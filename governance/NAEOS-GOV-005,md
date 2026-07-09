@@ -1,0 +1,393 @@
+Document ID: NAEOS-GOV-005
+Title: Core Principles
+Version: 1.0.0
+Status: Stable
+Category: Governance
+Owner: NAEOS Foundation
+Priority: Critical
+
+Motto:
+  Specify Once. Build Anywhere.
+
+Depends On:
+  - NAEOS-GOV-001 Project Charter
+  - NAEOS-GOV-002 Vision
+  - NAEOS-GOV-003 Mission
+  - NAEOS-GOV-004 Manifesto
+
+Referenced By:
+  - NAEOS-CON-001 Engineering Constitution
+  - NAEOS-SPEC-001 NAEOS Overview
+  - NAEOS-SPEC-002 Engineering Knowledge Graph
+  - NAEOS-STD-* Standards
+NAEOS Core Principles
+Executive Summary
+
+Core Principles adalah kumpulan prinsip fundamental yang menjadi dasar seluruh keputusan desain, implementasi, governance, dan evolusi NAEOS.
+
+Prinsip ini bersifat lintas domain dan berlaku untuk:
+
+Specification
+AI Agent
+Compiler
+Validator
+Documentation
+Software Architecture
+Community Governance
+
+Setiap komponen NAEOS harus mengikuti prinsip ini.
+
+1. Purpose
+
+Dokumen ini mendefinisikan:
+
+nilai engineering utama NAEOS,
+aturan pengambilan keputusan,
+batasan desain,
+prinsip evaluasi perubahan.
+2. Principle Hierarchy
+
+NAEOS menggunakan hierarki berikut:
+
+Semakin tinggi level dokumen, semakin besar otoritasnya.
+
+Principle 01
+Specification First
+Statement
+
+Every engineering activity MUST begin with a clear specification.
+
+Rationale
+
+Tanpa specification:
+
+AI kehilangan konteks,
+engineer memiliki interpretasi berbeda,
+kualitas sulit diverifikasi.
+
+Specification menjadi kontrak antara:
+
+manusia,
+AI,
+sistem,
+organisasi.
+Requirement
+
+NAEOS Component:
+
+MUST:
+
+memiliki specification,
+memiliki tujuan jelas,
+memiliki batasan.
+
+SHOULD:
+
+memiliki contoh implementasi.
+Principle 02
+Single Source of Truth
+Statement
+
+Every engineering knowledge artifact MUST have one authoritative source.
+
+Rationale
+
+Duplikasi menghasilkan:
+
+konflik informasi,
+dokumentasi tidak sinkron,
+keputusan tidak jelas.
+Model
+Source
+
+↓
+
+Compiler
+
+↓
+
+Artifacts
+
+Contoh:
+
+Satu specification menghasilkan:
+
+Markdown
+Website
+PDF
+AI Instructions
+Validation Rules
+Principle 03
+Knowledge Is An Asset
+Statement
+
+Engineering knowledge MUST be captured, structured, and reusable.
+
+Rationale
+
+Pengetahuan yang hanya berada di kepala manusia akan hilang.
+
+NAEOS mengubah:
+
+Experience
+
+↓
+
+Knowledge
+
+↓
+
+Pattern
+
+↓
+
+Reusable Asset
+Principle 04
+Architecture Before Implementation
+Statement
+
+Design decisions MUST be defined before implementation begins.
+
+Rationale
+
+Kode dapat berubah.
+
+Arsitektur menentukan umur sistem.
+
+Required Artifacts
+
+Sebelum implementasi:
+
+MUST tersedia:
+
+architecture decision,
+component design,
+dependency model.
+Principle 05
+Human Controlled AI
+Statement
+
+AI MAY assist engineering but MUST remain under human governance.
+
+Rationale
+
+AI memiliki kemampuan besar tetapi:
+
+dapat salah memahami konteks,
+dapat menghasilkan solusi tidak sesuai,
+membutuhkan validasi.
+AI Workflow
+AI Suggestion
+
+↓
+
+Human Review
+
+↓
+
+Validation
+
+↓
+
+Approval
+
+↓
+
+Implementation
+Principle 06
+Automation By Design
+Statement
+
+Any repeatable engineering process SHOULD be automated.
+
+Contoh:
+
+Manual:
+
+Review Rules
+Check Security
+Generate Docs
+Validate Format
+
+Menjadi:
+
+naeos validate
+naeos review
+naeos compile
+Principle 07
+Security Is Fundamental
+Statement
+
+Security MUST be considered from the beginning.
+
+Security bukan:
+
+tambahan,
+checklist akhir,
+fitur opsional.
+
+Security adalah bagian desain.
+
+Principle 08
+Quality Is Designed
+Statement
+
+Quality MUST be engineered, not inspected only at the end.
+
+Quality mencakup:
+
+correctness,
+maintainability,
+security,
+performance,
+usability.
+Principle 09
+Open By Default
+Statement
+
+NAEOS SHOULD use open standards whenever possible.
+
+Tujuan:
+
+interoperabilitas,
+komunitas,
+transparansi.
+Principle 10
+Vendor Neutrality
+Statement
+
+NAEOS MUST NOT depend on a single AI vendor.
+
+Specification harus tetap berlaku untuk:
+
+berbagai model,
+berbagai tools,
+berbagai platform.
+Principle 11
+Traceability
+Statement
+
+Every artifact SHOULD be traceable to its origin.
+
+Contoh:
+
+Requirement
+
+↓
+
+Architecture
+
+↓
+
+Code
+
+↓
+
+Test
+
+↓
+
+Documentation
+Principle 12
+Continuous Evolution
+Statement
+
+NAEOS MUST evolve through controlled improvement.
+
+Perubahan dilakukan melalui:
+
+RFC
+ADR
+Review
+Versioning
+3. Core Decision Model
+
+Setiap keputusan NAEOS dievaluasi berdasarkan:
+
+4. Principle Priority
+
+Jika terjadi konflik:
+
+Prioritas:
+
+Security
+    >
+Correctness
+    >
+Maintainability
+    >
+Performance
+    >
+Convenience
+5. Forbidden Practices
+
+NAEOS melarang:
+
+Prompt-only engineering
+
+Tanpa specification.
+
+Hidden decisions
+
+Keputusan penting tanpa dokumentasi.
+
+Uncontrolled automation
+
+AI melakukan perubahan tanpa validasi.
+
+Duplicate knowledge sources
+
+Dokumen berbeda dengan informasi berbeda.
+
+6. Compliance Checklist
+
+Sebuah komponen NAEOS dianggap sesuai apabila:
+
+Check	Required
+Memiliki specification	MUST
+Memiliki owner	MUST
+Memiliki metadata	MUST
+Dapat divalidasi	SHOULD
+Memiliki contoh	SHOULD
+Memiliki reference	SHOULD
+7. Official Principles Summary
+1. Specification First
+
+2. Single Source of Truth
+
+3. Knowledge Is An Asset
+
+4. Architecture Before Implementation
+
+5. Human Controlled AI
+
+6. Automation By Design
+
+7. Security Is Fundamental
+
+8. Quality Is Designed
+
+9. Open By Default
+
+10. Vendor Neutrality
+
+11. Traceability
+
+12. Continuous Evolution
+8. Related Documents
+ID	Document
+NAEOS-GOV-001	Project Charter
+NAEOS-GOV-002	Vision
+NAEOS-GOV-003	Mission
+NAEOS-GOV-004	Manifesto
+NAEOS-GOV-006	Governance Model
+NAEOS-CON-001	Engineering Constitution
+Revision History
+Version	Date	Change
+1.0.0	2026	Initial Core Principles
+Status
+NAEOS-GOV-005
+
+APPROVED
+
+Core Governance Principle Established
