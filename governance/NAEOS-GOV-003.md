@@ -20,7 +20,7 @@ Referenced By:
 NAEOS Mission
 Executive Summary
 
-Mission NAEOS adalah menerjemahkan visi menjadi tindakan nyata melalui pembangunan sebuah ekosistem engineering terbuka yang menghubungkan manusia, pengetahuan, spesifikasi, AI agent, dan software delivery.
+Mission NAEOS adalah menerjemahkan visi menjadi tindakan nyata melalui pembangunan sebuah ekosistem engineering terbuka yang menghubungkan manusia, pengetahuan, spesifikasi, AI agent, dan software[...]
 
 NAEOS berkomitmen membangun fondasi yang memungkinkan:
 
@@ -252,28 +252,56 @@ Real Production System
 Powered By NAEOS
 5. Mission Architecture
 
+```mermaid name=mission-architecture.mmd
 flowchart LR
+  %% Root
+  A[Mission]
 
-A[Mission]
+  %% Specification subgraph
+  subgraph SPEC["Specification"]
+    S1[Schema / RFCs]
+    S2[Document Model]
+    S3[Rule & Architecture Model]
+  end
 
-B[Specification]
+  %% Knowledge subgraph
+  subgraph KNOW["Engineering Knowledge"]
+    K1[Playbooks & Patterns]
+    K2[Templates & Examples]
+    K3[Reference Architecture]
+  end
 
-C[Knowledge]
+  %% Compiler / Tooling subgraph
+  subgraph COMP["Compiler / Tooling"]
+    C1[Validator]
+    C2[Compiler / Generator]
+    C3[Linter / Reviewer]
+  end
 
-D[Compiler]
+  E[AI Agent]
+  F[Software / Artifacts]
 
-E[AI Agent]
+  %% Flows
+  A --> SPEC
+  A --> KNOW
 
-F[Software]
+  S1 --> C1
+  S2 --> C2
+  S3 --> C3
 
-A --> B
-A --> C
+  K1 --> C2
+  K2 --> C1
+  K3 --> C3
 
-B --> D
-C --> D
+  C1 --> C2
+  C2 --> E
+  E --> F
 
-D --> E
-E --> F
+  %% Optional feedback loops
+  F --> KNOW
+  F --> SPEC
+```
+
 6. Strategic Programs
 
 NAEOS Foundation akan memiliki program berikut.
