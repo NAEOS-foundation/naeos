@@ -1,0 +1,8 @@
+{
+  "pipeline": {
+    "name": "naeos-dev",
+    "mode": "development",
+    "verbose": true,
+    "output_dir": "./out"
+  }
+}
