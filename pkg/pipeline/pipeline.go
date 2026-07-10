@@ -3,6 +3,8 @@ package pipeline
 import (
 	"fmt"
 	"time"
+	"os"
+	"path/filepath"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/neir/builder"
@@ -41,6 +43,14 @@ type Pipeline struct {
 	scheduler  scheduler.Scheduler
 	generator  engine.GeneratorEngine
 	kernel     *kernel.Kernel
+	parser        parser.Parser
+	normalizer    normalizer.Normalizer
+	resolver      resolver.Resolver
+	builder       builder.Builder
+	validator     validator.Validator
+	scheduler     scheduler.Scheduler
+	generator     engine.GeneratorEngine
+	outputDirValue string
 }
 
 // Result is the output produced by a pipeline run.
@@ -76,6 +86,14 @@ func New(cfg Config) (*Pipeline, error) {
 		scheduler:  cfg.Scheduler,
 		generator:  cfg.Generator,
 		kernel:     cfg.Kernel,
+		parser:         cfg.Parser,
+		normalizer:     cfg.Normalizer,
+		resolver:       cfg.Resolver,
+		builder:        cfg.Builder,
+		validator:      cfg.Validator,
+		scheduler:      cfg.Scheduler,
+		generator:      cfg.Generator,
+		outputDirValue: cfg.OutputDir,
 	}
 
 	if p.parser == nil {
@@ -163,6 +181,15 @@ func (p *Pipeline) emitKernelEvent(name string, payload map[string]any) error {
 }
 
 func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
+=======
+func (p *Pipeline) outputDir() string {
+	if p == nil {
+		return ""
+	}
+	return p.outputDirValue
+}
+
+func (p *Pipeline) Run(input string) (*Result, error) {
 	if input == "" {
 		return nil, fmt.Errorf("input cannot be empty")
 	}
@@ -170,6 +197,14 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 	parsed, err := p.parser.Parse(input)
 	if err != nil {
 		return nil, err
+	}
+	if parsed != nil {
+		if parsed.Project == "" {
+			parsed.Project = parser.DefaultProjectNameForInput(input)
+		}
+		if len(parsed.Modules) == 0 {
+			parsed.Modules = []parser.Module{{Name: parser.DefaultModuleNameForProject(parsed.Project), Path: fmt.Sprintf("./%s", parser.Slugify(parsed.Project))}}
+		}
 	}
 
 	normalized, err := p.normalizer.Normalize(parsed)
@@ -263,4 +298,23 @@ func (p *Pipeline) Subscribe(topic string, handler func(any)) error {
 		return fmt.Errorf("kernel not initialized")
 	}
 	return p.kernel.Subscribe(topic, handler)
+	outputDir := p.outputDir()
+	if outputDir != "" {
+		for _, artifact := range artifacts {
+			artifactPath := filepath.Join(outputDir, artifact.Path)
+			if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
+				return nil, fmt.Errorf("create artifact dir: %w", err)
+			}
+			if err := os.WriteFile(artifactPath, artifact.Content, 0o644); err != nil {
+				return nil, fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+			}
+		}
+	}
+
+	return &Result{
+		Source:    parsed.Raw,
+		NEIR:      neir,
+		Artifacts: artifacts,
+		Tasks:     tasks,
+	}, nill
 }
