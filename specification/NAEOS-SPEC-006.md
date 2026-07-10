@@ -116,41 +116,6 @@ graph TB
     Foundation --> Standards --> Profiles --> Specs --> Impl --> Generated
 ```
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                 Dependency Graph Architecture            │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │              Level 0 — Foundation                │  │
-│  │   Constitution, Core Specification, GOV docs     │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           │                             │
-│  ┌────────────────────────▼─────────────────────────┐  │
-│  │              Level 1 — Standards                 │  │
-│  │   API Standard, Security Standard, DB Standard   │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           │                             │
-│  ┌────────────────────────▼─────────────────────────┐  │
-│  │              Level 2 — Profiles & Playbooks      │  │
-│  │   Backend Profile, Frontend Profile, etc.        │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           │                             │
-│  ┌────────────────────────▼─────────────────────────┐  │
-│  │              Level 3 — Specification             │  │
-│  │   Project specs, Module specs, API contracts     │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           │                             │
-│  ┌────────────────────────▼─────────────────────────┐  │
-│  │              Level 4 — Implementation            │  │
-│  │   Source Code, Tests, Config, Dockerfiles        │  │
-│  └────────────────────────┬─────────────────────────┘  │
-│                           │                             │
-│  ┌────────────────────────▼─────────────────────────┐  │
-│  │              Level 5 — Generated Artifacts       │  │
-│  │   Go, TypeScript, Python, Java, Rust adapters    │  │
-│  └──────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-```
 
 Semakin tinggi level, semakin banyak artefak yang bergantung padanya.
 
