@@ -92,40 +92,6 @@ graph TB
     Operation --> Knowledge
 ```
 
-Intent
-
-↓
-
-Requirement
-
-↓
-
-Specification
-
-↓
-
-Architecture
-
-↓
-
-Implementation
-
-↓
-
-Testing
-
-↓
-
-Deployment
-
-↓
-
-Operation
-
-↓
-
-Knowledge
-
 Semua objek saling terhubung.
 
 4. Core Node Types
