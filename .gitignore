@@ -49,3 +49,4 @@ cmd/naeos/out/
 # Temp
 tmp/
 .tmp/
+documentation.o
