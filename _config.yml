@@ -1,0 +1,24 @@
+title: NAEOS Documentation
+description: Declarative platform engineering system
+theme: jekyll-theme-cayman
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+exclude:
+  - cmd/
+  - internal/
+  - pkg/
+  - examples/
+  - vendor/
+  - go.mod
+  - go.sum
+  - Makefile
+  - Dockerfile
+  - .github/
+include:
+  - docs/
+  - specification/
+  - governance/
+  - ARCHITECTURE-OVERVIEW.md

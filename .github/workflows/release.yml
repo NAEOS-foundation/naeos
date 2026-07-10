@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build linux/amd64
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" \
+            -o naeos-linux-amd64 ./cmd/naeos
+
+      - name: Build linux/arm64
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: "0"
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" \
+            -o naeos-linux-arm64 ./cmd/naeos
+
+      - name: Build darwin/amd64
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" \
+            -o naeos-darwin-amd64 ./cmd/naeos
+
+      - name: Build darwin/arm64
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+          CGO_ENABLED: "0"
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" \
+            -o naeos-darwin-arm64 ./cmd/naeos
+
+      - name: Build windows/amd64
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" \
+            -o naeos-windows-amd64.exe ./cmd/naeos
+
+      - name: Generate checksums
+        run: |
+          sha256sum naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 naeos-windows-amd64.exe > checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: NAEOS ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## NAEOS ${{ steps.version.outputs.VERSION }}
+
+            Declarative platform engineering system — transform specifications into validated, multi-language project structures.
+
+            ### Installation
+
+            ```bash
+            go install github.com/NAEOS-foundation/naeos/cmd/naeos@${{ github.ref_name }}
+            ```
+
+            ### Binary Downloads
+
+            | Platform | Architecture | Binary |
+            |----------|-------------|--------|
+            | Linux | amd64 | `naeos-linux-amd64` |
+            | Linux | arm64 | `naeos-linux-arm64` |
+            | macOS | amd64 | `naeos-darwin-amd64` |
+            | macOS | arm64 | `naeos-darwin-arm64` |
+            | Windows | amd64 | `naeos-windows-amd64.exe` |
+
+            ### What's New
+
+            - Mermaid architecture diagrams across all documentation
+            - Unit tests for all model and shared packages
+            - Multi-language output adapters (Go, TypeScript, Python, Java, Rust)
+            - CLI `--language` flag for multi-target generation
+            - CLI `--dry-run` flag for export preview
+            - Improved validator error messages with actionable suggestions
+          files: |
+            naeos-linux-amd64
+            naeos-linux-arm64
+            naeos-darwin-amd64
+            naeos-darwin-arm64
+            naeos-windows-amd64.exe
+            checksums.txt
+          draft: false
+          prerelease: false
