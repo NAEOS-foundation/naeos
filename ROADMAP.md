@@ -24,3 +24,19 @@ Roadmap ini memberikan arah pengembangan dokumentasi dan ekosistem NAEOS.
 
 ## Prinsip roadmap
 Prioritas utama adalah menjaga kualitas, konsistensi, dan keterpahaman dokumen bagi komunitas serta implementer.
+
+---
+
+## Implementasi Teknis (Completed)
+
+### Core Improvements
+- [x] Fix `FindByContentSubstring` bug (was hardcoded false)
+- [x] Resolver cross-reference: dependency filtering, endpoint normalization, defaults
+- [x] Wire `--verbose` CLI flag to pipeline
+- [x] Integrate `renderers.Renderer` into pipeline kernel service
+- [x] Implement `GenerateForLanguage` with per-language code generation
+- [x] Add `ParallelGroups()` to scheduler for priority-based execution
+- [x] Add `extractDeployment()` and `extractTesting()` to NEIR builder
+- [x] Add `SetOutputDir()` and file write to RuntimeEngine
+- [x] 180+ tests passing with race detector
+- [x] Clean up duplicate governance files
