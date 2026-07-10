@@ -15,7 +15,10 @@ func (stubParser) Parse(input string) (*parser.SpecDocument, error) {
 }
 
 func TestPipelineRunProducesResult(t *testing.T) {
-	p := New(Config{})
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
 
 	result, err := p.Run("sample specification")
 	if err != nil {
@@ -36,7 +39,10 @@ func TestPipelineRunProducesResult(t *testing.T) {
 }
 
 func TestPipelineUsesInjectedParser(t *testing.T) {
-	p := New(Config{Parser: stubParser{}})
+	p, err := New(Config{Parser: stubParser{}})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
 	result, err := p.Run("sample")
 	if err != nil {
 		t.Fatalf("Run returned error: %v", err)

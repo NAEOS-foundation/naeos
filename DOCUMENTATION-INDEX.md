@@ -16,10 +16,26 @@ Dokumen ini berfungsi sebagai indeks utama untuk navigasi repositori NAEOS.
 - [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md) — konstitusi engineering.
 - [governance/NAEOS-GOV-001.md](governance/NAEOS-GOV-001.md) — tata kelola utama.
 
-## 4. Policy dan kernel
-- [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) — policy compiler.
+## 4. Policy, Kernel, dan Profile
 - [kernel/NAEOS-KER-001.md](kernel/NAEOS-KER-001.md) — spesifikasi kernel.
-- [profile/NAEOS-PRO-001.md](profile/NAEOS-PRO-001.md) — profil implementasi.
+
+### 4.1 Policy System Documentation
+- [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) — spesifikasi policy compiler (high-level overview).
+- [policy/NAEOS-POL-002.md](policy/NAEOS-POL-002.md) — panduan penulisan & definisi policy (cara membuat policies).
+- [policy/NAEOS-POL-003.md](policy/NAEOS-POL-003.md) — contoh policy konkret (security, testing, documentation, compliance, deployment).
+- [policy/NAEOS-POL-004.md](policy/NAEOS-POL-004.md) — best practices (design principles, organization, governance).
+- [policy/NAEOS-POL-005.md](policy/NAEOS-POL-005.md) — policy compiler & engine (technical deep dive, architecture, graph resolution).
+- [policy/NAEOS-POL-006.md](policy/NAEOS-POL-006.md) — evaluasi & enforcement (strategies, CI/CD integration, remediation).
+- [policy/NAEOS-POL-007.md](policy/NAEOS-POL-007.md) — troubleshooting & FAQ (common issues, solutions, best practices Q&A).
+
+### 4.2 Profile System Documentation
+- [profile/NAEOS-PRO-001.md](profile/NAEOS-PRO-001.md) — spesifikasi sistem profil (high-level overview).
+- [profile/NAEOS-PRO-002.md](profile/NAEOS-PRO-002.md) — panduan implementasi & setup (cara membuat dan mengaktifkan profile).
+- [profile/NAEOS-PRO-003.md](profile/NAEOS-PRO-003.md) — contoh profile konkret (base, startup, enterprise, fintech, healthcare, saas, microservices).
+- [profile/NAEOS-PRO-004.md](profile/NAEOS-PRO-004.md) — best practices (design principles, policy design, governance).
+- [profile/NAEOS-PRO-005.md](profile/NAEOS-PRO-005.md) — API & CLI reference (perintah lengkap, contoh penggunaan, SDK).
+- [profile/NAEOS-PRO-006.md](profile/NAEOS-PRO-006.md) — migration & upgrade guide (upgrade strategies, major version migration, rollback).
+- [profile/NAEOS-PRO-007.md](profile/NAEOS-PRO-007.md) — troubleshooting & FAQ (common issues, solutions, best practices Q&A).
 
 ## 5. Dokumen penunjang
 - [GLOSSARY.md](GLOSSARY.md) — daftar istilah penting.
@@ -58,14 +74,38 @@ Dokumen ini berfungsi sebagai indeks utama untuk navigasi repositori NAEOS.
 - [docs/NES-022-Release.md](docs/NES-022-Release.md) — release.
 
 ## 8. Rekomendasi membaca
-Untuk pemula, urutan yang disarankan adalah:
+
+### 8.1 Untuk pemula (memahami proyek)
+Urutan yang disarankan:
 1. [README.md](README.md)
 2. [GETTING-STARTED.md](GETTING-STARTED.md)
 3. [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md)
 4. [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md)
 5. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md)
 
-## 7. Catatan navigasi
+### 8.2 Untuk policy system
+Jika ingin memahami dan menggunakan policy system, baca dalam urutan:
+1. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) — pahami konsep dasar policy compiler
+2. [policy/NAEOS-POL-003.md](policy/NAEOS-POL-003.md) — lihat contoh konkret policies
+3. [policy/NAEOS-POL-002.md](policy/NAEOS-POL-002.md) — praktik menulis dan mendefinisikan policies
+4. [policy/NAEOS-POL-004.md](policy/NAEOS-POL-004.md) — best practices policy design
+5. [policy/NAEOS-POL-006.md](policy/NAEOS-POL-006.md) — evaluasi dan enforcement strategies
+6. [policy/NAEOS-POL-005.md](policy/NAEOS-POL-005.md) — technical deep dive (opsional, untuk developers)
+7. [policy/NAEOS-POL-007.md](policy/NAEOS-POL-007.md) — troubleshooting saat perlu
+
+### 8.3 Untuk profile system
+Jika ingin memahami dan menggunakan profile system, baca dalam urutan:
+1. [profile/NAEOS-PRO-001.md](profile/NAEOS-PRO-001.md) — pahami konsep dasar
+2. [profile/NAEOS-PRO-003.md](profile/NAEOS-PRO-003.md) — lihat contoh konkret
+3. [profile/NAEOS-PRO-002.md](profile/NAEOS-PRO-002.md) — praktik implementasi
+4. [profile/NAEOS-PRO-004.md](profile/NAEOS-PRO-004.md) — best practices
+5. [profile/NAEOS-PRO-005.md](profile/NAEOS-PRO-005.md) — referensi CLI & API
+6. [profile/NAEOS-PRO-007.md](profile/NAEOS-PRO-007.md) — troubleshooting saat perlu
+7. [profile/NAEOS-PRO-006.md](profile/NAEOS-PRO-006.md) — upgrade guide saat upgrade
+
+## 9. Catatan navigasi
 - Gunakan dokumen ini sebagai titik masuk saat mencari topik tertentu.
 - Jika Anda ingin memahami keseluruhan proyek, mulai dari bagian inti terlebih dahulu.
 - Untuk kontribusi, lihat [CONTRIBUTING.md](CONTRIBUTING.md).
+- Untuk policy system, mulai dari NAEOS-POL-001 kemudian lanjut sesuai kebutuhan.
+- Untuk profile system, mulai dari NAEOS-PRO-001 kemudian lanjut sesuai kebutuhan.
