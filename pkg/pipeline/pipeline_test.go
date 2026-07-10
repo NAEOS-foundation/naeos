@@ -46,6 +46,25 @@ func TestPipelineUsesInjectedParser(t *testing.T) {
 	}
 }
 
+func TestPipelineWritesArtifactsToOutputDir(t *testing.T) {
+	dir := t.TempDir()
+	outputDir := filepath.Join(dir, "out")
+	p := New(Config{OutputDir: outputDir})
+
+	_, err := p.Run("sample specification")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	files, err := os.ReadDir(outputDir)
+	if err != nil {
+		t.Fatalf("read output dir: %v", err)
+	}
+	if len(files) == 0 {
+		t.Fatal("expected output dir to contain generated files")
+	}
+}
+
 func TestConfigFromFileJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")

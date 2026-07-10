@@ -2,6 +2,8 @@ package pipeline
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	cfgpkg "github.com/NAEOS-foundation/naeos/pkg/config"
@@ -30,13 +32,14 @@ type Config struct {
 
 // Pipeline coordinates the main NAEOS processing flow.
 type Pipeline struct {
-	parser     parser.Parser
-	normalizer normalizer.Normalizer
-	resolver   resolver.Resolver
-	builder    builder.Builder
-	validator  validator.Validator
-	scheduler  scheduler.Scheduler
-	generator  engine.GeneratorEngine
+	parser        parser.Parser
+	normalizer    normalizer.Normalizer
+	resolver      resolver.Resolver
+	builder       builder.Builder
+	validator     validator.Validator
+	scheduler     scheduler.Scheduler
+	generator     engine.GeneratorEngine
+	outputDirValue string
 }
 
 // Result is the output produced by a pipeline run.
@@ -64,13 +67,14 @@ func ConfigFromFile(path string) (Config, error) {
 // New creates a default pipeline implementation with optional dependency injection.
 func New(cfg Config) *Pipeline {
 	p := &Pipeline{
-		parser:     cfg.Parser,
-		normalizer: cfg.Normalizer,
-		resolver:   cfg.Resolver,
-		builder:    cfg.Builder,
-		validator:  cfg.Validator,
-		scheduler:  cfg.Scheduler,
-		generator:  cfg.Generator,
+		parser:         cfg.Parser,
+		normalizer:     cfg.Normalizer,
+		resolver:       cfg.Resolver,
+		builder:        cfg.Builder,
+		validator:      cfg.Validator,
+		scheduler:      cfg.Scheduler,
+		generator:      cfg.Generator,
+		outputDirValue: cfg.OutputDir,
 	}
 
 	if p.parser == nil {
@@ -99,6 +103,13 @@ func New(cfg Config) *Pipeline {
 }
 
 // Run executes the specification-to-artifact pipeline.
+func (p *Pipeline) outputDir() string {
+	if p == nil {
+		return ""
+	}
+	return p.outputDirValue
+}
+
 func (p *Pipeline) Run(input string) (*Result, error) {
 	if input == "" {
 		return nil, fmt.Errorf("input cannot be empty")
@@ -107,6 +118,14 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 	parsed, err := p.parser.Parse(input)
 	if err != nil {
 		return nil, err
+	}
+	if parsed != nil {
+		if parsed.Project == "" {
+			parsed.Project = parser.DefaultProjectNameForInput(input)
+		}
+		if len(parsed.Modules) == 0 {
+			parsed.Modules = []parser.Module{{Name: parser.DefaultModuleNameForProject(parsed.Project), Path: fmt.Sprintf("./%s", parser.Slugify(parsed.Project))}}
+		}
 	}
 
 	normalized, err := p.normalizer.Normalize(parsed)
@@ -136,6 +155,19 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 	artifacts, err := p.generator.Generate(neir)
 	if err != nil {
 		return nil, err
+	}
+
+	outputDir := p.outputDir()
+	if outputDir != "" {
+		for _, artifact := range artifacts {
+			artifactPath := filepath.Join(outputDir, artifact.Path)
+			if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
+				return nil, fmt.Errorf("create artifact dir: %w", err)
+			}
+			if err := os.WriteFile(artifactPath, artifact.Content, 0o644); err != nil {
+				return nil, fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+			}
+		}
 	}
 
 	return &Result{
