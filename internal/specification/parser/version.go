@@ -26,11 +26,17 @@ func ParseSchemaVersion(version string) (SchemaVersion, error) {
 	if err != nil {
 		return SchemaVersion{}, fmt.Errorf("invalid major version: %w", err)
 	}
+	if sv.Major < 0 {
+		return SchemaVersion{}, fmt.Errorf("major version cannot be negative")
+	}
 
 	if len(parts) > 1 {
 		sv.Minor, err = strconv.Atoi(parts[1])
 		if err != nil {
 			return SchemaVersion{}, fmt.Errorf("invalid minor version: %w", err)
+		}
+		if sv.Minor < 0 {
+			return SchemaVersion{}, fmt.Errorf("minor version cannot be negative")
 		}
 	}
 
@@ -38,6 +44,9 @@ func ParseSchemaVersion(version string) (SchemaVersion, error) {
 		sv.Patch, err = strconv.Atoi(parts[2])
 		if err != nil {
 			return SchemaVersion{}, fmt.Errorf("invalid patch version: %w", err)
+		}
+		if sv.Patch < 0 {
+			return SchemaVersion{}, fmt.Errorf("patch version cannot be negative")
 		}
 	}
 

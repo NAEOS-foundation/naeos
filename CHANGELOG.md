@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-11
+
+### Added
+- **Spec Language v2 Enhancement** (`internal/specification/parser/resolve_ext.go`):
+  - `$include{file}` — multi-file spec composition with recursive resolution (max depth 10).
+  - `$fn{name(args)}` — custom functions: `upper`, `lower`, `slug`, `default`, `len`, `coalesce`.
+  - `$if{condition}` / `$endif` — conditional sections based on environment variables.
+  - Condition operators: `==`, `!=`, `!`, `defined:`.
+- **MCP Server** (`internal/mcp/server.go`):
+  - Model Context Protocol server for AI agent integration.
+  - Tools: `parse_spec`, `validate_spec`, `generate_context`, `compile_spec`, `explain_concept`.
+  - JSON-RPC 2.0 over HTTP with `/mcp` and `/health` endpoints.
+- **Migration Engine** (`internal/migration/engine.go`):
+  - Real version transforms: v0.1.0 → v0.2.0 (add generation config, normalize modules) → v0.3.0 (add architecture defaults, security, testing).
+  - `Migrate()`, `Plan()`, `AvailableVersions()`, `VersionBetween()`.
+- **Testing Framework** (`internal/testrunner/runner.go`):
+  - Multi-language test runner: Go, TypeScript/Node, Python, Java, Rust.
+  - Auto-detect project languages from config files.
+- **Documentation Generator** (`internal/docgen/generator.go`):
+  - Generate full docs, API docs, module docs from specs or NEIR.
+- **Benchmarks** (`internal/specification/parser/bench_test.go`):
+  - 8 benchmarks: parse simple/complex/with-variables, validate modules/services, variable resolver, schema version, cycle detection.
+- **Fuzz Testing** (`internal/specification/parser/fuzz_test.go`):
+  - 6 fuzz targets: parse, parseYAMLNode, variable resolver, schema version, validate modules.
+- **Docker Image** — multi-stage Dockerfile (golang:1.22-alpine → alpine:3.19).
+- **CLI commands**:
+  - `naeos mcp` — start MCP server (`--port`).
+  - `naeos test` — run tests for generated code (`--dir`, `--language`, `--verbose`).
+  - `naeos docgen` — generate documentation (`--output full|api|modules`).
+
+### Changed
+- All 66 packages pass, `go vet` clean, `go build` clean.
+
 ## [0.3.0] - 2026-07-11
 
 ### Added

@@ -75,5 +75,8 @@ func newRootCommand() *cobra.Command {
 	root.AddCommand(newWatchCommand())
 	root.AddCommand(newStatusCommand())
 	root.AddCommand(newContextCommand())
+	root.AddCommand(newMCPCommand())
+	root.AddCommand(newTestCommand())
+	root.AddCommand(newDocsGenCommand())
 	return root
 }

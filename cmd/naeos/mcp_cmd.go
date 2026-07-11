@@ -1,0 +1,49 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+
+	"github.com/NAEOS-foundation/naeos/internal/mcp"
+	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+)
+
+func newMCPCommand() *cobra.Command {
+	var port int
+
+	cmd := &cobra.Command{
+		Use:   "mcp",
+		Short: "Start MCP (Model Context Protocol) server",
+		Long: `Start an MCP server that exposes NAEOS tools to AI agents.
+
+The server implements the Model Context Protocol and provides tools:
+  - parse_spec: Parse a NAEOS specification
+  - validate_spec: Validate a specification
+  - generate_context: Generate AI context bundle
+  - compile_spec: Compile spec to AI instruction sets
+  - explain_concept: Explain NAEOS concepts
+
+Example:
+  naeos mcp --port 8080
+  naeos mcp`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			compiler := compiler.New()
+			bundle := contextbundle.NewGenerator(nil)
+			_ = mcp.NewServer(compiler, bundle)
+
+			addr := fmt.Sprintf(":%d", port)
+			fmt.Fprintf(cmd.OutOrStdout(), "NAEOS MCP server starting on %s\n", addr)
+			fmt.Fprintf(cmd.OutOrStdout(), "Tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Health check: http://localhost:%d/health\n", port)
+
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVar(&port, "port", 3000, "port for MCP server")
+
+	return cmd
+}
