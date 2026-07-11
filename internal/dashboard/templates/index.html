@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAEOS Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #333; }
+        h1 { font-size: 24px; color: #00ff88; }
+        .status { color: #666; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
+        .card { background: #1a1a1a; border-radius: 12px; padding: 24px; border: 1px solid #333; }
+        .card h2 { font-size: 14px; color: #666; text-transform: uppercase; margin-bottom: 8px; }
+        .card .value { font-size: 32px; font-weight: 700; color: #00ff88; }
+        .section { margin: 40px 0; }
+        .section h2 { font-size: 18px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #666; font-size: 12px; text-transform: uppercase; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-green { background: #00ff8822; color: #00ff88; }
+        .badge-yellow { background: #ffaa0022; color: #ffaa00; }
+        .badge-red { background: #ff444422; color: #ff4444; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn-primary { background: #00ff88; color: #000; }
+        .btn-secondary { background: #333; color: #fff; }
+        .btn:hover { opacity: 0.9; }
+        .actions { display: flex; gap: 10px; margin: 20px 0; }
+        .log { background: #111; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 13px; max-height: 300px; overflow-y: auto; }
+        .log-entry { padding: 4px 0; border-bottom: 1px solid #222; }
+        .log-time { color: #666; }
+        .log-ok { color: #00ff88; }
+        .log-warn { color: #ffaa00; }
+        .log-error { color: #ff4444; }
+        nav { display: flex; gap: 20px; }
+        nav a { color: #666; text-decoration: none; font-size: 14px; }
+        nav a:hover, nav a.active { color: #00ff88; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NAEOS</h1>
+            <nav>
+                <a href="#" class="active">Dashboard</a>
+                <a href="#">Specs</a>
+                <a href="#">Pipeline</a>
+                <a href="#">Artifacts</a>
+                <a href="#">Settings</a>
+            </nav>
+            <span class="status">v0.4.0 | Server Running</span>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Projects</h2>
+                <div class="value">1</div>
+            </div>
+            <div class="card">
+                <h2>Specifications</h2>
+                <div class="value">0</div>
+            </div>
+            <div class="card">
+                <h2>Artifacts</h2>
+                <div class="value">0</div>
+            </div>
+            <div class="card">
+                <h2>Pipeline Runs</h2>
+                <div class="value">0</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="runPipeline()">Run Pipeline</button>
+                <button class="btn btn-secondary" onclick="validateSpec()">Validate Spec</button>
+                <button class="btn btn-secondary" onclick="compileSpec()">Compile to AI</button>
+                <button class="btn btn-secondary" onclick="refreshDashboard()">Refresh</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Recent Activity</h2>
+            <div class="log" id="activity-log">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-ok">Dashboard loaded</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>System Status</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Status</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>API Server</td>
+                        <td><span class="badge badge-green">Running</span></td>
+                        <td>0.4.0</td>
+                    </tr>
+                    <tr>
+                        <td>Parser</td>
+                        <td><span class="badge badge-green">Ready</span></td>
+                        <td>0.4.0</td>
+                    </tr>
+                    <tr>
+                        <td>Compiler</td>
+                        <td><span class="badge badge-green">Ready</span></td>
+                        <td>0.4.0</td>
+                    </tr>
+                    <tr>
+                        <td>MCP Server</td>
+                        <td><span class="badge badge-yellow">Stopped</span></td>
+                        <td>0.4.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function addLog(message, type = 'ok') {
+            const log = document.getElementById('activity-log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = '<span class="log-time">' + time + '</span> <span class="log-' + type + '">' + message + '</span>';
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function runPipeline() {
+            addLog('Starting pipeline...', 'ok');
+            try {
+                const res = await fetch('/api/v1/pipeline/run', { method: 'POST' });
+                const data = await res.json();
+                addLog('Pipeline started: ' + data.data.pipeline_id, 'ok');
+            } catch (e) {
+                addLog('Pipeline error: ' + e.message, 'error');
+            }
+        }
+
+        async function validateSpec() {
+            addLog('Validating specification...', 'ok');
+            try {
+                const res = await fetch('/api/v1/specs/validate', { method: 'POST' });
+                const data = await res.json();
+                addLog('Validation complete: ' + (data.data.valid ? 'passed' : 'failed'), data.data.valid ? 'ok' : 'warn');
+            } catch (e) {
+                addLog('Validation error: ' + e.message, 'error');
+            }
+        }
+
+        async function compileSpec() {
+            addLog('Compiling to AI instruction sets...', 'ok');
+            try {
+                const res = await fetch('/api/v1/specs/compile', { method: 'POST' });
+                const data = await res.json();
+                addLog('Compilation complete: ' + data.data.targets.join(', '), 'ok');
+            } catch (e) {
+                addLog('Compilation error: ' + e.message, 'error');
+            }
+        }
+
+        async function refreshDashboard() {
+            addLog('Dashboard refreshed', 'ok');
+        }
+    </script>
+</body>
+</html>
