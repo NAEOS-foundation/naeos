@@ -74,5 +74,6 @@ func newRootCommand() *cobra.Command {
 	root.AddCommand(newProfileCommand())
 	root.AddCommand(newWatchCommand())
 	root.AddCommand(newStatusCommand())
+	root.AddCommand(newContextCommand())
 	return root
 }

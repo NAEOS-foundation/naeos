@@ -125,6 +125,13 @@ func NewParser() Parser {
 			if rawGen, ok := m["generation"].(map[string]any); ok {
 				doc.Generation = extractGeneration(rawGen)
 			}
+
+			if versionStr := ExtractVersionFromData(m); versionStr != "" {
+				result := CheckSpecVersion(versionStr)
+				if !result.Valid {
+					return nil, fmt.Errorf("spec version check: %s", result.Message)
+				}
+			}
 		}
 
 		return doc, nil

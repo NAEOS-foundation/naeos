@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-11
+
+### Added
+- **Spec Language v2** (`internal/specification/parser/resolve.go`):
+  - Variable interpolation: `${var}` syntax for custom variables.
+  - Environment variable resolution: `$env{VAR}` reads from env.
+  - Reference resolution: `$ref{path}` cross-references spec values.
+  - Recursive resolver for maps, slices, and nested structures.
+- **Validation Kernel** (`internal/specification/parser/resolve.go`):
+  - Circular dependency detection in module dependency graphs.
+  - Port conflict detection across services.
+  - Module boundary enforcement (name required, duplicate detection).
+  - Dangling dependency detection (missing module references).
+  - Deep validation of `$ref` references against resolved context.
+- **Schema Versioning** (`internal/specification/parser/version.go`):
+  - `ParseSchemaVersion`, `CheckSpecVersion`, `ExtractVersionFromData` — parse, compare, and validate SemVer spec versions.
+  - Parser auto-checks `version` field on parse; rejects specs below minimum version.
+  - Minimum version constant `MinSpecVersion = "0.1.0"`, `CurrentSpecVersion = "0.3.0"`.
+- **AI Context Bundles** (`internal/context/bundle/bundle.go`):
+  - `GenerateFromNEIR` and `GenerateFromSpec` — produce LLM-ready context bundles from NEIR or parsed specs.
+  - Markdown and plain text output with modules, services, languages, and endpoints.
+  - Metadata tracking (module count, service count, generator).
+- **CLI command**:
+  - `naeos context` — generate AI context bundles from specifications (`--input`, `--input-file`, `--output markdown|plain|json|yaml`).
+
+### Changed
+- Pipeline now performs schema version validation automatically during spec parsing.
+- All 63 packages pass, `go vet` clean, `go build` clean.
+
 ## [0.2.0] - 2026-07-11
 
 ### Added
