@@ -4,14 +4,20 @@
 BINARY := naeos
 MODULE := github.com/NAEOS-foundation/naeos
 CMD := ./cmd/naeos
+VERSION := $(shell cat VERSION 2>/dev/null || echo "dev")
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "")
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS := -X 'github.com/NAEOS-foundation/naeos/internal/version.Version=$(VERSION)' \
+           -X 'github.com/NAEOS-foundation/naeos/internal/version.GitCommit=$(GIT_COMMIT)' \
+           -X 'github.com/NAEOS-foundation/naeos/internal/version.BuildDate=$(BUILD_DATE)'
 
 # Default target
 all: check build
 
 ## build: Build the binary
 build:
-	@echo "Building $(BINARY)..."
-	go build -o $(BINARY) $(CMD)
+	@echo "Building $(BINARY) $(VERSION)..."
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) $(CMD)
 
 ## test: Run tests
 test:
@@ -51,6 +57,10 @@ clean:
 	@echo "Cleaning..."
 	rm -f $(BINARY)
 	rm -f coverage.out
+
+## version: Show current version
+version:
+	@echo $(VERSION)
 
 ## check: Run all checks (fmt, vet, lint, test)
 check: fmt vet lint test

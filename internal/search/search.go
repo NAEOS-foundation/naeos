@@ -1,7 +1,10 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -260,6 +263,74 @@ func NewManager() *Manager {
 	return &Manager{
 		engines: make(map[string]Engine),
 	}
+}
+
+// Persistent wraps InMemory with JSON file persistence.
+type Persistent struct {
+	*InMemory
+	filePath string
+}
+
+func NewPersistent(dir string) (*Persistent, error) {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, fmt.Errorf("create search dir: %w", err)
+	}
+	p := &Persistent{
+		InMemory: NewInMemory(),
+		filePath: filepath.Join(dir, "search-index.json"),
+	}
+	p.load()
+	return p, nil
+}
+
+func (p *Persistent) save() error {
+	p.mu.RLock()
+	docs := make([]*Document, 0, len(p.documents))
+	for _, doc := range p.documents {
+		docs = append(docs, doc)
+	}
+	p.mu.RUnlock()
+
+	data, err := json.MarshalIndent(docs, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(p.filePath, data, 0o644)
+}
+
+func (p *Persistent) load() {
+	data, err := os.ReadFile(p.filePath)
+	if err != nil {
+		return
+	}
+	var docs []*Document
+	if err := json.Unmarshal(data, &docs); err != nil {
+		return
+	}
+	for _, doc := range docs {
+		_ = p.InMemory.Index(doc)
+	}
+}
+
+func (p *Persistent) Index(doc *Document) error {
+	if err := p.InMemory.Index(doc); err != nil {
+		return err
+	}
+	return p.save()
+}
+
+func (p *Persistent) Delete(id string) error {
+	if err := p.InMemory.Delete(id); err != nil {
+		return err
+	}
+	return p.save()
+}
+
+func (p *Persistent) Update(id string, doc *Document) error {
+	if err := p.InMemory.Update(id, doc); err != nil {
+		return err
+	}
+	return p.save()
 }
 
 func (m *Manager) Register(name string, engine Engine) {

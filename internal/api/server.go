@@ -12,31 +12,25 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NAEOS-foundation/naeos/internal/artifacts"
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type Server struct {
-	Addr    string
-	Router  *http.ServeMux
-	server  *http.Server
-	Auth    *AuthConfig
-	Limiter *RateLimiter
-	jwt     *JWTValidator
-	parser  parser.Parser
-	compiler *compiler.Compiler
-	bundle   *contextbundle.Generator
-	artifacts []artifactEntry
-	pipelines []pipelineRun
-}
-
-type artifactEntry struct {
-	ID      string `json:"id"`
-	Path    string `json:"path"`
-	Kind    string `json:"kind"`
-	Size    int64  `json:"size"`
-	Created string `json:"created"`
+	Addr       string
+	Router     *http.ServeMux
+	server     *http.Server
+	Auth       *AuthConfig
+	Limiter    *RateLimiter
+	jwt        *JWTValidator
+	parser     parser.Parser
+	compiler   *compiler.Compiler
+	bundle     *contextbundle.Generator
+	store      *artifacts.Store
+	pipelines  []pipelineRun
 }
 
 type pipelineRun struct {
@@ -65,13 +59,17 @@ type ErrorResponse struct {
 }
 
 func NewServer(addr string, auth *AuthConfig) *Server {
+	store := artifacts.NewStore(".naeos/artifacts")
+	_ = store.LoadFromDisk()
+
 	s := &Server{
-		Addr:   addr,
-		Router: http.NewServeMux(),
-		Auth:   auth,
-		Limiter: NewRateLimiter(100, time.Minute),
-		parser:  parser.NewParser(),
+		Addr:     addr,
+		Router:   http.NewServeMux(),
+		Auth:     auth,
+		Limiter:  NewRateLimiter(100, time.Minute),
+		parser:   parser.NewParser(),
 		compiler: compiler.New(),
+		store:    store,
 	}
 
 	if auth != nil && auth.JWTSecret != "" {
@@ -104,12 +102,17 @@ func (s *Server) setupRoutes() {
 
 	// MCP endpoints
 	s.Router.HandleFunc("/api/v1/mcp/message", s.handleMCPMessage)
+
+	// System endpoints
+	s.Router.HandleFunc("/api/v1/version", s.handleVersion)
+	s.Router.HandleFunc("/api/v1/config/schema", s.handleConfigSchema)
+	s.Router.HandleFunc("/api/v1/pipelines", s.handlePipelines)
 }
 
 func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Rate limit
-		if !s.Limiter.Allow() {
+		if !s.Limiter.Allow(r.RemoteAddr) {
 			s.writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
 			return
 		}
@@ -166,7 +169,7 @@ func (s *Server) writeError(w http.ResponseWriter, status int, message string) {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status":  "healthy",
-		"version": "0.5.0",
+		"version": version.String(),
 		"uptime":  time.Since(startTime).String(),
 	})
 }
@@ -337,9 +340,10 @@ func (s *Server) handlePipelineStatus(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
+		list := s.store.List()
 		s.writeJSON(w, http.StatusOK, map[string]interface{}{
-			"artifacts": s.artifacts,
-			"count":     len(s.artifacts),
+			"artifacts": list,
+			"count":     len(list),
 		})
 	case "POST":
 		var req struct {
@@ -355,19 +359,16 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusBadRequest, "path and content required")
 			return
 		}
-		kind := req.Kind
-		if kind == "" {
-			kind = "other"
+		kind := artifacts.DetectKind(req.Path)
+		if req.Kind != "" {
+			kind = artifacts.ArtifactKind(req.Kind)
 		}
-		id := fmt.Sprintf("art-%d", time.Now().UnixNano())
-		artifact := artifactEntry{
-			ID:      id,
-			Path:    req.Path,
-			Kind:    kind,
-			Size:    int64(len(req.Content)),
-			Created: time.Now().Format(time.RFC3339),
+		artifact, err := s.store.Add(req.Path, []byte(req.Content), kind)
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, "failed to store artifact: "+err.Error())
+			return
 		}
-		s.artifacts = append(s.artifacts, artifact)
+		_ = s.store.WriteToDisk()
 		s.writeJSON(w, http.StatusCreated, map[string]interface{}{
 			"message":  "artifact stored",
 			"artifact": artifact,
@@ -442,7 +443,7 @@ func (s *Server) handleMCPMessage(w http.ResponseWriter, r *http.Request) {
 	case "initialize":
 		resp.Result = map[string]any{
 			"protocolVersion": "2024-11-05",
-			"serverInfo":      map[string]any{"name": "naeos-api-mcp", "version": "0.5.0"},
+			"serverInfo":      map[string]any{"name": "naeos-api-mcp", "version": version.String()},
 		}
 	case "tools/list":
 		resp.Result = map[string]any{
@@ -475,6 +476,44 @@ func (s *Server) handleMCPMessage(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
+			case "validate_spec":
+				if spec == "" {
+					resp.Error = map[string]any{"code": -32000, "message": "spec is required"}
+				} else {
+					doc, err := s.parser.Parse(spec)
+					if err != nil {
+						resp.Result = map[string]any{
+							"isError": true,
+							"content": []map[string]any{{"type": "text", "text": fmt.Sprintf("Validation error: %v", err)}},
+						}
+					} else {
+						status := "PASS"
+						if len(doc.Modules) == 0 {
+							status = "WARN"
+						}
+						resp.Result = map[string]any{
+							"content": []map[string]any{{"type": "text", "text": fmt.Sprintf("Status: %s\nProject: %s\nModules: %d\nServices: %d", status, doc.Project, len(doc.Modules), len(doc.Services))}},
+						}
+					}
+				}
+			case "compile_spec":
+				if spec == "" {
+					resp.Error = map[string]any{"code": -32000, "message": "spec is required"}
+				} else {
+					doc, err := s.parser.Parse(spec)
+					if err != nil {
+						resp.Error = map[string]any{"code": -32000, "message": err.Error()}
+					} else {
+						b := s.bundle.GenerateFromSpec(doc)
+						target, _ := params.Arguments["target"].(string)
+						if target == "" {
+							target = "copilot"
+						}
+						resp.Result = map[string]any{
+							"content": []map[string]any{{"type": "text", "text": fmt.Sprintf("Compiled for target: %s\n\n%s", target, b.ToMarkdown())}},
+						}
+					}
+				}
 			default:
 				resp.Error = map[string]any{"code": -32601, "message": "method not found"}
 			}
@@ -485,6 +524,35 @@ func (s *Server) handleMCPMessage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, http.StatusOK, map[string]string{
+		"version":  version.String(),
+		"go":       fmt.Sprintf("go%d", 25),
+		"platform": "naeos-api",
+	})
+}
+
+func (s *Server) handleConfigSchema(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"name":        map[string]string{"type": "string", "description": "project name"},
+			"version":     map[string]string{"type": "string", "description": "project version"},
+			"output_dir":  map[string]string{"type": "string", "description": "output directory"},
+			"mode":        map[string]string{"type": "string", "description": "pipeline mode"},
+			"verbose":     map[string]string{"type": "boolean", "description": "verbose output"},
+		},
+		"required": []string{"name"},
+	})
+}
+
+func (s *Server) handlePipelines(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"pipelines": s.pipelines,
+		"total":     len(s.pipelines),
+	})
 }
 
 var startTime = time.Now()

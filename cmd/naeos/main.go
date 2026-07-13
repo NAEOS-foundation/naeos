@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	version    = "dev"
 	cliVerbose bool
 	cliDryRun  bool
 )
@@ -85,7 +84,6 @@ func newRootCommand() *cobra.Command {
 	root.AddCommand(newWebSocketCommand())
 	root.AddCommand(newGraphQLCommand())
 	root.AddCommand(newMonitorCommand())
-	root.AddCommand(newPluginSDKCommand())
 	root.AddCommand(newAuthCommand())
 	root.AddCommand(newDBCommand())
 	root.AddCommand(newBrokerCommand())
@@ -96,5 +94,15 @@ func newRootCommand() *cobra.Command {
 	root.AddCommand(newSecurityCommand())
 	root.AddCommand(newPerfCommand())
 	root.AddCommand(newDXCommand())
+	root.AddCommand(newCompletionCommand())
+	root.AddCommand(newDistributedCommand())
+	root.AddCommand(newEventsCommand())
+	root.AddCommand(newImportCommand())
+	root.AddCommand(newHealthCommand())
+	root.AddCommand(newBenchmarkCommand())
+	root.AddCommand(newConfigCmd())
+	root.AddCommand(newHistoryCommand())
+	root.AddCommand(newMigrationCmd())
+	root.AddCommand(newDeployCommand())
 	return root
 }

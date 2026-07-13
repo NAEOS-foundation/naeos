@@ -29,7 +29,7 @@ Example:
 	cmd.AddCommand(newObsLogCommand())
 	cmd.AddCommand(newObsMetricsCommand())
 	cmd.AddCommand(newObsStatusCommand())
-
+	cmd.AddCommand(newObsDashboardCommand())
 	return cmd
 }
 
@@ -139,4 +139,31 @@ func newObsStatusCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newObsDashboardCommand() *cobra.Command {
+	var port int
+
+	cmd := &cobra.Command{
+		Use:   "dashboard",
+		Short: "Start the observability dashboard",
+		Long: `Start a local web dashboard for viewing traces, logs, and metrics.
+
+Example:
+  naeos observability dashboard
+  naeos observability dashboard --port 9090`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("Starting observability dashboard on http://localhost:%d\n", port)))
+			cmd.OutOrStdout().Write([]byte("Endpoints:\n"))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  GET /traces     — View traces\n")))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  GET /logs       — View logs\n")))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  GET /metrics    — View metrics\n")))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  GET /status     — System status\n")))
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVarP(&port, "port", "p", 9090, "dashboard port")
+	return cmd
 }

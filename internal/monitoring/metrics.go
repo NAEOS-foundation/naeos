@@ -3,6 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 )
@@ -238,20 +239,30 @@ func (r *Registry) FormatPrometheus() string {
 }
 
 func labelsKey(labels map[string]string) string {
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	key := ""
-	for k, v := range labels {
-		key += k + "=" + v + ","
+	for _, k := range keys {
+		key += k + "=" + labels[k] + ","
 	}
 	return key
 }
 
 func formatLabels(labels map[string]string) string {
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	result := ""
-	for k, v := range labels {
+	for _, k := range keys {
 		if result != "" {
 			result += ","
 		}
-		result += fmt.Sprintf(`%s="%s"`, k, v)
+		result += fmt.Sprintf(`%s="%s"`, k, labels[k])
 	}
 	return result
 }

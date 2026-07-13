@@ -1,13 +1,26 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/search"
 )
+
+func searchDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".naeos", "search")
+}
+
+func openSearchIndex(name string) (*search.Persistent, error) {
+	dir := filepath.Join(searchDir(), name)
+	return search.NewPersistent(dir)
+}
 
 func newSearchCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -16,10 +29,10 @@ func newSearchCommand() *cobra.Command {
 		Long: `Manage search indexes, query documents, and perform full-text search.
 
 Example:
-  naeos search index --name myindex --id doc1 --title "Hello World" --content "This is a test"
-  naeos search query --name myindex --term "hello"
-  naeos search count --name myindex
-  naeos search delete --name myindex --id doc1
+  naeos search index --id doc1 --title "Hello World" --content "This is a test"
+  naeos search query --term "hello"
+  naeos search count
+  naeos search delete --id doc1
   naeos search list`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -45,10 +58,14 @@ func newSearchIndexCommand() *cobra.Command {
 		Short: "Index a document",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			eng := search.NewInMemory()
+			eng, err := openSearchIndex(name)
+			if err != nil {
+				return fmt.Errorf("failed to open index: %w", err)
+			}
 
 			doc := &search.Document{
 				ID:      id,
+				Index:   name,
 				Title:   title,
 				Content: content,
 				Tags:    tags,
@@ -75,13 +92,17 @@ func newSearchIndexCommand() *cobra.Command {
 func newSearchQueryCommand() *cobra.Command {
 	var name, term string
 	var limit int
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Search for documents",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			eng := search.NewInMemory()
+			eng, err := openSearchIndex(name)
+			if err != nil {
+				return fmt.Errorf("failed to open index: %w", err)
+			}
 
 			q := &search.Query{
 				Text:  term,
@@ -91,6 +112,47 @@ func newSearchQueryCommand() *cobra.Command {
 			result, err := eng.Search(q)
 			if err != nil {
 				return fmt.Errorf("search failed: %w", err)
+			}
+
+			type searchHit struct {
+				ID      string   `json:"id"`
+				Title   string   `json:"title"`
+				Content string   `json:"content"`
+				Tags    []string `json:"tags,omitempty"`
+			}
+
+			type searchOutput struct {
+				Index string     `json:"index"`
+				Term  string     `json:"term"`
+				Total int        `json:"total"`
+				Hits  []searchHit `json:"hits"`
+			}
+
+			var hits []searchHit
+			for _, hit := range result.Hits {
+				hits = append(hits, searchHit{
+					ID:      hit.Document.ID,
+					Title:   hit.Document.Title,
+					Content: hit.Document.Content,
+					Tags:    hit.Document.Tags,
+				})
+			}
+
+			output := searchOutput{
+				Index: name,
+				Term:  term,
+				Total: result.Total,
+				Hits:  hits,
+			}
+
+			if outputFormat == "json" {
+				data, err := json.MarshalIndent(output, "", "  ")
+				if err != nil {
+					return fmt.Errorf("marshal search result: %w", err)
+				}
+				cmd.OutOrStdout().Write(data)
+				cmd.OutOrStdout().Write([]byte("\n"))
+				return nil
 			}
 
 			out := cmd.OutOrStdout()
@@ -106,6 +168,7 @@ func newSearchQueryCommand() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "default", "search index name")
 	cmd.Flags().StringVar(&term, "term", "", "search term (required)")
 	cmd.Flags().IntVar(&limit, "limit", 10, "max results")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "text", "output format: text, json")
 	cmd.MarkFlagRequired("term")
 	return cmd
 }
@@ -118,7 +181,10 @@ func newSearchCountCommand() *cobra.Command {
 		Short: "Count documents in index",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			eng := search.NewInMemory()
+			eng, err := openSearchIndex(name)
+			if err != nil {
+				return fmt.Errorf("failed to open index: %w", err)
+			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Documents in '%s': %d\n", name, eng.Count())
 			return nil
@@ -137,7 +203,10 @@ func newSearchDeleteCommand() *cobra.Command {
 		Short: "Delete a document from index",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			eng := search.NewInMemory()
+			eng, err := openSearchIndex(name)
+			if err != nil {
+				return fmt.Errorf("failed to open index: %w", err)
+			}
 
 			if err := eng.Delete(id); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
@@ -160,7 +229,19 @@ func newSearchListCommand() *cobra.Command {
 		Short: "List all search indexes",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintf(cmd.OutOrStdout(), "Search indexes: %s\n", strings.Join([]string{"default"}, ", "))
+			dir := searchDir()
+			entries, err := os.ReadDir(dir)
+			if err != nil || len(entries) == 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "Search indexes: none\n")
+				return nil
+			}
+			var names []string
+			for _, e := range entries {
+				if e.IsDir() {
+					names = append(names, e.Name())
+				}
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Search indexes: %s\n", strings.Join(names, ", "))
 			return nil
 		},
 	}

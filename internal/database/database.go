@@ -18,6 +18,7 @@ type Database interface {
 	QueryRow(query string, args ...interface{}) (Row, error)
 	Begin() (Transaction, error)
 	Migrate(migrations []Migration) error
+	Rollback(version int) error
 }
 
 type Config struct {
@@ -54,12 +55,19 @@ type Migration struct {
 // PostgreSQL Adapter
 
 type PostgreSQL struct {
-	config *Config
-	connected bool
+	config       *Config
+	connected    bool
+	mu           sync.RWMutex
+	tables       map[string][]Row
+	migrations   []Migration
+	lastVersion  int
+	txInProgress bool
 }
 
 func NewPostgreSQL() *PostgreSQL {
-	return &PostgreSQL{}
+	return &PostgreSQL{
+		tables: make(map[string][]Row),
+	}
 }
 
 func (p *PostgreSQL) Name() string {
@@ -88,6 +96,8 @@ func (p *PostgreSQL) Exec(query string, args ...interface{}) (Result, error) {
 	if !p.connected {
 		return Result{}, fmt.Errorf("not connected")
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return Result{RowsAffected: 1}, nil
 }
 
@@ -95,6 +105,8 @@ func (p *PostgreSQL) Query(query string, args ...interface{}) ([]Row, error) {
 	if !p.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	return []Row{}, nil
 }
 
@@ -109,6 +121,9 @@ func (p *PostgreSQL) Begin() (Transaction, error) {
 	if !p.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	p.mu.Lock()
+	p.txInProgress = true
+	p.mu.Unlock()
 	return &PostgreSQLTx{db: p}, nil
 }
 
@@ -116,11 +131,43 @@ func (p *PostgreSQL) Migrate(migrations []Migration) error {
 	if !p.connected {
 		return fmt.Errorf("not connected")
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, m := range migrations {
+		p.migrations = append(p.migrations, m)
+		if m.Version > p.lastVersion {
+			p.lastVersion = m.Version
+		}
+	}
 	return nil
 }
 
+func (p *PostgreSQL) Rollback(version int) error {
+	if !p.connected {
+		return fmt.Errorf("not connected")
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for i := len(p.migrations) - 1; i >= 0; i-- {
+		if p.migrations[i].Version > version {
+			p.migrations = p.migrations[:i]
+		}
+	}
+	if version < p.lastVersion {
+		p.lastVersion = version
+	}
+	return nil
+}
+
+func (p *PostgreSQL) MigrationVersion() int {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.lastVersion
+}
+
 type PostgreSQLTx struct {
-	db *PostgreSQL
+	db     *PostgreSQL
+	committed bool
 }
 
 func (t *PostgreSQLTx) Exec(query string, args ...interface{}) (Result, error) {
@@ -132,22 +179,36 @@ func (t *PostgreSQLTx) Query(query string, args ...interface{}) ([]Row, error) {
 }
 
 func (t *PostgreSQLTx) Commit() error {
+	t.committed = true
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 
 func (t *PostgreSQLTx) Rollback() error {
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 
 // MySQL Adapter
 
 type MySQL struct {
-	config *Config
-	connected bool
+	config       *Config
+	connected    bool
+	mu           sync.RWMutex
+	tables       map[string][]Row
+	migrations   []Migration
+	lastVersion  int
+	txInProgress bool
 }
 
 func NewMySQL() *MySQL {
-	return &MySQL{}
+	return &MySQL{
+		tables: make(map[string][]Row),
+	}
 }
 
 func (m *MySQL) Name() string {
@@ -176,6 +237,8 @@ func (m *MySQL) Exec(query string, args ...interface{}) (Result, error) {
 	if !m.connected {
 		return Result{}, fmt.Errorf("not connected")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return Result{RowsAffected: 1}, nil
 }
 
@@ -183,6 +246,8 @@ func (m *MySQL) Query(query string, args ...interface{}) ([]Row, error) {
 	if !m.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return []Row{}, nil
 }
 
@@ -197,6 +262,9 @@ func (m *MySQL) Begin() (Transaction, error) {
 	if !m.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	m.mu.Lock()
+	m.txInProgress = true
+	m.mu.Unlock()
 	return &MySQLTx{db: m}, nil
 }
 
@@ -204,11 +272,43 @@ func (m *MySQL) Migrate(migrations []Migration) error {
 	if !m.connected {
 		return fmt.Errorf("not connected")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, migration := range migrations {
+		m.migrations = append(m.migrations, migration)
+		if migration.Version > m.lastVersion {
+			m.lastVersion = migration.Version
+		}
+	}
 	return nil
 }
 
+func (m *MySQL) Rollback(version int) error {
+	if !m.connected {
+		return fmt.Errorf("not connected")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i := len(m.migrations) - 1; i >= 0; i-- {
+		if m.migrations[i].Version > version {
+			m.migrations = m.migrations[:i]
+		}
+	}
+	if version < m.lastVersion {
+		m.lastVersion = version
+	}
+	return nil
+}
+
+func (m *MySQL) MigrationVersion() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.lastVersion
+}
+
 type MySQLTx struct {
-	db *MySQL
+	db     *MySQL
+	committed bool
 }
 
 func (t *MySQLTx) Exec(query string, args ...interface{}) (Result, error) {
@@ -220,22 +320,36 @@ func (t *MySQLTx) Query(query string, args ...interface{}) ([]Row, error) {
 }
 
 func (t *MySQLTx) Commit() error {
+	t.committed = true
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 
 func (t *MySQLTx) Rollback() error {
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 
 // SQLite Adapter
 
 type SQLite struct {
-	config *Config
-	connected bool
+	config       *Config
+	connected    bool
+	mu           sync.RWMutex
+	tables       map[string][]Row
+	migrations   []Migration
+	lastVersion  int
+	txInProgress bool
 }
 
 func NewSQLite() *SQLite {
-	return &SQLite{}
+	return &SQLite{
+		tables: make(map[string][]Row),
+	}
 }
 
 func (s *SQLite) Name() string {
@@ -264,6 +378,8 @@ func (s *SQLite) Exec(query string, args ...interface{}) (Result, error) {
 	if !s.connected {
 		return Result{}, fmt.Errorf("not connected")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return Result{RowsAffected: 1}, nil
 }
 
@@ -271,6 +387,8 @@ func (s *SQLite) Query(query string, args ...interface{}) ([]Row, error) {
 	if !s.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return []Row{}, nil
 }
 
@@ -285,6 +403,9 @@ func (s *SQLite) Begin() (Transaction, error) {
 	if !s.connected {
 		return nil, fmt.Errorf("not connected")
 	}
+	s.mu.Lock()
+	s.txInProgress = true
+	s.mu.Unlock()
 	return &SQLiteTx{db: s}, nil
 }
 
@@ -292,11 +413,43 @@ func (s *SQLite) Migrate(migrations []Migration) error {
 	if !s.connected {
 		return fmt.Errorf("not connected")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, migration := range migrations {
+		s.migrations = append(s.migrations, migration)
+		if migration.Version > s.lastVersion {
+			s.lastVersion = migration.Version
+		}
+	}
 	return nil
 }
 
+func (s *SQLite) Rollback(version int) error {
+	if !s.connected {
+		return fmt.Errorf("not connected")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := len(s.migrations) - 1; i >= 0; i-- {
+		if s.migrations[i].Version > version {
+			s.migrations = s.migrations[:i]
+		}
+	}
+	if version < s.lastVersion {
+		s.lastVersion = version
+	}
+	return nil
+}
+
+func (s *SQLite) MigrationVersion() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.lastVersion
+}
+
 type SQLiteTx struct {
-	db *SQLite
+	db     *SQLite
+	committed bool
 }
 
 func (t *SQLiteTx) Exec(query string, args ...interface{}) (Result, error) {
@@ -308,10 +461,17 @@ func (t *SQLiteTx) Query(query string, args ...interface{}) ([]Row, error) {
 }
 
 func (t *SQLiteTx) Commit() error {
+	t.committed = true
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 
 func (t *SQLiteTx) Rollback() error {
+	t.db.mu.Lock()
+	t.db.txInProgress = false
+	t.db.mu.Unlock()
 	return nil
 }
 

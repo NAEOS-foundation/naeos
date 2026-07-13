@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type RegistryEntry struct {
@@ -145,9 +147,9 @@ func (c *RegistryClient) saveCache(entries []RegistryEntry) error {
 
 func (c *RegistryClient) defaultEntries() []RegistryEntry {
 	return []RegistryEntry{
-		{Name: "go-http-api", Version: "1.0.0", Description: "Go HTTP API starter", Author: "naeos", Tags: []string{"go", "http", "api"}, Downloads: 100},
-		{Name: "python-ml-service", Version: "1.0.0", Description: "Python ML service template", Author: "naeos", Tags: []string{"python", "ml", "service"}, Downloads: 50},
-		{Name: "rust-web-service", Version: "0.1.0", Description: "Rust web service template", Author: "naeos", Tags: []string{"rust", "web", "service"}, Downloads: 30},
+		{Name: "go-http-api", Version: version.DefaultEntryVersion, Description: "Go HTTP API starter", Author: version.ProductName, Tags: []string{"go", "http", "api"}, Downloads: 100},
+		{Name: "python-ml-service", Version: version.DefaultEntryVersion, Description: "Python ML service template", Author: version.ProductName, Tags: []string{"python", "ml", "service"}, Downloads: 50},
+		{Name: "rust-web-service", Version: version.DefaultModuleVersion, Description: "Rust web service template", Author: version.ProductName, Tags: []string{"rust", "web", "service"}, Downloads: 30},
 	}
 }
 

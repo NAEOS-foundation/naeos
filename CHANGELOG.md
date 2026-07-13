@@ -7,6 +7,145 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-13
+
+### Added
+- **10 new CLI commands**:
+  - `naeos benchmark` — run pipeline N iterations with timing statistics (avg, min, max, ops/sec).
+  - `naeos config validate|show` — validate config against schema or display default config schema.
+  - `naeos deploy` — deploy pipeline output to Docker, Kubernetes, Docker Compose, SSH, rsync, or local copy with dry-run.
+  - `naeos distributed` — execute pipeline tasks across multiple parallel workers with coordinator/round-robin dispatch.
+  - `naeos events replay|list` — replay event sourcing records or list past pipeline run events.
+  - `naeos export compose` — generate `docker-compose.yaml`, `Dockerfile`, and K8s manifests via container adapter.
+  - `naeos health` — system health checks (Go, Git, config dir, version) with text/JSON/YAML output.
+  - `naeos history` — display summary of past pipeline runs from persisted event store.
+  - `naeos import` — parse HCL specification files and convert to NAEOS YAML/JSON.
+  - `naeos migration status` — show migration status for PostgreSQL, MySQL, SQLite.
+- **AI/LLM integration** (`internal/ai/`):
+  - LLM service supporting OpenAI and Anthropic providers.
+  - `EnrichSpec`, `GenerateSuggestions`, `ExplainArchitecture` methods with structured prompts.
+- **NATS message broker** (`internal/broker/`):
+  - Real NATS client with connect, publish, subscribe, ping, and close.
+- **Config hot-reload** (`internal/configreload/`):
+  - `HotReloader` watches config directory via `fsnotify`, auto-reloads with 300ms debounce.
+  - Config diff computation (added/removed/modified keys).
+- **PostgreSQL database adapter** (`internal/database/`):
+  - Real PostgreSQL adapter using `pgx` with connect, exec, query, transactions, and versioned migration tracking.
+- **NEIR structural diff** (`internal/diff/`):
+  - Structural diffing between two NEIR objects with colorized formatted output.
+  - Detects project-level and service-level changes (added, removed, modified).
+- **Distributed task execution** (`internal/distributed/`):
+  - Coordinator with fan-out dispatch to worker goroutines.
+  - Round-robin LoadBalancer, ResultAggregator, and SimpleWorker.
+- **Event sourcing** (`internal/eventsourcing/`):
+  - Event store interface with InMemory and FileStore (JSON persistence).
+  - Aggregate with versioned event application and PipelineRunSnapshot for state reconstruction.
+- **Container artifact generation** (`internal/generation/adapters/container/`):
+  - Generates Dockerfiles for Go, Node, Python, Java, Rust.
+  - Generates `docker-compose.yaml` and Kubernetes manifests (namespace, deployment, service).
+- **HCL parser** (`internal/hcl/`):
+  - Simple HCL parser for project/service/infra blocks with YAML serialization.
+- **End-to-end integration tests** (`internal/integration/`):
+  - Full pipeline E2E tests: spec → parse → normalize → resolve → build → validate → compile.
+- **Remote plugin marketplace** (`internal/marketplace/remote.go`):
+  - `RemoteRegistry` with List, Search, Install, Uninstall operations against remote HTTP registry.
+  - Plugin binary (.so) download with metadata persistence.
+- **Pipeline result cache** (`internal/pipelinecache/`):
+  - SHA-256 spec hashing, LRU-style eviction, disk persistence, hit counting.
+- **Pipeline middleware chain** (`internal/pipelinemiddleware/`):
+  - `Chain` executor with LogMiddleware (timing), MetricsMiddleware, AuthMiddleware (token), CacheMiddleware.
+- **Plugin sandbox** (`internal/pluginsdk/sandbox/`):
+  - Executes external plugin binaries via JSON-over-stdin/stdout protocol with timeouts.
+  - WASM execution path using `wasmtime`.
+- **Profile detection** (`internal/profiledetect/`):
+  - Auto-detect project language/framework from marker files with weighted confidence scoring.
+  - Framework detection: React, Next.js, Django, Gin, etc.
+- **Telemetry tracing** (`internal/telemetry/`):
+  - Span creation with parent-child support, batched export via Exporter interface.
+  - `HTTPExporter` for remote endpoint posting.
+- **Config schema validation** (`internal/configschema/`):
+  - Schema definition with property types and validation.
+  - `ValidateConfig`, `ValidateData`, `ValidateFile` for YAML/JSON configs.
+- **WebSocket observer** (`internal/websocket/`):
+  - Bridges `PipelineObserver` to `EventBroadcaster` for real-time pipeline lifecycle events.
+- **Pipeline adapter** (`pkg/pipeline/`):
+  - Middleware chain support, event sourcing hooks, and telemetry integration.
+  - `RunWithMiddleware` for pre/post-process middleware execution.
+
+### Changed
+- Version bumped to 0.7.0.
+- 101 packages pass, `go vet` clean, `go build` clean.
+- 54,819 lines of Go code across the codebase.
+- Enhanced CLI: `init`, `lint`, `search`, `validate`, `watch`, `status`, `test`, `plugin`, `marketplace`, `observability`, `security`, `profile`, `workspace`, `ws`, `doctor`, `export`, `scaffold` commands expanded with subcommands and richer functionality.
+- Improved error handling and logging across all subsystems.
+
+## [0.6.0] - 2026-07-12
+
+### Added
+- **Centralized version management** (`internal/version/`):
+  - `VERSION` file at repository root.
+  - `internal/version/version.go` with `String()`, `Full()`, embed-based fallback.
+  - Makefile ldflags injection: `-X version.Version=... -X version.GitCommit=... -X version.BuildDate=...`.
+- **Persistent search engine** (`internal/search/search.go`):
+  - `Persistent` wrapper with JSON file persistence between CLI invocations.
+  - Data stored in `~/.naeos/search/<name>/search-index.json`.
+  - CLI `search` commands now use persistent storage by default.
+- **Plugin system pipeline integration** (`pkg/pipeline/pipeline.go`):
+  - `PluginManager` field in pipeline Config for plugin lifecycle hooks.
+  - `executePluginHooks()` runs enabled plugins at `pipeline.after_run` stage.
+- **Pipeline observer pattern** (`pkg/pipeline/pipeline.go`):
+  - `PipelineObserver` interface: `OnPipelineStart`, `OnPipelineComplete`, `OnPipelineFailed`, `OnArtifactGenerated`.
+  - Optional observer hooks wired into pipeline execution lifecycle.
+- **MCP validate_spec and compile_spec** (`internal/api/server.go`):
+  - API server `handleMCPMessage` now handles `validate_spec` and `compile_spec` tool calls.
+- **Cloud Destroy implementations** (`internal/cloud/`):
+  - AWS, GCP, Azure adapters now plan and list resources before destroy.
+
+### Changed
+- All hardcoded version strings (`"0.5.0"`, `"v0.2.0"`) replaced with `version.String()`.
+- `doctor_cmd.go` uses centralized version for header display.
+- `graphql_cmd.go` resolvers use centralized version.
+- API server health endpoint uses centralized version.
+- MCP server uses centralized version.
+- Plugin host `LoadAll()` now returns combined errors instead of silently swallowing failures.
+- API artifacts endpoint uses `internal/artifacts.Store` with disk persistence instead of in-memory slice.
+- Removed deprecated `pluginsdk` CLI command (use `plugin` instead).
+- Removed dead code in `db_cmd.go` (unused `strconv` import and `_ = strconv.Itoa(0)`).
+- 90 packages pass, `go vet` clean, build clean.
+
+## [0.5.1] - 2026-07-12
+
+### Added
+- API handlers fully wired (handleSpecs, handleArtifacts, handleMCPMessage, handlePipelineStatus)
+- Integration tests: full pipeline spec → parse → normalize → resolve → build → validate → compile
+- Cloud adapter content-based HCL tests (18 subtests: AWS/GCP/Azure × 6 resource types)
+- Context bundle enricher: dependency graph, security context, cloud resource mapping
+- Dashboard stats persistence (JSON file-based)
+- CI/CD pipeline (.github/workflows/ci.yml)
+- golangci-lint config (.golangci.yaml)
+- OpenAPI 3.0 spec (docs/openapi.yaml, 10 endpoints)
+
+## [0.5.0] - 2026-07-12
+
+### Added
+- **Cloud Integration** (`internal/cloud/`):
+  - 6 resource types (storage, compute, database, cache, queue, CDN) × 3 providers (AWS/GCP/Azure).
+  - Terraform HCL export for all resource types.
+  - CLI `cloud run` with `--input-file` flag and spec loader.
+  - CLI `cloud types` command listing supported resource types.
+  - NEIR model extended with `Project`, `Environment`, `Type` infrastructure fields.
+- **Plugin Unification** (`internal/pluginhost/`):
+  - Unified plugin system merging 3 legacy packages.
+  - Plugin lifecycle: `enable`, `disable`, `info`, `execute`.
+  - `pkg/plugin` and `internal/pluginsdk` deprecated with redirect wrappers.
+- **MCP Server Fixes**: version 0.5.0, compile_spec returns context bundle.
+- **API Server**: JWT auth wired into middleware, handlers use real pipeline.
+- **Dashboard**: dynamic `GetStats()`, version updated to 0.5.0.
+- Tests for: shared/log, dashboard, docgen, testrunner, testgen, mcp (6 new test files).
+
+### Changed
+- All 63 packages pass, `go vet` clean, `go build` clean.
+
 ## [0.4.0] - 2026-07-11
 
 ### Added

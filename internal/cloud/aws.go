@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type AWSAdapter struct{}
@@ -128,7 +130,18 @@ func (a *AWSAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
 }
 
 func (a *AWSAdapter) Destroy(config *DeployConfig) error {
-	return nil
+	plan, err := a.Plan(config)
+	if err != nil {
+		return err
+	}
+	if len(plan) == 0 {
+		return fmt.Errorf("no resources to destroy")
+	}
+	var resources []string
+	for _, r := range plan {
+		resources = append(resources, r.Type+"."+r.Name)
+	}
+	return fmt.Errorf("terraform destroy planned: %d AWS resources would be destroyed: %s", len(resources), strings.Join(resources, ", "))
 }
 
 func (a *AWSAdapter) ExportTerraform(config *DeployConfig) (string, error) {
@@ -157,11 +170,11 @@ provider "aws" {
   common_tags = {
     Environment = "%s"
     Project     = "%s"
-    ManagedBy   = "naeos"
+    ManagedBy   = "%s"
   }
 }
 
-`, config.Project, config.Environment, config.Environment, config.Project))
+`, config.Project, config.Environment, config.Environment, config.Project, version.ProductName))
 
 	for _, res := range config.Resources {
 		switch res.Type {

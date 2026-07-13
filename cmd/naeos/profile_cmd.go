@@ -20,6 +20,59 @@ func newProfileCommand() *cobra.Command {
 	cmd.AddCommand(newProfileShowCommand())
 	cmd.AddCommand(newProfileSearchCommand())
 	cmd.AddCommand(newProfileApplyCommand())
+	cmd.AddCommand(newProfileCompareCommand())
+	cmd.AddCommand(newProfileCategoriesCommand())
+	return cmd
+}
+
+func newProfileCompareCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "compare [profile-a] [profile-b]",
+		Short: "Compare two profiles side by side",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			reg := profiles.NewRegistry()
+			a, okA := reg.Get(args[0])
+			b, okB := reg.Get(args[1])
+			if !okA {
+				return fmt.Errorf("profile %q not found", args[0])
+			}
+			if !okB {
+				return fmt.Errorf("profile %q not found", args[1])
+			}
+
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("Comparing: %s vs %s\n", a.Name, b.Name)))
+			cmd.OutOrStdout().Write([]byte(strings.Repeat("─", 50) + "\n"))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-20s %-15s %-15s\n", "Field", a.Name, b.Name)))
+			cmd.OutOrStdout().Write([]byte(strings.Repeat("─", 50) + "\n"))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-20s %-15s %-15s\n", "Industry", a.Industry, b.Industry)))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-20s %-15s %-15s\n", "Version", a.Version, b.Version)))
+			return nil
+		},
+	}
+	return cmd
+}
+
+func newProfileCategoriesCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "categories",
+		Short: "List all profile categories",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			reg := profiles.NewRegistry()
+			all := reg.List()
+			cats := make(map[string]int)
+			for _, p := range all {
+				cats[p.Industry]++
+			}
+			cmd.OutOrStdout().Write([]byte("Profile Categories:\n"))
+			cmd.OutOrStdout().Write([]byte(strings.Repeat("─", 30) + "\n"))
+			for cat, count := range cats {
+				cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-20s %d profiles\n", cat, count)))
+			}
+			return nil
+		},
+	}
 	return cmd
 }
 

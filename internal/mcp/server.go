@@ -10,6 +10,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type Server struct {
@@ -104,7 +105,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 			},
 		"serverInfo": map[string]any{
 			"name":    "naeos-mcp",
-			"version": "0.5.0",
+			"version": version.String(),
 		},
 		}
 	case "tools/list":

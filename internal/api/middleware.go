@@ -1,55 +1,101 @@
 package api
 
 import (
+	"net/http"
 	"sync"
 	"time"
 )
 
 type RateLimiter struct {
-	mu       sync.Mutex
-	requests map[string][]time.Time
-	limit    int
-	window   time.Duration
+	clients map[string]*clientRecord
+	mu      sync.Mutex
+	rate    int
+	window  time.Duration
 }
 
-func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
-	return &RateLimiter{
-		requests: make(map[string][]time.Time),
-		limit:    limit,
-		window:   window,
+type clientRecord struct {
+	tokens   int
+	lastSeen time.Time
+}
+
+func NewRateLimiter(requestsPerWindow int, window time.Duration) *RateLimiter {
+	rl := &RateLimiter{
+		clients: make(map[string]*clientRecord),
+		rate:    requestsPerWindow,
+		window:  window,
 	}
+	go rl.cleanup()
+	return rl
 }
 
-func (r *RateLimiter) Allow() bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+func (rl *RateLimiter) Allow(clientID string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
 
 	now := time.Now()
-	windowStart := now.Add(-r.window)
-
-	// Clean old requests
-	if reqs, ok := r.requests["global"]; ok {
-		valid := make([]time.Time, 0)
-		for _, t := range reqs {
-			if t.After(windowStart) {
-				valid = append(valid, t)
-			}
+	record, exists := rl.clients[clientID]
+	if !exists {
+		rl.clients[clientID] = &clientRecord{
+			tokens:   rl.rate - 1,
+			lastSeen: now,
 		}
-		r.requests["global"] = valid
+		return true
 	}
 
-	// Check limit
-	if len(r.requests["global"]) >= r.limit {
+	elapsed := now.Sub(record.lastSeen)
+	refills := int(elapsed/rl.window) * rl.rate
+	if refills > 0 {
+		record.tokens += refills
+		if record.tokens > rl.rate {
+			record.tokens = rl.rate
+		}
+		record.lastSeen = now
+	}
+
+	if record.tokens <= 0 {
 		return false
 	}
 
-	// Add request
-	r.requests["global"] = append(r.requests["global"], now)
+	record.tokens--
+	record.lastSeen = now
 	return true
 }
 
-func (r *RateLimiter) Reset() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.requests = make(map[string][]time.Time)
+func (rl *RateLimiter) Reset() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	rl.clients = make(map[string]*clientRecord)
+}
+
+func (rl *RateLimiter) cleanup() {
+	ticker := time.NewTicker(rl.window)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		rl.mu.Lock()
+		now := time.Now()
+		for id, record := range rl.clients {
+			if now.Sub(record.lastSeen) > rl.window*10 {
+				delete(rl.clients, id)
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
+
+func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientID := r.RemoteAddr
+		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+			clientID = forwarded
+		}
+
+		if !rl.Allow(clientID) {
+			w.Header().Set("Retry-After", rl.window.String())
+			http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

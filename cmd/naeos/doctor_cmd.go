@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/lint"
+	"github.com/NAEOS-foundation/naeos/internal/version"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
@@ -25,6 +27,7 @@ func newDoctorCommand() *cobra.Command {
 	var configPath string
 	var specFile string
 	var quick bool
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "doctor",
@@ -38,48 +41,42 @@ Checks include:
   - Git version
   - NAEOS configuration
   - Spec validation (if spec provided)
-  - Network connectivity`,
+  - Network connectivity
+  - Go module status
+  - Output directory writability
+  - Workspace detection`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			var results []checkResult
 
-			// System info
-			fmt.Fprintf(out, "NAEOS Doctor v0.2.0\n")
+			fmt.Fprintf(out, "NAEOS Doctor v%s\n", version.String())
 			fmt.Fprintf(out, "Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 			fmt.Fprintf(out, "Go: %s\n\n", runtime.Version())
 
-			// 1. Go toolchain
 			results = append(results, checkGo())
-
-			// 2. Language runtimes (skip in quick mode)
 			if !quick {
 				results = append(results, checkNode())
 				results = append(results, checkPython())
 				results = append(results, checkJava())
 				results = append(results, checkRust())
 			}
-
-			// 3. Docker
 			results = append(results, checkDocker())
-
-			// 4. Git
 			results = append(results, checkGit())
-
-			// 5. NAEOS config
 			results = append(results, checkConfig(configPath))
-
-			// 6. Spec validation
+			results = append(results, checkGoModule())
+			results = append(results, checkOutputWritable())
 			if specFile != "" {
 				results = append(results, checkSpec(specFile))
 			}
-
-			// 7. Network (skip in quick mode)
 			if !quick {
 				results = append(results, checkNetwork())
 			}
 
-			// Print results
+			if outputFormat == "json" {
+				return renderDoctorJSON(cmd, results)
+			}
+
 			passed := 0
 			warned := 0
 			failed := 0
@@ -113,6 +110,7 @@ Checks include:
 	cmd.Flags().StringVar(&configPath, "config", "", "path to config file")
 	cmd.Flags().StringVar(&specFile, "spec", "", "path to spec file for validation")
 	cmd.Flags().BoolVar(&quick, "quick", false, "skip language runtime and network checks")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "text", "output format: text, json")
 	return cmd
 }
 
@@ -312,4 +310,79 @@ func checkNetwork() checkResult {
 	}
 	resp.Body.Close()
 	return checkResult{Name: "Network", Status: "pass", Detail: "github.com reachable"}
+}
+
+func checkGoModule() checkResult {
+	if _, err := os.Stat("go.mod"); err != nil {
+		return checkResult{Name: "Go Module", Status: "warn", Detail: "go.mod not found in current directory"}
+	}
+	cmd := exec.Command("go", "mod", "verify")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return checkResult{Name: "Go Module", Status: "warn", Detail: "modules may need verification"}
+	}
+	return checkResult{Name: "Go Module", Status: "pass", Detail: strings.TrimSpace(string(out))}
+}
+
+func checkOutputWritable() checkResult {
+	wd, err := os.Getwd()
+	if err != nil {
+		return checkResult{Name: "Output Dir", Status: "warn", Detail: "cannot determine working directory"}
+	}
+	outDir := wd + "/output"
+	if _, err := os.Stat(outDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return checkResult{Name: "Output Dir", Status: "warn", Detail: "cannot create output directory"}
+		}
+		os.Remove(outDir)
+		return checkResult{Name: "Output Dir", Status: "pass", Detail: "writable"}
+	}
+	tmpFile := outDir + "/.doctor-test"
+	f, err := os.Create(tmpFile)
+	if err != nil {
+		return checkResult{Name: "Output Dir", Status: "warn", Detail: "not writable"}
+	}
+	f.Close()
+	os.Remove(tmpFile)
+	return checkResult{Name: "Output Dir", Status: "pass", Detail: "writable"}
+}
+
+func renderDoctorJSON(cmd *cobra.Command, results []checkResult) error {
+	passed := 0
+	warned := 0
+	failed := 0
+	for _, r := range results {
+		switch r.Status {
+		case "warn":
+			warned++
+		case "fail":
+			failed++
+		default:
+			passed++
+		}
+	}
+	status := "healthy"
+	if failed > 0 {
+		status = "unhealthy"
+	} else if warned > 0 {
+		status = "degraded"
+	}
+
+	report := map[string]any{
+		"status":  status,
+		"version": version.String(),
+		"go":      runtime.Version(),
+		"platform": runtime.GOOS + "/" + runtime.GOARCH,
+		"passed":  passed,
+		"warned":  warned,
+		"failed":  failed,
+		"checks":  results,
+	}
+	data, err := json.Marshal(report)
+	if err != nil {
+		return err
+	}
+	cmd.OutOrStdout().Write(data)
+	cmd.OutOrStdout().Write([]byte("\n"))
+	return nil
 }

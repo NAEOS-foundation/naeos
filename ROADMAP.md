@@ -64,3 +64,38 @@ Prioritas utama adalah menjaga kualitas, konsistensi, dan keterpahaman dokumen b
 - [x] CI/CD pipeline (.github/workflows/ci.yml)
 - [x] golangci-lint config (.golangci.yaml)
 - [x] OpenAPI 3.0 spec (docs/openapi.yaml, 10 endpoints)
+
+### v0.6.0 — Integration & Quality
+- [x] Centralized version management (VERSION file, internal/version, ldflags Makefile)
+- [x] All hardcoded version strings replaced with version.String()
+- [x] Persistent search engine (JSON file-based, survives CLI invocations)
+- [x] Plugin system wired into pipeline (PluginManager + plugin hooks)
+- [x] PipelineObserver interface for dashboard/WebSocket lifecycle events
+- [x] MCP validate_spec and compile_spec tool calls in API server
+- [x] API artifacts endpoint uses internal/artifacts.Store with disk persistence
+- [x] Cloud Destroy implemented for AWS/GCP/Azure (resource listing + plan)
+- [x] Plugin host LoadAll returns combined errors instead of silent swallowing
+- [x] Removed deprecated pluginsdk CLI command
+- [x] Dead code cleanup (unused strconv import in db_cmd.go)
+
+### v0.7.0 — Distributed, AI & DevOps Expansion
+- [x] 10 new CLI commands (benchmark, config, deploy, distributed, events, export_compose, health, history, import, migration)
+- [x] AI/LLM integration (OpenAI + Anthropic providers, enrich/spec/suggest/explain)
+- [x] NATS real broker adapter (connect, publish, subscribe, ping, close)
+- [x] Config hot-reload via fsnotify with debounce and config diff
+- [x] PostgreSQL real adapter using pgx with transactions and versioned migrations
+- [x] NEIR structural diff (project + service level, colorized output)
+- [x] Distributed task execution (Coordinator, LoadBalancer, ResultAggregator, SimpleWorker)
+- [x] Event sourcing (InMemory + FileStore, Aggregate, PipelineRunSnapshot)
+- [x] Container artifact generation (Dockerfiles for 5 languages, docker-compose, K8s manifests)
+- [x] HCL parser for project/service/infra blocks
+- [x] End-to-end integration tests (full pipeline lifecycle)
+- [x] Remote plugin marketplace (list, search, install, uninstall via HTTP registry)
+- [x] Pipeline result cache (SHA-256 hashing, LRU eviction, disk persistence)
+- [x] Pipeline middleware chain (log, metrics, auth, cache middleware)
+- [x] Plugin sandbox (JSON-over-stdin/stdout, WASM execution path)
+- [x] Profile detection (language/framework from marker files, confidence scoring)
+- [x] Telemetry tracing (spans, batched export, HTTP exporter)
+- [x] Config schema validation (schema definition, YAML/JSON validation)
+- [x] WebSocket observer (PipelineObserver → EventBroadcaster bridge)
+- [x] Pipeline adapter (middleware chain, event sourcing, telemetry integration)

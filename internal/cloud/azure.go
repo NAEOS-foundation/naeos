@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type AzureAdapter struct{}
@@ -115,7 +117,18 @@ func (a *AzureAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
 }
 
 func (a *AzureAdapter) Destroy(config *DeployConfig) error {
-	return nil
+	plan, err := a.Plan(config)
+	if err != nil {
+		return err
+	}
+	if len(plan) == 0 {
+		return fmt.Errorf("no resources to destroy")
+	}
+	var resources []string
+	for _, r := range plan {
+		resources = append(resources, r.Type+"."+r.Name)
+	}
+	return fmt.Errorf("terraform destroy planned: %d Azure resources would be destroyed: %s", len(resources), strings.Join(resources, ", "))
 }
 
 func (a *AzureAdapter) ExportTerraform(config *DeployConfig) (string, error) {
@@ -142,11 +155,11 @@ resource "azurerm_resource_group" "main" {
   tags = {
     environment = "%s"
     project     = "%s"
-    managed_by  = "naeos"
+    managed_by  = "%s"
   }
 }
 
-`, config.Project, config.Region, config.Environment, config.Project))
+`, config.Project, config.Region, config.Environment, config.Project, version.ProductName))
 
 	for _, res := range config.Resources {
 		switch res.Type {

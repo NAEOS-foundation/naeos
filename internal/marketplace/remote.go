@@ -1,0 +1,207 @@
+package marketplace
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
+)
+
+const DefaultRegistryURL = "https://registry.naeos.dev/v1"
+
+type RemoteRegistry struct {
+	baseURL    string
+	installDir string
+	httpClient *http.Client
+}
+
+func NewRemoteRegistry(baseURL, installDir string) *RemoteRegistry {
+	if baseURL == "" {
+		baseURL = DefaultRegistryURL
+	}
+	return &RemoteRegistry{
+		baseURL:    baseURL,
+		installDir: installDir,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+	}
+}
+
+type RemotePlugin struct {
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Description string   `json:"description"`
+	Author      string   `json:"author"`
+	Tags        []string `json:"tags"`
+	Platform    string   `json:"platform"`
+	DownloadURL string   `json:"download_url"`
+	SHA256      string   `json:"sha256"`
+	Size        int64    `json:"size"`
+	UpdatedAt   string   `json:"updated_at"`
+}
+
+type RemotePluginList struct {
+	Plugins []RemotePlugin `json:"plugins"`
+}
+
+func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
+	url := r.baseURL + "/plugins"
+	resp, err := r.httpClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("fetch plugin list: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
+	}
+
+	var list RemotePluginList
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, fmt.Errorf("decode plugin list: %w", err)
+	}
+
+	return list.Plugins, nil
+}
+
+func (r *RemoteRegistry) Search(query string) ([]RemotePlugin, error) {
+	plugins, err := r.List()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []RemotePlugin
+	for _, p := range plugins {
+		if query == "" {
+			results = append(results, p)
+			continue
+		}
+		if containsStr(p.Name, query) || containsStr(p.Description, query) {
+			results = append(results, p)
+			continue
+		}
+		for _, tag := range p.Tags {
+			if containsStr(tag, query) {
+				results = append(results, p)
+				break
+			}
+		}
+	}
+	return results, nil
+}
+
+func (r *RemoteRegistry) Install(name, version string) (string, error) {
+	plugin, err := r.resolvePlugin(name, version)
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.MkdirAll(r.installDir, 0o755); err != nil {
+		return "", fmt.Errorf("create install dir: %w", err)
+	}
+
+	destPath := filepath.Join(r.installDir, name+".so")
+	if err := r.downloadFile(plugin.DownloadURL, destPath); err != nil {
+		return "", fmt.Errorf("download plugin: %w", err)
+	}
+
+	metaPath := filepath.Join(r.installDir, name+".meta.json")
+	meta := map[string]interface{}{
+		"name":        plugin.Name,
+		"version":     plugin.Version,
+		"description": plugin.Description,
+		"author":      plugin.Author,
+		"installed_at": time.Now().Format(time.RFC3339),
+	}
+	metaData, _ := json.MarshalIndent(meta, "", "  ")
+	_ = os.WriteFile(metaPath, metaData, 0o644)
+
+	return destPath, nil
+}
+
+func (r *RemoteRegistry) Uninstall(name string) error {
+	soPath := filepath.Join(r.installDir, name+".so")
+	metaPath := filepath.Join(r.installDir, name+".meta.json")
+
+	os.Remove(soPath)
+	os.Remove(metaPath)
+	return nil
+}
+
+func (r *RemoteRegistry) Installed() ([]map[string]interface{}, error) {
+	entries, err := os.ReadDir(r.installDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var plugins []map[string]interface{}
+	for _, entry := range entries {
+		if entry.Name() == "" || entry.IsDir() {
+			continue
+		}
+		if len(entry.Name()) > len(".meta.json") && entry.Name()[len(entry.Name())-len(".meta.json"):] == ".meta.json" {
+			data, err := os.ReadFile(filepath.Join(r.installDir, entry.Name()))
+			if err != nil {
+				continue
+			}
+			var meta map[string]interface{}
+			if json.Unmarshal(data, &meta) == nil {
+				plugins = append(plugins, meta)
+			}
+		}
+	}
+	return plugins, nil
+}
+
+func (r *RemoteRegistry) resolvePlugin(name, version string) (*RemotePlugin, error) {
+	plugins, err := r.Search(name)
+	if err != nil {
+		return nil, err
+	}
+
+	platform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+
+	for _, p := range plugins {
+		if p.Name == name {
+			if version != "" && p.Version != version {
+				continue
+			}
+			if p.Platform != "" && p.Platform != platform {
+				continue
+			}
+			return &p, nil
+		}
+	}
+
+	if version != "" {
+		return nil, fmt.Errorf("plugin %s@%s not found", name, version)
+	}
+	return nil, fmt.Errorf("plugin %s not found", name)
+}
+
+func (r *RemoteRegistry) downloadFile(url, destPath string) error {
+	resp, err := r.httpClient.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("download returned status %d", resp.StatusCode)
+	}
+
+	out, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}

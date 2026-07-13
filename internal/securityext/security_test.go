@@ -1,6 +1,7 @@
 package securityext
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -134,7 +135,10 @@ func TestValidator(t *testing.T) {
 	v.AddRule("name", RequiredRule)
 	v.AddRule("email", func(val string) error {
 		if !strings.Contains(val, "@") {
-			return nil // placeholder
+			return fmt.Errorf("invalid email: must contain @")
+		}
+		if !strings.Contains(val, ".") {
+			return fmt.Errorf("invalid email: must contain domain")
 		}
 		return nil
 	})

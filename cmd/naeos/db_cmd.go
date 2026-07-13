@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
@@ -170,6 +169,5 @@ func newDBDisconnectCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "connection name (required)")
 	cmd.MarkFlagRequired("name")
-	_ = strconv.Itoa(0)
 	return cmd
 }

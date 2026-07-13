@@ -96,5 +96,8 @@ Example:
 	cmd.Flags().StringVar(&outputDir, "output-dir", "", "directory to write exported artifacts")
 	cmd.Flags().StringArrayVar(&languages, "language", nil, "target language for code generation (go, typescript, python, java, rust)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview artifacts without writing to disk")
+
+	cmd.AddCommand(newExportComposeCommand())
+
 	return cmd
 }

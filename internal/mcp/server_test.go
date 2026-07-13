@@ -10,6 +10,7 @@ import (
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 func newTestServer() *Server {
@@ -103,8 +104,8 @@ func TestInitialize(t *testing.T) {
 	if !ok {
 		t.Fatal("expected serverInfo")
 	}
-	if serverInfo["version"] != "0.5.0" {
-		t.Errorf("expected version 0.5.0, got %v", serverInfo["version"])
+	if serverInfo["version"] != version.String() {
+		t.Errorf("expected version %s, got %v", version.String(), serverInfo["version"])
 	}
 }
 

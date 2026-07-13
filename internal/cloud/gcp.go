@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
 type GCPAdapter struct{}
@@ -115,7 +117,18 @@ func (a *GCPAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
 }
 
 func (a *GCPAdapter) Destroy(config *DeployConfig) error {
-	return nil
+	plan, err := a.Plan(config)
+	if err != nil {
+		return err
+	}
+	if len(plan) == 0 {
+		return fmt.Errorf("no resources to destroy")
+	}
+	var resources []string
+	for _, r := range plan {
+		resources = append(resources, r.Type+"."+r.Name)
+	}
+	return fmt.Errorf("terraform destroy planned: %d GCP resources would be destroyed: %s", len(resources), strings.Join(resources, ", "))
 }
 
 func (a *GCPAdapter) ExportTerraform(config *DeployConfig) (string, error) {
@@ -145,11 +158,11 @@ provider "google" {
   common_labels = {
     environment = "%s"
     project     = "%s"
-    managed_by  = "naeos"
+    managed_by  = "%s"
   }
 }
 
-`, config.Project, config.Environment, config.Environment, config.Project))
+`, config.Project, config.Environment, config.Environment, config.Project, version.ProductName))
 
 	for _, res := range config.Resources {
 		switch res.Type {

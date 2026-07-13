@@ -50,6 +50,7 @@ type Config struct {
 	Kernel     *kernel.Kernel
 	Policies   []policy.Rule
 	Hooks      *Hooks
+	Observer   PipelineObserver
 }
 
 type HookFunc func(ctx *HookContext) error
@@ -70,6 +71,7 @@ type Hooks struct {
 }
 
 type Pipeline struct {
+	name           string
 	parser         parser.Parser
 	normalizer     normalizer.Normalizer
 	resolver       resolver.Resolver
@@ -89,6 +91,13 @@ type Pipeline struct {
 	verbose        bool
 	dryRun         bool
 	hooks          *Hooks
+}
+
+type PipelineObserver interface {
+	OnPipelineStart(pipelineID string)
+	OnPipelineComplete(pipelineID string, artifacts int, duration string)
+	OnPipelineFailed(pipelineID string, errMsg string)
+	OnArtifactGenerated(name string, path string)
 }
 
 type Result struct {
@@ -116,6 +125,7 @@ func ConfigFromFile(path string) (Config, error) {
 
 func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value semantics preferred
 	p := &Pipeline{
+		name:           cfg.Name,
 		parser:         cfg.Parser,
 		normalizer:     cfg.Normalizer,
 		resolver:       cfg.Resolver,
@@ -181,6 +191,13 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	}
 
 	return p, nil
+}
+
+func (p *Pipeline) Name() string {
+	if p.name != "" {
+		return p.name
+	}
+	return "unnamed"
 }
 
 func (p *Pipeline) registerKernelServices() error {

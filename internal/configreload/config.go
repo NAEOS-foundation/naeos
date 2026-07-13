@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Config Store
@@ -38,8 +41,17 @@ func (c *Config) Load() error {
 	}
 
 	var newConfig map[string]interface{}
-	if err := json.Unmarshal(data, &newConfig); err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
+
+	ext := filepath.Ext(c.filePath)
+	switch ext {
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(data, &newConfig); err != nil {
+			return fmt.Errorf("failed to parse YAML config: %w", err)
+		}
+	default:
+		if err := json.Unmarshal(data, &newConfig); err != nil {
+			return fmt.Errorf("failed to parse JSON config: %w", err)
+		}
 	}
 
 	old := c.data
@@ -164,7 +176,17 @@ func (c *Config) Save() error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	data, err := json.MarshalIndent(c.data, "", "  ")
+	ext := filepath.Ext(c.filePath)
+	var data []byte
+	var err error
+
+	switch ext {
+	case ".yaml", ".yml":
+		data, err = yaml.Marshal(c.data)
+	default:
+		data, err = json.MarshalIndent(c.data, "", "  ")
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"github.com/NAEOS-foundation/naeos/internal/graphql"
+	"github.com/NAEOS-foundation/naeos/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +36,7 @@ func newGraphQLCommand() *cobra.Command {
 							Resolve: func(ctx *graphql.Context, args map[string]interface{}) (interface{}, error) {
 								return map[string]string{
 									"status":  "healthy",
-									"version": "0.5.0",
+									"version": version.String(),
 								}, nil
 							},
 						},
@@ -43,7 +44,7 @@ func newGraphQLCommand() *cobra.Command {
 							Name: "version",
 							Type: "String",
 							Resolve: func(ctx *graphql.Context, args map[string]interface{}) (interface{}, error) {
-								return "0.5.0", nil
+								return version.String(), nil
 							},
 						},
 					},

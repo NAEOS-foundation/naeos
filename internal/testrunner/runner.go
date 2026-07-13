@@ -13,6 +13,7 @@ type TestConfig struct {
 	Languages  []string
 	Verbose    bool
 	Timeout    int
+	Parallel   bool
 }
 
 type TestResult struct {

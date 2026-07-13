@@ -240,31 +240,39 @@ func (m *Manager) Unregister(name string) error {
 }
 
 // LoadAll loads all enabled plugins from .so files.
+// Returns a combined error if any plugins fail to load, but continues loading others.
 func (m *Manager) LoadAll(ctx *PluginContext) error {
 	m.mu.RLock()
 	pluginsCopy := make([]PluginInfo, len(m.config.Plugins))
 	copy(pluginsCopy, m.config.Plugins)
 	m.mu.RUnlock()
 
+	var errs []string
 	for _, pInfo := range pluginsCopy {
 		if !pInfo.Enabled || pInfo.Path == "" {
 			continue
 		}
 		if err := m.sandbox.ValidatePath(pInfo.Path); err != nil {
+			errs = append(errs, fmt.Sprintf("plugin %s: sandbox validation failed: %v", pInfo.Name, err))
 			continue
 		}
 		p, err := m.loadGoPlugin(pInfo.Path)
 		if err != nil {
+			errs = append(errs, fmt.Sprintf("plugin %s: load failed: %v", pInfo.Name, err))
 			continue
 		}
 		if err := p.Initialize(ctx); err != nil {
 			m.updateState(pInfo.Name, StateError, err)
+			errs = append(errs, fmt.Sprintf("plugin %s: init failed: %v", pInfo.Name, err))
 			continue
 		}
 		m.mu.Lock()
 		m.plugins[pInfo.Name] = p
 		m.updateStateLocked(pInfo.Name, StateInitialized, nil)
 		m.mu.Unlock()
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("plugin load errors (%d): %s", len(errs), strings.Join(errs, "; "))
 	}
 	return nil
 }

@@ -220,10 +220,14 @@ func (w *Watcher) Run(fn func() error) error {
 				return nil
 			}
 			if event.Op&(fsnotify.Create|fsnotify.Write|fsnotify.Remove|fsnotify.Rename) != 0 {
-				if w.onChange != nil {
-					w.onChange(event.Name)
+				ext := filepath.Ext(event.Name)
+				switch ext {
+				case ".yaml", ".yml", ".json":
+					if w.onChange != nil {
+						w.onChange(event.Name)
+					}
+					debounce.Reset(w.interval)
 				}
-				debounce.Reset(w.interval)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {

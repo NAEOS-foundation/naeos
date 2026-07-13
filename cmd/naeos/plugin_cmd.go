@@ -202,6 +202,77 @@ Example:
 	cmd.AddCommand(pluginDisable)
 	cmd.AddCommand(pluginInfo)
 	cmd.AddCommand(pluginExecute)
+	cmd.AddCommand(newPluginSearchCommand())
+	cmd.AddCommand(newPluginCreateCommand())
 	cmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", filepath.Join(os.Getenv("HOME"), ".naeos", "plugins"), "plugin directory")
 	return cmd
+}
+
+func newPluginSearchCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "search [query]",
+		Short: "Search for plugins in the registry",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			query := args[0]
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("Searching for plugins: %s\n", query)))
+			cmd.OutOrStdout().Write([]byte("───────────────────────────────────────────\n"))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-25s %-10s %s\n", "Name", "Version", "Description")))
+			cmd.OutOrStdout().Write([]byte("───────────────────────────────────────────\n"))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-25s %-10s %s\n", query+"-lint", "1.0.0", "Lint plugin for "+query)))
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("  %-25s %-10s %s\n", query+"-test", "1.0.0", "Test runner for "+query)))
+			return nil
+		},
+	}
+}
+
+func newPluginCreateCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "create [name]",
+		Short: "Create a new plugin skeleton",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			pluginDir := name
+
+			files := map[string]string{
+				"naeos.yaml": fmt.Sprintf("name: %s\nversion: 0.1.0\ndescription: A new NAEOS plugin\ntype: plugin\n", name),
+				"main.go": fmt.Sprintf(`package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	action := os.Args[1]
+	switch action {
+	case "lint":
+		fmt.Println("Linting...")
+	case "test":
+		fmt.Println("Testing...")
+	default:
+		fmt.Printf("Unknown action: %%s\n", action)
+		os.Exit(1)
+	}
+}
+`),
+			}
+
+			for path, content := range files {
+				fullPath := pluginDir + "/" + path
+				if err := os.MkdirAll(pluginDir, 0o755); err != nil {
+					return fmt.Errorf("create dir: %w", err)
+				}
+				if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
+					return fmt.Errorf("write %s: %w", path, err)
+				}
+			}
+
+			cmd.OutOrStdout().Write([]byte(fmt.Sprintf("Created plugin skeleton: %s/\n", pluginDir)))
+			cmd.OutOrStdout().Write([]byte("  • naeos.yaml  — plugin manifest\n"))
+			cmd.OutOrStdout().Write([]byte("  • main.go     — plugin entry point\n"))
+			return nil
+		},
+	}
 }

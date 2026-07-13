@@ -53,16 +53,72 @@ func (l *SimpleLogger) Debug(msg string, args ...any) {
 }
 
 // SimpleMetrics is a no-op MetricsCollector.
-type SimpleMetrics struct{}
+type SimpleMetrics struct {
+	mu        sync.RWMutex
+	counters  map[string]float64
+	gauges    map[string]float64
+	histograms map[string][]float64
+}
 
 // NewSimpleMetrics creates a new SimpleMetrics.
 func NewSimpleMetrics() *SimpleMetrics {
-	return &SimpleMetrics{}
+	return &SimpleMetrics{
+		counters:  make(map[string]float64),
+		gauges:    make(map[string]float64),
+		histograms: make(map[string][]float64),
+	}
 }
 
-func (m *SimpleMetrics) CounterInc(_ string, _ map[string]string)                        {}
-func (m *SimpleMetrics) GaugeSet(_ string, _ float64, _ map[string]string)              {}
-func (m *SimpleMetrics) HistogramObserve(_ string, _ float64, _ map[string]string)      {}
+func (m *SimpleMetrics) CounterInc(name string, labels map[string]string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := metricKey(name, labels)
+	m.counters[key]++
+}
+
+func (m *SimpleMetrics) GaugeSet(name string, value float64, labels map[string]string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := metricKey(name, labels)
+	m.gauges[key] = value
+}
+
+func (m *SimpleMetrics) HistogramObserve(name string, value float64, labels map[string]string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := metricKey(name, labels)
+	m.histograms[key] = append(m.histograms[key], value)
+}
+
+func (m *SimpleMetrics) Snapshot() (counters, gauges map[string]float64, histograms map[string][]float64) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	counters = make(map[string]float64, len(m.counters))
+	for k, v := range m.counters {
+		counters[k] = v
+	}
+
+	gauges = make(map[string]float64, len(m.gauges))
+	for k, v := range m.gauges {
+		gauges[k] = v
+	}
+
+	histograms = make(map[string][]float64, len(m.histograms))
+	for k, v := range m.histograms {
+		histograms[k] = append([]float64{}, v...)
+	}
+
+	return counters, gauges, histograms
+}
+
+func metricKey(name string, labels map[string]string) string {
+	key := name
+	for k, v := range labels {
+		key += "|" + k + "=" + v
+	}
+	return key
+}
 
 // SimpleEventEmitter is an in-memory EventEmitter.
 type SimpleEventEmitter struct {
