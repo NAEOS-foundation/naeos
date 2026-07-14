@@ -3,17 +3,17 @@ openapi: "3.0.3"
 info:
   title: NAEOS API
   description: Neural Architecture Engine for Orchestration & Synthesis
-  version: "1.0.0"
+  version: "1.1.0"
   contact:
     name: NAEOS Foundation
     url: https://github.com/NAEOS-foundation/naeos
 
 servers:
-  - url: http://localhost:8080/api/v1
+  - url: http://localhost:8080
     description: Local development server
 
 paths:
-  /health:
+  /api/v1/health:
     get:
       operationId: getHealth
       summary: Health check
@@ -26,29 +26,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
 
-  /specs:
+  /api/v1/specs:
     get:
       operationId: listSpecs
       summary: List all specifications
       tags: [Specifications]
       parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
       responses:
         "200":
-          description: List of specs
+          description: Spec count
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpecListResponse"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
     post:
       operationId: createSpec
       summary: Create a new specification
@@ -65,11 +65,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpecResponse"
+                $ref: "#/components/schemas/SpecCreateResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /specs/validate:
+  /api/v1/specs/validate:
     post:
       operationId: validateSpec
       summary: Validate a specification
@@ -79,7 +79,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SpecValidateRequest"
+              $ref: "#/components/schemas/SpecTextRequest"
       responses:
         "200":
           description: Validation result
@@ -90,7 +90,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /specs/compile:
+  /api/v1/specs/compile:
     post:
       operationId: compileSpec
       summary: Compile a specification
@@ -110,8 +110,10 @@ paths:
                 $ref: "#/components/schemas/SpecCompileResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 
-  /pipeline/run:
+  /api/v1/pipeline/run:
     post:
       operationId: runPipeline
       summary: Execute a pipeline
@@ -132,17 +134,11 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /pipeline/status:
+  /api/v1/pipeline/status:
     get:
       operationId: getPipelineStatus
       summary: Get pipeline execution status
       tags: [Pipeline]
-      parameters:
-        - name: id
-          in: query
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: Pipeline status
@@ -150,24 +146,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PipelineStatusResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
 
-  /artifacts:
+  /api/v1/artifacts:
     get:
       operationId: listArtifacts
       summary: List artifacts
       tags: [Artifacts]
       parameters:
-        - name: spec_id
-          in: query
-          schema:
-            type: string
-        - name: kind
-          in: query
-          schema:
-            type: string
-            enum: [source, binary, manifest, log]
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
       responses:
         "200":
           description: List of artifacts
@@ -182,30 +169,20 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              required: [file, kind]
-              properties:
-                file:
-                  type: string
-                  format: binary
-                kind:
-                  type: string
-                  enum: [source, binary, manifest, log]
-                spec_id:
-                  type: string
+              $ref: "#/components/schemas/ArtifactUploadRequest"
       responses:
         "201":
           description: Artifact uploaded
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ArtifactResponse"
+                $ref: "#/components/schemas/ArtifactUploadResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /context/generate:
+  /api/v1/context/generate:
     post:
       operationId: generateContext
       summary: Generate context for a spec
@@ -226,7 +203,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /cloud/plan:
+  /api/v1/cloud/plan:
     post:
       operationId: cloudPlan
       summary: Generate a cloud deployment plan
@@ -247,7 +224,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /cloud/deploy:
+  /api/v1/cloud/deploy:
     post:
       operationId: cloudDeploy
       summary: Deploy to cloud provider
@@ -259,8 +236,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CloudDeployRequest"
       responses:
-        "202":
-          description: Deployment accepted and in progress
+        "200":
+          description: Deployment completed
           content:
             application/json:
               schema:
@@ -268,7 +245,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /cloud/destroy:
+  /api/v1/cloud/destroy:
     post:
       operationId: cloudDestroy
       summary: Destroy cloud resources
@@ -280,8 +257,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CloudDestroyRequest"
       responses:
-        "202":
-          description: Destruction accepted and in progress
+        "200":
+          description: Resources destroyed
           content:
             application/json:
               schema:
@@ -289,17 +266,14 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /cloud/status:
+  /api/v1/cloud/status:
     get:
       operationId: cloudStatus
       summary: Get cloud deployment status
       tags: [Cloud]
       parameters:
-        - name: deployment_id
-          in: query
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
       responses:
         "200":
           description: Cloud deployment status
@@ -307,14 +281,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CloudStatusResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
 
-  /plugins:
+  /api/v1/plugins:
     get:
       operationId: listPlugins
       summary: List installed plugins
       tags: [Plugins]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
       responses:
         "200":
           description: List of plugins
@@ -342,7 +317,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /plugins/execute:
+  /api/v1/plugins/execute:
     post:
       operationId: executePlugin
       summary: Execute a plugin command
@@ -363,7 +338,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /plugins/{name}:
+  /api/v1/plugins/{name}:
     get:
       operationId: getPlugin
       summary: Get plugin details
@@ -399,7 +374,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /mcp/message:
+  /api/v1/mcp/message:
     post:
       operationId: mcpMessage
       summary: Send an MCP message
@@ -419,8 +394,10 @@ paths:
                 $ref: "#/components/schemas/MCPMessageResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
 
-  /version:
+  /api/v1/version:
     get:
       operationId: getVersion
       summary: Get API version
@@ -433,38 +410,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
 
-  /config/schema:
+  /api/v1/config/schema:
     get:
       operationId: getConfigSchema
       summary: Get configuration schema
       tags: [System]
       responses:
         "200":
-          description: Config schema
+          description: Config schema (JSON Schema)
           content:
             application/json:
               schema:
                 type: object
 
-  /pipelines:
+  /api/v1/pipelines:
     get:
       operationId: listPipelines
       summary: List pipeline runs
       tags: [Pipeline]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
       responses:
         "200":
           description: Pipeline runs
           content:
             application/json:
               schema:
+                $ref: "#/components/schemas/PipelineListResponse"
+
+  /.well-known/openid-configuration:
+    get:
+      operationId: oidcDiscovery
+      summary: OIDC discovery document
+      tags: [System]
+      responses:
+        "200":
+          description: OIDC discovery document
+          content:
+            application/json:
+              schema:
                 type: object
-                properties:
-                  total:
-                    type: integer
-                  runs:
-                    type: array
-                    items:
-                      type: object
+        "404":
+          description: OIDC not configured
 
   /metrics:
     get:
@@ -490,10 +478,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  healthy:
-                    type: boolean
+                $ref: "#/components/schemas/HealthzResponse"
 
   /readyz:
     get:
@@ -506,12 +491,26 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ready:
-                    type: boolean
+                $ref: "#/components/schemas/ReadyzResponse"
 
 components:
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
   responses:
     BadRequest:
       description: Bad request
@@ -521,6 +520,18 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    MethodNotAllowed:
+      description: Method not allowed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: Service unavailable
       content:
         application/json:
           schema:
@@ -537,341 +548,451 @@ components:
           properties:
             status:
               type: string
-              example: ok
+              example: healthy
             version:
               type: string
-              example: "0.8.0"
             uptime:
               type: string
+            database:
+              type: string
+              description: "Database health status (not_configured, healthy, or unhealthy: <error>)"
+              example: healthy
 
-    SpecCreateRequest:
-      type: object
-      required: [name, content]
-      properties:
-        name:
-          type: string
-        content:
-          type: object
-        version:
-          type: string
-          default: "1.0.0"
-        description:
-          type: string
-
-    SpecResponse:
+    HealthzResponse:
       type: object
       properties:
-        id:
+        status:
           type: string
-        name:
-          type: string
-        version:
-          type: string
-        content:
-          type: object
-        created_at:
+          example: healthy
+        timestamp:
           type: string
           format: date-time
 
-    SpecListResponse:
+    ReadyzResponse:
       type: object
       properties:
-        specs:
-          type: array
-          items:
-            $ref: "#/components/schemas/SpecResponse"
-        total:
-          type: integer
-        limit:
-          type: integer
-        offset:
-          type: integer
-
-    SpecValidateRequest:
-      type: object
-      required: [spec_id]
-      properties:
-        spec_id:
+        status:
           type: string
+          example: ready
+
+    SpecTextRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+
+    SpecCreateRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+
+    SpecCreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+            project:
+              type: string
+            modules:
+              type: integer
+            services:
+              type: integer
 
     SpecValidateResponse:
       type: object
       properties:
-        valid:
+        success:
           type: boolean
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ValidationError"
-
-    ValidationError:
-      type: object
-      properties:
-        path:
-          type: string
-        message:
-          type: string
-        severity:
-          type: string
-          enum: [error, warning, info]
+        data:
+          type: object
+          properties:
+            valid:
+              type: boolean
+            errors:
+              type: array
+              items:
+                type: string
+            warnings:
+              type: array
+              items:
+                type: string
 
     SpecCompileRequest:
       type: object
-      required: [spec_id]
+      required: [spec]
       properties:
-        spec_id:
+        spec:
           type: string
+          description: Raw NEIR specification text
         target:
           type: string
-          enum: [go, wasm, tflite]
-          default: go
+          description: Compilation target
 
     SpecCompileResponse:
       type: object
       properties:
-        artifact_id:
-          type: string
-        status:
-          type: string
-          example: compiled
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            compiled:
+              type: boolean
+            targets:
+              type: array
+              items:
+                type: string
+            bundle:
+              type: string
+            project:
+              type: string
+            modules:
+              type: integer
+            services:
+              type: integer
 
     PipelineRunRequest:
       type: object
-      required: [spec_id, pipeline]
+      required: [spec]
       properties:
-        spec_id:
+        spec:
           type: string
-        pipeline:
+          description: Raw NEIR specification text
+        target:
           type: string
-          enum: [build, deploy, test, full]
-        params:
-          type: object
-          additionalProperties: true
+          description: Pipeline target
 
     PipelineRunResponse:
       type: object
       properties:
-        pipeline_id:
-          type: string
-        status:
-          type: string
-          example: queued
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            job_id:
+              type: string
+            status:
+              type: string
+              example: running
 
     PipelineStatusResponse:
       type: object
       properties:
-        id:
-          type: string
-        status:
-          type: string
-          enum: [queued, running, succeeded, failed, cancelled]
-        steps:
-          type: array
-          items:
-            $ref: "#/components/schemas/PipelineStep"
-        started_at:
-          type: string
-          format: date-time
-        finished_at:
-          type: string
-          format: date-time
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [idle, running]
+            total:
+              type: integer
+            last_run:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                status:
+                  type: string
+                project:
+                  type: string
+                modules:
+                  type: integer
+                services:
+                  type: integer
+                created_at:
+                  type: string
+                  format: date-time
 
-    PipelineStep:
+    PipelineListResponse:
       type: object
       properties:
-        name:
-          type: string
-        status:
-          type: string
-          enum: [pending, running, succeeded, failed, skipped]
-        message:
-          type: string
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pipelines:
+              type: array
+              items:
+                type: object
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
 
-    ArtifactResponse:
+    ArtifactUploadRequest:
       type: object
+      required: [path, content]
       properties:
-        id:
+        path:
           type: string
+          description: Artifact file path
+        content:
+          type: string
+          description: Artifact content
         kind:
           type: string
-        spec_id:
-          type: string
-        size:
-          type: integer
-          format: int64
-        created_at:
-          type: string
-          format: date-time
+          description: Artifact kind (auto-detected from path if empty)
+
+    ArtifactUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+            artifact:
+              type: object
 
     ArtifactListResponse:
       type: object
       properties:
-        artifacts:
-          type: array
-          items:
-            $ref: "#/components/schemas/ArtifactResponse"
-        total:
-          type: integer
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            artifacts:
+              type: array
+              items:
+                type: object
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
 
     ContextGenerateRequest:
       type: object
-      required: [spec_id]
+      required: [spec]
       properties:
-        spec_id:
+        spec:
           type: string
-        context_type:
+          description: Raw NEIR specification text
+        format:
           type: string
-          enum: [full, summary, dependencies]
-          default: full
+          enum: [markdown, plain]
+          default: markdown
 
     ContextGenerateResponse:
       type: object
       properties:
-        context_id:
-          type: string
-        context:
+        success:
+          type: boolean
+        data:
           type: object
-        generated_at:
+          properties:
+            context:
+              type: string
+            format:
+              type: string
+            project:
+              type: string
+
+    CloudResourceRequest:
+      type: object
+      properties:
+        name:
           type: string
-          format: date-time
+        type:
+          type: string
+        spec:
+          type: object
+          additionalProperties: true
 
     CloudPlanRequest:
       type: object
-      required: [spec_id]
+      required: [provider, project]
       properties:
-        spec_id:
-          type: string
         provider:
           type: string
-          enum: [aws, gcp, azure, digitalocean]
+          enum: [aws, gcp, azure]
+        project:
+          type: string
         region:
           type: string
-        resource_constraints:
-          type: object
-          properties:
-            max_cpu:
-              type: string
-            max_memory:
-              type: string
-            max_storage:
-              type: string
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudResourceRequest"
 
     CloudPlanResponse:
       type: object
       properties:
-        plan_id:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            provider:
+              type: string
+            project:
+              type: string
+            hcl:
+              type: string
+              description: Generated Terraform HCL
+
+    CloudDeployRequest:
+      type: object
+      required: [provider, project]
+      properties:
+        provider:
+          type: string
+          enum: [aws, gcp, azure]
+        project:
+          type: string
+        region:
           type: string
         resources:
           type: array
           items:
-            $ref: "#/components/schemas/CloudResource"
-        estimated_cost:
-          type: object
-          properties:
-            monthly:
-              type: number
-              format: float
-            currency:
-              type: string
-              example: USD
-
-    CloudResource:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [compute, storage, network, database, loadbalancer]
-        name:
-          type: string
-        spec:
-          type: object
-
-    CloudDeployRequest:
-      type: object
-      required: [plan_id]
-      properties:
-        plan_id:
-          type: string
-        environment:
-          type: string
-          enum: [staging, production]
-        dry_run:
-          type: boolean
-          default: false
+            $ref: "#/components/schemas/CloudResourceRequest"
 
     CloudDeployResponse:
       type: object
       properties:
-        deployment_id:
-          type: string
-        status:
-          type: string
-          example: in_progress
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deployment_id:
+              type: string
+            provider:
+              type: string
+            project:
+              type: string
+            status:
+              type: string
+            resources:
+              type: array
+              items:
+                type: object
 
     CloudDestroyRequest:
       type: object
-      required: [deployment_id]
+      required: [provider, project]
       properties:
-        deployment_id:
+        provider:
           type: string
-        force:
-          type: boolean
-          default: false
+          enum: [aws, gcp, azure]
+        project:
+          type: string
+        region:
+          type: string
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudResourceRequest"
 
     CloudDestroyResponse:
       type: object
       properties:
-        deployment_id:
-          type: string
-        status:
-          type: string
-          example: destroying
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            provider:
+              type: string
+            project:
+              type: string
+            status:
+              type: string
+              example: destroyed
 
     CloudStatusResponse:
       type: object
       properties:
-        deployment_id:
-          type: string
-        provider:
-          type: string
-        status:
-          type: string
-          enum: [planning, deploying, running, destroying, failed]
-        resources:
-          type: array
-          items:
-            $ref: "#/components/schemas/CloudResource"
-        last_updated:
-          type: string
-          format: date-time
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deployments:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  provider:
+                    type: string
+                  project:
+                    type: string
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
 
     PluginListResponse:
       type: object
       properties:
-        plugins:
-          type: array
-          items:
-            $ref: "#/components/schemas/PluginResponse"
-        total:
-          type: integer
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            plugins:
+              type: array
+              items:
+                $ref: "#/components/schemas/PluginResponse"
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
 
     PluginResponse:
       type: object
       properties:
-        name:
-          type: string
-        version:
-          type: string
-        description:
-          type: string
-        kind:
-          type: string
-          enum: [native, wasm]
-        enabled:
+        success:
           type: boolean
-        installed_at:
-          type: string
-          format: date-time
+        data:
+          type: object
+          properties:
+            name:
+              type: string
+            version:
+              type: string
+            description:
+              type: string
+            kind:
+              type: string
+              enum: [native, wasm]
+            enabled:
+              type: boolean
+            installed_at:
+              type: string
+              format: date-time
 
     PluginInstallRequest:
       type: object
@@ -887,31 +1008,35 @@ components:
 
     PluginExecuteRequest:
       type: object
-      required: [plugin, command]
+      required: [name]
       properties:
-        plugin:
+        name:
           type: string
-        command:
+        action:
           type: string
-        args:
+          default: execute
+        params:
           type: object
           additionalProperties: true
 
     PluginExecuteResponse:
       type: object
       properties:
-        plugin:
-          type: string
-        command:
-          type: string
-        result:
+        success:
+          type: boolean
+        data:
           type: object
-        exit_code:
-          type: integer
+          properties:
+            plugin:
+              type: string
+            action:
+              type: string
+            result:
+              type: object
 
     MCPMessageRequest:
       type: object
-      required: [method, params]
+      required: [method]
       properties:
         jsonrpc:
           type: string
@@ -949,23 +1074,32 @@ components:
     VersionResponse:
       type: object
       properties:
-        version:
-          type: string
-          example: "1.0.0"
-        platform:
-          type: string
-          example: naeos-api
-        go_version:
-          type: string
-        git_commit:
-          type: string
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            version:
+              type: string
+            go:
+              type: string
+              description: Go version
+            platform:
+              type: string
+              example: naeos-api
 
     ErrorResponse:
       type: object
       properties:
+        success:
+          type: boolean
+          example: false
         error:
           type: string
-        message:
-          type: string
-        details:
+        data:
           type: object
+          properties:
+            error:
+              type: string
+            message:
+              type: string

@@ -8,6 +8,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
+// GCPAdapter implements CloudAdapter for Google Cloud Platform.
 type GCPAdapter struct {
 	Runner CommandRunner
 }
@@ -38,7 +39,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "google_storage_bucket",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"location": config.Region,
 				},
@@ -47,7 +48,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "google_cloud_run_service",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     res.Name,
 					"location": config.Region,
 				},
@@ -56,7 +57,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "google_sql_database_instance",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":       fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"region":     config.Region,
 					"db_version": "POSTGRES_15",
@@ -66,7 +67,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "google_redis_instance",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":   fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"region": config.Region,
 				},
@@ -75,7 +76,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "google_pubsub_topic",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				},
 			})
@@ -84,14 +85,14 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_compute_backend_bucket",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
 		resources = append(resources, Resource{
 			Name: res.Name + "-cdn-bucket",
 			Type: "google_storage_bucket",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name":     bucketName,
 				"location": config.Region,
 			},
@@ -100,7 +101,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_cloudfunctions2_function",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				"location": config.Region,
 			},
@@ -109,7 +110,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_monitoring_alert_policy",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"display_name": fmt.Sprintf("%s %s %s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -117,7 +118,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_secret_manager_secret",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"secret_id": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -125,7 +126,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_dns_managed_zone",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name":        res.Name,
 				"dns_name":    fmt.Sprintf("%s.", res.Name),
 			},
@@ -134,7 +135,7 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "google_compute_network",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})

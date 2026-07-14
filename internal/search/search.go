@@ -32,7 +32,7 @@ type Document struct {
 	Title     string
 	Content   string
 	Tags      []string
-	Metadata  map[string]interface{}
+	Metadata  map[string]any
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -43,7 +43,7 @@ type Query struct {
 	Tags      []string
 	Limit     int
 	Offset    int
-	Filters   map[string]interface{}
+	Filters   map[string]any
 	SortBy    string
 	SortOrder string
 }

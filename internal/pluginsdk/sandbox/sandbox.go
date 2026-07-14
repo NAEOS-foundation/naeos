@@ -29,12 +29,12 @@ type Config struct {
 
 type Request struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]any `json:"params"`
 }
 
 type Response struct {
 	OK      bool        `json:"ok"`
-	Result  interface{} `json:"result,omitempty"`
+	Result  any `json:"result,omitempty"`
 	Error   string      `json:"error,omitempty"`
 	Elapsed int64       `json:"elapsed_ms"`
 }
@@ -129,7 +129,7 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 	defer cancel()
 
 	type result struct {
-		value interface{}
+		value any
 		err   error
 	}
 	ch := make(chan result, 1)

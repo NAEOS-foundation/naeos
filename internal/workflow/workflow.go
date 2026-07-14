@@ -104,7 +104,7 @@ type WorkflowStep struct {
 }
 
 type WorkflowContext struct {
-	Data    map[string]interface{}
+	Data    map[string]any
 	Steps   []string
 	Current string
 	Error   error
@@ -138,7 +138,7 @@ func NewWorkflow(name string, steps []*WorkflowStep) *Workflow {
 		Steps:   steps,
 		Machine: machine,
 		Context: &WorkflowContext{
-			Data:  make(map[string]interface{}),
+			Data:  make(map[string]any),
 			Steps: []string{},
 		},
 	}

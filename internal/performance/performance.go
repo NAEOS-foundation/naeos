@@ -108,7 +108,7 @@ func (p *ConnectionPool) Close() {
 
 type BatchItem struct {
 	ID      string
-	Data    interface{}
+	Data    any
 	Status  BatchStatus
 	Error   error
 }
@@ -132,11 +132,11 @@ type BatchProcessor struct {
 	name      string
 	batches   []*Batch
 	batchSize int
-	handler   func(interface{}) error
+	handler   func(any) error
 	mu        sync.Mutex
 }
 
-func NewBatchProcessor(name string, batchSize int, handler func(interface{}) error) *BatchProcessor {
+func NewBatchProcessor(name string, batchSize int, handler func(any) error) *BatchProcessor {
 	return &BatchProcessor{
 		name:      name,
 		batches:   make([]*Batch, 0),
@@ -145,7 +145,7 @@ func NewBatchProcessor(name string, batchSize int, handler func(interface{}) err
 	}
 }
 
-func (bp *BatchProcessor) AddItem(item interface{}) *BatchItem {
+func (bp *BatchProcessor) AddItem(item any) *BatchItem {
 	bp.mu.Lock()
 	defer bp.mu.Unlock()
 
@@ -229,7 +229,7 @@ func (bp *BatchProcessor) GetBatchByID(id string) *Batch {
 
 type CacheEntry struct {
 	Key       string
-	Value     interface{}
+	Value     any
 	ExpiresAt time.Time
 }
 
@@ -246,7 +246,7 @@ func NewCache(name string) *Cache {
 	}
 }
 
-func (c *Cache) Set(key string, value interface{}, ttl time.Duration) {
+func (c *Cache) Set(key string, value any, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -257,7 +257,7 @@ func (c *Cache) Set(key string, value interface{}, ttl time.Duration) {
 	}
 }
 
-func (c *Cache) Get(key string) (interface{}, bool) {
+func (c *Cache) Get(key string) (any, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

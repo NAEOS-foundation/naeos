@@ -56,7 +56,7 @@ func (s *InMemoryStore) Load(streamID string) ([]Event, error) {
 
 	events, ok := s.streams[streamID]
 	if !ok {
-		return nil, nil
+		return nil, nil // Stream does not exist — no events to return
 	}
 	out := make([]Event, len(events))
 	copy(out, events)
@@ -69,7 +69,7 @@ func (s *InMemoryStore) LoadFrom(streamID string, fromVersion int) ([]Event, err
 
 	events, ok := s.streams[streamID]
 	if !ok {
-		return nil, nil
+		return nil, nil // Stream does not exist — no events to return
 	}
 
 	var out []Event
@@ -265,7 +265,7 @@ func (s *FileStore) Load(streamID string) ([]Event, error) {
 		return nil, err
 	}
 	if events == nil {
-		return nil, nil
+		return nil, nil // No persisted events for this stream
 	}
 	out := make([]Event, len(events))
 	copy(out, events)
@@ -291,7 +291,7 @@ func (s *FileStore) loadRaw(streamID string) ([]Event, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, nil // No file on disk — stream has no events
 		}
 		return nil, err
 	}

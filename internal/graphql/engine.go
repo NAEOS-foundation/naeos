@@ -32,37 +32,37 @@ type ArgDef struct {
 	Name     string
 	Type     string
 	Required bool
-	Default  interface{}
+	Default  any
 }
 
 type OperationDef struct {
 	Fields map[string]*FieldDef
 }
 
-type Resolver func(ctx *Context, args map[string]interface{}) (interface{}, error)
+type Resolver func(ctx *Context, args map[string]any) (any, error)
 
 type Context struct {
 	Request *http.Request
 	Schema  *Schema
-	Root    interface{}
+	Root    any
 }
 
 type Request struct {
 	Query         string                 `json:"query"`
 	OperationName string                 `json:"operationName"`
-	Variables     map[string]interface{} `json:"variables"`
+	Variables     map[string]any `json:"variables"`
 }
 
 type Response struct {
-	Data   interface{}    `json:"data,omitempty"`
+	Data   any    `json:"data,omitempty"`
 	Errors []*GraphQLError `json:"errors,omitempty"`
 }
 
 type GraphQLError struct {
 	Message    string                 `json:"message"`
 	Locations  []Location            `json:"locations,omitempty"`
-	Path       []interface{}         `json:"path,omitempty"`
-	Extensions map[string]interface{} `json:"extensions,omitempty"`
+	Path       []any         `json:"path,omitempty"`
+	Extensions map[string]any `json:"extensions,omitempty"`
 }
 
 type Location struct {
@@ -84,7 +84,7 @@ func (e *Executor) Execute(ctx *Context, query string) *Response {
 		return &Response{Errors: errs}
 	}
 
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	for _, selection := range ast.Selections {
 		result, err := e.resolveSelection(ctx, selection)
 		if err != nil {
@@ -96,7 +96,7 @@ func (e *Executor) Execute(ctx *Context, query string) *Response {
 	return &Response{Data: data}
 }
 
-func (e *Executor) resolveSelection(ctx *Context, sel *Selection) (interface{}, error) {
+func (e *Executor) resolveSelection(ctx *Context, sel *Selection) (any, error) {
 	// Try queries first
 	if e.schema.Queries != nil {
 		if field, ok := e.schema.Queries.Fields[sel.Name]; ok {
@@ -114,7 +114,7 @@ func (e *Executor) resolveSelection(ctx *Context, sel *Selection) (interface{}, 
 	}
 
 	// Try root fields
-	if rootMap, ok := ctx.Root.(map[string]interface{}); ok {
+	if rootMap, ok := ctx.Root.(map[string]any); ok {
 		if val, ok := rootMap[sel.Name]; ok {
 			return val, nil
 		}
@@ -123,8 +123,8 @@ func (e *Executor) resolveSelection(ctx *Context, sel *Selection) (interface{}, 
 	return nil, fmt.Errorf("field '%s' not found", sel.Name)
 }
 
-func (e *Executor) buildArgs(arguments map[string]string, argDefs map[string]*ArgDef) map[string]interface{} {
-	result := make(map[string]interface{})
+func (e *Executor) buildArgs(arguments map[string]string, argDefs map[string]*ArgDef) map[string]any {
+	result := make(map[string]any)
 	for name, def := range argDefs {
 		if val, ok := arguments[name]; ok {
 			result[name] = parseValue(val)
@@ -135,7 +135,7 @@ func (e *Executor) buildArgs(arguments map[string]string, argDefs map[string]*Ar
 	return result
 }
 
-func parseValue(s string) interface{} {
+func parseValue(s string) any {
 	s = strings.TrimSpace(s)
 	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
 		return strings.Trim(s, "\"")
@@ -153,25 +153,25 @@ func parseValue(s string) interface{} {
 }
 
 func (e *Executor) Introspect() *Response {
-	types := make(map[string]interface{})
+	types := make(map[string]any)
 	for name, t := range e.schema.Types {
-		fields := make([]map[string]interface{}, 0)
+		fields := make([]map[string]any, 0)
 		for _, f := range t.Fields {
-			fields = append(fields, map[string]interface{}{
+			fields = append(fields, map[string]any{
 				"name":     f.Name,
 				"type":     f.Type,
 				"required": f.Required,
 			})
 		}
-		types[name] = map[string]interface{}{
+		types[name] = map[string]any{
 			"name":   name,
 			"fields": fields,
 		}
 	}
 
 	return &Response{
-		Data: map[string]interface{}{
-			"__schema": map[string]interface{}{
+		Data: map[string]any{
+			"__schema": map[string]any{
 				"types": types,
 			},
 		},

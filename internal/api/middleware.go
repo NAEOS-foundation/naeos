@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// RateLimiter implements a token-bucket rate limiter per client.
 type RateLimiter struct {
 	clients map[string]*clientRecord
 	mu      sync.Mutex
@@ -21,6 +22,7 @@ type clientRecord struct {
 	lastSeen time.Time
 }
 
+// NewRateLimiter creates a rate limiter with the given requests per window.
 func NewRateLimiter(requestsPerWindow int, window time.Duration) *RateLimiter {
 	rl := &RateLimiter{
 		clients: make(map[string]*clientRecord),
@@ -31,6 +33,7 @@ func NewRateLimiter(requestsPerWindow int, window time.Duration) *RateLimiter {
 	return rl
 }
 
+// Allow reports whether the given client has remaining rate limit tokens.
 func (rl *RateLimiter) Allow(clientID string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
@@ -64,6 +67,7 @@ func (rl *RateLimiter) Allow(clientID string) bool {
 	return true
 }
 
+// Reset clears all client records from the rate limiter.
 func (rl *RateLimiter) Reset() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
@@ -86,6 +90,7 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
+// Middleware wraps an http.Handler with per-client rate limiting.
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		clientID := r.RemoteAddr

@@ -80,7 +80,7 @@ func TestParseSelection(t *testing.T) {
 func TestParseValue(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected interface{}
+		expected any
 	}{
 		{`"hello"`, "hello"},
 		{"true", true},
@@ -124,7 +124,7 @@ func TestGraphQLHandler(t *testing.T) {
 				"health": {
 					Name: "health",
 					Type: "String",
-					Resolve: func(ctx *Context, args map[string]interface{}) (interface{}, error) {
+					Resolve: func(ctx *Context, args map[string]any) (any, error) {
 						return "healthy", nil
 					},
 				},

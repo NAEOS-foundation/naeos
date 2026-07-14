@@ -6,6 +6,7 @@ import (
 )
 
 func TestGetAdapterAWS(t *testing.T) {
+	t.Parallel()
 	adapter, err := GetAdapter(AWS)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -19,6 +20,7 @@ func TestGetAdapterAWS(t *testing.T) {
 }
 
 func TestGetAdapterGCP(t *testing.T) {
+	t.Parallel()
 	adapter, err := GetAdapter(GCP)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -32,6 +34,7 @@ func TestGetAdapterGCP(t *testing.T) {
 }
 
 func TestGetAdapterAzure(t *testing.T) {
+	t.Parallel()
 	adapter, err := GetAdapter(Azure)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -45,6 +48,7 @@ func TestGetAdapterAzure(t *testing.T) {
 }
 
 func TestGetAdapterInvalid(t *testing.T) {
+	t.Parallel()
 	_, err := GetAdapter("invalid")
 	if err == nil {
 		t.Error("expected error for invalid provider")
@@ -52,6 +56,7 @@ func TestGetAdapterInvalid(t *testing.T) {
 }
 
 func TestSupportedResourceTypes(t *testing.T) {
+	t.Parallel()
 	expected := []string{"storage", "compute", "database", "cache", "queue", "cdn", "serverless", "monitoring", "secrets", "dns", "networking"}
 	if len(SupportedResourceTypes) != len(expected) {
 		t.Fatalf("expected %d resource types, got %d", len(expected), len(SupportedResourceTypes))
@@ -66,6 +71,7 @@ func TestSupportedResourceTypes(t *testing.T) {
 // --- AWS Tests ---
 
 func TestAWSValidate(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 
 	validConfig := &DeployConfig{
@@ -96,6 +102,7 @@ func TestAWSValidate(t *testing.T) {
 }
 
 func TestAWSPlanAllResourceTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -137,6 +144,7 @@ func TestAWSPlanAllResourceTypes(t *testing.T) {
 }
 
 func TestAWSTerraformExportAllTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -192,6 +200,7 @@ func TestAWSTerraformExportAllTypes(t *testing.T) {
 }
 
 func TestAWSDeploy(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{Runner: &mockRunner{stdout: []byte("ok")}}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -226,6 +235,7 @@ func TestAWSDeploy(t *testing.T) {
 // --- GCP Tests ---
 
 func TestGCPValidate(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{}
 
 	validConfig := &DeployConfig{
@@ -255,6 +265,7 @@ func TestGCPValidate(t *testing.T) {
 }
 
 func TestGCPPlanAllResourceTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{}
 	config := &DeployConfig{
 		Provider:    GCP,
@@ -293,6 +304,7 @@ func TestGCPPlanAllResourceTypes(t *testing.T) {
 }
 
 func TestGCPTerraformExportAllTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{}
 	config := &DeployConfig{
 		Provider:    GCP,
@@ -343,6 +355,7 @@ func TestGCPTerraformExportAllTypes(t *testing.T) {
 }
 
 func TestGCPDeploy(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{Runner: &mockRunner{stdout: []byte("ok")}}
 	config := &DeployConfig{
 		Provider:    GCP,
@@ -373,6 +386,7 @@ func TestGCPDeploy(t *testing.T) {
 // --- Azure Tests ---
 
 func TestAzureValidate(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{}
 
 	validConfig := &DeployConfig{
@@ -402,6 +416,7 @@ func TestAzureValidate(t *testing.T) {
 }
 
 func TestAzurePlanAllResourceTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{}
 	config := &DeployConfig{
 		Provider:    Azure,
@@ -439,6 +454,7 @@ func TestAzurePlanAllResourceTypes(t *testing.T) {
 }
 
 func TestAzureTerraformExportAllTypes(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{}
 	config := &DeployConfig{
 		Provider:    Azure,
@@ -491,6 +507,7 @@ func TestAzureTerraformExportAllTypes(t *testing.T) {
 }
 
 func TestAzureDeploy(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{Runner: &mockRunner{stdout: []byte("ok")}}
 	config := &DeployConfig{
 		Provider:    Azure,
@@ -521,6 +538,7 @@ func TestAzureDeploy(t *testing.T) {
 // --- Edge Cases ---
 
 func TestAWSExportEmptyResources(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -541,6 +559,7 @@ func TestAWSExportEmptyResources(t *testing.T) {
 }
 
 func TestGCPExportEmptyResources(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{}
 	config := &DeployConfig{
 		Provider:    GCP,
@@ -561,6 +580,7 @@ func TestGCPExportEmptyResources(t *testing.T) {
 }
 
 func TestAzureExportEmptyResources(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{}
 	config := &DeployConfig{
 		Provider:    Azure,
@@ -581,6 +601,7 @@ func TestAzureExportEmptyResources(t *testing.T) {
 }
 
 func TestAWSUnknownResourceTypeSkipped(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -605,6 +626,7 @@ func TestAWSUnknownResourceTypeSkipped(t *testing.T) {
 // --- HCL Content Verification Tests ---
 
 func TestAWSHCLContent(t *testing.T) {
+	t.Parallel()
 	adapter := &AWSAdapter{}
 	config := &DeployConfig{
 		Provider:    AWS,
@@ -640,6 +662,7 @@ func TestAWSHCLContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if !strings.Contains(tf, tt.resource) {
 				t.Errorf("HCL output missing resource type %q", tt.resource)
 			}
@@ -648,6 +671,7 @@ func TestAWSHCLContent(t *testing.T) {
 }
 
 func TestGCPHCLContent(t *testing.T) {
+	t.Parallel()
 	adapter := &GCPAdapter{}
 	config := &DeployConfig{
 		Provider:    GCP,
@@ -683,6 +707,7 @@ func TestGCPHCLContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if !strings.Contains(tf, tt.resource) {
 				t.Errorf("HCL output missing resource type %q", tt.resource)
 			}
@@ -691,6 +716,7 @@ func TestGCPHCLContent(t *testing.T) {
 }
 
 func TestAzureHCLContent(t *testing.T) {
+	t.Parallel()
 	adapter := &AzureAdapter{}
 	config := &DeployConfig{
 		Provider:    Azure,
@@ -726,6 +752,7 @@ func TestAzureHCLContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if !strings.Contains(tf, tt.resource) {
 				t.Errorf("HCL output missing resource type %q", tt.resource)
 			}

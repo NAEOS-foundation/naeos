@@ -10,7 +10,7 @@ import (
 
 type Entry struct {
 	Key       string
-	Value     interface{}
+	Value     any
 	ExpiresAt time.Time
 	Size      int
 }
@@ -46,7 +46,7 @@ func New(capacity int, ttl time.Duration) *Cache {
 	}
 }
 
-func (c *Cache) Get(key string) (interface{}, bool) {
+func (c *Cache) Get(key string) (any, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -66,11 +66,11 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (c *Cache) Set(key string, value interface{}) {
+func (c *Cache) Set(key string, value any) {
 	c.SetWithTTL(key, value, c.ttl)
 }
 
-func (c *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
+func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -255,11 +255,11 @@ func NewHTTPCache(ttl time.Duration) *HTTPCache {
 	}
 }
 
-func (h *HTTPCache) Get(key string) (interface{}, bool) {
+func (h *HTTPCache) Get(key string) (any, bool) {
 	return h.cache.Get(key)
 }
 
-func (h *HTTPCache) Set(key string, value interface{}) {
+func (h *HTTPCache) Set(key string, value any) {
 	h.cache.Set(key, value)
 }
 

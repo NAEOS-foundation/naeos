@@ -1,7 +1,7 @@
 # NAEOS Foundation — NAEOS
 
 [![CI](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg)](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Go Version](https://img.shields.io/badge/go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/NAEOS-foundation/naeos)](https://goreportcard.com/report/github.com/NAEOS-foundation/naeos)
 [![Release](https://img.shields.io/github/v/release/NAEOS-foundation/naeos)](https://github.com/NAEOS-foundation/naeos/releases)

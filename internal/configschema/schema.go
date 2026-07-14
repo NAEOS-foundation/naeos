@@ -61,7 +61,7 @@ func ValidateFile(path string) ([]ValidationError, error) {
 }
 
 func ValidateData(data []byte, format string) []ValidationError {
-	var config map[string]interface{}
+	var config map[string]any
 	switch format {
 	case "yaml", "yml":
 		if err := yaml.Unmarshal(data, &config); err != nil {
@@ -76,7 +76,7 @@ func ValidateData(data []byte, format string) []ValidationError {
 	return ValidateConfig(config)
 }
 
-func ValidateConfig(config map[string]interface{}) []ValidationError {
+func ValidateConfig(config map[string]any) []ValidationError {
 	schema := DefaultSchema()
 	var errors []ValidationError
 
@@ -105,7 +105,7 @@ func ValidateConfig(config map[string]interface{}) []ValidationError {
 	return errors
 }
 
-func validateType(val interface{}, expected string) bool {
+func validateType(val any, expected string) bool {
 	switch expected {
 	case "string":
 		_, ok := val.(string)
@@ -120,17 +120,17 @@ func validateType(val interface{}, expected string) bool {
 		}
 		return false
 	case "array":
-		_, ok := val.([]interface{})
+		_, ok := val.([]any)
 		return ok
 	case "object":
-		_, ok := val.(map[string]interface{})
+		_, ok := val.(map[string]any)
 		return ok
 	}
 	return true
 }
 
 func validateYAML(data []byte) ([]ValidationError, error) {
-	var config map[string]interface{}
+	var config map[string]any
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return []ValidationError{{Field: "_root", Message: "invalid YAML: " + err.Error()}}, nil
 	}
@@ -138,7 +138,7 @@ func validateYAML(data []byte) ([]ValidationError, error) {
 }
 
 func validateJSON(data []byte) ([]ValidationError, error) {
-	var config map[string]interface{}
+	var config map[string]any
 	if err := json.Unmarshal(data, &config); err != nil {
 		return []ValidationError{{Field: "_root", Message: "invalid JSON: " + err.Error()}}, nil
 	}

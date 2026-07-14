@@ -14,7 +14,7 @@ import (
 // Config Store
 
 type Config struct {
-	data      map[string]interface{}
+	data      map[string]any
 	version   int
 	lastMod   time.Time
 	filePath  string
@@ -22,11 +22,11 @@ type Config struct {
 	mu        sync.RWMutex
 }
 
-type ConfigWatcher func(old, new map[string]interface{})
+type ConfigWatcher func(old, new map[string]any)
 
 func New(filePath string) *Config {
 	return &Config{
-		data:     make(map[string]interface{}),
+		data:     make(map[string]any),
 		filePath: filePath,
 	}
 }
@@ -40,7 +40,7 @@ func (c *Config) Load() error {
 		return fmt.Errorf("failed to read config: %w", err)
 	}
 
-	var newConfig map[string]interface{}
+	var newConfig map[string]any
 
 	ext := filepath.Ext(c.filePath)
 	switch ext {
@@ -67,7 +67,7 @@ func (c *Config) Load() error {
 	return nil
 }
 
-func (c *Config) Get(key string) (interface{}, bool) {
+func (c *Config) Get(key string) (any, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -111,11 +111,11 @@ func (c *Config) GetBool(key string, defaultValue bool) bool {
 	return defaultValue
 }
 
-func (c *Config) Set(key string, value interface{}) {
+func (c *Config) Set(key string, value any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	old := make(map[string]interface{})
+	old := make(map[string]any)
 	for k, v := range c.data {
 		old[k] = v
 	}
@@ -129,7 +129,7 @@ func (c *Config) Set(key string, value interface{}) {
 	}
 }
 
-func (c *Config) SetAll(data map[string]interface{}) {
+func (c *Config) SetAll(data map[string]any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -194,11 +194,11 @@ func (c *Config) Save() error {
 	return os.WriteFile(c.filePath, data, 0644)
 }
 
-func (c *Config) Snapshot() map[string]interface{} {
+func (c *Config) Snapshot() map[string]any {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	snapshot := make(map[string]interface{})
+	snapshot := make(map[string]any)
 	for k, v := range c.data {
 		snapshot[k] = v
 	}
@@ -318,16 +318,16 @@ func (m *Manager) ReloadAll() error {
 // Diff
 
 type ConfigDiff struct {
-	Added    map[string]interface{}
-	Removed  map[string]interface{}
-	Modified map[string]interface{}
+	Added    map[string]any
+	Removed  map[string]any
+	Modified map[string]any
 }
 
-func Diff(old, new map[string]interface{}) *ConfigDiff {
+func Diff(old, new map[string]any) *ConfigDiff {
 	diff := &ConfigDiff{
-		Added:    make(map[string]interface{}),
-		Removed:  make(map[string]interface{}),
-		Modified: make(map[string]interface{}),
+		Added:    make(map[string]any),
+		Removed:  make(map[string]any),
+		Modified: make(map[string]any),
 	}
 
 	for key, newVal := range new {
@@ -335,7 +335,7 @@ func Diff(old, new map[string]interface{}) *ConfigDiff {
 		if !exists {
 			diff.Added[key] = newVal
 		} else if fmt.Sprintf("%v", oldVal) != fmt.Sprintf("%v", newVal) {
-			diff.Modified[key] = map[string]interface{}{
+			diff.Modified[key] = map[string]any{
 				"old": oldVal,
 				"new": newVal,
 			}

@@ -35,8 +35,8 @@ type ServiceModification struct {
 
 type FieldChange struct {
 	Field    string
-	OldValue interface{}
-	NewValue interface{}
+	OldValue any
+	NewValue any
 }
 
 func ComputeNEIRDiff(old, new *model.NEIR) *NEIRDiff {

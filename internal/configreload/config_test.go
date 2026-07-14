@@ -83,7 +83,7 @@ func TestOnChange(t *testing.T) {
 	c := New("config.json")
 
 	var called bool
-	c.OnChange(func(old, new map[string]interface{}) {
+	c.OnChange(func(old, new map[string]any) {
 		called = true
 	})
 
@@ -155,7 +155,7 @@ func TestSetAll(t *testing.T) {
 
 	c.Set("old", "value")
 
-	newData := map[string]interface{}{
+	newData := map[string]any{
 		"new": "value",
 	}
 
@@ -242,13 +242,13 @@ func TestManagerReloadAll(t *testing.T) {
 }
 
 func TestDiff(t *testing.T) {
-	old := map[string]interface{}{
+	old := map[string]any{
 		"a": 1,
 		"b": 2,
 		"c": 3,
 	}
 
-	new := map[string]interface{}{
+	new := map[string]any{
 		"b": 20,
 		"c": 3,
 		"d": 4,

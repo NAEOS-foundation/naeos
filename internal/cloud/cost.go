@@ -6,21 +6,25 @@ import (
 	"strings"
 )
 
+// CostEstimate holds the total and per-resource monthly cost estimate.
 type CostEstimate struct {
 	TotalMonthlyUSD float64            `json:"total_monthly_usd"`
 	Breakdown       map[string]float64 `json:"breakdown"`
 	Currency        string             `json:"currency"`
 }
 
+// ResourceCost associates a resource type with its monthly cost.
 type ResourceCost struct {
 	ResourceType string  `json:"resource_type"`
 	MonthlyUSD   float64 `json:"monthly_usd"`
 }
 
+// CostEstimator calculates cost estimates for cloud resources.
 type CostEstimator struct {
 	pricing map[string]map[string]float64
 }
 
+// NewCostEstimator creates a cost estimator with built-in pricing data.
 func NewCostEstimator() *CostEstimator {
 	ce := &CostEstimator{
 		pricing: make(map[string]map[string]float64),
@@ -73,6 +77,7 @@ func (ce *CostEstimator) loadPricing() {
 	}
 }
 
+// EstimateCost returns the total monthly cost for the given resources.
 func (ce *CostEstimator) EstimateCost(provider string, resources []Resource) CostEstimate {
 	providerPricing, ok := ce.pricing[provider]
 	if !ok {
@@ -103,6 +108,7 @@ func (ce *CostEstimator) EstimateCost(provider string, resources []Resource) Cos
 	}
 }
 
+// EstimateCostByType returns per-resource-type cost breakdown.
 func (ce *CostEstimator) EstimateCostByType(provider string, resources []Resource) []ResourceCost {
 	providerPricing, ok := ce.pricing[provider]
 	if !ok {
@@ -126,6 +132,7 @@ func (ce *CostEstimator) EstimateCostByType(provider string, resources []Resourc
 	return costs
 }
 
+// FormatCost returns a human-readable cost breakdown string.
 func (e CostEstimate) FormatCost() string {
 	if len(e.Breakdown) == 0 {
 		return fmt.Sprintf("Estimated cost: $0.00 %s/month", e.Currency)

@@ -116,7 +116,7 @@ func (r *RemoteRegistry) Install(name, version string) (string, error) {
 	}
 
 	metaPath := filepath.Join(r.installDir, name+".meta.json")
-	meta := map[string]interface{}{
+	meta := map[string]any{
 		"name":        plugin.Name,
 		"version":     plugin.Version,
 		"description": plugin.Description,
@@ -139,16 +139,16 @@ func (r *RemoteRegistry) Uninstall(name string) error {
 	return nil
 }
 
-func (r *RemoteRegistry) Installed() ([]map[string]interface{}, error) {
+func (r *RemoteRegistry) Installed() ([]map[string]any, error) {
 	entries, err := os.ReadDir(r.installDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, nil // Install directory does not exist — no plugins installed
 		}
 		return nil, err
 	}
 
-	var plugins []map[string]interface{}
+	var plugins []map[string]any
 	for _, entry := range entries {
 		if entry.Name() == "" || entry.IsDir() {
 			continue
@@ -158,7 +158,7 @@ func (r *RemoteRegistry) Installed() ([]map[string]interface{}, error) {
 			if err != nil {
 				continue
 			}
-			var meta map[string]interface{}
+			var meta map[string]any
 			if json.Unmarshal(data, &meta) == nil {
 				plugins = append(plugins, meta)
 			}

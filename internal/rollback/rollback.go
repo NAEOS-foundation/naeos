@@ -64,7 +64,7 @@ func (s *SnapshotStore) List() ([]Snapshot, error) {
 	entries, err := os.ReadDir(snapDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, nil // Snapshot directory does not exist yet — empty list
 		}
 		return nil, err
 	}

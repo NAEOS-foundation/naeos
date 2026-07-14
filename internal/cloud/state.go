@@ -12,6 +12,7 @@ import (
 	naeoserrors "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
+// DeploymentRecord stores the state of a completed cloud deployment.
 type DeploymentRecord struct {
 	Project          string           `json:"project"`
 	Provider         CloudProvider    `json:"provider"`
@@ -23,17 +24,20 @@ type DeploymentRecord struct {
 	Status           string           `json:"status"`
 }
 
+// StateManager persists deployment records to disk.
 type StateManager struct {
 	mu      sync.RWMutex
 	baseDir string
 }
 
+// NewStateManager creates a state manager using ~/.naeos/cloud as the base directory.
 func NewStateManager() *StateManager {
 	home, _ := os.UserHomeDir()
 	base := filepath.Join(home, ".naeos", "cloud")
 	return &StateManager{baseDir: base}
 }
 
+// NewStateManagerWithDir creates a state manager with a custom base directory.
 func NewStateManagerWithDir(baseDir string) *StateManager {
 	return &StateManager{baseDir: baseDir}
 }
@@ -42,6 +46,7 @@ func (s *StateManager) deploymentPath(project, provider string) string {
 	return filepath.Join(s.baseDir, project, string(provider), "deployment.json")
 }
 
+// Save persists a deployment record to disk.
 func (s *StateManager) Save(record *DeploymentRecord) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -74,6 +79,7 @@ func (s *StateManager) Save(record *DeploymentRecord) error {
 	return nil
 }
 
+// Load retrieves a deployment record by project and provider.
 func (s *StateManager) Load(project string, provider CloudProvider) (*DeploymentRecord, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -94,6 +100,7 @@ func (s *StateManager) Load(project string, provider CloudProvider) (*Deployment
 	return &record, nil
 }
 
+// List returns all deployment records sorted by timestamp descending.
 func (s *StateManager) List() ([]DeploymentRecord, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -140,6 +147,7 @@ func (s *StateManager) List() ([]DeploymentRecord, error) {
 	return records, nil
 }
 
+// Delete removes a deployment record from disk.
 func (s *StateManager) Delete(project string, provider CloudProvider) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -25,7 +25,7 @@ type TypeDefinition struct {
 	Name     string
 	Type     SpecType
 	Required bool
-	Default  interface{}
+	Default  any
 	Constraints []Constraint
 	Items    *TypeDefinition
 	Properties map[string]*TypeDefinition
@@ -35,14 +35,14 @@ type TypeDefinition struct {
 
 type Constraint struct {
 	Type  string
-	Value interface{}
+	Value any
 }
 
 type ValidationRule struct {
 	Name     string
 	Field    string
 	Operator string
-	Value    interface{}
+	Value    any
 	Message  string
 }
 
@@ -57,7 +57,7 @@ type ValidationSchema struct {
 type CustomValidator struct {
 	Name   string
 	Func   string
-	Params map[string]interface{}
+	Params map[string]any
 }
 
 // Type Registry
@@ -110,7 +110,7 @@ func (b *TypeBuilder) Required() *TypeBuilder {
 	return b
 }
 
-func (b *TypeBuilder) Default(val interface{}) *TypeBuilder {
+func (b *TypeBuilder) Default(val any) *TypeBuilder {
 	b.def.Default = val
 	return b
 }
@@ -174,7 +174,7 @@ func NewValidationEngine(schema *ValidationSchema) *ValidationEngine {
 	return &ValidationEngine{schema: schema}
 }
 
-func (v *ValidationEngine) Validate(data map[string]interface{}) []ValidationError {
+func (v *ValidationEngine) Validate(data map[string]any) []ValidationError {
 	var errors []ValidationError
 
 	// Check required fields
@@ -188,7 +188,7 @@ func (v *ValidationEngine) Validate(data map[string]interface{}) []ValidationErr
 	}
 
 	// Check unique fields
-	seen := make(map[interface{}]bool)
+	seen := make(map[any]bool)
 	for _, field := range v.schema.Unique {
 		val, ok := data[field]
 		if !ok {
@@ -237,7 +237,7 @@ func (v *ValidationEngine) Validate(data map[string]interface{}) []ValidationErr
 	return errors
 }
 
-func (v *ValidationEngine) validateType(val interface{}, def *TypeDefinition) error {
+func (v *ValidationEngine) validateType(val any, def *TypeDefinition) error {
 	switch def.Type {
 	case TypeString:
 		s, ok := val.(string)
@@ -266,7 +266,7 @@ func (v *ValidationEngine) validateType(val interface{}, def *TypeDefinition) er
 		}
 		return nil
 	case TypeArray:
-		arr, ok := val.([]interface{})
+		arr, ok := val.([]any)
 		if !ok {
 			return fmt.Errorf("expected array, got %T", val)
 		}
@@ -279,7 +279,7 @@ func (v *ValidationEngine) validateType(val interface{}, def *TypeDefinition) er
 		}
 		return nil
 	case TypeObject:
-		obj, ok := val.(map[string]interface{})
+		obj, ok := val.(map[string]any)
 		if !ok {
 			return fmt.Errorf("expected object, got %T", val)
 		}
@@ -357,7 +357,7 @@ func (v *ValidationEngine) validateString(s string, def *TypeDefinition) error {
 	return nil
 }
 
-func (v *ValidationEngine) validateNumber(val interface{}, def *TypeDefinition) error {
+func (v *ValidationEngine) validateNumber(val any, def *TypeDefinition) error {
 	var num float64
 	switch n := val.(type) {
 	case int:
@@ -385,7 +385,7 @@ func (v *ValidationEngine) validateNumber(val interface{}, def *TypeDefinition) 
 	return nil
 }
 
-func (v *ValidationEngine) applyRule(data map[string]interface{}, rule *ValidationRule) error {
+func (v *ValidationEngine) applyRule(data map[string]any, rule *ValidationRule) error {
 	val, ok := data[rule.Field]
 	if !ok {
 		return nil

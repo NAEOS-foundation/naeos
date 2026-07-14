@@ -102,10 +102,10 @@ func TestConnectionPoolConcurrency(t *testing.T) {
 }
 
 func TestBatchProcessor(t *testing.T) {
-	processed := make([]interface{}, 0)
+	processed := make([]any, 0)
 	var mu sync.Mutex
 
-	bp := NewBatchProcessor("test", 3, func(item interface{}) error {
+	bp := NewBatchProcessor("test", 3, func(item any) error {
 		mu.Lock()
 		processed = append(processed, item)
 		mu.Unlock()
@@ -132,7 +132,7 @@ func TestBatchProcessor(t *testing.T) {
 }
 
 func TestBatchProcessorError(t *testing.T) {
-	bp := NewBatchProcessor("test", 3, func(item interface{}) error {
+	bp := NewBatchProcessor("test", 3, func(item any) error {
 		if item == "fail" {
 			return nil // simplified
 		}

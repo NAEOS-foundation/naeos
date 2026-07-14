@@ -14,7 +14,7 @@ type Span struct {
 	Name       string
 	StartTime  time.Time
 	EndTime    time.Time
-	Attributes map[string]interface{}
+	Attributes map[string]any
 	Events     []SpanEvent
 	Status     SpanStatus
 }
@@ -22,7 +22,7 @@ type Span struct {
 type SpanEvent struct {
 	Name       string
 	Timestamp  time.Time
-	Attributes map[string]interface{}
+	Attributes map[string]any
 }
 
 type SpanStatus struct {
@@ -57,7 +57,7 @@ func (t *Tracer) StartSpan(name string) *Span {
 		SpanID:     generateID(),
 		Name:       name,
 		StartTime:  time.Now(),
-		Attributes: make(map[string]interface{}),
+		Attributes: make(map[string]any),
 		Events:     make([]SpanEvent, 0),
 	}
 
@@ -89,7 +89,7 @@ func (t *Tracer) StartSpanWithParent(name, parentID string) *Span {
 		ParentID:   parentID,
 		Name:       name,
 		StartTime:  time.Now(),
-		Attributes: make(map[string]interface{}),
+		Attributes: make(map[string]any),
 		Events:     make([]SpanEvent, 0),
 	}
 
@@ -123,7 +123,7 @@ func (t *Tracer) EndSpan(span *Span) {
 	span.EndTime = time.Now()
 }
 
-func (t *Tracer) AddEvent(span *Span, name string, attributes map[string]interface{}) {
+func (t *Tracer) AddEvent(span *Span, name string, attributes map[string]any) {
 	event := SpanEvent{
 		Name:       name,
 		Timestamp:  time.Now(),
@@ -154,7 +154,7 @@ type LogEntry struct {
 	Timestamp  time.Time
 	Level      LogLevel
 	Message    string
-	Attributes map[string]interface{}
+	Attributes map[string]any
 	Source     string
 }
 
@@ -173,23 +173,23 @@ func NewLogger(name string, level LogLevel) *Logger {
 	}
 }
 
-func (l *Logger) Debug(msg string, attrs map[string]interface{}) {
+func (l *Logger) Debug(msg string, attrs map[string]any) {
 	l.log(LogLevelDebug, msg, attrs)
 }
 
-func (l *Logger) Info(msg string, attrs map[string]interface{}) {
+func (l *Logger) Info(msg string, attrs map[string]any) {
 	l.log(LogLevelInfo, msg, attrs)
 }
 
-func (l *Logger) Warn(msg string, attrs map[string]interface{}) {
+func (l *Logger) Warn(msg string, attrs map[string]any) {
 	l.log(LogLevelWarn, msg, attrs)
 }
 
-func (l *Logger) Error(msg string, attrs map[string]interface{}) {
+func (l *Logger) Error(msg string, attrs map[string]any) {
 	l.log(LogLevelError, msg, attrs)
 }
 
-func (l *Logger) log(level LogLevel, msg string, attrs map[string]interface{}) {
+func (l *Logger) log(level LogLevel, msg string, attrs map[string]any) {
 	if level < l.level {
 		return
 	}

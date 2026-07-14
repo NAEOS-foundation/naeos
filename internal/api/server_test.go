@@ -106,7 +106,7 @@ func TestSpecValidateEndpointInvalid(t *testing.T) {
 	var resp APIResponse
 	json.NewDecoder(w.Body).Decode(&resp)
 	data, _ := json.Marshal(resp.Data)
-	var result map[string]interface{}
+	var result map[string]any
 	json.Unmarshal(data, &result)
 	if result["valid"].(bool) {
 		t.Error("expected valid to be false for empty spec")
@@ -207,7 +207,7 @@ func TestPipelineStatusEndpoint(t *testing.T) {
 	}
 
 	data, _ := json.Marshal(resp.Data)
-	var result map[string]interface{}
+	var result map[string]any
 	json.Unmarshal(data, &result)
 
 	if result["status"] != "idle" {
@@ -304,7 +304,7 @@ func TestContextGenerateMissingSpec(t *testing.T) {
 func TestMCPMessageEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "initialize",
 		"id":      1,
@@ -319,7 +319,7 @@ func TestMCPMessageEndpoint(t *testing.T) {
 		t.Errorf("expected status 200, got %d", w.Code)
 	}
 
-	var rpcResp map[string]interface{}
+	var rpcResp map[string]any
 	if err := json.NewDecoder(w.Body).Decode(&rpcResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
@@ -334,7 +334,7 @@ func TestMCPMessageEndpoint(t *testing.T) {
 func TestMCPToolsList(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "tools/list",
 		"id":      2,
@@ -349,7 +349,7 @@ func TestMCPToolsList(t *testing.T) {
 		t.Errorf("expected status 200, got %d", w.Code)
 	}
 
-	var rpcResp map[string]interface{}
+	var rpcResp map[string]any
 	if err := json.NewDecoder(w.Body).Decode(&rpcResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
@@ -361,7 +361,7 @@ func TestMCPToolsList(t *testing.T) {
 func TestMCPMethodNotFound(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "nonexistent/method",
 		"id":      3,
@@ -376,7 +376,7 @@ func TestMCPMethodNotFound(t *testing.T) {
 		t.Errorf("expected status 200 (error is in JSON-RPC body), got %d", w.Code)
 	}
 
-	var rpcResp map[string]interface{}
+	var rpcResp map[string]any
 	if err := json.NewDecoder(w.Body).Decode(&rpcResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
@@ -396,7 +396,7 @@ func TestMCPMethodNotAllowed(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status 200, got %d", w.Code)
 	}
-	var rpcResp map[string]interface{}
+	var rpcResp map[string]any
 	if err := json.NewDecoder(w.Body).Decode(&rpcResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
@@ -408,11 +408,11 @@ func TestMCPMethodNotAllowed(t *testing.T) {
 func TestCloudPlanEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"provider": "aws",
 		"project":  "test-project",
 		"region":   "us-east-1",
-		"resources": []map[string]interface{}{
+		"resources": []map[string]any{
 			{"name": "bucket1", "type": "storage"},
 		},
 	})
@@ -438,7 +438,7 @@ func TestCloudPlanEndpoint(t *testing.T) {
 func TestCloudPlanMissingProvider(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"project": "test-project",
 	})
 	req := httptest.NewRequest("POST", "/api/v1/cloud/plan", bytes.NewReader(body))
@@ -455,7 +455,7 @@ func TestCloudPlanMissingProvider(t *testing.T) {
 func TestCloudPlanInvalidProvider(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"provider": "invalid",
 		"project":  "test-project",
 	})
@@ -486,11 +486,11 @@ func TestCloudPlanMethodNotAllowed(t *testing.T) {
 func TestCloudDeployEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"provider": "aws",
 		"project":  "test-project",
 		"region":   "us-east-1",
-		"resources": []map[string]interface{}{
+		"resources": []map[string]any{
 			{"name": "bucket1", "type": "storage"},
 		},
 	})
@@ -509,7 +509,7 @@ func TestCloudDeployEndpoint(t *testing.T) {
 func TestCloudDeployMissingProvider(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"project": "test-project",
 	})
 	req := httptest.NewRequest("POST", "/api/v1/cloud/deploy", bytes.NewReader(body))
@@ -539,11 +539,11 @@ func TestCloudDeployMethodNotAllowed(t *testing.T) {
 func TestCloudDestroyEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"provider": "aws",
 		"project":  "test-project",
 		"region":   "us-east-1",
-		"resources": []map[string]interface{}{
+		"resources": []map[string]any{
 			{"name": "bucket1", "type": "storage"},
 		},
 	})
@@ -562,7 +562,7 @@ func TestCloudDestroyEndpoint(t *testing.T) {
 func TestCloudDestroyMissingProvider(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"project": "test-project",
 	})
 	req := httptest.NewRequest("POST", "/api/v1/cloud/destroy", bytes.NewReader(body))
@@ -579,7 +579,7 @@ func TestCloudDestroyMissingProvider(t *testing.T) {
 func TestCloudDestroyInvalidProvider(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
-	body, _ := json.Marshal(map[string]interface{}{
+	body, _ := json.Marshal(map[string]any{
 		"provider": "bogus",
 		"project":  "test-project",
 	})
@@ -752,7 +752,7 @@ func TestConfigSchemaEndpoint(t *testing.T) {
 	}
 
 	data, _ := json.Marshal(resp.Data)
-	var result map[string]interface{}
+	var result map[string]any
 	json.Unmarshal(data, &result)
 
 	if result["type"] != "object" {
@@ -784,7 +784,7 @@ func TestPipelinesEndpoint(t *testing.T) {
 	}
 
 	data, _ := json.Marshal(resp.Data)
-	var result map[string]interface{}
+	var result map[string]any
 	json.Unmarshal(data, &result)
 
 	if result["total"] != float64(0) {

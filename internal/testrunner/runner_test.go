@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewRunnerDefaults(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{})
 	if r == nil {
 		t.Fatal("expected non-nil runner")
@@ -21,6 +22,7 @@ func TestNewRunnerDefaults(t *testing.T) {
 }
 
 func TestNewRunnerCustom(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{
 		WorkingDir: "/tmp/test",
 		Timeout:    60,
@@ -36,6 +38,7 @@ func TestNewRunnerCustom(t *testing.T) {
 }
 
 func TestRunLanguageUnsupported(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{WorkingDir: "."})
 	_, err := r.RunLanguage("cobol")
 	if err == nil {
@@ -47,6 +50,7 @@ func TestRunLanguageUnsupported(t *testing.T) {
 }
 
 func TestRunAllEmpty(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{
 		WorkingDir: "/nonexistent-dir",
 		Languages:  []string{},
@@ -61,6 +65,7 @@ func TestRunAllEmpty(t *testing.T) {
 }
 
 func TestFormatResultsAllPass(t *testing.T) {
+	t.Parallel()
 	results := []TestResult{
 		{Language: "go", Passed: true, Tests: 5},
 		{Language: "python", Passed: true, Tests: 3},
@@ -79,6 +84,7 @@ func TestFormatResultsAllPass(t *testing.T) {
 }
 
 func TestFormatResultsSomeFail(t *testing.T) {
+	t.Parallel()
 	results := []TestResult{
 		{Language: "go", Passed: true, Tests: 5},
 		{Language: "rust", Passed: false, Failures: 2},
@@ -97,6 +103,7 @@ func TestFormatResultsSomeFail(t *testing.T) {
 }
 
 func TestParseGoOutput(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{})
 	result := &TestResult{
 		Output: "ok  \tpkg1\t0.01s\nok  \tpkg2\t0.02s\nFAIL\tpkg3\t0.03s",
@@ -112,6 +119,7 @@ func TestParseGoOutput(t *testing.T) {
 }
 
 func TestParseGoOutputEmpty(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{})
 	result := &TestResult{Output: ""}
 	r.parseGoOutput(result)
@@ -125,6 +133,7 @@ func TestParseGoOutputEmpty(t *testing.T) {
 }
 
 func TestDetectLanguagesGo(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{WorkingDir: "../.."})
 	langs := r.detectLanguages()
 	found := false
@@ -140,6 +149,7 @@ func TestDetectLanguagesGo(t *testing.T) {
 }
 
 func TestDetectLanguagesTypescript(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-ts-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -166,6 +176,7 @@ func TestDetectLanguagesTypescript(t *testing.T) {
 }
 
 func TestDetectLanguagesPython(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-py-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -192,6 +203,7 @@ func TestDetectLanguagesPython(t *testing.T) {
 }
 
 func TestDetectLanguagesJava(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-java-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -218,6 +230,7 @@ func TestDetectLanguagesJava(t *testing.T) {
 }
 
 func TestDetectLanguagesRust(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-rust-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -244,6 +257,7 @@ func TestDetectLanguagesRust(t *testing.T) {
 }
 
 func TestDetectLanguagesNone(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-empty-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -259,6 +273,7 @@ func TestDetectLanguagesNone(t *testing.T) {
 }
 
 func TestRunLanguageNodeNotFound(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-node-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -276,6 +291,7 @@ func TestRunLanguageNodeNotFound(t *testing.T) {
 }
 
 func TestRunLanguageJavaNotFound(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-java-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -293,6 +309,7 @@ func TestRunLanguageJavaNotFound(t *testing.T) {
 }
 
 func TestRunAllWithErrors(t *testing.T) {
+	t.Parallel()
 	r := NewRunner(TestConfig{
 		WorkingDir: ".",
 		Languages:  []string{"cobol"},
@@ -316,6 +333,7 @@ func TestRunAllWithErrors(t *testing.T) {
 }
 
 func TestRunGoTests(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-gotest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -333,6 +351,7 @@ func TestRunGoTests(t *testing.T) {
 import "testing"
 
 func TestSample(t *testing.T) {
+	t.Parallel()
 	if true != true {
 		t.Fatal("unexpected")
 	}
@@ -359,6 +378,7 @@ func TestSample(t *testing.T) {
 }
 
 func TestRunNodeTestsSuccess(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-nodetest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -387,6 +407,7 @@ func TestRunNodeTestsSuccess(t *testing.T) {
 }
 
 func TestRunNodeTestsPnpm(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-pnpmtest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -415,6 +436,7 @@ func TestRunNodeTestsPnpm(t *testing.T) {
 }
 
 func TestRunPythonTests(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunnerpytest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -436,6 +458,7 @@ func TestRunPythonTests(t *testing.T) {
 }
 
 func TestRunJavaTestsWithPom(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-maventest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -462,6 +485,7 @@ func TestRunJavaTestsWithPom(t *testing.T) {
 }
 
 func TestRunJavaTestsWithGradle(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-gradletest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -488,6 +512,7 @@ func TestRunJavaTestsWithGradle(t *testing.T) {
 }
 
 func TestRunRustTests(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "testrunner-rusttest-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)

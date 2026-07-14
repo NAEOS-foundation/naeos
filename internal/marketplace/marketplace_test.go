@@ -1,9 +1,13 @@
 package marketplace
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewClient(t *testing.T) {
@@ -250,5 +254,75 @@ func TestDefaultEntriesVersion(t *testing.T) {
 	}
 	if entry2.Version == "" {
 		t.Error("expected non-empty version for rust-web-service")
+	}
+}
+
+func TestFetchPluginNotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error":"not found"}`))
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	_, err := rr.List()
+	if err == nil {
+		t.Fatal("expected error for 404 response")
+	}
+	if !strings.Contains(err.Error(), "status 404") {
+		t.Errorf("expected 404 in error, got: %v", err)
+	}
+}
+
+func TestFetchPluginTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(2 * time.Second)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"plugins":[]}`))
+	}))
+	defer srv.Close()
+
+	rr := &RemoteRegistry{
+		baseURL:    srv.URL,
+		installDir: t.TempDir(),
+		httpClient: &http.Client{Timeout: 50 * time.Millisecond},
+	}
+	_, err := rr.List()
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+}
+
+func TestFetchPluginInvalidJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{not valid json`))
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	_, err := rr.List()
+	if err == nil {
+		t.Fatal("expected error for invalid JSON response")
+	}
+	if !strings.Contains(err.Error(), "decode") {
+		t.Errorf("expected decode error, got: %v", err)
+	}
+}
+
+func TestSearchPluginsEmpty(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"plugins":[]}`))
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	results, err := rr.Search("")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected empty results, got %d", len(results))
 	}
 }

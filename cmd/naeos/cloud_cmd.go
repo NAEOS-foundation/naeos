@@ -62,7 +62,7 @@ func loadCloudConfigFromSpec(path string) (*cloud.DeployConfig, error) {
 		if resType == "" {
 			resType = r.Kind
 		}
-		specMap := make(map[string]interface{})
+		specMap := make(map[string]any)
 		for k, v := range r.Spec {
 			specMap[k] = v
 		}

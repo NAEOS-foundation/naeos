@@ -235,7 +235,7 @@ func TestWASMPluginExecuteJSONRoundtrip(t *testing.T) {
 	}
 
 	respJSON, _ := json.Marshal(resp)
-	var parsed map[string]interface{}
+	var parsed map[string]any
 	if err := json.Unmarshal(respJSON, &parsed); err != nil {
 		t.Fatalf("response is not valid JSON: %v", err)
 	}

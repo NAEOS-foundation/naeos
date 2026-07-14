@@ -10,13 +10,17 @@ import (
 	"time"
 )
 
+// LLMProvider identifies a supported LLM provider.
 type LLMProvider string
 
 const (
+	// ProviderOpenAI is the OpenAI LLM provider.
 	ProviderOpenAI    LLMProvider = "openai"
+	// ProviderAnthropic is the Anthropic LLM provider.
 	ProviderAnthropic LLMProvider = "anthropic"
 )
 
+// LLMConfig holds configuration for an LLM service.
 type LLMConfig struct {
 	Provider  LLMProvider
 	APIKey    string
@@ -26,6 +30,7 @@ type LLMConfig struct {
 	BaseURL   string
 }
 
+// LLMService communicates with external LLM APIs to enrich specifications.
 type LLMService struct {
 	config     LLMConfig
 	httpClient *http.Client
@@ -69,6 +74,7 @@ type anthropicResponse struct {
 	} `json:"error,omitempty"`
 }
 
+// NewLLMService creates an LLM service with the given configuration.
 func NewLLMService(config LLMConfig) *LLMService {
 	if config.Model == "" {
 		switch config.Provider {
@@ -93,6 +99,7 @@ func NewLLMService(config LLMConfig) *LLMService {
 	}
 }
 
+// EnrichSpec sends a specification to the LLM for enhancement with best practices.
 func (s *LLMService) EnrichSpec(specContent string) (string, error) {
 	prompt := fmt.Sprintf(`You are a platform engineering expert. Analyze this NAEOS specification and enrich it with best practices.
 Add any missing sections that would improve the specification. Keep the existing content intact.
@@ -104,6 +111,7 @@ Specification:
 	return s.callLLM(prompt)
 }
 
+// GenerateSuggestions asks the LLM to produce improvement suggestions for a specification.
 func (s *LLMService) GenerateSuggestions(specContent string) ([]Suggestion, error) {
 	prompt := fmt.Sprintf(`Analyze this NAEOS specification and return a JSON array of suggestions.
 Each suggestion should have: category, title, description, priority (high/medium/low).
@@ -125,6 +133,7 @@ Specification:
 	return suggestions, nil
 }
 
+// ExplainArchitecture asks the LLM to explain an architecture pattern in the context of the specification.
 func (s *LLMService) ExplainArchitecture(specContent, architecture string) (string, error) {
 	prompt := fmt.Sprintf(`Explain the architecture pattern "%s" in the context of this specification.
 Provide a clear, concise explanation suitable for a developer.

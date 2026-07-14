@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// AuditEvent represents a single auditable action performed by a user.
 type AuditEvent struct {
 	ID        string    `json:"id"`
 	Timestamp time.Time `json:"timestamp"`
@@ -22,15 +23,18 @@ type AuditEvent struct {
 	Details   string    `json:"details,omitempty"`
 }
 
+// Auditor is the interface for logging audit events.
 type Auditor interface {
 	Log(event AuditEvent) error
 }
 
+// FileAuditor writes audit events to a local log file.
 type FileAuditor struct {
 	path string
 	mu   sync.Mutex
 }
 
+// NewFileAuditor creates a file-backed auditor that writes to ~/.naeos/audit.log.
 func NewFileAuditor(homeDir string) (*FileAuditor, error) {
 	dir := filepath.Join(homeDir, ".naeos")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -41,6 +45,7 @@ func NewFileAuditor(homeDir string) (*FileAuditor, error) {
 	}, nil
 }
 
+// Log appends an audit event to the log file.
 func (f *FileAuditor) Log(event AuditEvent) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -71,15 +76,18 @@ func (f *FileAuditor) Log(event AuditEvent) error {
 	return nil
 }
 
+// MemoryAuditor stores audit events in memory for testing.
 type MemoryAuditor struct {
 	events []AuditEvent
 	mu     sync.Mutex
 }
 
+// NewMemoryAuditor creates an in-memory auditor.
 func NewMemoryAuditor() *MemoryAuditor {
 	return &MemoryAuditor{}
 }
 
+// Log stores an audit event in memory.
 func (m *MemoryAuditor) Log(event AuditEvent) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -95,6 +103,7 @@ func (m *MemoryAuditor) Log(event AuditEvent) error {
 	return nil
 }
 
+// Events returns a copy of all stored audit events.
 func (m *MemoryAuditor) Events() []AuditEvent {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -104,6 +113,7 @@ func (m *MemoryAuditor) Events() []AuditEvent {
 	return events
 }
 
+// Clear removes all stored audit events.
 func (m *MemoryAuditor) Clear() {
 	m.mu.Lock()
 	defer m.mu.Unlock()

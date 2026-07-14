@@ -2,6 +2,11 @@ package diff
 
 import (
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/internal/neir/model"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 )
 
 func TestComputeDiffAdded(t *testing.T) {
@@ -109,4 +114,108 @@ func TestRemovedLines(t *testing.T) {
 			t.Errorf("expected ChangeRemoved, got %s", l.Type)
 		}
 	}
+}
+
+func TestDiffNEIREmpty(t *testing.T) {
+	diff := ComputeNEIRDiff(&model.NEIR{}, &model.NEIR{})
+	if diff.Summary != "no changes" {
+		t.Errorf("expected 'no changes', got %q", diff.Summary)
+	}
+	if diff.ProjectDiff == nil {
+		t.Fatal("expected non-nil ProjectDiff")
+	}
+	if diff.ProjectDiff.NameChanged {
+		t.Error("expected NameChanged=false for empty NEIRs")
+	}
+}
+
+func TestDiffModulesSame(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp", Version: "1.0.0"},
+		Modules: []module.Module{
+			{Name: "core", Path: "./core"},
+			{Name: "util", Path: "./util"},
+		},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp", Version: "1.0.0"},
+		Modules: []module.Module{
+			{Name: "core", Path: "./core"},
+			{Name: "util", Path: "./util"},
+		},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if diff.Summary != "no changes" {
+		t.Errorf("expected 'no changes', got %q", diff.Summary)
+	}
+	if diff.ProjectDiff.NameChanged {
+		t.Error("expected no project name change")
+	}
+}
+
+func TestDiffModulesAdded(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Modules: []module.Module{
+			{Name: "core"},
+		},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Modules: []module.Module{
+			{Name: "core"},
+			{Name: "new-module"},
+		},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if diff.ServicesDiff == nil {
+		t.Fatal("expected non-nil ServicesDiff")
+	}
+	if len(diff.ServicesDiff.Added) != 0 || len(diff.ServicesDiff.Removed) != 0 {
+		t.Errorf("expected no service changes for module diff, added=%d removed=%d",
+			len(diff.ServicesDiff.Added), len(diff.ServicesDiff.Removed))
+	}
+	if !containsStrInDiff(diff.Summary, "no changes") {
+		t.Errorf("expected 'no changes' in summary, got %q", diff.Summary)
+	}
+}
+
+func TestDiffServicesRemoved(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080, Kind: service.KindHTTP},
+			{Name: "worker", Port: 9090, Kind: service.KindWorker},
+		},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080, Kind: service.KindHTTP},
+		},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if diff.ServicesDiff == nil {
+		t.Fatal("expected non-nil ServicesDiff")
+	}
+	if len(diff.ServicesDiff.Removed) != 1 {
+		t.Fatalf("expected 1 removed service, got %d", len(diff.ServicesDiff.Removed))
+	}
+	if diff.ServicesDiff.Removed[0].Name != "worker" {
+		t.Errorf("expected removed service 'worker', got %q", diff.ServicesDiff.Removed[0].Name)
+	}
+	if !containsStrInDiff(diff.Summary, "-1 services") {
+		t.Errorf("expected '-1 services' in summary, got %q", diff.Summary)
+	}
+}
+
+func containsStrInDiff(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || func() bool {
+		for i := 0; i <= len(s)-len(substr); i++ {
+			if s[i:i+len(substr)] == substr {
+				return true
+			}
+		}
+		return false
+	}())
 }

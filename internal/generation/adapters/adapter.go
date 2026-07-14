@@ -38,7 +38,7 @@ func All() map[language.Language]OutputAdapter {
 
 func GenerateForNEIR(neir *model.NEIR) ([]engine.Artifact, error) {
 	if neir == nil {
-		return nil, nil
+		return nil, nil // Nil input — nothing to generate, return empty result
 	}
 
 	languages := resolveLanguages(neir)

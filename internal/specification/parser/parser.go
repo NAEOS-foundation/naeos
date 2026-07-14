@@ -305,7 +305,7 @@ func parseYAMLNode(node *yaml.Node) (any, error) {
 
 func parseYAMLScalar(node *yaml.Node) (any, error) {
 	if node.Tag == "!!null" {
-		return nil, nil
+		return nil, nil // YAML null literal — represent as Go nil
 	}
 
 	switch node.Tag {
@@ -322,7 +322,7 @@ func parseYAMLScalar(node *yaml.Node) (any, error) {
 			return strconv.ParseBool(node.Value)
 		}
 		if node.Value == "null" || node.Value == "~" {
-			return nil, nil
+			return nil, nil // Explicit null/tilde value — represent as Go nil
 		}
 		if i, err := strconv.ParseInt(node.Value, 10, 64); err == nil {
 			return i, nil

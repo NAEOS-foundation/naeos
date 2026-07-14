@@ -5,11 +5,15 @@ import (
 	"time"
 )
 
+// CloudProvider identifies a supported cloud infrastructure provider.
 type CloudProvider string
 
 const (
+	// AWS is the Amazon Web Services provider.
 	AWS   CloudProvider = "aws"
+	// GCP is the Google Cloud Platform provider.
 	GCP   CloudProvider = "gcp"
+	// Azure is the Microsoft Azure provider.
 	Azure CloudProvider = "azure"
 )
 
@@ -28,6 +32,7 @@ const (
 	ResourceNetworking  = "networking"
 )
 
+// SupportedResourceTypes lists all abstract resource types across providers.
 var SupportedResourceTypes = []string{
 	ResourceStorage,
 	ResourceCompute,
@@ -42,6 +47,7 @@ var SupportedResourceTypes = []string{
 	ResourceNetworking,
 }
 
+// DeployConfig holds the parameters for a cloud deployment operation.
 type DeployConfig struct {
 	Provider    CloudProvider
 	Region      string
@@ -50,12 +56,14 @@ type DeployConfig struct {
 	Resources   []Resource
 }
 
+// Resource describes a single cloud resource to provision.
 type Resource struct {
 	Name string
 	Type string
-	Spec map[string]interface{}
+	Spec map[string]any
 }
 
+// DeployResult contains the outcome of a cloud deployment.
 type DeployResult struct {
 	Provider   CloudProvider
 	Resources  []DeployedResource
@@ -64,6 +72,7 @@ type DeployResult struct {
 	Timestamp  time.Time
 }
 
+// DeployedResource represents a cloud resource that has been provisioned.
 type DeployedResource struct {
 	Name string
 	Type string
@@ -71,11 +80,13 @@ type DeployedResource struct {
 	ARN  string
 }
 
+// PlanResult contains resources and cost estimates for a planned deployment.
 type PlanResult struct {
 	Resources     []Resource   `json:"resources"`
 	CostEstimate  CostEstimate `json:"cost_estimate"`
 }
 
+// CloudAdapter is the interface implemented by cloud provider adapters.
 type CloudAdapter interface {
 	Name() string
 	Provider() CloudProvider
@@ -92,6 +103,7 @@ var adapterCache = map[CloudProvider]CloudAdapter{
 	Azure: &AzureAdapter{},
 }
 
+// GetAdapter returns the CloudAdapter for the given provider.
 func GetAdapter(provider CloudProvider) (CloudAdapter, error) {
 	if adapter, ok := adapterCache[provider]; ok {
 		return adapter, nil

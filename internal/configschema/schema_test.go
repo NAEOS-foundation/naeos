@@ -7,7 +7,7 @@ import (
 )
 
 func TestValidateConfigRequired(t *testing.T) {
-	config := map[string]interface{}{
+	config := map[string]any{
 		"description": "no name",
 	}
 	errs := ValidateConfig(config)
@@ -23,7 +23,7 @@ func TestValidateConfigRequired(t *testing.T) {
 }
 
 func TestValidateConfigTypes(t *testing.T) {
-	config := map[string]interface{}{
+	config := map[string]any{
 		"name":    123,
 		"verbose": "notbool",
 	}
@@ -34,7 +34,7 @@ func TestValidateConfigTypes(t *testing.T) {
 }
 
 func TestValidateConfigValid(t *testing.T) {
-	config := map[string]interface{}{
+	config := map[string]any{
 		"name":    "myproject",
 		"version": "1.0.0",
 		"verbose": true,
@@ -70,7 +70,7 @@ func TestValidateDataInvalidJSON(t *testing.T) {
 }
 
 func TestValidateDataMissingRequired(t *testing.T) {
-	data, _ := json.Marshal(map[string]interface{}{
+	data, _ := json.Marshal(map[string]any{
 		"version": "1.0.0",
 	})
 	errs := ValidateData(data, "json")
@@ -178,7 +178,7 @@ func TestValidateTypeNumber(t *testing.T) {
 		t.Error("expected string to be invalid for 'number'")
 	}
 	// exercise ValidateConfig with number-typed value in a known property
-	config := map[string]interface{}{
+	config := map[string]any{
 		"name":    "project",
 		"verbose": float64(1),
 	}
@@ -197,15 +197,15 @@ func TestValidateTypeNumber(t *testing.T) {
 }
 
 func TestValidateTypeObject(t *testing.T) {
-	// map[string]interface{} should be valid for "object" type
-	obj := map[string]interface{}{"key": "value"}
+	// map[string]any should be valid for "object" type
+	obj := map[string]any{"key": "value"}
 	if !validateType(obj, "object") {
-		t.Error("expected map[string]interface{} to be valid for 'object'")
+		t.Error("expected map[string]any to be valid for 'object'")
 	}
 	// a slice should not be valid for "object"
-	slice := []interface{}{"a", "b"}
+	slice := []any{"a", "b"}
 	if validateType(slice, "object") {
-		t.Error("expected []interface{} to be invalid for 'object'")
+		t.Error("expected []any to be invalid for 'object'")
 	}
 	// string should not be valid for "object"
 	if validateType("string", "object") {

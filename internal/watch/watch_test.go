@@ -9,6 +9,7 @@ import (
 )
 
 func TestNewWatcher(t *testing.T) {
+	t.Parallel()
 	w := NewWatcher(time.Second, func(path string) {})
 	if w == nil {
 		t.Fatal("expected non-nil watcher")
@@ -19,6 +20,7 @@ func TestNewWatcher(t *testing.T) {
 }
 
 func TestNewWatcherDefaultInterval(t *testing.T) {
+	t.Parallel()
 	w := NewWatcher(0, func(path string) {})
 	if w.interval != 500*time.Millisecond {
 		t.Errorf("expected default interval 500ms, got %v", w.interval)
@@ -26,6 +28,7 @@ func TestNewWatcherDefaultInterval(t *testing.T) {
 }
 
 func TestAddDirectory(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	w := NewWatcher(time.Second, func(path string) {})
 	if err := w.AddDirectory(dir); err != nil {
@@ -37,6 +40,7 @@ func TestAddDirectory(t *testing.T) {
 }
 
 func TestAddDirectoryNotFound(t *testing.T) {
+	t.Parallel()
 	w := NewWatcher(time.Second, func(path string) {})
 	err := w.AddDirectory("/nonexistent/path")
 	if err == nil {
@@ -45,6 +49,7 @@ func TestAddDirectoryNotFound(t *testing.T) {
 }
 
 func TestAddFileAsDirectory(t *testing.T) {
+	t.Parallel()
 	tmpFile := filepath.Join(t.TempDir(), "file.txt")
 	os.WriteFile(tmpFile, []byte("test"), 0o600)
 	w := NewWatcher(time.Second, func(path string) {})
@@ -55,6 +60,7 @@ func TestAddFileAsDirectory(t *testing.T) {
 }
 
 func TestStartStop(t *testing.T) {
+	t.Parallel()
 	w := NewWatcher(time.Second, func(path string) {})
 	if w.IsRunning() {
 		t.Fatal("expected not running initially")
@@ -72,6 +78,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartTwice(t *testing.T) {
+	t.Parallel()
 	w := NewWatcher(time.Second, func(path string) {})
 	w.Start()
 	err := w.Start()
@@ -82,6 +89,7 @@ func TestStartTwice(t *testing.T) {
 }
 
 func TestSnapshot(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "file1.txt"), []byte("content1"), 0o600)
 	os.WriteFile(filepath.Join(dir, "file2.txt"), []byte("content2"), 0o600)
@@ -99,6 +107,7 @@ func TestSnapshot(t *testing.T) {
 }
 
 func TestDetectChanges(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "file1.txt"), []byte("content1"), 0o600)
 
@@ -126,6 +135,7 @@ func TestDetectChanges(t *testing.T) {
 }
 
 func TestPipelineWatcherShouldProcess(t *testing.T) {
+	t.Parallel()
 	pw := NewPipelineWatcher("spec.yaml", "out", func(ctx context.Context, input string) error {
 		return nil
 	})
@@ -151,6 +161,7 @@ func TestPipelineWatcherShouldProcess(t *testing.T) {
 }
 
 func TestPipelineWatcherNew(t *testing.T) {
+	t.Parallel()
 	called := false
 	pw := NewPipelineWatcher("spec.yaml", "output", func(ctx context.Context, input string) error {
 		called = true
@@ -186,6 +197,7 @@ func TestPipelineWatcherNew(t *testing.T) {
 }
 
 func TestDetectChangesModified(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	targetFile := filepath.Join(dir, "file.txt")
 	os.WriteFile(targetFile, []byte("original"), 0o600)
@@ -216,6 +228,7 @@ func TestDetectChangesModified(t *testing.T) {
 }
 
 func TestDetectChangesEmpty(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "file.txt"), []byte("content"), 0o600)
 
@@ -232,6 +245,7 @@ func TestDetectChangesEmpty(t *testing.T) {
 }
 
 func TestWatcherRunWithDebounce(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	onChangeCalled := make(chan string, 1)
@@ -279,6 +293,7 @@ func TestWatcherRunWithDebounce(t *testing.T) {
 }
 
 func TestPipelineWatcherStop(t *testing.T) {
+	t.Parallel()
 	pw := NewPipelineWatcher("spec.yaml", "", func(ctx context.Context, input string) error {
 		return nil
 	})
@@ -296,6 +311,7 @@ func TestPipelineWatcherStop(t *testing.T) {
 }
 
 func TestPipelineWatcherStartAndStop(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	specFile := filepath.Join(dir, "spec.yaml")
 	os.WriteFile(specFile, []byte("key: value"), 0o600)

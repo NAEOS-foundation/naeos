@@ -15,12 +15,12 @@ import (
 
 type Request struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]any `json:"params"`
 }
 
 type Response struct {
 	OK      bool        `json:"ok"`
-	Result  interface{} `json:"result,omitempty"`
+	Result  any `json:"result,omitempty"`
 	Error   string      `json:"error,omitempty"`
 	Elapsed int64       `json:"elapsed_ms"`
 }
@@ -85,7 +85,7 @@ func (p *WASMPlugin) Name() string        { return p.name }
 func (p *WASMPlugin) Version() string     { return p.version }
 func (p *WASMPlugin) Description() string { return p.description }
 
-func (p *WASMPlugin) Initialize(_ interface{}) error {
+func (p *WASMPlugin) Initialize(_ any) error {
 	return nil
 }
 

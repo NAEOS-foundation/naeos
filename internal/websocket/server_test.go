@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
+	t.Parallel()
 	s := NewServer()
 	if s == nil {
 		t.Fatal("expected server to be created")
@@ -14,6 +15,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestMessageSerialization(t *testing.T) {
+	t.Parallel()
 	msg := Message{
 		Type:    "test",
 		Payload: map[string]string{"key": "value"},
@@ -36,6 +38,7 @@ func TestMessageSerialization(t *testing.T) {
 }
 
 func TestBroadcast(t *testing.T) {
+	t.Parallel()
 	s := NewServer()
 	go s.Run()
 
@@ -47,6 +50,7 @@ func TestBroadcast(t *testing.T) {
 }
 
 func TestEventBroadcaster(t *testing.T) {
+	t.Parallel()
 	s := NewServer()
 	broadcaster := NewEventBroadcaster(s)
 	go s.Run()
@@ -60,6 +64,7 @@ func TestEventBroadcaster(t *testing.T) {
 }
 
 func TestGenerateID(t *testing.T) {
+	t.Parallel()
 	id1 := generateID()
 	id2 := generateID()
 
@@ -69,6 +74,7 @@ func TestGenerateID(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
+	t.Parallel()
 	s := NewServer()
 	go s.Run()
 	s.Stop()
@@ -99,6 +105,7 @@ func makeTestClient(s *Server, sendCap int) *Client {
 // --- new tests ---
 
 func TestServerRegisterAndUnregister(t *testing.T) {
+	t.Parallel()
 	s := startTestRunWithServer()
 
 	c := makeTestClient(s, 256)
@@ -118,6 +125,7 @@ func TestServerRegisterAndUnregister(t *testing.T) {
 }
 
 func TestServerBroadcastToClients(t *testing.T) {
+	t.Parallel()
 	s := startTestRunWithServer()
 
 	c := makeTestClient(s, 256)
@@ -145,6 +153,7 @@ func TestServerBroadcastToClients(t *testing.T) {
 }
 
 func TestServerBroadcastFullChannel(t *testing.T) {
+	t.Parallel()
 	s := startTestRunWithServer()
 
 	// Create a client whose send channel can hold only 1 message.
@@ -165,6 +174,7 @@ func TestServerBroadcastFullChannel(t *testing.T) {
 }
 
 func TestStopWithNoClients(t *testing.T) {
+	t.Parallel()
 	s := NewServer()
 	go s.Run()
 
@@ -183,6 +193,7 @@ func TestStopWithNoClients(t *testing.T) {
 }
 
 func TestGenerateIDUniqueness(t *testing.T) {
+	t.Parallel()
 	const count = 100
 	ids := make(map[string]bool, count)
 	for i := 0; i < count; i++ {
@@ -197,6 +208,7 @@ func TestGenerateIDUniqueness(t *testing.T) {
 }
 
 func TestEventBroadcasterAllMethods(t *testing.T) {
+	t.Parallel()
 	s := startTestRunWithServer()
 	b := NewEventBroadcaster(s)
 
@@ -262,6 +274,7 @@ func TestEventBroadcasterAllMethods(t *testing.T) {
 }
 
 func TestWSObserverAllMethods(t *testing.T) {
+	t.Parallel()
 	s := startTestRunWithServer()
 	b := NewEventBroadcaster(s)
 	o := NewWSObserver(b)

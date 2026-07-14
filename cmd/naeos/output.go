@@ -10,7 +10,7 @@ import (
 )
 
 // FormatOutput marshals data in the requested format and writes it to w.
-func FormatOutput(w io.Writer, data interface{}, format string) error {
+func FormatOutput(w io.Writer, data any, format string) error {
 	switch format {
 	case "json":
 		result, err := json.MarshalIndent(data, "", "  ")

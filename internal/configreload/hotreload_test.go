@@ -48,7 +48,7 @@ func TestHotReloaderDetectsChange(t *testing.T) {
 	}
 
 	reloaded := make(chan struct{}, 1)
-	cfg.OnChange(func(old, new map[string]interface{}) {
+	cfg.OnChange(func(old, new map[string]any) {
 		select {
 		case reloaded <- struct{}{}:
 		default:
@@ -92,7 +92,7 @@ func TestHotReloaderIgnoresUnrelatedFiles(t *testing.T) {
 	}
 
 	reloaded := make(chan struct{}, 1)
-	cfg.OnChange(func(old, new map[string]interface{}) {
+	cfg.OnChange(func(old, new map[string]any) {
 		select {
 		case reloaded <- struct{}{}:
 		default:
@@ -169,8 +169,8 @@ func TestConfigLoadJSON(t *testing.T) {
 }
 
 func TestConfigDiff(t *testing.T) {
-	old := map[string]interface{}{"a": 1, "b": 2, "c": 3}
-	new := map[string]interface{}{"a": 1, "b": 99, "d": 4}
+	old := map[string]any{"a": 1, "b": 2, "c": 3}
+	new := map[string]any{"a": 1, "b": 99, "d": 4}
 
 	diff := Diff(old, new)
 

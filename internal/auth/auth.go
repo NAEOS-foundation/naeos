@@ -348,7 +348,7 @@ type SessionManager struct {
 type Session struct {
 	ID        string
 	UserID    string
-	Data      map[string]interface{}
+	Data      map[string]any
 	ExpiresAt time.Time
 	CreatedAt time.Time
 }
@@ -359,7 +359,7 @@ func NewSessionManager() *SessionManager {
 	}
 }
 
-func (m *SessionManager) Create(userID string, data map[string]interface{}, expiresAt time.Time) (string, error) {
+func (m *SessionManager) Create(userID string, data map[string]any, expiresAt time.Time) (string, error) {
 	id, err := generateSecureKey()
 	if err != nil {
 		return "", err

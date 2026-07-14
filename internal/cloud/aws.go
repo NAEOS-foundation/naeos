@@ -9,6 +9,7 @@ import (
 )
 
 
+// AWSAdapter implements CloudAdapter for Amazon Web Services.
 type AWSAdapter struct {
 	Runner CommandRunner
 }
@@ -53,7 +54,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "aws_s3_bucket",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"bucket": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"region": config.Region,
 				},
@@ -62,7 +63,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "aws_ecs_service",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"cluster": fmt.Sprintf("%s-%s", config.Project, config.Environment),
 					"service": res.Name,
 				},
@@ -71,7 +72,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "aws_rds_instance",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"identifier": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"engine":     "postgres",
 				},
@@ -80,7 +81,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "aws_elasticache_cluster",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"cluster_id": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"engine":     "redis",
 				},
@@ -89,7 +90,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "aws_sqs_queue",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				},
 			})
@@ -97,7 +98,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_cloudfront_distribution",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"comment": fmt.Sprintf("%s %s %s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -105,7 +106,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_lambda_function",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"function_name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				"runtime":       "python3.12",
 			},
@@ -114,7 +115,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_cloudwatch_metric_alarm",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"alarm_name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -122,7 +123,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_secretsmanager_secret",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -130,7 +131,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_route53_zone",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": res.Name,
 			},
 		})
@@ -138,7 +139,7 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "aws_vpc",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"cidr_block": "10.0.0.0/16",
 			},
 		})

@@ -3,6 +3,7 @@ package sandbox
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,7 +32,7 @@ func TestSandboxExec(t *testing.T) {
 
 	resp, err := sb.Exec(context.Background(), pluginPath, Request{
 		Method: "test",
-		Params: map[string]interface{}{"key": "value"},
+		Params: map[string]any{"key": "value"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -142,4 +143,73 @@ func TestResponseJSON(t *testing.T) {
 	if !decoded.OK || decoded.Elapsed != 42 {
 		t.Errorf("unexpected decoded response: %+v", decoded)
 	}
+}
+
+func TestSandboxConcurrentExecution(t *testing.T) {
+	pluginPath := createTestPlugin(t)
+	sb := New(Config{Timeout: 5 * time.Second})
+
+	const goroutines = 5
+	errs := make(chan error, goroutines)
+	done := make(chan struct{}, goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(n int) {
+			defer func() { done <- struct{}{} }()
+			resp, err := sb.Exec(context.Background(), pluginPath, Request{
+				Method: fmt.Sprintf("concurrent-%d", n),
+			})
+			if err != nil {
+				errs <- fmt.Errorf("goroutine %d: %v", n, err)
+				return
+			}
+			if !resp.OK {
+				errs <- fmt.Errorf("goroutine %d: expected ok=true, error=%s", n, resp.Error)
+				return
+			}
+		}(i)
+	}
+
+	for i := 0; i < goroutines; i++ {
+		<-done
+	}
+	close(errs)
+
+	for err := range errs {
+		t.Error(err)
+	}
+}
+
+func TestSandboxExecuteContextCancellation(t *testing.T) {
+	dir := t.TempDir()
+	pluginPath := filepath.Join(dir, "slow-plugin")
+	content := `#!/usr/bin/env python3
+import time, json, sys
+json.loads(sys.stdin.read())
+time.sleep(10)
+print(json.dumps({"ok": true}))
+`
+	if err := os.WriteFile(pluginPath, []byte(content), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	sb := New(Config{Timeout: 10 * time.Second})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	done := make(chan struct{})
+	go func() {
+		resp, err := sb.Exec(ctx, pluginPath, Request{Method: "cancel"})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if resp.OK {
+			t.Error("expected ok=false after cancellation")
+		}
+		done <- struct{}{}
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	<-done
 }

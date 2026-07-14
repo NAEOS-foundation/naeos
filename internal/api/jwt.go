@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// JWTClaims represents the claims in a JSON Web Token.
 type JWTClaims struct {
 	Sub       string `json:"sub"`
 	Name      string `json:"name"`
@@ -17,16 +18,19 @@ type JWTClaims struct {
 	IssuedAt  int64  `json:"iat"`
 }
 
+// JWTValidator validates and generates HS256-signed JWTs.
 type JWTValidator struct {
 	secret []byte
 }
 
+// NewJWTValidator creates a validator that signs tokens with the given secret.
 func NewJWTValidator(secret string) *JWTValidator {
 	return &JWTValidator{
 		secret: []byte(secret),
 	}
 }
 
+// Generate creates a signed JWT from the given claims.
 func (j *JWTValidator) Generate(claims *JWTClaims) (string, error) {
 	if claims.ExpiresAt == 0 {
 		claims.ExpiresAt = time.Now().Add(24 * time.Hour).Unix()
@@ -58,6 +62,7 @@ func (j *JWTValidator) Generate(claims *JWTClaims) (string, error) {
 	return fmt.Sprintf("%s.%s", signingInput, signature), nil
 }
 
+// Validate verifies the signature and expiry of a JWT and returns its claims.
 func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
@@ -94,6 +99,7 @@ func (j *JWTValidator) sign(input string) string {
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 }
 
+// OIDCDiscovery represents an OpenID Connect discovery document.
 type OIDCDiscovery struct {
 	Issuer                            string   `json:"issuer"`
 	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
@@ -103,6 +109,7 @@ type OIDCDiscovery struct {
 	IDTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
 }
 
+// OIDCDiscoveryDocument returns the OIDC discovery metadata for the given issuer.
 func (j *JWTValidator) OIDCDiscoveryDocument(issuer string) *OIDCDiscovery {
 	return &OIDCDiscovery{
 		Issuer:                            issuer,

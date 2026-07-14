@@ -33,7 +33,7 @@ func newGraphQLCommand() *cobra.Command {
 						"health": {
 							Name: "health",
 							Type: "String",
-							Resolve: func(ctx *graphql.Context, args map[string]interface{}) (interface{}, error) {
+							Resolve: func(ctx *graphql.Context, args map[string]any) (any, error) {
 								return map[string]string{
 									"status":  "healthy",
 									"version": version.String(),
@@ -43,7 +43,7 @@ func newGraphQLCommand() *cobra.Command {
 						"version": {
 							Name: "version",
 							Type: "String",
-							Resolve: func(ctx *graphql.Context, args map[string]interface{}) (interface{}, error) {
+							Resolve: func(ctx *graphql.Context, args map[string]any) (any, error) {
 								return version.String(), nil
 							},
 						},

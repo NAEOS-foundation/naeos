@@ -32,11 +32,18 @@ type Client struct {
 	send    chan []byte
 	id      string
 	created time.Time
+	writeMu sync.Mutex
+}
+
+func (c *Client) writeMessage(msgType int, data []byte) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
+	return c.conn.WriteMessage(msgType, data)
 }
 
 type Message struct {
 	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
+	Payload any `json:"payload"`
 	Time    time.Time   `json:"time"`
 }
 
@@ -91,15 +98,25 @@ func (s *Server) Run() {
 
 		case message := <-s.broadcast:
 			s.mu.RLock()
+			var full []*Client
 			for client := range s.clients {
 				select {
 				case client.send <- message:
 				default:
-					close(client.send)
-					delete(s.clients, client)
+					full = append(full, client)
 				}
 			}
 			s.mu.RUnlock()
+			if len(full) > 0 {
+				s.mu.Lock()
+				for _, client := range full {
+					if _, ok := s.clients[client]; ok {
+						close(client.send)
+						delete(s.clients, client)
+					}
+				}
+				s.mu.Unlock()
+			}
 		}
 	}
 }
@@ -124,7 +141,7 @@ func (s *Server) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-func (s *Server) Broadcast(eventType string, payload interface{}) {
+func (s *Server) Broadcast(eventType string, payload any) {
 	msg := Message{
 		Type:    eventType,
 		Payload: payload,
@@ -147,7 +164,7 @@ func (s *Server) ClientCount() int {
 func (s *Server) Stop() {
 	s.mu.Lock()
 	for client := range s.clients {
-		client.conn.WriteMessage(websocket.CloseMessage,
+		client.writeMessage(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseNormalClosure, "server shutting down"))
 		close(client.send)
 		delete(s.clients, client)
@@ -182,7 +199,7 @@ func (c *Client) readPump() {
 		switch incoming.Type {
 		case "ping":
 			pong, _ := json.Marshal(Message{Type: "pong", Time: time.Now()})
-			c.conn.WriteMessage(websocket.TextMessage, pong)
+			c.writeMessage(websocket.TextMessage, pong)
 		}
 	}
 }
@@ -199,15 +216,15 @@ func (c *Client) writePump() {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage,
+				c.writeMessage(websocket.CloseMessage,
 					websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				return
 			}
-			c.conn.WriteMessage(websocket.TextMessage, message)
+			c.writeMessage(websocket.TextMessage, message)
 
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.writeMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
@@ -240,7 +257,7 @@ func (b *EventBroadcaster) PipelineFailed(pipelineID string, errMsg string) {
 }
 
 func (b *EventBroadcaster) SpecValidated(valid bool, errors []string) {
-	b.server.Broadcast("spec.validated", map[string]interface{}{"valid": valid, "errors": errors})
+	b.server.Broadcast("spec.validated", map[string]any{"valid": valid, "errors": errors})
 }
 
 func (b *EventBroadcaster) ArtifactGenerated(name string, path string) {

@@ -18,7 +18,19 @@ func (m *mockRunner) Run(name string, args []string, dir string) ([]byte, error)
 	return m.stdout, m.err
 }
 
+type recordingRunner struct {
+	calls [][]string
+	stdout []byte
+	err    error
+}
+
+func (r *recordingRunner) Run(name string, args []string, dir string) ([]byte, error) {
+	r.calls = append(r.calls, append([]string{name}, args...))
+	return r.stdout, r.err
+}
+
 func TestTerraformRunnerCreation(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	tr := NewTerraformRunner(dir)
 	if tr.WorkDir != dir {
@@ -30,6 +42,7 @@ func TestTerraformRunnerCreation(t *testing.T) {
 }
 
 func TestTerraformRunnerWithMock(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{stdout: []byte("{}")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -39,6 +52,7 @@ func TestTerraformRunnerWithMock(t *testing.T) {
 }
 
 func TestWriteHCL(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join(t.TempDir(), "nested", "tf")
 	tr := NewTerraformRunner(dir)
 
@@ -57,6 +71,7 @@ func TestWriteHCL(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{stdout: []byte("ok")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -67,6 +82,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestInitError(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{err: fmt.Errorf("command failed")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -77,6 +93,7 @@ func TestInitError(t *testing.T) {
 }
 
 func TestPlanJSON(t *testing.T) {
+	t.Parallel()
 	planJSON := `{"@level":"info","@message":"Plan: 2 to add, 0 to change, 1 to destroy.","changes":{"add":2,"change":0,"destroy":1}}`
 	mock := &mockRunner{stdout: []byte(planJSON)}
 	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
@@ -94,6 +111,7 @@ func TestPlanJSON(t *testing.T) {
 }
 
 func TestPlanMultiLineJSON(t *testing.T) {
+	t.Parallel()
 	planJSON := strings.Join([]string{
 		`{"@level":"info","@message":"Terraform will perform the following actions:"}`,
 		`{"@level":"info","@message":"Plan: 1 to add.","changes":{"add":1,"change":0,"destroy":0}}`,
@@ -111,6 +129,7 @@ func TestPlanMultiLineJSON(t *testing.T) {
 }
 
 func TestApply(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{stdout: []byte("ok")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -121,6 +140,7 @@ func TestApply(t *testing.T) {
 }
 
 func TestApplyError(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{err: fmt.Errorf("apply failed")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -131,6 +151,7 @@ func TestApplyError(t *testing.T) {
 }
 
 func TestDestroyAll(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	mock := &mockRunner{stdout: []byte("ok")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -141,6 +162,7 @@ func TestDestroyAll(t *testing.T) {
 }
 
 func TestOutput(t *testing.T) {
+	t.Parallel()
 	outputJSON := `{"bucket_id":{"value":"my-bucket","sensitive":false,"type":"string"}}`
 	mock := &mockRunner{stdout: []byte(outputJSON)}
 	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
@@ -157,6 +179,7 @@ func TestOutput(t *testing.T) {
 }
 
 func TestOutputError(t *testing.T) {
+	t.Parallel()
 	mock := &mockRunner{err: fmt.Errorf("no outputs")}
 	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
 
@@ -167,6 +190,7 @@ func TestOutputError(t *testing.T) {
 }
 
 func TestDeploy(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join(t.TempDir(), "deploy-test")
 	mock := &mockRunner{stdout: []byte("ok")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -186,6 +210,7 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployWritesHCLBeforeInit(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join(t.TempDir(), "hcl-order")
 	mock := &mockRunner{stdout: []byte("ok")}
 	tr := NewTerraformRunnerWithRunner(dir, mock)
@@ -205,6 +230,7 @@ func TestDeployWritesHCLBeforeInit(t *testing.T) {
 }
 
 func TestTempWorkDir(t *testing.T) {
+	t.Parallel()
 	dir, err := TempWorkDir("naeos-test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -225,6 +251,7 @@ func TestTempWorkDir(t *testing.T) {
 }
 
 func TestParsePlanJSONNoChanges(t *testing.T) {
+	t.Parallel()
 	mock := &mockRunner{stdout: []byte(`{"@message":"no changes"}`)}
 	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
 
@@ -238,6 +265,7 @@ func TestParsePlanJSONNoChanges(t *testing.T) {
 }
 
 func TestDeployError(t *testing.T) {
+	t.Parallel()
 	mock := &mockRunner{err: fmt.Errorf("init failed")}
 	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
 
@@ -248,6 +276,7 @@ func TestDeployError(t *testing.T) {
 }
 
 func TestRunnerPoolGetPutRemove(t *testing.T) {
+	t.Parallel()
 	pool := NewRunnerPool(10, time.Minute)
 	tr := NewTerraformRunner(t.TempDir())
 
@@ -269,6 +298,7 @@ func TestRunnerPoolGetPutRemove(t *testing.T) {
 }
 
 func TestRunnerPoolEviction(t *testing.T) {
+	t.Parallel()
 	pool := NewRunnerPool(2, time.Minute)
 
 	tr1 := NewTerraformRunner(t.TempDir())
@@ -285,6 +315,7 @@ func TestRunnerPoolEviction(t *testing.T) {
 }
 
 func TestRunnerPoolNotFound(t *testing.T) {
+	t.Parallel()
 	pool := NewRunnerPool(10, time.Minute)
 	_, ok := pool.Get("nonexistent", AWS)
 	if ok {
@@ -293,6 +324,7 @@ func TestRunnerPoolNotFound(t *testing.T) {
 }
 
 func TestParsePlanJSONEmpty(t *testing.T) {
+	t.Parallel()
 	output, err := parsePlanJSON([]byte{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -303,6 +335,7 @@ func TestParsePlanJSONEmpty(t *testing.T) {
 }
 
 func TestParsePlanJSONNoSummary(t *testing.T) {
+	t.Parallel()
 	input := []byte(`{"@message":"Creating..."}
 {"@message":"Still creating..."}`)
 	output, err := parsePlanJSON(input)
@@ -315,6 +348,7 @@ func TestParsePlanJSONNoSummary(t *testing.T) {
 }
 
 func TestParsePlanJSONMalformed(t *testing.T) {
+	t.Parallel()
 	input := []byte(`not json
 {broken json
 {"@message":"test"}`)
@@ -328,6 +362,7 @@ func TestParsePlanJSONMalformed(t *testing.T) {
 }
 
 func TestParsePlanJSONValid(t *testing.T) {
+	t.Parallel()
 	input := []byte(`{"@message":"Planning..."}
 {"@message":"Plan: 2 to add, 0 to change, 1 to destroy.","changes":{"add":2,"change":0,"destroy":1}}`)
 	output, err := parsePlanJSON(input)
@@ -342,7 +377,101 @@ func TestParsePlanJSONValid(t *testing.T) {
 	}
 }
 
+func TestAWSDestroy(t *testing.T) {
+	t.Parallel()
+	runner := &recordingRunner{stdout: []byte("ok")}
+	adapter := &AWSAdapter{Runner: runner}
+	config := &DeployConfig{
+		Provider:    AWS,
+		Region:      "us-east-1",
+		Project:     "test-destroy-aws",
+		Environment: "dev",
+		Resources: []Resource{
+			{Name: "uploads", Type: ResourceStorage},
+			{Name: "api", Type: ResourceCompute},
+		},
+	}
+
+	if err := adapter.Destroy(config); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	foundDestroy := false
+	for _, call := range runner.calls {
+		if call[0] == "terraform" && len(call) > 1 && call[1] == "destroy" {
+			foundDestroy = true
+			break
+		}
+	}
+	if !foundDestroy {
+		t.Errorf("expected terraform destroy call, got calls: %v", runner.calls)
+	}
+}
+
+func TestGCPDestroy(t *testing.T) {
+	t.Parallel()
+	runner := &recordingRunner{stdout: []byte("ok")}
+	adapter := &GCPAdapter{Runner: runner}
+	config := &DeployConfig{
+		Provider:    GCP,
+		Region:      "us-central1",
+		Project:     "test-destroy-gcp",
+		Environment: "dev",
+		Resources: []Resource{
+			{Name: "uploads", Type: ResourceStorage},
+			{Name: "api", Type: ResourceCompute},
+		},
+	}
+
+	if err := adapter.Destroy(config); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	foundDestroy := false
+	for _, call := range runner.calls {
+		if call[0] == "terraform" && len(call) > 1 && call[1] == "destroy" {
+			foundDestroy = true
+			break
+		}
+	}
+	if !foundDestroy {
+		t.Errorf("expected terraform destroy call, got calls: %v", runner.calls)
+	}
+}
+
+func TestAzureDestroy(t *testing.T) {
+	t.Parallel()
+	runner := &recordingRunner{stdout: []byte("ok")}
+	adapter := &AzureAdapter{Runner: runner}
+	config := &DeployConfig{
+		Provider:    Azure,
+		Region:      "eastus",
+		Project:     "test-destroy-azure",
+		Environment: "dev",
+		Resources: []Resource{
+			{Name: "uploads", Type: ResourceStorage},
+			{Name: "api", Type: ResourceCompute},
+		},
+	}
+
+	if err := adapter.Destroy(config); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	foundDestroy := false
+	for _, call := range runner.calls {
+		if call[0] == "terraform" && len(call) > 1 && call[1] == "destroy" {
+			foundDestroy = true
+			break
+		}
+	}
+	if !foundDestroy {
+		t.Errorf("expected terraform destroy call, got calls: %v", runner.calls)
+	}
+}
+
 func TestConcurrentStateAccess(t *testing.T) {
+	t.Parallel()
 	sm := NewStateManager()
 	record := &DeploymentRecord{
 		Project:     "test",

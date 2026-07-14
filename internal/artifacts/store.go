@@ -11,21 +11,33 @@ import (
 	"time"
 )
 
+// ArtifactKind identifies the type of a build artifact.
 type ArtifactKind string
 
 const (
+	// KindCode represents source code artifacts.
 	KindCode       ArtifactKind = "code"
+	// KindConfig represents configuration file artifacts.
 	KindConfig     ArtifactKind = "config"
+	// KindDocs represents documentation artifacts.
 	KindDocs       ArtifactKind = "docs"
+	// KindDocker represents Dockerfile and compose artifacts.
 	KindDocker     ArtifactKind = "docker"
+	// KindCI represents CI/CD pipeline artifacts.
 	KindCI         ArtifactKind = "ci"
+	// KindAI represents AI agent configuration artifacts.
 	KindAI         ArtifactKind = "ai"
+	// KindTest represents test file artifacts.
 	KindTest       ArtifactKind = "test"
+	// KindMigration represents database migration artifacts.
 	KindMigration  ArtifactKind = "migration"
+	// KindProfile represents profile artifacts.
 	KindProfile    ArtifactKind = "profile"
+	// KindOther represents uncategorized artifacts.
 	KindOther      ArtifactKind = "other"
 )
 
+// Artifact represents a single build artifact with metadata and content.
 type Artifact struct {
 	ID          string            `json:"id"`
 	Path        string            `json:"path"`
@@ -41,6 +53,7 @@ type Artifact struct {
 	Size        int64             `json:"size"`
 }
 
+// StoreManifest is the on-disk manifest that tracks all artifacts in a store.
 type StoreManifest struct {
 	Version   string      `json:"version"`
 	Project   string      `json:"project"`
@@ -49,6 +62,7 @@ type StoreManifest struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
+// Store manages a collection of artifacts with deduplication and persistence.
 type Store struct {
 	root      string
 	manifest  StoreManifest
@@ -57,6 +71,7 @@ type Store struct {
 	byHash    map[string]*Artifact
 }
 
+// NewStore creates a new artifact store rooted at the given directory.
 func NewStore(root string) *Store {
 	return &Store{
 		root:     root,
@@ -71,6 +86,7 @@ func NewStore(root string) *Store {
 	}
 }
 
+// Add inserts an artifact into the store, deduplicating by content hash.
 func (s *Store) Add(path string, content []byte, kind ArtifactKind, opts ...Option) (*Artifact, error) {
 	hash := computeHash(content)
 	if existing, ok := s.byHash[hash]; ok {
@@ -102,20 +118,24 @@ func (s *Store) Add(path string, content []byte, kind ArtifactKind, opts ...Opti
 	return artifact, nil
 }
 
+// Get retrieves an artifact by its path.
 func (s *Store) Get(path string) (*Artifact, bool) {
 	a, ok := s.byPath[path]
 	return a, ok
 }
 
+// GetByKind returns all artifacts of the given kind.
 func (s *Store) GetByKind(kind ArtifactKind) []*Artifact {
 	return s.byKind[kind]
 }
 
+// GetByHash retrieves an artifact by its content hash.
 func (s *Store) GetByHash(hash string) (*Artifact, bool) {
 	a, ok := s.byHash[hash]
 	return a, ok
 }
 
+// List returns all artifacts sorted by path.
 func (s *Store) List() []Artifact {
 	result := make([]Artifact, 0, len(s.manifest.Artifacts))
 	for _, a := range s.manifest.Artifacts {
@@ -127,6 +147,7 @@ func (s *Store) List() []Artifact {
 	return result
 }
 
+// Remove deletes an artifact from the store by path.
 func (s *Store) Remove(path string) bool {
 	artifact, ok := s.byPath[path]
 	if !ok {
@@ -155,6 +176,7 @@ func (s *Store) Remove(path string) bool {
 	return true
 }
 
+// WriteToDisk persists the artifact manifest and all artifact contents to disk.
 func (s *Store) WriteToDisk() error {
 	if err := os.MkdirAll(s.root, 0o755); err != nil {
 		return fmt.Errorf("create store dir: %w", err)
@@ -179,6 +201,7 @@ func (s *Store) WriteToDisk() error {
 	return os.WriteFile(manifestPath, data, 0o644)
 }
 
+// LoadFromDisk reads the artifact manifest and contents from disk into the store.
 func (s *Store) LoadFromDisk() error {
 	manifestPath := filepath.Join(s.root, ".artifacts.json")
 	data, err := os.ReadFile(manifestPath)
@@ -215,6 +238,7 @@ func (s *Store) LoadFromDisk() error {
 	return nil
 }
 
+// Deduplicate removes duplicate artifacts that share the same content hash.
 func (s *Store) Deduplicate() int {
 	seen := make(map[string]bool)
 	removed := 0
@@ -237,6 +261,7 @@ func (s *Store) Deduplicate() int {
 	return removed
 }
 
+// Summary returns a count of artifacts grouped by kind.
 func (s *Store) Summary() map[string]int {
 	summary := make(map[string]int)
 	for _, a := range s.manifest.Artifacts {
@@ -246,36 +271,43 @@ func (s *Store) Summary() map[string]int {
 	return summary
 }
 
+// SetProject sets the project name in the store manifest.
 func (s *Store) SetProject(name string) {
 	s.manifest.Project = name
 }
 
+// SetNEIRVersion stamps the NEIR version on all artifacts in the store.
 func (s *Store) SetNEIRVersion(v string) {
 	for i := range s.manifest.Artifacts {
 		s.manifest.Artifacts[i].NEIRVersion = v
 	}
 }
 
+// Option configures optional artifact properties during creation.
 type Option func(*Artifact)
 
+// WithLanguage sets the language metadata on an artifact.
 func WithLanguage(lang string) Option {
 	return func(a *Artifact) {
 		a.Language = lang
 	}
 }
 
+// WithNEIRVersion sets the NEIR version metadata on an artifact.
 func WithNEIRVersion(v string) Option {
 	return func(a *Artifact) {
 		a.NEIRVersion = v
 	}
 }
 
+// WithSource sets the source metadata on an artifact.
 func WithSource(src string) Option {
 	return func(a *Artifact) {
 		a.Source = src
 	}
 }
 
+// WithMetadata adds a key-value metadata pair to an artifact.
 func WithMetadata(key, value string) Option {
 	return func(a *Artifact) {
 		if a.Metadata == nil {
@@ -295,6 +327,7 @@ func generateID(path string) string {
 	return fmt.Sprintf("%x", h[:8])
 }
 
+// DetectKind infers the ArtifactKind from a file path based on extension and name.
 func DetectKind(path string) ArtifactKind {
 	ext := strings.ToLower(filepath.Ext(path))
 	base := strings.ToLower(filepath.Base(path))

@@ -5,16 +5,19 @@ import (
 	"strings"
 )
 
+// AIService provides rule-based analysis and suggestions for NAEOS specifications.
 type AIService struct {
 	context map[string]any
 }
 
+// NewService creates a new AI service instance.
 func NewService() *AIService {
 	return &AIService{
 		context: make(map[string]any),
 	}
 }
 
+// Suggestion represents an improvement recommendation for a specification.
 type Suggestion struct {
 	Category    string
 	Title       string
@@ -22,12 +25,14 @@ type Suggestion struct {
 	Priority    string
 }
 
+// Explanation holds a structured explanation of a NAEOS concept.
 type Explanation struct {
 	Topic   string
 	Content string
 	Details []string
 }
 
+// Suggest analyses a specification and returns improvement suggestions.
 func (s *AIService) Suggest(specContent string) ([]Suggestion, error) {
 	if specContent == "" {
 		return nil, fmt.Errorf("empty specification")
@@ -115,6 +120,7 @@ func (s *AIService) Suggest(specContent string) ([]Suggestion, error) {
 	return suggestions, nil
 }
 
+// Explain returns a detailed explanation of the given topic.
 func (s *AIService) Explain(topic, specContent string) (*Explanation, error) {
 	if topic == "" {
 		return nil, fmt.Errorf("topic is required")

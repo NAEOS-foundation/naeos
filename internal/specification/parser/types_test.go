@@ -73,10 +73,10 @@ func TestValidationEngineRequired(t *testing.T) {
 	engine := NewValidationEngine(schema)
 
 	// Missing required fields (Required list + type Required)
-	var data map[string]interface{}
+	var data map[string]any
 	var errors []ValidationError
 
-	data = map[string]interface{}{
+	data = map[string]any{
 		"age": 25,
 	}
 	errors = engine.Validate(data)
@@ -85,7 +85,7 @@ func TestValidationEngineRequired(t *testing.T) {
 	}
 
 	// All required fields present
-	data = map[string]interface{}{
+	data = map[string]any{
 		"name":  "John",
 		"email": "john@example.com",
 	}
@@ -107,11 +107,11 @@ func TestValidationEngineTypes(t *testing.T) {
 
 	engine := NewValidationEngine(schema)
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"name":   "John",
 		"age":    25,
 		"active": true,
-		"tags":   []interface{}{"admin", "user"},
+		"tags":   []any{"admin", "user"},
 	}
 	errors := engine.Validate(data)
 	if len(errors) != 0 {
@@ -119,7 +119,7 @@ func TestValidationEngineTypes(t *testing.T) {
 	}
 
 	// Wrong types
-	data = map[string]interface{}{
+	data = map[string]any{
 		"name":   123,
 		"age":    "not a number",
 		"active": "not a bool",
@@ -139,7 +139,7 @@ func TestValidationEnginePattern(t *testing.T) {
 
 	engine := NewValidationEngine(schema)
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"email": "john@example.com",
 	}
 	errors := engine.Validate(data)
@@ -147,7 +147,7 @@ func TestValidationEnginePattern(t *testing.T) {
 		t.Errorf("expected 0 errors, got %d", len(errors))
 	}
 
-	data = map[string]interface{}{
+	data = map[string]any{
 		"email": "not-an-email",
 	}
 	errors = engine.Validate(data)
@@ -165,7 +165,7 @@ func TestValidationEngineOneOf(t *testing.T) {
 
 	engine := NewValidationEngine(schema)
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"status": "active",
 	}
 	errors := engine.Validate(data)
@@ -173,7 +173,7 @@ func TestValidationEngineOneOf(t *testing.T) {
 		t.Errorf("expected 0 errors, got %d", len(errors))
 	}
 
-	data = map[string]interface{}{
+	data = map[string]any{
 		"status": "unknown",
 	}
 	errors = engine.Validate(data)
@@ -200,7 +200,7 @@ func TestValidationEngineRules(t *testing.T) {
 
 	engine := NewValidationEngine(schema)
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"port": 8080,
 	}
 	errors := engine.Validate(data)
@@ -222,7 +222,7 @@ func TestValidationEngineUnion(t *testing.T) {
 	engine := NewValidationEngine(schema)
 
 	// String value
-	data := map[string]interface{}{
+	data := map[string]any{
 		"value": "hello",
 	}
 	errors := engine.Validate(data)
@@ -231,7 +231,7 @@ func TestValidationEngineUnion(t *testing.T) {
 	}
 
 	// Integer value
-	data = map[string]interface{}{
+	data = map[string]any{
 		"value": 123,
 	}
 	errors = engine.Validate(data)

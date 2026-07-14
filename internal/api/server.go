@@ -19,6 +19,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/cloud"
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+	"github.com/NAEOS-foundation/naeos/internal/database"
 	"github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/mcp"
 	"github.com/NAEOS-foundation/naeos/internal/monitoring"
@@ -28,6 +29,7 @@ import (
 	naeosws "github.com/NAEOS-foundation/naeos/internal/websocket"
 )
 
+// Server is the main HTTP API server for the NAEOS platform.
 type Server struct {
 	Addr        string
 	Router      *http.ServeMux
@@ -53,6 +55,7 @@ type Server struct {
 	auditor        audit.Auditor
 	wsServer       *naeosws.Server
 	mcpServer      *mcp.Server
+	db             database.Database
 }
 
 type pipelineRun struct {
@@ -81,11 +84,13 @@ type cloudDeployment struct {
 	Error     string              `json:"error,omitempty"`
 }
 
+// AuthConfig holds authentication settings for the API server.
 type AuthConfig struct {
 	JWTSecret string
 	Enabled   bool
 }
 
+// CORSConfig holds Cross-Origin Resource Sharing settings.
 type CORSConfig struct {
 	AllowedOrigins   []string
 	AllowedMethods   []string
@@ -93,18 +98,21 @@ type CORSConfig struct {
 	AllowCredentials bool
 }
 
+// APIResponse is the standard JSON envelope returned by API endpoints.
 type APIResponse struct {
 	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
+	Data    any `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
 }
 
+// ErrorResponse contains detailed error information in API responses.
 type ErrorResponse struct {
 	Error   string      `json:"error"`
 	Message string      `json:"message"`
-	Details interface{} `json:"details,omitempty"`
+	Details any `json:"details,omitempty"`
 }
 
+// NewServer creates a new API server with the given address and auth configuration.
 func NewServer(addr string, auth *AuthConfig) *Server {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
@@ -231,10 +239,17 @@ func (s *Server) setupRoutes() {
 	s.Router.HandleFunc("/.well-known/openid-configuration", s.handleOIDCDiscovery)
 }
 
+// SetWebSocketServer attaches a WebSocket server to the API server.
 func (s *Server) SetWebSocketServer(ws *naeosws.Server) {
 	s.wsServer = ws
 }
 
+// SetDatabase attaches a database to the API server for persistence.
+func (s *Server) SetDatabase(db database.Database) {
+	s.db = db
+}
+
+// RegisterAPIKey registers an API key with its associated rate limit.
 func (s *Server) RegisterAPIKey(key string, requestsPerSecond int) {
 	s.apiKeysMu.Lock()
 	defer s.apiKeysMu.Unlock()
@@ -357,7 +372,7 @@ func containsHeader(headers []string, target string) bool {
 	return false
 }
 
-func (s *Server) writeJSON(w http.ResponseWriter, status int, data interface{}) {
+func (s *Server) writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(APIResponse{
@@ -380,17 +395,26 @@ func (s *Server) writeError(w http.ResponseWriter, status int, message string) {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  "healthy",
-		"version": version.String(),
-		"uptime":  time.Since(startTime).String(),
+	dbStatus := "not_configured"
+	if s.db != nil {
+		if err := s.db.HealthCheck(); err != nil {
+			dbStatus = "unhealthy: " + err.Error()
+		} else {
+			dbStatus = "healthy"
+		}
+	}
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"status":   "healthy",
+		"version":  version.String(),
+		"uptime":   time.Since(startTime).String(),
+		"database": dbStatus,
 	})
 }
 
 func (s *Server) handleSpecs(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"count": len(s.pipelines),
 		})
 	case "POST":
@@ -410,7 +434,7 @@ func (s *Server) handleSpecs(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusBadRequest, "parse error: "+err.Error())
 			return
 		}
-		s.writeJSON(w, http.StatusCreated, map[string]interface{}{
+		s.writeJSON(w, http.StatusCreated, map[string]any{
 			"message":  "spec received and parsed",
 			"project":  doc.Project,
 			"modules":  len(doc.Modules),
@@ -434,7 +458,7 @@ func (s *Server) handleSpecValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Spec == "" {
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"valid":    false,
 			"errors":   []string{"spec field is required"},
 			"warnings": []string{},
@@ -443,14 +467,14 @@ func (s *Server) handleSpecValidate(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := s.parser.Parse(req.Spec)
 	if err != nil {
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"valid":    false,
 			"errors":   []string{err.Error()},
 			"warnings": []string{},
 		})
 		return
 	}
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"valid":    true,
 		"errors":   []string{},
 		"warnings": []string{},
@@ -481,7 +505,7 @@ func (s *Server) handleSpecCompile(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusServiceUnavailable, "no compiler targets available; check compiler configuration")
 		return
 	}
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"compiled":  true,
 		"targets":   targets,
 		"bundle":    b.ToMarkdown(),
@@ -532,13 +556,19 @@ func (s *Server) handlePipelineRun(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: time.Now().Format(time.RFC3339),
 		}
 		s.pipelines = append(s.pipelines, run)
+
+		if s.db != nil {
+			s.db.Exec("INSERT INTO pipeline_runs (id, status, project, modules, services, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+				run.ID, run.Status, run.Project, run.Modules, run.Services, run.CreatedAt)
+		}
+
 		s.jobsMu.Lock()
 		job.Status = "completed"
 		s.jobsMu.Unlock()
 		_ = b
 	}()
 
-	s.writeJSON(w, http.StatusAccepted, map[string]interface{}{
+	s.writeJSON(w, http.StatusAccepted, map[string]any{
 		"job_id": jobID,
 		"status": "running",
 	})
@@ -558,7 +588,7 @@ func (s *Server) handlePipelineStatus(w http.ResponseWriter, r *http.Request) {
 	if lastRun != nil && lastRun.Status == "running" {
 		status = "running"
 	}
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"status":   status,
 		"total":    len(s.pipelines),
 		"last_run": lastRun,
@@ -579,7 +609,7 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"artifacts": list[start:end],
 			"count":     total,
 			"page":      offset/limit + 1,
@@ -609,7 +639,7 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_ = s.store.WriteToDisk()
-		s.writeJSON(w, http.StatusCreated, map[string]interface{}{
+		s.writeJSON(w, http.StatusCreated, map[string]any{
 			"message":  "artifact stored",
 			"artifact": artifact,
 		})
@@ -648,7 +678,7 @@ func (s *Server) handleContextGenerate(w http.ResponseWriter, r *http.Request) {
 	default:
 		text = b.ToMarkdown()
 	}
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"context": text,
 		"format":  format,
 		"project": doc.Project,
@@ -668,7 +698,7 @@ func (s *Server) handleCloudPlan(w http.ResponseWriter, r *http.Request) {
 		Provider  string                   `json:"provider"`
 		Project   string                   `json:"project"`
 		Region    string                   `json:"region"`
-		Resources []map[string]interface{} `json:"resources"`
+		Resources []map[string]any `json:"resources"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.writeError(w, http.StatusBadRequest, "invalid request body")
@@ -712,7 +742,7 @@ func (s *Server) handleCloudPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"provider": req.Provider,
 		"project":  req.Project,
 		"hcl":      result,
@@ -728,7 +758,7 @@ func (s *Server) handleCloudDeploy(w http.ResponseWriter, r *http.Request) {
 		Provider  string                   `json:"provider"`
 		Project   string                   `json:"project"`
 		Region    string                   `json:"region"`
-		Resources []map[string]interface{} `json:"resources"`
+		Resources []map[string]any `json:"resources"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.writeError(w, http.StatusBadRequest, "invalid request body")
@@ -789,7 +819,7 @@ func (s *Server) handleCloudDeploy(w http.ResponseWriter, r *http.Request) {
 	})
 	s.deployMu.Unlock()
 
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"deployment_id": deploymentID,
 		"provider":      req.Provider,
 		"project":       req.Project,
@@ -807,7 +837,7 @@ func (s *Server) handleCloudDestroy(w http.ResponseWriter, r *http.Request) {
 		Provider  string                   `json:"provider"`
 		Project   string                   `json:"project"`
 		Region    string                   `json:"region"`
-		Resources []map[string]interface{} `json:"resources"`
+		Resources []map[string]any `json:"resources"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.writeError(w, http.StatusBadRequest, "invalid request body")
@@ -845,7 +875,7 @@ func (s *Server) handleCloudDestroy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"provider": req.Provider,
 		"project":  req.Project,
 		"status":   "destroyed",
@@ -870,7 +900,7 @@ func (s *Server) handleCloudStatus(w http.ResponseWriter, r *http.Request) {
 	if end > total {
 		end = total
 	}
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"deployments": s.deployments[start:end],
 		"count":       total,
 		"page":        offset/limit + 1,
@@ -892,7 +922,7 @@ func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"plugins": plugins[start:end],
 			"count":   total,
 			"page":    offset/limit + 1,
@@ -917,7 +947,7 @@ func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusInternalServerError, "install failed: "+err.Error())
 			return
 		}
-		s.writeJSON(w, http.StatusCreated, map[string]interface{}{
+		s.writeJSON(w, http.StatusCreated, map[string]any{
 			"name":         info.Name,
 			"version":      info.Version,
 			"description":  info.Description,
@@ -958,7 +988,7 @@ func (s *Server) handlePluginExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+	s.writeJSON(w, http.StatusOK, map[string]any{
 		"plugin": req.Name,
 		"action": req.Action,
 		"result": result,
@@ -979,7 +1009,7 @@ func (s *Server) handlePluginByName(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusNotFound, fmt.Sprintf("plugin %s not found", name))
 			return
 		}
-		s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		s.writeJSON(w, http.StatusOK, map[string]any{
 			"name":         info.Name,
 			"version":      info.Version,
 			"description":  info.Description,
@@ -1111,6 +1141,7 @@ func parsePagination(r *http.Request, defaultLimit, maxLimit int) (offset, limit
 
 var startTime = time.Now()
 
+// Start begins listening for HTTP requests and handles graceful shutdown.
 func (s *Server) Start() error {
 	wrappedHandler := s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP))
 
@@ -1141,6 +1172,7 @@ func (s *Server) Start() error {
 	return s.server.ListenAndServe()
 }
 
+// Stop gracefully shuts down the server and any attached WebSocket server.
 func (s *Server) Stop() error {
 	if s.wsServer != nil {
 		s.wsServer.Stop()

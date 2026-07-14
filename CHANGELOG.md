@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.1.0] - 2026-07-15
+
+### Added
+- **Test coverage improvements** across 10 packages:
+  - `internal/generation/adapters`: Java, Python, Rust, TypeScript adapter tests (GenerateProject, GenerateModule, GenerateService, GenerateDockerfile, GenerateCI, GenerateDockerCompose, GenerateArchitectureDoc).
+  - `internal/cloud`: AWS/GCP/Azure Destroy method tests, RunnerPool eviction/not-found, parsePlanJSON edge cases, concurrent State access.
+  - `internal/broker`: NATS real connector tests (name, connect failure, not connected).
+  - `internal/database`: PostgreSQL real connector tests (name, connect failure, not connected).
+  - `internal/pluginsdk/sandbox`: Concurrent execution, context cancellation tests.
+  - `internal/marketplace`: FetchPlugin 404/timeout/invalid-JSON, SearchPlugins empty results.
+  - `internal/diff`: DiffNEIR empty, modules same/added, services removed.
+  - `cmd/naeos`: FormatOutput/FormatTable, loadInput, resolveInput, renderOutput, cpDir, checkSpec, doctor command.
+- **Integration test build tags**: `//go:build integration` added to e2e and pipeline test files for faster CI.
+- **Fuzz tests**: `FuzzHandleMCP` for MCP server.
+- **t.Parallel()**: Added to 109 test functions across testrunner, watch, websocket, cloud packages.
+- **Godoc comments**: ~122 exported symbols documented across api, ai, artifacts, audit, cloud packages.
+- **OpenAPI spec**: Fully rewritten to match actual server implementation (27 endpoints, all request/response schemas aligned).
+
+### Changed
+- **WebSocket race conditions fixed**: 3 data races resolved (broadcast map mutation under RLock, readPump vs writePump concurrent WriteMessage, Stop vs writePump concurrent WriteMessage). Added `writeMu sync.Mutex` to Client.
+- **Migrated `interface{}` → `any`**: 247 occurrences replaced across 39 files (Go 1.18+ idiomatic).
+- **Fixed `return nil, nil` ambiguity**: Added clarifying comments to 9 instances across 5 files.
+- **Removed deprecated packages**: `internal/pluginsdk/sdk.go` and `pkg/plugin/plugin.go` deleted (zero consumers).
+- **CHANGELOG dedup**: Merged duplicate `### Added` section in v0.2.0.
+- **README badge**: Go version updated from 1.22+ to 1.25+.
+
+### Security
+- WebSocket `AllowedOrigins` now enforced per-instance with configurable upgrader.
+- JWKS endpoint removed (was leaking HMAC secret).
+
 ## [1.0.0] - 2026-07-14
 
 ### Added
@@ -388,8 +418,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - All 63 packages pass, `go vet` clean, `go build` clean.
-
-### Added
 - Documentation index with recommended reading orders (beginner, policy, profile, CLI, testing).
 - NES-028 CLI Reference — comprehensive CLI command documentation.
 - NES-029 Configuration — pipeline configuration reference.

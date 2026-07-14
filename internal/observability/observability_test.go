@@ -62,7 +62,7 @@ func TestTracerAddEvent(t *testing.T) {
 	tr := NewTracer("test")
 
 	span := tr.StartSpan("operation")
-	tr.AddEvent(span, "event1", map[string]interface{}{"key": "value"})
+	tr.AddEvent(span, "event1", map[string]any{"key": "value"})
 
 	if len(span.Events) != 1 {
 		t.Errorf("expected 1 event, got %d", len(span.Events))
@@ -83,7 +83,7 @@ func TestTracerSetStatus(t *testing.T) {
 func TestLogger(t *testing.T) {
 	l := NewLogger("test", LogLevelInfo)
 
-	l.Info("test message", map[string]interface{}{"key": "value"})
+	l.Info("test message", map[string]any{"key": "value"})
 
 	entries := l.GetEntries()
 	if len(entries) != 1 {

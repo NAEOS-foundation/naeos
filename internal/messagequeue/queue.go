@@ -10,7 +10,7 @@ import (
 type Message struct {
 	ID        string
 	Topic     string
-	Payload   interface{}
+	Payload   any
 	Timestamp time.Time
 	Retries   int
 	MaxRetries int
@@ -252,7 +252,7 @@ func (e *QueueError) Error() string {
 
 // Message Builder
 
-func NewMessage(topic string, payload interface{}) *Message {
+func NewMessage(topic string, payload any) *Message {
 	return &Message{
 		ID:        generateID(),
 		Topic:     topic,

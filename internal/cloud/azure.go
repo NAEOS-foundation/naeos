@@ -8,6 +8,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
+// AzureAdapter implements CloudAdapter for Microsoft Azure.
 type AzureAdapter struct {
 	Runner CommandRunner
 }
@@ -38,7 +39,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "azurerm_storage_account",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     fmt.Sprintf("%s%s%s", config.Project, config.Environment, res.Name),
 					"location": config.Region,
 				},
@@ -47,7 +48,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "azurerm_container_group",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     res.Name,
 					"location": config.Region,
 				},
@@ -56,7 +57,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "azurerm_postgresql_flexible_server",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"location": config.Region,
 				},
@@ -65,7 +66,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "azurerm_redis_cache",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 					"location": config.Region,
 				},
@@ -74,7 +75,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 			resources = append(resources, Resource{
 				Name: res.Name,
 				Type: "azurerm_servicebus_queue",
-				Spec: map[string]interface{}{
+				Spec: map[string]any{
 					"name":     res.Name,
 					"location": config.Region,
 				},
@@ -83,7 +84,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_cdn_frontdoor_profile",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -91,7 +92,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_linux_function_app",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				"location": config.Region,
 			},
@@ -100,7 +101,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_monitor_action_group",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -108,7 +109,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_key_vault",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 			},
 		})
@@ -116,7 +117,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_dns_zone",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name": res.Name,
 			},
 		})
@@ -124,7 +125,7 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 		resources = append(resources, Resource{
 			Name: res.Name,
 			Type: "azurerm_virtual_network",
-			Spec: map[string]interface{}{
+			Spec: map[string]any{
 				"name":     fmt.Sprintf("%s-%s-%s", config.Project, config.Environment, res.Name),
 				"location": config.Region,
 			},

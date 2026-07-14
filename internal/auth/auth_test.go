@@ -217,7 +217,7 @@ func TestAPIKeyListByUser(t *testing.T) {
 func TestSessionManager(t *testing.T) {
 	m := NewSessionManager()
 
-	id, err := m.Create("user-1", map[string]interface{}{"role": "admin"}, time.Now().Add(time.Hour))
+	id, err := m.Create("user-1", map[string]any{"role": "admin"}, time.Now().Add(time.Hour))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
