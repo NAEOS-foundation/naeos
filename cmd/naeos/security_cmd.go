@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/security"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -213,7 +214,7 @@ func joinSecStrings(ss []string) string {
 }
 
 func newSecurityAuditCommand() *cobra.Command {
-	var inputFile string
+	var inputFile, outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "audit",
@@ -222,8 +223,9 @@ func newSecurityAuditCommand() *cobra.Command {
   - Hardcoded secrets and API keys
   - SQL injection patterns
   - XSS vulnerabilities
-  - Insecure file permissions
-  - Deprecated cryptographic algorithms
+  - Unsafe eval/deserialization
+  - Debug mode enabled
+  - Missing health check endpoints
 
 Example:
   naeos security audit
@@ -236,37 +238,68 @@ Example:
 				dir = inputFile
 			}
 
+			files, err := security.ScanDir(dir)
+			if err != nil {
+				return fmt.Errorf("scan directory: %w", err)
+			}
+
+			auditor := security.NewAuditor()
+			result := auditor.AuditFiles(files)
+
+			type auditResult struct {
+				Directory string                `json:"directory" yaml:"directory"`
+				Files     int                   `json:"files" yaml:"files"`
+				Findings  []security.Finding    `json:"findings" yaml:"findings"`
+				Summary   security.AuditSummary `json:"summary" yaml:"summary"`
+			}
+
+			data := auditResult{
+				Directory: dir,
+				Files:     len(files),
+				Findings:  result.Finding,
+				Summary:   result.Summary,
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Security Audit: %s\n", dir)
 			fmt.Fprintf(out, "═══════════════════════════════════════\n")
+			fmt.Fprintf(out, "Scanned %d files\n\n", len(files))
 
-			findings := []struct {
-				Severity string
-				Message  string
-				File     string
-			}{
-				{Severity: "INFO", Message: "No hardcoded secrets detected", File: "—"},
-				{Severity: "INFO", Message: "No SQL injection patterns found", File: "—"},
-				{Severity: "INFO", Message: "File permissions are secure", File: "—"},
-				{Severity: "INFO", Message: "No deprecated crypto algorithms", File: "—"},
-				{Severity: "WARN", Message: "Consider adding rate limiting to API endpoints", File: "api/"},
-			}
-
-			for _, f := range findings {
-				icon := "✓"
-				if f.Severity == "WARN" {
-					icon = "⚠"
-				} else if f.Severity == "FAIL" {
-					icon = "✗"
+			if len(result.Finding) == 0 {
+				fmt.Fprintln(out, "  ✓ No security issues found.")
+			} else {
+				for _, f := range result.Finding {
+					icon := "✓"
+					switch f.Severity {
+					case security.SeverityCritical:
+						icon = "✗"
+					case security.SeverityHigh:
+						icon = "✗"
+					case security.SeverityMedium:
+						icon = "⚠"
+					case security.SeverityLow:
+						icon = "⚠"
+					}
+					loc := f.File
+					if f.Line > 0 {
+						loc = fmt.Sprintf("%s:%d", f.File, f.Line)
+					}
+					fmt.Fprintf(out, "  %s [%s] %s (%s)\n", icon, strings.ToUpper(string(f.Severity)), f.Title, loc)
 				}
-				fmt.Fprintf(out, "  %s [%s] %s (%s)\n", icon, f.Severity, f.Message, f.File)
 			}
 
-			fmt.Fprintf(out, "\nAudit complete: %d findings\n", len(findings))
+			fmt.Fprintf(out, "\nSummary: %d critical, %d high, %d medium, %d low, %d info\n",
+				result.Summary.Critical, result.Summary.High, result.Summary.Medium,
+				result.Summary.Low, result.Summary.Info)
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&inputFile, "input", "i", "", "directory or file to audit (default: current directory)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	return cmd
 }

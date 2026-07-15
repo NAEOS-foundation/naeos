@@ -69,7 +69,7 @@ func (TypeScriptAdapter) GenerateModule(moduleName, modulePath, projectName stri
 		{Path: fmt.Sprintf("%s/service.ts", dir), Content: []byte("export interface Service {\n  process(): string;\n}\n\nexport class DefaultService implements Service {\n  process(): string {\n    return \"processed\";\n  }\n}\n")},
 		{Path: fmt.Sprintf("%s/repository.ts", dir), Content: []byte("export interface Repository {\n  list(): string[];\n}\n")},
 		{Path: fmt.Sprintf("%s/types.ts", dir), Content: []byte("export interface Model {\n  name: string;\n}\n")},
-		{Path: fmt.Sprintf("%s/handler.test.ts", dir), Content: []byte(fmt.Sprintf("import { describe, it, expect } from \"vitest\";\nimport { Handler } from \"./handler\";\n\ndescribe(\"Handler\", () => {\n  it(\"should handle request\", () => {\n    expect(true).toBe(true);\n  });\n});\n"))},
+		{Path: fmt.Sprintf("%s/handler.test.ts", dir), Content: []byte(fmt.Sprintf("import { describe, it, expect } from \"vitest\";\nimport { Handler } from \"./handler\";\nimport { DefaultService } from \"./service\";\n\ndescribe(\"Handler\", () => {\n  it(\"should handle request\", () => {\n    const service = new DefaultService();\n    const handler = new Handler(service);\n    expect(handler.handle()).toBe(\"processed\");\n  });\n});\n"))},
 	}
 }
 
@@ -101,7 +101,7 @@ func (TypeScriptAdapter) GenerateDockerfile(projectName string) []engine.Artifac
 
 func (TypeScriptAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
-		Path: ".github/workflows/ci.yml",
+		Path:    ".github/workflows/ci.yml",
 		Content: []byte("name: ci\n\non: [push, pull_request]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '22'\n      - run: npm ci\n      - run: npm test\n"),
 	}}
 }
@@ -109,7 +109,7 @@ func (TypeScriptAdapter) GenerateCI(projectName string) []engine.Artifact {
 func (TypeScriptAdapter) GenerateDockerCompose(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
 		Path:    "docker-compose.yml",
-		Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '3000:3000'\n"),
+		Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '3000:3000'\n"),
 	}}
 }
 

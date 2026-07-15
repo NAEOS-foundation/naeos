@@ -1,6 +1,8 @@
 package security
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -217,5 +219,56 @@ func TestHardcodedSecretEnvExempt(t *testing.T) {
 		if f.ID == "hardcoded-secret" {
 			t.Error("should not flag env var usage as hardcoded secret")
 		}
+	}
+}
+
+func TestScanDir(t *testing.T) {
+	dir := t.TempDir()
+
+	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "app.py"), []byte("print('hello')\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("not scanned\n"), 0o644)
+	os.MkdirAll(filepath.Join(dir, "vendor"), 0o755)
+	os.WriteFile(filepath.Join(dir, "vendor", "dep.go"), []byte("package dep\n"), 0o644)
+
+	files, err := ScanDir(dir)
+	if err != nil {
+		t.Fatalf("ScanDir failed: %v", err)
+	}
+
+	if _, ok := files["main.go"]; !ok {
+		t.Error("expected main.go to be scanned")
+	}
+	if _, ok := files["app.py"]; !ok {
+		t.Error("expected app.py to be scanned")
+	}
+	if _, ok := files["readme.txt"]; ok {
+		t.Error("readme.txt should not be scanned")
+	}
+	if _, ok := files["vendor/dep.go"]; ok {
+		t.Error("vendor files should be skipped")
+	}
+}
+
+func TestScanDir_Empty(t *testing.T) {
+	dir := t.TempDir()
+	files, err := ScanDir(dir)
+	if err != nil {
+		t.Fatalf("ScanDir failed: %v", err)
+	}
+	if len(files) != 0 {
+		t.Errorf("expected 0 files, got %d", len(files))
+	}
+}
+
+func TestAuditFiles_Summary(t *testing.T) {
+	auditor := NewAuditor()
+	files := map[string]string{
+		"main.go":  `password=secret123`,
+		"clean.go": `package main`,
+	}
+	result := auditor.AuditFiles(files)
+	if result.Summary.Critical == 0 {
+		t.Error("expected at least 1 critical finding")
 	}
 }

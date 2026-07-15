@@ -72,7 +72,7 @@ func (GoAdapter) GenerateModule(moduleName, modulePath, projectName string) []en
 		{Path: fmt.Sprintf("%s/middleware/logging.go", dir), Content: []byte("package middleware\n\nimport \"net/http\"\n\ntype LoggingMiddleware struct{}\n\nfunc (m LoggingMiddleware) Wrap(next http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tnext.ServeHTTP(w, r)\n\t})\n}\n")},
 		{Path: fmt.Sprintf("%s/config/config.go", dir), Content: []byte(fmt.Sprintf("package config\n\ntype Config struct {\n\tName string `yaml:\"name\"`\n\tPort int    `yaml:\"port\"`\n\tMode string `yaml:\"mode\"`\n}\n"))},
 		{Path: fmt.Sprintf("%s/config/load.go", dir), Content: []byte(fmt.Sprintf("package config\n\nimport (\n\t\"os\"\n\n\t\"gopkg.in/yaml.v3\"\n)\n\nfunc Load(path string) (*Config, error) {\n\tdata, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tvar cfg Config\n\tif err := yaml.Unmarshal(data, &cfg); err != nil {\n\t\treturn nil, err\n\t}\n\treturn &cfg, nil\n}\n"))},
-		{Path: fmt.Sprintf("%s/handler_test.go", dir), Content: []byte(fmt.Sprintf("package %s\n\nimport \"testing\"\n\nfunc TestHandler(t *testing.T) {\n\tt.Log(\"test for %s\")\n}\n", pkg, moduleName))},
+		{Path: fmt.Sprintf("%s/handler_test.go", dir), Content: []byte(fmt.Sprintf("package %s\n\nimport \"testing\"\n\nfunc TestHandler(t *testing.T) {\n\th := NewHandler(nil)\n\tif h == nil {\n\t\tt.Fatal(\"handler should not be nil\")\n\t}\n}\n", pkg))},
 	}
 }
 
@@ -88,7 +88,7 @@ func (GoAdapter) GenerateService(serviceName, serviceKind string, servicePort in
 
 	if serviceKind == "http" || serviceKind == "" {
 		artifacts = append(artifacts, engine.Artifact{
-			Path: fmt.Sprintf("%s/server.go", dir),
+			Path:    fmt.Sprintf("%s/server.go", dir),
 			Content: []byte(fmt.Sprintf("package %s\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n)\n\nfunc Run(port int) error {\n\thandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\tfmt.Fprintf(w, `{\"service\":\"%%s\",\"status\":\"ok\"}`, %q)\n\t})\n\taddr := fmt.Sprintf(\":%%d\", port)\n\tfmt.Printf(\"%%s listening on %%s\\n\", %q, addr)\n\treturn http.ListenAndServe(addr, handler)\n}\n", pkg, serviceName, serviceName)),
 		})
 		artifacts = append(artifacts, engine.Artifact{
@@ -109,7 +109,7 @@ func (GoAdapter) GenerateDockerfile(projectName string) []engine.Artifact {
 
 func (GoAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
-		Path: ".github/workflows/ci.yml",
+		Path:    ".github/workflows/ci.yml",
 		Content: []byte("name: ci\n\non: [push, pull_request]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-go@v5\n        with:\n          go-version: '1.22'\n      - run: go test ./...\n"),
 	}}
 }
@@ -117,7 +117,7 @@ func (GoAdapter) GenerateCI(projectName string) []engine.Artifact {
 func (GoAdapter) GenerateDockerCompose(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
 		Path:    "docker-compose.yml",
-		Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n"),
+		Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n"),
 	}}
 }
 

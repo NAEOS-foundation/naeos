@@ -82,9 +82,9 @@ func TestGenerateK8s(t *testing.T) {
 	artifacts := g.Generate(neir)
 
 	needed := map[string]bool{
-		"k8s/namespace.yaml":            false,
-		"k8s/deployment-api.yaml":       false,
-		"k8s/service-api.yaml":          false,
+		"k8s/namespace.yaml":      false,
+		"k8s/deployment-api.yaml": false,
+		"k8s/service-api.yaml":    false,
 	}
 	for _, a := range artifacts {
 		if _, ok := needed[a.Path]; ok {

@@ -38,7 +38,9 @@ Example:
 }
 
 func newWorkflowListCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all workflows",
 		Args:  cobra.NoArgs,
@@ -46,6 +48,11 @@ func newWorkflowListCommand() *cobra.Command {
 			mgr := workflow.NewManager()
 
 			names := mgr.List()
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), names, outputFormat)
+			}
+
 			if len(names) == 0 {
 				fmt.Fprintln(cmd.OutOrStdout(), "No workflows defined.")
 				return nil
@@ -60,6 +67,9 @@ func newWorkflowListCommand() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }
 
 func newWorkflowCreateCommand() *cobra.Command {
@@ -181,6 +191,7 @@ func newWorkflowRejectCommand() *cobra.Command {
 
 func newWorkflowRequestsCommand() *cobra.Command {
 	var status string
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "requests",
@@ -190,6 +201,11 @@ func newWorkflowRequestsCommand() *cobra.Command {
 			aw := workflow.NewApprovalWorkflow()
 
 			requests := aw.ListByStatus(status)
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), requests, outputFormat)
+			}
+
 			if len(requests) == 0 {
 				fmt.Fprintf(cmd.OutOrStdout(), "No %s requests.\n", status)
 				return nil
@@ -207,5 +223,6 @@ func newWorkflowRequestsCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&status, "status", "pending", "filter by status (pending, approved, rejected)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	return cmd
 }

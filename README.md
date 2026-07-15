@@ -243,9 +243,10 @@ wiki/               # Project wiki (19 pages)
 - [x] v1.0.0 — Stable release (test coverage, security hardening, 35+ commands)
 - [x] v1.1.0 — Critical fixes (WebSocket races, interface{}→any, godoc, OpenAPI)
 - [x] v1.2.0 — Database layer (PostgreSQL/MySQL/SQLite, retry, logging, health checks)
+- [x] v1.3.0 — Quality, Correctness & Production Readiness (code gen fixes, security audit, CLI --output json/yaml)
 
 ### In Progress
-- [ ] v1.3.0 — Cloud integration, advanced plugins
+- [ ] v1.4.0 — Cloud integration, advanced plugins
 - [ ] v2.0.0 — Dashboard UI, distributed builds
 
 ## License
@@ -254,4 +255,4 @@ Apache License 2.0
 
 ## Status
 
-🟢 **Active Development** — NAEOS saat ini dalam tahap pengembangan aktif dengan fitur lengkap untuk specification-driven engineering. Versi terbaru: v1.2.0 (Database Layer).
+🟢 **Active Development** — NAEOS saat ini dalam tahap pengembangan aktif dengan fitur lengkap untuk specification-driven engineering. Versi terbaru: v1.3.0 (Quality, Correctness & Production Readiness).

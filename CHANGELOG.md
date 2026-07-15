@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.3.0] - 2026-07-16
+
+### Added
+- **CLI `--output json/yaml` support** for 14 commands:
+  - `security audit` — machine-readable security reports for CI pipelines.
+  - `benchmark` — structured performance metrics (avg, min, max, ops/sec).
+  - `db list`, `db status` — database connection data.
+  - `gateway status`, `gateway rate-status`, `gateway cb-status`, `gateway lb-list` — API gateway data.
+  - `workflow list`, `workflow requests` — workflow and approval data.
+  - `observability metrics`, `observability status` — telemetry data.
+  - `perf pool-stats`, `perf cache-stats` — performance monitoring data.
+- **`security ScanDir()`** — recursive directory scanner with extension filtering, skip dirs (.git, vendor, node_modules), and 1MB file size limit.
+- **`security audit` real file scanning** — replaced hardcoded findings with real `Auditor` + `ScanDir` integration.
+- **39 new CLI integration tests** covering:
+  - `security audit`, `set-secret`, `get-secret`, `sanitize`, `hash-password`, `validate` (10 tests).
+  - `db connect`, `disconnect`, `status`, `list`, `migrate` (7 tests).
+  - `gateway status`, `rate-status`, `cb-status`, `lb-list`, `add-backend` (6 tests).
+  - `workflow list`, `create`, `execute`, `requests` (5 tests).
+  - `perf pool-create`, `pool-acquire`, `pool-stats`, `cache-set`, `cache-get`, `cache-stats` (6 tests).
+  - `observability trace`, `log`, `metrics`, `status`, `dashboard` (5 tests).
+- **`internal/database/store.go`** — persistent connection store with JSON file persistence (`~/.naeos/db/connections.json`).
+- **`internal/database/store_test.go`** — 8 tests for connection store (Add, List, Remove, Get, Duplicate, Persistence, FileCreated).
+- **`internal/generation/adapters/go_test.go`** — 8 tests for GoAdapter.
+- **`internal/security/security_test.go`** — 3 new tests for `ScanDir`, `ScanDir_Empty`, `AuditFiles_Summary`.
+
+### Fixed
+- **Rust/Axum adapter** — upgraded from Axum 0.6 to 0.7 (`axum::serve` replacing deprecated `axum::Server`), meaningful test assertions.
+- **Actix-web adapter** — CI workflow uses `dtolnay/rust-toolchain@stable`, Dockerfile `AS` casing fixed.
+- **FastAPI adapter** — removed `# TODO` placeholder in generated `app.py`, test imports actual app module.
+- **Go adapter** — test now asserts `handler.Handle() == "processed"` instead of `assert!(true)`.
+- **Python adapter** — test now asserts `handler.handle() == "processed"` instead of `assert True`.
+- **Java adapter** — migrated from JUnit 4 to JUnit 5 (`junit-jupiter`), test uses `assertEquals("processed", ...)`.
+- **TypeScript adapter** — test uses Vitest with proper assertion `handler.handle() == "processed"`.
+- **All generated docker-compose files** — removed deprecated `version: '3.8'` field.
+- **WebSocket server** — removed insecure `defaultUpgrader` package variable (server already uses secure per-instance upgrader).
+- **`db_cmd.go`** — rewritten to use real `database.New()` adapter + persistent connection store.
+
+### Changed
+- **Engine `renderDockerCompose`** — removed `version: '3.8'` from all generated docker-compose YAML output.
+- **Engine `renderPlaceholder`** — fixed placeholder comment to include `pipeline` keyword.
+- **Engine test** — updated assertion to verify `services:` present and `version:` absent in docker-compose output.
+- All 103 packages pass `go test`, `go vet` clean, `go build` clean.
+
 ## [1.2.0] - 2026-07-15
 
 ### Added

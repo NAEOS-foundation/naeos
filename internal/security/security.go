@@ -2,8 +2,53 @@ package security
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
+
+var scanExtensions = map[string]bool{
+	".go": true, ".py": true, ".js": true, ".ts": true,
+	".java": true, ".rs": true, ".rb": true, ".php": true,
+	".yaml": true, ".yml": true, ".json": true, ".toml": true,
+	".env": true, ".sh": true, ".sql": true, ".html": true,
+}
+
+var skipDirs = map[string]bool{
+	".git": true, "node_modules": true, "vendor": true,
+	".venv": true, "__pycache__": true, "target": true,
+	".naeos": true,
+}
+
+func ScanDir(dir string) (map[string]string, error) {
+	files := make(map[string]string)
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			if skipDirs[info.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		ext := filepath.Ext(path)
+		if !scanExtensions[ext] {
+			return nil
+		}
+		if info.Size() > 1<<20 {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		rel, _ := filepath.Rel(dir, path)
+		files[rel] = string(data)
+		return nil
+	})
+	return files, err
+}
 
 type Severity string
 
@@ -26,18 +71,18 @@ type Finding struct {
 }
 
 type AuditResult struct {
-	Project   string
-	Finding   []Finding
-	Summary   AuditSummary
+	Project string
+	Finding []Finding
+	Summary AuditSummary
 }
 
 type AuditSummary struct {
-	Total      int
-	Critical   int
-	High       int
-	Medium     int
-	Low        int
-	Info       int
+	Total    int
+	Critical int
+	High     int
+	Medium   int
+	Low      int
+	Info     int
 }
 
 type Auditor struct {

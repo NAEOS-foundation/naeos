@@ -37,11 +37,23 @@ Example:
 }
 
 func newGatewayStatusCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show gateway status",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			data := map[string]string{
+				"rate_limiter":     "active",
+				"circuit_breakers": "configured",
+				"load_balancers":   "configured",
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "API Gateway Status\n")
 			fmt.Fprintf(out, "==================\n")
@@ -51,27 +63,44 @@ func newGatewayStatusCommand() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }
 
 func newGatewayRateStatusCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "rate-status",
 		Short: "Show rate limiter usage",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rl := gateway.NewRateLimiter()
+			_ = rl
+
+			data := map[string]any{
+				"type":    "token bucket",
+				"default": "100 requests per minute",
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Rate Limiter: active (token bucket)\n")
 			fmt.Fprintf(cmd.OutOrStdout(), "Default: 100 requests per minute\n")
-
-			_ = rl
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }
 
 func newGatewayCBStatusCommand() *cobra.Command {
 	var name string
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "cb-status",
@@ -79,6 +108,18 @@ func newGatewayCBStatusCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cb := gateway.NewCircuitBreaker(name, 5, 3, 30*time.Second)
+
+			data := map[string]any{
+				"name":              name,
+				"state":             cb.State(),
+				"failure_threshold": 5,
+				"success_threshold": 3,
+				"timeout":           "30s",
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
 
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Circuit Breaker: %s\n", name)
@@ -91,11 +132,13 @@ func newGatewayCBStatusCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "default", "circuit breaker name")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	return cmd
 }
 
 func newGatewayLBListCommand() *cobra.Command {
 	var name string
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "lb-list",
@@ -105,6 +148,11 @@ func newGatewayLBListCommand() *cobra.Command {
 			lb := gateway.NewLoadBalancer()
 
 			backends := lb.List()
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), backends, outputFormat)
+			}
+
 			if len(backends) == 0 {
 				fmt.Fprintln(cmd.OutOrStdout(), "No backends configured.")
 				return nil
@@ -125,6 +173,7 @@ func newGatewayLBListCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "default", "load balancer name")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	return cmd
 }
 

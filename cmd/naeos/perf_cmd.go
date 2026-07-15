@@ -92,6 +92,7 @@ func newPerfPoolAcquireCommand() *cobra.Command {
 
 func newPerfPoolStatsCommand() *cobra.Command {
 	var name string
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "pool-stats",
@@ -101,6 +102,17 @@ func newPerfPoolStatsCommand() *cobra.Command {
 			pool := performance.NewConnectionPool(name, 2, 10)
 
 			total, avail, inUse := pool.Stats()
+
+			data := map[string]int{
+				"total":     total,
+				"available": avail,
+				"in_use":    inUse,
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Pool: %s\n", name)
 			fmt.Fprintf(out, "Total:     %d\n", total)
@@ -111,6 +123,7 @@ func newPerfPoolStatsCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "pool name (required)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	cmd.MarkFlagRequired("name")
 	return cmd
 }
@@ -167,16 +180,29 @@ func newPerfCacheGetCommand() *cobra.Command {
 }
 
 func newPerfCacheStatsCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "cache-stats",
 		Short: "Show cache statistics",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cache := performance.NewCache("naeos")
 
+			data := map[string]int{
+				"entries": cache.Size(),
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			fmt.Fprintf(cmd.OutOrStdout(), "Cache: naeos\n")
 			fmt.Fprintf(cmd.OutOrStdout(), "Entries: %d\n", cache.Size())
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }

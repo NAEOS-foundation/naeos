@@ -41,9 +41,9 @@ func (JavaAdapter) GenerateProject(projectName string) []engine.Artifact {
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -63,7 +63,7 @@ func (JavaAdapter) GenerateModule(moduleName, modulePath, projectName string) []
 		{Path: fmt.Sprintf("%s/Service.java", dir), Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\npublic interface Service {\n    String process();\n}\n", javaPkg, javaMod))},
 		{Path: fmt.Sprintf("%s/Repository.java", dir), Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\nimport java.util.List;\n\npublic interface Repository {\n    List<String> list();\n}\n", javaPkg, javaMod))},
 		{Path: fmt.Sprintf("%s/Model.java", dir), Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\npublic class Model {\n    private String name;\n\n    public String getName() { return name; }\n    public void setName(String name) { this.name = name; }\n}\n", javaPkg, javaMod))},
-		{Path: fmt.Sprintf("src/test/java/com/example/%s/%s/HandlerTest.java", javaPkg, javaMod), Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\nimport org.junit.Test;\nimport static org.junit.Assert.*;\n\npublic class HandlerTest {\n    @Test\n    public void testHandle() {\n        assertTrue(true);\n    }\n}\n", javaPkg, javaMod))},
+		{Path: fmt.Sprintf("src/test/java/com/example/%s/%s/HandlerTest.java", javaPkg, javaMod), Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\nimport org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;\n\npublic class HandlerTest {\n    @Test\n    public void testHandle() {\n        Service service = new DefaultService();\n        Handler handler = new Handler(service);\n        assertNotNull(handler);\n        assertEquals(\"processed\", handler.handle());\n    }\n}\n", javaPkg, javaMod))},
 	}
 }
 
@@ -76,7 +76,7 @@ func (JavaAdapter) GenerateService(serviceName, serviceKind string, servicePort 
 
 	if serviceKind == "http" || serviceKind == "" {
 		artifacts = append(artifacts, engine.Artifact{
-			Path: fmt.Sprintf("%s/Server.java", dir),
+			Path:    fmt.Sprintf("%s/Server.java", dir),
 			Content: []byte(fmt.Sprintf("package com.example.%s.%s;\n\npublic class Server {\n    public static void start(int port) {\n        System.out.printf(\"%%s listening on port %%d%%n\", %q, port);\n    }\n}\n", javaPkg, javaSvc, serviceName)),
 		})
 	}
@@ -93,7 +93,7 @@ func (JavaAdapter) GenerateDockerfile(projectName string) []engine.Artifact {
 
 func (JavaAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
-		Path: ".github/workflows/ci.yml",
+		Path:    ".github/workflows/ci.yml",
 		Content: []byte("name: ci\n\non: [push, pull_request]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-java@v4\n        with:\n          java-version: '21'\n          distribution: 'temurin'\n      - run: mvn test\n"),
 	}}
 }
@@ -101,7 +101,7 @@ func (JavaAdapter) GenerateCI(projectName string) []engine.Artifact {
 func (JavaAdapter) GenerateDockerCompose(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
 		Path:    "docker-compose.yml",
-		Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n"),
+		Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n"),
 	}}
 }
 

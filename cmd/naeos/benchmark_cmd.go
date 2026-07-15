@@ -12,6 +12,7 @@ import (
 func newBenchmarkCommand() *cobra.Command {
 	var iterations int
 	var configPath string
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "benchmark",
@@ -33,7 +34,7 @@ Example:
 			input := "project:\n  name: benchapp\n  version: \"1.0.0\"\nservices:\n  - name: api\n    port: 8080"
 
 			durations := make([]time.Duration, 0, iterations)
-			var errors int
+			var errCount int
 
 			for i := 0; i < iterations; i++ {
 				p, err := pipeline.New(*cfg)
@@ -44,7 +45,7 @@ Example:
 				_, err = p.Run(input)
 				durations = append(durations, time.Since(start))
 				if err != nil {
-					errors++
+					errCount++
 				}
 			}
 
@@ -62,9 +63,33 @@ Example:
 			}
 			avg := total / time.Duration(len(durations))
 
+			type benchResult struct {
+				Iterations int     `json:"iterations" yaml:"iterations"`
+				Errors     int     `json:"errors" yaml:"errors"`
+				Average    string  `json:"average" yaml:"average"`
+				Min        string  `json:"min" yaml:"min"`
+				Max        string  `json:"max" yaml:"max"`
+				Total      string  `json:"total" yaml:"total"`
+				OpsPerSec  float64 `json:"ops_per_sec" yaml:"ops_per_sec"`
+			}
+
+			data := benchResult{
+				Iterations: iterations,
+				Errors:     errCount,
+				Average:    avg.Round(time.Microsecond).String(),
+				Min:        minD.Round(time.Microsecond).String(),
+				Max:        maxD.Round(time.Microsecond).String(),
+				Total:      total.Round(time.Millisecond).String(),
+				OpsPerSec:  float64(time.Second) / float64(avg),
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			var sb strings.Builder
 			sb.WriteString("NAEOS Benchmark Results\n")
-			sb.WriteString(fmt.Sprintf("Iterations: %d | Errors: %d\n", iterations, errors))
+			sb.WriteString(fmt.Sprintf("Iterations: %d | Errors: %d\n", iterations, errCount))
 			sb.WriteString(strings.Repeat("─", 45) + "\n")
 			sb.WriteString(fmt.Sprintf("  Average:  %s\n", avg.Round(time.Microsecond)))
 			sb.WriteString(fmt.Sprintf("  Min:      %s\n", minD.Round(time.Microsecond)))
@@ -79,5 +104,6 @@ Example:
 
 	cmd.Flags().IntVarP(&iterations, "iterations", "n", 10, "number of iterations")
 	cmd.Flags().StringVar(&configPath, "config", "", "path to config file")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
 	return cmd
 }

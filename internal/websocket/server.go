@@ -10,20 +10,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var defaultUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
 type Server struct {
-	clients         map[*Client]bool
-	broadcast       chan []byte
-	register        chan *Client
-	unregister      chan *Client
-	mu              sync.RWMutex
-	allowedOrigins  []string
-	upgrader        websocket.Upgrader
+	clients        map[*Client]bool
+	broadcast      chan []byte
+	register       chan *Client
+	unregister     chan *Client
+	mu             sync.RWMutex
+	allowedOrigins []string
+	upgrader       websocket.Upgrader
 }
 
 type Client struct {
@@ -42,16 +36,16 @@ func (c *Client) writeMessage(msgType int, data []byte) error {
 }
 
 type Message struct {
-	Type    string      `json:"type"`
-	Payload any `json:"payload"`
-	Time    time.Time   `json:"time"`
+	Type    string    `json:"type"`
+	Payload any       `json:"payload"`
+	Time    time.Time `json:"time"`
 }
 
 func NewServer() *Server {
 	s := &Server{
-		clients:   make(map[*Client]bool),
-		broadcast: make(chan []byte, 256),
-		register:  make(chan *Client),
+		clients:    make(map[*Client]bool),
+		broadcast:  make(chan []byte, 256),
+		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
 	s.upgrader = websocket.Upgrader{

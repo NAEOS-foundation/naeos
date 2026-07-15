@@ -52,7 +52,7 @@ func (ActixWebAdapter) GenerateService(serviceName, serviceKind string, serviceP
 	var artifacts []engine.Artifact
 	if serviceKind == "http" || serviceKind == "" {
 		artifacts = append(artifacts, engine.Artifact{
-			Path: fmt.Sprintf("%s/server.rs", dir),
+			Path:    fmt.Sprintf("%s/server.rs", dir),
 			Content: []byte(fmt.Sprintf("use actix_web::{get, App, HttpResponse, HttpServer, Responder};\n\n#[get(\"/health\")]\nasync fn health() -> impl Responder {\n    HttpResponse::Ok().json(serde_json::json!({\"status\": \"ok\"}))\n}\n\n#[actix_web::main]\nasync fn main() -> std::io::Result<()> {\n    HttpServer::new(|| App::new().service(health))\n        .bind((\"0.0.0.0\", %d))?\n        .run()\n        .await\n}\n", servicePort)),
 		})
 	}
@@ -64,7 +64,7 @@ func (ActixWebAdapter) GenerateDockerfile(projectName string) []engine.Artifact 
 	return []engine.Artifact{
 		{
 			Path:    "Dockerfile",
-			Content: []byte("FROM rust:1-slim as builder\nWORKDIR /app\nCOPY . .\nRUN cargo install --path .\n\nFROM debian:bookworm-slim\nCOPY --from=builder /usr/local/cargo/bin/app /usr/local/bin/app\nEXPOSE 8080\nCMD [\"app\"]\n"),
+			Content: []byte("FROM rust:1-slim AS builder\nWORKDIR /app\nCOPY . .\nRUN cargo install --path .\n\nFROM debian:bookworm-slim\nCOPY --from=builder /usr/local/cargo/bin/app /usr/local/bin/app\nEXPOSE 8080\nCMD [\"app\"]\n"),
 		},
 	}
 }
@@ -73,8 +73,8 @@ func (ActixWebAdapter) GenerateDockerfile(projectName string) []engine.Artifact 
 func (ActixWebAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{
 		{
-			Path: ".github/workflows/ci.yml",
-			Content: []byte("name: CI\n\non: [push, pull_request]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions-rs/toolchain@v1\n        with:\n          toolchain: stable\n      - run: cargo test --verbose\n"),
+			Path:    ".github/workflows/ci.yml",
+			Content: []byte("name: CI\n\non: [push, pull_request]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: dtolnay/rust-toolchain@stable\n      - run: cargo test --verbose\n"),
 		},
 	}
 }
@@ -84,7 +84,7 @@ func (ActixWebAdapter) GenerateDockerCompose(projectName string) []engine.Artifa
 	return []engine.Artifact{
 		{
 			Path:    "docker-compose.yml",
-			Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n    environment:\n      - ENV=development\n"),
+			Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n    environment:\n      - ENV=development\n"),
 		},
 	}
 }

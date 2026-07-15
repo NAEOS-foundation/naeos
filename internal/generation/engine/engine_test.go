@@ -324,8 +324,11 @@ func TestGenerateNEIRWithDeployment(t *testing.T) {
 		if a.Path == "docker-compose.yml" {
 			foundDockerCompose = true
 			content := string(a.Content)
-			if !strings.Contains(content, "version:") {
-				t.Error("docker-compose.yml should contain version")
+			if !strings.Contains(content, "services:") {
+				t.Error("docker-compose.yml should contain services")
+			}
+			if strings.Contains(content, "version:") {
+				t.Error("docker-compose.yml should not contain deprecated version key")
 			}
 		}
 	}

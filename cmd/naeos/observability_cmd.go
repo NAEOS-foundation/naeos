@@ -95,7 +95,9 @@ func newObsLogCommand() *cobra.Command {
 }
 
 func newObsMetricsCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "metrics",
 		Short: "Show collected metrics",
 		Args:  cobra.NoArgs,
@@ -107,6 +109,10 @@ func newObsMetricsCommand() *cobra.Command {
 			mc.Histogram("request_duration_ms", 125.5, nil)
 
 			metrics := mc.GetMetrics()
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), metrics, outputFormat)
+			}
 
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "%-25s %-12s %-10s %s\n", "NAME", "TYPE", "VALUE", "LABELS")
@@ -122,14 +128,29 @@ func newObsMetricsCommand() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }
 
 func newObsStatusCommand() *cobra.Command {
-	return &cobra.Command{
+	var outputFormat string
+
+	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show observability stack status",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			data := map[string]string{
+				"tracer":  "active",
+				"logger":  "active (level: info)",
+				"metrics": "active",
+			}
+
+			if outputFormat != "" && outputFormat != "text" {
+				return FormatOutput(cmd.OutOrStdout(), data, outputFormat)
+			}
+
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Observability Stack\n")
 			fmt.Fprintf(out, "===================\n")
@@ -139,6 +160,9 @@ func newObsStatusCommand() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format: text, json, yaml")
+	return cmd
 }
 
 func newObsDashboardCommand() *cobra.Command {

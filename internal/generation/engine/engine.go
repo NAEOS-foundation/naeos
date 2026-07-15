@@ -72,7 +72,7 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 	if deployStrategy != "" {
 		artifacts = append(artifacts, Artifact{
 			Path:    "docker-compose.yml",
-			Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n    deploy:\n      replicas: 2\n"),
+			Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n    deploy:\n      replicas: 2\n"),
 		})
 	}
 
@@ -112,7 +112,7 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 		})
 		artifacts = append(artifacts, Artifact{
 			Path:    fmt.Sprintf("%s/package.go", moduleDir),
-			Content: []byte(fmt.Sprintf("package %s\n\n// %s module placeholder.\n", pkg, name)),
+			Content: []byte(fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name)),
 		})
 		artifacts = append(artifacts, Artifact{
 			Path:    fmt.Sprintf("%s/config.yaml", moduleDir),

@@ -39,7 +39,7 @@ func (PythonAdapter) GenerateModule(moduleName, modulePath, projectName string) 
 		{Path: fmt.Sprintf("%s/service.py", dir), Content: []byte("from abc import ABC, abstractmethod\n\n\nclass Service(ABC):\n    @abstractmethod\n    def process(self) -> str:\n        ...\n\n\nclass DefaultService(Service):\n    def process(self) -> str:\n        return \"processed\"\n")},
 		{Path: fmt.Sprintf("%s/repository.py", dir), Content: []byte("from abc import ABC, abstractmethod\n\n\nclass Repository(ABC):\n    @abstractmethod\n    def list(self) -> list[str]:\n        ...\n")},
 		{Path: fmt.Sprintf("%s/models.py", dir), Content: []byte("from dataclasses import dataclass\n\n\n@dataclass\nclass Model:\n    name: str\n")},
-		{Path: fmt.Sprintf("tests/test_%s.py", strutil.Slugify(moduleName)), Content: []byte(fmt.Sprintf("def test_handler():\n    assert True\n"))},
+		{Path: fmt.Sprintf("tests/test_%s.py", strutil.Slugify(moduleName)), Content: []byte(fmt.Sprintf("from %s.handler import Handler\nfrom %s.service import DefaultService\n\ndef test_handler():\n    svc = DefaultService()\n    handler = Handler(svc)\n    assert handler.handle() == \"processed\"\n", pkgName(moduleName), pkgName(moduleName)))},
 	}
 }
 
@@ -54,7 +54,7 @@ func (PythonAdapter) GenerateService(serviceName, serviceKind string, servicePor
 
 	if serviceKind == "http" || serviceKind == "" {
 		artifacts = append(artifacts, engine.Artifact{
-			Path: fmt.Sprintf("%s/server.py", dir),
+			Path:    fmt.Sprintf("%s/server.py", dir),
 			Content: []byte(fmt.Sprintf("from http.server import HTTPServer, SimpleHTTPRequestHandler\n\n\ndef create_server(port: int) -> HTTPServer:\n    server = HTTPServer((\"\", port), SimpleHTTPRequestHandler)\n    print(f\"%s listening on port {port}\")\n    return server\n", serviceName)),
 		})
 	}
@@ -71,7 +71,7 @@ func (PythonAdapter) GenerateDockerfile(projectName string) []engine.Artifact {
 
 func (PythonAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
-		Path: ".github/workflows/ci.yml",
+		Path:    ".github/workflows/ci.yml",
 		Content: []byte("name: ci\n\non: [push, pull_request]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.12'\n      - run: pip install -e .\n      - run: pytest\n"),
 	}}
 }
@@ -79,7 +79,7 @@ func (PythonAdapter) GenerateCI(projectName string) []engine.Artifact {
 func (PythonAdapter) GenerateDockerCompose(projectName string) []engine.Artifact {
 	return []engine.Artifact{{
 		Path:    "docker-compose.yml",
-		Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8000:8000'\n"),
+		Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8000:8000'\n"),
 	}}
 }
 

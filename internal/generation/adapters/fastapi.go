@@ -30,7 +30,7 @@ func (FastAPIAdapter) GenerateProject(projectName string) []engine.Artifact {
 		{Path: "pyproject.toml", Content: []byte(fmt.Sprintf("[build-system]\nrequires = [\"setuptools>=68.0\", \"wheel\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"%s\"\nversion = \"0.1.0\"\nrequires-python = \">=3.11\"\ndependencies = [\"fastapi\", \"uvicorn[standard]\"]\n\n[project.scripts]\n%s = \"%s.__main__:main\"\n\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n", slug, pkg, pkg))},
 		{Path: fmt.Sprintf("%s/__init__.py", pkg), Content: []byte(fmt.Sprintf("\"\"\"%s package.\"\"\"\n\n__version__ = \"0.1.0\"\n", projectName))},
 		{Path: fmt.Sprintf("%s/__main__.py", pkg), Content: []byte(fmt.Sprintf("import uvicorn\nfrom .app import app\n\ndef main() -> None:\n    uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n\nif __name__ == \"__main__\":\n    main()\n"))},
-		{Path: fmt.Sprintf("%s/app.py", pkg), Content: []byte(fmt.Sprintf("from fastapi import FastAPI\n\napp = FastAPI(title=\"%s\")\n\n@app.get(\"/\")\nasync def root():\n    return {\"message\": \"Hello World\"}\n\n# TODO: add routers from generated services/modules\n", projectName))},
+		{Path: fmt.Sprintf("%s/app.py", pkg), Content: []byte(fmt.Sprintf("from fastapi import FastAPI\n\napp = FastAPI(title=\"%s\")\n\n@app.get(\"/\")\nasync def root():\n    return {\"message\": \"Hello World\"}\n", projectName))},
 	}
 }
 
@@ -44,7 +44,7 @@ func (FastAPIAdapter) GenerateModule(moduleName, modulePath, projectName string)
 		{Path: fmt.Sprintf("%s/router.py", dir), Content: []byte(fmt.Sprintf("from fastapi import APIRouter, Depends\n\nrouter = APIRouter(prefix=\"/%s\", tags=[\"%s\"])\n\n@router.get(\"/\")\nasync def read_items():\n    return {\"items\": []}\n", slug, slug))},
 		{Path: fmt.Sprintf("%s/service.py", dir), Content: []byte("from abc import ABC, abstractmethod\nfrom typing import Any\n\nclass Service(ABC):\n    @abstractmethod\n    async def process(self) -> Any:\n        ...\n\nclass DefaultService(Service):\n    async def process(self) -> Any:\n        return {\"result\": \"processed\"}\n")},
 		{Path: fmt.Sprintf("%s/models.py", dir), Content: []byte("from pydantic import BaseModel\n\nclass Model(BaseModel):\n    name: str\n\n")},
-		{Path: fmt.Sprintf("tests/test_%s.py", slug), Content: []byte("def test_dummy():\n    assert True\n")},
+		{Path: fmt.Sprintf("tests/test_%s.py", slug), Content: []byte(fmt.Sprintf("from src.%s.app import app\n\ndef test_app_exists():\n    assert app is not None\n", slug))},
 	}
 }
 
@@ -81,7 +81,7 @@ func (FastAPIAdapter) GenerateDockerfile(projectName string) []engine.Artifact {
 func (FastAPIAdapter) GenerateCI(projectName string) []engine.Artifact {
 	return []engine.Artifact{
 		{
-			Path: ".github/workflows/ci.yml",
+			Path:    ".github/workflows/ci.yml",
 			Content: []byte("name: CI\n\non: [push, pull_request]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.12'\n      - run: pip install -e .[test]\n      - run: pytest\n"),
 		},
 	}
@@ -92,7 +92,7 @@ func (FastAPIAdapter) GenerateDockerCompose(projectName string) []engine.Artifac
 	return []engine.Artifact{
 		{
 			Path:    "docker-compose.yml",
-			Content: []byte("version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - '8000:8000'\n    environment:\n      - ENV=development\n"),
+			Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8000:8000'\n    environment:\n      - ENV=development\n"),
 		},
 	}
 }
