@@ -30,18 +30,18 @@ func newArtifactsCommand() *cobra.Command {
 
 			list := store.List()
 			if len(list) == 0 {
-				fmt.Println("No artifacts tracked.")
+				fmt.Fprintln(cmd.OutOrStdout(), "No artifacts tracked.")
 				return nil
 			}
 
-			fmt.Printf("%-40s %-10s %-8s %s\n", "PATH", "KIND", "SIZE", "HASH")
-			fmt.Println(strings.Repeat("-", 100))
+			fmt.Fprintf(cmd.OutOrStdout(), "%-40s %-10s %-8s %s\n", "PATH", "KIND", "SIZE", "HASH")
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 100))
 			for _, a := range list {
 				hash := a.ContentHash
 				if len(hash) > 8 {
 					hash = hash[:8]
 				}
-				fmt.Printf("%-40s %-10s %-8d %s\n", a.Path, a.Kind, a.Size, hash)
+				fmt.Fprintf(cmd.OutOrStdout(), "%-40s %-10s %-8d %s\n", a.Path, a.Kind, a.Size, hash)
 			}
 			return nil
 		},
@@ -62,16 +62,16 @@ func newArtifactsCommand() *cobra.Command {
 				return fmt.Errorf("artifact %q not found", args[0])
 			}
 
-			fmt.Printf("Path: %s\n", a.Path)
-			fmt.Printf("Kind: %s\n", a.Kind)
-			fmt.Printf("Language: %s\n", a.Language)
-			fmt.Printf("Size: %d bytes\n", a.Size)
-			fmt.Printf("Hash: %s\n", a.ContentHash)
-			fmt.Printf("Created: %s\n", a.CreatedAt.Format("2006-01-02 15:04:05"))
+			fmt.Fprintf(cmd.OutOrStdout(), "Path: %s\n", a.Path)
+			fmt.Fprintf(cmd.OutOrStdout(), "Kind: %s\n", a.Kind)
+			fmt.Fprintf(cmd.OutOrStdout(), "Language: %s\n", a.Language)
+			fmt.Fprintf(cmd.OutOrStdout(), "Size: %d bytes\n", a.Size)
+			fmt.Fprintf(cmd.OutOrStdout(), "Hash: %s\n", a.ContentHash)
+			fmt.Fprintf(cmd.OutOrStdout(), "Created: %s\n", a.CreatedAt.Format("2006-01-02 15:04:05"))
 			if len(a.Metadata) > 0 {
-				fmt.Println("Metadata:")
+				fmt.Fprintln(cmd.OutOrStdout(), "Metadata:")
 				for k, v := range a.Metadata {
-					fmt.Printf("  %s: %s\n", k, v)
+					fmt.Fprintf(cmd.OutOrStdout(), "  %s: %s\n", k, v)
 				}
 			}
 			return nil
@@ -92,7 +92,7 @@ func newArtifactsCommand() *cobra.Command {
 				return fmt.Errorf("save store: %w", err)
 			}
 
-			fmt.Printf("Removed %d duplicate artifacts.\n", removed)
+			fmt.Fprintf(cmd.OutOrStdout(), "Removed %d duplicate artifacts.\n", removed)
 			return nil
 		},
 	})
@@ -107,10 +107,10 @@ func newArtifactsCommand() *cobra.Command {
 			}
 
 			summary := store.Summary()
-			fmt.Println("Artifact Summary:")
-			fmt.Println(strings.Repeat("-", 30))
+			fmt.Fprintln(cmd.OutOrStdout(), "Artifact Summary:")
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("-", 30))
 			for kind, count := range summary {
-				fmt.Printf("  %-15s %d\n", kind, count)
+				fmt.Fprintf(cmd.OutOrStdout(), "  %-15s %d\n", kind, count)
 			}
 			return nil
 		},

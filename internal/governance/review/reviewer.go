@@ -2,6 +2,7 @@ package review
 
 import (
 	"fmt"
+	"strings"
 )
 
 type ReviewStatus string
@@ -108,10 +109,11 @@ func (DefaultReviewer) ReviewArtifact(name, content string, rules []string) (*Re
 func containsTODO(content string) bool {
 	for _, line := range splitLines(content) {
 		trimmed := trimSpace(line)
-		if len(trimmed) >= 4 && trimmed[:4] == "TODO" {
+		lower := strings.ToLower(trimmed)
+		if strings.HasPrefix(lower, "todo") {
 			return true
 		}
-		if len(trimmed) >= 7 && trimmed[:7] == "// TODO" {
+		if strings.Contains(lower, "todo") {
 			return true
 		}
 	}
@@ -120,8 +122,9 @@ func containsTODO(content string) bool {
 
 func containsPlaceholder(content string) bool {
 	placeholders := []string{"TODO", "FIXME", "XXX", "PLACEHOLDER", "CHANGEME", "REPLACE_ME"}
+	lowerContent := strings.ToLower(content)
 	for _, p := range placeholders {
-		if containsStr(content, p) {
+		if strings.Contains(lowerContent, strings.ToLower(p)) {
 			return true
 		}
 	}
@@ -164,8 +167,10 @@ func trimSpace(s string) string {
 }
 
 func containsStr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
+	lowerS := strings.ToLower(s)
+	lowerSub := strings.ToLower(substr)
+	for i := 0; i <= len(lowerS)-len(lowerSub); i++ {
+		if lowerS[i:i+len(lowerSub)] == lowerSub {
 			return true
 		}
 	}

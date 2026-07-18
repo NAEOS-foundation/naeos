@@ -53,7 +53,8 @@ func (s *SnapshotStore) snapshotDir() string {
 }
 
 func (s *SnapshotStore) Create(outputDir string, artifacts []SnapshotArtifact) (*Snapshot, error) {
-	id := fmt.Sprintf("snap-%d", time.Now().UnixMilli())
+	createdAt := time.Now()
+	id := fmt.Sprintf("snap-%d", createdAt.UnixNano())
 	snapDir := filepath.Join(s.snapshotDir(), id)
 
 	if err := os.MkdirAll(snapDir, 0o755); err != nil {
@@ -89,7 +90,7 @@ func (s *SnapshotStore) Create(outputDir string, artifacts []SnapshotArtifact) (
 	manifest := &Manifest{
 		Version:   1,
 		SnapID:    id,
-		Created:   time.Now(),
+		Created:   createdAt,
 		Files:     files,
 		TotalSize: totalSize,
 		Checksum:  fmt.Sprintf("%x", hasher.Sum(nil)),
@@ -106,7 +107,7 @@ func (s *SnapshotStore) Create(outputDir string, artifacts []SnapshotArtifact) (
 
 	snap := &Snapshot{
 		ID:        id,
-		Timestamp: time.Now(),
+		Timestamp: createdAt,
 		OutputDir: outputDir,
 		Artifacts: artifacts,
 		Manifest:  manifest,

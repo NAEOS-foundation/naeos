@@ -272,9 +272,9 @@ func CriticalPath(tasks []Task) ([]Task, error) {
 	}
 
 	dist := make(map[string]time.Duration)
- predecessor := make(map[string]string)
+	predecessor := make(map[string]string)
 	for _, t := range tasks {
-		dist[t.ID] = 0
+		dist[t.ID] = t.Duration
 	}
 
 	ordered := topologicalOrder(tasks)
@@ -282,7 +282,7 @@ func CriticalPath(tasks []Task) ([]Task, error) {
 		for _, t2 := range tasks {
 			for _, dep := range t2.Dependencies {
 				if dep == t.ID {
-					candidate := dist[t.ID] + t.Duration
+					candidate := dist[t.ID] + t2.Duration
 					if candidate > dist[t2.ID] {
 						dist[t2.ID] = candidate
 						predecessor[t2.ID] = t.ID
@@ -295,7 +295,7 @@ func CriticalPath(tasks []Task) ([]Task, error) {
 	var maxDur time.Duration
 	var endTask string
 	for _, t := range tasks {
-		if dist[t.ID] > maxDur {
+		if endTask == "" || dist[t.ID] > maxDur {
 			maxDur = dist[t.ID]
 			endTask = t.ID
 		}
@@ -446,9 +446,19 @@ func (ra ResourceAwareStrategy) Apply(tasks []Task) [][]Task {
 	currentWeight := 0
 
 	for _, t := range sorted {
+		if t.Weight == 0 {
+			if len(currentGroup) > 0 {
+				groups = append(groups, currentGroup)
+				currentGroup = nil
+				currentWeight = 0
+			}
+			groups = append(groups, []Task{t})
+			continue
+		}
+
 		w := t.Weight
-		if w == 0 {
-			w = 1
+		if w < 0 {
+			w = 0
 		}
 		if currentWeight+w > ra.Capacity && len(currentGroup) > 0 {
 			groups = append(groups, currentGroup)
@@ -511,6 +521,12 @@ func ValidateSchedule(tasks []Task) error {
 }
 
 func dfsCycle(id string, adj map[string][]string, visited map[string]int) error {
+	const (
+		white = 0
+		gray  = 1
+		black = 2
+	)
+
 	visited[id] = gray
 	for _, child := range adj[id] {
 		if visited[child] == gray {

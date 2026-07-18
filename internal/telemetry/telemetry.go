@@ -710,12 +710,5 @@ func (e *InMemoryExporter) Reset() {
 	e.spans = e.spans[:0]
 }
 
-// SpanCount returns the count of currently buffered spans in a Service.
-func (s *Service) SpanCount() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.spans)
-}
-
 // Ensure unused import suppression.
 var _ = atomic.LoadInt64

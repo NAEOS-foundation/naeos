@@ -135,6 +135,21 @@ func TestReviewArtifactMultipleRules(t *testing.T) {
 	}
 }
 
+func TestReviewArtifactDetectsLowercaseTodoAndPlaceholder(t *testing.T) {
+	r := NewReviewer()
+	content := "package main\n\n// todo: implement this\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"no-todo", "no-placeholder"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusChanges {
+		t.Fatalf("expected changes_requested status, got %s", result.Status)
+	}
+	if len(result.Comments) != 2 {
+		t.Fatalf("expected 2 comments, got %d", len(result.Comments))
+	}
+}
+
 func TestReviewArtifactNoRules(t *testing.T) {
 	r := NewReviewer()
 	content := "package main\n\nfunc main() {}"

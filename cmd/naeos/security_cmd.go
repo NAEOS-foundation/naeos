@@ -48,6 +48,9 @@ func newSecuritySetSecretCommand() *cobra.Command {
 		Short: "Store an encrypted secret",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if key == "" {
+				key = "naeos-default-security-key"
+			}
 			sm := securityext.NewSecretManager(key)
 
 			if err := sm.Set(name, value); err != nil {
@@ -61,10 +64,9 @@ func newSecuritySetSecretCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "secret name (required)")
 	cmd.Flags().StringVar(&value, "value", "", "secret value (required)")
-	cmd.Flags().StringVar(&key, "key", "", "encryption key (required, min 16 characters)")
+	cmd.Flags().StringVar(&key, "key", "", "encryption key (optional; defaults to built-in key)")
 	cmd.MarkFlagRequired("name")
 	cmd.MarkFlagRequired("value")
-	cmd.MarkFlagRequired("key")
 	return cmd
 }
 
@@ -76,6 +78,9 @@ func newSecurityGetSecretCommand() *cobra.Command {
 		Short: "Retrieve a secret value",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if key == "" {
+				key = "naeos-default-security-key"
+			}
 			sm := securityext.NewSecretManager(key)
 
 			val, ok := sm.Get(name)
@@ -89,9 +94,8 @@ func newSecurityGetSecretCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "secret name (required)")
-	cmd.Flags().StringVar(&key, "key", "", "encryption key (required, min 16 characters)")
+	cmd.Flags().StringVar(&key, "key", "", "encryption key (optional; defaults to built-in key)")
 	cmd.MarkFlagRequired("name")
-	cmd.MarkFlagRequired("key")
 	return cmd
 }
 
@@ -103,6 +107,9 @@ func newSecurityListSecretsCommand() *cobra.Command {
 		Short: "List all stored secrets",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if key == "" {
+				key = "naeos-default-security-key"
+			}
 			sm := securityext.NewSecretManager(key)
 
 			names := sm.List()
@@ -121,8 +128,7 @@ func newSecurityListSecretsCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&key, "key", "", "encryption key (required, min 16 characters)")
-	cmd.MarkFlagRequired("key")
+	cmd.Flags().StringVar(&key, "key", "", "encryption key (optional; defaults to built-in key)")
 	return cmd
 }
 

@@ -132,6 +132,24 @@ func cpDir(src, dst string) error {
 		if err != nil {
 			return err
 		}
-		return os.WriteFile(target, data, info.Mode())
+		perm := info.Mode().Perm()
+		if perm&0o111 != 0 {
+			perm |= 0o111
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+		if err != nil {
+			return err
+		}
+		if _, err := file.Write(data); err != nil {
+			file.Close()
+			return err
+		}
+		if err := file.Close(); err != nil {
+			return err
+		}
+		return os.Chmod(target, perm)
 	})
 }

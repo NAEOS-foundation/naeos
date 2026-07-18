@@ -122,6 +122,9 @@ func newCloudDeployCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if len(config.Resources) == 0 {
+				return fmt.Errorf("cloud deployment requires at least one resource in the configuration")
+			}
 
 			adapter, err := cloud.GetAdapter(config.Provider)
 			if err != nil {
@@ -137,9 +140,9 @@ func newCloudDeployCommand() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("Deployed to %s: %d resources\n", result.Provider, len(result.Resources))
+			fmt.Fprintf(cmd.OutOrStdout(), "Deployed to %s: %d resources\n", result.Provider, len(result.Resources))
 			for _, r := range result.Resources {
-				fmt.Printf("  - %s (%s) -> %s\n", r.Name, r.Type, r.ID)
+				fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s) -> %s\n", r.Name, r.Type, r.ID)
 			}
 			return nil
 		},
@@ -155,6 +158,9 @@ func newCloudPlanCommand() *cobra.Command {
 			config, err := resolveCloudConfig()
 			if err != nil {
 				return err
+			}
+			if len(config.Resources) == 0 {
+				return fmt.Errorf("cloud plan requires at least one resource in the configuration")
 			}
 
 			adapter, err := cloud.GetAdapter(config.Provider)
@@ -176,16 +182,16 @@ func newCloudPlanCommand() *cobra.Command {
 				return fmt.Errorf("generate HCL: %w", err)
 			}
 
-			fmt.Printf("Plan: %d resources to deploy (%s/%s)\n", len(planResult.Resources), config.Provider, config.Region)
+			fmt.Fprintf(cmd.OutOrStdout(), "Plan: %d resources to deploy (%s/%s)\n", len(planResult.Resources), config.Provider, config.Region)
 			for _, res := range planResult.Resources {
-				fmt.Printf("  - %s (%s)\n", res.Name, res.Type)
+				fmt.Fprintf(cmd.OutOrStdout(), "  - %s (%s)\n", res.Name, res.Type)
 			}
 
-			fmt.Println("\n--- Cost Estimate ---")
-			fmt.Print(planResult.CostEstimate.FormatCost())
+			fmt.Fprintln(cmd.OutOrStdout(), "\n--- Cost Estimate ---")
+			fmt.Fprint(cmd.OutOrStdout(), planResult.CostEstimate.FormatCost())
 
-			fmt.Println("\n--- Generated HCL ---")
-			fmt.Println(tf)
+			fmt.Fprintln(cmd.OutOrStdout(), "\n--- Generated HCL ---")
+			fmt.Fprintln(cmd.OutOrStdout(), tf)
 			return nil
 		},
 	}
@@ -208,7 +214,7 @@ func newCloudStatusCommand() *cobra.Command {
 			entries, err := os.ReadDir(stateDir)
 			if err != nil {
 				if os.IsNotExist(err) {
-					fmt.Println("No deployments found. State store is empty.")
+					fmt.Fprintln(cmd.OutOrStdout(), "No deployments found. State store is empty.")
 					return nil
 				}
 				return fmt.Errorf("read state store: %w", err)
@@ -253,27 +259,27 @@ func newCloudStatusCommand() *cobra.Command {
 				}
 
 				if !found {
-					fmt.Println("Deployed resources:")
-					fmt.Println("──────────────────────────────────────────────────────")
+					fmt.Fprintln(cmd.OutOrStdout(), "Deployed resources:")
+					fmt.Fprintln(cmd.OutOrStdout(), "──────────────────────────────────────────────────────")
 					found = true
 				}
 
-				fmt.Printf("  Provider:   %s\n", state.Provider)
-				fmt.Printf("  Project:    %s\n", state.Project)
-				fmt.Printf("  Region:     %s\n", state.Region)
-				fmt.Printf("  Status:     %s\n", state.Status)
-				fmt.Printf("  Deployed:   %s\n", state.Timestamp)
+				fmt.Fprintf(cmd.OutOrStdout(), "  Provider:   %s\n", state.Provider)
+				fmt.Fprintf(cmd.OutOrStdout(), "  Project:    %s\n", state.Project)
+				fmt.Fprintf(cmd.OutOrStdout(), "  Region:     %s\n", state.Region)
+				fmt.Fprintf(cmd.OutOrStdout(), "  Status:     %s\n", state.Status)
+				fmt.Fprintf(cmd.OutOrStdout(), "  Deployed:   %s\n", state.Timestamp)
 				if len(state.Resources) > 0 {
-					fmt.Printf("  Resources:\n")
+					fmt.Fprintln(cmd.OutOrStdout(), "  Resources:")
 					for _, r := range state.Resources {
-						fmt.Printf("    - %s (%s) -> %s\n", r.Name, r.Type, r.ID)
+						fmt.Fprintf(cmd.OutOrStdout(), "    - %s (%s) -> %s\n", r.Name, r.Type, r.ID)
 					}
 				}
-				fmt.Println("──────────────────────────────────────────────────────")
+				fmt.Fprintln(cmd.OutOrStdout(), "──────────────────────────────────────────────────────")
 			}
 
 			if !found {
-				fmt.Println("No deployments found matching the given filters.")
+				fmt.Fprintln(cmd.OutOrStdout(), "No deployments found matching the given filters.")
 			}
 			return nil
 		},
@@ -292,6 +298,9 @@ func newCloudExportCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if len(config.Resources) == 0 {
+				return fmt.Errorf("cloud export requires at least one resource in the configuration")
+			}
 
 			adapter, err := cloud.GetAdapter(config.Provider)
 			if err != nil {
@@ -307,7 +316,7 @@ func newCloudExportCommand() *cobra.Command {
 				return err
 			}
 
-			fmt.Println(tf)
+			fmt.Fprintln(cmd.OutOrStdout(), tf)
 			return nil
 		},
 	}
@@ -324,9 +333,9 @@ func newCloudTypesCommand() *cobra.Command {
 			case "yaml":
 				return FormatOutput(cmd.OutOrStdout(), cloud.SupportedResourceTypes, "yaml")
 			default:
-				fmt.Println("Supported resource types:")
+				fmt.Fprintln(cmd.OutOrStdout(), "Supported resource types:")
 				for _, t := range cloud.SupportedResourceTypes {
-					fmt.Printf("  - %s\n", t)
+					fmt.Fprintf(cmd.OutOrStdout(), "  - %s\n", t)
 				}
 				return nil
 			}
