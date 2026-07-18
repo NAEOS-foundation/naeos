@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/governance/review"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
 
@@ -239,6 +240,59 @@ func TestPipelineRunWithSpecFullExample(t *testing.T) {
 	}
 	if tsArtifacts == 0 {
 		t.Fatal("expected TypeScript artifacts from spec-full.yaml generation")
+	}
+}
+
+func TestReviewRulesForArtifactGo(t *testing.T) {
+	goRules := reviewRulesForArtifact("src/main.go")
+	if len(goRules) != 4 {
+		t.Fatalf("expected 4 review rules for Go artifact, got %d", len(goRules))
+	}
+	expected := []string{"no-todo", "no-placeholder", "has-package-declaration", "has-license-header"}
+	for i, rule := range expected {
+		if goRules[i] != rule {
+			t.Fatalf("expected rule %q at index %d, got %q", rule, i, goRules[i])
+		}
+	}
+
+	nonGoRules := reviewRulesForArtifact("README.md")
+	if len(nonGoRules) != 2 {
+		t.Fatalf("expected 2 review rules for non-Go artifact, got %d", len(nonGoRules))
+	}
+	if nonGoRules[0] != "no-todo" || nonGoRules[1] != "no-placeholder" {
+		t.Fatalf("unexpected non-Go review rules: %#v", nonGoRules)
+	}
+}
+
+func TestPipelineRunWithGoReviewArtifacts(t *testing.T) {
+	p, err := New(Config{Languages: []string{"go"}})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	spec := `project: review-go
+services:
+  - name: api
+    kind: http
+    port: 8080
+`
+
+	result, err := p.Run(spec)
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if len(result.Reviews) == 0 {
+		t.Fatal("expected review results")
+	}
+
+	approved := 0
+	for _, r := range result.Reviews {
+		if r.Status == review.StatusApproved {
+			approved++
+		}
+	}
+	if approved == 0 {
+		t.Fatal("expected at least one approved review")
 	}
 }
 
