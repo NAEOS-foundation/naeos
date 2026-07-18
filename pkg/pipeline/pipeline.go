@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/adapters"
@@ -21,10 +22,10 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/planner/graph"
 	"github.com/NAEOS-foundation/naeos/internal/planner/scheduler"
 	"github.com/NAEOS-foundation/naeos/internal/registry"
+	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 	"github.com/NAEOS-foundation/naeos/internal/specification/normalizer"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
-	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 	cfgpkg "github.com/NAEOS-foundation/naeos/pkg/config"
 	"github.com/NAEOS-foundation/naeos/pkg/kernel"
 	"golang.org/x/sync/errgroup"
@@ -65,10 +66,10 @@ type HookContext struct {
 }
 
 type Hooks struct {
-	BeforeParse  []HookFunc
-	AfterParse   []HookFunc
-	BeforeRun    []HookFunc
-	AfterRun     []HookFunc
+	BeforeParse    []HookFunc
+	AfterParse     []HookFunc
+	BeforeRun      []HookFunc
+	AfterRun       []HookFunc
 	BeforeGenerate []HookFunc
 	AfterGenerate  []HookFunc
 }
@@ -200,6 +201,13 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	}
 
 	return p, nil
+}
+
+func reviewRulesForArtifact(path string) []string {
+	if strings.HasSuffix(path, ".go") {
+		return []string{"no-todo", "no-placeholder", "has-package-declaration", "has-license-header"}
+	}
+	return []string{"no-todo", "no-placeholder"}
 }
 
 func (p *Pipeline) Name() string {
@@ -639,7 +647,8 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.logVerbose("reviewing %d artifacts", len(artifacts))
 		var reviews []*review.ReviewResult
 		for _, artifact := range artifacts {
-			r, err := p.reviewer.ReviewArtifact(artifact.Path, string(artifact.Content), []string{"no-todo", "no-placeholder"})
+			rules := reviewRulesForArtifact(artifact.Path)
+			r, err := p.reviewer.ReviewArtifact(artifact.Path, string(artifact.Content), rules)
 			if err == nil && r != nil {
 				reviews = append(reviews, r)
 			}

@@ -89,6 +89,34 @@ func TestGenerateForLanguageGo(t *testing.T) {
 	}
 }
 
+func TestGenerateForLanguageGoIncludesLicenseHeader(t *testing.T) {
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "acme-api"},
+		Modules: []module.Module{{Name: "auth", Path: "./internal/auth"}},
+	}
+
+	engine := NewEngine()
+	artifacts, err := engine.GenerateForLanguage(neir, language.LanguageGo)
+	if err != nil {
+		t.Fatalf("GenerateForLanguage returned error: %v", err)
+	}
+	if len(artifacts) == 0 {
+		t.Fatal("expected artifacts from Go generation")
+	}
+
+	for _, a := range artifacts {
+		if strings.HasSuffix(a.Path, ".go") {
+			content := string(a.Content)
+			if !strings.Contains(content, "Copyright 2026 NAEOS Foundation") {
+				t.Errorf("expected license header in %s", a.Path)
+			}
+			if !strings.Contains(content, "package ") {
+				t.Errorf("expected package declaration in %s", a.Path)
+			}
+		}
+	}
+}
+
 func TestGenerateForLanguageTypeScript(t *testing.T) {
 	neir := &model.NEIR{
 		Project: &project.Project{Name: "web-app"},

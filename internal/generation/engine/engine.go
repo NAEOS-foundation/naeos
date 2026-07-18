@@ -22,6 +22,14 @@ type Artifact struct {
 	Content []byte
 }
 
+const goLicenseHeader = `// Copyright 2026 NAEOS Foundation
+// Licensed under the Apache License, Version 2.0 (the "License");
+// You may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+`
+
 type DefaultEngine struct{}
 
 func NewEngine() GeneratorEngine {
@@ -237,7 +245,7 @@ edition = "2021"
 func generateMainFile(lang language.Language, projectName string) string {
 	switch lang {
 	case language.LanguageGo:
-		return fmt.Sprintf("package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hello from %s\")\n}\n", projectName)
+		return goLicenseHeader + fmt.Sprintf("package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hello from %s\")\n}\n", projectName)
 	case language.LanguageTypeScript:
 		return fmt.Sprintf("console.log('hello from %s');\n", projectName)
 	case language.LanguagePython:
@@ -272,7 +280,7 @@ func generateModuleFile(lang language.Language, moduleName, projectName string) 
 	pkg := strutil.Slugify(moduleName)
 	switch lang {
 	case language.LanguageGo:
-		return fmt.Sprintf("package %s\n\n// %s module.\n", pkg, moduleName)
+		return goLicenseHeader + fmt.Sprintf("package %s\n\n// %s module.\n", pkg, moduleName)
 	case language.LanguageTypeScript:
 		return fmt.Sprintf("// %s module\nexport {};\n", moduleName)
 	case language.LanguagePython:
