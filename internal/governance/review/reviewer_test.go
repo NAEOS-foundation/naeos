@@ -161,3 +161,30 @@ func TestReviewArtifactNoRules(t *testing.T) {
 		t.Fatalf("expected approved status, got %s", result.Status)
 	}
 }
+
+func TestReviewArtifactMissingLicenseHeader(t *testing.T) {
+	r := NewReviewer()
+	content := "package main\n\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"has-license-header"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusChanges {
+		t.Fatalf("expected changes_requested status, got %s", result.Status)
+	}
+	if len(result.Comments) != 1 {
+		t.Fatalf("expected 1 comment, got %d", len(result.Comments))
+	}
+}
+
+func TestReviewArtifactHasLicenseHeader(t *testing.T) {
+	r := NewReviewer()
+	content := "// Copyright 2026 NAEOS Foundation\n// Licensed under the Apache License, Version 2.0 (the \"License\");\npackage main\n\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"has-license-header"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusApproved {
+		t.Fatalf("expected approved status, got %s", result.Status)
+	}
+}

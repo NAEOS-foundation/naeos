@@ -136,7 +136,22 @@ func containsPackageDecl(content string) bool {
 }
 
 func containsLicense(content string) bool {
-	return containsStr(content, "License") || containsStr(content, "license") || containsStr(content, "Apache") || containsStr(content, "MIT")
+	lines := splitLines(content)
+	maxLines := 20
+	if len(lines) < maxLines {
+		maxLines = len(lines)
+	}
+
+	header := strings.Join(lines[:maxLines], "\n")
+	licenseMarkers := []string{"license", "apache", "mit", "copyright", "licensed under"}
+	lowerHeader := strings.ToLower(header)
+
+	for _, marker := range licenseMarkers {
+		if strings.Contains(lowerHeader, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func splitLines(s string) []string {
