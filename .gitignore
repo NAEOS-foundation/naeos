@@ -43,6 +43,10 @@ cmd/naeos/out/
 .env
 .env.local
 
+# SQLite temporary files
+*.db-shm
+*.db-wal
+
 # Logs
 *.log
 
