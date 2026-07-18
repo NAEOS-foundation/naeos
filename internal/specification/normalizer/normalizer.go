@@ -396,7 +396,7 @@ func inferArrayType(arr []any) map[string]any {
 
 	typeList := make([]string, 0, len(itemTypes))
 	for t := range itemTypes {
-		typeList = append(t, t)
+		typeList = append(typeList, t)
 	}
 	sort.Strings(typeList)
 
@@ -439,7 +439,7 @@ func describeType(v any) string {
 
 func ExtractSchema(normalized *NormalizedSpec) map[string]string {
 	if normalized == nil {
-		return make(map[string]any)
+		return map[string]string{}
 	}
 
 	result := make(map[string]string)
