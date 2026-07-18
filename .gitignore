@@ -51,3 +51,4 @@ tmp/
 .tmp/
 documentation.o
 cmd/naeos/nonexistent/
+.kilo/
