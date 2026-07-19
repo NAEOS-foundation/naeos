@@ -1,0 +1,58 @@
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - typecheck
+    - gofmt
+    - goimports
+    - misspell
+    - unconvert
+    - unparam
+    - gocritic
+    - gosec
+    - bodyclose
+    - noctx
+    - errorlint
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/NAEOS-foundation/naeos
+  misspell:
+    locale: US
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+  gosec:
+    excludes:
+      - G104  # unhandled errors on deferred close
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+
+issues:
+  exclude-generated: lax
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+    - path: "zz_generated.*"
+      linters:
+        - govet
+        - errcheck
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+        - typecheck
+  max-issues-per-linter: 0
+  max-same-issues: 0
