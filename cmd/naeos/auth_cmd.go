@@ -82,15 +82,21 @@ func newAuthCreateUserCommand() *cobra.Command {
 		Short: "Create a new user",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			store := auth.NewUserStore()
 			mgr := auth.NewManager()
 
 			user := &auth.User{
-				ID:    generateSimpleID(),
-				Name:  name,
-				Email: email,
-				Roles: roles,
+				ID:        generateSimpleID(),
+				Name:      name,
+				Email:     email,
+				Roles:     roles,
+				CreatedAt: time.Now(),
 			}
 			mgr.CreateUser(user)
+
+			if err := store.Add(user); err != nil {
+				return fmt.Errorf("failed to persist user: %w", err)
+			}
 
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Created user: %s (ID: %s)\n", user.Name, user.ID)
@@ -141,7 +147,25 @@ func newAuthListUsersCommand() *cobra.Command {
 		Short: "List all users",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "Users: (create users with 'naeos auth create-user')")
+			store := auth.NewUserStore()
+
+			users, err := store.List()
+			if err != nil {
+				return fmt.Errorf("failed to list users: %w", err)
+			}
+
+			if len(users) == 0 {
+				fmt.Fprintln(cmd.OutOrStdout(), "No users found. Create users with 'naeos auth create-user'.")
+				return nil
+			}
+
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "%-10s %-15s %-25s %-20s\n", "ID", "NAME", "EMAIL", "ROLES")
+			fmt.Fprintf(out, "%-10s %-15s %-25s %-20s\n", "----", "----", "-----", "-----")
+			for _, u := range users {
+				roles := strings.Join(u.Roles, ", ")
+				fmt.Fprintf(out, "%-10s %-15s %-25s %-20s\n", u.ID, u.Name, u.Email, roles)
+			}
 			return nil
 		},
 	}
@@ -153,7 +177,25 @@ func newAuthListRolesCommand() *cobra.Command {
 		Short: "List all roles",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "Roles: (add roles with RBAC)")
+			mgr := auth.NewManager()
+			roles := mgr.RBAC().ListRoles()
+
+			if len(roles) == 0 {
+				fmt.Fprintln(cmd.OutOrStdout(), "No roles defined. Add roles via RBAC.")
+				return nil
+			}
+
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "%-25s %s\n", "ROLE", "PERMISSIONS")
+			fmt.Fprintf(out, "%-25s %s\n", "-------------------------", "-----------")
+			for _, name := range roles {
+				role, _ := mgr.RBAC().GetRole(name)
+				perms := ""
+				if role != nil {
+					perms = strings.Join(role.Permissions, ", ")
+				}
+				fmt.Fprintf(out, "%-25s %s\n", name, perms)
+			}
 			return nil
 		},
 	}

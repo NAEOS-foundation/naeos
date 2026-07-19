@@ -493,6 +493,16 @@ func (m *Manager) AuthenticateAPIKey(key string) (*User, bool) {
 	return user, true
 }
 
+func (m *Manager) ListUsers() []*User {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	users := make([]*User, 0, len(m.users))
+	for _, u := range m.users {
+		users = append(users, u)
+	}
+	return users
+}
+
 // Helpers
 
 func generateToken() string {

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -178,12 +182,59 @@ Example:
   naeos observability dashboard --port 9090`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			mux := http.NewServeMux()
+			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/html")
+				fmt.Fprint(w, `<!DOCTYPE html>
+<html><head><title>NAEOS Observability Dashboard</title></head>
+<body>
+<h1>NAEOS Observability Dashboard</h1>
+<h2>Available Endpoints</h2>
+<ul>
+  <li><a href="/traces">GET /traces</a> — View traces</li>
+  <li><a href="/logs">GET /logs</a> — View logs</li>
+  <li><a href="/metrics">GET /metrics</a> — View metrics</li>
+  <li><a href="/status">GET /status</a> — System status</li>
+</ul>
+</body></html>`)
+			})
+			mux.HandleFunc("/traces", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"traces":[]}`)
+			})
+			mux.HandleFunc("/logs", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"logs":[]}`)
+			})
+			mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"metrics":[]}`)
+			})
+			mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"tracer":"active","logger":"active","metrics":"active"}`)
+			})
+
+			addr := fmt.Sprintf(":%d", port)
+			srv := &http.Server{
+				Addr:    addr,
+				Handler: mux,
+			}
+
+			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+
 			fmt.Fprintf(cmd.OutOrStdout(), "Starting observability dashboard on http://localhost:%d\n", port)
-			_, _ = cmd.OutOrStdout().Write([]byte("Endpoints:\n"))
-			_, _ = cmd.OutOrStdout().Write([]byte("  GET /traces     — View traces\n"))
-			_, _ = cmd.OutOrStdout().Write([]byte("  GET /logs       — View logs\n"))
-			_, _ = cmd.OutOrStdout().Write([]byte("  GET /metrics    — View metrics\n"))
-			_, _ = cmd.OutOrStdout().Write([]byte("  GET /status     — System status\n"))
+
+			go func() {
+				<-ctx.Done()
+				srv.Shutdown(context.Background())
+			}()
+
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				return fmt.Errorf("dashboard server error: %w", err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Dashboard stopped.")
 			return nil
 		},
 	}

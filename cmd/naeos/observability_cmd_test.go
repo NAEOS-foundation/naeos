@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestObservabilityCommandShowsHelp(t *testing.T) {
@@ -61,15 +63,30 @@ func TestObsStatus(t *testing.T) {
 }
 
 func TestObsDashboard(t *testing.T) {
+	buf := new(bytes.Buffer)
 	root := newRootCommand()
-	output, err := executeCommand(root, "observability", "dashboard", "--port", "8080")
-	if err != nil {
-		t.Fatalf("observability dashboard failed: %v", err)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs([]string{"observability", "dashboard", "--port", "0"})
+	root.SilenceErrors = true
+	root.SilenceUsage = true
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := root.ExecuteC()
+		done <- err
+	}()
+
+	select {
+	case <-time.After(500 * time.Millisecond):
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("observability dashboard failed: %v", err)
+		}
 	}
+
+	output := buf.String()
 	if !strings.Contains(output, "Starting observability dashboard") {
 		t.Fatalf("expected dashboard start message, got %q", output)
-	}
-	if !strings.Contains(output, "8080") {
-		t.Fatalf("expected port in output, got %q", output)
 	}
 }

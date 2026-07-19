@@ -6,8 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -106,6 +109,115 @@ func (sm *SecretManager) Exists(name string) bool {
 	defer sm.mu.RUnlock()
 	_, ok := sm.secrets[name]
 	return ok
+}
+
+// FileSecretManager wraps SecretManager with file-backed persistence.
+
+type FileSecretManager struct {
+	sm       *SecretManager
+	filePath string
+	mu       sync.Mutex
+}
+
+func NewFileSecretManager(key string) (*FileSecretManager, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "."
+	}
+	dir := filepath.Join(home, ".config", "naeos")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, fmt.Errorf("create config dir: %w", err)
+	}
+	fp := filepath.Join(dir, "secrets.enc")
+	fsm := &FileSecretManager{
+		sm:       NewSecretManager(key),
+		filePath: fp,
+	}
+	fsm.load()
+	return fsm, nil
+}
+
+type fileEntry struct {
+	Name      string `json:"name"`
+	Value     string `json:"value"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+func (fsm *FileSecretManager) load() {
+	data, err := os.ReadFile(fsm.filePath)
+	if err != nil {
+		return
+	}
+	var entries []fileEntry
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return
+	}
+	fsm.sm.mu.Lock()
+	defer fsm.sm.mu.Unlock()
+	for _, e := range entries {
+		createdAt, _ := time.Parse(time.RFC3339Nano, e.CreatedAt)
+		updatedAt, _ := time.Parse(time.RFC3339Nano, e.UpdatedAt)
+		fsm.sm.secrets[e.Name] = &Secret{
+			Name:      e.Name,
+			Value:     e.Value,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		}
+	}
+}
+
+func (fsm *FileSecretManager) Save() error {
+	fsm.sm.mu.RLock()
+	defer fsm.sm.mu.RUnlock()
+	entries := make([]fileEntry, 0, len(fsm.sm.secrets))
+	for _, s := range fsm.sm.secrets {
+		entries = append(entries, fileEntry{
+			Name:      s.Name,
+			Value:     s.Value,
+			CreatedAt: s.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt: s.UpdatedAt.Format(time.RFC3339Nano),
+		})
+	}
+	data, err := json.Marshal(entries)
+	if err != nil {
+		return fmt.Errorf("marshal secrets: %w", err)
+	}
+	if err := os.WriteFile(fsm.filePath, data, 0o600); err != nil {
+		return fmt.Errorf("write secrets file: %w", err)
+	}
+	return nil
+}
+
+func (fsm *FileSecretManager) Set(name, value string) error {
+	fsm.mu.Lock()
+	defer fsm.mu.Unlock()
+	if err := fsm.sm.Set(name, value); err != nil {
+		return err
+	}
+	return fsm.Save()
+}
+
+func (fsm *FileSecretManager) Get(name string) (string, bool) {
+	return fsm.sm.Get(name)
+}
+
+func (fsm *FileSecretManager) Delete(name string) bool {
+	fsm.mu.Lock()
+	defer fsm.mu.Unlock()
+	ok := fsm.sm.Delete(name)
+	if ok {
+		_ = fsm.Save()
+	}
+	return ok
+}
+
+func (fsm *FileSecretManager) List() []string {
+	return fsm.sm.List()
+}
+
+func (fsm *FileSecretManager) Exists(name string) bool {
+	return fsm.sm.Exists(name)
 }
 
 func (sm *SecretManager) encrypt(value string) (string, error) {
@@ -314,12 +426,14 @@ func MaxLengthRule(max int) func(string) error {
 }
 
 func PatternRule(pattern string) func(string) error {
-	return func(value string) error {
-		matched, err := regexp.MatchString(pattern, value)
-		if err != nil {
-			return err
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return func(string) error {
+			return fmt.Errorf("invalid pattern %q: %w", pattern, err)
 		}
-		if !matched {
+	}
+	return func(value string) error {
+		if !re.MatchString(value) {
 			return fmt.Errorf("value does not match pattern")
 		}
 		return nil

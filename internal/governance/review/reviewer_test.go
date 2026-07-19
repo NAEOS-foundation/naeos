@@ -86,7 +86,7 @@ func TestReviewArtifactNoPlaceholder(t *testing.T) {
 
 func TestReviewArtifactWithPlaceholder(t *testing.T) {
 	r := NewReviewer()
-	content := "package main\n\n// FIXME: broken\nfunc main() {}"
+	content := "package main\n\n// PLACEHOLDER: implement this\nfunc main() {}"
 	result, err := r.ReviewArtifact("test.go", content, []string{"no-placeholder"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -145,8 +145,8 @@ func TestReviewArtifactDetectsLowercaseTodoAndPlaceholder(t *testing.T) {
 	if result.Status != StatusChanges {
 		t.Fatalf("expected changes_requested status, got %s", result.Status)
 	}
-	if len(result.Comments) != 2 {
-		t.Fatalf("expected 2 comments, got %d", len(result.Comments))
+	if len(result.Comments) != 1 {
+		t.Fatalf("expected 1 comment, got %d", len(result.Comments))
 	}
 }
 

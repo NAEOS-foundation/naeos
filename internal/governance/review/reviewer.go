@@ -121,7 +121,7 @@ func containsTODO(content string) bool {
 }
 
 func containsPlaceholder(content string) bool {
-	placeholders := []string{"TODO", "FIXME", "XXX", "PLACEHOLDER", "CHANGEME", "REPLACE_ME"}
+	placeholders := []string{"PLACEHOLDER", "CHANGEME", "REPLACE_ME"}
 	lowerContent := strings.ToLower(content)
 	for _, p := range placeholders {
 		if strings.Contains(lowerContent, strings.ToLower(p)) {

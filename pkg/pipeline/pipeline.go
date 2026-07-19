@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/adapters"
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
@@ -31,6 +28,12 @@ import (
 	cfgpkg "github.com/NAEOS-foundation/naeos/pkg/config"
 	"github.com/NAEOS-foundation/naeos/pkg/kernel"
 )
+
+type ParseCache interface {
+	Get(specHash string) (*Result, bool)
+	Set(specHash string, result *Result)
+	HashSpec(spec string) string
+}
 
 type Config struct {
 	Name       string
@@ -56,6 +59,7 @@ type Config struct {
 	Policies   []policy.Rule
 	Hooks      *Hooks
 	Observer   PipelineObserver
+	Cache      ParseCache
 }
 
 type HookFunc func(ctx *HookContext) error
@@ -97,6 +101,7 @@ type Pipeline struct {
 	dryRun         bool
 	parallel       bool
 	hooks          *Hooks
+	cache          ParseCache
 }
 
 type PipelineObserver interface {
@@ -113,6 +118,12 @@ type Result struct {
 	Tasks     []scheduler.Task
 	Graph     *graph.PlannerGraph
 	Reviews   []*review.ReviewResult
+}
+
+func WithCache(cache ParseCache) func(*Config) {
+	return func(cfg *Config) {
+		cfg.Cache = cache
+	}
 }
 
 func ConfigFromFile(path string) (Config, error) {
@@ -197,6 +208,7 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	if p.kernel == nil {
 		p.kernel = kernel.NewKernel()
 	}
+	p.cache = cfg.Cache
 	if err := p.registerKernelServices(); err != nil {
 		return nil, err
 	}
@@ -364,6 +376,14 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		return nil, fmt.Errorf("input cannot be empty")
 	}
 
+	if p.cache != nil {
+		specHash := p.cache.HashSpec(input)
+		if cached, ok := p.cache.Get(specHash); ok {
+			p.logVerbose("cache hit for specification hash %s", specHash)
+			return cached, nil
+		}
+	}
+
 	if err := p.executeHooks(p.getHookFuncs().BeforeParse, "parse"); err != nil {
 		return nil, err
 	}
@@ -428,70 +448,17 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		NEIR:   neir,
 	}
 	_ = p.emitKernelEvent("pipeline.validate", map[string]any{"source_len": len(result.Source)})
+
+	if p.cache != nil {
+		specHash := p.cache.HashSpec(input)
+		p.cache.Set(specHash, result)
+	}
+
 	return result, nil
 }
 
 func (p *Pipeline) normalizeParallel(parsed *parser.SpecDocument) (*normalizer.NormalizedSpec, error) {
-	g, _ := errgroup.WithContext(context.Background())
-	g.SetLimit(runtime.GOMAXPROCS(0))
-
-	type moduleResult struct {
-		index int
-		entry map[string]any
-	}
-
-	results := make([]moduleResult, len(parsed.Modules))
-
-	for i, mod := range parsed.Modules {
-		i, mod := i, mod
-		g.Go(func() error {
-			entry := map[string]any{
-				"name": mod.Name,
-				"path": mod.Path,
-			}
-			if mod.Description != "" {
-				entry["description"] = mod.Description
-			}
-			if len(mod.Dependencies) > 0 {
-				entry["dependencies"] = mod.Dependencies
-			}
-			results[i] = moduleResult{index: i, entry: entry}
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	modules := make([]map[string]any, len(results))
-	for _, r := range results {
-		modules[r.index] = r.entry
-	}
-
-	services := normalizeServicesFromSpec(parsed)
-
-	result := map[string]any{
-		"project":  parsed.Project,
-		"modules":  modules,
-		"services": services,
-		"source":   parsed,
-	}
-
-	if parsed.Architecture != nil {
-		result["architecture"] = normalizeArchitectureFromSpec(parsed.Architecture)
-	}
-	if parsed.Deployment != nil {
-		result["deployment"] = normalizeDeploymentFromSpec(parsed.Deployment)
-	}
-	if parsed.Testing != nil {
-		result["testing"] = normalizeTestingFromSpec(parsed.Testing)
-	}
-	if parsed.Generation != nil {
-		result["generation"] = normalizeGenerationFromSpec(parsed.Generation)
-	}
-
-	return &normalizer.NormalizedSpec{Values: result}, nil
+	return p.normalizer.Normalize(parsed)
 }
 
 func normalizeServicesFromSpec(parsed *parser.SpecDocument) []map[string]any {

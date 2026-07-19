@@ -307,9 +307,29 @@ func (h *HTTPCache) Set(key string, value any) {
 }
 
 func (h *HTTPCache) Invalidate(pattern string) {
-	for _, key := range h.cache.Keys() {
+	if pattern == "*" {
+		h.cache.Clear()
+		return
+	}
+
+	h.cache.mu.RLock()
+	keys := make([]string, 0, len(h.cache.items))
+	for key := range h.cache.items {
 		if matchPattern(key, pattern) {
-			h.cache.Delete(key)
+			keys = append(keys, key)
+		}
+	}
+	h.cache.mu.RUnlock()
+
+	if len(keys) == 0 {
+		return
+	}
+
+	h.cache.mu.Lock()
+	defer h.cache.mu.Unlock()
+	for _, key := range keys {
+		if elem, ok := h.cache.items[key]; ok {
+			h.cache.remove(elem)
 		}
 	}
 }

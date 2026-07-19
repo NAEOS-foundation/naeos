@@ -49,7 +49,7 @@ func newSecuritySetSecretCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if key == "" {
-				key = "naeos-default-security-key"
+				return fmt.Errorf("encryption key is required (use --key flag)")
 			}
 			sm := securityext.NewSecretManager(key)
 
@@ -64,9 +64,10 @@ func newSecuritySetSecretCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "secret name (required)")
 	cmd.Flags().StringVar(&value, "value", "", "secret value (required)")
-	cmd.Flags().StringVar(&key, "key", "", "encryption key (optional; defaults to built-in key)")
+	cmd.Flags().StringVar(&key, "key", "", "encryption key (required)")
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.MarkFlagRequired("value")
+	_ = cmd.MarkFlagRequired("key")
 	return cmd
 }
 
@@ -79,7 +80,7 @@ func newSecurityGetSecretCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if key == "" {
-				key = "naeos-default-security-key"
+				return fmt.Errorf("encryption key is required (use --key flag)")
 			}
 			sm := securityext.NewSecretManager(key)
 
@@ -94,8 +95,9 @@ func newSecurityGetSecretCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "secret name (required)")
-	cmd.Flags().StringVar(&key, "key", "", "encryption key (optional; defaults to built-in key)")
+	cmd.Flags().StringVar(&key, "key", "", "encryption key (required)")
 	_ = cmd.MarkFlagRequired("name")
+	_ = cmd.MarkFlagRequired("key")
 	return cmd
 }
 

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -32,13 +36,30 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compiler := compiler.New()
 			bundle := contextbundle.NewGenerator(nil)
-			_ = mcp.NewServer(compiler, bundle)
+			server := mcp.NewServer(compiler, bundle)
 
 			addr := fmt.Sprintf(":%d", port)
 			fmt.Fprintf(cmd.OutOrStdout(), "NAEOS MCP server starting on %s\n", addr)
 			fmt.Fprintf(cmd.OutOrStdout(), "Tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept\n")
 			fmt.Fprintf(cmd.OutOrStdout(), "Health check: http://localhost:%d/health\n", port)
 
+			srv := &http.Server{
+				Addr:    addr,
+				Handler: server.Handler(),
+			}
+
+			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+
+			go func() {
+				<-ctx.Done()
+				srv.Shutdown(context.Background())
+			}()
+
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				return fmt.Errorf("MCP server error: %w", err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "MCP server stopped.")
 			return nil
 		},
 	}
