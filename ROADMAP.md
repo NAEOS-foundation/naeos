@@ -165,3 +165,54 @@ Prioritas utama adalah menjaga kualitas, konsistensi, dan keterpahaman dokumen b
 - [x] Docker HEALTHCHECK + .dockerignore
 - [x] API ↔ OpenAPI spec alignment (fixed path mismatches)
 - [x] Cleanup: removed empty api/handlers/ and api/middleware/
+
+### v1.0.0 — Stable Release
+- [x] 65.4% test coverage (105 test packages)
+- [x] Comprehensive tests: pluginsdk, database, migration, configschema, telemetry, testrunner, watch, marketplace, websocket, API
+- [x] OpenAPI 3.0 specification generated
+- [x] Security: removed JWKS HMAC leak, fixed WebSocket CheckOrigin, random_password for DB exports
+- [x] Architecture: unified MCP implementations, merged golangci-lint configs (17 linters)
+- [x] Performance: WASM module caching, WebSocket busy-wait fix, pagination for list endpoints
+- [x] Fuzz tests for MCP server
+- [x] Documentation: SECURITY.md, CONTRIBUTING.md updated
+
+### v1.1.0 — Database & Ecosystem
+- [x] Database layer: context.Context support, configurable connection pool, retry logic
+- [x] Real MySQL adapter (go-sql-driver/mysql)
+- [x] Real SQLite adapter (modernc.org/sqlite)
+- [x] Query logging decorator, HealthCheck on all adapters
+- [x] File-based migration loader, API server database integration
+- [x] WebSocket race condition fixes (3 fixes)
+- [x] OpenAPI spec rewrite (27 endpoints aligned)
+- [x] interface{} → any migration (247 replacements)
+- [x] t.Parallel() on 109 test functions
+- [x] Godoc comments (~122 symbols), 70+ new tests
+
+### v1.3.0 — Quality, Correctness & Production Readiness
+- [x] Code generation fixes: Rust/Axum 0.7, Java JUnit 5, meaningful test adapters
+- [x] Persistent connection store (~/.naeos/db/connections.json)
+- [x] Security hardening: security.ScanDir(), real Auditor integration
+- [x] 39 new CLI integration tests, 8 database store tests, 3 security tests
+- [x] Structured output (--output json/yaml) for 14 commands
+- [x] 103 packages pass, 47+ new tests, 7 adapter bugs fixed
+
+### v1.3.1 — Code Quality & Lint Compliance
+- [x] golangci-lint: resolved all 999 issues (999 → 0)
+- [x] Removed 22 unused functions, types, vars, and struct fields
+- [x] Replaced WriteString(fmt.Sprintf(...)) with fmt.Fprintf(...) across 21 files
+- [x] Added context propagation across all HTTP and exec calls
+- [x] Fixed errcheck, gosec, govet, staticcheck, unparam, unconvert, ineffassign issues
+- [x] Applied gofmt and goimports for consistent formatting
+
+### v1.4.0 — Prompt Library & Platform Improvements
+- [x] Prompt Library (NES-054): centralized YAML-based prompt templates for LLM and compiler adapters
+- [x] Builtin prompts: 3 LLM (enrich-spec, generate-suggestions, explain-architecture) + 6 compiler adapters
+- [x] Custom template functions (join, bt, code, json, yaml) with backtick support
+- [x] Template CLI: `naeos template list/show` with `--kind` filter
+- [x] Backward compatible: nil library falls back to hardcoded prompts
+- [x] AIService wired to LLMService with rule-based fallback
+- [x] Observability dashboard: /traces, /logs, /metrics endpoints now return real data
+- [x] Workflow Manager: file-based persistence (~/.naeos/workflows/workflows.json)
+- [x] Distributed workers: stage-aware processing with context cancellation
+- [x] Bug fixes: version test mismatch, rollback Import '.' entry rejection
+- [x] 19 new promptlib tests, 5 new AI-LLM integration tests

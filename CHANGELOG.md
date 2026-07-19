@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.4.0] - 2026-07-19
+
+### Added
+- **Prompt Library (NES-054)** — centralized YAML-based prompt templates:
+  - `internal/promptlib/` package with template parsing, rendering, and manifest support.
+  - Custom template functions: `join`, `bt` (backtick), `code`, `json`, `yaml`, `title`, `upper`, `lower`, `trim`, `default`, `contains`, `replace`, `split`, `range`, `len`.
+  - 3 builtin LLM prompts: `enrich-spec`, `generate-suggestions`, `explain-architecture`.
+  - 6 builtin compiler adapter templates: copilot, claude, cursor, gemini, codex, opencode.
+  - `prompts/builtin/` directory with 11 YAML reference files and manifest.
+  - Backward compatible: nil library falls back to hardcoded prompts.
+- **`naeos template` CLI** — list and inspect prompt templates:
+  - `naeos template list` — show all registered templates.
+  - `naeos template list --kind prompt-llm` — filter by kind.
+  - `naeos template show <name>` — display template details and rendered output.
+- **AIService ↔ LLMService integration**:
+  - `NewServiceWithLLM(llm)` constructor for AI service with LLM backend.
+  - `Suggest()` tries LLM first, falls back to rule-based analysis.
+  - `Explain()` tries LLM for architecture topics, falls back to built-in knowledge.
+  - CLI auto-wires LLM when `NAEOS_LLM_API_KEY` env var is set.
+  - 5 new tests covering LLM paths and fallbacks.
+- **Observability dashboard real data**:
+  - `/traces` endpoint returns actual span data from `observability.Stack`.
+  - `/logs` endpoint returns actual log entries with level filtering.
+  - `/metrics` endpoint returns collected counters, gauges, and histograms.
+  - Dashboard seeds sample pipeline data on startup.
+- **Workflow Manager persistence**:
+  - `NewManagerWithPath(dir)` constructor with file-based persistence.
+  - Workflows saved to `~/.naeos/workflows/workflows.json`.
+  - `Register()` and `Remove()` auto-save to disk.
+- **Distributed workers** — stage-aware processing:
+  - Each pipeline stage (parse, normalize, resolve, build-neir, validate, schedule, generate, review) has realistic simulated duration.
+  - Workers respect context cancellation.
+
+### Fixed
+- **`internal/version/version_test.go`** — updated hardcoded `"0.9.0"` to `"1.3.1"` to match VERSION file.
+- **`internal/rollback/rollback.go`** — `Import()` now allows `.` root directory entry from tar archives (was rejecting with "invalid path").
+- **`wiki/Compiler.md`** — updated constructor calls to match new signatures with `nil` library parameter.
 ## [1.3.1] - 2026-07-19
 
 ### Fixed
