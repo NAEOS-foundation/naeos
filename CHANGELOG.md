@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.3.1] - 2026-07-19
+
+### Fixed
+- **golangci-lint: 999 → 0 issues** across 211 files (2135 insertions, 2364 deletions):
+  - Removed 22 unused functions, types, vars, and struct fields.
+  - Replaced `WriteString(fmt.Sprintf(...))` with `fmt.Fprintf(...)` across 21 files.
+  - Added context propagation (`http.NewRequestWithContext`, `exec.CommandContext`) across all HTTP and exec calls.
+  - Fixed 198 errcheck issues with proper error handling.
+  - Fixed 40 gosec issues: file permissions (0o600), HTTP timeouts, path validation, weak crypto.
+  - Fixed 6 govet copylocks issues with pointer types.
+  - Fixed 11 misspellings (US English locale).
+  - Fixed staticcheck issues: S1039, S1011, S1025, S1002, QF1003, QF1001, QF1008, QF1004.
+  - Fixed 13 unparam, 1 unconvert, 2 ineffassign issues.
+  - Applied `gofmt` and `goimports` for consistent formatting.
 ## [1.3.0] - 2026-07-16
 
 ### Added

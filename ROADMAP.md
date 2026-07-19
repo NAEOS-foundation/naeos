@@ -22,6 +22,19 @@ Roadmap ini memberikan arah pengembangan dokumentasi dan ekosistem NAEOS.
 - memperkuat dokumentasi publik,
 - mendukung adopsi lintas organisasi.
 
+### v0.10.0 — Code Quality & Lint Compliance
+- [x] golangci-lint: resolved all 999 issues (999 → 0)
+- [x] Removed 22 unused functions, types, vars, and struct fields
+- [x] Replaced WriteString(fmt.Sprintf(...)) with fmt.Fprintf(...) across 21 files
+- [x] Added context propagation (http.NewRequestWithContext, exec.CommandContext) across all HTTP and exec calls
+- [x] Fixed errcheck issues with proper error handling
+- [x] Fixed gosec issues: file permissions, HTTP timeouts, path validation, weak crypto
+- [x] Fixed govet copylocks issues with pointer types
+- [x] Fixed misspellings (US English locale)
+- [x] Fixed staticcheck issues: S1039, S1011, S1025, S1002, QF1003, QF1001, QF1008, QF1004
+- [x] Fixed unparam, unconvert, ineffassign issues
+- [x] Applied gofmt and goimports for consistent formatting
+
 ## Prinsip roadmap
 Prioritas utama adalah menjaga kualitas, konsistensi, dan keterpahaman dokumen bagi komunitas serta implementer.
 
