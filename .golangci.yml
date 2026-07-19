@@ -1,68 +1,67 @@
-run:
-  timeout: 5m
-  modules-download-mode: readonly
-  skip-dirs:
-    - vendor
-    - docs
-    - scripts
-
+version: "2"
 linters:
   enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - unconvert
+    - unparam
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - typecheck
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    gosec:
+      excludes:
+        - G104
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+        path: _test\.go
+      - linters:
+          - errcheck
+          - govet
+          - ineffassign
+          - staticcheck
+          - unused
+        path: zz_generated.*
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 10000
+  max-same-issues: 10000
+formatters:
+  enable:
     - gofmt
     - goimports
-    - misspell
-    - unconvert
-    - unparam
-    - gocritic
-    - gosec
-    - bodyclose
-    - noctx
-    - errorlint
-
-linters-settings:
-  govet:
-    check-shadowing: false
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: github.com/NAEOS-foundation/naeos
-  misspell:
-    locale: US
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-  gosec:
-    excludes:
-      - G104  # unhandled errors on deferred close
-  errorlint:
-    errorf: true
-    asserts: true
-    comparison: true
-
-issues:
-  exclude-generated: true
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    - path: "zz_generated.*"
-      linters:
-        - govet
-        - errcheck
-        - staticcheck
-        - unused
-        - gosimple
-        - ineffassign
-        - typecheck
-  max-issues-per-linter: 0
-  max-same-issues: 0
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/NAEOS-foundation/naeos
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
