@@ -3,6 +3,7 @@ package broker
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -701,5 +702,121 @@ func TestManagerGetNonExistent(t *testing.T) {
 	_, ok := m.Get("nonexistent")
 	if ok {
 		t.Error("expected false for non-existent broker")
+	}
+}
+
+func TestConnectionPoolSetMaxLifetime(t *testing.T) {
+	r1 := NewRedis()
+	r2 := NewRedis()
+	pool := NewConnectionPool(r1, r2)
+
+	pool.SetMaxLifetime(0)
+	if pool.HealthyCount() != 2 {
+		t.Errorf("expected 2 healthy with no lifetime limit, got %d", pool.HealthyCount())
+	}
+
+	pool.SetMaxLifetime(1 * time.Nanosecond)
+	time.Sleep(2 * time.Nanosecond)
+	if pool.HealthyCount() != 0 {
+		t.Errorf("expected 0 healthy with expired lifetime, got %d", pool.HealthyCount())
+	}
+}
+
+func TestConnectionPoolStartStopHealthCheck(t *testing.T) {
+	r1 := NewRedis()
+	pool := NewConnectionPool(r1)
+
+	pool.StartHealthCheck(10 * time.Millisecond)
+	defer pool.StopHealthCheck()
+
+	time.Sleep(50 * time.Millisecond)
+
+	pool.StopHealthCheck()
+	pool.StopHealthCheck()
+}
+
+func TestConnectionPoolMetrics(t *testing.T) {
+	r1 := NewRedis()
+	r2 := NewRedis()
+	pool := NewConnectionPool(r1, r2)
+
+	m := pool.PoolMetrics()
+	if m.Total != 2 {
+		t.Errorf("expected total 2, got %d", m.Total)
+	}
+	if m.Healthy != 2 {
+		t.Errorf("expected healthy 2, got %d", m.Healthy)
+	}
+
+	pool.SetHealthy(0, false)
+	m = pool.PoolMetrics()
+	if m.Healthy != 1 {
+		t.Errorf("expected healthy 1, got %d", m.Healthy)
+	}
+	if m.Unhealthy != 1 {
+		t.Errorf("expected unhealthy 1, got %d", m.Unhealthy)
+	}
+
+	pool.Next()
+	pool.Next()
+	m = pool.PoolMetrics()
+	if m.NextCalls < 2 {
+		t.Errorf("expected at least 2 NextCalls, got %d", m.NextCalls)
+	}
+}
+
+func TestConnectionPoolHealthCheckTracksMaxLifetime(t *testing.T) {
+	b := &mockBroker{name: "test"}
+	pool := NewConnectionPool(b)
+	pool.SetMaxLifetime(0)
+
+	pool.SetHealthCheck(func(b Broker) bool { return true })
+	pool.CheckHealth()
+	if pool.HealthyCount() != 1 {
+		t.Errorf("expected 1 healthy after check, got %d", pool.HealthyCount())
+	}
+
+	pool.SetMaxLifetime(1 * time.Nanosecond)
+	time.Sleep(2 * time.Nanosecond)
+	pool.CheckHealth()
+	if pool.HealthyCount() != 0 {
+		t.Errorf("expected 0 healthy after lifetime expiry, got %d", pool.HealthyCount())
+	}
+}
+
+type mockBroker struct {
+	name      string
+	connected atomic.Bool
+}
+
+func (m *mockBroker) Name() string                                           { return m.name }
+func (m *mockBroker) Connect(config *Config) error                           { m.connected.Store(true); return nil }
+func (m *mockBroker) Close() error                                           { m.connected.Store(false); return nil }
+func (m *mockBroker) Ping() error                                            { return nil }
+func (m *mockBroker) Publish(channel string, msg *Message) error             { return nil }
+func (m *mockBroker) Subscribe(channel string, handler MessageHandler) error { return nil }
+func (m *mockBroker) Unsubscribe(channel string) error                       { return nil }
+
+func BenchmarkConnectionPoolNext(b *testing.B) {
+	brokers := make([]Broker, 10)
+	for i := range brokers {
+		brokers[i] = NewRedis()
+	}
+	pool := NewConnectionPool(brokers...)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pool.Next()
+	}
+}
+
+func BenchmarkConnectionPoolCheckHealth(b *testing.B) {
+	brokers := make([]Broker, 10)
+	for i := range brokers {
+		brokers[i] = NewRedis()
+	}
+	pool := NewConnectionPool(brokers...)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pool.CheckHealth()
 	}
 }

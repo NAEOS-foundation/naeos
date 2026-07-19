@@ -104,4 +104,11 @@ func TestAll(t *testing.T) {
 	if len(all) == 0 {
 		t.Fatal("expected registered adapters, got none")
 	}
+	count := 0
+	for _, adapters := range all {
+		count += len(adapters)
+	}
+	if count != 7 {
+		t.Fatalf("expected 7 registered adapters, got %d", count)
+	}
 }

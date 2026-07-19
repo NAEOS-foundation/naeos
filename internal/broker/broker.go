@@ -564,35 +564,107 @@ func (dlc *DeadLetterChannel) Close() {
 }
 
 // ConnectionPool manages a pool of Broker connections with round-robin
-// selection and optional health checking.
+// selection, health checking, and pool-level metrics.
+
+type PoolMetrics struct {
+	Total        int64
+	Healthy      int64
+	Unhealthy    int64
+	NextCalls    int64
+	HealthChecks int64
+}
 
 type ConnectionPool struct {
-	brokers []Broker
-	current uint64
-	healthy []bool
-	mu      sync.RWMutex
-	checkFn func(Broker) bool
+	brokers     []Broker
+	current     uint64
+	healthy     []bool
+	createdAt   []time.Time
+	maxLifetime time.Duration
+	mu          sync.RWMutex
+	checkFn     func(Broker) bool
+	metrics     PoolMetrics
+	stopCh      chan struct{}
+	running     bool
 }
 
 func NewConnectionPool(brokers ...Broker) *ConnectionPool {
 	healthy := make([]bool, len(brokers))
+	createdAt := make([]time.Time, len(brokers))
+	now := time.Now()
 	for i := range healthy {
 		healthy[i] = true
+		createdAt[i] = now
 	}
 	return &ConnectionPool{
-		brokers: brokers,
-		healthy: healthy,
-		checkFn: func(b Broker) bool { return b.Ping() == nil },
+		brokers:   brokers,
+		healthy:   healthy,
+		createdAt: createdAt,
+		checkFn:   func(b Broker) bool { return b.Ping() == nil },
+		metrics:   PoolMetrics{Total: int64(len(brokers)), Healthy: int64(len(brokers))},
+		stopCh:    make(chan struct{}),
 	}
 }
 
 func (cp *ConnectionPool) SetHealthCheck(fn func(Broker) bool) {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
 	cp.checkFn = fn
+}
+
+func (cp *ConnectionPool) SetMaxLifetime(d time.Duration) {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
+	cp.maxLifetime = d
+	now := time.Now()
+	for i := range cp.brokers {
+		if d <= 0 {
+			cp.healthy[i] = true
+		} else if now.Sub(cp.createdAt[i]) > d {
+			cp.healthy[i] = false
+		}
+	}
+	cp.updateMetrics()
+}
+
+func (cp *ConnectionPool) StartHealthCheck(interval time.Duration) {
+	cp.mu.Lock()
+	if cp.running {
+		cp.mu.Unlock()
+		return
+	}
+	cp.running = true
+	stopCh := cp.stopCh
+	cp.mu.Unlock()
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				cp.CheckHealth()
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+}
+
+func (cp *ConnectionPool) StopHealthCheck() {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
+	if cp.running {
+		close(cp.stopCh)
+		cp.running = false
+		cp.stopCh = make(chan struct{})
+	}
 }
 
 func (cp *ConnectionPool) Next() Broker {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
+
+	cp.metrics.NextCalls++
 
 	if len(cp.brokers) == 0 {
 		return nil
@@ -628,9 +700,17 @@ func (cp *ConnectionPool) HealthyCount() int {
 func (cp *ConnectionPool) CheckHealth() {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
+
+	cp.metrics.HealthChecks++
+
 	for i, b := range cp.brokers {
-		cp.healthy[i] = cp.checkFn(b)
+		healthy := cp.checkFn(b)
+		if healthy && cp.maxLifetime > 0 && time.Since(cp.createdAt[i]) > cp.maxLifetime {
+			healthy = false
+		}
+		cp.healthy[i] = healthy
 	}
+	cp.updateMetrics()
 }
 
 func (cp *ConnectionPool) SetHealthy(index int, healthy bool) {
@@ -638,7 +718,14 @@ func (cp *ConnectionPool) SetHealthy(index int, healthy bool) {
 	defer cp.mu.Unlock()
 	if index >= 0 && index < len(cp.healthy) {
 		cp.healthy[index] = healthy
+		cp.updateMetrics()
 	}
+}
+
+func (cp *ConnectionPool) PoolMetrics() PoolMetrics {
+	cp.mu.RLock()
+	defer cp.mu.RUnlock()
+	return cp.metrics
 }
 
 func (cp *ConnectionPool) CloseAll() error {
@@ -650,6 +737,18 @@ func (cp *ConnectionPool) CloseAll() error {
 		}
 	}
 	return nil
+}
+
+func (cp *ConnectionPool) updateMetrics() {
+	healthy := int64(0)
+	for _, h := range cp.healthy {
+		if h {
+			healthy++
+		}
+	}
+	cp.metrics.Total = int64(len(cp.brokers))
+	cp.metrics.Healthy = healthy
+	cp.metrics.Unhealthy = int64(len(cp.brokers)) - healthy
 }
 
 // Metrics tracks publish/receive/error counts and per-channel subscriber counts.

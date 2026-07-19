@@ -52,6 +52,7 @@ type Server struct {
 	deployments     []cloudDeployment
 	deployMu        sync.RWMutex
 	plugins         *pluginhost.Manager
+	metrics         *monitoring.Metrics
 	metricsRegistry *monitoring.Registry
 	auditor         audit.Auditor
 	wsServer        *naeosws.Server
@@ -155,6 +156,7 @@ func NewServer(addr string, auth *AuthConfig) *Server {
 	s.mcpServer.SetArtifactStore(store)
 	s.mcpServer.SetPluginManager(s.plugins)
 
+	s.metrics = metrics
 	s.metricsRegistry = metrics.Registry()
 	s.auditor = audit.NewMemoryAuditor()
 	s.setupRoutes()
@@ -1125,7 +1127,8 @@ var startTime = time.Now()
 
 // Start begins listening for HTTP requests and handles graceful shutdown.
 func (s *Server) Start() error {
-	wrappedHandler := s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP))
+	mw := monitoring.MetricsMiddleware(s.metrics)
+	wrappedHandler := mw(s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP)))
 
 	s.server = &http.Server{
 		Addr:         s.Addr,

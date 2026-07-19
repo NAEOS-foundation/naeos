@@ -8,6 +8,7 @@ import (
 
 type OutputAdapter interface {
 	Language() language.Language
+	Framework() string
 	GenerateProject(projectName string) []engine.Artifact
 	GenerateModule(moduleName, modulePath, projectName string) []engine.Artifact
 	GenerateService(serviceName, serviceKind string, servicePort int, projectName string) []engine.Artifact
@@ -17,19 +18,41 @@ type OutputAdapter interface {
 	GenerateArchitectureDoc(projectName, pattern string) []engine.Artifact
 }
 
-var adapters = map[language.Language]OutputAdapter{}
+var adapters = map[language.Language][]OutputAdapter{}
 
 func Register(adapter OutputAdapter) {
-	adapters[adapter.Language()] = adapter
+	lang := adapter.Language()
+	adapters[lang] = append(adapters[lang], adapter)
 }
 
 func Get(lang language.Language) (OutputAdapter, bool) {
-	a, ok := adapters[lang]
-	return a, ok
+	adapters, ok := adapters[lang]
+	if !ok || len(adapters) == 0 {
+		return nil, false
+	}
+	for _, a := range adapters {
+		if a.Framework() == "" {
+			return a, true
+		}
+	}
+	return adapters[0], true
 }
 
-func All() map[language.Language]OutputAdapter {
-	result := make(map[language.Language]OutputAdapter, len(adapters))
+func GetFramework(lang language.Language, framework string) (OutputAdapter, bool) {
+	adapters, ok := adapters[lang]
+	if !ok {
+		return nil, false
+	}
+	for _, a := range adapters {
+		if a.Framework() == framework {
+			return a, true
+		}
+	}
+	return nil, false
+}
+
+func All() map[language.Language][]OutputAdapter {
+	result := make(map[language.Language][]OutputAdapter, len(adapters))
 	for k, v := range adapters {
 		result[k] = v
 	}

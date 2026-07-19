@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -286,5 +287,94 @@ func TestHTTPCacheInvalidateAll(t *testing.T) {
 
 	if hc.cache.Size() != 0 {
 		t.Error("expected all keys to be invalidated")
+	}
+}
+
+func TestNewWithPolicy(t *testing.T) {
+	c := NewWithPolicy(100, time.Minute, PolicyLFU)
+	if c == nil {
+		t.Fatal("expected cache to be created")
+	}
+	if c.policy != PolicyLFU {
+		t.Errorf("expected LFU policy, got %v", c.policy)
+	}
+}
+
+func TestLFUEviction(t *testing.T) {
+	c := NewWithPolicy(3, time.Minute, PolicyLFU)
+
+	c.Set("a", 1)
+	c.Set("b", 2)
+	c.Set("c", 3)
+
+	c.Get("a")
+	c.Get("a")
+	c.Get("b")
+
+	c.Set("d", 4)
+
+	if _, ok := c.Get("c"); ok {
+		t.Error("expected 'c' to be evicted (least frequently used)")
+	}
+	if _, ok := c.Get("a"); !ok {
+		t.Error("expected 'a' to be retained (most frequently used)")
+	}
+}
+
+func TestLFUAllAccessed(t *testing.T) {
+	c := NewWithPolicy(3, time.Minute, PolicyLFU)
+
+	c.Set("a", 1)
+	c.Set("b", 2)
+	c.Set("c", 3)
+
+	c.Get("a")
+	c.Get("a")
+	c.Get("b")
+
+	c.Set("d", 4)
+
+	if _, ok := c.Get("c"); ok {
+		t.Error("expected 'c' to be evicted (least frequently used, freq=0)")
+	}
+	if _, ok := c.Get("d"); !ok {
+		t.Error("expected 'd' to be present")
+	}
+}
+
+func TestLRUDefaultPolicy(t *testing.T) {
+	c := New(3, time.Minute)
+	if c.policy != PolicyLRU {
+		t.Errorf("expected default LRU policy, got %v", c.policy)
+	}
+}
+
+func BenchmarkCacheSet(b *testing.B) {
+	c := New(10000, time.Minute)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Set(fmt.Sprintf("key-%d", i), i)
+	}
+}
+
+func BenchmarkCacheGet(b *testing.B) {
+	c := New(10000, time.Minute)
+	for i := 0; i < 10000; i++ {
+		c.Set(fmt.Sprintf("key-%d", i), i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Get(fmt.Sprintf("key-%d", i%10000))
+	}
+}
+
+func BenchmarkCacheDelete(b *testing.B) {
+	c := New(10000, time.Minute)
+	for i := 0; i < 10000; i++ {
+		c.Set(fmt.Sprintf("key-%d", i), i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Delete(fmt.Sprintf("key-%d", i%10000))
 	}
 }

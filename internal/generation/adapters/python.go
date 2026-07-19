@@ -18,6 +18,8 @@ func (PythonAdapter) Language() language.Language {
 	return language.LanguagePython
 }
 
+func (PythonAdapter) Framework() string { return "" }
+
 func (PythonAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 	pkg := pkgName(projectName)

@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -580,5 +581,47 @@ func TestHistogramPrometheusFormat(t *testing.T) {
 	}
 	if !strings.Contains(output, "hist_test_count") {
 		t.Error("expected count line")
+	}
+}
+
+func BenchmarkCounterInc(b *testing.B) {
+	reg := NewRegistry()
+	reg.Register("bench_counter", Counter, "bench")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		reg.CounterInc("bench_counter", map[string]string{"label": "value"})
+	}
+}
+
+func BenchmarkGaugeSet(b *testing.B) {
+	reg := NewRegistry()
+	reg.Register("bench_gauge", Gauge, "bench")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		reg.GaugeSet("bench_gauge", float64(i), nil)
+	}
+}
+
+func BenchmarkHistogramObserve(b *testing.B) {
+	reg := NewRegistry()
+	reg.RegisterWithBuckets("bench_hist", "bench", []float64{0.1, 0.5, 1.0})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		reg.HistogramObserveWithBuckets("bench_hist", float64(i%100)/100, nil)
+	}
+}
+
+func BenchmarkFormatPrometheus(b *testing.B) {
+	reg := NewRegistry()
+	reg.Register("bench_counter", Counter, "bench")
+	reg.Register("bench_gauge", Gauge, "bench")
+	reg.RegisterWithBuckets("bench_hist", "bench", []float64{0.1, 0.5, 1.0})
+	for i := 0; i < 100; i++ {
+		reg.CounterInc("bench_counter", map[string]string{"label": fmt.Sprintf("val-%d", i)})
+		reg.GaugeSet("bench_gauge", float64(i), map[string]string{"label": fmt.Sprintf("val-%d", i)})
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		reg.FormatPrometheus()
 	}
 }

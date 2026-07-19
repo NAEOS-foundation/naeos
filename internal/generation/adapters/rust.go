@@ -18,6 +18,8 @@ func (RustAdapter) Language() language.Language {
 	return language.LanguageRust
 }
 
+func (RustAdapter) Framework() string { return "" }
+
 func (RustAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 

@@ -21,6 +21,8 @@ const (
 	ProviderOpenAI LLMProvider = "openai"
 	// ProviderAnthropic is the Anthropic LLM provider.
 	ProviderAnthropic LLMProvider = "anthropic"
+	// ProviderOllama is the Ollama local LLM provider (OpenAI-compatible).
+	ProviderOllama LLMProvider = "ollama"
 )
 
 // LLMConfig holds configuration for an LLM service.
@@ -86,7 +88,12 @@ func NewLLMService(config LLMConfig, lib ...*promptlib.Library) *LLMService {
 			config.Model = "gpt-4o-mini"
 		case ProviderAnthropic:
 			config.Model = "claude-3-haiku-20240307"
+		case ProviderOllama:
+			config.Model = "llama3.2"
 		}
+	}
+	if config.BaseURL == "" && config.Provider == ProviderOllama {
+		config.BaseURL = "http://localhost:11434"
 	}
 	if config.MaxTokens == 0 {
 		config.MaxTokens = 1024
@@ -194,7 +201,7 @@ Architecture explanation:`, arch, specContent)
 
 func (s *LLMService) callLLM(prompt string) (string, error) {
 	switch s.config.Provider {
-	case ProviderOpenAI:
+	case ProviderOpenAI, ProviderOllama:
 		return s.callOpenAI(prompt)
 	case ProviderAnthropic:
 		return s.callAnthropic(prompt)
@@ -229,7 +236,9 @@ func (s *LLMService) callOpenAI(prompt string) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.config.APIKey)
+	if s.config.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+s.config.APIKey)
+	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

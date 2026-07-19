@@ -3,6 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -552,7 +553,6 @@ type Metrics struct {
 func NewMetrics() *Metrics {
 	reg := NewRegistry()
 
-	// Register default metrics
 	reg.Register("naeos_requests_total", Counter, "Total HTTP requests")
 	reg.Register("naeos_request_duration_seconds", Histogram, "HTTP request duration")
 	reg.Register("naeos_pipelines_total", Counter, "Total pipeline runs")
@@ -561,8 +561,31 @@ func NewMetrics() *Metrics {
 	reg.Register("naeos_artifacts_generated_total", Counter, "Total artifacts generated")
 	reg.Register("naeos_active_websocket_connections", Gauge, "Active WebSocket connections")
 	reg.Register("naeos_uptime_seconds", Gauge, "Server uptime in seconds")
+	reg.Register("naeos_go_goroutines", Gauge, "Number of goroutines")
+	reg.Register("naeos_go_memory_alloc_bytes", Gauge, "Current memory allocation in bytes")
+	reg.Register("naeos_go_memory_sys_bytes", Gauge, "Total memory obtained from OS")
+	reg.Register("naeos_go_gc_pauses_total", Counter, "Total number of GC pauses")
 
 	return &Metrics{registry: reg}
+}
+
+func (m *Metrics) RecordRuntime() {
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+	m.registry.GaugeSet("naeos_go_goroutines", float64(runtime.NumGoroutine()), nil)
+	m.registry.GaugeSet("naeos_go_memory_alloc_bytes", float64(mem.Alloc), nil)
+	m.registry.GaugeSet("naeos_go_memory_sys_bytes", float64(mem.Sys), nil)
+	m.registry.CounterAdd("naeos_go_gc_pauses_total", float64(mem.NumGC), nil)
+}
+
+func (m *Metrics) StartRuntimeCollector(interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C {
+			m.RecordRuntime()
+		}
+	}()
 }
 
 func (m *Metrics) Registry() *Registry {

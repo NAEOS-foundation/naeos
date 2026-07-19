@@ -128,6 +128,55 @@ func TestLLMServiceDefaultModel(t *testing.T) {
 	if svc2.config.Model != "claude-3-haiku-20240307" {
 		t.Errorf("expected default model claude-3-haiku, got %s", svc2.config.Model)
 	}
+
+	svc3 := NewLLMService(LLMConfig{
+		Provider: ProviderOllama,
+	})
+	if svc3.config.Model != "llama3.2" {
+		t.Errorf("expected default model llama3.2, got %s", svc3.config.Model)
+	}
+	if svc3.config.BaseURL != "http://localhost:11434" {
+		t.Errorf("expected default base URL http://localhost:11434, got %s", svc3.config.BaseURL)
+	}
+}
+
+func TestLLMServiceOllama(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/chat/completions" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		if r.Header.Get("Authorization") != "" {
+			t.Error("expected no Authorization header for Ollama")
+		}
+
+		resp := openAIResponse{
+			Choices: []struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+			}{
+				{Message: struct {
+					Content string `json:"content"`
+				}{Content: "ollama response"}},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	svc := NewLLMService(LLMConfig{
+		Provider: ProviderOllama,
+		Model:    "llama3.2",
+		BaseURL:  server.URL,
+	})
+
+	result, err := svc.callOpenAI("test prompt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != "ollama response" {
+		t.Errorf("unexpected response: %s", result)
+	}
 }
 
 func TestGenerateSuggestionsFromLLM(t *testing.T) {

@@ -18,6 +18,8 @@ func (TypeScriptAdapter) Language() language.Language {
 	return language.LanguageTypeScript
 }
 
+func (TypeScriptAdapter) Framework() string { return "" }
+
 func (TypeScriptAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 

@@ -3,10 +3,24 @@ package promptlib
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 )
+
+type errList []error
+
+func (e errList) Error() string {
+	if len(e) == 0 {
+		return ""
+	}
+	msgs := make([]string, len(e))
+	for i, err := range e {
+		msgs[i] = err.Error()
+	}
+	return fmt.Sprintf("%d override load error(s): %s", len(e), strings.Join(msgs, "; "))
+}
 
 // Library is the central prompt template library.
 // It manages LLM prompts and compiler templates, supporting built-in defaults
@@ -94,12 +108,14 @@ func (l *Library) loadOverrides() error {
 		return err
 	}
 
+	var errs errList
 	for path, data := range files {
 		var meta struct {
 			Kind string `yaml:"kind"`
 			Name string `yaml:"name"`
 		}
 		if err := parseYAML(data, &meta); err != nil {
+			errs = append(errs, fmt.Errorf("%s: parse meta: %w", path, err))
 			continue
 		}
 
@@ -107,20 +123,25 @@ func (l *Library) loadOverrides() error {
 		case "llm":
 			p, err := ParseLLMPrompt(data)
 			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: parse LLM prompt: %w", path, err))
 				continue
 			}
 			l.llmPrompts[p.Name] = p
 		case "compiler":
 			t, err := ParseCompilerTemplate(data)
 			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: parse compiler template: %w", path, err))
 				continue
 			}
 			l.compilerTpls[t.Name] = t
 		default:
-			_ = path
+			errs = append(errs, fmt.Errorf("%s: unknown kind %q", path, meta.Kind))
 		}
 	}
 
+	if len(errs) > 0 {
+		return errs
+	}
 	return nil
 }
 

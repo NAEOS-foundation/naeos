@@ -1,6 +1,8 @@
 package promptlib
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -429,5 +431,52 @@ func TestManifestFindByName(t *testing.T) {
 
 	if m.FindByName("z") != nil {
 		t.Error("expected nil for nonexistent prompt")
+	}
+}
+
+func TestLoadOverrides_InvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "bad.yaml"), []byte("invalid: [yaml: broken"), 0o644)
+
+	_, err := New(WithOverridesDir(dir))
+	if err == nil {
+		t.Fatal("expected error for invalid override YAML")
+	}
+	if !strings.Contains(err.Error(), "override load error") {
+		t.Errorf("expected override load error message, got: %v", err)
+	}
+}
+
+func TestLoadOverrides_UnknownKind(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "unknown.yaml"), []byte("kind: unknown\nname: test"), 0o644)
+
+	_, err := New(WithOverridesDir(dir))
+	if err == nil {
+		t.Fatal("expected error for unknown kind")
+	}
+	if !strings.Contains(err.Error(), "unknown kind") {
+		t.Errorf("expected unknown kind error, got: %v", err)
+	}
+}
+
+func TestLoadOverrides_ValidOverride(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "custom.yaml"), []byte(`kind: llm
+name: custom-prompt
+description: A custom prompt
+user: "Hello {{.Name}}"
+`), 0o644)
+
+	l, err := New(WithOverridesDir(dir))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	p, ok := l.GetLLMPrompt("custom-prompt")
+	if !ok {
+		t.Fatal("expected custom prompt to be loaded")
+	}
+	if p.User != "Hello {{.Name}}" {
+		t.Errorf("expected 'Hello {{.Name}}', got %s", p.User)
 	}
 }

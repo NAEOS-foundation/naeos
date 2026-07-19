@@ -6,11 +6,19 @@ import (
 	"time"
 )
 
+type EvictionPolicy int
+
+const (
+	PolicyLRU EvictionPolicy = iota
+	PolicyLFU
+)
+
 type Entry struct {
 	Key       string
 	Value     any
 	ExpiresAt time.Time
 	Size      int
+	frequency int
 }
 
 func (e *Entry) IsExpired() bool {
@@ -24,6 +32,7 @@ type Cache struct {
 	lru      *list.List
 	capacity int
 	ttl      time.Duration
+	policy   EvictionPolicy
 	mu       sync.RWMutex
 	stats    *Stats
 	callback EvictionCallback
@@ -39,11 +48,16 @@ type Stats struct {
 }
 
 func New(capacity int, ttl time.Duration) *Cache {
+	return NewWithPolicy(capacity, ttl, PolicyLRU)
+}
+
+func NewWithPolicy(capacity int, ttl time.Duration, policy EvictionPolicy) *Cache {
 	return &Cache{
 		items:    make(map[string]*list.Element),
 		lru:      list.New(),
 		capacity: capacity,
 		ttl:      ttl,
+		policy:   policy,
 		stats:    &Stats{},
 		stopCh:   make(chan struct{}),
 	}
@@ -66,6 +80,7 @@ func (c *Cache) Get(key string) (any, bool) {
 			c.stats.Misses++
 			return nil, false
 		}
+		entry.frequency++
 		c.lru.MoveToFront(elem)
 		c.stats.Hits++
 		return entry.Value, true
@@ -98,12 +113,7 @@ func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 	c.items[key] = elem
 	c.stats.Size++
 
-	for c.lru.Len() > c.capacity {
-		oldest := c.lru.Back()
-		if oldest != nil {
-			c.remove(oldest)
-		}
-	}
+	c.evict()
 }
 
 func (c *Cache) Delete(key string) bool {
@@ -216,6 +226,47 @@ func (c *Cache) StopEviction() {
 		close(c.stopCh)
 		c.running = false
 		c.stopCh = make(chan struct{})
+	}
+}
+
+func (c *Cache) evict() {
+	if c.lru.Len() <= c.capacity {
+		return
+	}
+
+	switch c.policy {
+	case PolicyLFU:
+		c.evictLFU()
+	default:
+		c.evictLRU()
+	}
+}
+
+func (c *Cache) evictLRU() {
+	for c.lru.Len() > c.capacity {
+		oldest := c.lru.Back()
+		if oldest == nil {
+			break
+		}
+		c.remove(oldest)
+	}
+}
+
+func (c *Cache) evictLFU() {
+	for c.lru.Len() > c.capacity {
+		target := c.lru.Back()
+		if target == nil {
+			break
+		}
+		targetFreq := target.Value.(*Entry).frequency
+		for e := c.lru.Back().Prev(); e != nil; e = e.Prev() {
+			entry := e.Value.(*Entry)
+			if entry.frequency < targetFreq {
+				target = e
+				targetFreq = entry.frequency
+			}
+		}
+		c.remove(target)
 	}
 }
 

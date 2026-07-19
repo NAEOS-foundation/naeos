@@ -32,10 +32,15 @@ func (hr *HotReloader) Start() error {
 		hr.mu.Unlock()
 		return fmt.Errorf("hot reloader already running")
 	}
+	hr.running = true
+	hr.stopCh = make(chan struct{})
 	hr.mu.Unlock()
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		hr.mu.Lock()
+		hr.running = false
+		hr.mu.Unlock()
 		return fmt.Errorf("create watcher: %w", err)
 	}
 	hr.watcher = watcher
@@ -46,13 +51,11 @@ func (hr *HotReloader) Start() error {
 	}
 	if err := watcher.Add(dir); err != nil {
 		watcher.Close()
+		hr.mu.Lock()
+		hr.running = false
+		hr.mu.Unlock()
 		return fmt.Errorf("watch config directory %s: %w", dir, err)
 	}
-
-	hr.mu.Lock()
-	hr.running = true
-	hr.stopCh = make(chan struct{})
-	hr.mu.Unlock()
 
 	go hr.loop()
 
@@ -83,6 +86,12 @@ func (hr *HotReloader) IsRunning() bool {
 }
 
 func (hr *HotReloader) loop() {
+	defer func() {
+		if r := recover(); r != nil {
+			naeoslog.Error("hot reloader panicked", "recover", r)
+		}
+	}()
+
 	debounce := time.NewTimer(0)
 	if !debounce.Stop() {
 		<-debounce.C
