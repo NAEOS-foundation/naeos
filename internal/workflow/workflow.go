@@ -195,7 +195,7 @@ func (w *Workflow) ExecuteWithContext(ctx context.Context) error {
 
 	for _, step := range w.Steps {
 		if ctx.Err() != nil {
-			w.Machine.Trigger("cancel")
+			_ = w.Machine.Trigger("cancel")
 			return ctx.Err()
 		}
 
@@ -214,15 +214,15 @@ func (w *Workflow) ExecuteWithContext(ctx context.Context) error {
 		if err != nil {
 			w.Context.Error = err
 			w.emitEvent(EventStepFailed, step.Name, err)
-			w.Machine.Trigger("error")
+			_ = w.Machine.Trigger("error")
 			return fmt.Errorf("step %q failed: %w", step.Name, err)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
-		w.Machine.Trigger("next")
+		_ = w.Machine.Trigger("next")
 	}
 
-	w.Machine.Trigger("complete")
+	_ = w.Machine.Trigger("complete")
 	return nil
 }
 
@@ -250,7 +250,7 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 
 	for _, step := range w.Steps {
 		if ctx.Err() != nil {
-			w.Machine.Trigger("cancel")
+			_ = w.Machine.Trigger("cancel")
 			return ctx.Err()
 		}
 
@@ -287,15 +287,15 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 		if lastErr != nil {
 			w.Context.Error = lastErr
 			w.emitEvent(EventStepFailed, step.Name, lastErr)
-			w.Machine.Trigger("error")
+			_ = w.Machine.Trigger("error")
 			return fmt.Errorf("step %q failed after %d retries: %w", step.Name, config.MaxRetries, lastErr)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
-		w.Machine.Trigger("next")
+		_ = w.Machine.Trigger("next")
 	}
 
-	w.Machine.Trigger("complete")
+	_ = w.Machine.Trigger("complete")
 	return nil
 }
 
@@ -306,7 +306,7 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 
 	for _, group := range groups {
 		if ctx.Err() != nil {
-			w.Machine.Trigger("cancel")
+			_ = w.Machine.Trigger("cancel")
 			return ctx.Err()
 		}
 
@@ -319,12 +319,12 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 			if err := step.Action(w.Context); err != nil {
 				w.Context.Error = err
 				w.emitEvent(EventStepFailed, step.Name, err)
-				w.Machine.Trigger("error")
+				_ = w.Machine.Trigger("error")
 				return fmt.Errorf("step %q failed: %w", step.Name, err)
 			}
 
 			w.emitEvent(EventStepComplete, step.Name, nil)
-			w.Machine.Trigger("next")
+			_ = w.Machine.Trigger("next")
 			continue
 		}
 
@@ -353,14 +353,14 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 
 		if err := <-errCh; err != nil {
 			w.Context.Error = err
-			w.Machine.Trigger("error")
+			_ = w.Machine.Trigger("error")
 			return err
 		}
 
-		w.Machine.Trigger("next")
+		_ = w.Machine.Trigger("next")
 	}
 
-	w.Machine.Trigger("complete")
+	_ = w.Machine.Trigger("complete")
 	return nil
 }
 
@@ -371,10 +371,10 @@ func (w *Workflow) emitEvent(event WorkflowEvent, step string, err error) {
 }
 
 type WorkflowSnapshot struct {
-	Name      string         `json:"name"`
-	State     State          `json:"state"`
+	Name      string           `json:"name"`
+	State     State            `json:"state"`
 	Context   *WorkflowContext `json:"context"`
-	CreatedAt time.Time      `json:"created_at"`
+	CreatedAt time.Time        `json:"created_at"`
 }
 
 func (w *Workflow) SaveSnapshot(path string) error {
