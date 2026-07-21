@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/auth"
+	"github.com/NAEOS-foundation/naeos/internal/database"
+	"github.com/NAEOS-foundation/naeos/internal/multitenant"
 	"github.com/NAEOS-foundation/naeos/internal/profiles"
+	naeosws "github.com/NAEOS-foundation/naeos/internal/websocket"
 )
 
 func TestNewServer(t *testing.T) {
@@ -1164,10 +1169,10 @@ func TestAICompileStreamEndpointMethodNotAllowed(t *testing.T) {
 
 func TestParsePagination(t *testing.T) {
 	tests := []struct {
-		name           string
-		query          string
-		wantOffset     int
-		wantLimit      int
+		name       string
+		query      string
+		wantOffset int
+		wantLimit  int
 	}{
 		{name: "defaults", query: "", wantOffset: 0, wantLimit: 50},
 		{name: "limit only", query: "limit=10", wantOffset: 0, wantLimit: 10},
@@ -1191,3 +1196,158 @@ func TestParsePagination(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_SetterMethods(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+
+	ws := naeosws.NewServer()
+	s.SetWebSocketServer(ws)
+	if s.wsServer != ws {
+		t.Error("SetWebSocketServer did not store reference")
+	}
+
+	s.SetDatabase(database.Database(nil))
+	// Just ensures no panic
+
+	s.SetAuthManager(auth.NewManager())
+	// Just ensures no panic
+
+	s.SetWorkspace(&multitenant.Workspace{})
+	// Just ensures no panic
+
+	s.SetRoutePermission("/custom", "spec", "read")
+	if s.routePerms["/custom"].Resource != "spec" {
+		t.Error("SetRoutePermission did not store permission")
+	}
+	if s.routePerms["/custom"].Action != "read" {
+		t.Error("SetRoutePermission did not store action")
+	}
+
+	// SetPipelineObserver just ensures no panic - we can't easily create a PipelineObserver here
+	// due to import cycle constraints, so skip it in this test
+
+	s.RegisterAPIKey("new-key", 50)
+	rl, ok := s.APIKeys["new-key"]
+	if !ok {
+		t.Fatal("RegisterAPIKey did not store key")
+	}
+	if !rl.Allow("any-client") {
+		t.Error("expected registered API key rate limiter to allow first request")
+	}
+}
+
+func TestServer_SetRoutePermissionNilMap(t *testing.T) {
+	s := &Server{}
+	s.SetRoutePermission("/path", "resource", "action")
+	if s.routePerms == nil {
+		t.Fatal("expected routePerms to be initialized")
+	}
+	if s.routePerms["/path"].Resource != "resource" {
+		t.Errorf("expected resource 'resource', got %q", s.routePerms["/path"].Resource)
+	}
+}
+
+func TestServer_handleHealthWithDB(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s.SetDatabase(&mockDB{})
+
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/health", nil)
+	w := httptest.NewRecorder()
+	s.handleHealth(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	var resp struct {
+		Data map[string]any `json:"data"`
+	}
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode: %v", err)
+	}
+	if db, ok := resp.Data["database"]; !ok || db != "healthy" {
+		t.Errorf("expected database healthy, got %v", resp.Data["database"])
+	}
+}
+
+func TestServer_handleHealthWithUnhealthyDB(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s.SetDatabase(&unhealthyDB{})
+
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/health", nil)
+	w := httptest.NewRecorder()
+	s.handleHealth(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	var resp struct {
+		Data map[string]any `json:"data"`
+	}
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode: %v", err)
+	}
+	dbStatus, ok := resp.Data["database"].(string)
+	if !ok || !strings.Contains(dbStatus, "unhealthy") {
+		t.Errorf("expected database unhealthy, got %v", resp.Data["database"])
+	}
+}
+
+type mockDB struct{}
+
+func (m *mockDB) Name() string                          { return "mock" }
+func (m *mockDB) Connect(config *database.Config) error { return nil }
+func (m *mockDB) Close() error                          { return nil }
+func (m *mockDB) Ping() error                           { return nil }
+func (m *mockDB) Exec(query string, args ...any) (database.Result, error) {
+	return database.Result{}, nil
+}
+func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (database.Result, error) {
+	return database.Result{}, nil
+}
+func (m *mockDB) Query(query string, args ...any) ([]database.Row, error) { return nil, nil }
+func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) ([]database.Row, error) {
+	return nil, nil
+}
+func (m *mockDB) QueryRow(query string, args ...any) (database.Row, error) { return nil, nil }
+func (m *mockDB) QueryRowContext(ctx context.Context, query string, args ...any) (database.Row, error) {
+	return nil, nil
+}
+func (m *mockDB) Begin() (database.Transaction, error)                      { return nil, nil }
+func (m *mockDB) BeginTx(ctx context.Context) (database.Transaction, error) { return nil, nil }
+func (m *mockDB) Migrate(migrations []database.Migration) error             { return nil }
+func (m *mockDB) MigrateContext(ctx context.Context, migrations []database.Migration) error {
+	return nil
+}
+func (m *mockDB) Rollback(version int) error                             { return nil }
+func (m *mockDB) RollbackContext(ctx context.Context, version int) error { return nil }
+func (m *mockDB) HealthCheck() error                                     { return nil }
+
+type unhealthyDB struct{}
+
+func (m *unhealthyDB) Name() string                          { return "unhealthy" }
+func (m *unhealthyDB) Connect(config *database.Config) error { return nil }
+func (m *unhealthyDB) Close() error                          { return nil }
+func (m *unhealthyDB) Ping() error                           { return nil }
+func (m *unhealthyDB) Exec(query string, args ...any) (database.Result, error) {
+	return database.Result{}, nil
+}
+func (m *unhealthyDB) ExecContext(ctx context.Context, query string, args ...any) (database.Result, error) {
+	return database.Result{}, nil
+}
+func (m *unhealthyDB) Query(query string, args ...any) ([]database.Row, error) { return nil, nil }
+func (m *unhealthyDB) QueryContext(ctx context.Context, query string, args ...any) ([]database.Row, error) {
+	return nil, nil
+}
+func (m *unhealthyDB) QueryRow(query string, args ...any) (database.Row, error) { return nil, nil }
+func (m *unhealthyDB) QueryRowContext(ctx context.Context, query string, args ...any) (database.Row, error) {
+	return nil, nil
+}
+func (m *unhealthyDB) Begin() (database.Transaction, error)                      { return nil, nil }
+func (m *unhealthyDB) BeginTx(ctx context.Context) (database.Transaction, error) { return nil, nil }
+func (m *unhealthyDB) Migrate(migrations []database.Migration) error             { return nil }
+func (m *unhealthyDB) MigrateContext(ctx context.Context, migrations []database.Migration) error {
+	return nil
+}
+func (m *unhealthyDB) Rollback(version int) error                             { return nil }
+func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
+func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
