@@ -1,0 +1,20 @@
+{{ define "main" }}
+<div class="not-found">
+    <div class="container">
+        <h1>404</h1>
+        <p>{{ i18n "page_not_found_desc" }}</p>
+        <p style="font-size:0.875rem;color:var(--color-text-dim);margin-bottom:1.5rem;">
+            {{ if eq .Language.Lang "id" }}
+            Mungkin halaman telah dipindahkan atau URL yang Anda ketik tidak benar.
+            {{ else }}
+            The page may have been moved or the URL you typed may be incorrect.
+            {{ end }}
+        </p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+            <a href="{{ .Site.Home.RelPermalink }}" class="btn btn-primary">{{ i18n "back_home" }}</a>
+            <a href="{{ "search/" | relLangURL }}" class="btn btn-secondary" onclick="event.preventDefault();openSearch();">{{ i18n "nav_search" }}</a>
+            <a href="{{ "docs/" | relLangURL }}" class="btn btn-secondary">{{ i18n "nav_docs" }}</a>
+        </div>
+    </div>
+</div>
+{{ end }}

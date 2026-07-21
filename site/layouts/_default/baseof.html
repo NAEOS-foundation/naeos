@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="{{ .Language.Lang }}" data-theme="{{ .Site.Params.pwa.theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}</title>
+    <meta name="description" content="{{ .Description | default .Site.Params.description }}">
+    <link rel="canonical" href="{{ .Permalink }}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="{{ .Site.Params.pwa.themeColor }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    {{ partial "head/seo.html" . }}
+    {{ partial "head/fonts.html" . }}
+    {{ $css := resources.Get "css/main.css" | resources.Minify | resources.Fingerprint "sha256" }}
+    <link rel="preload" href="{{ $css.RelPermalink }}" as="style" crossorigin>
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}"></noscript>
+    {{ partial "head/analytics.html" . }}
+</head>
+<body>
+    <a href="#main-content" class="skip-link">{{ i18n "skip_to_content" }}</a>
+    {{ partial "header.html" . }}
+    <main id="main-content">
+        {{ block "main" . }}{{ end }}
+    </main>
+    {{ partial "footer.html" . }}
+    {{ partial "search-modal.html" . }}
+    <script>
+        var SEARCH_INDEX_URL = '{{ "index.json" | absURL }}';
+        var SEARCH_PLACEHOLDER = '{{ i18n "search_placeholder" }}';
+        var SEARCH_NO_RESULTS = '{{ i18n "search_no_results" }}';
+    </script>
+    {{ $js := resources.Get "js/main.js" | resources.Minify | resources.Fingerprint "sha256" }}
+    <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+</body>
+</html>

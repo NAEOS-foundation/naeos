@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blog on NAEOS — Declarative Platform Engineering System</title><link>https://naeos.dev/id/blog/</link><description>Recent content in Blog on NAEOS — Declarative Platform Engineering System</description><generator>Hugo</generator><language>en</language><copyright>Copyright © 2026 NAEOS Foundation. All rights reserved.</copyright><lastBuildDate>Wed, 01 Jul 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://naeos.dev/id/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>Rilis NAEOS v2.1.0</title><link>https://naeos.dev/id/blog/v2.1.0-release/</link><pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/blog/v2.1.0-release/</guid><description>&lt;p>Kami dengan bangga mengumumkan rilis NAEOS v2.1.0! Rilis ini membawa peningkatan signifikan pada platform.&lt;/p>
+&lt;h2 id="yang-baru">Yang Baru&lt;/h2>
+&lt;ul>
+&lt;li>Model NEIR yang ditingkatkan dengan dukungan struktur proyek yang diperluas&lt;/li>
+&lt;li>Kompiler AI yang ditingkatkan dengan生成 set instruksi yang lebih baik&lt;/li>
+&lt;li>Optimalisasi kinerja di seluruh pipeline&lt;/li>
+&lt;li>Pesan kesalahan yang ditingkatkan dan dukungan debugging&lt;/li>
+&lt;/ul>
+&lt;h2 id="changelog">Changelog&lt;/h2>
+&lt;p>Untuk changelog lengkap, kunjungi &lt;a href="https://github.com/NAEOS-foundation/naeos/releases">halaman Rilis GitHub&lt;/a>.&lt;/p></description></item><item><title>Membangun Microservices dengan NAEOS — Panduan Langkah demi Langkah</title><link>https://naeos.dev/id/blog/microservices-with-naeos/</link><pubDate>Mon, 15 Jun 2026 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/blog/microservices-with-naeos/</guid><description>&lt;p>Dalam tutorial ini, kita akan membangun aplikasi microservices lengkap menggunakan NAEOS. Anda akan belajar cara mendefinisikan layanan, mengelola dependensi, menghasilkan kode, dan melakukan deployment.&lt;/p></description></item></channel></rss>

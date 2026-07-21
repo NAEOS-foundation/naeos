@@ -1,0 +1,326 @@
+[nav_features]
+other = "Features"
+
+[nav_docs]
+other = "Docs"
+
+[nav_blog]
+other = "Blog"
+
+[nav_download]
+other = "Download"
+
+[nav_community]
+other = "Community"
+
+[cta_get_started]
+other = "Get Started"
+
+[cta_install_now]
+other = "Install Now"
+
+[cta_view_on_github]
+other = "View on GitHub"
+
+[cta_read_docs]
+other = "Read the Docs"
+
+[hero_title]
+other = "Specify Once.<br>Build Anywhere."
+
+[hero_subtitle]
+other = "NAEOS is a declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems — with full traceability from intent to implementation."
+
+[hero_cta_primary]
+other = "Get Started"
+
+[hero_cta_secondary]
+other = "View on GitHub"
+
+[section_what_is]
+other = "What is NAEOS?"
+
+[section_what_is_desc]
+other = "NAEOS (Nusantara Engineering & Architecture Operating System) is not just a project generator. It is an engineering runtime that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle."
+
+[section_features]
+other = "Core Features"
+
+[section_quick_start]
+other = "Quick Start"
+
+[section_languages]
+other = "Supported Languages"
+
+[section_ai]
+other = "AI Integration"
+
+[section_cta]
+other = "Ready to build?"
+
+[section_cta_desc]
+other = "Start engineering your next project with NAEOS."
+
+[footer_product]
+other = "Product"
+
+[footer_docs]
+other = "Documentation"
+
+[footer_community]
+other = "Community"
+
+[footer_roadmap]
+other = "Roadmap"
+
+[footer_getting_started]
+other = "Getting Started"
+
+[footer_installation]
+other = "Installation"
+
+[footer_architecture]
+other = "Architecture"
+
+[footer_contribute]
+other = "Contribute"
+
+[stats_cli_commands]
+other = "CLI Commands"
+
+[stats_languages]
+other = "Languages"
+
+[stats_ai_platforms]
+other = "AI Platforms"
+
+[stats_specs]
+other = "Specifications"
+
+[feature_pipeline]
+other = "Pipeline Engine"
+
+[feature_pipeline_desc]
+other = "9-stage DAG pipeline from parsing to export. Parse, normalize, resolve, build, validate, schedule, generate, compile, and export — with full observability at every stage."
+
+[feature_compiler]
+other = "AI Compiler"
+
+[feature_compiler_desc]
+other = "Transform NEIR into AI instruction sets for 6 platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode."
+
+[feature_generator]
+other = "Code Generator"
+
+[feature_generator_desc]
+other = "Generate production-ready code in Go, TypeScript, Python, Java, and Rust. Template-driven with per-language adapters."
+
+[feature_neir]
+other = "NEIR Model"
+
+[feature_neir_desc]
+other = "NAEOS Engineering Intermediate Representation — a canonical model that describes the entire system: project, architecture, modules, services, APIs, infrastructure, and security."
+
+[feature_governance]
+other = "Governance & Policy"
+
+[feature_governance_desc]
+other = "Built-in policy engine with 7 operators, RBAC, audit trails, and artifact review. Keep your team aligned with organizational rules."
+
+[feature_marketplace]
+other = "Marketplace"
+
+[feature_marketplace_desc]
+other = "Publish, discover, and install industry profiles and plugins. 5 built-in profiles: SaaS, AI Agent, FinTech, Healthcare, Government."
+
+[download_title]
+other = "Install NAEOS"
+
+[download_subtitle]
+other = "Choose your preferred installation method."
+
+[download_go_install]
+other = "Go Install"
+
+[download_go_install_desc]
+other = "Install directly using Go (requires Go 1.25+):"
+
+[download_docker]
+other = "Docker"
+
+[download_docker_desc]
+other = "Run using Docker:"
+
+[download_binary]
+other = "Binary Release"
+
+[download_binary_desc]
+other = "Download the latest binary for your platform from GitHub Releases."
+
+[download_source]
+other = "Build from Source"
+
+[download_source_desc]
+other = "Clone the repository and build:"
+
+[community_title]
+other = "Join the Community"
+
+[community_subtitle]
+other = "NAEOS is an open-source project. We welcome contributions, feedback, and collaboration."
+
+[features_page_title]
+other = "Features"
+
+[features_page_desc]
+other = "Explore the complete feature set of NAEOS — from specification parsing to AI-assisted code generation."
+
+[docs_page_title]
+other = "Documentation"
+
+[docs_page_desc]
+other = "Learn how to use NAEOS with comprehensive guides and references."
+
+[blog_page_title]
+other = "Blog"
+
+[blog_page_desc]
+other = "News, release notes, tutorials, and community updates."
+
+[page_not_found]
+other = "Page Not Found"
+
+[page_not_found_desc]
+other = "The page you're looking for doesn't exist."
+
+[back_home]
+other = "Back to Home"
+
+[footer_newsletter]
+other = "Stay Updated"
+
+[footer_subscribe]
+other = "Subscribe"
+
+[nav_about]
+other = "About"
+
+[nav_faq]
+other = "FAQ"
+
+[nav_use_cases]
+other = "Use Cases"
+
+[about_title]
+other = "About NAEOS Foundation"
+
+[about_desc]
+other = "Learn about the mission, vision, and team behind NAEOS."
+
+[faq_title]
+other = "Frequently Asked Questions"
+
+[faq_desc]
+other = "Common questions about NAEOS and declarative engineering."
+
+[use_cases_title]
+other = "Use Cases"
+
+[use_cases_desc]
+other = "See how NAEOS is used across different architectures and teams."
+
+[skip_to_content]
+other = "Skip to main content"
+
+[cookie_consent]
+other = "We use cookies to analyze traffic and improve your experience. By using our site, you consent to our use of cookies."
+
+[cookie_accept]
+other = "Accept"
+
+[footer_releases]
+other = "Releases"
+
+[footer_use_cases]
+other = "Use Cases"
+
+[footer_cli_reference]
+other = "CLI Reference"
+
+[footer_faq]
+other = "FAQ"
+
+[footer_about]
+other = "About"
+
+[footer_discussions]
+other = "Discussions"
+
+[footer_issues]
+other = "Issues"
+
+[search_placeholder]
+other = "Search docs, features, blog..."
+
+[search_hint]
+other = "Type to search — press ↑↓ to navigate, Enter to select, Esc to close"
+
+[search_no_results]
+other = "No results found"
+
+[search_results_for]
+other = "Results for"
+
+[nav_search]
+other = "Search"
+
+[toggle_theme]
+other = "Toggle theme"
+
+[theme_dark]
+other = "Dark"
+
+[theme_light]
+other = "Light"
+
+[releases_title]
+other = "Releases"
+
+[releases_desc]
+other = "Version history and release notes for NAEOS."
+
+[roadmap_title]
+other = "Roadmap"
+
+[roadmap_desc]
+other = "The development roadmap for NAEOS."
+
+[contributors_title]
+other = "Contributors"
+
+[contributors_desc]
+other = "The amazing people who contribute to NAEOS."
+
+[security_title]
+other = "Security"
+
+[security_desc]
+other = "Security policy and vulnerability reporting."
+
+[status_title]
+other = "System Status"
+
+[status_desc]
+other = "Current status of NAEOS services and infrastructure."
+
+[privacy_title]
+other = "Privacy Policy"
+
+[privacy_desc]
+other = "How we handle your data and privacy."
+
+[terms_title]
+other = "Terms of Service"
+
+[terms_desc]
+other = "Terms and conditions for using NAEOS."

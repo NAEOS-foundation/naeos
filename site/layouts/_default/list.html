@@ -1,0 +1,22 @@
+{{ define "main" }}
+<div class="page-header">
+    <div class="container">
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}<p>{{ . }}</p>{{ end }}
+    </div>
+</div>
+<section class="content-section">
+    <div class="container">
+        {{ .Content }}
+        <div class="blog-grid">
+            {{ range .Pages }}
+            <article class="blog-card">
+                <div class="blog-date">{{ .Date | time.Format "January 2, 2006" }}</div>
+                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+                <p>{{ .Description | default .Summary | truncate 120 }}</p>
+            </article>
+            {{ end }}
+        </div>
+    </div>
+</section>
+{{ end }}

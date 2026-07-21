@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>NAEOS — Sistem Rekayasa Platform Deklaratif on NAEOS — Declarative Platform Engineering System</title><link>https://naeos.dev/id/</link><description>Recent content in NAEOS — Sistem Rekayasa Platform Deklaratif on NAEOS — Declarative Platform Engineering System</description><generator>Hugo</generator><language>en</language><copyright>Copyright © 2026 NAEOS Foundation. All rights reserved.</copyright><lastBuildDate>Mon, 01 Jan 0001 00:00:00 +0000</lastBuildDate><atom:link href="https://naeos.dev/id/index.xml" rel="self" type="application/rss+xml"/><item><title>Ekosistem</title><link>https://naeos.dev/id/ecosystem/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/ecosystem/</guid><description>&lt;h2 id="profil-bawaan">Profil Bawaan&lt;/h2>
+&lt;p>NAEOS hadir dengan 5 profil industri yang menyediakan pola, aturan, dan template yang sudah dikonfigurasi sebelumnya untuk domain umum.&lt;/p></description></item><item><title>Keamanan</title><link>https://naeos.dev/id/security/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/security/</guid><description>&lt;h2 id="kebijakan-keamanan">Kebijakan Keamanan&lt;/h2>
+&lt;p>Proyek NAEOS menganggap serius masalah keamanan. Kami menghargai upaya Anda dalam melaporkan kerentanan secara bertanggung jawab.&lt;/p>
+&lt;h2 id="melaporkan-kerentanan">Melaporkan Kerentanan&lt;/h2>
+&lt;p>&lt;strong>Mohon jangan melaporkan kerentanan keamanan melalui issue GitHub publik.&lt;/strong>&lt;/p></description></item><item><title>Kebijakan Privasi</title><link>https://naeos.dev/id/privacy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/privacy/</guid><description>&lt;h2 id="informasi-yang-kami-kumpulkan">Informasi yang Kami Kumpulkan&lt;/h2>
+&lt;p>NAEOS adalah alat command-line yang berjalan secara lokal di mesin Anda. Kami tidak mengumpulkan atau mentransmisikan data apa pun dari penggunaan alat CLI NAEOS itu sendiri.&lt;/p></description></item><item><title>Ketentuan Layanan</title><link>https://naeos.dev/id/terms/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/terms/</guid><description>&lt;h2 id="penerimaan-ketentuan">Penerimaan Ketentuan&lt;/h2>
+&lt;p>Dengan menggunakan NAEOS, Anda menyetujui ketentuan layanan ini. NAEOS adalah proyek open-source yang dirilis di bawah Lisensi Apache 2.0.&lt;/p></description></item><item><title>Komunitas</title><link>https://naeos.dev/id/community/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/community/</guid><description>&lt;p>NAEOS adalah proyek open-source yang dibangun oleh komunitas, untuk komunitas. Kami menyambut kontribusi dari semua jenis — kode, dokumentasi, laporan bug, permintaan fitur, dan diskusi.&lt;/p></description></item><item><title>Kontributor</title><link>https://naeos.dev/id/contributors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/contributors/</guid><description>&lt;h2 id="kontributor-kami">Kontributor Kami&lt;/h2>
+&lt;p>NAEOS dibangun oleh komunitas kontributor yang luar biasa. Terima kasih kepada semua yang telah membantu mewujudkan proyek ini.&lt;/p></description></item><item><title>Pertanyaan Umum</title><link>https://naeos.dev/id/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/faq/</guid><description>&lt;div class="faq-list">
+&lt;div class="faq-item">
+&lt;button class="faq-question">
+&lt;span>Apa itu NAEOS?&lt;/span>
+&lt;span class="faq-arrow">▾&lt;/span>
+&lt;/button>
+&lt;div class="faq-answer">
+&lt;p>NAEOS (Nusantara Engineering &amp; Architecture Operating System) adalah platform rekayasa deklaratif yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. NAEOS adalah runtime rekayasa — bukan sekadar generator proyek — yang memahami spesifikasi, membangun model internal (NEIR), mengatur rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya.&lt;/p></description></item><item><title>Peta Jalan</title><link>https://naeos.dev/id/roadmap/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/roadmap/</guid><description>&lt;h2 id="visi">Visi&lt;/h2>
+&lt;p>NAEOS bertujuan menjadi sistem operasi deklaratif standar untuk proyek engineering — sumber kebenaran tunggal yang menghubungkan kode, dokumentasi, spesifikasi, dan kode yang dihasilkan AI dalam kerangka kerja yang koheren dan terverifikasi.&lt;/p></description></item><item><title>Rilis</title><link>https://naeos.dev/id/releases/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/releases/</guid><description>&lt;h2 id="riwayat-rilis">Riwayat Rilis&lt;/h2>
+&lt;p>Rilis terbaru NAEOS dibuat dari cabang &lt;code>main&lt;/code>. Semua rilis diberi tag dan dipublikasikan di &lt;a href="https://github.com/NAEOS-foundation/naeos/releases">GitHub Releases&lt;/a>.&lt;/p>
+&lt;div id="releases-container">
+ &lt;table class="releases-table">
+ &lt;thead>
+ &lt;tr>&lt;th>Versi&lt;/th>&lt;th>Deskripsi&lt;/th>&lt;th>Tanggal&lt;/th>&lt;/tr>
+ &lt;/thead>
+ &lt;tbody id="releases-body">
+ &lt;tr>&lt;td colspan="3" style="text-align:center;padding:2rem;">Memuat rilis dari GitHub...&lt;/td>&lt;/tr>
+ &lt;/tbody>
+ &lt;/table>
+&lt;/div>
+&lt;h2 id="catatan-perubahan">Catatan Perubahan&lt;/h2>
+&lt;p>Untuk catatan perubahan yang detail, kunjungi &lt;a href="https://github.com/NAEOS-foundation/naeos/releases">halaman GitHub Releases&lt;/a> atau baca &lt;a href="https://github.com/NAEOS-foundation/naeos/blob/main/CHANGELOG.md">CHANGELOG&lt;/a> di repositori.&lt;/p></description></item><item><title>Status Sistem</title><link>https://naeos.dev/id/status/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/status/</guid><description>&lt;h2 id="status-layanan">Status Layanan&lt;/h2>
+&lt;div class="status-grid">
+ &lt;div class="status-card">
+ &lt;span class="status-dot operational">&lt;/span>
+ &lt;div>
+ &lt;h4>NAEOS CLI&lt;/h4>
+ &lt;p>Pipeline build, rilis, dan distribusi&lt;/p>
+ &lt;/div>
+ &lt;span class="badge badge-success">Beroperasi&lt;/span>
+ &lt;/div>
+ &lt;div class="status-card">
+ &lt;span class="status-dot operational">&lt;/span>
+ &lt;div>
+ &lt;h4>Situs Web (naeos.dev)&lt;/h4>
+ &lt;p>Dokumentasi, blog, dan pusat komunitas&lt;/p></description></item><item><title>Studi Kasus</title><link>https://naeos.dev/id/use-cases/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/use-cases/</guid><description>&lt;h2 id="arsitektur-microservices">Arsitektur Microservices&lt;/h2>
+&lt;p>Desain, hasilkan, dan deploy microservices dengan NAEOS. Tentukan layanan, API, dependensi, dan target deployment dalam satu spesifikasi.&lt;/p>
+&lt;ul>
+&lt;li>Hasilkan kode layanan Go atau TypeScript dengan endpoint REST&lt;/li>
+&lt;li>Buat Dockerfiles dan konfigurasi docker-compose&lt;/li>
+&lt;li>Ekspor manifes Kubernetes&lt;/li>
+&lt;li>Hasilkan dokumentasi API secara otomatis&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>Stack tipikal:&lt;/strong> Go, TypeScript, Docker, Kubernetes&lt;/p></description></item><item><title>Tentang NAEOS Foundation</title><link>https://naeos.dev/id/about/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/about/</guid><description>&lt;h2 id="misi-kami">Misi Kami&lt;/h2>
+&lt;p>NAEOS (Nusantara Engineering &amp;amp; Architecture Operating System) adalah platform rekayasa deklaratif open-source yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Misi kami adalah menghilangkan kesenjangan antara niat dan implementasi — memungkinkan pengembang untuk mendeskripsikan sistem mereka sekali, lalu membangun, memvalidasi, dan mengembangkan perangkat lunak di berbagai bahasa, kerangka kerja, atau platform.&lt;/p></description></item><item><title>Unduh</title><link>https://naeos.dev/id/download/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/download/</guid><description>&lt;h2 id="metode-instalasi">Metode Instalasi&lt;/h2>
+&lt;div class="download-grid">
+&lt;div class="download-card">
+&lt;h3>Go Install&lt;/h3>
+&lt;p>Pasang langsung menggunakan Go. Membutuhkan Go 1.25+.&lt;/p>
+&lt;div class="code-block">
+&lt;div class="code-block-header">&lt;span>bash&lt;/span>&lt;button class="copy-btn">Copy&lt;/button>&lt;/div>
+&lt;pre>&lt;code>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;/div>
+&lt;div class="download-card">
+&lt;h3>Docker&lt;/h3>
+&lt;p>Jalankan menggunakan kontainer Docker.&lt;/p>
+&lt;div class="code-block">
+&lt;div class="code-block-header">&lt;span>bash&lt;/span>&lt;button class="copy-btn">Copy&lt;/button>&lt;/div>
+&lt;pre>&lt;code>docker pull ghcr.io/naeos-foundation/naeos:latest
+docker run --rm ghcr.io/naeos-foundation/naeos:latest naeos version&lt;/code>&lt;/pre>
+&lt;/div>
+&lt;/div>
+&lt;div class="download-card">
+&lt;h3>Rilis Biner&lt;/h3>
+&lt;p>Unduh biner terbaru dari GitHub Releases.&lt;/p></description></item></channel></rss>

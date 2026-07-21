@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Dokumentasi on NAEOS — Declarative Platform Engineering System</title><link>https://naeos.dev/id/docs/</link><description>Recent content in Dokumentasi on NAEOS — Declarative Platform Engineering System</description><generator>Hugo</generator><language>en</language><copyright>Copyright © 2026 NAEOS Foundation. All rights reserved.</copyright><atom:link href="https://naeos.dev/id/docs/index.xml" rel="self" type="application/rss+xml"/><item><title>Arsitektur</title><link>https://naeos.dev/id/docs/architecture/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/docs/architecture/</guid><description>&lt;h2 id="arsitektur-sistem">Arsitektur Sistem&lt;/h2>
+&lt;p>NAEOS dibangun di atas arsitektur berlapis dengan lima lapisan utama:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Lapisan Input │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Spec YAML/JSON · Perintah CLI │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Core Runtime │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Parser · Normalizer · Resolver · Validator · Scheduler │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Lapisan Penalaran │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Reasoning Graph · Knowledge Graph │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Lapisan Generasi │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Generator · Adapters · Template Engine · Compiler │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Lapisan Output │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ NEIR Model · Kode · Dokumen · Konteks AI · Manifes │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="1-lapisan-input">1. Lapisan Input&lt;/h3>
+&lt;p>Titik masuk di mana spesifikasi (YAML/JSON) dan perintah CLI masuk ke sistem.&lt;/p></description></item><item><title>Instalasi</title><link>https://naeos.dev/id/docs/installation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/docs/installation/</guid><description>&lt;h2 id="go-install-direkomendasikan">Go Install (Direkomendasikan)&lt;/h2>
+&lt;p>Membutuhkan Go 1.25+:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="docker">Docker&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker pull ghcr.io/naeos-foundation/naeos:latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Verifikasi instalasi:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run --rm ghcr.io/naeos-foundation/naeos:latest naeos version
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="bangun-dari-sumber">Bangun dari Sumber&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/NAEOS-foundation/naeos.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd naeos
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>make build
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Biner akan tersedia di &lt;code>./naeos&lt;/code>.&lt;/p></description></item><item><title>Panduan Awal</title><link>https://naeos.dev/id/docs/getting-started/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/docs/getting-started/</guid><description>&lt;h2 id="prasyarat">Prasyarat&lt;/h2>
+&lt;ul>
+&lt;li>Go 1.25+ (untuk metode &lt;code>go install&lt;/code>)&lt;/li>
+&lt;li>Terminal dengan pengetahuan dasar command-line&lt;/li>
+&lt;/ul>
+&lt;h2 id="instalasi">Instalasi&lt;/h2>
+&lt;p>Pilih salah satu metode berikut:&lt;/p>
+&lt;h3 id="go-install">Go Install&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="docker">Docker&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker pull ghcr.io/naeos-foundation/naeos:latest
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>docker run --rm -v &lt;span style="color:#66d9ef">$(&lt;/span>pwd&lt;span style="color:#66d9ef">)&lt;/span>:/workspace ghcr.io/naeos-foundation/naeos:latest naeos version
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="bangun-dari-sumber">Bangun dari Sumber&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/NAEOS-foundation/naeos.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd naeos
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>go build ./cmd/naeos/
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="pipeline-pertama-anda">Pipeline Pertama Anda&lt;/h2>
+&lt;h3 id="1-buat-file-spesifikasi">1. Buat file spesifikasi&lt;/h3>
+&lt;p>Buat &lt;code>spec.yaml&lt;/code>:&lt;/p></description></item><item><title>Referensi CLI</title><link>https://naeos.dev/id/docs/cli-reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/id/docs/cli-reference/</guid><description>&lt;p>NAEOS menyediakan 35+ perintah CLI untuk setiap tahap pipeline rekayasa.&lt;/p>
+&lt;h2 id="perintah-inti">Perintah Inti&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Perintah&lt;/th>
+ &lt;th>Deskripsi&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos run&lt;/code>&lt;/td>
+ &lt;td>Jalankan pipeline lengkap&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos validate&lt;/code>&lt;/td>
+ &lt;td>Validasi spesifikasi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos compile&lt;/code>&lt;/td>
+ &lt;td>Kompilasi ke set instruksi AI&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos context&lt;/code>&lt;/td>
+ &lt;td>Generate bundel konteks AI&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos test&lt;/code>&lt;/td>
+ &lt;td>Jalankan tes untuk kode yang dihasilkan&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos docgen&lt;/code>&lt;/td>
+ &lt;td>Generate dokumentasi&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="perintah-proyek">Perintah Proyek&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Perintah&lt;/th>
+ &lt;th>Deskripsi&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos init&lt;/code>&lt;/td>
+ &lt;td>Inisialisasi konfigurasi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos create&lt;/code>&lt;/td>
+ &lt;td>Buat proyek&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos scaffold&lt;/code>&lt;/td>
+ &lt;td>Generate scaffold&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos export&lt;/code>&lt;/td>
+ &lt;td>Ekspor artefak&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos audit&lt;/code>&lt;/td>
+ &lt;td>Audit spesifikasi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos diff&lt;/code>&lt;/td>
+ &lt;td>Bandingkan spesifikasi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos repair&lt;/code>&lt;/td>
+ &lt;td>Perbaiki spesifikasi&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="perintah-manajemen">Perintah Manajemen&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Perintah&lt;/th>
+ &lt;th>Deskripsi&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos mcp&lt;/code>&lt;/td>
+ &lt;td>Mulai server MCP&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos marketplace&lt;/code>&lt;/td>
+ &lt;td>Jelajahi marketplace&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos profile&lt;/code>&lt;/td>
+ &lt;td>Kelola profil industri&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos plugin&lt;/code>&lt;/td>
+ &lt;td>Kelola plugin&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos template&lt;/code>&lt;/td>
+ &lt;td>Kelola template&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos workspace&lt;/code>&lt;/td>
+ &lt;td>Kelola workspace&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos artifacts&lt;/code>&lt;/td>
+ &lt;td>Kelola penyimpanan artefak&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos migrate&lt;/code>&lt;/td>
+ &lt;td>Migrasi skema&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos rollback&lt;/code>&lt;/td>
+ &lt;td>Kembalikan perubahan&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="perintah-monitoring">Perintah Monitoring&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Perintah&lt;/th>
+ &lt;th>Deskripsi&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos status&lt;/code>&lt;/td>
+ &lt;td>Status pipeline&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos doctor&lt;/code>&lt;/td>
+ &lt;td>Pemeriksaan kesehatan sistem&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos watch&lt;/code>&lt;/td>
+ &lt;td>Pantau perubahan&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos kernel&lt;/code>&lt;/td>
+ &lt;td>Periksa kernel&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos dashboard&lt;/code>&lt;/td>
+ &lt;td>Mulai dashboard web&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos api&lt;/code>&lt;/td>
+ &lt;td>Mulai server API&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="perintah-utilitas">Perintah Utilitas&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Perintah&lt;/th>
+ &lt;th>Deskripsi&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos version&lt;/code>&lt;/td>
+ &lt;td>Info versi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos ai&lt;/code>&lt;/td>
+ &lt;td>Bantuan AI&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos docs&lt;/code>&lt;/td>
+ &lt;td>Dokumentasi&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos completion&lt;/code>&lt;/td>
+ &lt;td>Penyelesaian shell&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos lock&lt;/code>&lt;/td>
+ &lt;td>Kunci dependensi&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>Untuk penggunaan detail setiap perintah, jalankan &lt;code>naeos &amp;lt;command&amp;gt; --help&lt;/code>.&lt;/p></description></item></channel></rss>

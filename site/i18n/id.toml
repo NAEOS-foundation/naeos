@@ -1,0 +1,326 @@
+[nav_features]
+other = "Fitur"
+
+[nav_docs]
+other = "Dokumen"
+
+[nav_blog]
+other = "Blog"
+
+[nav_download]
+other = "Unduh"
+
+[nav_community]
+other = "Komunitas"
+
+[cta_get_started]
+other = "Mulai"
+
+[cta_install_now]
+other = "Pasang Sekarang"
+
+[cta_view_on_github]
+other = "Lihat di GitHub"
+
+[cta_read_docs]
+other = "Baca Dokumen"
+
+[hero_title]
+other = "Tentukan Sekali.<br>Bangun di Mana Saja."
+
+[hero_subtitle]
+other = "NAEOS adalah platform rekayasa deklaratif yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi — dengan ketelusuran penuh dari niat hingga implementasi."
+
+[hero_cta_primary]
+other = "Mulai"
+
+[hero_cta_secondary]
+other = "Lihat di GitHub"
+
+[section_what_is]
+other = "Apa itu NAEOS?"
+
+[section_what_is_desc]
+other = "NAEOS (Nusantara Engineering & Architecture Operating System) bukan sekadar generator proyek. NAEOS adalah runtime rekayasa yang memahami spesifikasi, membangun model internal (NEIR), mengatur rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya."
+
+[section_features]
+other = "Fitur Utama"
+
+[section_quick_start]
+other = "Mulai Cepat"
+
+[section_languages]
+other = "Bahasa yang Didukung"
+
+[section_ai]
+other = "Integrasi AI"
+
+[section_cta]
+other = "Siap membangun?"
+
+[section_cta_desc]
+other = "Mulai rekayasa proyek Anda dengan NAEOS."
+
+[footer_product]
+other = "Produk"
+
+[footer_docs]
+other = "Dokumentasi"
+
+[footer_community]
+other = "Komunitas"
+
+[footer_roadmap]
+other = "Peta Jalan"
+
+[footer_getting_started]
+other = "Panduan Awal"
+
+[footer_installation]
+other = "Instalasi"
+
+[footer_architecture]
+other = "Arsitektur"
+
+[footer_contribute]
+other = "Berkontribusi"
+
+[stats_cli_commands]
+other = "Perintah CLI"
+
+[stats_languages]
+other = "Bahasa"
+
+[stats_ai_platforms]
+other = "Platform AI"
+
+[stats_specs]
+other = "Spesifikasi"
+
+[feature_pipeline]
+other = "Pipeline Engine"
+
+[feature_pipeline_desc]
+other = "Pipeline DAG 9-tahap dari parsing hingga ekspor. Parse, normalisasi, resolusi, bangun, validasi, jadwalkan, hasilkan, kompilasi, dan ekspor — dengan observabilitas penuh di setiap tahap."
+
+[feature_compiler]
+other = "Kompiler AI"
+
+[feature_compiler_desc]
+other = "Ubah NEIR menjadi set instruksi AI untuk 6 platform: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, dan OpenCode."
+
+[feature_generator]
+other = "Generator Kode"
+
+[feature_generator_desc]
+other = "Hasilkan kode siap-produksi dalam Go, TypeScript, Python, Java, dan Rust. Berbasis template dengan adapter per-bahasa."
+
+[feature_neir]
+other = "Model NEIR"
+
+[feature_neir_desc]
+other = "NAEOS Engineering Intermediate Representation — model kanonikal yang mendeskripsikan seluruh sistem: proyek, arsitektur, modul, layanan, API, infrastruktur, dan keamanan."
+
+[feature_governance]
+other = "Tata Kelola & Kebijakan"
+
+[feature_governance_desc]
+other = "Mesin kebijakan bawaan dengan 7 operator, RBAC, jejak audit, dan tinjauan artefak. Jaga tim Anda tetap selaras dengan aturan organisasi."
+
+[feature_marketplace]
+other = "Marketplace"
+
+[feature_marketplace_desc]
+other = "Publikasikan, temukan, dan pasang profil industri serta plugin. 5 profil bawaan: SaaS, AI Agent, FinTech, Healthcare, Government."
+
+[download_title]
+other = "Pasang NAEOS"
+
+[download_subtitle]
+other = "Pilih metode instalasi yang Anda inginkan."
+
+[download_go_install]
+other = "Go Install"
+
+[download_go_install_desc]
+other = "Pasang langsung menggunakan Go (membutuhkan Go 1.25+):"
+
+[download_docker]
+other = "Docker"
+
+[download_docker_desc]
+other = "Jalankan menggunakan Docker:"
+
+[download_binary]
+other = "Rilis Biner"
+
+[download_binary_desc]
+other = "Unduh biner terbaru untuk platform Anda dari GitHub Releases."
+
+[download_source]
+other = "Bangun dari Sumber"
+
+[download_source_desc]
+other = "Kloning repositori dan bangun:"
+
+[community_title]
+other = "Gabung Komunitas"
+
+[community_subtitle]
+other = "NAEOS adalah proyek open-source. Kami menyambut kontribusi, masukan, dan kolaborasi."
+
+[features_page_title]
+other = "Fitur"
+
+[features_page_desc]
+other = "Jelajahi rangkaian fitur lengkap NAEOS — dari parsing spesifikasi hingga生成 kode berbantuan AI."
+
+[docs_page_title]
+other = "Dokumentasi"
+
+[docs_page_desc]
+other = "Pelajari cara menggunakan NAEOS dengan panduan dan referensi yang komprehensif."
+
+[blog_page_title]
+other = "Blog"
+
+[blog_page_desc]
+other = "Berita, catatan rilis, tutorial, dan pembaruan komunitas."
+
+[page_not_found]
+other = "Halaman Tidak Ditemukan"
+
+[page_not_found_desc]
+other = "Halaman yang Anda cari tidak ditemukan."
+
+[back_home]
+other = "Kembali ke Beranda"
+
+[footer_newsletter]
+other = "Tetap Terupdate"
+
+[footer_subscribe]
+other = "Langganan"
+
+[nav_about]
+other = "Tentang"
+
+[nav_faq]
+other = "FAQ"
+
+[nav_use_cases]
+other = "Studi Kasus"
+
+[about_title]
+other = "Tentang NAEOS Foundation"
+
+[about_desc]
+other = "Pelajari misi, visi, dan tim di balik NAEOS."
+
+[faq_title]
+other = "Pertanyaan Umum"
+
+[faq_desc]
+other = "Pertanyaan umum tentang NAEOS dan rekayasa deklaratif."
+
+[use_cases_title]
+other = "Studi Kasus"
+
+[use_cases_desc]
+other = "Lihat bagaimana NAEOS digunakan di berbagai arsitektur dan tim."
+
+[skip_to_content]
+other = "Lompat ke konten utama"
+
+[cookie_consent]
+other = "Kami menggunakan cookie untuk menganalisis lalu lintas dan meningkatkan pengalaman Anda. Dengan menggunakan situs kami, Anda menyetujui penggunaan cookie."
+
+[cookie_accept]
+other = "Terima"
+
+[footer_releases]
+other = "Rilis"
+
+[footer_use_cases]
+other = "Studi Kasus"
+
+[footer_cli_reference]
+other = "Referensi CLI"
+
+[footer_faq]
+other = "FAQ"
+
+[footer_about]
+other = "Tentang"
+
+[footer_discussions]
+other = "Diskusi"
+
+[footer_issues]
+other = "Isu"
+
+[search_placeholder]
+other = "Cari dokumen, fitur, blog..."
+
+[search_hint]
+other = "Ketik untuk mencari — ↑↓ navigasi, Enter pilih, Esc tutup"
+
+[search_no_results]
+other = "Tidak ada hasil"
+
+[search_results_for]
+other = "Hasil untuk"
+
+[nav_search]
+other = "Cari"
+
+[toggle_theme]
+other = "Ganti tema"
+
+[theme_dark]
+other = "Gelap"
+
+[theme_light]
+other = "Terang"
+
+[releases_title]
+other = "Rilis"
+
+[releases_desc]
+other = "Riwayat versi dan catatan rilis untuk NAEOS."
+
+[roadmap_title]
+other = "Peta Jalan"
+
+[roadmap_desc]
+other = "Peta jalan pengembangan NAEOS."
+
+[contributors_title]
+other = "Kontributor"
+
+[contributors_desc]
+other = "Orang-orang hebat yang berkontribusi ke NAEOS."
+
+[security_title]
+other = "Keamanan"
+
+[security_desc]
+other = "Kebijakan keamanan dan pelaporan kerentanan."
+
+[status_title]
+other = "Status Sistem"
+
+[status_desc]
+other = "Status layanan dan infrastruktur NAEOS saat ini."
+
+[privacy_title]
+other = "Kebijakan Privasi"
+
+[privacy_desc]
+other = "Bagaimana kami menangani data dan privasi Anda."
+
+[terms_title]
+other = "Ketentuan Layanan"
+
+[terms_desc]
+other = "Ketentuan dan syarat penggunaan NAEOS."

@@ -1,0 +1,62 @@
+<meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}">
+<meta property="og:description" content="{{ .Description | default .Site.Params.description }}">
+<meta property="og:type" content="{{ if or .IsHome (ne .Section "blog") }}website{{ else }}article{{ end }}">
+<meta property="og:url" content="{{ .Permalink }}">
+<meta property="og:image" content="{{ "images/og-default.png" | absURL }}">
+<meta property="og:site_name" content="NAEOS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}">
+<meta name="twitter:description" content="{{ .Description | default .Site.Params.description }}">
+<meta name="twitter:image" content="{{ "images/og-default.png" | absURL }}">
+{{ range .Translations }}
+<link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
+{{ end }}
+<link rel="alternate" hreflang="x-default" href="{{ .Site.BaseURL }}">
+<link rel="alternate" hreflang="en" href="{{ .Site.BaseURL }}">
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "SoftwareApplication",
+            "name": "NAEOS",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Linux, macOS, Windows",
+            "description": "{{ .Site.Params.description }}",
+            "url": "{{ .Site.BaseURL }}",
+            "author": { "@type": "Organization", "name": "NAEOS Foundation" },
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        },
+        {
+            "@type": "WebSite",
+            "name": "NAEOS",
+            "url": "{{ .Site.BaseURL }}",
+            {{ if not .IsHome }}
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ .Site.BaseURL }}" }{{ $pos := 2 }}
+                    {{- range .Ancestors.Reverse }}{{ if ne . $.Site.Home }}
+                    ,{ "@type": "ListItem", "position": {{ $pos }}, "name": "{{ .Title }}", "item": "{{ .Permalink }}" }{{ $pos = add $pos 1 }}
+                    {{ end }}{{ end }}
+                    ,{ "@type": "ListItem", "position": {{ $pos }}, "name": "{{ .Title }}" }
+                ]
+            }
+            {{ end }}
+        }{{ if eq .Section "faq" }},
+        {
+            "@type": "FAQPage",
+            "mainEntity": [
+                {{ range (findRE `(?s)<div class="faq-item">.*?</div>` .Content 50) }}{{ $q := index (findRE `(?s)<button class="faq-question">\s*<span>(.*?)</span>` . 1) 0 }}{{ $a := index (findRE `(?s)<div class="faq-answer">\s*<p>(.*?)</p>` . 1) 0 }}
+                {
+                    "@type": "Question",
+                    "name": {{ $q | plainify | jsonify }},
+                    "acceptedAnswer": { "@type": "Answer", "text": {{ $a | plainify | jsonify }} }
+                }{{ if ne . (index (findRE `(?s)<div class="faq-item">.*?</div>` $.Content 50) (sub (len (findRE `(?s)<div class="faq-item">.*?</div>` $.Content 50)) 1)) }},{{ end }}
+                {{ end }}
+            ]
+        }
+        {{ end }}
+    ]
+}
+</script>

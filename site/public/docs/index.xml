@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Documentation on NAEOS — Declarative Platform Engineering System</title><link>https://naeos.dev/docs/</link><description>Recent content in Documentation on NAEOS — Declarative Platform Engineering System</description><generator>Hugo</generator><language>en</language><copyright>Copyright © 2026 NAEOS Foundation. All rights reserved.</copyright><atom:link href="https://naeos.dev/docs/index.xml" rel="self" type="application/rss+xml"/><item><title>Architecture</title><link>https://naeos.dev/docs/architecture/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/docs/architecture/</guid><description>&lt;h2 id="system-architecture">System Architecture&lt;/h2>
+&lt;p>NAEOS is built on a layered architecture with five main layers:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Input Layer │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Spec YAML/JSON · CLI Commands │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Core Runtime │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Parser · Normalizer · Resolver · Validator · Scheduler │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Reasoning Layer │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Reasoning Graph · Knowledge Graph │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Generation Layer │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Generator · Adapters · Template Engine · Compiler │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>├─────────────────────────────────────────────────────────┤
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Output Layer │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ NEIR Model · Code · Docs · AI Context · Manifests │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="1-input-layer">1. Input Layer&lt;/h3>
+&lt;p>The entry point where specifications (YAML/JSON) and CLI commands enter the system.&lt;/p></description></item><item><title>CLI Reference</title><link>https://naeos.dev/docs/cli-reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/docs/cli-reference/</guid><description>&lt;p>NAEOS provides 35+ CLI commands for every stage of the engineering pipeline.&lt;/p>
+&lt;h2 id="core-commands">Core Commands&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Command&lt;/th>
+ &lt;th>Description&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos run&lt;/code>&lt;/td>
+ &lt;td>Execute full pipeline&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos validate&lt;/code>&lt;/td>
+ &lt;td>Validate specification&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos compile&lt;/code>&lt;/td>
+ &lt;td>Compile to AI instruction sets&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos context&lt;/code>&lt;/td>
+ &lt;td>Generate AI context bundle&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos test&lt;/code>&lt;/td>
+ &lt;td>Run tests for generated code&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos docgen&lt;/code>&lt;/td>
+ &lt;td>Generate documentation&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="project-commands">Project Commands&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Command&lt;/th>
+ &lt;th>Description&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos init&lt;/code>&lt;/td>
+ &lt;td>Initialize configuration&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos create&lt;/code>&lt;/td>
+ &lt;td>Create project&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos scaffold&lt;/code>&lt;/td>
+ &lt;td>Generate scaffold&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos export&lt;/code>&lt;/td>
+ &lt;td>Export artifacts&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos audit&lt;/code>&lt;/td>
+ &lt;td>Audit specification&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos diff&lt;/code>&lt;/td>
+ &lt;td>Compare specifications&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos repair&lt;/code>&lt;/td>
+ &lt;td>Repair specification&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="management-commands">Management Commands&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Command&lt;/th>
+ &lt;th>Description&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos mcp&lt;/code>&lt;/td>
+ &lt;td>Start MCP server&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos marketplace&lt;/code>&lt;/td>
+ &lt;td>Browse marketplace&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos profile&lt;/code>&lt;/td>
+ &lt;td>Manage industry profiles&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos plugin&lt;/code>&lt;/td>
+ &lt;td>Manage plugins&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos template&lt;/code>&lt;/td>
+ &lt;td>Manage templates&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos workspace&lt;/code>&lt;/td>
+ &lt;td>Manage workspace&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos artifacts&lt;/code>&lt;/td>
+ &lt;td>Manage artifact store&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos migrate&lt;/code>&lt;/td>
+ &lt;td>Schema migration&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos rollback&lt;/code>&lt;/td>
+ &lt;td>Rollback changes&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="monitoring-commands">Monitoring Commands&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Command&lt;/th>
+ &lt;th>Description&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos status&lt;/code>&lt;/td>
+ &lt;td>Pipeline status&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos doctor&lt;/code>&lt;/td>
+ &lt;td>System health check&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos watch&lt;/code>&lt;/td>
+ &lt;td>Watch for changes&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos kernel&lt;/code>&lt;/td>
+ &lt;td>Inspect kernel&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos dashboard&lt;/code>&lt;/td>
+ &lt;td>Start web dashboard&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos api&lt;/code>&lt;/td>
+ &lt;td>Start API server&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;h2 id="utility-commands">Utility Commands&lt;/h2>
+&lt;table>
+ &lt;thead>
+ &lt;tr>
+ &lt;th>Command&lt;/th>
+ &lt;th>Description&lt;/th>
+ &lt;/tr>
+ &lt;/thead>
+ &lt;tbody>
+ &lt;tr>
+ &lt;td>&lt;code>naeos version&lt;/code>&lt;/td>
+ &lt;td>Version info&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos ai&lt;/code>&lt;/td>
+ &lt;td>AI assistance&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos docs&lt;/code>&lt;/td>
+ &lt;td>Documentation&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos completion&lt;/code>&lt;/td>
+ &lt;td>Shell completion&lt;/td>
+ &lt;/tr>
+ &lt;tr>
+ &lt;td>&lt;code>naeos lock&lt;/code>&lt;/td>
+ &lt;td>Lock dependencies&lt;/td>
+ &lt;/tr>
+ &lt;/tbody>
+&lt;/table>
+&lt;p>For detailed usage of each command, run &lt;code>naeos &amp;lt;command&amp;gt; --help&lt;/code>.&lt;/p></description></item><item><title>Getting Started</title><link>https://naeos.dev/docs/getting-started/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/docs/getting-started/</guid><description>&lt;h2 id="prerequisites">Prerequisites&lt;/h2>
+&lt;ul>
+&lt;li>Go 1.25+ (for &lt;code>go install&lt;/code> method)&lt;/li>
+&lt;li>A terminal with basic command-line knowledge&lt;/li>
+&lt;/ul>
+&lt;h2 id="installation">Installation&lt;/h2>
+&lt;p>Choose one of these methods:&lt;/p>
+&lt;h3 id="go-install">Go Install&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="docker">Docker&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker pull ghcr.io/naeos-foundation/naeos:latest
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>docker run --rm -v &lt;span style="color:#66d9ef">$(&lt;/span>pwd&lt;span style="color:#66d9ef">)&lt;/span>:/workspace ghcr.io/naeos-foundation/naeos:latest naeos version
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="build-from-source">Build from Source&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/NAEOS-foundation/naeos.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd naeos
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>go build ./cmd/naeos/
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="your-first-pipeline">Your First Pipeline&lt;/h2>
+&lt;h3 id="1-create-a-specification-file">1. Create a specification file&lt;/h3>
+&lt;p>Create &lt;code>spec.yaml&lt;/code>:&lt;/p></description></item><item><title>Installation</title><link>https://naeos.dev/docs/installation/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://naeos.dev/docs/installation/</guid><description>&lt;h2 id="go-install-recommended">Go Install (Recommended)&lt;/h2>
+&lt;p>Requires Go 1.25+:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="docker">Docker&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker pull ghcr.io/naeos-foundation/naeos:latest
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Verify the installation:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run --rm ghcr.io/naeos-foundation/naeos:latest naeos version
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="build-from-source">Build from Source&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/NAEOS-foundation/naeos.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd naeos
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>make build
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The binary will be available at &lt;code>./naeos&lt;/code>.&lt;/p></description></item></channel></rss>

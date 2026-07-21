@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blog on NAEOS — Declarative Platform Engineering System</title><link>https://naeos.dev/blog/</link><description>Recent content in Blog on NAEOS — Declarative Platform Engineering System</description><generator>Hugo</generator><language>en</language><copyright>Copyright © 2026 NAEOS Foundation. All rights reserved.</copyright><lastBuildDate>Wed, 01 Jul 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://naeos.dev/blog/index.xml" rel="self" type="application/rss+xml"/><item><title>NAEOS v2.1.0 Release</title><link>https://naeos.dev/blog/naeos-v2.1.0-release/</link><pubDate>Wed, 01 Jul 2026 00:00:00 +0000</pubDate><guid>https://naeos.dev/blog/naeos-v2.1.0-release/</guid><description>&lt;p>We&amp;rsquo;re excited to announce the release of NAEOS v2.1.0! This release brings significant improvements to the platform.&lt;/p>
+&lt;h2 id="whats-new">What&amp;rsquo;s New&lt;/h2>
+&lt;ul>
+&lt;li>Enhanced NEIR model with expanded project structure support&lt;/li>
+&lt;li>Improved AI compiler with better instruction set generation&lt;/li>
+&lt;li>Performance optimizations across the pipeline&lt;/li>
+&lt;li>Enhanced error messages and debugging support&lt;/li>
+&lt;/ul>
+&lt;h2 id="changelog">Changelog&lt;/h2>
+&lt;p>For the full changelog, visit the &lt;a href="https://github.com/NAEOS-foundation/naeos/releases">GitHub Releases page&lt;/a>.&lt;/p></description></item><item><title>Building Microservices with NAEOS — A Step-by-Step Guide</title><link>https://naeos.dev/blog/building-microservices-with-naeos-a-step-by-step-guide/</link><pubDate>Mon, 15 Jun 2026 00:00:00 +0000</pubDate><guid>https://naeos.dev/blog/building-microservices-with-naeos-a-step-by-step-guide/</guid><description>&lt;p>In this tutorial, we&amp;rsquo;ll build a complete microservices application using NAEOS. You&amp;rsquo;ll learn how to define services, manage dependencies, generate code, and deploy.&lt;/p></description></item></channel></rss>

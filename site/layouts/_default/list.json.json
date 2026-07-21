@@ -1,0 +1,12 @@
+[
+{{- range $i, $p := .RegularPagesRecursive }}
+{{- if $i }},{{ end }}
+{
+  "title": {{ $p.Title | jsonify }},
+  "permalink": {{ $p.Permalink | jsonify }},
+  "section": {{ $p.Section | jsonify }},
+  "content": {{ $p.Plain | jsonify }},
+  "sections": [{{ range $j, $s := $p.Sections }}{{ if $j }},{{ end }}{{ $s.Title | jsonify }}{{ end }}]
+}
+{{- end }}
+]
