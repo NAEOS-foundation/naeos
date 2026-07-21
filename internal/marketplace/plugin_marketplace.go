@@ -198,6 +198,7 @@ func (m *PluginMarketplace) installOne(entry *PluginEntry) error {
 	for i, e := range entries {
 		if e.Name == entry.Name {
 			entries[i].Installed = true
+			entries[i].Version = entry.Version
 			entries[i].Downloads++
 			entries[i].UpdatedAt = now
 			entries[i].VersionHistory = append(entries[i].VersionHistory, VersionEntry{

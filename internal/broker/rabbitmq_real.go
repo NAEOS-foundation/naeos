@@ -1,3 +1,5 @@
+//go:build !nobroker
+
 package broker
 
 import (

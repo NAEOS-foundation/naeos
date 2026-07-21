@@ -275,6 +275,35 @@ func TestDeployError(t *testing.T) {
 	}
 }
 
+func TestNewRunnerPoolDefaults(t *testing.T) {
+	pool := NewRunnerPool(0, 0)
+	if pool.maxSize != 16 {
+		t.Errorf("expected default maxSize 16, got %d", pool.maxSize)
+	}
+	if pool.idleTTL != 30*time.Minute {
+		t.Errorf("expected default idleTTL 30m, got %v", pool.idleTTL)
+	}
+}
+
+func TestPlanError(t *testing.T) {
+	t.Parallel()
+	mock := &mockRunner{err: fmt.Errorf("plan failed")}
+	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
+	_, err := tr.Plan()
+	if err == nil {
+		t.Error("expected error from Plan")
+	}
+}
+
+func TestApplyDestroyError(t *testing.T) {
+	t.Parallel()
+	mock := &mockRunner{err: fmt.Errorf("destroy failed")}
+	tr := NewTerraformRunnerWithRunner(t.TempDir(), mock)
+	if err := tr.ApplyDestroy(); err == nil {
+		t.Error("expected error from ApplyDestroy")
+	}
+}
+
 func TestRunnerPoolGetPutRemove(t *testing.T) {
 	t.Parallel()
 	pool := NewRunnerPool(10, time.Minute)
