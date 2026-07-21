@@ -1,6 +1,7 @@
 package create
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
 	"strings"
@@ -407,5 +408,286 @@ func TestValidateConfigPortTooHigh(t *testing.T) {
 	})
 	if len(errs) == 0 {
 		t.Error("expected error for port out of range")
+	}
+}
+
+func TestNewWizard(t *testing.T) {
+	w := NewWizard()
+	if w == nil {
+		t.Fatal("expected non-nil wizard")
+	}
+	if w.reader == nil {
+		t.Error("expected non-nil reader")
+	}
+}
+
+func TestWizard_askRequired(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("my-project\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askRequired("Project name")
+	if result != "my-project" {
+		t.Errorf("expected my-project, got %s", result)
+	}
+}
+
+func TestWizard_askDefault(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askDefault("Module path", "./default")
+	if result != "./default" {
+		t.Errorf("expected ./default, got %s", result)
+	}
+}
+
+func TestWizard_askDefaultCustom(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("./custom\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askDefault("Module path", "./default")
+	if result != "./custom" {
+		t.Errorf("expected ./custom, got %s", result)
+	}
+}
+
+func TestWizard_askChoiceDefault(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askChoice("Language", []string{"go", "typescript"}, "go")
+	if result != "go" {
+		t.Errorf("expected go, got %s", result)
+	}
+}
+
+func TestWizard_askChoiceSelected(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("2\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askChoice("Language", []string{"go", "typescript", "python"}, "go")
+	if result != "typescript" {
+		t.Errorf("expected typescript, got %s", result)
+	}
+}
+
+func TestWizard_askChoiceInvalid(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("99\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askChoice("Language", []string{"go", "typescript"}, "go")
+	if result != "go" {
+		t.Errorf("expected go fallback, got %s", result)
+	}
+}
+
+func TestWizard_askIntDefault(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askInt("Port", 8080)
+	if result != 8080 {
+		t.Errorf("expected 8080, got %d", result)
+	}
+}
+
+func TestWizard_askIntCustom(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("3000\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askInt("Port", 8080)
+	if result != 3000 {
+		t.Errorf("expected 3000, got %d", result)
+	}
+}
+
+func TestWizard_askIntInvalid(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("not-a-number\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askInt("Port", 8080)
+	if result != 8080 {
+		t.Errorf("expected 8080 fallback, got %d", result)
+	}
+}
+
+func TestWizard_askYesNoDefaultNo(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askYesNo("Enable auth", false)
+	if result {
+		t.Error("expected false")
+	}
+}
+
+func TestWizard_askYesNoDefaultYes(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askYesNo("Enable testing", true)
+	if !result {
+		t.Error("expected true")
+	}
+}
+
+func TestWizard_askYesNoYes(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("y\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askYesNo("Enable auth", false)
+	if !result {
+		t.Error("expected true")
+	}
+}
+
+func TestWizard_askRequiredRetry(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("\nmy-project\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askRequired("Project name")
+	if result != "my-project" {
+		t.Errorf("expected my-project, got %s", result)
+	}
+}
+
+func TestNewScaffolder(t *testing.T) {
+	s := NewScaffolder(true)
+	if s == nil {
+		t.Fatal("expected non-nil scaffolder")
+	}
+	if !s.dryRun {
+		t.Error("expected dryRun true")
+	}
+	s2 := NewScaffolder(false)
+	if s2.dryRun {
+		t.Error("expected dryRun false")
+	}
+}
+
+func TestScaffolder_AddFile(t *testing.T) {
+	s := NewScaffolder(false)
+	s.addFile("test.txt", "hello")
+	if len(s.files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(s.files))
+	}
+	if s.files[0].Path != "test.txt" {
+		t.Errorf("expected test.txt, got %s", s.files[0].Path)
+	}
+	if s.files[0].Content != "hello" {
+		t.Errorf("expected hello, got %s", s.files[0].Content)
+	}
+}
+
+func TestScaffolder_GenerateReturnsSpec(t *testing.T) {
+	s := NewScaffolder(true)
+	files, err := s.Generate(&ProjectConfig{
+		Name: "test", OutputDir: "/tmp/out", Language: "go",
+		ModulePath: "./test", Architecture: "hexagonal", Port: 8080,
+	})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	foundSpec := false
+	for _, f := range files {
+		if strings.HasSuffix(f.Path, ".spec.yaml") {
+			foundSpec = true
+			if !strings.Contains(f.Content, "project: test") {
+				t.Error("spec missing project name")
+			}
+		}
+	}
+	if !foundSpec {
+		t.Error("expected spec file")
+	}
+}
+
+func TestScaffolder_ExecuteMkdirAllError(t *testing.T) {
+	s := NewScaffolder(false)
+	s.addFile("/proc/readonly/forbidden/file.txt", "content")
+	err := s.Execute(&ProjectConfig{OutputDir: "/out"})
+	if err == nil {
+		t.Error("expected error for invalid path")
+	}
+}
+
+func TestScaffolder_ExecuteWriteFileError(t *testing.T) {
+	s := NewScaffolder(false)
+	s.addFile("/root/test_write_denied.txt", "content")
+	err := s.Execute(&ProjectConfig{OutputDir: "/out"})
+	if err == nil {
+		t.Error("expected error when writing to protected path")
+	}
+}
+
+func TestWizard_askYesNoNo(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("n\n")
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	result := wiz.askYesNo("Enable auth", true)
+	if result {
+		t.Error("expected false")
+	}
+}
+
+func TestGenerateSpec(t *testing.T) {
+	s := NewScaffolder(false)
+	cfg := &ProjectConfig{Name: "test", Architecture: "hexagonal", Port: 8080, Language: "go"}
+	spec := s.generateSpec(cfg)
+	if !strings.Contains(spec, "project: test") {
+		t.Error("expected spec content")
+	}
+}
+
+func TestWizard_Run(t *testing.T) {
+	input := "MyProject\n./myproject\nA test project\n1\n1\n1\n8080\nmyproject\nn\n\ny\ny\n"
+	r, w, _ := os.Pipe()
+	w.WriteString(input)
+	w.Close()
+	wiz := &Wizard{reader: bufio.NewReader(r)}
+	cfg, err := wiz.Run()
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if cfg.Name != "MyProject" {
+		t.Errorf("expected MyProject, got %s", cfg.Name)
+	}
+	if cfg.Language != "go" {
+		t.Errorf("expected go, got %s", cfg.Language)
+	}
+	if cfg.Architecture != "hexagonal" {
+		t.Errorf("expected hexagonal, got %s", cfg.Architecture)
+	}
+	if cfg.Deployment != "rolling" {
+		t.Errorf("expected rolling, got %s", cfg.Deployment)
+	}
+	if cfg.Port != 8080 {
+		t.Errorf("expected 8080, got %d", cfg.Port)
+	}
+	if cfg.EnableAuth {
+		t.Error("expected auth disabled")
+	}
+	if !cfg.EnableTesting {
+		t.Error("expected testing enabled")
+	}
+	if !cfg.EnableDocker {
+		t.Error("expected docker enabled")
+	}
+	if !cfg.EnableCI {
+		t.Error("expected CI enabled")
 	}
 }
