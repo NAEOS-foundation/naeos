@@ -845,8 +845,9 @@ h4 { font-size: var(--font-size-base); }
 .toc { background: var(--color-bg-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin: 1.5rem 0; }
 .toc-title { font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-dim); margin-bottom: 0.75rem; }
 .toc nav { display: flex; flex-direction: column; gap: 0.25rem; }
-.toc a { font-size: var(--font-size-sm); color: var(--color-text-muted); padding: 0.25rem 0; transition: color var(--transition-base); }
+.toc a { font-size: var(--font-size-sm); color: var(--color-text-muted); padding: 0.25rem 0; transition: color var(--transition-base); border-left: 2px solid transparent; padding-left: 0.5rem; margin-left: -0.5rem; }
 .toc a:hover { color: var(--color-accent); }
+.toc a.active { color: var(--color-accent); border-left-color: var(--color-accent); font-weight: 500; }
 
 .tab-container { margin: 1.5rem 0; }
 .tab-list { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
