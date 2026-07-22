@@ -173,7 +173,7 @@ other = "NAEOS adalah proyek open-source. Kami menyambut kontribusi, masukan, da
 other = "Fitur"
 
 [features_page_desc]
-other = "Jelajahi rangkaian fitur lengkap NAEOS — dari parsing spesifikasi hingga生成 kode berbantuan AI."
+other = "Jelajahi rangkaian fitur lengkap NAEOS — dari parsing spesifikasi hingga generasi kode berbantuan AI."
 
 [docs_page_title]
 other = "Dokumentasi"
@@ -348,3 +348,60 @@ other = "Ketentuan Layanan"
 
 [terms_desc]
 other = "Ketentuan dan syarat penggunaan NAEOS."
+
+[cookie_decline]
+other = "Tolak"
+
+[share]
+other = "Bagikan:"
+
+[copy]
+other = "Salin"
+
+[copied]
+other = "Disalin!"
+
+[previous]
+other = "Sebelumnya"
+
+[next]
+other = "Berikutnya"
+
+[filter_pages]
+other = "Filter halaman..."
+
+[loading_contributors]
+other = "Memuat kontributor..."
+
+[edit_page]
+other = "Edit halaman ini"
+
+[loading_releases]
+other = "Memuat rilis dari GitHub..."
+
+[nav_api_reference]
+other = "Referensi API"
+
+[nav_glossary]
+other = "Glosarium"
+
+[nav_contributing]
+other = "Berkontribusi"
+
+[nav_context_bundles]
+other = "Context Bundles"
+
+[nav_profiles]
+other = "Profil Industri"
+
+[nav_validation]
+other = "Validasi"
+
+[nav_governance]
+other = "Governance"
+
+[nav_project_structure]
+other = "Struktur Proyek"
+
+[nav_core_principles]
+other = "Prinsip Inti"

@@ -23,10 +23,10 @@
 </div>
 <section class="content-section">
     <div class="container">
-        <div class="single-content" style="max-width:720px;">
+        <div class="single-content blog-content">
             {{ .Content }}
             <div class="social-share">
-                <span style="font-size:var(--font-size-sm);color:var(--color-text-dim);">{{ i18n "share_this" | default "Share:" }}</span>
+                <span class="share-label">{{ i18n "share_this" | default "Share:" }}</span>
                 <a href="https://twitter.com/intent/tweet?text={{ .Title }}&url={{ .Permalink }}" target="_blank" rel="noopener" aria-label="Share on Twitter">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                     Twitter

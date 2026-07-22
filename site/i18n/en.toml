@@ -348,3 +348,60 @@ other = "Terms of Service"
 
 [terms_desc]
 other = "Terms and conditions for using NAEOS."
+
+[cookie_decline]
+other = "Decline"
+
+[share]
+other = "Share:"
+
+[copy]
+other = "Copy"
+
+[copied]
+other = "Copied!"
+
+[previous]
+other = "Previous"
+
+[next]
+other = "Next"
+
+[filter_pages]
+other = "Filter pages..."
+
+[loading_contributors]
+other = "Loading contributors..."
+
+[edit_page]
+other = "Edit this page"
+
+[loading_releases]
+other = "Loading releases from GitHub..."
+
+[nav_api_reference]
+other = "API Reference"
+
+[nav_glossary]
+other = "Glossary"
+
+[nav_contributing]
+other = "Contributing"
+
+[nav_context_bundles]
+other = "Context Bundles"
+
+[nav_profiles]
+other = "Industry Profiles"
+
+[nav_validation]
+other = "Validation"
+
+[nav_governance]
+other = "Governance"
+
+[nav_project_structure]
+other = "Project Structure"
+
+[nav_core_principles]
+other = "Core Principles"
