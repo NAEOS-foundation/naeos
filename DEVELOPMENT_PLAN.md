@@ -18,7 +18,7 @@
 | API docs auto-generate | Site | CI job baca `docs/openapi.yaml` → generate Swagger UI page di `/docs/api/` |
 | Blog content pipeline | Site | GitHub Action: detect release tag → auto-create blog post dari changelog |
 | Interactive playground | Site | Integrasi xterm.js + WebSocket ke server demo di homepage |
-| PDF generation | Site | CLI reference + getting-started sebagai PDF download |
+| PDF generation ✅ | Site | CLI reference + getting-started sebagai PDF download via GitHub Action (`pdf-docs.yml`). Tersedia di `/downloads/` |
 | Dark mode OG image | Site | Generate PNG OG image yang sesuai dark theme + light theme |
 
 ## Fase 3: Platform & Ekosistem

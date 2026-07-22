@@ -84,3 +84,7 @@ naeos compile --all --input-file spec.yaml
 - Explore the [CLI Reference](/docs/cli-reference/) for all available commands
 - Read about the [Architecture](/docs/architecture/) to understand how NAEOS works
 - Check out the [Features](/features/) page for a complete overview
+
+## Download
+
+- [Getting Started PDF](/downloads/naeos-getting-started.pdf)

@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site
+.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf
 
 # Variables
 BINARY := naeos
@@ -121,6 +121,25 @@ site:
 	@echo "Building website..."
 	cp docs/openapi.yaml site/static/openapi.yaml
 	cd site && hugo --minify
+
+## pdf: Generate PDF documentation
+pdf:
+	@echo "Generating PDF documentation..."
+	@mkdir -p site/static/downloads
+	pandoc site/content/docs/cli-reference.md --pdf-engine=xelatex \
+		-V geometry:margin=1in \
+		-V title="NAEOS CLI Reference" \
+		-V subtitle="Version $(shell cat VERSION)" \
+		-V author="NAEOS Foundation" \
+		-V date="$(shell date +%Y-%m-%d)" \
+		-o site/static/downloads/naeos-cli-reference.pdf
+	pandoc site/content/docs/getting-started.md --pdf-engine=xelatex \
+		-V geometry:margin=1in \
+		-V title="NAEOS Getting Started" \
+		-V subtitle="Version $(shell cat VERSION)" \
+		-V author="NAEOS Foundation" \
+		-V date="$(shell date +%Y-%m-%d)" \
+		-o site/static/downloads/naeos-getting-started.pdf
 
 ## man: Generate man pages (requires cobra-doc)
 man: build
