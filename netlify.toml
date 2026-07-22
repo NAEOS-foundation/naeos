@@ -1,0 +1,17 @@
+[build]
+  base    = "site/"
+  publish = "public"
+  command = "hugo --minify"
+
+[build.environment]
+  HUGO_VERSION = "0.145.0"
+  HUGO_EXTENDED = "true"
+
+[context.production]
+  environment = { HUGO_ENV = "production" }
+
+[context.deploy-preview]
+  environment = { HUGO_ENV = "production" }
+
+[context.branch-deploy]
+  environment = { HUGO_ENV = "production" }
