@@ -13,6 +13,12 @@ other = "Unduh"
 [nav_community]
 other = "Komunitas"
 
+[nav_plugins]
+other = "Plugin"
+
+[plugins_install]
+other = "Pasang"
+
 [cta_get_started]
 other = "Mulai"
 

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const DefaultRegistryURL = "https://registry.naeos.dev/v1"
+const DefaultRegistryURL = "https://naeos.dev/plugins/registry.json"
 
 type RemoteRegistry struct {
 	baseURL    string
@@ -49,7 +49,7 @@ type RemotePluginList struct {
 }
 
 func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
-	url := r.baseURL + "/plugins"
+	url := r.baseURL
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)

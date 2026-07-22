@@ -13,6 +13,12 @@ other = "Download"
 [nav_community]
 other = "Community"
 
+[nav_plugins]
+other = "Plugins"
+
+[plugins_install]
+other = "Install"
+
 [cta_get_started]
 other = "Get Started"
 
