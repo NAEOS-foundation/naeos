@@ -1,0 +1,90 @@
+name: Plugin Registry
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover plugins from GitHub
+        id: discover
+        run: |
+          plugins='[]'
+          page=1
+          total=0
+
+          while true; do
+            resp=$(curl -s "https://api.github.com/search/repositories?q=topic:naeos-plugin&sort=updated&per_page=100&page=$page")
+            count=$(echo "$resp" | jq '.items | length')
+            if [ "$count" = "0" ] || [ "$count" = "null" ]; then break; fi
+
+            for row in $(echo "$resp" | jq -c '.items[]'); do
+              name=$(echo "$row" | jq -r '.name')
+              desc=$(echo "$row" | jq -r '.description // "NAEOS plugin"')
+              full_name=$(echo "$row" | jq -r '.full_name')
+              html_url=$(echo "$row" | jq -r '.html_url')
+              stars=$(echo "$row" | jq -r '.stargazers_count')
+              updated=$(echo "$row" | jq -r '.updated_at')
+              topics=$(echo "$row" | jq -c '.topics')
+
+              tags=$(echo "$topics" | jq -c '[.[] | select(. != "naeos-plugin")]')
+              author=$(echo "$full_name" | cut -d/ -f1)
+
+              entry=$(jq -n \
+                --arg n "$name" \
+                --arg d "$desc" \
+                --arg a "$author" \
+                --arg u "$html_url" \
+                --argjson s $stars \
+                --arg t "$updated" \
+                --argjson tags "$tags" \
+                '{name: $n, version: "0.1.0", description: $d, author: $a, type: "community", tags: $tags, repo_url: $u, homepage: $u, license: "Apache-2.0", platforms: ["linux/amd64"], downloads: 0, created_at: $t, updated_at: $t}')
+
+              plugins=$(echo "$plugins" | jq --argjson e "$entry" '. + [$e]')
+              total=$((total + 1))
+            done
+
+            page=$((page + 1))
+            if [ "$page" -gt 5 ]; then break; fi
+          done
+
+          echo "found=$total" >> $GITHUB_OUTPUT
+
+          official=$(cat site/static/plugins/registry.json 2>/dev/null || echo '{"plugins":[]}')
+          merged=$(echo "$plugins" | jq --argjson official "$official" '{"plugins": ($official.plugins + .)}')
+          echo "$merged" > site/data/plugins.json
+          echo "$merged" > site/static/plugins/registry.json
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet site/data/plugins.json site/static/plugins/registry.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update plugin registry (${{ steps.discover.outputs.found }} community plugins)"
+          title: "Plugin registry update (${{ steps.discover.outputs.found }} community plugins)"
+          body: |
+            Automated plugin registry update from GitHub topic `naeos-plugin`.
+
+            - **Official plugins**: curated entries in `site/static/plugins/registry.json`
+            - **Community plugins**: ${{ steps.discover.outputs.found }} repos found with `naeos-plugin` topic
+          branch: chore/plugin-registry-update
+          base: main
+          delete-branch: true

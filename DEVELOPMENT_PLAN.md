@@ -25,7 +25,7 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Plugin registry publik | Backend/Site | Bikin `marketplace.naeos.dev` API + halaman browse plugin dari GitHub topic `naeos-plugin` |
+| Plugin registry publik ✅ | Backend/Site | `registry.json` di `/plugins/`, halaman browse di `/plugins/`, `RemoteRegistry` client di `internal/marketplace/`, GitHub workflow auto-discover `naeos-plugin` topic |
 | Plugin template generator | CLI | `naeos plugin init` — scaffolding plugin project dengan SDK boilerplate, testing, CI template |
 | NEIR schema registry | Backend | Host NEIR JSON Schema di `schemaregistry/` dengan versioning, validasi spec terhadap schema terbaru |
 | Template marketplace | CLI/Site | Publikasi template starter project (microservices-go, serverless-ts, dll) via `naeos template publish` |

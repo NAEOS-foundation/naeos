@@ -26,6 +26,7 @@
                 </div>
             </div>
             <a href="{{ "blog/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/blog/") }} aria-current="page"{{ end }}>{{ i18n "nav_blog" }}</a>
+            <a href="{{ "plugins/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/plugins/") }} aria-current="page"{{ end }}>{{ i18n "nav_plugins" | default "Plugins" }}</a>
             <a href="{{ "download/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/download/") }} aria-current="page"{{ end }}>{{ i18n "nav_download" }}</a>
             <a href="{{ "community/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/community/") }} aria-current="page"{{ end }}>{{ i18n "nav_community" }}</a>
         </nav>
@@ -56,6 +57,7 @@
         <a href="{{ "docs/architecture/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_architecture" }}</a>
         <a href="{{ "docs/cli-reference/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_cli_reference" }}</a>
         <a href="{{ "blog/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/blog/") }} aria-current="page"{{ end }}>{{ i18n "nav_blog" }}</a>
+        <a href="{{ "plugins/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/plugins/") }} aria-current="page"{{ end }}>{{ i18n "nav_plugins" | default "Plugins" }}</a>
         <a href="{{ "download/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/download/") }} aria-current="page"{{ end }}>{{ i18n "nav_download" }}</a>
         <a href="{{ "community/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/community/") }} aria-current="page"{{ end }}>{{ i18n "nav_community" }}</a>
         <div class="lang-switcher mobile" style="padding:0.75rem 1rem;">
