@@ -44,23 +44,23 @@ func newMigrateRunCommand() *cobra.Command {
 			}
 
 			if len(plan) == 0 {
-				fmt.Println("Spec is already at the latest version.")
+				cmd.Println("Spec is already at the latest version.")
 				return nil
 			}
 
-			fmt.Printf("Migration plan: %s -> %s\n", migration.CurrentVersion, migration.TargetVersion)
+			cmd.Printf("Migration plan: %s -> %s\n", migration.CurrentVersion, migration.TargetVersion)
 			for _, step := range plan {
-				fmt.Printf("  [%s -> %s] %s\n", step.FromVersion, step.ToVersion, step.Description)
+				cmd.Printf("  [%s -> %s] %s\n", step.FromVersion, step.ToVersion, step.Description)
 			}
 
 			result, err := planner.Migrate(content, migration.CurrentVersion, migration.TargetVersion)
 			if err != nil {
-				return fmt.Errorf("migrate: %w", err)
+				return err
 			}
 
 			if dryRun {
-				fmt.Println("\n--- DRY RUN OUTPUT ---")
-				fmt.Println(string(result))
+				cmd.Println("\n--- DRY RUN OUTPUT ---")
+				cmd.Println(string(result))
 				return nil
 			}
 
@@ -70,10 +70,10 @@ func newMigrateRunCommand() *cobra.Command {
 			}
 
 			if err := os.WriteFile(outPath, result, 0o600); err != nil { //nolint:gosec // G703: outPath is a CLI-provided output path
-				return fmt.Errorf("write migrated spec: %w", err)
+				return err
 			}
 
-			fmt.Printf("\nMigrated %s -> %s\n", specFile, outPath)
+			cmd.Printf("\nMigrated %s -> %s\n", specFile, outPath)
 			return nil
 		},
 	}
@@ -98,13 +98,13 @@ func newMigratePlanCommand() *cobra.Command {
 			}
 
 			if len(plan) == 0 {
-				fmt.Println("No migrations needed. Spec is at the latest version.")
+				cmd.Println("No migrations needed. Spec is at the latest version.")
 				return nil
 			}
 
-			fmt.Printf("Migration plan: %s -> %s\n\n", fromVer, toVer)
+			cmd.Printf("Migration plan: %s -> %s\n\n", fromVer, toVer)
 			for i, step := range plan {
-				fmt.Printf("%d. [%s -> %s] %s\n", i+1, step.FromVersion, step.ToVersion, step.Description)
+				cmd.Printf("%d. [%s -> %s] %s\n", i+1, step.FromVersion, step.ToVersion, step.Description)
 			}
 			return nil
 		},
@@ -120,12 +120,12 @@ func newMigrateVersionsCommand() *cobra.Command {
 		Use:   "versions",
 		Short: "List supported migration versions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("Supported versions:")
-			fmt.Printf("  Current: %s\n", migration.CurrentVersion)
-			fmt.Printf("  Target:  %s\n", migration.TargetVersion)
-			fmt.Println("\nMigration steps:")
-			fmt.Println("  0.1.0 -> 0.2.0: Add generation section")
-			fmt.Println("  0.2.0 -> 0.3.0: Add testing section")
+			cmd.Println("Supported versions:")
+			cmd.Printf("  Current: %s\n", migration.CurrentVersion)
+			cmd.Printf("  Target:  %s\n", migration.TargetVersion)
+			cmd.Println("\nMigration steps:")
+			cmd.Println("  0.1.0 -> 0.2.0: Add generation section")
+			cmd.Println("  0.2.0 -> 0.3.0: Add testing section")
 			return nil
 		},
 	}
