@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
@@ -24,7 +25,7 @@ func (a *copilotAdapter) Target() compiler.Target {
 
 func (a *copilotAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "nil NEIR")
 	}
 
 	if a.library != nil {

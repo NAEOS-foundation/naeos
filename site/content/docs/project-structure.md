@@ -23,7 +23,6 @@ naeos/
 ├── prompts/             # AI prompt templates
 ├── templates/           # ADR/RFC templates
 ├── examples/            # Example documents
-├── wiki/                # Project wiki (17 pages)
 ├── Reference Architecture/ # Reference architecture docs
 ├── go.mod               # Go module definition
 ├── go.sum               # Go module checksum

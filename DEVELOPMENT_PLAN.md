@@ -14,7 +14,7 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Wiki → Hugo migration | Site | Pindah 19 halaman `wiki/` ke `site/content/docs/`. Hapus wiki/ setelah landing page verified |
+| Wiki → Hugo migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke Hugo site. Wiki/ dihapus. |
 | API docs auto-generate | Site | CI job baca `docs/openapi.yaml` → generate Swagger UI page di `/docs/api/` |
 | Blog content pipeline | Site | GitHub Action: detect release tag → auto-create blog post dari changelog |
 | Interactive playground | Site | Integrasi xterm.js + WebSocket ke server demo di homepage |

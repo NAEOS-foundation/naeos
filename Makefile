@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man
+.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site
 
 # Variables
 BINARY := naeos
@@ -115,6 +115,12 @@ install-completion: build
 	@mkdir -p $(HOME)/.config/fish/completions
 	@./$(BINARY) completion fish > $(HOME)/.config/fish/completions/naeos.fish
 	@echo "Completions installed. Restart your shell or source the completion files."
+
+## site: Build the Hugo website
+site:
+	@echo "Building website..."
+	cp docs/openapi.yaml site/static/openapi.yaml
+	cd site && hugo --minify
 
 ## man: Generate man pages (requires cobra-doc)
 man: build
