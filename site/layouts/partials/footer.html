@@ -3,11 +3,7 @@
         <div class="footer-grid">
             <div class="footer-col brand">
                 <a href="{{ .Site.Home.RelPermalink }}" class="logo">
-                    <svg class="logo-icon" width="28" height="28" viewBox="0 0 32 32" fill="var(--color-accent)" aria-hidden="true">
-                        <polygon points="8,4 12,4 12,28 8,28"/>
-                        <polygon points="20,4 24,4 24,28 20,28"/>
-                        <polygon points="8,4 12,4 24,28 20,28"/>
-                    </svg>
+                    <img class="logo-icon" src="{{ "images/logo-mark.svg" | relURL }}" width="28" height="28" alt="" aria-hidden="true">
                     <span class="logo-text">NAEOS</span>
                 </a>
                 <p class="tagline">{{ .Site.Params.tagline }}</p>
