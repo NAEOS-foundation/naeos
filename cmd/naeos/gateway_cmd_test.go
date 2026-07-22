@@ -6,7 +6,7 @@ import (
 )
 
 func TestGatewayCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "gateway")
 	if err != nil {
 		t.Fatalf("execute gateway failed: %v", err)
@@ -14,7 +14,7 @@ func TestGatewayCommandShowsHelp(t *testing.T) {
 }
 
 func TestGatewayStatus(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "gateway", "status")
 	if err != nil {
 		t.Fatalf("gateway status failed: %v", err)
@@ -25,7 +25,7 @@ func TestGatewayStatus(t *testing.T) {
 }
 
 func TestGatewayRateStatus(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "gateway", "rate-status")
 	if err != nil {
 		t.Fatalf("gateway rate-status failed: %v", err)
@@ -36,7 +36,7 @@ func TestGatewayRateStatus(t *testing.T) {
 }
 
 func TestGatewayCBStatus(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "gateway", "cb-status", "--name", "api")
 	if err != nil {
 		t.Fatalf("gateway cb-status failed: %v", err)
@@ -50,7 +50,7 @@ func TestGatewayCBStatus(t *testing.T) {
 }
 
 func TestGatewayLBListEmpty(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "gateway", "lb-list")
 	if err != nil {
 		t.Fatalf("gateway lb-list failed: %v", err)
@@ -61,7 +61,7 @@ func TestGatewayLBListEmpty(t *testing.T) {
 }
 
 func TestGatewayAddBackend(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "gateway", "add-backend", "--name", "backend1", "--url", "http://localhost:8080")
 	if err != nil {
 		t.Fatalf("gateway add-backend failed: %v", err)

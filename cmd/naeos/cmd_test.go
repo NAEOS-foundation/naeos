@@ -8,7 +8,7 @@ import (
 )
 
 func TestVersionCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "version")
 	if err != nil {
 		t.Fatalf("execute version failed: %v", err)
@@ -19,7 +19,7 @@ func TestVersionCmd(t *testing.T) {
 }
 
 func TestStatusCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "status")
 	if err != nil {
 		t.Fatalf("execute status failed: %v", err)
@@ -27,7 +27,7 @@ func TestStatusCmd(t *testing.T) {
 }
 
 func TestHealthCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "health")
 	if err != nil {
 		t.Fatalf("execute health failed: %v", err)
@@ -42,7 +42,7 @@ func writeConfig(path string) {
 }
 
 func TestMigratePlanCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "migrate", "plan")
 	if err != nil {
 		t.Fatalf("execute migrate plan failed: %v", err)
@@ -53,7 +53,7 @@ func TestMigratePlanCmd(t *testing.T) {
 }
 
 func TestMigrateVersionsCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "migrate", "versions")
 	if err != nil {
 		t.Fatalf("execute migrate versions failed: %v", err)
@@ -68,7 +68,7 @@ func TestMigrateRunCmd(t *testing.T) {
 	specFile := filepath.Join(dir, "spec.yaml")
 	os.WriteFile(specFile, []byte("project: test\n"), 0o644)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "migrate", "run", specFile)
 	if err != nil {
 		t.Fatalf("execute migrate run failed: %v", err)
@@ -83,7 +83,7 @@ func TestMigrateRunDryRunCmd(t *testing.T) {
 	specFile := filepath.Join(dir, "spec.yaml")
 	os.WriteFile(specFile, []byte("project: test\n"), 0o644)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "migrate", "run", specFile, "--dry-run")
 	if err != nil {
 		t.Fatalf("execute migrate run --dry-run failed: %v", err)
@@ -99,7 +99,7 @@ func TestMigrateRunOutputCmd(t *testing.T) {
 	outFile := filepath.Join(dir, "out.yaml")
 	os.WriteFile(specFile, []byte("project: test\n"), 0o644)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "migrate", "run", specFile, "--output", outFile)
 	if err != nil {
 		t.Fatalf("execute migrate run --output failed: %v", err)

@@ -6,7 +6,7 @@ import (
 )
 
 func TestMarketplaceSearchCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "search", "web")
 	if err != nil {
 		t.Fatalf("execute marketplace search failed: %v", err)
@@ -18,7 +18,7 @@ func TestMarketplaceSearchCmd(t *testing.T) {
 
 func TestMarketplaceInstallCmd(t *testing.T) {
 	dir := t.TempDir()
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "install", "go-http-api")
 	if err != nil {
 		t.Fatalf("execute marketplace install failed: %v", err)
@@ -30,7 +30,7 @@ func TestMarketplaceInstallCmd(t *testing.T) {
 }
 
 func TestMarketplaceProfileListCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "profile", "list")
 	if err != nil {
 		t.Fatalf("execute marketplace profile list failed: %v", err)
@@ -41,7 +41,7 @@ func TestMarketplaceProfileListCmd(t *testing.T) {
 }
 
 func TestMarketplacePluginListCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "plugin", "list")
 	if err != nil {
 		t.Fatalf("execute marketplace plugin list failed: %v", err)
@@ -51,7 +51,7 @@ func TestMarketplacePluginListCmd(t *testing.T) {
 }
 
 func TestMarketplaceHelpCmd(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "--help")
 	if err != nil {
 		t.Fatalf("execute marketplace --help failed: %v", err)
@@ -62,7 +62,7 @@ func TestMarketplaceHelpCmd(t *testing.T) {
 }
 
 func TestMarketplaceSearchJSONOutput(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "marketplace", "search", "web", "--output", "json")
 	if err != nil {
 		t.Fatalf("execute marketplace search json failed: %v", err)
