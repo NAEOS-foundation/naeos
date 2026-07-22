@@ -92,6 +92,8 @@ params:
     shortName: NAEOS
     backgroundColor: "#0a0a0a"
     themeColor: "#00ff88"
+  interactiveTerminal:
+    websocketUrl: wss://naeos-demo.fly.dev/ws
 
 permalinks:
   blog: /blog/:slug/

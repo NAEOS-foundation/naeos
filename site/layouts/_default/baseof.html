@@ -55,8 +55,13 @@
             success: {{ i18n "newsletter_success" | jsonify }},
             error: {{ i18n "newsletter_error" | jsonify }}
         };
+        {{ if .Site.Params.interactiveTerminal.websocketUrl }}
+        var NAEOS_WS_URL = '{{ .Site.Params.interactiveTerminal.websocketUrl }}';
+        {{ end }}
     </script>
     {{ $js := resources.Get "js/main.js" | resources.Minify | resources.Fingerprint "sha256" }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{ $termJs := resources.Get "js/terminal.js" | resources.Minify | resources.Fingerprint "sha256" }}
+    <script src="{{ $termJs.RelPermalink }}" integrity="{{ $termJs.Data.Integrity }}" defer></script>
 </body>
 </html>
