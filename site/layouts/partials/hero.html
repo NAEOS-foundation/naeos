@@ -14,7 +14,7 @@
             <a href="{{ "docs/getting-started/" | relLangURL }}" class="btn btn-primary btn-lg">{{ i18n "cta_get_started" }}</a>
             <a href="{{ .Site.Params.social.github }}" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">{{ i18n "cta_view_on_github" }}</a>
         </div>
-        <div class="hero-terminal fade-in-scale">
+        <div class="hero-terminal fade-in-scale" id="hero-terminal-static">
             <div class="terminal-header">
                 <span class="terminal-dot red" aria-hidden="true"></span>
                 <span class="terminal-dot yellow" aria-hidden="true"></span>
@@ -37,6 +37,14 @@
                 <div class="terminal-line output">✓ Generated: go/, typescript/</div>
                 <div class="terminal-line output">✓ <span class="highlight">Done</span> in 1.2s</div>
                 <div class="terminal-line terminal-cursor"></div>
+            </div>
+        </div>
+        <div class="hero-terminal fade-in-scale" id="interactive-terminal" style="display:none;">
+            <div class="terminal-header">
+                <span class="terminal-dot red" aria-hidden="true"></span>
+                <span class="terminal-dot yellow" aria-hidden="true"></span>
+                <span class="terminal-dot green" aria-hidden="true"></span>
+                <span class="terminal-title">demo — naeos interactive</span>
             </div>
         </div>
     </div>

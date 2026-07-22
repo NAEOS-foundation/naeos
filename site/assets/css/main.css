@@ -459,6 +459,12 @@ h4 { font-size: var(--font-size-base); }
 .terminal-line.output { color: var(--color-text-muted); }
 .terminal-line.output .highlight { color: var(--color-accent); }
 .terminal-cursor::after { content: '█'; animation: blink 1s step-end infinite; color: var(--color-accent); }
+#interactive-terminal .terminal-body { padding: 0; min-height: 280px; }
+#interactive-terminal .xterm { height: 100%; padding: 0.5rem; }
+#interactive-terminal .xterm-viewport { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+#interactive-terminal .xterm-viewport::-webkit-scrollbar { width: 6px; }
+#interactive-terminal .xterm-viewport::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+#interactive-terminal .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
 @keyframes terminalFadeIn { to { opacity: 1; } }
 @keyframes blink { 50% { opacity: 0; } }
 
