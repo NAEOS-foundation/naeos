@@ -24,8 +24,9 @@ type User struct {
 // Role
 
 type Role struct {
-	Name        string
-	Permissions []string
+	Name            string
+	Permissions     []string
+	ResourceActions map[string][]string
 }
 
 type Permission struct {
@@ -91,6 +92,23 @@ func (r *RBAC) HasPermission(user *User, resource, action string) bool {
 		role, ok := r.roles[roleName]
 		if !ok {
 			continue
+		}
+
+		if role.ResourceActions != nil {
+			if actions, ok := role.ResourceActions[resource]; ok {
+				for _, a := range actions {
+					if a == "*" || a == action {
+						return true
+					}
+				}
+			}
+			if actions, ok := role.ResourceActions["*"]; ok {
+				for _, a := range actions {
+					if a == "*" || a == action {
+						return true
+					}
+				}
+			}
 		}
 
 		for _, permName := range role.Permissions {

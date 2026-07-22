@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -57,7 +58,8 @@ Example:
 			}
 
 			if outputPath != "" {
-				if err := os.WriteFile(outputPath, []byte(encrypted), 0o600); err != nil {
+				outputPath = filepath.Clean(outputPath)
+				if err := os.WriteFile(outputPath, []byte(encrypted), 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
 					return fmt.Errorf("write output: %w", err)
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Encrypted config written to %s\n", outputPath)
@@ -105,7 +107,8 @@ Example:
 			}
 
 			if outputPath != "" {
-				if err := os.WriteFile(outputPath, decrypted, 0o600); err != nil {
+				outputPath = filepath.Clean(outputPath)
+				if err := os.WriteFile(outputPath, decrypted, 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
 					return fmt.Errorf("write output: %w", err)
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "Decrypted config written to %s\n", outputPath)

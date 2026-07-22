@@ -55,7 +55,7 @@ func (s *Sandbox) ValidatePath(path string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("plugin path %s is outside allowed directories", path)
+	return fmt.Errorf("plugin path %q is outside allowed directories; add the path to sandbox.allowed_dirs in plugins.json", path)
 }
 
 // CheckRateLimit enforces per-plugin call count limits.
@@ -64,7 +64,7 @@ func (s *Sandbox) CheckRateLimit(pluginName string) error {
 	defer s.mu.Unlock()
 	s.callCnt[pluginName]++
 	if s.callCnt[pluginName] > s.config.MaxCalls {
-		return fmt.Errorf("plugin %s exceeded max call limit (%d)", pluginName, s.config.MaxCalls)
+		return fmt.Errorf("plugin %q exceeded max call limit (%d); increase sandbox.max_calls in plugins.json or reduce call frequency", pluginName, s.config.MaxCalls)
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ func (s *Sandbox) ExecuteWithTimeout(ctx context.Context, fn func() (any, error)
 	case <-ctx.Done():
 		return nil, fmt.Errorf("plugin execution canceled: %w", ctx.Err())
 	case <-timer.C:
-		return nil, fmt.Errorf("plugin execution timed out after %s", s.config.ExecTimeout)
+		return nil, fmt.Errorf("plugin execution timed out after %s; increase sandbox.exec_timeout in plugins.json or optimize the plugin", s.config.ExecTimeout)
 	case r := <-ch:
 		return r.value, r.err
 	}

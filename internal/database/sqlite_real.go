@@ -104,7 +104,7 @@ func (s *RealSQLite) Close() error {
 
 func (s *RealSQLite) Ping() error {
 	if s.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	ctx, cancel := s.defaultContext()
 	defer cancel()
@@ -119,7 +119,7 @@ func (s *RealSQLite) Exec(query string, args ...any) (Result, error) {
 
 func (s *RealSQLite) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if s.db == nil {
-		return Result{}, fmt.Errorf("not connected")
+		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	res, err := s.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *RealSQLite) Query(query string, args ...any) ([]Row, error) {
 
 func (s *RealSQLite) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -178,7 +178,7 @@ func (s *RealSQLite) QueryRow(query string, args ...any) (Row, error) {
 
 func (s *RealSQLite) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *RealSQLite) Begin() (Transaction, error) {
 
 func (s *RealSQLite) BeginTx(ctx context.Context) (Transaction, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -239,7 +239,7 @@ func (s *RealSQLite) Migrate(migrations []Migration) error {
 
 func (s *RealSQLite) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if s.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	_, err := s.db.ExecContext(ctx, `
@@ -295,7 +295,7 @@ func (s *RealSQLite) Rollback(version int) error {
 
 func (s *RealSQLite) RollbackContext(ctx context.Context, version int) error {
 	if s.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	var migrations []Migration
@@ -341,7 +341,7 @@ func (s *RealSQLite) RollbackContext(ctx context.Context, version int) error {
 
 func (s *RealSQLite) HealthCheck() error {
 	if s.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	ctx, cancel := s.defaultContext()
 	defer cancel()

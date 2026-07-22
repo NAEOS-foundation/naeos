@@ -42,8 +42,8 @@ func TestService_Full(t *testing.T) {
 		Endpoints: []Endpoint{
 			{Method: "GET", Path: "/users", Action: "list"},
 		},
-		Middleware:  []string{"auth", "logging"},
-		Attributes:  map[string]string{"key": "val"},
+		Middleware: []string{"auth", "logging"},
+		Attributes: map[string]string{"key": "val"},
 	}
 	if s.Name != "user-api" {
 		t.Errorf("expected user-api, got %s", s.Name)

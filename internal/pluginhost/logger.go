@@ -1,7 +1,7 @@
 package pluginhost
 
 import (
-	"fmt"
+	"log/slog"
 	"sync"
 )
 
@@ -26,30 +26,32 @@ type EventEmitter interface {
 	On(event string, handler func(data any))
 }
 
-// SimpleLogger is a Logger implementation that writes to stdout.
+// SimpleLogger is a Logger implementation backed by log/slog.
 type SimpleLogger struct {
-	prefix string
+	logger *slog.Logger
 }
 
 // NewSimpleLogger creates a new SimpleLogger with the given prefix.
 func NewSimpleLogger(prefix string) *SimpleLogger {
-	return &SimpleLogger{prefix: prefix}
+	return &SimpleLogger{
+		logger: slog.Default().With("component", prefix),
+	}
 }
 
 func (l *SimpleLogger) Info(msg string, args ...any) {
-	fmt.Printf("[%s] INFO: %s\n", l.prefix, fmt.Sprintf(msg, args...))
+	l.logger.Info(msg, args...)
 }
 
 func (l *SimpleLogger) Warn(msg string, args ...any) {
-	fmt.Printf("[%s] WARN: %s\n", l.prefix, fmt.Sprintf(msg, args...))
+	l.logger.Warn(msg, args...)
 }
 
 func (l *SimpleLogger) Error(msg string, args ...any) {
-	fmt.Printf("[%s] ERROR: %s\n", l.prefix, fmt.Sprintf(msg, args...))
+	l.logger.Error(msg, args...)
 }
 
 func (l *SimpleLogger) Debug(msg string, args ...any) {
-	fmt.Printf("[%s] DEBUG: %s\n", l.prefix, fmt.Sprintf(msg, args...))
+	l.logger.Debug(msg, args...)
 }
 
 // SimpleMetrics is a no-op MetricsCollector.

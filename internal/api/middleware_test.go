@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -191,7 +192,7 @@ func TestMaxBytesBody_Read(t *testing.T) {
 
 	p := make([]byte, 10)
 	n, err := body.Read(p)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		t.Errorf("unexpected error, got %v", err)
 	}
 	if n != 5 {

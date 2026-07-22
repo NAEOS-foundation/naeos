@@ -15,8 +15,6 @@ modules:
     dependencies:
       - core
   - name: payment
-    path: core
-  - name: payment
     path: ./internal/payment
     description: Processes payments for orders.
     dependencies:
@@ -67,7 +65,7 @@ architecture:
     - Idempotent event handling to guarantee exactly‑once semantics.
 
 deployment:
-  strategy: rolling-update
+  strategy: rolling
   environments:
     - development
     - staging

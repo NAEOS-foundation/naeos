@@ -492,7 +492,7 @@ func TestWizard_askIntDefault(t *testing.T) {
 	w.WriteString("\n")
 	w.Close()
 	wiz := &Wizard{reader: bufio.NewReader(r)}
-	result := wiz.askInt("Port", 8080)
+	result := wiz.askInt("Port")
 	if result != 8080 {
 		t.Errorf("expected 8080, got %d", result)
 	}
@@ -503,7 +503,7 @@ func TestWizard_askIntCustom(t *testing.T) {
 	w.WriteString("3000\n")
 	w.Close()
 	wiz := &Wizard{reader: bufio.NewReader(r)}
-	result := wiz.askInt("Port", 8080)
+	result := wiz.askInt("Port")
 	if result != 3000 {
 		t.Errorf("expected 3000, got %d", result)
 	}
@@ -514,7 +514,7 @@ func TestWizard_askIntInvalid(t *testing.T) {
 	w.WriteString("not-a-number\n")
 	w.Close()
 	wiz := &Wizard{reader: bufio.NewReader(r)}
-	result := wiz.askInt("Port", 8080)
+	result := wiz.askInt("Port")
 	if result != 8080 {
 		t.Errorf("expected 8080 fallback, got %d", result)
 	}

@@ -123,7 +123,7 @@ func (m *Manager) Install(path string) (*PluginInfo, error) {
 	}
 	namePtr, ok := symName.(*string)
 	if !ok {
-		return nil, fmt.Errorf("PluginName is not *string")
+		return nil, fmt.Errorf("plugin %q: exported PluginName must be a *string; rebuild the plugin with the correct type", path)
 	}
 
 	version := "0.0.0"
@@ -184,7 +184,7 @@ func (m *Manager) Uninstall(name string) error {
 			return m.SaveConfig()
 		}
 	}
-	return fmt.Errorf("plugin %s not found", name)
+	return fmt.Errorf("plugin %q not found; run 'naeos plugin list' to see installed plugins", name)
 }
 
 // Enable enables a plugin by name.
@@ -198,7 +198,7 @@ func (m *Manager) Enable(name string) error {
 			return m.SaveConfig()
 		}
 	}
-	return fmt.Errorf("plugin %s not found", name)
+	return fmt.Errorf("plugin %q not found; run 'naeos plugin list' to see installed plugins", name)
 }
 
 // Disable disables a plugin by name.
@@ -212,7 +212,7 @@ func (m *Manager) Disable(name string) error {
 			return m.SaveConfig()
 		}
 	}
-	return fmt.Errorf("plugin %s not found", name)
+	return fmt.Errorf("plugin %q not found; run 'naeos plugin list' to see installed plugins", name)
 }
 
 // Register registers a plugin in-memory (for in-process plugins).
@@ -222,7 +222,7 @@ func (m *Manager) Register(p Plugin) error {
 
 	name := p.Name()
 	if _, exists := m.plugins[name]; exists {
-		return fmt.Errorf("plugin '%s' already registered", name)
+		return fmt.Errorf("plugin %q already registered; unregister it first with 'naeos plugin unregister %s'", name, name)
 	}
 
 	m.plugins[name] = p
@@ -240,7 +240,7 @@ func (m *Manager) Unregister(name string) error {
 	defer m.mu.Unlock()
 
 	if _, exists := m.plugins[name]; !exists {
-		return fmt.Errorf("plugin '%s' not found", name)
+		return fmt.Errorf("plugin %q not found in memory; it may not be loaded", name)
 	}
 
 	delete(m.plugins, name)
@@ -288,7 +288,7 @@ func (m *Manager) LoadAll(ctx *PluginContext) error {
 		m.mu.Unlock()
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("plugin load errors (%d): %s", len(errs), strings.Join(errs, "; "))
+		return fmt.Errorf("failed to load %d plugin(s); check plugin paths and rebuild if needed: %s", len(errs), strings.Join(errs, "; "))
 	}
 	return nil
 }

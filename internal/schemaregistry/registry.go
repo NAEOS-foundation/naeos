@@ -17,12 +17,12 @@ type SchemaEntry struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Summary   string    `json:"summary,omitempty"`
-	TenantID   string    `json:"tenant_id,omitempty"`
+	TenantID  string    `json:"tenant_id,omitempty"`
 }
 
 // Registry provides versioned JSON Schema storage and resolution.
 type Registry struct {
-	mu     sync.RWMutex
+	mu      sync.RWMutex
 	schemas map[string]map[string]*SchemaEntry
 }
 

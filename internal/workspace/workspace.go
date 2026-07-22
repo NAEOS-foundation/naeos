@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 )
 
 type Module struct {
@@ -22,7 +21,6 @@ type Workspace struct {
 
 type Manager struct {
 	rootDir string
-	mu      sync.RWMutex
 }
 
 func NewManager(rootDir string) *Manager {

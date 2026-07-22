@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,7 @@ import (
 func TestCheckOriginAllowed(t *testing.T) {
 	s := NewServer()
 	s.SetAllowedOrigins([]string{"http://example.com", "*"})
-	r1 := httptest.NewRequest("GET", "/", nil)
+	r1 := httptest.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	r1.Header.Set("Origin", "http://example.com")
 	if !s.checkOrigin(r1) {
 		t.Error("expected allowed origin to pass")
@@ -21,7 +22,7 @@ func TestCheckOriginAllowed(t *testing.T) {
 func TestCheckOriginDenied(t *testing.T) {
 	s := NewServer()
 	s.SetAllowedOrigins([]string{"http://example.com"})
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	r.Header.Set("Origin", "http://evil.com")
 	if s.checkOrigin(r) {
 		t.Error("expected disallowed origin to fail")
@@ -41,7 +42,7 @@ func TestAuthMiddlewareUnauthorized(t *testing.T) {
 	})
 	h := a.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", "/", nil))
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", rec.Code)
 	}
@@ -74,7 +75,7 @@ func TestReplayToClientWithZero(t *testing.T) {
 
 func TestCheckOriginNoOrigins(t *testing.T) {
 	s := NewServer()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	r.Header.Set("Origin", "http://example.com")
 	if !s.checkOrigin(r) {
 		t.Error("expected true when no origins set")
@@ -89,5 +90,3 @@ func TestGetOrCreateExisting(t *testing.T) {
 		t.Errorf("expected foo, got %s", r2.Name)
 	}
 }
-
-

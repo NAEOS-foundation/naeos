@@ -82,13 +82,13 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 	claimsJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims encoding", "error", err)
-		return nil, fmt.Errorf("invalid claims encoding")
+		return nil, fmt.Errorf("invalid claims encoding: %w", err)
 	}
 
 	var claims JWTClaims
 	if err := json.Unmarshal(claimsJSON, &claims); err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims format", "error", err)
-		return nil, fmt.Errorf("invalid claims format")
+		return nil, fmt.Errorf("invalid claims format: %w", err)
 	}
 
 	if claims.ExpiresAt < time.Now().Unix() {

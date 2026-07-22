@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -123,7 +124,7 @@ func TestNewLLMServiceAnthropicDefaults(t *testing.T) {
 
 func TestEnrichSpecEmpty(t *testing.T) {
 	s := &LLMService{}
-	_, err := s.EnrichSpecContext(nil, "")
+	_, err := s.EnrichSpecContext(context.TODO(), "")
 	if err == nil {
 		t.Error("expected error for empty spec")
 	}
