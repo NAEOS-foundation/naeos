@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Message Broker Interface
@@ -62,14 +64,14 @@ func (s *stubBroker) close() error {
 
 func (s *stubBroker) ping() error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (s *stubBroker) publish(channel string, msg *Message) error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	s.mu.RLock()
@@ -84,7 +86,7 @@ func (s *stubBroker) publish(channel string, msg *Message) error {
 
 func (s *stubBroker) subscribe(channel string, handler MessageHandler) error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	s.mu.Lock()
@@ -292,14 +294,14 @@ func (b *InMemoryBroker) Close() error {
 
 func (b *InMemoryBroker) Ping() error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (b *InMemoryBroker) Publish(channel string, msg *Message) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	if msg == nil {
 		return fmt.Errorf("message is nil")
@@ -332,7 +334,7 @@ func (b *InMemoryBroker) Publish(channel string, msg *Message) error {
 
 func (b *InMemoryBroker) Subscribe(channel string, handler MessageHandler) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()

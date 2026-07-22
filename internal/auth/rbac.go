@@ -70,16 +70,11 @@ var DefaultRolePermissions = map[string][]struct {
 // with their associated permissions on the given RBAC instance.
 func SetupDefaultRoles(r *RBAC) {
 	for roleName, perms := range DefaultRolePermissions {
-		role := &Role{Name: roleName}
+		ra := make(map[string][]string, len(perms))
 		for _, p := range perms {
-			permName := p.Resource + ":" + joinActions(p.Actions)
-			r.AddPermission(&Permission{
-				Resource: p.Resource,
-				Actions:  p.Actions,
-			})
-			role.Permissions = append(role.Permissions, permName)
+			ra[p.Resource] = p.Actions
 		}
-		r.AddRole(role)
+		r.AddRole(&Role{Name: roleName, ResourceActions: ra})
 	}
 }
 

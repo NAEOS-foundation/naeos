@@ -384,7 +384,7 @@ func TestIncludeResolverChain(t *testing.T) {
 		prev = name
 	}
 	r := NewIncludeResolver(dir)
-	result, err := r.ResolveIncludes(fmt.Sprintf("$include{level_9.yaml}"))
+	result, err := r.ResolveIncludes("$include{level_9.yaml}")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -406,7 +406,7 @@ func TestIncludeResolverDepthExceeded(t *testing.T) {
 	os.WriteFile(files[11], []byte("leaf"), 0o644)
 
 	r := NewIncludeResolver(dir)
-	_, err := r.ResolveIncludes(fmt.Sprintf("$include{f_0.yaml}"))
+	_, err := r.ResolveIncludes("$include{f_0.yaml}")
 	if err == nil {
 		t.Error("expected depth exceeded error")
 	}

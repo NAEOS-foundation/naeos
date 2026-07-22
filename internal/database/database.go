@@ -126,16 +126,20 @@ func (b *BaseDatabase) close() {
 	b.connected = false
 }
 
+func (b *BaseDatabase) notConnectedError() error {
+	return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+}
+
 func (b *BaseDatabase) ping() error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	return nil
 }
 
 func (b *BaseDatabase) exec(_ string, _ ...any) (Result, error) {
 	if !b.connected {
-		return Result{}, fmt.Errorf("not connected")
+		return Result{}, b.notConnectedError()
 	}
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -144,7 +148,7 @@ func (b *BaseDatabase) exec(_ string, _ ...any) (Result, error) {
 
 func (b *BaseDatabase) query(_ string, _ ...any) ([]Row, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -153,14 +157,14 @@ func (b *BaseDatabase) query(_ string, _ ...any) ([]Row, error) {
 
 func (b *BaseDatabase) queryRow(_ string, _ ...any) (Row, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	return Row{}, nil
 }
 
 func (b *BaseDatabase) begin() (Transaction, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -170,7 +174,7 @@ func (b *BaseDatabase) begin() (Transaction, error) {
 
 func (b *BaseDatabase) migrate(migrations []Migration) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -185,7 +189,7 @@ func (b *BaseDatabase) migrate(migrations []Migration) error {
 
 func (b *BaseDatabase) rollback(version int) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -532,5 +536,3 @@ func (p *Pool) Put(conn Database) {
 func (p *Pool) Size() int {
 	return len(p.conns)
 }
-
-

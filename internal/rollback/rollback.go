@@ -354,12 +354,12 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 			return nil, err
 		}
 
-		target, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Name), snapDir)
+		target, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Name), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
 		if err != nil {
 			return nil, fmt.Errorf("invalid path in archive: %s", header.Name)
 		}
 		if header.Typeflag == tar.TypeSymlink || header.Typeflag == tar.TypeLink {
-			linkTarget, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Linkname), snapDir)
+			linkTarget, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Linkname), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
 			if err != nil {
 				return nil, fmt.Errorf("symlink target escapes snapshot directory: %s", header.Linkname)
 			}

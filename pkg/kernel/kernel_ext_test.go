@@ -8,13 +8,13 @@ import (
 type simpleService struct{ name string }
 
 type lifecycleService struct {
-	name         string
-	initErr      error
-	startErr     error
-	stopErr      error
-	initialized  bool
-	started      bool
-	stopped      bool
+	name        string
+	initErr     error
+	startErr    error
+	stopErr     error
+	initialized bool
+	started     bool
+	stopped     bool
 }
 
 func (s *lifecycleService) Initialize() error { s.initialized = true; return s.initErr }

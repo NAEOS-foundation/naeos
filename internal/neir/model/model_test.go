@@ -72,22 +72,22 @@ func TestNEIR_ZeroValue(t *testing.T) {
 
 func TestNEIR_Full(t *testing.T) {
 	n := NEIR{
-		Project:      &project.Project{Name: "naeos"},
-		Architecture: &architecture.Architecture{Pattern: architecture.PatternHexagonal},
-		Domain:       &domain.Domain{Name: "platform"},
-		Modules:      []module.Module{{Name: "core", Path: "./core"}},
-		Components:   []component.Component{{Name: "handler", Kind: component.KindHandler}},
-		Services:     []service.Service{{Name: "api", Kind: service.KindHTTP}},
-		APIs:         []api.API{{Name: "public", Protocol: api.ProtocolHTTP}},
-		Storage:      []storage.Storage{{Name: "db", Type: storage.TypeSQL}},
+		Project:        &project.Project{Name: "naeos"},
+		Architecture:   &architecture.Architecture{Pattern: architecture.PatternHexagonal},
+		Domain:         &domain.Domain{Name: "platform"},
+		Modules:        []module.Module{{Name: "core", Path: "./core"}},
+		Components:     []component.Component{{Name: "handler", Kind: component.KindHandler}},
+		Services:       []service.Service{{Name: "api", Kind: service.KindHTTP}},
+		APIs:           []api.API{{Name: "public", Protocol: api.ProtocolHTTP}},
+		Storage:        []storage.Storage{{Name: "db", Type: storage.TypeSQL}},
 		Infrastructure: &infrastructure.Infrastructure{Provider: infrastructure.ProviderAWS},
-		Security:     &security.Security{Authentication: &security.Authentication{Method: "oauth2"}},
-		AI:           &ai.AI{Models: []ai.Model{{Name: "gpt4"}}},
-		Documentation: &docs.Documentation{Guides: []docs.Doc{{Title: "Getting Started"}}},
-		Deployment:   &deployment.Deployment{Strategy: deployment.StrategyRolling},
-		Testing:      &testingmodel.Testing{Strategy: testingmodel.StrategyUnit},
-		Metadata:     &metadata.Metadata{NEIRVersion: "2.0"},
-		Generation:   &generation.GenerationConfig{OutputDir: "./out"},
+		Security:       &security.Security{Authentication: &security.Authentication{Method: "oauth2"}},
+		AI:             &ai.AI{Models: []ai.Model{{Name: "gpt4"}}},
+		Documentation:  &docs.Documentation{Guides: []docs.Doc{{Title: "Getting Started"}}},
+		Deployment:     &deployment.Deployment{Strategy: deployment.StrategyRolling},
+		Testing:        &testingmodel.Testing{Strategy: testingmodel.StrategyUnit},
+		Metadata:       &metadata.Metadata{NEIRVersion: "2.0"},
+		Generation:     &generation.GenerationConfig{OutputDir: "./out"},
 	}
 	if n.Project.Name != "naeos" {
 		t.Errorf("expected naeos, got %s", n.Project.Name)

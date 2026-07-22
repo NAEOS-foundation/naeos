@@ -240,7 +240,7 @@ func (m *MemoryAuditor) ExportCSV(path string) error {
 	var sb strings.Builder
 	sb.WriteString("id,timestamp,user_id,action,resource,resource_id,status,ip,user_agent,details\n")
 	for _, e := range events {
-		sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+		fmt.Fprintf(&sb, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
 			escapeCSV(e.ID),
 			e.Timestamp.Format(time.RFC3339),
 			escapeCSV(e.UserID),
@@ -251,7 +251,7 @@ func (m *MemoryAuditor) ExportCSV(path string) error {
 			escapeCSV(e.IP),
 			escapeCSV(e.UserAgent),
 			escapeCSV(e.Details),
-		))
+		)
 	}
 	return os.WriteFile(path, []byte(sb.String()), 0o600)
 }

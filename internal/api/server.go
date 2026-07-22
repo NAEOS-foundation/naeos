@@ -186,16 +186,16 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders: []string{"Content-Type", "Authorization"},
 		},
-		MaxBodySize:     10 << 20,
-		Limiter:         NewRateLimiter(100, time.Minute),
-		TenantLimiter:   NewRateLimiter(1000, time.Minute),
-		APIKeys:         make(map[string]*RateLimiter),
-		parser:          parser.NewParser("."),
-		compiler:        compiler.New(),
-		store:           store,
-		pipelinesFile:   pipelinesFile,
-		pipelineJobs:    make(map[string]*pipelineJob),
-		plugins:         pluginhost.NewManager(".naeos/plugins"),
+		MaxBodySize:   10 << 20,
+		Limiter:       NewRateLimiter(100, time.Minute),
+		TenantLimiter: NewRateLimiter(1000, time.Minute),
+		APIKeys:       make(map[string]*RateLimiter),
+		parser:        parser.NewParser("."),
+		compiler:      compiler.New(),
+		store:         store,
+		pipelinesFile: pipelinesFile,
+		pipelineJobs:  make(map[string]*pipelineJob),
+		plugins:       pluginhost.NewManager(".naeos/plugins"),
 		profiles:      profiles.NewRegistry(),
 		profileSubs:   make(map[string]*profiles.Subscription),
 		schemas:       schemaregistry.New(),
@@ -265,7 +265,7 @@ func (s *Server) savePipelines() {
 		slog.Warn("failed to create pipelines directory", "error", err)
 		return
 	}
-	if err := os.WriteFile(s.pipelinesFile, data, 0644); err != nil {
+	if err := os.WriteFile(s.pipelinesFile, data, 0600); err != nil {
 		slog.Warn("failed to write pipelines file", "error", err)
 	}
 }
@@ -367,8 +367,8 @@ func defaultRoutePermissions() map[string]auth.RoutePermission {
 		"/api/v1/schemas":              {Resource: auth.ResourceConfig, Action: auth.ActionRead},
 		"/api/v1/version":              {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 		"/api/v1/health":               {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
-		"/api/v1/tenants":             {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
-		"/api/v1/tenants/":            {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
+		"/api/v1/tenants":              {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
+		"/api/v1/tenants/":             {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 	}
 }
 
@@ -592,7 +592,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 		// Audit trail
 		if s.auditor != nil {
 			action := mapMethodToAction(r.Method)
-			s.auditor.Log(audit.AuditEvent{
+			_ = s.auditor.Log(audit.AuditEvent{
 				ID:        GenerateRequestID(),
 				Timestamp: time.Now(),
 				UserID:    userID,

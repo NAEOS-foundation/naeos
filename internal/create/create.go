@@ -49,7 +49,7 @@ func (w *Wizard) Run() (*ProjectConfig, error) {
 	cfg.Language = w.askChoice("Language", []string{"go", "typescript", "python", "java", "rust"}, "go")
 	cfg.Architecture = w.askChoice("Architecture pattern", []string{"hexagonal", "layered", "clean", "event-driven", "cqrs", "monolith"}, "hexagonal")
 	cfg.Deployment = w.askChoice("Deployment strategy", []string{"rolling", "blue-green", "canary", "recreate"}, "rolling")
-	cfg.Port = w.askInt("Default port", 8080)
+	cfg.Port = w.askInt("Default port")
 	cfg.OutputDir = w.askDefault("Output directory", cfg.Name)
 	cfg.EnableAuth = w.askYesNo("Enable authentication", false)
 	cfg.EnableTesting = w.askYesNo("Enable test generation", true)
@@ -105,7 +105,8 @@ func (w *Wizard) askChoice(prompt string, options []string, defaultVal string) s
 	return defaultVal
 }
 
-func (w *Wizard) askInt(prompt string, defaultVal int) int {
+func (w *Wizard) askInt(prompt string) int {
+	const defaultVal = 8080
 	fmt.Printf("%s [%d]: ", prompt, defaultVal)
 	text, _ := w.reader.ReadString('\n')
 	text = strings.TrimSpace(text)

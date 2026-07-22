@@ -98,5 +98,3 @@ Example:
 	_ = cmd.MarkFlagRequired("output")
 	return cmd
 }
-
-

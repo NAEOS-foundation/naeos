@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -183,7 +184,7 @@ Example:
 			var output strings.Builder
 			for {
 				event, data, err := decoder.Decode()
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				if err != nil {
@@ -240,7 +241,7 @@ func enrichStream(ctx context.Context, llm *ai.LLMService, spec string, w io.Wri
 	decoder := ai.NewSSEDecoder(pr)
 	for {
 		event, data, err := decoder.Decode()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {

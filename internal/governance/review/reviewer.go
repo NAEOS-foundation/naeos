@@ -5,10 +5,7 @@ import (
 	"strings"
 )
 
-var (
-	placeholdersLower = []string{"placeholder", "changeme", "replace_me"}
-	licenseMarkers    = []string{"license", "apache", "mit", "copyright", "licensed under"}
-)
+var placeholdersLower = []string{"placeholder", "changeme", "replace_me"}
 
 type ReviewStatus string
 
@@ -161,18 +158,6 @@ func splitLines(s string) []string {
 		lines = append(lines, s[start:])
 	}
 	return lines
-}
-
-func trimSpace(s string) string {
-	start := 0
-	end := len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t') {
-		start++
-	}
-	for end > start && (s[end-1] == ' ' || s[end-1] == '\t') {
-		end--
-	}
-	return s[start:end]
 }
 
 func containsStr(s, substr string) bool {

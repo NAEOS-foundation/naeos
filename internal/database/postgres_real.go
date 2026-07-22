@@ -85,7 +85,7 @@ func (p *RealPostgreSQL) Close() error {
 
 func (p *RealPostgreSQL) Ping() error {
 	if p.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	ctx, cancel := p.defaultContext()
 	defer cancel()
@@ -100,7 +100,7 @@ func (p *RealPostgreSQL) Exec(query string, args ...any) (Result, error) {
 
 func (p *RealPostgreSQL) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if p.db == nil {
-		return Result{}, fmt.Errorf("not connected")
+		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	res, err := p.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -119,7 +119,7 @@ func (p *RealPostgreSQL) Query(query string, args ...any) ([]Row, error) {
 
 func (p *RealPostgreSQL) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -159,7 +159,7 @@ func (p *RealPostgreSQL) QueryRow(query string, args ...any) (Row, error) {
 
 func (p *RealPostgreSQL) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -203,7 +203,7 @@ func (p *RealPostgreSQL) Begin() (Transaction, error) {
 
 func (p *RealPostgreSQL) BeginTx(ctx context.Context) (Transaction, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -220,7 +220,7 @@ func (p *RealPostgreSQL) Migrate(migrations []Migration) error {
 
 func (p *RealPostgreSQL) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if p.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	_, err := p.db.ExecContext(ctx, `
@@ -276,7 +276,7 @@ func (p *RealPostgreSQL) Rollback(version int) error {
 
 func (p *RealPostgreSQL) RollbackContext(ctx context.Context, version int) error {
 	if p.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	var migrations []Migration
@@ -322,7 +322,7 @@ func (p *RealPostgreSQL) RollbackContext(ctx context.Context, version int) error
 
 func (p *RealPostgreSQL) HealthCheck() error {
 	if p.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	ctx, cancel := p.defaultContext()
 	defer cancel()

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealRedis struct {
@@ -76,14 +78,14 @@ func (r *RealRedis) Close() error {
 
 func (r *RealRedis) Ping() error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return r.client.Ping(context.Background()).Err()
 }
 
 func (r *RealRedis) Publish(channel string, msg *Message) error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	data := msg.Payload
@@ -96,7 +98,7 @@ func (r *RealRedis) Publish(channel string, msg *Message) error {
 
 func (r *RealRedis) Subscribe(channel string, handler MessageHandler) error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	sub := r.client.Subscribe(context.Background(), channel)

@@ -133,8 +133,6 @@ func TestSaveLoadSnapshotErrors(t *testing.T) {
 	}
 }
 
-
-
 func TestExecuteWithRetryStepTimeout(t *testing.T) {
 	w := NewWorkflow("test", []*WorkflowStep{
 		{

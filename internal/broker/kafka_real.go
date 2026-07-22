@@ -12,6 +12,8 @@ import (
 
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/compress"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealKafka struct {
@@ -70,14 +72,14 @@ func (k *RealKafka) Close() error {
 
 func (k *RealKafka) Ping() error {
 	if k.writer == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (k *RealKafka) Publish(channel string, msg *Message) error {
 	if k.writer == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	data := msg.Payload
@@ -103,7 +105,7 @@ func (k *RealKafka) Publish(channel string, msg *Message) error {
 
 func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
 	if k.config == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	broker := fmt.Sprintf("%s:%d", k.config.Host, k.config.Port)

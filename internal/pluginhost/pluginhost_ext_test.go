@@ -1,6 +1,7 @@
 package pluginhost
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -52,10 +53,10 @@ func TestUpdateStateLockedWithError(t *testing.T) {
 	if m.info["test"].State != StateError {
 		t.Errorf("expected StateError, got %v", m.info["test"].State)
 	}
-	if m.info["test"].Error != err {
+	if !errors.Is(m.info["test"].Error, err) {
 		t.Error("expected error to be set on info")
 	}
-	if m.config.Plugins[0].Error != err {
+	if !errors.Is(m.config.Plugins[0].Error, err) {
 		t.Error("expected error to be set on config")
 	}
 }

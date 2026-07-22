@@ -58,3 +58,4 @@ tmp/
 site/public/
 documentation.o
 cmd/naeos/nonexistent/
+internal/api/.naeos/

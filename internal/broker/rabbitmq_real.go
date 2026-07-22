@@ -10,6 +10,8 @@ import (
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealRabbitMQ struct {
@@ -78,17 +80,17 @@ func (r *RealRabbitMQ) Close() error {
 
 func (r *RealRabbitMQ) Ping() error {
 	if r.conn == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	if r.conn.IsClosed() {
-		return fmt.Errorf("connection closed")
+		return naeoserr.Wrap(naeoserr.ErrNetwork, "connection closed", nil)
 	}
 	return nil
 }
 
 func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 	if r.channel == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	r.mu.Lock()
@@ -124,7 +126,7 @@ func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 
 func (r *RealRabbitMQ) Subscribe(channel string, handler MessageHandler) error {
 	if r.channel == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	r.mu.Lock()

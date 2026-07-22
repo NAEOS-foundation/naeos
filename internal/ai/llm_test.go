@@ -122,7 +122,7 @@ func TestSSEDecoder(t *testing.T) {
 			want:  []struct{ event, data string }{{event: "chunk", data: "{\"text\":\"line1\"}\n{\"text\":\"line2\"}"}},
 		},
 		{
-			name: "multiple events",
+			name:  "multiple events",
 			input: "event: start\ndata: {}\n\nevent: chunk\ndata: {\"text\":\"hello\"}\n\nevent: done\ndata: {\"status\":\"completed\"}\n\n",
 			want: []struct{ event, data string }{
 				{event: "start", data: `{}`},

@@ -181,8 +181,8 @@ func TestResolveEnvironmentVariables(t *testing.T) {
 	defer ClearEnvForTest()
 
 	context := map[string]any{
-		"host": "${DB_HOST}",
-		"port": "${DB_PORT}",
+		"host":  "${DB_HOST}",
+		"port":  "${DB_PORT}",
 		"fixed": "hello",
 	}
 	resolved := ResolveEnvironmentVariables(context)

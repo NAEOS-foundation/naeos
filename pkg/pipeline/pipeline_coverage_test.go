@@ -196,10 +196,10 @@ type captureObserver struct {
 	artifact string
 }
 
-func (o *captureObserver) OnPipelineStart(pipelineID string)      { o.started = pipelineID }
+func (o *captureObserver) OnPipelineStart(pipelineID string)                        { o.started = pipelineID }
 func (o *captureObserver) OnPipelineComplete(pid string, artifacts int, dur string) { o.complete = pid }
-func (o *captureObserver) OnPipelineFailed(pid, errMsg string)           { o.failed = pid }
-func (o *captureObserver) OnArtifactGenerated(name, path string)         { o.artifact = name }
+func (o *captureObserver) OnPipelineFailed(pid, errMsg string)                      { o.failed = pid }
+func (o *captureObserver) OnArtifactGenerated(name, path string)                    { o.artifact = name }
 
 func TestChainObservers(t *testing.T) {
 	o1 := &captureObserver{}

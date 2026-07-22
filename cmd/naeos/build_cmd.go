@@ -73,13 +73,13 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 	}
 
 	payload := map[string]any{
-		"pipeline":    cfg.Name,
-		"mode":        cfg.Mode,
-		"build":       "local",
-		"verbose":     cfg.Verbose,
-		"output_dir":  cfg.OutputDir,
-		"artifacts":   len(result.Artifacts),
-		"tasks":       len(result.Tasks),
+		"pipeline":   cfg.Name,
+		"mode":       cfg.Mode,
+		"build":      "local",
+		"verbose":    cfg.Verbose,
+		"output_dir": cfg.OutputDir,
+		"artifacts":  len(result.Artifacts),
+		"tasks":      len(result.Tasks),
 	}
 
 	if len(languages) > 0 {
@@ -147,8 +147,8 @@ func runBuildDistributed(cmd *cobra.Command, configPath string, workerCount int)
 	stages := []string{"parse", "normalize", "resolve", "generate"}
 	for _, s := range stages {
 		coord.Submit(&distributed.Task{
-			ID:   fmt.Sprintf("build-%s", s),
-			Type: "build",
+			ID:      fmt.Sprintf("build-%s", s),
+			Type:    "build",
 			Payload: map[string]any{"stage": s},
 		})
 	}
@@ -182,5 +182,3 @@ func runBuildDistributed(cmd *cobra.Command, configPath string, workerCount int)
 
 	return writeOrPrint(cmd, rendered, "")
 }
-
-

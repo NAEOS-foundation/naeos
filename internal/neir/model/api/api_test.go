@@ -36,8 +36,8 @@ func TestAPI_ZeroValue(t *testing.T) {
 
 func TestAPI_Full(t *testing.T) {
 	a := API{
-		Name:    "users",
-		Version: "1.0",
+		Name:     "users",
+		Version:  "1.0",
 		Protocol: ProtocolHTTP,
 		Endpoints: []APIEndpoint{
 			{Method: "GET", Path: "/users", Summary: "List users"},

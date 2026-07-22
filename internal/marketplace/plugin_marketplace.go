@@ -22,19 +22,19 @@ type VersionEntry struct {
 }
 
 type PluginEntry struct {
-	Name         string             `json:"name"`
-	Version      string             `json:"version"`
-	Description  string             `json:"description"`
-	Author       string             `json:"author"`
-	Type         string             `json:"type"`
-	Tags         []string           `json:"tags"`
-	Dependencies []PluginDependency `json:"dependencies,omitempty"`
-	Downloads    int                `json:"downloads"`
-	Installed    bool               `json:"installed,omitempty"`
-	VersionHistory []VersionEntry   `json:"version_history,omitempty"`
-	Config       map[string]any     `json:"config,omitempty"`
-	CreatedAt    time.Time          `json:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at"`
+	Name           string             `json:"name"`
+	Version        string             `json:"version"`
+	Description    string             `json:"description"`
+	Author         string             `json:"author"`
+	Type           string             `json:"type"`
+	Tags           []string           `json:"tags"`
+	Dependencies   []PluginDependency `json:"dependencies,omitempty"`
+	Downloads      int                `json:"downloads"`
+	Installed      bool               `json:"installed,omitempty"`
+	VersionHistory []VersionEntry     `json:"version_history,omitempty"`
+	Config         map[string]any     `json:"config,omitempty"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
 }
 
 type PluginMarketplace struct {

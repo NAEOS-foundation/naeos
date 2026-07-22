@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealNATS struct {
@@ -68,17 +70,17 @@ func (n *RealNATS) Close() error {
 
 func (n *RealNATS) Ping() error {
 	if n.conn == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	if n.conn.IsClosed() {
-		return fmt.Errorf("connection closed")
+		return naeoserr.Wrap(naeoserr.ErrNetwork, "connection closed", nil)
 	}
 	return nil
 }
 
 func (n *RealNATS) Publish(channel string, msg *Message) error {
 	if n.conn == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	data := msg.Payload
@@ -91,7 +93,7 @@ func (n *RealNATS) Publish(channel string, msg *Message) error {
 
 func (n *RealNATS) Subscribe(channel string, handler MessageHandler) error {
 	if n.conn == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	sub, err := n.conn.Subscribe(channel, func(m *nats.Msg) {

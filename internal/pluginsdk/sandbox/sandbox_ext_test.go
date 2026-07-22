@@ -157,6 +157,6 @@ func TestExecWASMContextCancel(t *testing.T) {
 
 	_, err := sb.ExecWASM(ctx, pluginPath, Request{Method: "test"})
 	if err == nil {
-		t.Fatal("expected error with cancelled context")
+		t.Fatal("expected error with canceled context")
 	}
 }
