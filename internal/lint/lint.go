@@ -15,9 +15,13 @@ var projectNameFormatRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
 type Severity string
 
 const (
-	SeverityError   Severity = "error"
-	SeverityWarning Severity = "warning"
-	SeverityInfo    Severity = "info"
+	SeverityCritical Severity = "critical"
+	SeverityHigh     Severity = "high"
+	SeverityMedium   Severity = "medium"
+	SeverityLow      Severity = "low"
+	SeverityError    Severity = "error"
+	SeverityWarning  Severity = "warning"
+	SeverityInfo     Severity = "info"
 )
 
 type LintIssue struct {

@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
+	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
 
-type cursorAdapter struct{}
+type cursorAdapter struct {
+	library *promptlib.Library
+}
 
-func NewCursorAdapter() compiler.Adapter {
-	return &cursorAdapter{}
+func NewCursorAdapter(lib *promptlib.Library) compiler.Adapter {
+	return &cursorAdapter{library: lib}
 }
 
 func (a *cursorAdapter) Target() compiler.Target {
@@ -21,9 +25,45 @@ func (a *cursorAdapter) Target() compiler.Target {
 
 func (a *cursorAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "nil NEIR")
 	}
 
+	if a.library != nil {
+		return a.compileFromLibrary(neir)
+	}
+
+	return a.compileLegacy(neir)
+}
+
+func (a *cursorAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
+	rendered, err := a.library.RenderCompiler("cursor", neir)
+	if err != nil {
+		return nil, fmt.Errorf("render from library: %w", err)
+	}
+
+	var files []compiler.OutputFile
+	for _, f := range rendered {
+		files = append(files, compiler.OutputFile{
+			Path:    f.Path,
+			Content: f.Content,
+			Kind:    f.Kind,
+		})
+	}
+
+	projectName := "unknown"
+	if neir.Project != nil {
+		projectName = neir.Project.Name
+	}
+
+	return &compiler.CompiledOutput{
+		Target:     compiler.TargetCursor,
+		Files:      files,
+		Summary:    fmt.Sprintf("Generated %d files for Cursor (%s)", len(files), projectName),
+		CompiledAt: time.Now(),
+	}, nil
+}
+
+func (a *cursorAdapter) compileLegacy(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	var files []compiler.OutputFile
 
 	rulesFile := a.buildRulesFile(neir)

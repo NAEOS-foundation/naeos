@@ -1,40 +1,44 @@
 package project
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestProjectZeroValue(t *testing.T) {
-	p := &Project{}
+func TestProject_ZeroValue(t *testing.T) {
+	var p Project
 	if p.Name != "" {
-		t.Errorf("zero-value Project.Name = %q, want empty", p.Name)
+		t.Error("expected empty Name")
 	}
-	if p.Version != "" {
-		t.Errorf("zero-value Project.Version = %q, want empty", p.Version)
+	if p.Authors != nil {
+		t.Error("expected nil Authors")
+	}
+	if p.Attributes != nil {
+		t.Error("expected nil Attributes")
 	}
 }
 
-func TestProjectWithFields(t *testing.T) {
-	p := &Project{
-		Name:        "my-api",
-		Version:     "1.0.0",
-		Description: "A test API",
-		License:     "Apache-2.0",
-		Authors:     []string{"alice", "bob"},
-		Repository:  "github.com/test/my-api",
-		Tags:        []string{"api", "backend"},
-		Attributes:  map[string]string{"env": "production"},
+func TestProject_Full(t *testing.T) {
+	p := Project{
+		Name:        "naeos",
+		Version:     "2.1.0",
+		Description: "Platform engineering system",
+		License:     "MIT",
+		Authors:     []string{"team"},
+		Repository:  "github.com/NAEOS-foundation/naeos",
+		Tags:        []string{"platform", "engineering"},
+		Attributes:  map[string]string{"key": "val"},
 	}
-	if p.Name != "my-api" {
-		t.Errorf("Name = %q, want %q", p.Name, "my-api")
+	if p.Name != "naeos" {
+		t.Errorf("expected naeos, got %s", p.Name)
 	}
-	if p.Version != "1.0.0" {
-		t.Errorf("Version = %q, want %q", p.Version, "1.0.0")
+	if p.Version != "2.1.0" {
+		t.Errorf("expected 2.1.0, got %s", p.Version)
 	}
-	if len(p.Authors) != 2 {
-		t.Errorf("Authors has %d entries, want 2", len(p.Authors))
+	if p.License != "MIT" {
+		t.Errorf("expected MIT, got %s", p.License)
 	}
-	if p.Attributes["env"] != "production" {
-		t.Errorf("Attributes[env] = %q, want %q", p.Attributes["env"], "production")
+	if len(p.Authors) != 1 {
+		t.Errorf("expected 1 author, got %d", len(p.Authors))
+	}
+	if len(p.Tags) != 2 {
+		t.Errorf("expected 2 tags, got %d", len(p.Tags))
 	}
 }

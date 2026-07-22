@@ -241,3 +241,203 @@ func TestComputeBackoff(t *testing.T) {
 		t.Error("expected max 5s backoff")
 	}
 }
+
+func TestSubmitPriorityOrder(t *testing.T) {
+	worker := NewSimpleWorker("p-w", func(ctx context.Context, task *Task) (map[string]any, error) {
+		return map[string]any{"id": task.ID}, nil
+	})
+	c := NewCoordinator([]Worker{worker}, 10)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c.Start(ctx)
+
+	c.Submit(&Task{ID: "low", Priority: 1})
+	c.SubmitPriority(&Task{ID: "high", Priority: 10})
+	c.SubmitPriority(&Task{ID: "mid", Priority: 5})
+
+	timeout := time.After(2 * time.Second)
+	var ids []string
+	for len(ids) < 3 {
+		select {
+		case r := <-c.Results():
+			if r.Succeeded {
+				ids = append(ids, r.Output["id"].(string))
+			}
+		case <-timeout:
+			t.Fatal("timeout waiting for results")
+		}
+	}
+
+	if len(ids) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(ids))
+	}
+	if ids[0] != "high" {
+		t.Errorf("expected first result to be 'high' (priority 10), got %s", ids[0])
+	}
+	if ids[1] != "mid" {
+		t.Errorf("expected second result to be 'mid' (priority 5), got %s", ids[1])
+	}
+	if ids[2] != "low" {
+		t.Errorf("expected third result to be 'low' (priority 1), got %s", ids[2])
+	}
+	c.Stop()
+}
+
+func TestSubmitPriorityDefault(t *testing.T) {
+	worker := NewSimpleWorker("pd-w", func(ctx context.Context, task *Task) (map[string]any, error) {
+		return map[string]any{"id": task.ID}, nil
+	})
+	c := NewCoordinator([]Worker{worker}, 10)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c.Start(ctx)
+
+	c.Submit(&Task{ID: "a"})
+	c.Submit(&Task{ID: "b"})
+	c.Submit(&Task{ID: "c"})
+
+	timeout := time.After(2 * time.Second)
+	var count int
+	for count < 3 {
+		select {
+		case <-c.Results():
+			count++
+		case <-timeout:
+			t.Fatal("timeout waiting for results")
+		}
+	}
+	c.Stop()
+}
+
+func TestRegisterAgent(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+
+	agent := &Agent{ID: "agent-1", Type: "builder"}
+	err := c.RegisterAgent(agent)
+	if err != nil {
+		t.Fatalf("RegisterAgent failed: %v", err)
+	}
+
+	got := c.Agent("agent-1")
+	if got == nil {
+		t.Fatal("expected to find agent-1")
+	}
+	if got.Status != AgentStatusOnline {
+		t.Errorf("expected online, got %s", got.Status)
+	}
+	if got.RegisteredAt.IsZero() {
+		t.Error("expected non-zero RegisteredAt")
+	}
+}
+
+func TestRegisterAgentEmptyID(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	err := c.RegisterAgent(&Agent{ID: ""})
+	if err == nil {
+		t.Fatal("expected error for empty agent ID")
+	}
+}
+
+func TestUnregisterAgent(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	c.RegisterAgent(&Agent{ID: "agent-1"})
+
+	err := c.UnregisterAgent("agent-1")
+	if err != nil {
+		t.Fatalf("UnregisterAgent failed: %v", err)
+	}
+
+	got := c.Agent("agent-1")
+	if got != nil {
+		t.Error("expected agent to be removed")
+	}
+}
+
+func TestUnregisterAgentNotFound(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	err := c.UnregisterAgent("nonexistent")
+	if err == nil {
+		t.Fatal("expected error for nonexistent agent")
+	}
+}
+
+func TestRecordHeartbeat(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	c.RegisterAgent(&Agent{ID: "agent-1"})
+
+	original := c.Agent("agent-1").LastHeartbeat
+	time.Sleep(time.Millisecond)
+
+	err := c.RecordHeartbeat("agent-1")
+	if err != nil {
+		t.Fatalf("RecordHeartbeat failed: %v", err)
+	}
+
+	updated := c.Agent("agent-1").LastHeartbeat
+	if !updated.After(original) {
+		t.Error("expected heartbeat to be updated")
+	}
+}
+
+func TestRecordHeartbeatNotFound(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	err := c.RecordHeartbeat("nonexistent")
+	if err == nil {
+		t.Fatal("expected error for nonexistent agent")
+	}
+}
+
+func TestListAgents(t *testing.T) {
+	c := NewCoordinator(nil, 10)
+	c.RegisterAgent(&Agent{ID: "a1"})
+	c.RegisterAgent(&Agent{ID: "a2"})
+	c.RegisterAgent(&Agent{ID: "a3"})
+
+	agents := c.ListAgents()
+	if len(agents) != 3 {
+		t.Fatalf("expected 3 agents, got %d", len(agents))
+	}
+
+	ids := make(map[string]bool)
+	for _, a := range agents {
+		ids[a.ID] = true
+	}
+	if !ids["a1"] || !ids["a2"] || !ids["a3"] {
+		t.Error("missing expected agent IDs")
+	}
+}
+
+func TestAgentStatusBusy(t *testing.T) {
+	agent := &Agent{ID: "busy-agent"}
+	agent.Status = AgentStatusBusy
+	if agent.Status != AgentStatusBusy {
+		t.Errorf("expected busy status")
+	}
+}
+
+func TestCoordinatorMultipleWorkers(t *testing.T) {
+	workers := []Worker{newTestWorker("w1"), newTestWorker("w2"), newTestWorker("w3")}
+	c := NewCoordinator(workers, 20)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c.Start(ctx)
+
+	for i := 0; i < 6; i++ {
+		c.Submit(&Task{ID: fmt.Sprintf("t%d", i), Type: "test"})
+	}
+
+	timeout := time.After(2 * time.Second)
+	var results []*TaskResult
+	for len(results) < 6 {
+		select {
+		case r := <-c.Results():
+			results = append(results, r)
+		case <-timeout:
+			t.Fatal("timeout waiting for all results")
+		}
+	}
+	if len(results) != 6 {
+		t.Fatalf("expected 6 results, got %d", len(results))
+	}
+	c.Stop()
+}

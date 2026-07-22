@@ -41,7 +41,7 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 		return nil, fmt.Errorf("neir is nil")
 	}
 
-	projectName := fmt.Sprint(neir)
+	var projectName string
 	var modules []any
 	var services []any
 	var archPattern string

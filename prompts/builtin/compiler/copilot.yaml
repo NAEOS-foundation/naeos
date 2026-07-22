@@ -1,0 +1,82 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: copilot
+kind: compiler
+version: "1.0.0"
+target: copilot
+files:
+  - path: ".github/copilot-instructions.md"
+    kind: instructions
+    template: |
+      # GitHub Copilot Instructions
+
+      This file contains project-specific instructions for GitHub Copilot.
+
+      {{if .Project.Name}}## Project: {{.Project.Name}}
+
+      {{if .Project.Description}}{{.Project.Description}}{{end}}
+      {{end}}
+      {{if .Architecture.Pattern}}## Architecture Pattern: {{.Architecture.Pattern}}
+
+      Follow these architectural principles:
+      {{range .Architecture.Principles}}- {{.}}
+      {{end}}{{end}}
+      {{if .Modules}}## Module Structure
+
+      {{range .Modules}}- **{{.Name}}**: {{.Path}}
+      {{if .Description}}  {{.Description}}{{end}}
+      {{end}}{{end}}
+      {{if .Components}}## Components
+
+      {{range .Components}}- {{code .Name}} ({{.Kind}}) in module {{code .Module}}
+      {{end}}{{end}}
+      {{if .Services}}## Services
+
+      {{range .Services}}### {{.Name}} ({{.Kind}}, port {{.Port}})
+      {{range .Endpoints}}- {{code (printf "%s %s" .Method .Path)}} -> {{code .Action}}
+      {{end}}{{end}}{{end}}
+      ## Coding Guidelines
+
+      - Write clean, idiomatic code following the project's architecture pattern
+      - Include proper error handling
+      - Add comments for public APIs
+      - Follow the module dependency structure
+
+  - path: ".github/copilot-context.md"
+    kind: context
+    template: |
+      # Project Context for Copilot
+
+      Use this file as additional context when generating code.
+
+      ```yaml
+      project: {{.Project.Name}}
+      {{if .Architecture.Pattern}}architecture: {{.Architecture.Pattern}}{{end}}
+      {{if .Modules}}modules:
+      {{range .Modules}}  - name: {{.Name}}
+        path: {{.Path}}
+      {{end}}{{end}}```
+
+  - path: ".github/copilot-rules.md"
+    kind: rules
+    template: |
+      # Copilot Rules
+
+      ## File Organization
+
+      {{range .Modules}}- Files in {{code .Path}} belong to the {{code .Name}} module
+      {{end}}
+
+      ## Code Style
+
+      - Use early returns for error handling
+      - Prefer composition over inheritance
+      - Keep functions small and focused
+      - Use meaningful variable and function names
+variables:
+  - name: Guidelines
+    type: "[]string"
+    default:
+      - "Write clean, idiomatic code following the project's architecture pattern"
+      - "Include proper error handling"
+      - "Add comments for public APIs"
+      - "Follow the module dependency structure"

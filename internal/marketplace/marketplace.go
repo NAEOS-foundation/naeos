@@ -3,6 +3,7 @@ package marketplace
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -96,25 +97,30 @@ func (c *RegistryClient) Get(name string) (*RegistryEntry, error) {
 func (c *RegistryClient) Install(name, targetDir string) error {
 	entry, err := c.Get(name)
 	if err != nil {
+		slog.Error("marketplace install failed", "name", name, "error", err)
 		return err
 	}
 	specContent := fmt.Sprintf("# %s v%s\n# %s\n# Author: %s\n\nproject: %s\n",
 		entry.Name, entry.Version, entry.Description, entry.Author, entry.Name)
+	slog.Info("marketplace installed", "name", name, "version", entry.Version)
 	return os.WriteFile(filepath.Join(targetDir, "spec.yaml"), []byte(specContent), 0o600)
 }
 
 func (c *RegistryClient) Publish(entry RegistryEntry) error {
 	entries, err := c.loadCache()
 	if err != nil {
+		slog.Warn("marketplace load cache failed", "error", err)
 		entries = []RegistryEntry{}
 	}
 	for i, e := range entries {
 		if e.Name == entry.Name {
 			entries[i] = entry
+			slog.Info("marketplace published (updated)", "name", entry.Name, "version", entry.Version)
 			return c.saveCache(entries)
 		}
 	}
 	entries = append(entries, entry)
+	slog.Info("marketplace published (new)", "name", entry.Name, "version", entry.Version)
 	return c.saveCache(entries)
 }
 

@@ -3,83 +3,126 @@ package model
 import (
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/ai"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/api"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/architecture"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/component"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/deployment"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/docs"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/domain"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/generation"
-	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/infrastructure"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/metadata"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/storage"
+	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
 )
 
-func TestNEIRZeroValue(t *testing.T) {
-	neir := &NEIR{}
-	if neir.Project != nil {
-		t.Error("zero-value NEIR should have nil Project")
+func TestNEIR_ZeroValue(t *testing.T) {
+	var n NEIR
+	if n.Project != nil {
+		t.Error("expected nil Project")
 	}
-	if neir.Modules != nil {
-		t.Error("zero-value NEIR should have nil Modules")
+	if n.Architecture != nil {
+		t.Error("expected nil Architecture")
 	}
-	if neir.Services != nil {
-		t.Error("zero-value NEIR should have nil Services")
+	if n.Modules != nil {
+		t.Error("expected nil Modules")
 	}
-	if neir.Generation != nil {
-		t.Error("zero-value NEIR should have nil Generation")
+	if n.Components != nil {
+		t.Error("expected nil Components")
 	}
-}
-
-func TestNEIRWithProject(t *testing.T) {
-	neir := &NEIR{
-		Project: &project.Project{
-			Name: "test-api",
-		},
+	if n.Services != nil {
+		t.Error("expected nil Services")
 	}
-	if neir.Project.Name != "test-api" {
-		t.Errorf("Project.Name = %q, want %q", neir.Project.Name, "test-api")
+	if n.APIs != nil {
+		t.Error("expected nil APIs")
 	}
-}
-
-func TestNEIRWithModules(t *testing.T) {
-	neir := &NEIR{
-		Modules: []module.Module{
-			{Name: "auth", Path: "./internal/auth"},
-			{Name: "user", Path: "./internal/user"},
-		},
+	if n.Storage != nil {
+		t.Error("expected nil Storage")
 	}
-	if len(neir.Modules) != 2 {
-		t.Errorf("Modules has %d entries, want 2", len(neir.Modules))
+	if n.Infrastructure != nil {
+		t.Error("expected nil Infrastructure")
 	}
-	if neir.Modules[0].Name != "auth" {
-		t.Errorf("Modules[0].Name = %q, want %q", neir.Modules[0].Name, "auth")
+	if n.Security != nil {
+		t.Error("expected nil Security")
 	}
-}
-
-func TestNEIRWithServices(t *testing.T) {
-	neir := &NEIR{
-		Services: []service.Service{
-			{Name: "gateway", Kind: "http", Port: 8080},
-		},
+	if n.AI != nil {
+		t.Error("expected nil AI")
 	}
-	if len(neir.Services) != 1 {
-		t.Errorf("Services has %d entries, want 1", len(neir.Services))
+	if n.Documentation != nil {
+		t.Error("expected nil Documentation")
 	}
-	if neir.Services[0].Port != 8080 {
-		t.Errorf("Services[0].Port = %d, want 8080", neir.Services[0].Port)
+	if n.Deployment != nil {
+		t.Error("expected nil Deployment")
+	}
+	if n.Testing != nil {
+		t.Error("expected nil Testing")
+	}
+	if n.Metadata != nil {
+		t.Error("expected nil Metadata")
+	}
+	if n.Generation != nil {
+		t.Error("expected nil Generation")
 	}
 }
 
-func TestNEIRWithGeneration(t *testing.T) {
-	neir := &NEIR{
-		Generation: &generation.GenerationConfig{
-			Languages: []language.Language{language.LanguageGo, language.LanguageTypeScript},
-			OutputDir: "./generated",
-		},
+func TestNEIR_Full(t *testing.T) {
+	n := NEIR{
+		Project:        &project.Project{Name: "naeos"},
+		Architecture:   &architecture.Architecture{Pattern: architecture.PatternHexagonal},
+		Domain:         &domain.Domain{Name: "platform"},
+		Modules:        []module.Module{{Name: "core", Path: "./core"}},
+		Components:     []component.Component{{Name: "handler", Kind: component.KindHandler}},
+		Services:       []service.Service{{Name: "api", Kind: service.KindHTTP}},
+		APIs:           []api.API{{Name: "public", Protocol: api.ProtocolHTTP}},
+		Storage:        []storage.Storage{{Name: "db", Type: storage.TypeSQL}},
+		Infrastructure: &infrastructure.Infrastructure{Provider: infrastructure.ProviderAWS},
+		Security:       &security.Security{Authentication: &security.Authentication{Method: "oauth2"}},
+		AI:             &ai.AI{Models: []ai.Model{{Name: "gpt4"}}},
+		Documentation:  &docs.Documentation{Guides: []docs.Doc{{Title: "Getting Started"}}},
+		Deployment:     &deployment.Deployment{Strategy: deployment.StrategyRolling},
+		Testing:        &testingmodel.Testing{Strategy: testingmodel.StrategyUnit},
+		Metadata:       &metadata.Metadata{NEIRVersion: "2.0"},
+		Generation:     &generation.GenerationConfig{OutputDir: "./out"},
 	}
-	if !neir.Generation.HasLanguage(language.LanguageGo) {
-		t.Error("Generation should contain Go")
+	if n.Project.Name != "naeos" {
+		t.Errorf("expected naeos, got %s", n.Project.Name)
 	}
-	if !neir.Generation.HasLanguage(language.LanguageTypeScript) {
-		t.Error("Generation should contain TypeScript")
+	if n.Architecture.Pattern != architecture.PatternHexagonal {
+		t.Errorf("expected hexagonal, got %s", n.Architecture.Pattern)
 	}
-	if neir.Generation.HasLanguage(language.LanguagePython) {
-		t.Error("Generation should not contain Python")
+	if len(n.Modules) != 1 {
+		t.Errorf("expected 1 module, got %d", len(n.Modules))
+	}
+	if len(n.Services) != 1 {
+		t.Errorf("expected 1 service, got %d", len(n.Services))
+	}
+	if n.Infrastructure.Provider != infrastructure.ProviderAWS {
+		t.Errorf("expected aws, got %s", n.Infrastructure.Provider)
+	}
+	if n.Security.Authentication.Method != "oauth2" {
+		t.Errorf("expected oauth2, got %s", n.Security.Authentication.Method)
+	}
+	if n.AI.Models[0].Name != "gpt4" {
+		t.Errorf("expected gpt4, got %s", n.AI.Models[0].Name)
+	}
+	if n.Documentation.Guides[0].Title != "Getting Started" {
+		t.Errorf("expected Getting Started, got %s", n.Documentation.Guides[0].Title)
+	}
+	if n.Deployment.Strategy != deployment.StrategyRolling {
+		t.Errorf("expected rolling, got %s", n.Deployment.Strategy)
+	}
+	if n.Testing.Strategy != testingmodel.StrategyUnit {
+		t.Errorf("expected unit, got %s", n.Testing.Strategy)
+	}
+	if n.Metadata.NEIRVersion != "2.0" {
+		t.Errorf("expected 2.0, got %s", n.Metadata.NEIRVersion)
+	}
+	if n.Generation.OutputDir != "./out" {
+		t.Errorf("expected ./out, got %s", n.Generation.OutputDir)
 	}
 }

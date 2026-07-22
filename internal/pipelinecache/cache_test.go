@@ -234,3 +234,25 @@ func TestCacheSetMaxAgeZero(t *testing.T) {
 		t.Errorf("expected 'reset', got %q", got.Source)
 	}
 }
+
+func TestCacheStats(t *testing.T) {
+	c := New(t.TempDir(), 10)
+	result := &pipeline.Result{Source: "test"}
+	hash := c.HashSpec("project: test")
+	c.Set(hash, result)
+
+	stats := c.Stats()
+	if stats.Size != 1 {
+		t.Errorf("expected size 1, got %d", stats.Size)
+	}
+	if stats.MaxSize != 10 {
+		t.Errorf("expected maxsize 10, got %d", stats.MaxSize)
+	}
+}
+
+func TestCacheDefaultSize(t *testing.T) {
+	c := New(t.TempDir(), 0)
+	if c.maxSize != 100 {
+		t.Errorf("expected default size 100, got %d", c.maxSize)
+	}
+}

@@ -7,9 +7,9 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e0e0e0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #333; }
-        h1 { font-size: 24px; color: #00ff88; }
+        h1 { font-size: 24px; color: #00ff88; cursor: pointer; }
         .status { color: #666; font-size: 14px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
         .card { background: #1a1a1a; border-radius: 12px; padding: 24px; border: 1px solid #333; }
@@ -36,119 +36,297 @@
         .log-warn { color: #ffaa00; }
         .log-error { color: #ff4444; }
         nav { display: flex; gap: 20px; }
-        nav a { color: #666; text-decoration: none; font-size: 14px; }
+        nav a { color: #666; text-decoration: none; font-size: 14px; cursor: pointer; }
         nav a:hover, nav a.active { color: #00ff88; }
+        .page { display: none; }
+        .page.active { display: block; }
+        textarea { width: 100%; min-height: 200px; background: #111; color: #e0e0e0; border: 1px solid #333; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 13px; resize: vertical; }
+        textarea:focus { outline: none; border-color: #00ff88; }
+        .viz-layout { display: flex; gap: 20px; margin-top: 20px; }
+        .viz-tree { flex: 1; background: #111; border-radius: 8px; padding: 16px; overflow: auto; max-height: 600px; }
+        .viz-graph { flex: 1; background: #111; border-radius: 8px; padding: 16px; overflow: auto; max-height: 600px; }
+        .tree-node { margin-left: 20px; }
+        .tree-toggle { cursor: pointer; user-select: none; color: #00ff88; }
+        .tree-toggle::before { content: '▾ '; }
+        .tree-toggle.collapsed::before { content: '▸ '; }
+        .tree-leaf { color: #888; font-size: 13px; }
+        .tree-label { color: #00ff88; font-weight: 600; }
+        .tree-key { color: #66b3ff; }
+        .tree-val { color: #ffaa00; }
+        .graph-svg { width: 100%; min-height: 300px; }
+        .graph-node { fill: #1a1a1a; stroke: #333; stroke-width: 1.5; cursor: pointer; }
+        .graph-node:hover { stroke: #00ff88; }
+        .graph-node.project { fill: #00ff8822; stroke: #00ff88; }
+        .graph-node.module { fill: #66b3ff22; stroke: #66b3ff; }
+        .graph-node.service { fill: #ffaa0022; stroke: #ffaa00; }
+        .graph-label { fill: #e0e0e0; font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+        .graph-edge { stroke: #444; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+        .empty-state { color: #666; text-align: center; padding: 40px; }
+        .sample-select { background: #1a1a1a; color: #e0e0e0; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 14px; margin-bottom: 10px; }
+        .sample-select:focus { outline: none; border-color: #00ff88; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>NAEOS</h1>
+            <h1 onclick="switchPage('dashboard')">NAEOS</h1>
             <nav>
-                <a href="#" class="active">Dashboard</a>
-                <a href="#">Specs</a>
-                <a href="#">Pipeline</a>
-                <a href="#">Artifacts</a>
-                <a href="#">Settings</a>
+                <a class="active" onclick="switchPage('dashboard')">Dashboard</a>
+                <a onclick="switchPage('specs')">Spec Visualizer</a>
+                <a onclick="switchPage('pipeline')">Pipeline</a>
+                <a onclick="switchPage('logs')">Logs</a>
+                <a onclick="switchPage('plugins')">Plugins</a>
+                <a onclick="switchPage('settings')">Settings</a>
             </nav>
-            <span class="status">v0.5.0 | Server Running</span>
+            <span class="status">v1.5.0 | Server Running</span>
         </header>
 
-        <div class="grid">
-            <div class="card">
-                <h2>Projects</h2>
-                <div class="value">1</div>
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page active">
+            <div class="grid">
+                <div class="card"><h2>Projects</h2><div class="value">1</div></div>
+                <div class="card"><h2>Specifications</h2><div class="value">0</div></div>
+                <div class="card"><h2>Artifacts</h2><div class="value">0</div></div>
+                <div class="card"><h2>Pipeline Runs</h2><div class="value">0</div></div>
             </div>
-            <div class="card">
-                <h2>Specifications</h2>
-                <div class="value">0</div>
+
+            <div class="section">
+                <h2>Quick Actions</h2>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="runPipeline()">Run Pipeline</button>
+                    <button class="btn btn-secondary" onclick="validateSpec()">Validate Spec</button>
+                    <button class="btn btn-secondary" onclick="compileSpec()">Compile to AI</button>
+                    <button class="btn btn-secondary" onclick="refreshDashboard()">Refresh</button>
+                </div>
             </div>
-            <div class="card">
-                <h2>Artifacts</h2>
-                <div class="value">0</div>
+
+            <div class="section">
+                <h2>Recent Activity</h2>
+                <div class="log" id="activity-log">
+                    <div class="log-entry">
+                        <span class="log-time">--:--:--</span>
+                        <span class="log-ok">Dashboard loaded</span>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <h2>Pipeline Runs</h2>
-                <div class="value">0</div>
+
+            <div class="section">
+                <h2>System Status</h2>
+                <table>
+                    <thead><tr><th>Component</th><th>Status</th><th>Version</th></tr></thead>
+                    <tbody>
+                        <tr><td>API Server</td><td><span class="badge badge-green">Running</span></td><td>1.5.0</td></tr>
+                        <tr><td>Parser</td><td><span class="badge badge-green">Ready</span></td><td>1.5.0</td></tr>
+                        <tr><td>Compiler</td><td><span class="badge badge-green">Ready</span></td><td>1.5.0</td></tr>
+                        <tr><td>MCP Server</td><td><span class="badge badge-yellow">Stopped</span></td><td>1.5.0</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="section">
-            <h2>Quick Actions</h2>
-            <div class="actions">
-                <button class="btn btn-primary" onclick="runPipeline()">Run Pipeline</button>
-                <button class="btn btn-secondary" onclick="validateSpec()">Validate Spec</button>
-                <button class="btn btn-secondary" onclick="compileSpec()">Compile to AI</button>
-                <button class="btn btn-secondary" onclick="refreshDashboard()">Refresh</button>
+        <!-- Spec Visualizer Page -->
+        <div id="page-specs" class="page">
+            <div class="section">
+                <h2>Spec Visualizer</h2>
+                <select class="sample-select" onchange="loadSampleSpec(this.value)">
+                    <option value="">-- Load Sample Spec --</option>
+                    <option value="microservice">Microservice</option>
+                    <option value="serverless">Serverless</option>
+                    <option value="monolith">Monolith</option>
+                </select>
+                <textarea id="spec-input" placeholder="Paste your NAEOS specification YAML here..."></textarea>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="visualizeSpec()">Visualize</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('spec-input').value='';document.getElementById('viz-output').innerHTML=''">Clear</button>
+                </div>
+                <div id="viz-output"></div>
             </div>
         </div>
 
-        <div class="section">
-            <h2>Recent Activity</h2>
-            <div class="log" id="activity-log">
-                <div class="log-entry">
-                    <span class="log-time">--:--:--</span>
-                    <span class="log-ok">Dashboard loaded</span>
+        <!-- Pipeline Page -->
+        <div id="page-pipeline" class="page">
+            <div class="section">
+                <h2>Pipeline Run History</h2>
+                <div class="actions">
+                    <input type="text" id="pipeline-search" placeholder="Search by project..." oninput="loadPipelineHistory()" style="flex:1;background:#111;color:#e0e0e0;border:1px solid #333;border-radius:8px;padding:10px;font-size:14px;">
+                    <select id="pipeline-status-filter" onchange="loadPipelineHistory()" style="background:#111;color:#e0e0e0;border:1px solid #333;border-radius:8px;padding:10px;font-size:14px;">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="running">Running</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadPipelineHistory()">Refresh</button>
+                </div>
+                <div id="pipeline-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Project</th>
+                                <th>Status</th>
+                                <th>Modules</th>
+                                <th>Services</th>
+                                <th>Target</th>
+                                <th>Duration</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pipeline-table-body">
+                            <tr><td colspan="8" style="text-align:center;color:#666;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="pipeline-pagination" class="actions" style="justify-content:center;margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- Logs Page -->
+        <div id="page-logs" class="page">
+            <div class="section">
+                <h2>Real-Time Logs</h2>
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="clearLogStream()">Clear</button>
+                    <button class="btn btn-secondary" onclick="toggleLogScroll()" id="log-scroll-btn">Auto-Scroll: ON</button>
+                </div>
+                <div id="log-stream" style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;font-family:monospace;font-size:13px;max-height:600px;overflow-y:auto;line-height:1.6;">
+                    <div style="color:#666;">Waiting for log entries...</div>
                 </div>
             </div>
         </div>
 
-        <div class="section">
-            <h2>System Status</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Component</th>
-                        <th>Status</th>
-                        <th>Version</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>API Server</td>
-                        <td><span class="badge badge-green">Running</span></td>
-                        <td>0.5.0</td>
-                    </tr>
-                    <tr>
-                        <td>Parser</td>
-                        <td><span class="badge badge-green">Ready</span></td>
-                        <td>0.5.0</td>
-                    </tr>
-                    <tr>
-                        <td>Compiler</td>
-                        <td><span class="badge badge-green">Ready</span></td>
-                        <td>0.5.0</td>
-                    </tr>
-                    <tr>
-                        <td>MCP Server</td>
-                        <td><span class="badge badge-yellow">Stopped</span></td>
-                        <td>0.5.0</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Plugins Page -->
+        <div id="page-plugins" class="page">
+            <div class="section">
+                <h2>Plugin Management</h2>
+                <div class="actions">
+                    <input type="text" id="plugin-source-input" placeholder="Plugin source (path or URL)..." style="flex:1;background:#111;color:#e0e0e0;border:1px solid #333;border-radius:8px;padding:10px;font-size:14px;">
+                    <button class="btn btn-primary" onclick="installPlugin()">Install</button>
+                    <button class="btn btn-secondary" onclick="loadPlugins()">Refresh</button>
+                </div>
+                <div id="plugin-install-status" style="margin:8px 0;font-size:13px;"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Version</th>
+                            <th>Description</th>
+                            <th>State</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plugin-table-body">
+                        <tr><td colspan="6" style="text-align:center;color:#666;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="page-settings" class="page">
+            <div class="section">
+                <h2>Settings</h2>
+                <div class="empty-state">Settings panel coming soon.</div>
+            </div>
         </div>
     </div>
 
     <script>
-        function addLog(message, type = 'ok') {
+        // ---- Page Navigation ----
+        function switchPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById('page-' + name).classList.add('active');
+            document.querySelector('nav a[onclick*="' + name + '"]').classList.add('active');
+        }
+
+        // ---- Dashboard ----
+        function addLog(message, type) {
             const log = document.getElementById('activity-log');
             const time = new Date().toLocaleTimeString();
             const entry = document.createElement('div');
             entry.className = 'log-entry';
-            entry.innerHTML = '<span class="log-time">' + time + '</span> <span class="log-' + type + '">' + message + '</span>';
+            entry.innerHTML = '<span class="log-time">' + time + '</span> <span class="log-' + (type||'ok') + '">' + message + '</span>';
             log.appendChild(entry);
             log.scrollTop = log.scrollHeight;
         }
+
+        function updateStat(metric, value) {
+            const cards = document.querySelectorAll('#page-dashboard .card .value');
+            const labels = ['Projects', 'Specifications', 'Artifacts', 'Pipeline Runs'];
+            const idx = labels.indexOf(metric);
+            if (idx >= 0 && cards[idx]) cards[idx].textContent = value;
+        }
+
+        let ws = null;
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(protocol + '//' + window.location.host + '/ws');
+            ws.onopen = function() { addLog('Real-time connected', 'ok'); };
+            ws.onmessage = function(event) {
+                try {
+                    const msg = JSON.parse(event.data);
+                    const type = msg.type;
+                    const payload = msg.payload || {};
+                    switch (type) {
+                        case 'pipeline.started':
+                            addLog('Pipeline started: ' + (payload.pipeline_id || ''), 'ok');
+                            updateStat('Pipeline Runs', parseInt(document.querySelectorAll('#page-dashboard .card .value')[3].textContent || '0') + 1);
+                            break;
+                        case 'pipeline.completed':
+                            addLog('Pipeline completed: ' + (payload.duration || ''), 'ok');
+                            break;
+                        case 'pipeline.failed':
+                            addLog('Pipeline failed: ' + (payload.error || ''), 'error');
+                            break;
+                        case 'spec.validated':
+                            addLog('Spec validation: ' + (payload.valid ? 'passed' : 'failed'), payload.valid ? 'ok' : 'warn');
+                            break;
+                        case 'artifact.generated':
+                            addLog('Artifact: ' + (payload.name || ''), 'ok');
+                            updateStat('Artifacts', parseInt(document.querySelectorAll('#page-dashboard .card .value')[2].textContent || '0') + 1);
+                            break;
+                        case 'log':
+                            addLog(payload.message || '', payload.level === 'error' ? 'error' : payload.level === 'warn' ? 'warn' : 'ok');
+                            appendLogStream(payload);
+                            break;
+                        case 'stats_update':
+                            if (payload.projects !== undefined) updateStat('Projects', payload.projects);
+                            if (payload.pipelines !== undefined) updateStat('Pipeline Runs', payload.pipelines);
+                            if (payload.artifacts !== undefined) updateStat('Artifacts', payload.artifacts);
+                            break;
+                        default:
+                            addLog('Event: ' + type, 'ok');
+                    }
+                } catch (e) {}
+            };
+            ws.onclose = function() {
+                addLog('Real-time disconnected, reconnecting...', 'warn');
+                setTimeout(connectWebSocket, 3000);
+            };
+            ws.onerror = function() { addLog('Real-time connection error', 'error'); };
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                if (data.projects !== undefined) updateStat('Projects', data.projects);
+                if (data.pipelines !== undefined) updateStat('Pipeline Runs', data.pipelines);
+                if (data.artifacts !== undefined) updateStat('Artifacts', data.artifacts);
+            } catch (e) {}
+        }
+
+        connectWebSocket();
+        fetchStats();
 
         async function runPipeline() {
             addLog('Starting pipeline...', 'ok');
             try {
                 const res = await fetch('/api/v1/pipeline/run', { method: 'POST' });
                 const data = await res.json();
-                addLog('Pipeline started: ' + data.data.pipeline_id, 'ok');
-            } catch (e) {
-                addLog('Pipeline error: ' + e.message, 'error');
-            }
+                addLog('Pipeline started: ' + (data.data && data.data.pipeline_id ? data.data.pipeline_id : ''), 'ok');
+            } catch (e) { addLog('Pipeline error: ' + e.message, 'error'); }
         }
 
         async function validateSpec() {
@@ -156,10 +334,9 @@
             try {
                 const res = await fetch('/api/v1/specs/validate', { method: 'POST' });
                 const data = await res.json();
-                addLog('Validation complete: ' + (data.data.valid ? 'passed' : 'failed'), data.data.valid ? 'ok' : 'warn');
-            } catch (e) {
-                addLog('Validation error: ' + e.message, 'error');
-            }
+                const passed = data.data && data.data.valid;
+                addLog('Validation complete: ' + (passed ? 'passed' : 'failed'), passed ? 'ok' : 'warn');
+            } catch (e) { addLog('Validation error: ' + e.message, 'error'); }
         }
 
         async function compileSpec() {
@@ -167,15 +344,522 @@
             try {
                 const res = await fetch('/api/v1/specs/compile', { method: 'POST' });
                 const data = await res.json();
-                addLog('Compilation complete: ' + data.data.targets.join(', '), 'ok');
-            } catch (e) {
-                addLog('Compilation error: ' + e.message, 'error');
+                const targets = data.data && data.data.targets ? data.data.targets : [];
+                addLog('Compilation complete: ' + targets.join(', '), 'ok');
+            } catch (e) { addLog('Compilation error: ' + e.message, 'error'); }
+        }
+
+        async function refreshDashboard() { await fetchStats(); addLog('Dashboard refreshed', 'ok'); }
+
+        // ---- Spec Visualizer ----
+        const sampleSpecs = {
+            microservice: `project: my-service
+version: "1.0"
+modules:
+  - name: api-gateway
+    path: ./api-gateway
+    description: API Gateway entry point
+    dependencies: [user-service, order-service]
+  - name: user-service
+    path: ./services/users
+    description: User management
+    dependencies: [database]
+  - name: order-service
+    path: ./services/orders
+    description: Order processing
+    dependencies: [user-service, payment-service]
+  - name: payment-service
+    path: ./services/payments
+    description: Payment processing
+    dependencies: []
+  - name: database
+    path: ./infra/db
+    description: Shared database layer
+services:
+  - name: api-gateway
+    kind: reverse-proxy
+    port: 8080
+    description: HTTP API Gateway
+    endpoints:
+      - method: GET
+        path: /api/users
+        action: forward
+      - method: POST
+        path: /api/orders
+        action: forward
+  - name: user-api
+    kind: rest
+    port: 9001
+    description: User REST API
+    endpoints:
+      - method: GET
+        path: /users
+        action: list
+      - method: POST
+        path: /users
+        action: create
+  - name: order-api
+    kind: rest
+    port: 9002
+    description: Order REST API
+    endpoints:
+      - method: GET
+        path: /orders
+        action: list
+      - method: POST
+        path: /orders
+        action: create
+architecture:
+  pattern: microservices
+  description: Event-driven microservices architecture
+  principles:
+    - loose coupling
+    - eventual consistency
+    - domain-driven design
+deployment:
+  strategy: kubernetes
+  environments: [dev, staging, production]
+testing:
+  strategy: unit+integration+e2e
+  coverage: "80%"
+generation:
+  languages: [go, typescript]
+  output_dir: ./generated
+  module_dir: ./modules`,
+            serverless: `project: serverless-app
+version: "1.0"
+modules:
+  - name: auth
+    path: ./functions/auth
+    description: Authentication
+  - name: api
+    path: ./functions/api
+    description: API handlers
+    dependencies: [auth]
+  - name: processor
+    path: ./functions/processor
+    description: Event processor
+    dependencies: [api]
+services:
+  - name: auth-function
+    kind: lambda
+    description: Auth Lambda
+  - name: api-function
+    kind: lambda
+    port: 0
+    description: API Lambda
+  - name: processor-function
+    kind: lambda
+    description: Event processor Lambda
+architecture:
+  pattern: serverless
+  description: Event-driven serverless architecture
+  principles:
+    - pay-per-use
+    - auto-scaling
+deployment:
+  strategy: serverless-framework
+  environments: [dev, prod]
+generation:
+  languages: [python, typescript]
+  output_dir: ./deploy`,
+            monolith: `project: monolith-app
+version: "1.0"
+modules:
+  - name: core
+    path: ./core
+    description: Core application logic
+  - name: web
+    path: ./web
+    description: Web interface
+    dependencies: [core]
+  - name: database
+    path: ./infra/db
+    description: Database layer
+    dependencies: [core]
+services:
+  - name: web-server
+    kind: http
+    port: 8080
+    description: Monolith web server
+    endpoints:
+      - method: GET
+        path: /health
+        action: health-check
+      - method: GET
+        path: /api/data
+        action: get-data
+      - method: POST
+        path: /api/data
+        action: create-data
+architecture:
+  pattern: monolithic
+  description: Traditional monolithic architecture
+  principles:
+    - simplicity
+    - single-deployment-unit
+deployment:
+  strategy: docker-compose
+  environments: [dev, staging, production]
+testing:
+  strategy: unit+integration
+  coverage: "70%"
+generation:
+  languages: [go]
+  output_dir: ./cmd`
+        };
+
+        function loadSampleSpec(name) {
+            if (name && sampleSpecs[name]) {
+                document.getElementById('spec-input').value = sampleSpecs[name];
+                visualizeSpec();
             }
         }
 
-        async function refreshDashboard() {
-            addLog('Dashboard refreshed', 'ok');
+        async function visualizeSpec() {
+            const spec = document.getElementById('spec-input').value.trim();
+            const output = document.getElementById('viz-output');
+            if (!spec) { output.innerHTML = '<div class="empty-state">Please enter a specification YAML.</div>'; return; }
+            output.innerHTML = '<div class="empty-state">Visualizing...</div>';
+
+            try {
+                const res = await fetch('/api/v1/specs/visualize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spec: spec })
+                });
+                const data = await res.json();
+                if (!data.ok) {
+                    output.innerHTML = '<div class="empty-state" style="color:#ff4444">Error: ' + (data.error || 'visualization failed') + '</div>';
+                    return;
+                }
+                renderViz(data.data.tree, data.data.edges, output);
+            } catch (e) {
+                output.innerHTML = '<div class="empty-state" style="color:#ff4444">Request failed: ' + e.message + '</div>';
+            }
         }
+
+        function renderViz(tree, edges, container) {
+            const html = '<div class="viz-layout">' +
+                '<div class="viz-tree"><h3 style="margin-bottom:12px;color:#666;font-size:12px;text-transform:uppercase;">Spec Tree</h3><div id="tree-root"></div></div>' +
+                '<div class="viz-graph"><h3 style="margin-bottom:12px;color:#666;font-size:12px;text-transform:uppercase;">Dependency Graph</h3><div id="graph-root"></div></div>' +
+                '</div>';
+            container.innerHTML = html;
+
+            renderTree(tree, document.getElementById('tree-root'));
+            renderGraph(tree, edges, document.getElementById('graph-root'));
+        }
+
+        function renderTree(node, el, depth) {
+            depth = depth || 0;
+            if (!node) return;
+
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            div.style.marginLeft = (depth * 20) + 'px';
+
+            const hasChildren = node.children && node.children.length > 0;
+            const icon = hasChildren ? '▾' : '';
+            const label = document.createElement('span');
+            label.className = hasChildren ? 'tree-toggle' : 'tree-leaf';
+            label.style.color = node.type === 'project' ? '#00ff88' :
+                                node.type === 'module' ? '#66b3ff' :
+                                node.type === 'service' ? '#ffaa00' :
+                                node.type === 'group' ? '#888' : '#e0e0e0';
+            label.textContent = icon + ' ' + node.name;
+            if (hasChildren) {
+                label.onclick = function() {
+                    const c = this.nextElementSibling;
+                    if (c) { c.style.display = c.style.display === 'none' ? 'block' : 'none'; }
+                    this.classList.toggle('collapsed');
+                };
+            }
+            div.appendChild(label);
+
+            if (node.props) {
+                const propSpan = document.createElement('span');
+                propSpan.style.color = '#666';
+                propSpan.style.fontSize = '12px';
+                propSpan.style.marginLeft = '8px';
+                const entries = Object.entries(node.props).filter(([k,v]) => v !== '' && v !== null && v !== 0);
+                if (entries.length > 0) {
+                    propSpan.textContent = entries.map(([k,v]) => k + ': ' + v).join(' | ');
+                }
+                div.appendChild(propSpan);
+            }
+
+            if (hasChildren) {
+                const childContainer = document.createElement('div');
+                childContainer.style.marginLeft = '0';
+                node.children.forEach(c => renderTree(c, childContainer, depth + 1));
+                div.appendChild(childContainer);
+            }
+
+            el.appendChild(div);
+        }
+
+        function renderGraph(tree, edges, container) {
+            const nodes = [];
+            function collectNodes(n) {
+                if (!n) return;
+                if (n.type === 'module' || n.type === 'service' || n.type === 'project') {
+                    nodes.push({ name: n.name, type: n.type });
+                }
+                if (n.children) n.children.forEach(collectNodes);
+            }
+            collectNodes(tree);
+
+            if (nodes.length === 0 && edges.length === 0) {
+                container.innerHTML = '<div class="empty-state">No dependencies to visualize.</div>';
+                return;
+            }
+
+            const nodeSet = new Set(nodes.map(n => n.name));
+            edges = edges.filter(e => nodeSet.has(e.from) && nodeSet.has(e.to));
+
+            if (nodes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No modules or services found.</div>';
+                return;
+            }
+
+            const w = container.clientWidth || 500;
+            const h = Math.max(300, nodes.length * 60);
+            const cx = w / 2;
+            const r = Math.min(cx - 60, h / 2 - 40);
+
+            const angleStep = (2 * Math.PI) / nodes.length;
+            const positions = {};
+            nodes.forEach((n, i) => {
+                const angle = angleStep * i - Math.PI / 2;
+                positions[n.name] = {
+                    x: cx + r * Math.cos(angle),
+                    y: h / 2 + r * Math.sin(angle)
+                };
+            });
+
+            let svg = '<svg class="graph-svg" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+            svg += '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#666"/></marker></defs>';
+
+            edges.forEach(e => {
+                const p1 = positions[e.from];
+                const p2 = positions[e.to];
+                if (!p1 || !p2) return;
+                svg += '<line class="graph-edge" x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '"/>';
+            });
+
+            nodes.forEach(n => {
+                const p = positions[n.name];
+                if (!p) return;
+                const cls = 'graph-node ' + n.type;
+                svg += '<circle class="' + cls + '" cx="' + p.x + '" cy="' + p.y + '" r="28"/>';
+                const label = n.name.length > 12 ? n.name.slice(0, 10) + '..' : n.name;
+                svg += '<text class="graph-label" x="' + p.x + '" y="' + p.y + '">' + label + '</text>';
+            });
+
+            svg += '</svg>';
+            container.innerHTML = svg;
+        }
+
+        // ---- Real-Time Log Stream ----
+        let logAutoScroll = true;
+
+        function appendLogStream(payload) {
+            const container = document.getElementById('log-stream');
+            if (!container) return;
+            const time = new Date().toLocaleTimeString();
+            const level = payload.level || 'info';
+            const msg = payload.message || '';
+            const color = level === 'error' ? '#ff4444' : level === 'warn' ? '#ffaa00' : '#00ff88';
+            const entry = document.createElement('div');
+            entry.innerHTML = '<span style="color:#666">[' + time + ']</span> <span style="color:' + color + '">[' + level.toUpperCase() + ']</span> ' + escapeHtml(msg);
+            container.appendChild(entry);
+            if (container.children.length > 500) {
+                container.removeChild(container.firstChild);
+            }
+            if (logAutoScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function clearLogStream() {
+            const container = document.getElementById('log-stream');
+            if (container) container.innerHTML = '';
+        }
+
+        function toggleLogScroll() {
+            logAutoScroll = !logAutoScroll;
+            const btn = document.getElementById('log-scroll-btn');
+            if (btn) btn.textContent = 'Auto-Scroll: ' + (logAutoScroll ? 'ON' : 'OFF');
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // ---- Plugin Management ----
+        async function loadPlugins() {
+            const tbody = document.getElementById('plugin-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">Loading...</td></tr>';
+            try {
+                const res = await fetch('/api/v1/plugins');
+                const data = await res.json();
+                if (!data.ok) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ff4444;">Error: ' + (data.error||'unknown') + '</td></tr>';
+                    return;
+                }
+                const plugins = data.data.plugins || [];
+                if (plugins.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No plugins installed.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                plugins.forEach(function(p) {
+                    const stateClass = p.state === 'running' ? 'badge-green' : p.state === 'error' ? 'badge-red' : 'badge-yellow';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td><strong>' + (p.name||'-') + '</strong></td>' +
+                        '<td>' + (p.version||'-') + '</td>' +
+                        '<td>' + (p.description||'-') + '</td>' +
+                        '<td><span class="badge ' + stateClass + '">' + (p.state||'-') + '</span></td>' +
+                        '<td>' + (p.enabled ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-red">No</span>') + '</td>' +
+                        '<td><button class="btn btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="uninstallPlugin(\'' + (p.name||'') + '\')">Uninstall</button></td>';
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ff4444;">Failed: ' + e.message + '</td></tr>';
+            }
+        }
+
+        async function installPlugin() {
+            const input = document.getElementById('plugin-source-input');
+            const source = input.value.trim();
+            const statusDiv = document.getElementById('plugin-install-status');
+            if (!source) { statusDiv.innerHTML = '<span style="color:#ffaa00;">Please enter a plugin source.</span>'; return; }
+            statusDiv.innerHTML = '<span style="color:#888;">Installing...</span>';
+            try {
+                const name = source.split('/').pop().replace(/\.(so|wasm)$/, '');
+                const res = await fetch('/api/v1/plugins', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name, source: source})
+                });
+                const data = await res.json();
+                if (!data.ok) {
+                    statusDiv.innerHTML = '<span style="color:#ff4444;">Install failed: ' + (data.error||'unknown error') + '</span>';
+                } else {
+                    statusDiv.innerHTML = '<span style="color:#00ff88;">Plugin "' + (data.data.name||name) + '" installed successfully.</span>';
+                    input.value = '';
+                    loadPlugins();
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '<span style="color:#ff4444;">Request failed: ' + e.message + '</span>';
+            }
+        }
+
+        async function uninstallPlugin(name) {
+            if (!confirm('Uninstall plugin "' + name + '"?')) return;
+            try {
+                const res = await fetch('/api/v1/plugins/' + encodeURIComponent(name), { method: 'DELETE' });
+                if (res.status === 204) {
+                    loadPlugins();
+                    const statusDiv = document.getElementById('plugin-install-status');
+                    statusDiv.innerHTML = '<span style="color:#00ff88;">Plugin "' + name + '" uninstalled.</span>';
+                } else {
+                    const data = await res.json();
+                    alert('Uninstall failed: ' + (data.error||'unknown'));
+                }
+            } catch (e) {
+                alert('Request failed: ' + e.message);
+            }
+        }
+
+        // ---- Pipeline History ----
+        let pipelinePage = 0;
+        const pipelineLimit = 15;
+
+        async function loadPipelineHistory() {
+            const search = document.getElementById('pipeline-search').value;
+            const status = document.getElementById('pipeline-status-filter').value;
+            const offset = pipelinePage * pipelineLimit;
+            let url = '/api/v1/pipelines?limit=' + pipelineLimit + '&offset=' + offset;
+            if (status) url += '&status=' + encodeURIComponent(status);
+            if (search) url += '&search=' + encodeURIComponent(search);
+
+            const tbody = document.getElementById('pipeline-table-body');
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#666;">Loading...</td></tr>';
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.ok) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ff4444;">Error: ' + (data.error||'unknown') + '</td></tr>';
+                    return;
+                }
+                const pipelines = data.data.pipelines || [];
+                const total = data.data.total || 0;
+
+                if (pipelines.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#666;">No pipeline runs found.</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    pipelines.forEach(p => {
+                        const statusClass = p.status === 'completed' ? 'badge-green' : p.status === 'running' ? 'badge-yellow' : 'badge-red';
+                        const modNames = p.module_names && p.module_names.length > 0 ? p.module_names.join(', ') : (p.modules || '-');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td style="font-family:monospace;font-size:12px;color:#888;">' + (p.id ? p.id.slice(0, 16) + '..' : '-') + '</td>' +
+                            '<td>' + (p.project || '-') + '</td>' +
+                            '<td><span class="badge ' + statusClass + '">' + (p.status || '-') + '</span></td>' +
+                            '<td>' + modNames + '</td>' +
+                            '<td>' + (p.services || '-') + '</td>' +
+                            '<td>' + (p.target || '-') + '</td>' +
+                            '<td>' + (p.duration || '-') + '</td>' +
+                            '<td style="font-size:12px;color:#888;">' + (p.created_at ? new Date(p.created_at).toLocaleString() : '-') + '</td>';
+                        if (p.error) {
+                            tr.innerHTML += '</tr><tr><td colspan="8" style="color:#ff4444;font-size:12px;padding:4px 12px;">Error: ' + p.error + '</td>';
+                        }
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                const totalPages = Math.max(1, Math.ceil(total / pipelineLimit));
+                const pagDiv = document.getElementById('pipeline-pagination');
+                pagDiv.innerHTML = '';
+                if (totalPages > 1) {
+                    const prevBtn = document.createElement('button');
+                    prevBtn.className = 'btn btn-secondary';
+                    prevBtn.textContent = 'Previous';
+                    prevBtn.disabled = pipelinePage === 0;
+                    prevBtn.onclick = function() { if (pipelinePage > 0) { pipelinePage--; loadPipelineHistory(); } };
+                    pagDiv.appendChild(prevBtn);
+                    const pageSpan = document.createElement('span');
+                    pageSpan.style.cssText = 'color:#666;padding:0 16px;align-self:center;';
+                    pageSpan.textContent = 'Page ' + (pipelinePage + 1) + ' of ' + totalPages;
+                    pagDiv.appendChild(pageSpan);
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'btn btn-secondary';
+                    nextBtn.textContent = 'Next';
+                    nextBtn.disabled = pipelinePage >= totalPages - 1;
+                    nextBtn.onclick = function() { if (pipelinePage < totalPages - 1) { pipelinePage++; loadPipelineHistory(); } };
+                    pagDiv.appendChild(nextBtn);
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ff4444;">Failed to load: ' + e.message + '</td></tr>';
+            }
+        }
+
+        // Load data when tabs are shown
+        const origSwitch = switchPage;
+        switchPage = function(name) {
+            origSwitch(name);
+            if (name === 'pipeline') {
+                pipelinePage = 0;
+                loadPipelineHistory();
+            }
+            if (name === 'plugins') {
+                loadPlugins();
+            }
+        };
     </script>
 </body>
 </html>

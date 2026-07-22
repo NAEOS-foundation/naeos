@@ -5,7 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0] - 2026-07-20
+
+### Added
+- **RBAC bootstrapping** — `SetupDefaultRoles()` (admin/developer/viewer) called on server start with full route permission mapping.
+- **Multi-tenant workspace** — `GET/POST /api/v1/tenants` API endpoints; tenant isolation for pipeline runs and schema registry entries (`TenantID` field filtering).
+- **Schema registry API** — 5 endpoints: `GET/POST /api/v1/schemas`, `GET/DELETE /api/v1/schemas/{name}/{version}`.
+- **5 industry profiles** — edtech-platform, ecommerce-engine, iot-backend, media-streaming, blockchain-node.
+- **Pipeline run file persistence** — runs saved to `~/.naeos/pipelines.json` (configurable via `NAEOS_PIPELINES_FILE` env var).
+- **`$import{}` resolver wired into parser** — modular spec fragments with depth-limiting and caching.
+- **ResultAggregator streaming** — `EnableStreaming()`, `StartStreaming() <-chan`, `Close()` for incremental result consumption.
+- **Rate limit response headers** — `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` on all API responses.
+- **Audit trail file persistence** — dual `multiAuditor` (MemoryAuditor + FileAuditor to `~/.naeos/audit.log`).
+- **Encryption at rest** — UserStore transparent AES-256-GCM encryption via `NAEOS_ENCRYPTION_KEY` env var.
+- **Compliance export CLI** — `naeos compliance export --audit-file` reads persisted audit log, outputs JSON/CSV.
+- **Metrics middleware wired to pipeline adapter** — per-stage latency recording via `MetricsMiddleware.RecordFunc`.
+
+### Changed
+- **`NewParser(baseDir string)`** — new parameter for `$import{}` base directory resolution.
+- **`auth.NewManager(passphrase ...string)`** — optional encryption passphrase for UserStore persistence.
+- **`middleware.Chain`** — added `ExecuteContext(ctx, ...)` to propagate caller context; existing `Execute()` delegates to it.
+
+### Fixed
+- **G304/G305 path traversal** — 7 files hardened with `securityext.ValidateFilePath`/`ValidatePluginName`: `artifacts/store.go`, `specification/parser/resolve_ext.go`, `rollback/rollback.go` (tar symlink), `diff/diff.go`, `pipeline/pipeline.go`, `cloud/state.go`, `eventsourcing/eventsourcing.go`.
+- **Context timeout propagation** — `EnrichSpec`/`GenerateSuggestions`/`ExplainArchitecture` now use `context.WithTimeout(ctx, config.Timeout)` instead of bare `context.Background()`.
+- **Workflow context error collection** — `ExecuteParallelGroup` stores all errors via `errors.Join()` instead of only the first.
+- **Structured logging for error paths** — 10 locations across `jwt.go`, `broker/`, `database/`, `compiler.go` now log with `slog.Error` before returning errors.
+- **Compliance export** — now reads from persisted audit log file instead of creating an empty in-memory auditor.
+- **API test isolation** — pipeline status/pipelines endpoint tests use `t.Setenv("NAEOS_PIPELINES_FILE", ...)` for per-test isolation.
+
+### Security
+- AES-256-GCM encryption for `UserStore` on disk.
+- Path traversal validation for `$include{}`/`$import{}` directives, artifact storage, tar extraction, snapshot restore, and diff file reading.
+- `ValidatePluginName()` on cloud provider/project/streamID identifiers.
+
+## [1.5.0] - 2026-07-19
+
+### Fixed
+- **`TestSecuritySetSecret`** — added missing `--key` flag in test command invocation.
+- **`TestCoordinatorDrain`** — fixed data race between `Drain()` and `workerLoop()` by synchronizing `draining` flag with mutex.
+
+### Production Hardening
+- **Test coverage** — improved coverage for `neir/validator`, `neir/builder`, `internal/diff`, `internal/broker`, `internal/create`.
+- **Race detector** — all packages pass `go test -race ./...` cleanly.
+
+## [1.4.0] - 2026-07-19
+
+### Added
+- **Prompt Library (NES-054)** — centralized YAML-based prompt templates:
+  - `internal/promptlib/` package with template parsing, rendering, and manifest support.
+  - Custom template functions: `join`, `bt` (backtick), `code`, `json`, `yaml`, `title`, `upper`, `lower`, `trim`, `default`, `contains`, `replace`, `split`, `range`, `len`.
+  - 3 builtin LLM prompts: `enrich-spec`, `generate-suggestions`, `explain-architecture`.
+  - 6 builtin compiler adapter templates: copilot, claude, cursor, gemini, codex, opencode.
+  - `prompts/builtin/` directory with 11 YAML reference files and manifest.
+  - Backward compatible: nil library falls back to hardcoded prompts.
+- **`naeos template` CLI** — list and inspect prompt templates:
+  - `naeos template list` — show all registered templates.
+  - `naeos template list --kind prompt-llm` — filter by kind.
+  - `naeos template show <name>` — display template details and rendered output.
+- **AIService ↔ LLMService integration**:
+  - `NewServiceWithLLM(llm)` constructor for AI service with LLM backend.
+  - `Suggest()` tries LLM first, falls back to rule-based analysis.
+  - `Explain()` tries LLM for architecture topics, falls back to built-in knowledge.
+  - CLI auto-wires LLM when `NAEOS_LLM_API_KEY` env var is set.
+  - 5 new tests covering LLM paths and fallbacks.
+- **Observability dashboard real data**:
+  - `/traces` endpoint returns actual span data from `observability.Stack`.
+  - `/logs` endpoint returns actual log entries with level filtering.
+  - `/metrics` endpoint returns collected counters, gauges, and histograms.
+  - Dashboard seeds sample pipeline data on startup.
+- **Workflow Manager persistence**:
+  - `NewManagerWithPath(dir)` constructor with file-based persistence.
+  - Workflows saved to `~/.naeos/workflows/workflows.json`.
+  - `Register()` and `Remove()` auto-save to disk.
+- **Distributed workers** — stage-aware processing:
+  - Each pipeline stage (parse, normalize, resolve, build-neir, validate, schedule, generate, review) has realistic simulated duration.
+  - Workers respect context cancellation.
+
+### Fixed
+- **`internal/version/version_test.go`** — updated hardcoded `"0.9.0"` to `"1.3.1"` to match VERSION file.
+- **`internal/rollback/rollback.go`** — `Import()` now allows `.` root directory entry from tar archives (was rejecting with "invalid path").
+- **`wiki/Compiler.md`** — updated constructor calls to match new signatures with `nil` library parameter.
 ## [1.3.1] - 2026-07-19
 
 ### Fixed

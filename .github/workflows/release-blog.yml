@@ -1,0 +1,87 @@
+name: Release Blog Post
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v2.2.0)'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-blog-post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get release info
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.event.release.tag_name }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          DATE=$(gh release view "$TAG" --json publishedAt -q .publishedAt 2>/dev/null | cut -d'T' -f1 || date +%Y-%m-%d)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          
+          BODY=$(gh release view "$TAG" --json body -q .body 2>/dev/null || echo "Release notes for $TAG")
+          # Write body to file to handle multiline
+          echo "$BODY" > /tmp/release-body.md
+
+      - name: Create blog post
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
+          VERSION="${{ steps.release.outputs.version }}"
+          DATE="${{ steps.release.outputs.date }}"
+          
+          # Create English blog post
+          mkdir -p site/content/blog
+          cat > "site/content/blog/${TAG}-release.md" << BLOGEOF
+---
+title: "NAEOS $VERSION Release"
+date: $DATE
+description: "Release notes for NAEOS $VERSION — new features, improvements, and bug fixes."
+categories: ["release"]
+---
+BLOGEOF
+          
+          cat /tmp/release-body.md >> "site/content/blog/${TAG}-release.md"
+          
+          # Create Indonesian blog post
+          mkdir -p site/content/id/blog
+          cat > "site/content/id/blog/${TAG}-release.md" << BLOGEOF
+---
+title: "Rilis NAEOS $VERSION"
+date: $DATE
+description: "Catatan rilis untuk NAEOS $VERSION — fitur baru, perbaikan, dan perbaikan bug."
+categories: ["release"]
+---
+BLOGEOF
+          
+          cat /tmp/release-body.md >> "site/content/id/blog/${TAG}-release.md"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "blog: add ${{ steps.release.outputs.tag }} release post"
+          title: "Blog: Add ${{ steps.release.outputs.tag }} release post"
+          body: |
+            Auto-generated blog post for the ${{ steps.release.outputs.tag }} release.
+            
+            Changes:
+            - Added English blog post
+            - Added Indonesian blog post
+          branch: blog/${{ steps.release.outputs.tag }}
+          delete-branch: true

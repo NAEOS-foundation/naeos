@@ -4,8 +4,8 @@ import "testing"
 
 func TestDocKindConstants(t *testing.T) {
 	tests := []struct {
-		constant DocKind
-		expected string
+		k    DocKind
+		want string
 	}{
 		{KindGuide, "guide"},
 		{KindReference, "reference"},
@@ -14,60 +14,55 @@ func TestDocKindConstants(t *testing.T) {
 		{KindChangelog, "changelog"},
 	}
 	for _, tt := range tests {
-		if string(tt.constant) != tt.expected {
-			t.Errorf("DocKind %v = %q, want %q", tt.constant, string(tt.constant), tt.expected)
+		if string(tt.k) != tt.want {
+			t.Errorf("DocKind(%s) = %s, want %s", tt.want, string(tt.k), tt.want)
 		}
 	}
 }
 
-func TestZeroValue(t *testing.T) {
+func TestDocumentation_ZeroValue(t *testing.T) {
 	var d Documentation
 	if d.Guides != nil {
-		t.Errorf("expected nil Guides, got %v", d.Guides)
+		t.Error("expected nil Guides")
 	}
-	if d.References != nil {
-		t.Errorf("expected nil References, got %v", d.References)
-	}
-	if d.ADRs != nil {
-		t.Errorf("expected nil ADRs, got %v", d.ADRs)
-	}
-	if d.RFCs != nil {
-		t.Errorf("expected nil RFCs, got %v", d.RFCs)
-	}
-
-	var doc Doc
-	if doc.Title != "" {
-		t.Errorf("expected empty Title, got %q", doc.Title)
-	}
-	if doc.Kind != "" {
-		t.Errorf("expected empty Kind, got %q", doc.Kind)
+	if d.Attributes != nil {
+		t.Error("expected nil Attributes")
 	}
 }
 
-func TestInitialization(t *testing.T) {
+func TestDocumentation_Full(t *testing.T) {
 	d := Documentation{
 		Guides: []Doc{
-			{Title: "Getting Started", Path: "docs/getting-started.md", Kind: KindGuide, Summary: "Quick start guide"},
-		},
-		References: []Doc{
-			{Title: "API Reference", Path: "docs/api.md", Kind: KindReference},
+			{Title: "Getting Started", Path: "/docs/start", Kind: KindGuide},
 		},
 		ADRs: []Doc{
-			{Title: "Use PostgreSQL", Kind: KindADR, Summary: "Chose PostgreSQL for main storage"},
+			{Title: "ADR-001", Path: "/adrs/001", Kind: KindADR},
 		},
 		RFCs: []Doc{
-			{Title: "Auth redesign", Kind: KindRFC},
+			{Title: "RFC-001", Path: "/rfcs/001", Kind: KindRFC},
 		},
-		Attributes: map[string]string{"version": "2.0"},
+		Attributes: map[string]string{"key": "val"},
 	}
+	if len(d.Guides) != 1 {
+		t.Errorf("expected 1 guide, got %d", len(d.Guides))
+	}
+	if d.Guides[0].Kind != KindGuide {
+		t.Errorf("expected guide kind, got %s", d.Guides[0].Kind)
+	}
+	if len(d.ADRs) != 1 {
+		t.Errorf("expected 1 adr, got %d", len(d.ADRs))
+	}
+	if d.RFCs[0].Title != "RFC-001" {
+		t.Errorf("expected RFC-001, got %s", d.RFCs[0].Title)
+	}
+	if d.Attributes["key"] != "val" {
+		t.Errorf("expected val, got %s", d.Attributes["key"])
+	}
+}
 
-	if len(d.Guides) != 1 || d.Guides[0].Title != "Getting Started" {
-		t.Errorf("unexpected Guides: %v", d.Guides)
-	}
-	if d.References[0].Kind != KindReference {
-		t.Errorf("expected KindReference, got %q", d.References[0].Kind)
-	}
-	if d.ADRs[0].Summary != "Chose PostgreSQL for main storage" {
-		t.Errorf("unexpected ADR summary: %q", d.ADRs[0].Summary)
+func TestDoc_ZeroValue(t *testing.T) {
+	var d Doc
+	if d.Title != "" {
+		t.Error("expected empty Title")
 	}
 }

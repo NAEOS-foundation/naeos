@@ -329,6 +329,43 @@ func (s *Sanitizer) SanitizeAll(input string) string {
 	return result
 }
 
+// ValidateFilePath checks that path stays within allowedBase.
+// Returns the cleaned absolute path if valid, or an error if traversal is detected.
+func ValidateFilePath(path, allowedBase string) (string, error) {
+	cleanPath := filepath.Clean(path)
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return "", fmt.Errorf("resolve path: %w", err)
+	}
+	absBase, err := filepath.Abs(allowedBase)
+	if err != nil {
+		return "", fmt.Errorf("resolve base: %w", err)
+	}
+	if !strings.HasPrefix(absPath, absBase+string(os.PathSeparator)) && absPath != absBase {
+		return "", fmt.Errorf("path traversal detected: %s", path)
+	}
+	return absPath, nil
+}
+
+// ValidatePluginName checks that a name is safe to use as a filesystem directory name.
+// It rejects empty names, names with path separators or relative components.
+func ValidatePluginName(name string) error {
+	if name == "" {
+		return fmt.Errorf("name must not be empty")
+	}
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return fmt.Errorf("name must not contain path separators")
+	}
+	if strings.Contains(name, "..") {
+		return fmt.Errorf("name must not contain relative path components")
+	}
+	clean := filepath.Clean(name)
+	if clean != name {
+		return fmt.Errorf("name must be a simple name without path components")
+	}
+	return nil
+}
+
 // Hash
 
 func HashPassword(password string) (string, error) {
@@ -423,6 +460,61 @@ func MaxLengthRule(max int) func(string) error {
 		}
 		return nil
 	}
+}
+
+// EncryptConfig encrypts raw config bytes using AES-256-GCM with the given passphrase.
+// Returns base64-encoded ciphertext.
+func EncryptConfig(plaintext []byte, passphrase string) (string, error) {
+	key := sha256.Sum256([]byte(passphrase))
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return "", err
+	}
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	ciphertext := aesGCM.Seal(nonce, nonce, plaintext, nil)
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+// DecryptConfig decrypts base64-encoded ciphertext using AES-256-GCM with the given passphrase.
+func DecryptConfig(encrypted string, passphrase string) ([]byte, error) {
+	data, err := base64.StdEncoding.DecodeString(encrypted)
+	if err != nil {
+		return nil, err
+	}
+
+	key := sha256.Sum256([]byte(passphrase))
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonceSize := aesGCM.NonceSize()
+	if len(data) < nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return plaintext, nil
 }
 
 func PatternRule(pattern string) func(string) error {

@@ -3,7 +3,10 @@ package diff
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 type ChangeType string
@@ -208,7 +211,10 @@ func ComputeDirectoryDiff(oldDir, newDir string, paths []string) []*FileDiff {
 }
 
 func readFileIfExists(dir, path string) string {
-	fullPath := fmt.Sprintf("%s/%s", strings.TrimRight(dir, "/"), strings.TrimLeft(path, "/"))
+	fullPath, err := securityext.ValidateFilePath(filepath.Join(dir, path), dir)
+	if err != nil {
+		return ""
+	}
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return ""

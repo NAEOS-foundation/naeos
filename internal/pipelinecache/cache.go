@@ -156,6 +156,38 @@ func (c *Cache) loadFromDisk() {
 	}
 }
 
+type CacheStats struct {
+	Size    int            `json:"size"`
+	MaxSize int            `json:"max_size"`
+	MaxAge  time.Duration  `json:"max_age"`
+	Entries []CacheSummary `json:"entries,omitempty"`
+}
+
+type CacheSummary struct {
+	Key      string `json:"key"`
+	HitCount int    `json:"hit_count"`
+	Age      string `json:"age"`
+}
+
+func (c *Cache) Stats() CacheStats {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	var entries []CacheSummary
+	for key, entry := range c.entries {
+		entries = append(entries, CacheSummary{
+			Key:      key,
+			HitCount: entry.HitCount,
+			Age:      time.Since(entry.Timestamp).Round(time.Second).String(),
+		})
+	}
+	return CacheStats{
+		Size:    len(c.entries),
+		MaxSize: c.maxSize,
+		MaxAge:  c.maxAge,
+		Entries: entries,
+	}
+}
+
 func (c *Cache) saveToDisk(key string) {
 	if c.dir == "" {
 		return

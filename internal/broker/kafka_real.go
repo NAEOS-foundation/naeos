@@ -1,14 +1,19 @@
+//go:build !nobroker
+
 package broker
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/compress"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealKafka struct {
@@ -16,10 +21,14 @@ type RealKafka struct {
 	writer *kafka.Writer
 	config *Config
 	mu     sync.RWMutex
+	subCtx map[string]context.CancelFunc
+	subMu  sync.Mutex
 }
 
 func NewRealKafka() *RealKafka {
-	return &RealKafka{}
+	return &RealKafka{
+		subCtx: make(map[string]context.CancelFunc),
+	}
 }
 
 func (k *RealKafka) Name() string {
@@ -30,6 +39,7 @@ func (k *RealKafka) Connect(config *Config) error {
 	k.config = config
 	broker := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
+	slog.Info("kafka connected", "host", config.Host, "port", config.Port)
 	k.writer = &kafka.Writer{
 		Addr:         kafka.TCP(broker),
 		Balancer:     &kafka.LeastBytes{},
@@ -62,14 +72,14 @@ func (k *RealKafka) Close() error {
 
 func (k *RealKafka) Ping() error {
 	if k.writer == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (k *RealKafka) Publish(channel string, msg *Message) error {
 	if k.writer == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	data := msg.Payload
@@ -77,7 +87,14 @@ func (k *RealKafka) Publish(channel string, msg *Message) error {
 		data = []byte{}
 	}
 
-	return k.writer.WriteMessages(context.Background(),
+	timeout := 30 * time.Second
+	if k.config != nil && k.config.Timeout > 0 {
+		timeout = k.config.Timeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	return k.writer.WriteMessages(ctx,
 		kafka.Message{
 			Key:   []byte(channel),
 			Value: data,
@@ -88,10 +105,19 @@ func (k *RealKafka) Publish(channel string, msg *Message) error {
 
 func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
 	if k.config == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	broker := fmt.Sprintf("%s:%d", k.config.Host, k.config.Port)
+
+	k.subMu.Lock()
+	if _, ok := k.subCtx[channel]; ok {
+		k.subMu.Unlock()
+		return fmt.Errorf("already subscribed to %s", channel)
+	}
+	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec // cancel stored in subCtx, called by Unsubscribe
+	k.subCtx[channel] = cancel
+	k.subMu.Unlock()
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{broker},
@@ -101,10 +127,11 @@ func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
 	})
 
 	go func() {
+		defer reader.Close()
 		for {
-			m, err := reader.ReadMessage(context.Background())
+			m, err := reader.ReadMessage(ctx)
 			if err != nil {
-				if strings.Contains(err.Error(), "reader is closed") {
+				if strings.Contains(err.Error(), "reader is closed") || ctx.Err() != nil {
 					return
 				}
 				continue
@@ -123,5 +150,14 @@ func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
 }
 
 func (k *RealKafka) Unsubscribe(channel string) error {
+	k.subMu.Lock()
+	cancel, ok := k.subCtx[channel]
+	if ok {
+		delete(k.subCtx, channel)
+	}
+	k.subMu.Unlock()
+	if ok {
+		cancel()
+	}
 	return nil
 }

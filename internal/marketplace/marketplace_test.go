@@ -1,6 +1,7 @@
 package marketplace
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -264,7 +265,7 @@ func TestFetchPluginNotFound(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
 	_, err := rr.List()
 	if err == nil {
 		t.Fatal("expected error for 404 response")
@@ -283,7 +284,7 @@ func TestFetchPluginTimeout(t *testing.T) {
 	defer srv.Close()
 
 	rr := &RemoteRegistry{
-		baseURL:    srv.URL,
+		baseURL:    srv.URL + "/plugins",
 		installDir: t.TempDir(),
 		httpClient: &http.Client{Timeout: 50 * time.Millisecond},
 	}
@@ -300,7 +301,7 @@ func TestFetchPluginInvalidJSON(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
 	_, err := rr.List()
 	if err == nil {
 		t.Fatal("expected error for invalid JSON response")
@@ -317,12 +318,197 @@ func TestSearchPluginsEmpty(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	rr := NewRemoteRegistry(srv.URL, t.TempDir())
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
 	results, err := rr.Search("")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(results) != 0 {
 		t.Errorf("expected empty results, got %d", len(results))
+	}
+}
+
+func TestContainsSubstr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		s, substr string
+		want      bool
+	}{
+		{"hello", "ell", true},
+		{"hello", "xyz", false},
+		{"a", "a", true},
+		{"", "", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.s+"_"+tt.substr, func(t *testing.T) {
+			t.Parallel()
+			if got := containsSubstr(tt.s, tt.substr); got != tt.want {
+				t.Errorf("containsSubstr(%q, %q) = %v, want %v", tt.s, tt.substr, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSearchWithQueryInDescription(t *testing.T) {
+	t.Parallel()
+
+	cacheDir := t.TempDir()
+	data := []byte(`[
+	  {"name": "alpha", "version": "1.0.0", "description": "Go HTTP API", "tags": ["web"]}
+]`)
+	os.WriteFile(filepath.Join(cacheDir, "registry.json"), data, 0o644)
+
+	client := NewClient(cacheDir)
+	results, err := client.Search(SearchFilter{Query: "HTTP"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result, got %d", len(results))
+	}
+}
+
+func TestSearchWithQueryInTag(t *testing.T) {
+	t.Parallel()
+
+	cacheDir := t.TempDir()
+	data := []byte(`[
+	  {"name": "beta", "version": "1.0.0", "description": "Service", "tags": ["grpc", "go"]}
+]`)
+	os.WriteFile(filepath.Join(cacheDir, "registry.json"), data, 0o644)
+
+	client := NewClient(cacheDir)
+	results, err := client.Search(SearchFilter{Query: "grpc"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 result, got %d", len(results))
+	}
+}
+
+func TestGetWithCorruptedCache(t *testing.T) {
+	t.Parallel()
+
+	cacheDir := t.TempDir()
+	os.WriteFile(filepath.Join(cacheDir, "registry.json"), []byte("bad json"), 0o644)
+
+	client := NewClient(cacheDir)
+	_, err := client.Get("test")
+	if err == nil {
+		t.Fatal("expected error for corrupted cache")
+	}
+}
+
+func TestPublishWithCorruptedCache(t *testing.T) {
+	t.Parallel()
+
+	cacheDir := t.TempDir()
+	os.WriteFile(filepath.Join(cacheDir, "registry.json"), []byte("bad json"), 0o644)
+
+	client := NewClient(cacheDir)
+	err := client.Publish(RegistryEntry{Name: "test", Version: "1.0.0"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	entry, err := client.Get("test")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if entry.Name != "test" {
+		t.Errorf("expected 'test', got %q", entry.Name)
+	}
+}
+
+func TestFetchPluginNonOKStatus(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(`{"error":"forbidden"}`))
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
+	_, err := rr.List()
+	if err == nil {
+		t.Fatal("expected error for 403 response")
+	}
+	if !strings.Contains(err.Error(), "403") {
+		t.Errorf("expected 403 in error, got: %v", err)
+	}
+}
+
+func TestNewRemoteRegistryDefaultURL(t *testing.T) {
+	t.Parallel()
+
+	rr := NewRemoteRegistry("", t.TempDir())
+	if rr.baseURL != DefaultRegistryURL {
+		t.Errorf("expected default URL, got %q", rr.baseURL)
+	}
+}
+
+func TestRemoteRegistryInstallNotFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(RemotePluginList{Plugins: []RemotePlugin{}})
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
+	_, err := rr.Install("nonexistent", "")
+	if err == nil {
+		t.Fatal("expected error for nonexistent plugin")
+	}
+}
+
+func TestRemoteRegistryInstallWrongVersion(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(RemotePluginList{
+			Plugins: []RemotePlugin{
+				{Name: "test", Version: "1.0.0", Platform: "linux/amd64"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	rr := NewRemoteRegistry(srv.URL+"/plugins", t.TempDir())
+	_, err := rr.Install("test", "2.0.0")
+	if err == nil {
+		t.Fatal("expected error for wrong version")
+	}
+}
+
+func TestRemoteRegistryInstalledEmptyDir(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	rr := NewRemoteRegistry("http://unused", dir)
+	plugins, err := rr.Installed()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(plugins) != 0 {
+		t.Errorf("expected 0 installed, got %d", len(plugins))
+	}
+}
+
+func TestRemoteRegistryInstalledNonExistentDir(t *testing.T) {
+	t.Parallel()
+
+	rr := NewRemoteRegistry("http://unused", "/nonexistent/dir")
+	plugins, err := rr.Installed()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(plugins) != 0 {
+		t.Errorf("expected 0 installed, got %d", len(plugins))
 	}
 }

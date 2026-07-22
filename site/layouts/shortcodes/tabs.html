@@ -1,0 +1,10 @@
+{{- $id := .Get "id" | default (printf "tabs-%d" .Ordinal) -}}
+<div class="tab-container" data-tabs-id="{{ $id }}">
+    <div class="tab-list" role="tablist">
+        {{- range $i, $name := split (.Get "names") "," -}}
+        {{- $name = trim $name " " -}}
+        <button class="tab-item{{ if eq $i 0 }} active{{ end }}" role="tab" data-tab="{{ $id }}-{{ $i }}" onclick="switchTab(this, '{{ $id }}-{{ $i }}')">{{ $name }}</button>
+        {{- end -}}
+    </div>
+    {{- .Inner -}}
+</div>

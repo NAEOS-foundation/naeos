@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -125,25 +126,29 @@ func (b *BaseDatabase) close() {
 	b.connected = false
 }
 
+func (b *BaseDatabase) notConnectedError() error {
+	return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+}
+
 func (b *BaseDatabase) ping() error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	return nil
 }
 
 func (b *BaseDatabase) exec(_ string, _ ...any) (Result, error) {
 	if !b.connected {
-		return Result{}, fmt.Errorf("not connected")
+		return Result{}, b.notConnectedError()
 	}
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	return Result{RowsAffected: 1}, nil
 }
 
 func (b *BaseDatabase) query(_ string, _ ...any) ([]Row, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -152,24 +157,24 @@ func (b *BaseDatabase) query(_ string, _ ...any) ([]Row, error) {
 
 func (b *BaseDatabase) queryRow(_ string, _ ...any) (Row, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	return Row{}, nil
 }
 
 func (b *BaseDatabase) begin() (Transaction, error) {
 	if !b.connected {
-		return nil, fmt.Errorf("not connected")
+		return nil, b.notConnectedError()
 	}
 	b.mu.Lock()
+	defer b.mu.Unlock()
 	b.txInProgress = true
-	b.mu.Unlock()
 	return &BaseTransaction{db: b}, nil
 }
 
 func (b *BaseDatabase) migrate(migrations []Migration) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -184,7 +189,7 @@ func (b *BaseDatabase) migrate(migrations []Migration) error {
 
 func (b *BaseDatabase) rollback(version int) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return b.notConnectedError()
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -473,6 +478,7 @@ func (m *Manager) ConnectAll(configs map[string]*Config) error {
 			continue
 		}
 		if err := db.Connect(config); err != nil {
+			slog.Error("database connect failed", "name", name, "error", err)
 			return fmt.Errorf("failed to connect to %s: %w", name, err)
 		}
 	}
@@ -485,6 +491,7 @@ func (m *Manager) CloseAll() error {
 
 	for name, db := range m.databases {
 		if err := db.Close(); err != nil {
+			slog.Error("database close failed", "name", name, "error", err)
 			return fmt.Errorf("failed to close %s: %w", name, err)
 		}
 	}
@@ -528,39 +535,4 @@ func (p *Pool) Put(conn Database) {
 
 func (p *Pool) Size() int {
 	return len(p.conns)
-}
-
-// Factory
-
-func New(driver string) Database {
-	switch driver {
-	case "postgresql", "postgres":
-		return NewRealPostgreSQL()
-	case "mysql":
-		return NewRealMySQL()
-	case "sqlite":
-		return NewRealSQLite()
-	case "mock-postgresql":
-		return NewPostgreSQL()
-	case "mock-mysql":
-		return NewMySQL()
-	case "mock-sqlite":
-		return NewSQLite()
-	default:
-		return nil
-	}
-}
-
-func NewFromConfig(driver string, config *Config) (Database, error) {
-	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-	db := New(driver)
-	if db == nil {
-		return nil, fmt.Errorf("unsupported driver: %s", driver)
-	}
-	if err := db.Connect(config); err != nil {
-		return nil, fmt.Errorf("connect: %w", err)
-	}
-	return db, nil
 }

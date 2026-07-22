@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 type Snapshot struct {
@@ -155,6 +157,9 @@ func (s *SnapshotStore) List() ([]Snapshot, error) {
 }
 
 func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
+	if err := validateSnapshotID(snapshotID); err != nil {
+		return err
+	}
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	info, err := os.Stat(snapDir)
 	if err != nil {
@@ -243,6 +248,9 @@ func (s *SnapshotStore) verifyIntegrity(dir string, manifest *Manifest) error {
 }
 
 func (s *SnapshotStore) Delete(snapshotID string) error {
+	if err := validateSnapshotID(snapshotID); err != nil {
+		return err
+	}
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	if _, err := os.Stat(snapDir); os.IsNotExist(err) {
 		return fmt.Errorf("snapshot %s not found", snapshotID)
@@ -268,6 +276,9 @@ func (s *SnapshotStore) Latest() (*Snapshot, error) {
 }
 
 func (s *SnapshotStore) Export(snapshotID, destPath string) error {
+	if err := validateSnapshotID(snapshotID); err != nil {
+		return err
+	}
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	if _, err := os.Stat(snapDir); os.IsNotExist(err) {
 		return fmt.Errorf("snapshot %s not found", snapshotID)
@@ -343,9 +354,16 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 			return nil, err
 		}
 
-		target := filepath.Join(snapDir, header.Name) //nolint:gosec // G305: path traversal validated on next line
-		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(snapDir)+string(os.PathSeparator)) {
+		target, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Name), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
+		if err != nil {
 			return nil, fmt.Errorf("invalid path in archive: %s", header.Name)
+		}
+		if header.Typeflag == tar.TypeSymlink || header.Typeflag == tar.TypeLink {
+			linkTarget, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Linkname), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
+			if err != nil {
+				return nil, fmt.Errorf("symlink target escapes snapshot directory: %s", header.Linkname)
+			}
+			_ = linkTarget
 		}
 		if header.FileInfo().IsDir() {
 			if err := os.MkdirAll(target, 0o755); err != nil {
@@ -382,4 +400,17 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 	}
 
 	return snap, nil
+}
+
+func validateSnapshotID(id string) error {
+	if id == "" {
+		return fmt.Errorf("snapshot ID must not be empty")
+	}
+	if strings.Contains(id, "/") || strings.Contains(id, "\\") {
+		return fmt.Errorf("snapshot ID must not contain path separators")
+	}
+	if strings.Contains(id, "..") {
+		return fmt.Errorf("snapshot ID must not contain relative path components")
+	}
+	return nil
 }

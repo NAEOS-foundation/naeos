@@ -21,6 +21,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/planner/graph"
 	"github.com/NAEOS-foundation/naeos/internal/planner/scheduler"
 	"github.com/NAEOS-foundation/naeos/internal/registry"
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 	"github.com/NAEOS-foundation/naeos/internal/specification/normalizer"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
@@ -102,6 +103,7 @@ type Pipeline struct {
 	parallel       bool
 	hooks          *Hooks
 	cache          ParseCache
+	observer       PipelineObserver
 }
 
 type PipelineObserver interface {
@@ -170,7 +172,7 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	}
 
 	if p.parser == nil {
-		p.parser = parser.NewParser()
+		p.parser = parser.NewParser(".")
 	}
 	if p.normalizer == nil {
 		p.normalizer = normalizer.NewNormalizer()
@@ -209,6 +211,7 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		p.kernel = kernel.NewKernel()
 	}
 	p.cache = cfg.Cache
+	p.observer = cfg.Observer
 	if err := p.registerKernelServices(); err != nil {
 		return nil, err
 	}
@@ -461,82 +464,6 @@ func (p *Pipeline) normalizeParallel(parsed *parser.SpecDocument) (*normalizer.N
 	return p.normalizer.Normalize(parsed)
 }
 
-func normalizeServicesFromSpec(parsed *parser.SpecDocument) []map[string]any {
-	result := make([]map[string]any, 0, len(parsed.Services))
-	for _, s := range parsed.Services {
-		entry := map[string]any{
-			"name": s.Name,
-			"kind": s.Kind,
-			"port": s.Port,
-		}
-		if s.Description != "" {
-			entry["description"] = s.Description
-		}
-		if len(s.Endpoints) > 0 {
-			eps := make([]map[string]any, 0, len(s.Endpoints))
-			for _, ep := range s.Endpoints {
-				eps = append(eps, map[string]any{
-					"method": ep.Method,
-					"path":   ep.Path,
-					"action": ep.Action,
-				})
-			}
-			entry["endpoints"] = eps
-		}
-		result = append(result, entry)
-	}
-	return result
-}
-
-func normalizeArchitectureFromSpec(arch *parser.Architecture) map[string]any {
-	result := map[string]any{
-		"pattern":     arch.Pattern,
-		"description": arch.Description,
-	}
-	if len(arch.Principles) > 0 {
-		result["principles"] = arch.Principles
-	}
-	return result
-}
-
-func normalizeDeploymentFromSpec(deploy *parser.Deployment) map[string]any {
-	result := map[string]any{
-		"strategy": deploy.Strategy,
-	}
-	if len(deploy.Environments) > 0 {
-		envs := make([]map[string]any, 0, len(deploy.Environments))
-		for _, env := range deploy.Environments {
-			envs = append(envs, map[string]any{"name": env})
-		}
-		result["environments"] = envs
-	}
-	return result
-}
-
-func normalizeGenerationFromSpec(gen *parser.Generation) map[string]any {
-	result := map[string]any{}
-	if len(gen.Languages) > 0 {
-		result["languages"] = gen.Languages
-	}
-	if gen.OutputDir != "" {
-		result["output_dir"] = gen.OutputDir
-	}
-	if gen.ModuleDir != "" {
-		result["module_dir"] = gen.ModuleDir
-	}
-	return result
-}
-
-func normalizeTestingFromSpec(test *parser.Testing) map[string]any {
-	result := map[string]any{
-		"strategy": test.Strategy,
-	}
-	if test.Coverage != "" {
-		result["coverage"] = test.Coverage
-	}
-	return result
-}
-
 func (p *Pipeline) Validate(input string) (*Result, error) {
 	return p.ValidateContext(context.Background(), input)
 }
@@ -555,7 +482,13 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 }
 
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
-	return p.executeWithKernel(func() (*Result, error) {
+	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
+	if p.observer != nil {
+		p.observer.OnPipelineStart(pipelineID)
+	}
+
+	startTime := time.Now()
+	result, err := p.executeWithKernel(func() (*Result, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf("context canceled: %w", err)
 		}
@@ -626,6 +559,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if outputDir := p.outputDirValue; outputDir != "" && !p.dryRun {
 			p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
 			for _, artifact := range artifacts {
+				if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
+					return nil, fmt.Errorf("invalid artifact path: %w", err)
+				}
 				artifactPath := filepath.Join(outputDir, artifact.Path)
 				if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
 					return nil, fmt.Errorf("create artifact dir: %w", err)
@@ -655,6 +591,17 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 		return result, nil
 	})
+	if err != nil && p.observer != nil {
+		p.observer.OnPipelineFailed(pipelineID, err.Error())
+	} else if err == nil && p.observer != nil {
+		duration := time.Since(startTime).Round(time.Millisecond).String()
+		artifactCount := 0
+		if result != nil {
+			artifactCount = len(result.Artifacts)
+		}
+		p.observer.OnPipelineComplete(pipelineID, artifactCount, duration)
+	}
+	return result, err
 }
 
 func (p *Pipeline) getHookFuncs() *Hooks {

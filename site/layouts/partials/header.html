@@ -1,0 +1,69 @@
+<header class="site-header" role="banner">
+    <div class="container header-inner">
+        <a href="{{ .Site.Home.RelPermalink }}" class="logo" aria-label="NAEOS Home">
+            <img class="logo-icon" src="{{ "images/Logo.png" | relURL }}" width="32" height="32" alt="" aria-hidden="true">
+            <span class="logo-text">NAEOS</span>
+        </a>
+        <nav class="site-nav" role="navigation" aria-label="Main navigation">
+            <a href="{{ "features/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/features/") }} aria-current="page"{{ end }}>{{ i18n "nav_features" }}</a>
+            <div class="nav-dropdown">
+                <a href="{{ "docs/" | relLangURL }}" class="nav-link"{{ if hasPrefix .RelPermalink (relLangURL "/docs/") }} aria-current="page"{{ end }}>
+                    {{ i18n "nav_docs" }}
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-left:2px;vertical-align:middle;"><path d="M1 1l4 4 4-4"/></svg>
+                </a>
+                <div class="nav-dropdown-content">
+                    <a href="{{ "docs/getting-started/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "footer_getting_started" }}</a>
+                    <a href="{{ "docs/installation/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "footer_installation" }}</a>
+                    <a href="{{ "docs/architecture/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "footer_architecture" }}</a>
+                    <a href="{{ "docs/cli-reference/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "footer_cli_reference" }}</a>
+                    <a href="{{ "docs/spec-language/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "nav_spec_language" | default "Spec Language" }}</a>
+                    <a href="{{ "docs/ai-compiler/" | relLangURL }}" class="nav-dropdown-link">{{ i18n "nav_ai_compiler" | default "AI Compiler" }}</a>
+                </div>
+            </div>
+            <a href="{{ "blog/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/blog/") }} aria-current="page"{{ end }}>{{ i18n "nav_blog" }}</a>
+            <a href="{{ "plugins/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/plugins/") }} aria-current="page"{{ end }}>{{ i18n "nav_plugins" | default "Plugins" }}</a>
+            <a href="{{ "templates/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/templates/") }} aria-current="page"{{ end }}>Templates</a>
+            <a href="{{ "schemaregistry/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/schemaregistry/") }} aria-current="page"{{ end }}>Schema Registry</a>
+            <a href="{{ "download/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/download/") }} aria-current="page"{{ end }}>{{ i18n "nav_download" }}</a>
+            <a href="{{ "community/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/community/") }} aria-current="page"{{ end }}>{{ i18n "nav_community" }}</a>
+        </nav>
+        <div class="header-actions">
+            <button class="search-toggle" onclick="openSearch()" aria-label="{{ i18n "nav_search" }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="{{ i18n "toggle_theme" }}">
+                <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <div class="lang-switcher">
+                {{ $siteLang := site.Language.Lang }}
+                {{ if eq $siteLang "en" }}<a href="/" class="lang-link active" aria-label="English">EN</a><a href="/id/" class="lang-link" aria-label="Bahasa Indonesia">ID</a>{{ end }}
+                {{ if eq $siteLang "id" }}<a href="/" class="lang-link" aria-label="English">EN</a><a href="/id/" class="lang-link active" aria-label="Bahasa Indonesia">ID</a>{{ end }}
+            </div>
+            <a href="{{ "download/" | relLangURL }}" class="btn btn-primary btn-sm header-cta">{{ i18n "cta_get_started" }}</a>
+            <button class="mobile-menu-btn" aria-label="{{ i18n "toggle_menu" | default "Toggle menu" }}" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+        <a href="{{ "features/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/features/") }} aria-current="page"{{ end }}>{{ i18n "nav_features" }}</a>
+        <a href="{{ "docs/" | relLangURL }}" class="nav-link"{{ if hasPrefix .RelPermalink (relLangURL "/docs/") }} aria-current="page"{{ end }}>{{ i18n "nav_docs" }}</a>
+        <a href="{{ "docs/getting-started/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_getting_started" }}</a>
+        <a href="{{ "docs/installation/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_installation" }}</a>
+        <a href="{{ "docs/architecture/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_architecture" }}</a>
+        <a href="{{ "docs/cli-reference/" | relLangURL }}" class="nav-link" style="padding-left:2rem;font-size:var(--font-size-sm);">{{ i18n "footer_cli_reference" }}</a>
+        <a href="{{ "blog/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/blog/") }} aria-current="page"{{ end }}>{{ i18n "nav_blog" }}</a>
+        <a href="{{ "plugins/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/plugins/") }} aria-current="page"{{ end }}>{{ i18n "nav_plugins" | default "Plugins" }}</a>
+        <a href="{{ "download/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/download/") }} aria-current="page"{{ end }}>{{ i18n "nav_download" }}</a>
+        <a href="{{ "community/" | relLangURL }}" class="nav-link"{{ if eq .RelPermalink (relLangURL "/community/") }} aria-current="page"{{ end }}>{{ i18n "nav_community" }}</a>
+        <div class="lang-switcher mobile" style="padding:0.75rem 1rem;">
+            {{ if eq $siteLang "en" }}<a href="/" class="lang-link active" aria-label="English">EN</a><a href="/id/" class="lang-link" aria-label="Bahasa Indonesia">ID</a>{{ end }}
+            {{ if eq $siteLang "id" }}<a href="/" class="lang-link" aria-label="English">EN</a><a href="/id/" class="lang-link active" aria-label="Bahasa Indonesia">ID</a>{{ end }}
+        </div>
+        <div class="mobile-menu-actions">
+            <button class="btn btn-secondary btn-sm" onclick="toggleTheme()" style="flex:1;">{{ i18n "toggle_theme" }}</button>
+            <button class="btn btn-secondary btn-sm" onclick="openSearch()" style="flex:1;">{{ i18n "nav_search" }}</button>
+        </div>
+    </div>
+</header>

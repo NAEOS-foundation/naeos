@@ -65,8 +65,18 @@ Dokumen ini memetakan struktur dokumentasi NAEOS berdasarkan skema modular yang 
 - Kernel Examples (NAEOS-KER-003) — contoh penggunaan kernel.
 - Kernel Best Practices (NAEOS-KER-004) — praktik terbaik kernel.
 
-## Rekomendasi penempatan dokumen
-Setiap area dapat memiliki dokumen pendukung dengan format berikut:
+## Architecture Decision Records (ADRs)
+- [adr/001-why-go-for-runtime.md](adr/001-why-go-for-runtime.md) — ADR-001: Why Go for the Runtime
+- [adr/002-why-neir-as-central-model.md](adr/002-why-neir-as-central-model.md) — ADR-002: Why NEIR as the Central Model
+- [adr/003-why-mcp-for-ai-integration.md](adr/003-why-mcp-for-ai-integration.md) — ADR-003: Why MCP for AI Integration
+- [adr/004-database-layer.md](adr/004-database-layer.md) — ADR-004: Database Layer (PostgreSQL, MySQL, SQLite)
+- [adr/005-websocket-communication.md](adr/005-websocket-communication.md) — ADR-005: WebSocket Communication
+- [adr/006-distributed-task-execution.md](adr/006-distributed-task-execution.md) — ADR-006: Distributed Task Execution
+- [adr/007-prompt-library.md](adr/007-prompt-library.md) — ADR-007: Prompt Library
+- [adr/008-wasm-plugin-sandbox.md](adr/008-wasm-plugin-sandbox.md) — ADR-008: WASM Plugin Sandbox
+
+## Document placement recommendations
+Each area can have supporting documents in the following format:
 - Overview
 - Concepts
 - Architecture

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 type ProfileEntry struct {
@@ -135,7 +137,11 @@ func (m *ProfileMarketplace) Download(name, targetDir string) error {
 		return err
 	}
 
-	profileFile := filepath.Join(profileDir, fmt.Sprintf("%s.json", entry.Name))
+	profileName := entry.Name
+	if err := securityext.ValidatePluginName(profileName); err != nil {
+		return fmt.Errorf("invalid profile name %q: %w", profileName, err)
+	}
+	profileFile := filepath.Join(profileDir, fmt.Sprintf("%s.json", profileName))
 	return os.WriteFile(profileFile, data, 0o600)
 }
 
@@ -280,6 +286,87 @@ func (m *ProfileMarketplace) defaultProfiles() []ProfileEntry {
 					map[string]any{"name": "brain", "path": "./brain"},
 					map[string]any{"name": "tools", "path": "./tools"},
 					map[string]any{"name": "memory", "path": "./memory"},
+				},
+			},
+		},
+		{
+			Name:        "edtech-platform",
+			Version:     "1.0.0",
+			Description: "Education technology platform with LMS, assessment engine, and learning analytics",
+			Author:      "naeos",
+			Industry:    "education",
+			Tags:        []string{"education", "lms", "assessment"},
+			Downloads:   85,
+			Content: map[string]any{
+				"modules": []any{
+					map[string]any{"name": "lms", "path": "./lms"},
+					map[string]any{"name": "assessment", "path": "./assessment"},
+					map[string]any{"name": "analytics", "path": "./analytics"},
+				},
+			},
+		},
+		{
+			Name:        "ecommerce-engine",
+			Version:     "1.0.0",
+			Description: "E-commerce engine with catalog management, shopping cart, payment processing, and order fulfillment",
+			Author:      "naeos",
+			Industry:    "retail",
+			Tags:        []string{"ecommerce", "retail", "payment"},
+			Downloads:   210,
+			Content: map[string]any{
+				"modules": []any{
+					map[string]any{"name": "catalog", "path": "./catalog"},
+					map[string]any{"name": "cart", "path": "./cart"},
+					map[string]any{"name": "payment", "path": "./payment"},
+					map[string]any{"name": "order", "path": "./order"},
+				},
+			},
+		},
+		{
+			Name:        "iot-backend",
+			Version:     "1.0.0",
+			Description: "IoT backend with device management, telemetry ingestion, and alerting",
+			Author:      "naeos",
+			Industry:    "iot",
+			Tags:        []string{"iot", "telemetry", "devices"},
+			Downloads:   140,
+			Content: map[string]any{
+				"modules": []any{
+					map[string]any{"name": "devices", "path": "./devices"},
+					map[string]any{"name": "telemetry", "path": "./telemetry"},
+					map[string]any{"name": "alerts", "path": "./alerts"},
+				},
+			},
+		},
+		{
+			Name:        "media-streaming",
+			Version:     "1.0.0",
+			Description: "Media streaming platform with content ingest, transcoding pipeline, and CDN delivery",
+			Author:      "naeos",
+			Industry:    "media",
+			Tags:        []string{"media", "streaming", "cdn"},
+			Downloads:   95,
+			Content: map[string]any{
+				"modules": []any{
+					map[string]any{"name": "ingest", "path": "./ingest"},
+					map[string]any{"name": "transcode", "path": "./transcode"},
+					map[string]any{"name": "cdn", "path": "./cdn"},
+				},
+			},
+		},
+		{
+			Name:        "blockchain-node",
+			Version:     "1.0.0",
+			Description: "Blockchain node with consensus engine, wallet, and block explorer",
+			Author:      "naeos",
+			Industry:    "blockchain",
+			Tags:        []string{"blockchain", "web3", "crypto"},
+			Downloads:   160,
+			Content: map[string]any{
+				"modules": []any{
+					map[string]any{"name": "consensus", "path": "./consensus"},
+					map[string]any{"name": "wallet", "path": "./wallet"},
+					map[string]any{"name": "explorer", "path": "./explorer"},
 				},
 			},
 		},

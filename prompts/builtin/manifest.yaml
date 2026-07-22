@@ -1,0 +1,38 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+prompts:
+  - name: enrich-spec
+    kind: llm
+    version: "1.0.0"
+    description: "Enrich a NAEOS specification with best practices"
+  - name: generate-suggestions
+    kind: llm
+    version: "1.0.0"
+    description: "Generate improvement suggestions for a NAEOS specification"
+  - name: explain-architecture
+    kind: llm
+    version: "1.0.0"
+    description: "Explain an architecture pattern in the context of a specification"
+  - name: copilot
+    kind: compiler
+    version: "1.0.0"
+    target: copilot
+  - name: claude
+    kind: compiler
+    version: "1.0.0"
+    target: claude
+  - name: cursor
+    kind: compiler
+    version: "1.0.0"
+    target: cursor
+  - name: gemini
+    kind: compiler
+    version: "1.0.0"
+    target: gemini
+  - name: codex
+    kind: compiler
+    version: "1.0.0"
+    target: codex
+  - name: opencode
+    kind: compiler
+    version: "1.0.0"
+    target: opencode

@@ -11,6 +11,12 @@ type contextKey string
 // RequestIDKey is the context key used to store the request ID.
 const RequestIDKey contextKey = "request_id"
 
+// UserContextKey is the context key used to store the authenticated user ID.
+const UserContextKey contextKey = "user_id"
+
+// TenantContextKey is the context key used to store the tenant ID.
+const TenantContextKey contextKey = "tenant_id"
+
 // GenerateRequestID returns a new random UUID v4 string.
 func GenerateRequestID() string {
 	var buf [16]byte

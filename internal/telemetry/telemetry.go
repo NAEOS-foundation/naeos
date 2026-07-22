@@ -172,7 +172,9 @@ func (e *HTTPExporter) Flush() error {
 		return fmt.Errorf("marshal spans: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", e.endpoint+"/v1/traces", bytes.NewReader(data))
+	ctx, cancel := context.WithTimeout(context.Background(), e.client.Timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "POST", e.endpoint+"/v1/traces", bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}

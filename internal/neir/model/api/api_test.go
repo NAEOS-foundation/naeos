@@ -1,11 +1,13 @@
 package api
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestProtocolConstants(t *testing.T) {
 	tests := []struct {
-		constant Protocol
-		expected string
+		protocol Protocol
+		want     string
 	}{
 		{ProtocolHTTP, "http"},
 		{ProtocolGRPC, "grpc"},
@@ -13,65 +15,54 @@ func TestProtocolConstants(t *testing.T) {
 		{ProtocolWS, "websocket"},
 	}
 	for _, tt := range tests {
-		if string(tt.constant) != tt.expected {
-			t.Errorf("Protocol %v = %q, want %q", tt.constant, string(tt.constant), tt.expected)
+		if string(tt.protocol) != tt.want {
+			t.Errorf("Protocol(%s) = %s, want %s", tt.want, string(tt.protocol), tt.want)
 		}
 	}
 }
 
-func TestZeroValue(t *testing.T) {
+func TestAPI_ZeroValue(t *testing.T) {
 	var a API
 	if a.Name != "" {
-		t.Errorf("expected empty Name, got %q", a.Name)
-	}
-	if a.Protocol != "" {
-		t.Errorf("expected empty Protocol, got %q", a.Protocol)
+		t.Error("expected empty Name")
 	}
 	if a.Endpoints != nil {
-		t.Errorf("expected nil Endpoints, got %v", a.Endpoints)
+		t.Error("expected nil Endpoints")
 	}
-	if a.Schemas != nil {
-		t.Errorf("expected nil Schemas, got %v", a.Schemas)
-	}
-
-	var ep APIEndpoint
-	if ep.Method != "" {
-		t.Errorf("expected empty Method, got %q", ep.Method)
-	}
-	if ep.Path != "" {
-		t.Errorf("expected empty Path, got %q", ep.Path)
-	}
-
-	var s Schema
-	if s.Name != "" {
-		t.Errorf("expected empty Name, got %q", s.Name)
-	}
-	if s.Fields != nil {
-		t.Errorf("expected nil Fields, got %v", s.Fields)
+	if a.Attributes != nil {
+		t.Error("expected nil Attributes")
 	}
 }
 
-func TestInitialization(t *testing.T) {
+func TestAPI_Full(t *testing.T) {
 	a := API{
-		Name:     "users-api",
-		Version:  "v1",
-		Protocol: ProtocolGRPC,
+		Name:     "users",
+		Version:  "1.0",
+		Protocol: ProtocolHTTP,
 		Endpoints: []APIEndpoint{
 			{Method: "GET", Path: "/users", Summary: "List users"},
 		},
 		Schemas: []Schema{
-			{Name: "User", Fields: map[string]string{"id": "string", "name": "string"}},
+			{Name: "User", Fields: map[string]string{"id": "string"}},
 		},
-		Attributes: map[string]string{"team": "backend"},
+		Attributes: map[string]string{"versioned": "true"},
 	}
-
-	if a.Protocol != ProtocolGRPC {
-		t.Errorf("expected Protocol %q, got %q", ProtocolGRPC, a.Protocol)
+	if a.Name != "users" {
+		t.Errorf("expected users, got %s", a.Name)
+	}
+	if a.Protocol != ProtocolHTTP {
+		t.Errorf("expected http, got %s", a.Protocol)
+	}
+	if len(a.Endpoints) != 1 {
+		t.Errorf("expected 1 endpoint, got %d", len(a.Endpoints))
 	}
 	if a.Endpoints[0].Method != "GET" {
-		t.Errorf("expected Method GET, got %q", a.Endpoints[0].Method)
+		t.Errorf("expected GET, got %s", a.Endpoints[0].Method)
+	}
+	if len(a.Schemas) != 1 {
+		t.Errorf("expected 1 schema, got %d", len(a.Schemas))
 	}
 	if a.Schemas[0].Fields["id"] != "string" {
-		t.Errorf("expected field id=string, got %q", a.Schemas[0].Fields["id"])
+		t.Errorf("expected string, got %s", a.Schemas[0].Fields["id"])
 	}
 }

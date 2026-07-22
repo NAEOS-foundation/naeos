@@ -209,8 +209,10 @@ func TestWASMPluginExecuteInvalidWASM(t *testing.T) {
 	path := writeTempWASM(t, []byte{0xDE, 0xAD, 0xBE, 0xEF})
 	plugin, err := rt.Load(path)
 	if err == nil {
-		_ = plugin
-		t.Skip("load should have failed for invalid wasm")
+		_, err = plugin.Execute("", nil)
+	}
+	if err == nil {
+		t.Fatal("expected error for invalid wasm")
 	}
 }
 

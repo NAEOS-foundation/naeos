@@ -29,7 +29,7 @@ Example:
 				return err
 			}
 
-			p := parser.NewParser()
+			p := parser.NewParser(".")
 			doc, err := p.Parse(inputValue)
 			if err != nil {
 				return fmt.Errorf("failed to parse specification: %w", err)

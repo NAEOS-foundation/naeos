@@ -1,0 +1,26 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: explain-architecture
+kind: llm
+version: "1.0.0"
+description: "Explain an architecture pattern in the context of a specification"
+provider: any
+user: |
+  Explain the architecture pattern "{{.Architecture}}" in the context of this specification.
+  Provide a clear, concise explanation suitable for a developer.
+
+  Specification:
+  {{.SpecContent}}
+
+  Architecture explanation:
+variables:
+  - name: Architecture
+    type: string
+    required: true
+    description: "The architecture pattern name"
+  - name: SpecContent
+    type: string
+    required: true
+    description: "The raw YAML specification content"
+constraints:
+  max_tokens: 1024
+  temperature: 0.3

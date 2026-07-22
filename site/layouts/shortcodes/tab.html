@@ -1,0 +1,10 @@
+{{- $name := .Get 0 | default "" -}}
+{{- $parent := .Parent -}}
+{{- $pid := $parent.Get "id" | default "" -}}
+{{- $i := 0 -}}
+{{- range $j, $n := split ($parent.Get "names") "," -}}
+  {{- if eq (trim $n " ") $name }}{{ $i = $j }}{{ end -}}
+{{- end -}}
+<div class="tab-content{{ if eq $i 0 }} active{{ end }}" id="{{ $pid }}-{{ $i }}-panel" role="tabpanel">
+    {{ .Inner | markdownify }}
+</div>

@@ -1,0 +1,88 @@
+{
+  "plugins": [
+    {
+      "name": "naeos-lint",
+      "version": "1.0.0",
+      "description": "Advanced linting rules for NAEOS specs — validates naming conventions, structure, and best practices",
+      "author": "NAEOS Foundation",
+      "tags": ["lint", "validation", "quality", "official"],
+      "type": "lint",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-lint",
+      "license": "Apache-2.0",
+      "downloads": 520,
+      "platform": "linux/amd64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-lint/releases/download/v1.0.0/naeos-lint-linux-amd64.so",
+      "updated_at": "2026-07-15T00:00:00Z"
+    },
+    {
+      "name": "naeos-security",
+      "version": "1.0.0",
+      "description": "Security audit plugin — scans for misconfigurations, secrets exposure, and compliance violations",
+      "author": "NAEOS Foundation",
+      "tags": ["security", "audit", "compliance", "official"],
+      "type": "security",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-security",
+      "license": "Apache-2.0",
+      "downloads": 380,
+      "platform": "darwin/arm64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-security/releases/download/v1.0.0/naeos-security-darwin-arm64.so",
+      "updated_at": "2026-07-10T00:00:00Z"
+    },
+    {
+      "name": "naeos-docs",
+      "version": "1.1.0",
+      "description": "Auto-generate documentation from NAEOS specs — Markdown, OpenAPI, and ADR outputs",
+      "author": "NAEOS Foundation",
+      "tags": ["docs", "documentation", "generation", "official"],
+      "type": "documentation",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-docs",
+      "license": "Apache-2.0",
+      "downloads": 310,
+      "platform": "linux/amd64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-docs/releases/download/v1.1.0/naeos-docs-linux-amd64.so",
+      "updated_at": "2026-07-12T00:00:00Z"
+    },
+    {
+      "name": "naeos-test",
+      "version": "1.0.0",
+      "description": "Test generation and execution plugin",
+      "author": "NAEOS Foundation",
+      "tags": ["test", "testing", "coverage", "official"],
+      "type": "testing",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-test",
+      "license": "Apache-2.0",
+      "downloads": 250,
+      "platform": "linux/amd64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-test/releases/download/v1.0.0/naeos-test-linux-amd64.so",
+      "updated_at": "2026-07-08T00:00:00Z"
+    },
+    {
+      "name": "naeos-cloud",
+      "version": "0.5.0",
+      "description": "Deploy NAEOS specs to AWS, GCP, and Azure with IaC generation",
+      "author": "NAEOS Foundation",
+      "tags": ["cloud", "deployment", "aws", "gcp", "azure", "iac", "official"],
+      "type": "deployment",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-cloud",
+      "license": "Apache-2.0",
+      "downloads": 180,
+      "platform": "linux/amd64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-cloud/releases/download/v0.5.0/naeos-cloud-linux-amd64.so",
+      "updated_at": "2026-07-14T00:00:00Z"
+    },
+    {
+      "name": "naeos-graph",
+      "version": "0.3.0",
+      "description": "Visualize NAEOS specs as interactive dependency graphs and architecture diagrams",
+      "author": "NAEOS Foundation",
+      "tags": ["graph", "visualization", "diagram", "official"],
+      "type": "visualization",
+      "repo_url": "https://github.com/NAEOS-foundation/naeos-graph",
+      "license": "Apache-2.0",
+      "downloads": 95,
+      "platform": "linux/amd64",
+      "download_url": "https://github.com/NAEOS-foundation/naeos-graph/releases/download/v0.3.0/naeos-graph-linux-amd64.so",
+      "updated_at": "2026-07-01T00:00:00Z"
+    }
+  ]
+}

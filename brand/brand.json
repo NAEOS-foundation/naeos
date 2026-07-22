@@ -1,0 +1,118 @@
+{
+  "brand": "NAEOS",
+  "tagline": "Specify Once. Build Anywhere.",
+  "description": "Nusantara AI Engineering Operating System",
+  "version": "2.1.0",
+
+  "colors": {
+    "accent": {
+      "primary": "#08d6ff",
+      "secondary": "#3a7cf8",
+      "tertiary": "#7c4dff",
+      "quaternary": "#9333ea",
+      "gradient": "linear-gradient(180deg, #08d6ff, #1ab0fc, #3a7cf8, #6056f5, #7c4dff, #8e3cf0, #9333ea)"
+    },
+    "dark": {
+      "bg": "#05050a",
+      "bgElevated": "#0a0a14",
+      "bgSurface": "#111122",
+      "bgHover": "#1a1a2e",
+      "bgSurfaceAlt": "#0f0f1a",
+      "border": "#1a1a33",
+      "borderLight": "#2a2a44"
+    },
+    "text": {
+      "primary": "#f0f0f0",
+      "muted": "#9999b0",
+      "dim": "#666680"
+    },
+    "semantic": {
+      "danger": "#ff4444",
+      "warning": "#ffaa00",
+      "info": "#60a5fa",
+      "success": "#27c93f"
+    }
+  },
+
+  "typography": {
+    "sans": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "mono": "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    },
+    "sizes": {
+      "xs": "0.75rem",
+      "sm": "0.8125rem",
+      "base": "0.9375rem",
+      "lg": "1.0625rem",
+      "xl": "1.25rem",
+      "2xl": "1.5rem",
+      "3xl": "clamp(1.5rem, 3vw, 2.25rem)",
+      "4xl": "clamp(2rem, 5vw, 3.5rem)",
+      "hero": "clamp(2.5rem, 6vw, 4.5rem)"
+    }
+  },
+
+  "spacing": {
+    "radius": {
+      "sm": "6px",
+      "md": "10px",
+      "lg": "16px",
+      "xl": "20px"
+    },
+    "shadow": {
+      "sm": "0 1px 3px rgba(0,0,0,0.5)",
+      "md": "0 4px 12px rgba(0,0,0,0.6)",
+      "lg": "0 8px 32px rgba(0,0,0,0.7)",
+      "glow": "0 0 30px rgba(8,214,255,0.15)",
+      "glowStrong": "0 0 40px rgba(124,77,255,0.2)"
+    }
+  },
+
+  "logo": {
+    "files": {
+      "primary": "logo.svg",
+      "icon": "logo.svg",
+      "mark": "logo-mark.svg",
+      "horizontal": "logo-horizontal.svg",
+      "simplified": "logo-simplified.svg",
+      "monochrome": "logo-mono.svg"
+    },
+    "primary": {
+      "description": "Full lockup with N mark + NAEOS wordmark + underline bar on dark rounded square",
+      "viewBox": "460 460",
+      "match": "99.7%",
+      "file": "logo.svg"
+    },
+    "icon": {
+      "description": "Full lockup matching GitHub avatar (N mark + NAEOS text + underline bar)",
+      "viewBox": "460 460",
+      "match": "99.7%",
+      "file": "logo.svg"
+    },
+    "mark": {
+      "description": "N mark on transparent background (crisp edges for programmatic use)",
+      "viewBox": "460 460",
+      "file": "logo-mark.svg"
+    },
+    "horizontal": {
+      "description": "Horizontal lockup: N mark + NAEOS wordmark + tagline for navbar/header use",
+      "viewBox": "1000 340",
+      "file": "logo-horizontal.svg"
+    },
+    "simplified": {
+      "description": "Solid N without internal gaps — optimized for favicons and small sizes",
+      "viewBox": "460 460",
+      "file": "logo-simplified.svg"
+    },
+    "monochrome": {
+      "description": "Single-color N mark for print, stamp, or monochrome environments",
+      "viewBox": "460 460",
+      "file": "logo-mono.svg"
+    }
+  }
+}

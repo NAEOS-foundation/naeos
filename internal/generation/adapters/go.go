@@ -27,6 +27,8 @@ func (GoAdapter) Language() language.Language {
 	return language.LanguageGo
 }
 
+func (GoAdapter) Framework() string { return "" }
+
 func cleanModulePath(path string) string {
 	path = strings.TrimPrefix(path, "./")
 	path = strings.TrimPrefix(path, ".\\")

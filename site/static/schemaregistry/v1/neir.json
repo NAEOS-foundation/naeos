@@ -1,0 +1,1136 @@
+{
+  "$id": "https://naeos.dev/schemaregistry/neir.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ai.AI": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "context_bundles": {
+          "items": {
+            "$ref": "#/definitions/ai.ContextBundle"
+          },
+          "type": "array"
+        },
+        "embeddings": {
+          "items": {
+            "$ref": "#/definitions/ai.Embedding"
+          },
+          "type": "array"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/definitions/ai.Model"
+          },
+          "type": "array"
+        },
+        "prompts": {
+          "items": {
+            "$ref": "#/definitions/ai.Prompt"
+          },
+          "type": "array"
+        }
+      },
+      "title": "ai.AI",
+      "type": "object"
+    },
+    "ai.ContextBundle": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ai.ContextBundle",
+      "type": "object"
+    },
+    "ai.Embedding": {
+      "properties": {
+        "dimension": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ai.Embedding",
+      "type": "object"
+    },
+    "ai.Model": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ai.Model",
+      "type": "object"
+    },
+    "ai.Prompt": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "template": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ai.Prompt",
+      "type": "object"
+    },
+    "api.API": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "description": {
+          "type": "string"
+        },
+        "endpoints": {
+          "items": {
+            "$ref": "#/definitions/api.APIEndpoint"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "protocol": {
+          "enum": [
+            "http",
+            "grpc",
+            "graphql",
+            "websocket"
+          ],
+          "type": "string"
+        },
+        "schemas": {
+          "items": {
+            "$ref": "#/definitions/api.Schema"
+          },
+          "type": "array"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "api.API",
+      "type": "object"
+    },
+    "api.APIEndpoint": {
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "request_ref": {
+          "type": "string"
+        },
+        "response_ref": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "title": "api.APIEndpoint",
+      "type": "object"
+    },
+    "api.Schema": {
+      "properties": {
+        "fields": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "api.Schema",
+      "type": "object"
+    },
+    "architecture.Architecture": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "description": {
+          "type": "string"
+        },
+        "layers": {
+          "items": {
+            "$ref": "#/definitions/architecture.Layer"
+          },
+          "type": "array"
+        },
+        "pattern": {
+          "enum": [
+            "layered",
+            "clean",
+            "hexagonal",
+            "microkernel",
+            "event-driven",
+            "cqrs",
+            "monolith"
+          ],
+          "type": "string"
+        },
+        "principles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "style": {
+          "type": "string"
+        }
+      },
+      "title": "architecture.Architecture",
+      "type": "object"
+    },
+    "architecture.Layer": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "modules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "architecture.Layer",
+      "type": "object"
+    },
+    "component.Component": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "handler",
+            "service",
+            "repository",
+            "middleware",
+            "model",
+            "config",
+            "worker",
+            "scheduler"
+          ],
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "component.Component",
+      "type": "object"
+    },
+    "deployment.Deployment": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "environments": {
+          "items": {
+            "$ref": "#/definitions/deployment.Environment"
+          },
+          "type": "array"
+        },
+        "scaling": {
+          "$ref": "#/definitions/deployment.Scaling"
+        },
+        "strategy": {
+          "enum": [
+            "rolling",
+            "blue-green",
+            "canary",
+            "recreate"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "title": "deployment.Deployment",
+      "type": "object"
+    },
+    "deployment.Environment": {
+      "properties": {
+        "config": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "deployment.Environment",
+      "type": "object"
+    },
+    "deployment.Scaling": {
+      "properties": {
+        "max": {
+          "type": "number"
+        },
+        "min": {
+          "type": "number"
+        },
+        "replicas": {
+          "type": "number"
+        }
+      },
+      "title": "deployment.Scaling",
+      "type": "object"
+    },
+    "docs.Doc": {
+      "properties": {
+        "kind": {
+          "enum": [
+            "guide",
+            "reference",
+            "adr",
+            "rfc",
+            "changelog"
+          ],
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "docs.Doc",
+      "type": "object"
+    },
+    "docs.Documentation": {
+      "properties": {
+        "adrs": {
+          "items": {
+            "$ref": "#/definitions/docs.Doc"
+          },
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "guides": {
+          "items": {
+            "$ref": "#/definitions/docs.Doc"
+          },
+          "type": "array"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/definitions/docs.Doc"
+          },
+          "type": "array"
+        },
+        "rfcs": {
+          "items": {
+            "$ref": "#/definitions/docs.Doc"
+          },
+          "type": "array"
+        }
+      },
+      "title": "docs.Documentation",
+      "type": "object"
+    },
+    "domain.Aggregate": {
+      "properties": {
+        "entities": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "root_entity": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "domain.Aggregate",
+      "type": "object"
+    },
+    "domain.BoundedContext": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "modules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "domain.BoundedContext",
+      "type": "object"
+    },
+    "domain.Domain": {
+      "properties": {
+        "aggregates": {
+          "items": {
+            "$ref": "#/definitions/domain.Aggregate"
+          },
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "bounded_contexts": {
+          "items": {
+            "$ref": "#/definitions/domain.BoundedContext"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/definitions/domain.Entity"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value_objects": {
+          "items": {
+            "$ref": "#/definitions/domain.ValueObject"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "domain.Domain",
+      "type": "object"
+    },
+    "domain.Entity": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "domain.Entity",
+      "type": "object"
+    },
+    "domain.ValueObject": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "domain.ValueObject",
+      "type": "object"
+    },
+    "generation.GenerationConfig": {
+      "properties": {
+        "languages": {
+          "items": {
+            "enum": [
+              "go",
+              "typescript",
+              "python",
+              "java",
+              "rust"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "module_dir": {
+          "type": "string"
+        },
+        "output_dir": {
+          "type": "string"
+        }
+      },
+      "title": "generation.GenerationConfig",
+      "type": "object"
+    },
+    "infrastructure.Infrastructure": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "networking": {
+          "items": {
+            "$ref": "#/definitions/infrastructure.Network"
+          },
+          "type": "array"
+        },
+        "project": {
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "aws",
+            "gcp",
+            "azure",
+            "local"
+          ],
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "resources": {
+          "items": {
+            "$ref": "#/definitions/infrastructure.Resource"
+          },
+          "type": "array"
+        }
+      },
+      "title": "infrastructure.Infrastructure",
+      "type": "object"
+    },
+    "infrastructure.Network": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ports": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "infrastructure.Network",
+      "type": "object"
+    },
+    "infrastructure.Resource": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "spec": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "infrastructure.Resource",
+      "type": "object"
+    },
+    "metadata.Metadata": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "modified_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "neir_version": {
+          "type": "string"
+        },
+        "project_version": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/metadata.SourceRef"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "title": "metadata.Metadata",
+      "type": "object"
+    },
+    "metadata.SourceRef": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        }
+      },
+      "title": "metadata.SourceRef",
+      "type": "object"
+    },
+    "module.Module": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "dependencies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "packages": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "module.Module",
+      "type": "object"
+    },
+    "project.Project": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "project.Project",
+      "type": "object"
+    },
+    "security.Authentication": {
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        }
+      },
+      "title": "security.Authentication",
+      "type": "object"
+    },
+    "security.Authorization": {
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "title": "security.Authorization",
+      "type": "object"
+    },
+    "security.Encryption": {
+      "properties": {
+        "algorithm": {
+          "type": "string"
+        },
+        "at_rest": {
+          "type": "boolean"
+        },
+        "in_transit": {
+          "type": "boolean"
+        }
+      },
+      "title": "security.Encryption",
+      "type": "object"
+    },
+    "security.Secret": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "security.Secret",
+      "type": "object"
+    },
+    "security.Security": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "authentication": {
+          "$ref": "#/definitions/security.Authentication"
+        },
+        "authorization": {
+          "$ref": "#/definitions/security.Authorization"
+        },
+        "encryption": {
+          "$ref": "#/definitions/security.Encryption"
+        },
+        "secrets": {
+          "items": {
+            "$ref": "#/definitions/security.Secret"
+          },
+          "type": "array"
+        }
+      },
+      "title": "security.Security",
+      "type": "object"
+    },
+    "service.Endpoint": {
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "title": "service.Endpoint",
+      "type": "object"
+    },
+    "service.Service": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "description": {
+          "type": "string"
+        },
+        "endpoints": {
+          "items": {
+            "$ref": "#/definitions/service.Endpoint"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "http",
+            "grpc",
+            "worker",
+            "cli",
+            "job"
+          ],
+          "type": "string"
+        },
+        "middleware": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "service.Service",
+      "type": "object"
+    },
+    "storage.Collection": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "schema": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "storage.Collection",
+      "type": "object"
+    },
+    "storage.Storage": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "collections": {
+          "items": {
+            "$ref": "#/definitions/storage.Collection"
+          },
+          "type": "array"
+        },
+        "connection": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "sql",
+            "nosql",
+            "file",
+            "cache",
+            "queue",
+            "blob"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "storage.Storage",
+      "type": "object"
+    },
+    "testing.Coverage": {
+      "properties": {
+        "min_percent": {
+          "type": "number"
+        }
+      },
+      "title": "testing.Coverage",
+      "type": "object"
+    },
+    "testing.Fixture": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "testing.Fixture",
+      "type": "object"
+    },
+    "testing.Testing": {
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "coverage": {
+          "$ref": "#/definitions/testing.Coverage"
+        },
+        "fixtures": {
+          "items": {
+            "$ref": "#/definitions/testing.Fixture"
+          },
+          "type": "array"
+        },
+        "frameworks": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "strategy": {
+          "enum": [
+            "unit",
+            "integration",
+            "e2e",
+            "contract"
+          ],
+          "type": "string"
+        }
+      },
+      "title": "testing.Testing",
+      "type": "object"
+    }
+  },
+  "description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
+  "properties": {
+    "ai": {
+      "$ref": "#/definitions/ai.AI"
+    },
+    "apis": {
+      "items": {
+        "$ref": "#/definitions/api.API"
+      },
+      "type": "array"
+    },
+    "architecture": {
+      "$ref": "#/definitions/architecture.Architecture"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/definitions/component.Component"
+      },
+      "type": "array"
+    },
+    "deployment": {
+      "$ref": "#/definitions/deployment.Deployment"
+    },
+    "documentation": {
+      "$ref": "#/definitions/docs.Documentation"
+    },
+    "domain": {
+      "$ref": "#/definitions/domain.Domain"
+    },
+    "generation": {
+      "$ref": "#/definitions/generation.GenerationConfig"
+    },
+    "infrastructure": {
+      "$ref": "#/definitions/infrastructure.Infrastructure"
+    },
+    "metadata": {
+      "$ref": "#/definitions/metadata.Metadata"
+    },
+    "modules": {
+      "items": {
+        "$ref": "#/definitions/module.Module"
+      },
+      "type": "array"
+    },
+    "project": {
+      "$ref": "#/definitions/project.Project"
+    },
+    "security": {
+      "$ref": "#/definitions/security.Security"
+    },
+    "services": {
+      "items": {
+        "$ref": "#/definitions/service.Service"
+      },
+      "type": "array"
+    },
+    "storage": {
+      "items": {
+        "$ref": "#/definitions/storage.Storage"
+      },
+      "type": "array"
+    },
+    "testing": {
+      "$ref": "#/definitions/testing.Testing"
+    }
+  },
+  "required": [
+    "project",
+    "modules"
+  ],
+  "title": "NEIR Specification",
+  "type": "object"
+}

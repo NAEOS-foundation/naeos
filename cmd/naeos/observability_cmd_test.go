@@ -3,9 +3,27 @@ package main
 import (
 	"bytes"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+type safeBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (sb *safeBuffer) Write(p []byte) (int, error) {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	return sb.buf.Write(p)
+}
+
+func (sb *safeBuffer) String() string {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	return sb.buf.String()
+}
 
 func TestObservabilityCommandShowsHelp(t *testing.T) {
 	root := newRootCommand()
@@ -63,7 +81,7 @@ func TestObsStatus(t *testing.T) {
 }
 
 func TestObsDashboard(t *testing.T) {
-	buf := new(bytes.Buffer)
+	buf := &safeBuffer{}
 	root := newRootCommand()
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -77,15 +95,17 @@ func TestObsDashboard(t *testing.T) {
 		done <- err
 	}()
 
+	var output string
 	select {
 	case <-time.After(500 * time.Millisecond):
+		output = buf.String()
 	case err := <-done:
 		if err != nil {
 			t.Fatalf("observability dashboard failed: %v", err)
 		}
+		output = buf.String()
 	}
 
-	output := buf.String()
 	if !strings.Contains(output, "Starting observability dashboard") {
 		t.Fatalf("expected dashboard start message, got %q", output)
 	}

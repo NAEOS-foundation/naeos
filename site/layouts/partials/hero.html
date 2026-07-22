@@ -1,0 +1,51 @@
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-particles" aria-hidden="true"></div>
+    <div class="container hero-content">
+        <div class="hero-badges">
+            <span class="badge badge-green">v{{ .Site.Params.version }}</span>
+            <span class="badge badge-blue">{{ i18n "hero_open_source" }}</span>
+            <span class="badge badge-orange">Apache 2.0</span>
+        </div>
+        <h1 class="hero-title">{{ i18n "hero_title" | safeHTML }}</h1>
+        <p class="hero-subtitle">{{ i18n "hero_subtitle" }}</p>
+        <div class="hero-actions">
+            <a href="{{ "docs/getting-started/" | relLangURL }}" class="btn btn-primary btn-lg">{{ i18n "cta_get_started" }}</a>
+            <a href="{{ .Site.Params.social.github }}" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">{{ i18n "cta_view_on_github" }}</a>
+        </div>
+        <div class="hero-terminal fade-in-scale" id="hero-terminal-static">
+            <div class="terminal-header">
+                <span class="terminal-dot red" aria-hidden="true"></span>
+                <span class="terminal-dot yellow" aria-hidden="true"></span>
+                <span class="terminal-dot green" aria-hidden="true"></span>
+                <span class="terminal-title">terminal — naeos</span>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-line prompt">$ naeos init</div>
+                <div class="terminal-line output">✓ Config initialized: naeos.yaml</div>
+                <div class="terminal-line prompt">$ cat spec.yaml</div>
+                <div class="terminal-line output">project: my-app</div>
+                <div class="terminal-line output">modules:</div>
+                <div class="terminal-line output">  - name: api</div>
+                <div class="terminal-line output">    path: ./api</div>
+                <div class="terminal-line output">generation:</div>
+                <div class="terminal-line output">  languages: [go, typescript]</div>
+                <div class="terminal-line prompt">$ naeos run --input spec.yaml</div>
+                <div class="terminal-line output">✓ Parsed → Normalized → Resolved</div>
+                <div class="terminal-line output">✓ NEIR built | <span class="highlight">4 modules</span>, <span class="highlight">8 services</span></div>
+                <div class="terminal-line output">✓ Generated: go/, typescript/</div>
+                <div class="terminal-line output">✓ <span class="highlight">Done</span> in 1.2s</div>
+                <div class="terminal-line terminal-cursor"></div>
+            </div>
+        </div>
+        <div class="hero-terminal fade-in-scale" id="interactive-terminal" style="display:none;">
+            <div class="terminal-header">
+                <span class="terminal-dot red" aria-hidden="true"></span>
+                <span class="terminal-dot yellow" aria-hidden="true"></span>
+                <span class="terminal-dot green" aria-hidden="true"></span>
+                <span class="terminal-title">demo — naeos interactive</span>
+            </div>
+        </div>
+    </div>
+</section>

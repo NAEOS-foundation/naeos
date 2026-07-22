@@ -188,6 +188,57 @@ func TestRestoreNotFound(t *testing.T) {
 	}
 }
 
+func TestImportEmptyArchive(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	exportPath := filepath.Join(dir, "empty.tar.gz")
+
+	emptyFile, err := os.Create(exportPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	emptyFile.Close()
+
+	_, err = store.Import(exportPath)
+	if err == nil {
+		t.Error("expected error for empty/corrupt archive")
+	}
+}
+
+func TestImportCorruptGzip(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	exportPath := filepath.Join(dir, "corrupt.tar.gz")
+
+	if err := os.WriteFile(exportPath, []byte("not-a-gzip-file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := store.Import(exportPath)
+	if err == nil {
+		t.Error("expected error for corrupt gzip")
+	}
+}
+
+func TestCreateEmptyArtifacts(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+
+	snap, err := store.Create("/output", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.ID == "" {
+		t.Error("expected non-empty ID")
+	}
+	if snap.Manifest == nil {
+		t.Error("expected manifest for empty artifact list")
+	}
+	if len(snap.Manifest.Files) != 0 {
+		t.Errorf("expected 0 files, got %d", len(snap.Manifest.Files))
+	}
+}
+
 func TestManifestChecksum(t *testing.T) {
 	dir := t.TempDir()
 	store := NewStore(dir)
@@ -205,5 +256,60 @@ func TestManifestChecksum(t *testing.T) {
 	}
 	if snap.Manifest.TotalSize != 8 {
 		t.Errorf("expected total size 8, got %d", snap.Manifest.TotalSize)
+	}
+}
+
+func TestValidateSnapshotIDEmpty(t *testing.T) {
+	err := validateSnapshotID("")
+	if err == nil {
+		t.Error("expected error for empty ID")
+	}
+}
+
+func TestValidateSnapshotIDPathSeparator(t *testing.T) {
+	err := validateSnapshotID("foo/bar")
+	if err == nil {
+		t.Error("expected error for ID with slash")
+	}
+}
+
+func TestValidateSnapshotIDBackslash(t *testing.T) {
+	err := validateSnapshotID("foo\\bar")
+	if err == nil {
+		t.Error("expected error for ID with backslash")
+	}
+}
+
+func TestValidateSnapshotIDDotDot(t *testing.T) {
+	err := validateSnapshotID("foo..bar")
+	if err == nil {
+		t.Error("expected error for ID with ..")
+	}
+}
+
+func TestDeleteInvalidID(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	err := store.Delete("")
+	if err == nil {
+		t.Error("expected error for empty ID")
+	}
+}
+
+func TestLatestEmpty(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	_, err := store.Latest()
+	if err == nil {
+		t.Error("expected error when no snapshots")
+	}
+}
+
+func TestExportInvalidID(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	err := store.Export("", filepath.Join(dir, "out.tar.gz"))
+	if err == nil {
+		t.Error("expected error for invalid ID")
 	}
 }

@@ -5,21 +5,38 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
+type PluginDependency struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+type VersionEntry struct {
+	Version   string    `json:"version"`
+	Installed time.Time `json:"installed"`
+}
+
 type PluginEntry struct {
-	Name        string         `json:"name"`
-	Version     string         `json:"version"`
-	Description string         `json:"description"`
-	Author      string         `json:"author"`
-	Type        string         `json:"type"`
-	Tags        []string       `json:"tags"`
-	Downloads   int            `json:"downloads"`
-	Installed   bool           `json:"installed,omitempty"`
-	Config      map[string]any `json:"config,omitempty"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	Name           string             `json:"name"`
+	Version        string             `json:"version"`
+	Description    string             `json:"description"`
+	Author         string             `json:"author"`
+	Type           string             `json:"type"`
+	Tags           []string           `json:"tags"`
+	Dependencies   []PluginDependency `json:"dependencies,omitempty"`
+	Downloads      int                `json:"downloads"`
+	Checksum       string             `json:"checksum,omitempty"`
+	DownloadURL    string             `json:"download_url,omitempty"`
+	Installed      bool               `json:"installed,omitempty"`
+	VersionHistory []VersionEntry     `json:"version_history,omitempty"`
+	Config         map[string]any     `json:"config,omitempty"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
 }
 
 type PluginMarketplace struct {
@@ -124,16 +141,42 @@ func (m *PluginMarketplace) List() ([]PluginEntry, error) {
 }
 
 func (m *PluginMarketplace) Install(name string) error {
+	if err := securityext.ValidatePluginName(name); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+	}
+
 	entry, err := m.Get(name)
 	if err != nil {
 		return err
 	}
 
+	if m.IsInstalled(name) {
+		return fmt.Errorf("plugin %q is already installed", name)
+	}
+
+	if len(entry.Dependencies) > 0 {
+		resolved, err := m.ResolveDependencies(entry.Dependencies, nil)
+		if err != nil {
+			return err
+		}
+		for _, dep := range resolved {
+			if !m.IsInstalled(dep.Name) {
+				if err := m.installOne(dep); err != nil {
+					return fmt.Errorf("install dependency %q: %w", dep.Name, err)
+				}
+			}
+		}
+	}
+
+	return m.installOne(entry)
+}
+
+func (m *PluginMarketplace) installOne(entry *PluginEntry) error {
 	if err := os.MkdirAll(m.installDir, 0o755); err != nil {
 		return err
 	}
 
-	pluginDir := filepath.Join(m.installDir, name)
+	pluginDir := filepath.Join(m.installDir, entry.Name)
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return err
 	}
@@ -153,11 +196,17 @@ func (m *PluginMarketplace) Install(name string) error {
 		return err
 	}
 
+	now := time.Now()
 	for i, e := range entries {
-		if e.Name == name {
+		if e.Name == entry.Name {
 			entries[i].Installed = true
+			entries[i].Version = entry.Version
 			entries[i].Downloads++
-			entries[i].UpdatedAt = time.Now()
+			entries[i].UpdatedAt = now
+			entries[i].VersionHistory = append(entries[i].VersionHistory, VersionEntry{
+				Version:   entry.Version,
+				Installed: now,
+			})
 			return m.savePlugins(entries)
 		}
 	}
@@ -165,7 +214,115 @@ func (m *PluginMarketplace) Install(name string) error {
 	return nil
 }
 
+// ResolveDependencies checks that all dependencies can be satisfied, detecting cycles
+// and missing plugins. It returns the list of plugins to install in dependency order.
+func (m *PluginMarketplace) ResolveDependencies(deps []PluginDependency, visited []string) ([]*PluginEntry, error) {
+	if visited == nil {
+		visited = make([]string, 0)
+	}
+
+	var resolved []*PluginEntry
+	for _, dep := range deps {
+		for _, v := range visited {
+			if v == dep.Name {
+				return nil, fmt.Errorf("circular dependency detected: %s", strings.Join(append(visited, dep.Name), " → "))
+			}
+		}
+
+		entry, err := m.Get(dep.Name)
+		if err != nil {
+			return nil, fmt.Errorf("dependency %q not found: %w", dep.Name, err)
+		}
+
+		if dep.Version != "" && !versionMatch(dep.Version, entry.Version) {
+			return nil, fmt.Errorf("dependency %q requires version %s, available %s", dep.Name, dep.Version, entry.Version)
+		}
+
+		if len(entry.Dependencies) > 0 {
+			sub, err := m.ResolveDependencies(entry.Dependencies, append(visited, dep.Name))
+			if err != nil {
+				return nil, fmt.Errorf("resolve %q deps: %w", dep.Name, err)
+			}
+			resolved = append(resolved, sub...)
+		}
+
+		resolved = append(resolved, entry)
+	}
+
+	return resolved, nil
+}
+
+func versionMatch(required, available string) bool {
+	if required == "" || required == "*" {
+		return true
+	}
+	return required == available
+}
+
+// VersionHistory returns the install version history for a plugin.
+func (m *PluginMarketplace) VersionHistory(name string) ([]VersionEntry, error) {
+	if err := securityext.ValidatePluginName(name); err != nil {
+		return nil, fmt.Errorf("invalid plugin name %q: %w", name, err)
+	}
+	entries, err := m.loadPlugins()
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entries {
+		if e.Name == name {
+			if len(e.VersionHistory) == 0 {
+				return nil, fmt.Errorf("no version history for %q", name)
+			}
+			return e.VersionHistory, nil
+		}
+	}
+	return nil, fmt.Errorf("plugin %q not found", name)
+}
+
+// Rollback reverts a plugin to a previous version from its version history.
+// If version is empty, it rolls back to the second-most-recent version.
+func (m *PluginMarketplace) Rollback(name, version string) error {
+	if err := securityext.ValidatePluginName(name); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+	}
+
+	history, err := m.VersionHistory(name)
+	if err != nil {
+		return err
+	}
+
+	var target *VersionEntry
+	if version == "" {
+		if len(history) < 2 {
+			return fmt.Errorf("no previous version to roll back to for %q", name)
+		}
+		target = &history[len(history)-2]
+	} else {
+		for i := len(history) - 1; i >= 0; i-- {
+			if history[i].Version == version {
+				target = &history[i]
+				break
+			}
+		}
+		if target == nil {
+			return fmt.Errorf("version %q not found in history for %q", version, name)
+		}
+	}
+
+	entry, err := m.Get(name)
+	if err != nil {
+		return err
+	}
+	entry.Version = target.Version
+	entry.UpdatedAt = time.Now()
+
+	return m.installOne(entry)
+}
+
 func (m *PluginMarketplace) Uninstall(name string) error {
+	if err := securityext.ValidatePluginName(name); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+	}
 	pluginDir := filepath.Join(m.installDir, name)
 	if err := os.RemoveAll(pluginDir); err != nil {
 		return err
@@ -188,6 +345,9 @@ func (m *PluginMarketplace) Uninstall(name string) error {
 }
 
 func (m *PluginMarketplace) IsInstalled(name string) bool {
+	if err := securityext.ValidatePluginName(name); err != nil {
+		return false
+	}
 	pluginDir := filepath.Join(m.installDir, name)
 	_, err := os.Stat(pluginDir)
 	return err == nil

@@ -1,0 +1,89 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: codex
+kind: compiler
+version: "1.0.0"
+target: codex
+files:
+  - path: "AGENTS.md"
+    kind: instructions
+    template: |
+      # AGENTS.md
+
+      Instructions for AI agents working on this project.
+
+      {{if .Project.Name}}## Project: {{.Project.Name}}
+
+      {{if .Project.Description}}{{.Project.Description}}{{end}}
+      {{end}}
+      {{if .Architecture.Pattern}}## Architecture: {{.Architecture.Pattern}}
+
+      {{range .Architecture.Principles}}- {{.}}
+      {{end}}{{end}}
+      ## Module Structure
+
+      {{range .Modules}}### {{.Name}}
+      Path: {{code .Path}}
+      {{if .Description}}{{.Description}}{{end}}
+      {{if .Dependencies}}Dependencies: {{join .Dependencies ", "}}{{end}}
+
+      {{end}}
+      {{if .Services}}## Services
+
+      {{range .Services}}### {{.Name}} ({{.Kind}}, port {{.Port}})
+      {{range .Endpoints}}- {{.Method}} {{.Path}} -> {{.Action}}
+      {{end}}
+
+      {{end}}{{end}}
+      {{if .Components}}## Components
+
+      {{range .Components}}- {{code .Name}} [{{.Kind}}] in {{code .Module}}
+      {{end}}
+
+      {{end}}
+      {{if .Deployment}}## Deployment: {{.Deployment.Strategy}}
+
+      {{range .Deployment.Environments}}- {{.Name}} ({{.Kind}})
+      {{end}}
+
+      {{end}}
+      ## Agent Guidelines
+
+      1. Follow the architecture pattern
+      2. Write clean, idiomatic code for the target language
+      3. Handle errors explicitly
+      4. Write tests for new code
+      5. Keep functions focused and small
+      6. Document public APIs
+
+  - path: ".codex/context.md"
+    kind: context
+    template: |
+      # Codex Context
+
+      {{if .Storage}}
+      ## Storage
+
+      {{range .Storage}}- {{.Name}} ({{.Type}}) via {{.Provider}}
+      {{range .Collections}}  - {{.Name}}
+      {{end}}{{end}}{{end}}
+      {{if .Infrastructure}}
+      ## Infrastructure: {{.Infrastructure.Provider}}
+
+      {{range .Infrastructure.Resources}}- {{.Name}} ({{.Kind}})
+      {{end}}{{end}}
+      {{if and .AI .AI.Models}}
+
+      ## AI Models
+
+      {{range .AI.Models}}- {{.Name}} ({{.Kind}}) v{{.Version}}
+      {{end}}{{end}}
+variables:
+  - name: AgentGuidelines
+    type: "[]string"
+    default:
+      - "Follow the architecture pattern"
+      - "Write clean, idiomatic code for the target language"
+      - "Handle errors explicitly"
+      - "Write tests for new code"
+      - "Keep functions focused and small"
+      - "Document public APIs"

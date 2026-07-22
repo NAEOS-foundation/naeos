@@ -1,12 +1,17 @@
+//go:build !nobroker
+
 package broker
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealRedis struct {
@@ -43,9 +48,11 @@ func (r *RealRedis) Connect(config *Config) error {
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		rdb.Close()
+		slog.Error("redis connect failed", "host", config.Host, "port", config.Port, "error", err)
 		return fmt.Errorf("connect to redis: %w", err)
 	}
 
+	slog.Info("redis connected", "host", config.Host, "port", config.Port)
 	r.client = rdb
 	_, r.cancel = context.WithCancel(context.Background())
 	return nil
@@ -71,14 +78,14 @@ func (r *RealRedis) Close() error {
 
 func (r *RealRedis) Ping() error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return r.client.Ping(context.Background()).Err()
 }
 
 func (r *RealRedis) Publish(channel string, msg *Message) error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	data := msg.Payload
@@ -91,7 +98,7 @@ func (r *RealRedis) Publish(channel string, msg *Message) error {
 
 func (r *RealRedis) Subscribe(channel string, handler MessageHandler) error {
 	if r.client == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	sub := r.client.Subscribe(context.Background(), channel)

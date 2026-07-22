@@ -125,18 +125,26 @@ func (s *Scheduler) Disable(id string) {
 
 func (s *Scheduler) Start() {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.running {
+		return
+	}
 	s.running = true
 	s.stopCh = make(chan struct{})
-	s.mu.Unlock()
+	stopCh := s.stopCh
 
-	go s.run()
+	go s.run(stopCh)
 }
 
 func (s *Scheduler) Stop() {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.running {
+		return
+	}
 	s.running = false
-	s.mu.Unlock()
 	close(s.stopCh)
+	s.stopCh = make(chan struct{})
 }
 
 func (s *Scheduler) IsRunning() bool {
@@ -145,13 +153,13 @@ func (s *Scheduler) IsRunning() bool {
 	return s.running
 }
 
-func (s *Scheduler) run() {
+func (s *Scheduler) run(stopCh <-chan struct{}) {
 	ticker := time.NewTicker(s.tickRate)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-s.stopCh:
+		case <-stopCh:
 			return
 		case <-ticker.C:
 			s.tick()

@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewParserParsesJSON(t *testing.T) {
-	p := NewParser()
+	p := NewParser(".")
 	input := `{"project":{"name":"demo"},"version":1}`
 
 	doc, err := p.Parse(input)
@@ -21,7 +21,7 @@ func TestNewParserParsesJSON(t *testing.T) {
 }
 
 func TestNewParserParsesYAML(t *testing.T) {
-	p := NewParser()
+	p := NewParser(".")
 	input := "project:\n  name: demo\nversion: 1\n"
 
 	doc, err := p.Parse(input)
@@ -37,7 +37,7 @@ func TestNewParserParsesYAML(t *testing.T) {
 }
 
 func TestNewParserRejectsInvalidInput(t *testing.T) {
-	p := NewParser()
+	p := NewParser(".")
 	input := "{unclosed"
 
 	doc, err := p.Parse(input)
@@ -50,7 +50,7 @@ func TestNewParserRejectsInvalidInput(t *testing.T) {
 }
 
 func TestNewParserEmptyInput(t *testing.T) {
-	p := NewParser()
+	p := NewParser(".")
 	doc, err := p.Parse("")
 	if err == nil {
 		t.Fatal("expected error for empty input")
@@ -61,7 +61,7 @@ func TestNewParserEmptyInput(t *testing.T) {
 }
 
 func TestNewParserEmptyDocument(t *testing.T) {
-	p := NewParser()
+	p := NewParser(".")
 	// YAML with just comments or empty content
 	doc, err := p.Parse("---\n")
 	if err == nil {
@@ -82,7 +82,7 @@ services:
     port: 8080
 `
 
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("Parse returned error: %v", err)
 	}
@@ -146,7 +146,7 @@ testing:
   coverage: 80%
 `
 
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("Parse returned error: %v", err)
 	}
@@ -216,7 +216,7 @@ generation:
   output_dir: ./dist
   module_dir: ./modules
 `
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("Parse returned error: %v", err)
 	}
@@ -424,7 +424,7 @@ services:
   - name: api
     port: 3000
 `
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -455,7 +455,7 @@ count: ~
 enabled: true
 ratio: 1.5
 `
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -472,7 +472,7 @@ func TestParserScalarWithoutTag(t *testing.T) {
 project: test
 custom: untagged_value
 `
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -491,7 +491,7 @@ func TestParserSequence(t *testing.T) {
   - two
   - three
 `
-	doc, err := NewParser().Parse(input)
+	doc, err := NewParser(".").Parse(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

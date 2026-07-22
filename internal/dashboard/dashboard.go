@@ -155,6 +155,13 @@ type ActivityLog struct {
 	entries []LogEntry
 	nextID  int64
 	maxLen  int
+	onLog   func(LogEntry)
+}
+
+func (al *ActivityLog) SetLogCallback(fn func(LogEntry)) {
+	al.mu.Lock()
+	defer al.mu.Unlock()
+	al.onLog = fn
 }
 
 func NewActivityLog(maxEntries int) *ActivityLog {
@@ -170,7 +177,6 @@ func NewActivityLog(maxEntries int) *ActivityLog {
 
 func (al *ActivityLog) Add(level LogLevel, message string) LogEntry {
 	al.mu.Lock()
-	defer al.mu.Unlock()
 
 	entry := LogEntry{
 		ID:        al.nextID,
@@ -184,6 +190,14 @@ func (al *ActivityLog) Add(level LogLevel, message string) LogEntry {
 	if len(al.entries) > al.maxLen {
 		al.entries = al.entries[len(al.entries)-al.maxLen:]
 	}
+
+	cb := al.onLog
+	al.mu.Unlock()
+
+	if cb != nil {
+		cb(entry)
+	}
+
 	return entry
 }
 

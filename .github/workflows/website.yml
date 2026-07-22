@@ -1,0 +1,72 @@
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/openapi.yaml'
+      - '.github/workflows/website.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/openapi.yaml'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync OpenAPI spec
+        run: cp ../docs/openapi.yaml static/openapi.yaml
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate OG images
+        run: |
+          npm ci 2>&1 | tail -3
+          node -e "
+            const s=require('sharp'),f=require('fs');
+            Promise.all([
+              s(f.readFileSync('static/images/og-dark.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default.png'),
+              s(f.readFileSync('static/images/og-light.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default-light.png')
+            ]).then(()=>console.log('OG images generated')).catch(e=>{console.error(e);process.exit(1)});
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.145.0'
+          extended: false
+      - name: Build
+        run: hugo --minify
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

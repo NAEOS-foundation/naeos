@@ -20,6 +20,8 @@ func (FastAPIAdapter) Language() language.Language {
 	return language.LanguagePython
 }
 
+func (FastAPIAdapter) Framework() string { return "fastapi" }
+
 // GenerateProject creates the base project layout for a FastAPI app.
 func (FastAPIAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)

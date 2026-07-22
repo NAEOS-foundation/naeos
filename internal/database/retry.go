@@ -26,7 +26,11 @@ func WithRetry(ctx context.Context, maxRetries int, baseDelay time.Duration, fn 
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			delay := baseDelay * time.Duration(1<<uint(attempt))
+			exp := 1
+			if attempt < 30 {
+				exp = 1 << uint(attempt)
+			}
+			delay := baseDelay * time.Duration(exp)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()

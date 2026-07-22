@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 const authConfigDir = ".config/naeos"
@@ -20,17 +23,24 @@ type SavedUser struct {
 }
 
 type UserStore struct {
-	mu      sync.RWMutex
-	dir     string
-	entries []SavedUser
+	mu         sync.RWMutex
+	dir        string
+	entries    []SavedUser
+	passphrase string
+	key        []byte
 }
 
-func NewUserStore() *UserStore {
+func NewUserStore(passphrase string) *UserStore {
+	var key []byte
+	if passphrase != "" {
+		h := sha256.Sum256([]byte(passphrase))
+		key = h[:]
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return &UserStore{dir: authConfigDir}
+		return &UserStore{dir: authConfigDir, passphrase: passphrase, key: key}
 	}
-	return &UserStore{dir: filepath.Join(home, authConfigDir)}
+	return &UserStore{dir: filepath.Join(home, authConfigDir), passphrase: passphrase, key: key}
 }
 
 func (s *UserStore) filePath() string {
@@ -46,6 +56,14 @@ func (s *UserStore) load() error {
 		}
 		return fmt.Errorf("read auth file: %w", err)
 	}
+
+	if s.key != nil {
+		decrypted, err := securityext.DecryptConfig(string(data), s.passphrase)
+		if err == nil {
+			return json.Unmarshal(decrypted, &s.entries)
+		}
+	}
+
 	return json.Unmarshal(data, &s.entries)
 }
 
@@ -57,6 +75,15 @@ func (s *UserStore) save() error {
 	if err != nil {
 		return fmt.Errorf("marshal users: %w", err)
 	}
+
+	if s.key != nil {
+		encrypted, err := securityext.EncryptConfig(data, s.passphrase)
+		if err != nil {
+			return fmt.Errorf("encrypt auth data: %w", err)
+		}
+		return os.WriteFile(s.filePath(), []byte(encrypted), 0o600)
+	}
+
 	return os.WriteFile(s.filePath(), data, 0o600)
 }
 
@@ -121,5 +148,7 @@ func (s *UserStore) List() ([]SavedUser, error) {
 	if err := s.load(); err != nil {
 		return nil, err
 	}
-	return s.entries, nil
+	result := make([]SavedUser, len(s.entries))
+	copy(result, s.entries)
+	return result, nil
 }

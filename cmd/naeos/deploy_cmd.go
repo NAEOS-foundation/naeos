@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/NAEOS-foundation/naeos/internal/observability"
 )
 
 type DeployTarget struct {
@@ -107,6 +109,7 @@ func runDeploy(cmd *cobra.Command, configPath, target, environment string, dryRu
 	c := exec.CommandContext(cmd.Context(), deployCmd.Command, deployCmd.Args...) //nolint:gosec // G204: command and args are from hardcoded DeployTarget definitions
 	c.Stdout = out
 	c.Stderr = os.Stderr
+	observability.InjectTraceToCmd(cmd.Context(), c)
 	if err := c.Run(); err != nil {
 		return fmt.Errorf("deploy failed: %w", err)
 	}

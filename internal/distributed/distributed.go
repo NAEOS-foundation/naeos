@@ -1,12 +1,71 @@
 package distributed
 
 import (
+	"container/heap"
 	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+// Agent represents a registered remote worker with metadata and heartbeat tracking.
+type Agent struct {
+	ID            string            `json:"id"`
+	Type          string            `json:"type"`
+	Endpoint      string            `json:"endpoint,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	Status        AgentStatus       `json:"status"`
+	LastHeartbeat time.Time         `json:"last_heartbeat"`
+	RegisteredAt  time.Time         `json:"registered_at"`
+	TasksExecuted int64             `json:"tasks_executed"`
+	mu            sync.RWMutex
+}
+
+type AgentStatus string
+
+const (
+	AgentStatusOnline  AgentStatus = "online"
+	AgentStatusOffline AgentStatus = "offline"
+	AgentStatusBusy    AgentStatus = "busy"
+)
+
+type taskItem struct {
+	task     *Task
+	priority int
+	index    int
+}
+
+type priorityQueue []*taskItem
+
+func (pq priorityQueue) Len() int { return len(pq) }
+
+func (pq priorityQueue) Less(i, j int) bool {
+	return pq[i].priority > pq[j].priority
+}
+
+func (pq priorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
+}
+
+func (pq *priorityQueue) Push(x any) {
+	n := len(*pq)
+	item := x.(*taskItem)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
+func (pq *priorityQueue) Pop() any {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil
+	item.index = -1
+	*pq = old[:n-1]
+	return item
+}
 
 type Task struct {
 	ID        string            `json:"id"`
@@ -37,13 +96,15 @@ type Worker interface {
 
 type Coordinator struct {
 	workers  []Worker
-	taskCh   chan *Task
+	agents   map[string]*Agent
+	queue    priorityQueue
+	notify   chan struct{}
 	resultCh chan *TaskResult
 	mu       sync.RWMutex
 	wg       sync.WaitGroup
 	handlers map[string]func(ctx context.Context, task *Task) (*TaskResult, error)
 	metrics  *CoordinatorMetrics
-	draining atomic.Bool
+	draining bool
 	drainWg  sync.WaitGroup
 }
 
@@ -62,7 +123,9 @@ func NewCoordinator(workers []Worker, queueSize int) *Coordinator {
 	}
 	return &Coordinator{
 		workers:  workers,
-		taskCh:   make(chan *Task, queueSize),
+		agents:   make(map[string]*Agent),
+		queue:    make(priorityQueue, 0),
+		notify:   make(chan struct{}, queueSize),
 		resultCh: make(chan *TaskResult, queueSize),
 		handlers: make(map[string]func(ctx context.Context, task *Task) (*TaskResult, error)),
 		metrics:  &CoordinatorMetrics{},
@@ -70,22 +133,87 @@ func NewCoordinator(workers []Worker, queueSize int) *Coordinator {
 }
 
 func (c *Coordinator) Submit(task *Task) {
+	c.pushTask(task, 0)
+}
+
+func (c *Coordinator) SubmitPriority(task *Task) {
+	c.pushTask(task, task.Priority)
+}
+
+func (c *Coordinator) pushTask(task *Task, priority int) {
 	if task.CreatedAt.IsZero() {
 		task.CreatedAt = time.Now()
 	}
 	if task.MaxRetry < 0 {
 		task.MaxRetry = 0
 	}
+	c.mu.Lock()
+	heap.Push(&c.queue, &taskItem{task: task, priority: priority})
+	c.mu.Unlock()
 	c.metrics.TasksSubmitted.Add(1)
-	c.taskCh <- task
+	select {
+	case c.notify <- struct{}{}:
+	default:
+	}
 }
 
-func (c *Coordinator) SubmitPriority(task *Task) {
-	if task.CreatedAt.IsZero() {
-		task.CreatedAt = time.Now()
+func (c *Coordinator) RegisterAgent(agent *Agent) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if agent.ID == "" {
+		return fmt.Errorf("agent ID must not be empty")
 	}
-	c.metrics.TasksSubmitted.Add(1)
-	c.taskCh <- task
+	agent.Status = AgentStatusOnline
+	agent.LastHeartbeat = time.Now()
+	if agent.RegisteredAt.IsZero() {
+		agent.RegisteredAt = time.Now()
+	}
+	c.agents[agent.ID] = agent
+	return nil
+}
+
+func (c *Coordinator) UnregisterAgent(id string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if _, ok := c.agents[id]; !ok {
+		return fmt.Errorf("agent not found: %s", id)
+	}
+	c.agents[id].Status = AgentStatusOffline
+	delete(c.agents, id)
+	return nil
+}
+
+func (c *Coordinator) RecordHeartbeat(id string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	agent, ok := c.agents[id]
+	if !ok {
+		return fmt.Errorf("agent not found: %s", id)
+	}
+	agent.mu.Lock()
+	agent.LastHeartbeat = time.Now()
+	agent.Status = AgentStatusOnline
+	agent.mu.Unlock()
+	return nil
+}
+
+func (c *Coordinator) Agent(id string) *Agent {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.agents[id]
+}
+
+func (c *Coordinator) ListAgents() []*Agent {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	out := make([]*Agent, 0, len(c.agents))
+	for _, a := range c.agents {
+		out = append(out, a)
+	}
+	return out
 }
 
 func (c *Coordinator) RegisterHandler(taskType string, handler func(ctx context.Context, task *Task) (*TaskResult, error)) {
@@ -104,22 +232,43 @@ func (c *Coordinator) Start(ctx context.Context) {
 func (c *Coordinator) workerLoop(ctx context.Context, w Worker) {
 	defer c.wg.Done()
 	for {
-		if c.draining.Load() {
+		task := c.popTask(ctx)
+		if task == nil {
 			return
 		}
+		c.mu.Lock()
+		if c.draining {
+			c.mu.Unlock()
+			return
+		}
+		c.mu.Unlock()
+		c.drainWg.Add(1)
+		result := c.executeWithRetry(ctx, w, task)
+		c.drainWg.Done()
+		if result != nil {
+			c.resultCh <- result
+		}
+	}
+}
+
+func (c *Coordinator) popTask(ctx context.Context) *Task {
+	for {
+		c.mu.Lock()
+		for c.queue.Len() > 0 {
+			item := heap.Pop(&c.queue).(*taskItem)
+			c.mu.Unlock()
+			return item.task
+		}
+		if c.draining {
+			c.mu.Unlock()
+			return nil
+		}
+		c.mu.Unlock()
+
 		select {
 		case <-ctx.Done():
-			return
-		case task, ok := <-c.taskCh:
-			if !ok {
-				return
-			}
-			c.drainWg.Add(1)
-			result := c.executeWithRetry(ctx, w, task)
-			c.drainWg.Done()
-			if result != nil {
-				c.resultCh <- result
-			}
+			return nil
+		case <-c.notify:
 		}
 	}
 }
@@ -131,7 +280,10 @@ func (c *Coordinator) executeWithRetry(ctx context.Context, w Worker, task *Task
 	}
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		if c.draining.Load() {
+		c.mu.Lock()
+		draining := c.draining
+		c.mu.Unlock()
+		if draining {
 			return &TaskResult{
 				TaskID:  task.ID,
 				Error:   "coordinator draining",
@@ -209,15 +361,20 @@ func (c *Coordinator) Results() <-chan *TaskResult {
 }
 
 func (c *Coordinator) Stop() {
-	close(c.taskCh)
+	c.mu.Lock()
+	c.draining = true
+	c.mu.Unlock()
+	close(c.notify)
 	c.wg.Wait()
 	close(c.resultCh)
 }
 
 func (c *Coordinator) Drain() {
-	c.draining.Store(true)
+	c.mu.Lock()
+	c.draining = true
+	c.mu.Unlock()
+	close(c.notify)
 	c.drainWg.Wait()
-	close(c.taskCh)
 	c.wg.Wait()
 	close(c.resultCh)
 }
@@ -292,22 +449,49 @@ func (lb *LoadBalancer) Next() Worker {
 }
 
 func (lb *LoadBalancer) WorkerCount() int {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
 	return len(lb.workers)
 }
 
 type ResultAggregator struct {
-	results []TaskResult
-	mu      sync.Mutex
+	results   []TaskResult
+	mu        sync.Mutex
+	resultsCh chan *TaskResult
+	closeOnce sync.Once
+	streaming bool
 }
 
 func NewResultAggregator() *ResultAggregator {
-	return &ResultAggregator{}
+	return &ResultAggregator{
+		resultsCh: make(chan *TaskResult, 100),
+	}
 }
 
 func (ra *ResultAggregator) Add(result TaskResult) {
 	ra.mu.Lock()
-	defer ra.mu.Unlock()
 	ra.results = append(ra.results, result)
+	ra.mu.Unlock()
+	if ra.streaming {
+		select {
+		case ra.resultsCh <- &result:
+		default:
+		}
+	}
+}
+
+func (ra *ResultAggregator) EnableStreaming() {
+	ra.streaming = true
+}
+
+func (ra *ResultAggregator) StartStreaming() <-chan *TaskResult {
+	return ra.resultsCh
+}
+
+func (ra *ResultAggregator) Close() {
+	ra.closeOnce.Do(func() {
+		close(ra.resultsCh)
+	})
 }
 
 func (ra *ResultAggregator) All() []TaskResult {
@@ -491,6 +675,41 @@ func NewHealthChecker(workers []Worker, interval time.Duration) *HealthChecker {
 	return hc
 }
 
+// Register adds a new worker and its health entry dynamically.
+func (hc *HealthChecker) Register(w Worker) {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+	hc.workers = append(hc.workers, w)
+	hc.health[w.ID()] = &WorkerHealth{
+		WorkerID:      w.ID(),
+		Healthy:       true,
+		LastHeartbeat: time.Now(),
+	}
+}
+
+// Unregister removes a worker by ID.
+func (hc *HealthChecker) Unregister(id string) {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+	for i, w := range hc.workers {
+		if w.ID() == id {
+			hc.workers = append(hc.workers[:i], hc.workers[i+1:]...)
+			delete(hc.health, id)
+			return
+		}
+	}
+}
+
+// RecordHeartbeat updates the last heartbeat time for a worker.
+func (hc *HealthChecker) RecordHeartbeat(id string) {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+	if h, ok := hc.health[id]; ok {
+		h.LastHeartbeat = time.Now()
+		h.Healthy = true
+	}
+}
+
 func (hc *HealthChecker) Start(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(hc.interval)
@@ -552,7 +771,14 @@ func (hc *HealthChecker) HealthyWorkers() []Worker {
 }
 
 func computeBackoff(attempt int) time.Duration {
-	base := time.Duration(1<<uint(attempt-1)) * 100 * time.Millisecond
+	if attempt < 1 {
+		return 100 * time.Millisecond
+	}
+	exp := 1
+	if attempt-1 < 30 {
+		exp = 1 << uint(attempt-1)
+	}
+	base := time.Duration(exp) * 100 * time.Millisecond
 	if base > 5*time.Second {
 		base = 5 * time.Second
 	}

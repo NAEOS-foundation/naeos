@@ -13,18 +13,7 @@ func TestWorkflowCommandShowsHelp(t *testing.T) {
 	}
 }
 
-func TestWorkflowListEmpty(t *testing.T) {
-	root := newRootCommand()
-	output, err := executeCommand(root, "workflow", "list")
-	if err != nil {
-		t.Fatalf("workflow list failed: %v", err)
-	}
-	if !strings.Contains(output, "No workflows defined") {
-		t.Fatalf("expected no workflows message, got %q", output)
-	}
-}
-
-func TestWorkflowCreate(t *testing.T) {
+func TestWorkflowCreateAndList(t *testing.T) {
 	root := newRootCommand()
 	output, err := executeCommand(root, "workflow", "create", "--name", "deploy", "--steps", "build,test,deploy")
 	if err != nil {
@@ -32,6 +21,14 @@ func TestWorkflowCreate(t *testing.T) {
 	}
 	if !strings.Contains(output, "Created workflow") {
 		t.Fatalf("expected create success message, got %q", output)
+	}
+
+	output, err = executeCommand(root, "workflow", "list")
+	if err != nil {
+		t.Fatalf("workflow list failed: %v", err)
+	}
+	if !strings.Contains(output, "deploy") {
+		t.Fatalf("expected workflow list to contain 'deploy', got %q", output)
 	}
 }
 

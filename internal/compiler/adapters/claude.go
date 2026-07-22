@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
+	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
 
-type claudeAdapter struct{}
+type claudeAdapter struct {
+	library *promptlib.Library
+}
 
-func NewClaudeAdapter() compiler.Adapter {
-	return &claudeAdapter{}
+func NewClaudeAdapter(lib *promptlib.Library) compiler.Adapter {
+	return &claudeAdapter{library: lib}
 }
 
 func (a *claudeAdapter) Target() compiler.Target {
@@ -21,26 +25,61 @@ func (a *claudeAdapter) Target() compiler.Target {
 
 func (a *claudeAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "nil NEIR")
+	}
+
+	if a.library != nil {
+		return a.compileFromLibrary(neir)
+	}
+	return a.compileLegacy(neir)
+}
+
+func (a *claudeAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
+	rendered, err := a.library.RenderCompiler("claude", neir)
+	if err != nil {
+		return nil, fmt.Errorf("render claude template: %w", err)
 	}
 
 	var files []compiler.OutputFile
+	for _, f := range rendered {
+		files = append(files, compiler.OutputFile{
+			Path:    f.Path,
+			Content: f.Content,
+			Kind:    f.Kind,
+		})
+	}
 
-	claudeMd := a.buildClaudeMd(neir)
+	projectName := "unknown"
+	if neir.Project != nil {
+		projectName = neir.Project.Name
+	}
+
+	return &compiler.CompiledOutput{
+		Target:     compiler.TargetClaude,
+		Files:      files,
+		Summary:    fmt.Sprintf("Generated %d files for Claude Code (%s)", len(files), projectName),
+		CompiledAt: time.Now(),
+	}, nil
+}
+
+func (a *claudeAdapter) compileLegacy(neir *model.NEIR) (*compiler.CompiledOutput, error) {
+	var files []compiler.OutputFile
+
+	claudeMd := buildClaudeMdLegacy(neir)
 	files = append(files, compiler.OutputFile{
 		Path:    "CLAUDE.md",
 		Content: claudeMd,
 		Kind:    "instructions",
 	})
 
-	contextFile := a.buildContextBundle(neir)
+	contextFile := buildClaudeContextLegacy(neir)
 	files = append(files, compiler.OutputFile{
 		Path:    ".claude/context.md",
 		Content: contextFile,
 		Kind:    "context",
 	})
 
-	rulesFile := a.buildRules(neir)
+	rulesFile := buildClaudeRulesLegacy(neir)
 	files = append(files, compiler.OutputFile{
 		Path:    ".claude/rules.md",
 		Content: rulesFile,
@@ -60,7 +99,7 @@ func (a *claudeAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, err
 	}, nil
 }
 
-func (a *claudeAdapter) buildClaudeMd(neir *model.NEIR) string {
+func buildClaudeMdLegacy(neir *model.NEIR) string {
 	var sb strings.Builder
 	sb.WriteString("# CLAUDE.md\n\n")
 	sb.WriteString("This file provides context for Claude Code when working on this project.\n\n")
@@ -126,7 +165,7 @@ func (a *claudeAdapter) buildClaudeMd(neir *model.NEIR) string {
 	return sb.String()
 }
 
-func (a *claudeAdapter) buildContextBundle(neir *model.NEIR) string {
+func buildClaudeContextLegacy(neir *model.NEIR) string {
 	var sb strings.Builder
 	sb.WriteString("# Context Bundle for Claude Code\n\n")
 	sb.WriteString("Project structure and key design decisions.\n\n")
@@ -154,7 +193,7 @@ func (a *claudeAdapter) buildContextBundle(neir *model.NEIR) string {
 	return sb.String()
 }
 
-func (a *claudeAdapter) buildRules(neir *model.NEIR) string {
+func buildClaudeRulesLegacy(neir *model.NEIR) string {
 	var sb strings.Builder
 	sb.WriteString("# Claude Code Rules\n\n")
 

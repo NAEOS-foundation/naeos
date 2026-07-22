@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -228,6 +229,38 @@ func (m *MemoryAuditor) ApplyRetention(policy RetentionPolicy) int {
 
 	m.events = kept
 	return original - len(m.events)
+}
+
+func (m *MemoryAuditor) ExportCSV(path string) error {
+	m.mu.Lock()
+	events := make([]AuditEvent, len(m.events))
+	copy(events, m.events)
+	m.mu.Unlock()
+
+	var sb strings.Builder
+	sb.WriteString("id,timestamp,user_id,action,resource,resource_id,status,ip,user_agent,details\n")
+	for _, e := range events {
+		fmt.Fprintf(&sb, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+			escapeCSV(e.ID),
+			e.Timestamp.Format(time.RFC3339),
+			escapeCSV(e.UserID),
+			escapeCSV(e.Action),
+			escapeCSV(e.Resource),
+			escapeCSV(e.ResourceID),
+			escapeCSV(e.Status),
+			escapeCSV(e.IP),
+			escapeCSV(e.UserAgent),
+			escapeCSV(e.Details),
+		)
+	}
+	return os.WriteFile(path, []byte(sb.String()), 0o600)
+}
+
+func escapeCSV(s string) string {
+	if strings.ContainsAny(s, ",\"\n") {
+		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
+	}
+	return s
 }
 
 func (m *MemoryAuditor) ExportJSON(path string) error {

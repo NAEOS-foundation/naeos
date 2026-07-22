@@ -205,8 +205,8 @@ func (c *Config) Snapshot() map[string]any {
 	return snapshot
 }
 
-// File Watcher
-
+// Deprecated: FileWatcher uses polling and has been superseded by HotReloader
+// (fsnotify-based). Use NewHotReloader instead.
 type FileWatcher struct {
 	config   *Config
 	interval time.Duration
@@ -215,6 +215,7 @@ type FileWatcher struct {
 	mu       sync.RWMutex
 }
 
+// Deprecated: Use NewHotReloader instead.
 func NewFileWatcher(config *Config, interval time.Duration) *FileWatcher {
 	return &FileWatcher{
 		config:   config,

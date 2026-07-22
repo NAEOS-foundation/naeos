@@ -6,6 +6,7 @@ import (
 )
 
 func TestPythonAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateProject("MyProject")
 	if len(artifacts) < 4 {
@@ -34,6 +35,7 @@ func TestPythonAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "MyProject")
 	if len(artifacts) < 6 {
@@ -58,6 +60,7 @@ func TestPythonAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "MyProject")
 	if len(artifacts) < 1 {
@@ -76,6 +79,7 @@ func TestPythonAdapter_GenerateService(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateDockerfile("MyProject")
 	if len(artifacts) != 1 {
@@ -91,6 +95,7 @@ func TestPythonAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateCI("MyProject")
 	if len(artifacts) != 1 {
@@ -106,6 +111,7 @@ func TestPythonAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateDockerCompose("MyProject")
 	if len(artifacts) != 1 {
@@ -118,6 +124,7 @@ func TestPythonAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestPythonAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := PythonAdapter{}
 	artifacts := a.GenerateArchitectureDoc("MyProject", "clean")
 	if len(artifacts) != 1 {

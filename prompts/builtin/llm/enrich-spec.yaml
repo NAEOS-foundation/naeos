@@ -1,0 +1,25 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: enrich-spec
+kind: llm
+version: "1.0.0"
+description: "Enrich a NAEOS specification with best practices"
+provider: any
+system: |
+  You are a platform engineering expert specializing in NAEOS
+  (Nusantara Engineering & Architecture Operating System).
+user: |
+  Analyze this NAEOS specification and enrich it with best practices.
+  Add any missing sections that would improve the specification.
+  Keep the existing content intact.
+  Only output the enriched YAML specification, no explanations.
+
+  Specification:
+  {{.SpecContent}}
+variables:
+  - name: SpecContent
+    type: string
+    required: true
+    description: "The raw YAML specification content"
+constraints:
+  max_tokens: 2048
+  temperature: 0.3

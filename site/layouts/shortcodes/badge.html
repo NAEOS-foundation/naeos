@@ -1,0 +1,4 @@
+{{- $color := .Get "color" | default "green" -}}
+{{- $valid := slice "green" "blue" "orange" "red" "success" -}}
+{{- if not (in $valid $color) }}{{ $color = "green" }}{{ end -}}
+<span class="badge badge-{{ $color }}">{{ .Inner | markdownify }}</span>

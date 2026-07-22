@@ -636,8 +636,8 @@ func TestSandboxExecuteWithTimeoutCancellation(t *testing.T) {
 
 func TestSimpleLogger(t *testing.T) {
 	l := NewSimpleLogger("test")
-	if l.prefix != "test" {
-		t.Errorf("expected prefix 'test', got %s", l.prefix)
+	if l == nil || l.logger == nil {
+		t.Error("expected non-nil logger")
 	}
 	l.Info("hello %s", "world")
 	l.Warn("warn %d", 42)

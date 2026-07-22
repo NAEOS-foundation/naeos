@@ -20,6 +20,8 @@ func (ActixWebAdapter) Language() language.Language {
 	return language.LanguageRust
 }
 
+func (ActixWebAdapter) Framework() string { return "actix-web" }
+
 // GenerateProject creates a new Actix-Web project skeleton.
 func (ActixWebAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)

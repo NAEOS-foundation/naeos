@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const brokerConfigDir = ".config/naeos"
@@ -66,10 +68,10 @@ func (s *ConnectionStore) Add(name, driver string, config *Config) error {
 		return err
 	}
 
-	for _, e := range s.entries {
+	for i, e := range s.entries {
 		if e.Name == name {
-			e.Driver = driver
-			e.Config = config
+			s.entries[i].Driver = driver
+			s.entries[i].Config = config
 			return s.save()
 		}
 	}
@@ -92,7 +94,7 @@ func (s *ConnectionStore) Remove(name string) error {
 			return s.save()
 		}
 	}
-	return fmt.Errorf("broker connection %q not found", name)
+	return naeoserr.Wrap(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q not found", name), nil)
 }
 
 func (s *ConnectionStore) Get(name string) (*SavedBroker, error) {
@@ -103,12 +105,12 @@ func (s *ConnectionStore) Get(name string) (*SavedBroker, error) {
 		return nil, err
 	}
 
-	for _, e := range s.entries {
-		if e.Name == name {
-			return &e, nil
+	for i := range s.entries {
+		if s.entries[i].Name == name {
+			return &s.entries[i], nil
 		}
 	}
-	return nil, fmt.Errorf("broker connection %q not found", name)
+	return nil, naeoserr.Wrap(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q not found", name), nil)
 }
 
 func (s *ConnectionStore) List() ([]SavedBroker, error) {
@@ -118,5 +120,7 @@ func (s *ConnectionStore) List() ([]SavedBroker, error) {
 	if err := s.load(); err != nil {
 		return nil, err
 	}
-	return s.entries, nil
+	result := make([]SavedBroker, len(s.entries))
+	copy(result, s.entries)
+	return result, nil
 }

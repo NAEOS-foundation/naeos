@@ -82,7 +82,7 @@ func newAuthCreateUserCommand() *cobra.Command {
 		Short: "Create a new user",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := auth.NewUserStore()
+			store := auth.NewUserStore("")
 			mgr := auth.NewManager()
 
 			user := &auth.User{
@@ -147,7 +147,7 @@ func newAuthListUsersCommand() *cobra.Command {
 		Short: "List all users",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := auth.NewUserStore()
+			store := auth.NewUserStore("")
 
 			users, err := store.List()
 			if err != nil {

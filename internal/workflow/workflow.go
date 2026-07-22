@@ -3,8 +3,11 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -334,7 +337,6 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 			wg.Add(1)
 			go func(s *WorkflowStep) {
 				defer wg.Done()
-				w.Context.Current = s.Name
 				w.emitEvent(EventStepStart, s.Name, nil)
 
 				if err := s.Action(w.Context); err != nil {
@@ -350,10 +352,16 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 		wg.Wait()
 		close(errCh)
 
-		if err := <-errCh; err != nil {
-			w.Context.Error = err
+		var errs []error
+		for err := range errCh {
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		if len(errs) > 0 {
+			w.Context.Error = errors.Join(errs...)
 			_ = w.Machine.Trigger("error")
-			return err
+			return fmt.Errorf("parallel steps failed: %w", errors.Join(errs...))
 		}
 
 		_ = w.Machine.Trigger("next")
@@ -501,6 +509,7 @@ func (a *ApprovalWorkflow) ListByStatus(status string) []*ApprovalRequest {
 
 type Manager struct {
 	workflows map[string]*Workflow
+	storePath string
 	mu        sync.RWMutex
 }
 
@@ -510,10 +519,23 @@ func NewManager() *Manager {
 	}
 }
 
-func (m *Manager) Register(name string, workflow *Workflow) {
+// NewManagerWithPath creates a Manager that persists workflows to the given directory.
+func NewManagerWithPath(storePath string) *Manager {
+	m := &Manager{
+		workflows: make(map[string]*Workflow),
+		storePath: storePath,
+	}
+	if err := m.load(); err != nil {
+		fmt.Fprintf(os.Stderr, "workflow: load error: %v\n", err)
+	}
+	return m
+}
+
+func (m *Manager) Register(name string, workflow *Workflow) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.workflows[name] = workflow
+	return m.save()
 }
 
 func (m *Manager) Get(name string) (*Workflow, bool) {
@@ -523,10 +545,11 @@ func (m *Manager) Get(name string) (*Workflow, bool) {
 	return workflow, ok
 }
 
-func (m *Manager) Remove(name string) {
+func (m *Manager) Remove(name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.workflows, name)
+	return m.save()
 }
 
 func (m *Manager) List() []string {
@@ -542,15 +565,79 @@ func (m *Manager) List() []string {
 func (m *Manager) Execute(name string) error {
 	workflow, ok := m.Get(name)
 	if !ok {
+		slog.Error("workflow not found", "name", name)
 		return fmt.Errorf("workflow not found: %s", name)
 	}
+	slog.Info("workflow executing", "name", name)
 	return workflow.Execute()
 }
 
 func (m *Manager) ExecuteWithContext(ctx context.Context, name string) error {
 	workflow, ok := m.Get(name)
 	if !ok {
+		slog.Error("workflow not found", "name", name)
 		return fmt.Errorf("workflow not found: %s", name)
 	}
+	slog.Info("workflow executing with context", "name", name)
 	return workflow.ExecuteWithContext(ctx)
+}
+
+type workflowEntry struct {
+	Name  string   `json:"name"`
+	Steps []string `json:"steps"`
+}
+
+func (m *Manager) save() error {
+	if m.storePath == "" {
+		return nil
+	}
+	if err := os.MkdirAll(m.storePath, 0o755); err != nil {
+		return fmt.Errorf("create workflow store: %w", err)
+	}
+	var entries []workflowEntry
+	for name, w := range m.workflows {
+		var stepNames []string
+		for _, s := range w.Steps {
+			stepNames = append(stepNames, s.Name)
+		}
+		entries = append(entries, workflowEntry{Name: name, Steps: stepNames})
+	}
+	data, err := json.MarshalIndent(entries, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal workflows: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(m.storePath, "workflows.json"), data, 0o600); err != nil {
+		return fmt.Errorf("write workflows: %w", err)
+	}
+	return nil
+}
+
+func (m *Manager) load() error {
+	if m.storePath == "" {
+		return nil
+	}
+	data, err := os.ReadFile(filepath.Join(m.storePath, "workflows.json"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("read workflows: %w", err)
+	}
+	var entries []workflowEntry
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return fmt.Errorf("unmarshal workflows: %w", err)
+	}
+	for _, e := range entries {
+		var steps []*WorkflowStep
+		for _, name := range e.Steps {
+			steps = append(steps, &WorkflowStep{
+				Name:     name,
+				Action:   func(ctx *WorkflowContext) error { return nil },
+				Timeout:  300,
+				Required: true,
+			})
+		}
+		m.workflows[e.Name] = NewWorkflow(e.Name, steps)
+	}
+	return nil
 }

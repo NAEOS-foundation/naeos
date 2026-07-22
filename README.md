@@ -8,13 +8,13 @@
 
 > Specify Once. Build Anywhere.
 
-NAEOS (Nusantara Engineering & Architecture Operating System) adalah platform engineering deklaratif yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas.
+NAEOS (Nusantara Engineering & Architecture Operating System) is a declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline.
 
-NAEOS bukan sekadar project generator. NAEOS adalah engineering runtime yang memahami spesifikasi, membangun model internal, menyusun rencana eksekusi, menghasilkan artifact, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya.
+NAEOS is not just a project generator. NAEOS is an engineering runtime that understands specifications, builds an internal model, orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle.
 
 ## Vision
 
-Membangun platform engineering open source yang memungkinkan pengembang dan organisasi mendeskripsikan sistem sekali, kemudian membangun, memvalidasi, dan mengembangkan perangkat lunak di berbagai bahasa, framework, dan platform.
+Build an open-source engineering platform that enables developers and organizations to describe their system once, then build, validate, and evolve software across multiple languages, frameworks, and platforms.
 
 ## Quick Start
 
@@ -56,7 +56,7 @@ naeos compile --all --input-file spec.yaml
 ## Features
 
 ### Core Pipeline
-- **Parser** — YAML/JSON specification parsing dengan variable interpolation
+- **Parser** — YAML/JSON specification parsing with variable interpolation
 - **Normalizer** — data normalization
 - **Resolver** — cross-reference resolution
 - **NEIR Builder** — unified project model
@@ -127,23 +127,23 @@ naeos compile --all --input-file spec.yaml
 ## Core Components
 
 ### Kernel
-Kernel menyediakan fondasi runtime:
+The kernel provides the runtime foundation:
 - Service Registry
 - Event Bus (pub/sub)
 - Telemetry Collection
 - Lifecycle Management
 
 ### Specification
-Specification menggunakan NAEOS Specification Language v2 sebagai sumber kebenaran utama.
+Specifications use NAEOS Specification Language v2 as the single source of truth.
 
 ### NEIR
-NAEOS Engineering Intermediate Representation adalah model engineering sentral yang merepresentasikan seluruh sistem. NEIR memuat project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, dan metadata.
+NAEOS Engineering Intermediate Representation is the central engineering model representing the entire system. NEIR encompasses project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, and metadata.
 
 ### Compiler
-Compiler mentransformasikan NEIR ke AI instruction sets untuk 6 target tools.
+The compiler transforms NEIR into AI instruction sets for 6 target tools.
 
 ### Marketplace
-Marketplace untuk profiles, plugins, dan templates yang bisa di-publish, search, dan install.
+A marketplace for profiles, plugins, and templates that can be published, searched, and installed.
 
 ## CLI Commands
 
@@ -221,15 +221,13 @@ pkg/
   config/           # Configuration
   plugin/           # Plugin system
 docs/               # Documentation (56 NES specs)
-wiki/               # Project wiki (19 pages)
 ```
 
 ## Documentation
 
-- [Wiki](wiki/) — 19 halaman dokumentasi lengkap
-- [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — indeks dokumen
-- [GETTING-STARTED.md](GETTING-STARTED.md) — panduan onboarding
-- [CONTRIBUTING.md](CONTRIBUTING.md) — pedoman kontribusi
+- [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — document index
+- [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines
 - [CHANGELOG.md](CHANGELOG.md) — version history
 - [docs/](docs/) — 56 NES specifications (NES-000 to NES-053)
 
@@ -244,9 +242,12 @@ wiki/               # Project wiki (19 pages)
 - [x] v1.1.0 — Critical fixes (WebSocket races, interface{}→any, godoc, OpenAPI)
 - [x] v1.2.0 — Database layer (PostgreSQL/MySQL/SQLite, retry, logging, health checks)
 - [x] v1.3.0 — Quality, Correctness & Production Readiness (code gen fixes, security audit, CLI --output json/yaml)
+- [x] v1.3.1 — Code Quality & Lint Compliance (999 issues resolved, 22 unused symbols removed)
+- [x] v1.4.0 — Prompt Library & Platform Improvements (YAML templates, observability dashboard, workflow manager)
+- [x] v1.5.0 — Production Hardening (HTTP timeouts, context propagation, error logging, SSE fixes, test fixes)
 
 ### In Progress
-- [ ] v1.4.0 — Cloud integration, advanced plugins
+- [ ] v1.6.0 — Ecosystem & Documentation
 - [ ] v2.0.0 — Dashboard UI, distributed builds
 
 ## License
@@ -255,4 +256,4 @@ Apache License 2.0
 
 ## Status
 
-🟢 **Active Development** — NAEOS saat ini dalam tahap pengembangan aktif dengan fitur lengkap untuk specification-driven engineering. Versi terbaru: v1.3.0 (Quality, Correctness & Production Readiness).
+🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v1.5.0 (Dashboard, Distributed Builds, Prompt Library, Production Hardening).

@@ -1,9 +1,150 @@
 package profiles
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestNewRemoteClient(t *testing.T) {
+	reg := RemoteRegistry{URL: "https://example.com", APIKey: "test-key"}
+	rc := NewRemoteClient(reg)
+	if rc == nil {
+		t.Fatal("expected non-nil client")
+	}
+}
+
+func TestRemoteClientPublish(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/profiles" {
+			t.Errorf("expected /profiles, got %s", r.URL.Path)
+		}
+		if auth := r.Header.Get("Authorization"); auth != "Bearer test-key" {
+			t.Errorf("expected Bearer test-key, got %s", auth)
+		}
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	rc := NewRemoteClient(RemoteRegistry{URL: srv.URL, APIKey: "test-key"})
+	err := rc.Publish([]Profile{{ID: "test", Name: "Test Profile"}})
+	if err != nil {
+		t.Fatalf("publish failed: %v", err)
+	}
+}
+
+func TestRemoteClientPublishError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"error":"invalid profile"}`))
+	}))
+	defer srv.Close()
+
+	rc := NewRemoteClient(RemoteRegistry{URL: srv.URL})
+	err := rc.Publish([]Profile{{ID: "bad"}})
+	if err == nil {
+		t.Fatal("expected error for bad request")
+	}
+}
+
+func TestRemoteClientSubscribe(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`[{"id":"remote-1","name":"Remote Profile","industry":"tech"}]`))
+	}))
+	defer srv.Close()
+
+	rc := NewRemoteClient(RemoteRegistry{URL: srv.URL})
+	profiles, err := rc.Subscribe()
+	if err != nil {
+		t.Fatalf("subscribe failed: %v", err)
+	}
+	if len(profiles) != 1 {
+		t.Fatalf("expected 1 profile, got %d", len(profiles))
+	}
+	if profiles[0].ID != "remote-1" {
+		t.Errorf("expected remote-1, got %s", profiles[0].ID)
+	}
+}
+
+func TestRemoteClientSubscribeError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	rc := NewRemoteClient(RemoteRegistry{URL: srv.URL})
+	_, err := rc.Subscribe()
+	if err == nil {
+		t.Fatal("expected error for server error")
+	}
+}
+
+func TestRegistrySubscribeAndStop(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`[{"id":"sub-profile","name":"Subscribed Profile","industry":"tech"}]`))
+	}))
+	defer srv.Close()
+
+	reg := NewRegistry()
+	sub := reg.Subscribe(RemoteRegistry{URL: srv.URL}, 50*time.Millisecond)
+	if sub == nil {
+		t.Fatal("expected non-nil subscription")
+	}
+
+	time.Sleep(120 * time.Millisecond)
+
+	sub.Stop()
+
+	p, ok := reg.Get("sub-profile")
+	if !ok {
+		t.Fatal("expected to find subscribed profile")
+	}
+	if p.Name != "Subscribed Profile" {
+		t.Errorf("expected 'Subscribed Profile', got %q", p.Name)
+	}
+}
+
+func TestSubscriptionStopIdempotent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`[]`))
+	}))
+	defer srv.Close()
+
+	reg := NewRegistry()
+	sub := reg.Subscribe(RemoteRegistry{URL: srv.URL}, 1*time.Hour)
+
+	sub.Stop()
+	sub.Stop()
+
+	// Should not panic
+}
+
+func TestRemoteClientPublishServerURL(t *testing.T) {
+	rc := NewRemoteClient(RemoteRegistry{URL: "http://invalid.local:1"})
+	err := rc.Publish([]Profile{{ID: "x"}})
+	if err == nil {
+		t.Fatal("expected connection error")
+	}
+}
+
+func TestRemoteClientSubscribeServerURL(t *testing.T) {
+	rc := NewRemoteClient(RemoteRegistry{URL: "http://invalid.local:1"})
+	_, err := rc.Subscribe()
+	if err == nil {
+		t.Fatal("expected connection error")
+	}
+}
 
 func TestRegistryLoadBuiltin(t *testing.T) {
 	reg := NewRegistry()

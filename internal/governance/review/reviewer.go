@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var placeholdersLower = []string{"placeholder", "changeme", "replace_me"}
+
 type ReviewStatus string
 
 const (
@@ -107,24 +109,13 @@ func (DefaultReviewer) ReviewArtifact(name, content string, rules []string) (*Re
 }
 
 func containsTODO(content string) bool {
-	for _, line := range splitLines(content) {
-		trimmed := trimSpace(line)
-		lower := strings.ToLower(trimmed)
-		if strings.HasPrefix(lower, "todo") {
-			return true
-		}
-		if strings.Contains(lower, "todo") {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(strings.ToLower(content), "todo")
 }
 
 func containsPlaceholder(content string) bool {
-	placeholders := []string{"PLACEHOLDER", "CHANGEME", "REPLACE_ME"}
 	lowerContent := strings.ToLower(content)
-	for _, p := range placeholders {
-		if strings.Contains(lowerContent, strings.ToLower(p)) {
+	for _, p := range placeholdersLower {
+		if strings.Contains(lowerContent, p) {
 			return true
 		}
 	}
@@ -167,18 +158,6 @@ func splitLines(s string) []string {
 		lines = append(lines, s[start:])
 	}
 	return lines
-}
-
-func trimSpace(s string) string {
-	start := 0
-	end := len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t') {
-		start++
-	}
-	for end > start && (s[end-1] == ' ' || s[end-1] == '\t') {
-		end--
-	}
-	return s[start:end]
 }
 
 func containsStr(s, substr string) bool {

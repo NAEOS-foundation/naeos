@@ -20,41 +20,33 @@ type ExecutionResult struct {
 	Error    error
 }
 
-type RuntimeEngine interface {
-	Run(artifact any) error
-	Execute(artifact Artifact) (*ExecutionResult, error)
-	ExecuteAll(artifacts []Artifact) ([]ExecutionResult, error)
-	Validate(artifact Artifact) error
-	SetOutputDir(dir string)
-}
-
-type DefaultRuntimeEngine struct {
-	mu        sync.Mutex
+type Engine struct {
+	mu        sync.RWMutex
 	history   []ExecutionResult
 	executed  map[string]bool
 	outputDir string
 }
 
-func NewEngine() RuntimeEngine {
-	return &DefaultRuntimeEngine{
+func NewEngine() *Engine {
+	return &Engine{
 		executed: make(map[string]bool),
 	}
 }
 
-func (e *DefaultRuntimeEngine) SetOutputDir(dir string) {
+func (e *Engine) SetOutputDir(dir string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.outputDir = dir
 }
 
-func (e *DefaultRuntimeEngine) Run(artifact any) error {
+func (e *Engine) Run(artifact any) error {
 	if artifact == nil {
 		return fmt.Errorf("artifact is nil")
 	}
 	return nil
 }
 
-func (e *DefaultRuntimeEngine) Execute(artifact Artifact) (*ExecutionResult, error) {
+func (e *Engine) Execute(artifact Artifact) (*ExecutionResult, error) {
 	if artifact.Path == "" {
 		return nil, fmt.Errorf("artifact path must not be empty")
 	}
@@ -103,7 +95,7 @@ func (e *DefaultRuntimeEngine) Execute(artifact Artifact) (*ExecutionResult, err
 	return result, nil
 }
 
-func (e *DefaultRuntimeEngine) ExecuteAll(artifacts []Artifact) ([]ExecutionResult, error) {
+func (e *Engine) ExecuteAll(artifacts []Artifact) ([]ExecutionResult, error) {
 	if len(artifacts) == 0 {
 		return nil, fmt.Errorf("no artifacts to execute")
 	}
@@ -119,7 +111,7 @@ func (e *DefaultRuntimeEngine) ExecuteAll(artifacts []Artifact) ([]ExecutionResu
 	return results, nil
 }
 
-func (e *DefaultRuntimeEngine) Validate(artifact Artifact) error {
+func (e *Engine) Validate(artifact Artifact) error {
 	if artifact.Path == "" {
 		return fmt.Errorf("artifact path must not be empty")
 	}
@@ -147,31 +139,31 @@ func (e *DefaultRuntimeEngine) Validate(artifact Artifact) error {
 	return nil
 }
 
-func (e *DefaultRuntimeEngine) History() []ExecutionResult {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+func (e *Engine) History() []ExecutionResult {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
 	result := make([]ExecutionResult, len(e.history))
 	copy(result, e.history)
 	return result
 }
 
-func (e *DefaultRuntimeEngine) Reset() {
+func (e *Engine) Reset() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.history = nil
 	e.executed = make(map[string]bool)
 }
 
-func (e *DefaultRuntimeEngine) ExecutedCount() int {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+func (e *Engine) ExecutedCount() int {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 	return len(e.executed)
 }
 
-func (e *DefaultRuntimeEngine) FailedCount() int {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+func (e *Engine) FailedCount() int {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 	count := 0
 	for _, r := range e.history {
 		if r.Status == "failed" {

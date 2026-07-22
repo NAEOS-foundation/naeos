@@ -120,6 +120,106 @@ func TestDetectFrameworkGin(t *testing.T) {
 	}
 }
 
+func TestDetectFrameworkVue(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies": {"vue": "^3.0"}}`), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "vue" {
+		t.Errorf("expected vue, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkAngular(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies": {"angular": "^15.0"}}`), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "angular" {
+		t.Errorf("expected angular, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkExpress(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies": {"express": "^4.18"}}`), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "express" {
+		t.Errorf("expected express, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkFastify(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies": {"fastify": "^4.0"}}`), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "fastify" {
+		t.Errorf("expected fastify, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkNestjs(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies": {"@nestjs/core": "^10.0"}}`), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "nestjs" {
+		t.Errorf("expected nestjs, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkFastAPI(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "pyproject.toml"), []byte("[tool.poetry.dependencies]\nfastapi = \"*\"\n"), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "fastapi" {
+		t.Errorf("expected fastapi, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkFlask(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "pyproject.toml"), []byte("[tool.poetry.dependencies]\nflask = \"*\"\n"), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "flask" {
+		t.Errorf("expected flask, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkGorilla(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/foo\nrequire github.com/gorilla/mux v1.8.0"), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "gorilla" {
+		t.Errorf("expected gorilla, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkEcho(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/foo\nrequire github.com/labstack/echo v4.0.0"), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "echo" {
+		t.Errorf("expected echo, got %s", result.Framework)
+	}
+}
+
+func TestDetectFrameworkFiber(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/foo\nrequire github.com/gofiber/fiber/v2 v2.52.0"), 0644)
+	d := NewDetector(dir)
+	result := d.Detect()
+	if result.Framework != "fiber" {
+		t.Errorf("expected fiber, got %s", result.Framework)
+	}
+}
+
 func TestDetectEmpty(t *testing.T) {
 	dir := t.TempDir()
 	d := NewDetector(dir)

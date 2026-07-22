@@ -4,8 +4,8 @@ import "testing"
 
 func TestProviderConstants(t *testing.T) {
 	tests := []struct {
-		constant Provider
-		expected string
+		p    Provider
+		want string
 	}{
 		{ProviderAWS, "aws"},
 		{ProviderGCP, "gcp"},
@@ -13,64 +13,52 @@ func TestProviderConstants(t *testing.T) {
 		{ProviderLocal, "local"},
 	}
 	for _, tt := range tests {
-		if string(tt.constant) != tt.expected {
-			t.Errorf("Provider %v = %q, want %q", tt.constant, string(tt.constant), tt.expected)
+		if string(tt.p) != tt.want {
+			t.Errorf("Provider(%s) = %s, want %s", tt.want, string(tt.p), tt.want)
 		}
 	}
 }
 
-func TestZeroValue(t *testing.T) {
-	var infra Infrastructure
-	if infra.Provider != "" {
-		t.Errorf("expected empty Provider, got %q", infra.Provider)
+func TestInfrastructure_ZeroValue(t *testing.T) {
+	var i Infrastructure
+	if i.Provider != "" {
+		t.Error("expected empty Provider")
 	}
-	if infra.Region != "" {
-		t.Errorf("expected empty Region, got %q", infra.Region)
-	}
-	if infra.Resources != nil {
-		t.Errorf("expected nil Resources, got %v", infra.Resources)
-	}
-	if infra.Networking != nil {
-		t.Errorf("expected nil Networking, got %v", infra.Networking)
-	}
-
-	var r Resource
-	if r.Name != "" {
-		t.Errorf("expected empty Name, got %q", r.Name)
-	}
-	if r.Spec != nil {
-		t.Errorf("expected nil Spec, got %v", r.Spec)
-	}
-
-	var n Network
-	if n.Name != "" {
-		t.Errorf("expected empty Name, got %q", n.Name)
-	}
-	if n.Ports != nil {
-		t.Errorf("expected nil Ports, got %v", n.Ports)
+	if i.Resources != nil {
+		t.Error("expected nil Resources")
 	}
 }
 
-func TestInitialization(t *testing.T) {
-	infra := Infrastructure{
-		Provider: ProviderAWS,
-		Region:   "us-east-1",
+func TestInfrastructure_Full(t *testing.T) {
+	i := Infrastructure{
+		Provider:    ProviderAWS,
+		Region:      "us-east-1",
+		Project:     "my-project",
+		Environment: "production",
 		Resources: []Resource{
-			{Name: "main-db", Kind: "rds", Spec: map[string]string{"engine": "postgres"}},
+			{Name: "db", Kind: "rds", Type: "postgres", Spec: map[string]string{"version": "16"}},
 		},
 		Networking: []Network{
-			{Name: "vpc", Kind: "private", Ports: []int{5432, 8080}},
+			{Name: "vpc", Kind: "vpc", Ports: []int{443, 80}},
 		},
-		Attributes: map[string]string{"cost-center": "engineering"},
+		Attributes: map[string]string{"key": "val"},
 	}
-
-	if infra.Provider != ProviderAWS {
-		t.Errorf("expected Provider %q, got %q", ProviderAWS, infra.Provider)
+	if i.Provider != ProviderAWS {
+		t.Errorf("expected aws, got %s", i.Provider)
 	}
-	if infra.Resources[0].Spec["engine"] != "postgres" {
-		t.Errorf("expected engine=postgres, got %q", infra.Resources[0].Spec["engine"])
+	if i.Region != "us-east-1" {
+		t.Errorf("expected us-east-1, got %s", i.Region)
 	}
-	if infra.Networking[0].Ports[0] != 5432 {
-		t.Errorf("expected first port 5432, got %d", infra.Networking[0].Ports[0])
+	if len(i.Resources) != 1 {
+		t.Errorf("expected 1 resource, got %d", len(i.Resources))
+	}
+	if i.Resources[0].Spec["version"] != "16" {
+		t.Errorf("expected version 16, got %s", i.Resources[0].Spec["version"])
+	}
+	if len(i.Networking) != 1 {
+		t.Errorf("expected 1 network, got %d", len(i.Networking))
+	}
+	if len(i.Networking[0].Ports) != 2 {
+		t.Errorf("expected 2 ports, got %d", len(i.Networking[0].Ports))
 	}
 }

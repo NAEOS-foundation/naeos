@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 type Event struct {
@@ -233,6 +236,10 @@ func (s *FileStore) Append(streamID string, events []Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if err := securityext.ValidatePluginName(streamID); err != nil {
+		return fmt.Errorf("invalid streamID: %w", err)
+	}
+
 	existing, _ := s.loadRaw(streamID)
 	startVersion := len(existing) + 1
 	for i := range events {
@@ -252,7 +259,7 @@ func (s *FileStore) Append(streamID string, events []Event) error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
-	path := s.dir + "/" + streamID + ".json"
+	path := filepath.Join(s.dir, streamID+".json")
 	return os.WriteFile(path, data, 0o600)
 }
 
@@ -287,7 +294,10 @@ func (s *FileStore) LoadFrom(streamID string, fromVersion int) ([]Event, error) 
 }
 
 func (s *FileStore) loadRaw(streamID string) ([]Event, error) {
-	path := s.dir + "/" + streamID + ".json"
+	if err := securityext.ValidatePluginName(streamID); err != nil {
+		return nil, fmt.Errorf("invalid streamID: %w", err)
+	}
+	path := filepath.Join(s.dir, streamID+".json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {

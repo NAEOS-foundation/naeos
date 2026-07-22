@@ -46,8 +46,34 @@ func runDistributed(cmd *cobra.Command, configPath string, workerCount int) erro
 	for i := 0; i < workerCount; i++ {
 		id := fmt.Sprintf("worker-%d", i)
 		workers[i] = distributed.NewSimpleWorker(id, func(ctx context.Context, task *distributed.Task) (map[string]any, error) {
-			time.Sleep(10 * time.Millisecond)
-			return map[string]any{"worker": id, "task": task.ID, "status": "completed"}, nil
+			stage, _ := task.Payload["stage"].(string)
+			var duration time.Duration
+			switch stage {
+			case "parse":
+				duration = 5 * time.Millisecond
+			case "normalize":
+				duration = 3 * time.Millisecond
+			case "resolve":
+				duration = 4 * time.Millisecond
+			case "build-neir":
+				duration = 8 * time.Millisecond
+			case "validate":
+				duration = 6 * time.Millisecond
+			case "schedule":
+				duration = 2 * time.Millisecond
+			case "generate":
+				duration = 10 * time.Millisecond
+			case "review":
+				duration = 7 * time.Millisecond
+			default:
+				duration = 5 * time.Millisecond
+			}
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(duration):
+			}
+			return map[string]any{"worker": id, "task": task.ID, "stage": stage, "status": "completed"}, nil
 		})
 	}
 

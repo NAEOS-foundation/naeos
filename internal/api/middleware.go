@@ -76,6 +76,45 @@ func (rl *RateLimiter) Allow(clientID string) bool {
 	return true
 }
 
+// Rate returns the maximum requests per window.
+func (rl *RateLimiter) Rate() int {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	return rl.rate
+}
+
+// Remaining returns the number of remaining requests for the given client.
+func (rl *RateLimiter) Remaining(clientID string) int {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	now := time.Now()
+	record, exists := rl.clients[clientID]
+	if !exists {
+		return rl.rate
+	}
+
+	elapsed := now.Sub(record.lastSeen)
+	refills := int(elapsed/rl.window) * rl.rate
+	tokens := record.tokens + refills
+	if tokens > rl.rate {
+		tokens = rl.rate
+	}
+	return tokens
+}
+
+// ResetTime returns the timestamp when the rate limit window resets for the given client.
+func (rl *RateLimiter) ResetTime(clientID string) time.Time {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	record, exists := rl.clients[clientID]
+	if !exists {
+		return time.Now()
+	}
+	return record.lastSeen.Add(rl.window)
+}
+
 // Reset clears all client records from the rate limiter.
 func (rl *RateLimiter) Reset() {
 	rl.mu.Lock()

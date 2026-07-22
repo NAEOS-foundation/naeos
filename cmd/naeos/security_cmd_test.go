@@ -15,7 +15,7 @@ func TestSecurityCommandShowsHelp(t *testing.T) {
 
 func TestSecuritySetSecret(t *testing.T) {
 	root := newRootCommand()
-	output, err := executeCommand(root, "security", "set-secret", "--name", "test-secret", "--value", "my-secret-value")
+	output, err := executeCommand(root, "security", "set-secret", "--name", "test-secret", "--value", "my-secret-value", "--key", "test-key-123")
 	if err != nil {
 		t.Fatalf("set-secret failed: %v", err)
 	}

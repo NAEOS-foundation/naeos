@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
+	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
 
-type codexAdapter struct{}
+type codexAdapter struct {
+	library *promptlib.Library
+}
 
-func NewCodexAdapter() compiler.Adapter {
-	return &codexAdapter{}
+func NewCodexAdapter(lib *promptlib.Library) compiler.Adapter {
+	return &codexAdapter{library: lib}
 }
 
 func (a *codexAdapter) Target() compiler.Target {
@@ -21,9 +25,45 @@ func (a *codexAdapter) Target() compiler.Target {
 
 func (a *codexAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "nil NEIR")
 	}
 
+	if a.library != nil {
+		return a.compileFromLibrary(neir)
+	}
+
+	return a.compileLegacy(neir)
+}
+
+func (a *codexAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
+	rendered, err := a.library.RenderCompiler("codex", neir)
+	if err != nil {
+		return nil, fmt.Errorf("render from library: %w", err)
+	}
+
+	var files []compiler.OutputFile
+	for _, f := range rendered {
+		files = append(files, compiler.OutputFile{
+			Path:    f.Path,
+			Content: f.Content,
+			Kind:    f.Kind,
+		})
+	}
+
+	projectName := "unknown"
+	if neir.Project != nil {
+		projectName = neir.Project.Name
+	}
+
+	return &compiler.CompiledOutput{
+		Target:     compiler.TargetCodex,
+		Files:      files,
+		Summary:    fmt.Sprintf("Generated %d files for Codex (%s)", len(files), projectName),
+		CompiledAt: time.Now(),
+	}, nil
+}
+
+func (a *codexAdapter) compileLegacy(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	var files []compiler.OutputFile
 
 	instructions := a.buildInstructions(neir)

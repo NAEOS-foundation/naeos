@@ -1,0 +1,68 @@
+name: Generate PDF Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/content/docs/*.md'
+      - '.github/workflows/pdf-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.145.0'
+
+      - name: Sync OpenAPI spec
+        run: cp docs/openapi.yaml site/static/openapi.yaml
+
+      - name: Build Hugo site
+        run: cd site && hugo --minify
+
+      - name: Setup Pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+
+      - name: Generate CLI Reference PDF
+        run: |
+          pandoc site/content/docs/cli-reference.md \
+            --pdf-engine=xelatex \
+            -V geometry:margin=1in \
+            -V title="NAEOS CLI Reference" \
+            -V subtitle="Version $(cat VERSION)" \
+            -V author="NAEOS Foundation" \
+            -V date="$(date +%Y-%m-%d)" \
+            -o site/static/downloads/naeos-cli-reference.pdf
+
+      - name: Generate Getting Started PDF
+        run: |
+          pandoc site/content/docs/getting-started.md \
+            --pdf-engine=xelatex \
+            -V geometry:margin=1in \
+            -V title="NAEOS Getting Started" \
+            -V subtitle="Version $(cat VERSION)" \
+            -V author="NAEOS Foundation" \
+            -V date="$(date +%Y-%m-%d)" \
+            -o site/static/downloads/naeos-getting-started.pdf
+
+      - name: Rebuild site with PDFs
+        run: cd site && hugo --minify
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/deploy-pages@v4

@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 // ArtifactKind identifies the type of a build artifact.
@@ -88,6 +90,9 @@ func NewStore(root string) *Store {
 
 // Add inserts an artifact into the store, deduplicating by content hash.
 func (s *Store) Add(path string, content []byte, kind ArtifactKind, opts ...Option) (*Artifact, error) {
+	if _, err := securityext.ValidateFilePath(filepath.Join(s.root, path), s.root); err != nil {
+		return nil, fmt.Errorf("invalid path: %w", err)
+	}
 	hash := computeHash(content)
 	if existing, ok := s.byHash[hash]; ok {
 		return existing, nil
@@ -181,7 +186,10 @@ func (s *Store) WriteToDisk() error {
 	}
 
 	for _, a := range s.manifest.Artifacts {
-		filePath := filepath.Join(s.root, a.Path)
+		filePath, err := securityext.ValidateFilePath(filepath.Join(s.root, a.Path), s.root)
+		if err != nil {
+			return fmt.Errorf("invalid artifact path %s: %w", a.Path, err)
+		}
 		dir := filepath.Dir(filePath)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("create dir %s: %w", dir, err)
@@ -222,7 +230,10 @@ func (s *Store) LoadFromDisk() error {
 
 	for i := range s.manifest.Artifacts {
 		a := &s.manifest.Artifacts[i]
-		filePath := filepath.Join(s.root, a.Path)
+		filePath, err := securityext.ValidateFilePath(filepath.Join(s.root, a.Path), s.root)
+		if err != nil {
+			continue
+		}
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			continue

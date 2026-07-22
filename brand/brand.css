@@ -1,0 +1,59 @@
+:root {
+  /* Accent colors — cyan-to-purple gradient */
+  --color-accent: #08d6ff;
+  --color-accent-secondary: #3a7cf8;
+  --color-accent-tertiary: #7c4dff;
+  --color-accent-quaternary: #9333ea;
+  --color-accent-dim: #1ab0fc;
+  --color-accent-glow: rgba(8, 214, 255, 0.12);
+  --color-accent-glow-strong: rgba(124, 77, 255, 0.25);
+  --color-accent-glow-subtle: rgba(8, 214, 255, 0.06);
+
+  /* Dark theme backgrounds */
+  --color-bg: #05050a;
+  --color-bg-elevated: #0a0a14;
+  --color-bg-surface: #111122;
+  --color-bg-hover: #1a1a2e;
+  --color-bg-surface-alt: #0f0f1a;
+  --color-border: #1a1a33;
+  --color-border-light: #2a2a44;
+
+  /* Dark theme text */
+  --color-text: #f0f0f0;
+  --color-text-muted: #9999b0;
+  --color-text-dim: #666680;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Font sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.9375rem;
+  --font-size-lg: 1.0625rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: clamp(1.5rem, 3vw, 2.25rem);
+  --font-size-4xl: clamp(2rem, 5vw, 3.5rem);
+  --font-size-hero: clamp(2.5rem, 6vw, 4.5rem);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows (dark) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 30px rgba(8, 214, 255, 0.15);
+  --shadow-glow-strong: 0 0 40px rgba(124, 77, 255, 0.2);
+
+  /* Semantic colors */
+  --color-danger: #ff4444;
+  --color-warning: #ffaa00;
+  --color-info: #60a5fa;
+  --color-success: #27c93f;
+}

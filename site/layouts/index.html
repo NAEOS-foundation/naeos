@@ -1,0 +1,329 @@
+{{ define "main" }}
+{{ partial "hero.html" . }}
+
+<div class="container">
+    <div class="stats-grid stagger-fade">
+        <div class="stat-card">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}">0</div>
+            <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}">0</div>
+            <div class="stat-label">{{ i18n "stats_languages" }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}">0</div>
+            <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}">0</div>
+            <div class="stat-label">{{ i18n "stats_specs" }}</div>
+        </div>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="what-is fade-in">
+            <div class="what-is-text">
+                <h2 class="section-title" style="text-align:left;">{{ i18n "section_what_is" }}</h2>
+                <p>{{ i18n "section_what_is_desc" }}</p>
+                <p>{{ i18n "home_what_is_extended" }}</p>
+                <a href="{{ "docs/architecture/" | relLangURL }}" class="btn btn-secondary">{{ i18n "cta_read_docs" }}</a>
+            </div>
+            <div class="what-is-diagram">
+                <svg class="arch-svg" viewBox="0 0 400 320" fill="none">
+                    <rect x="10" y="10" width="380" height="300" rx="12" stroke="#2a2a2a" stroke-width="1.5" fill="#111"/>
+                    <text x="200" y="40" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="2">NAEOS PIPELINE</text>
+                    <rect x="30" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
+                    <text x="105" y="90" text-anchor="middle" fill="#e8e8e8" font-family="Inter,sans-serif" font-size="13">Spec YAML/JSON</text>
+                    <rect x="220" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
+                    <text x="295" y="90" text-anchor="middle" fill="#e8e8e8" font-family="Inter,sans-serif" font-size="13">CLI Commands</text>
+                    <line x1="180" y1="85" x2="220" y2="85" stroke="#00ff88" stroke-width="1.5" stroke-dasharray="4" opacity="0.5"/>
+                    <rect x="110" y="140" width="180" height="50" rx="8" stroke="#00ff88" stroke-width="1" fill="rgba(0,255,136,0.05)"/>
+                    <text x="200" y="170" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600">Core Runtime</text>
+                    <line x1="180" y1="110" x2="180" y2="140" stroke="#444" stroke-width="1"/>
+                    <line x1="220" y1="110" x2="220" y2="140" stroke="#444" stroke-width="1"/>
+                    <rect x="30" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
+                    <text x="80" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">Parser</text>
+                    <rect x="150" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
+                    <text x="200" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">NEIR Model</text>
+                    <rect x="270" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
+                    <text x="320" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">Generator</text>
+                    <line x1="130" y1="190" x2="80" y2="220" stroke="#444" stroke-width="1"/>
+                    <line x1="200" y1="190" x2="200" y2="220" stroke="#444" stroke-width="1"/>
+                    <line x1="270" y1="190" x2="320" y2="220" stroke="#444" stroke-width="1"/>
+                    <rect x="110" y="280" width="180" height="28" rx="14" stroke="#00ff88" stroke-width="0.5" fill="rgba(0,255,136,0.08)"/>
+                    <text x="200" y="298" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="10">Go · TypeScript · Python · Java · Rust</text>
+                    <line x1="80" y1="260" x2="150" y2="280" stroke="#444" stroke-width="1"/>
+                    <line x1="200" y1="260" x2="200" y2="280" stroke="#444" stroke-width="1"/>
+                    <line x1="320" y1="260" x2="250" y2="280" stroke="#444" stroke-width="1"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title fade-in">{{ i18n "section_features" }}</h2>
+        <p class="section-subtitle fade-in">{{ i18n "home_features_subtitle" (dict "CLI" .Site.Params.stats.cli) }}</p>
+        <div class="features-grid stagger-fade">
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <h3>{{ i18n "feature_pipeline" }}</h3>
+                <p>{{ i18n "feature_pipeline_desc" }}</p>
+            </div>
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 2 12"/><path d="M12 2 12 12"/><path d="M12 12 12 22"/></svg>
+                <h3>{{ i18n "feature_compiler" }}</h3>
+                <p>{{ i18n "feature_compiler_desc" }}</p>
+            </div>
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <h3>{{ i18n "feature_generator" }}</h3>
+                <p>{{ i18n "feature_generator_desc" }}</p>
+            </div>
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+                <h3>{{ i18n "feature_neir" }}</h3>
+                <p>{{ i18n "feature_neir_desc" }}</p>
+            </div>
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <h3>{{ i18n "feature_governance" }}</h3>
+                <p>{{ i18n "feature_governance_desc" }}</p>
+            </div>
+            <div class="feature-card">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
+                <h3>{{ i18n "feature_marketplace" }}</h3>
+                <p>{{ i18n "feature_marketplace_desc" }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title fade-in">{{ i18n "section_quick_start" }}</h2>
+        <p class="section-subtitle fade-in">{{ i18n "home_quick_start_subtitle" }}</p>
+        <div class="quick-start-steps stagger-fade">
+            <div class="quick-start-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_install_title" }}</h4>
+                    <p>{{ i18n "home_step_install_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_spec_title" }}</h4>
+                    <p>{{ i18n "home_step_spec_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>yaml</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>project: my-app
+modules:
+  - name: auth
+    path: ./auth
+  - name: api
+    path: ./api
+    dependencies: [auth]
+services:
+  - name: gateway
+    kind: http
+    port: 8080
+generation:
+  languages: [go, typescript]</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_run_title" }}</h4>
+                    <p>{{ i18n "home_step_run_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>naeos run --input spec.yaml --output-dir ./out</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_ai_title" }}</h4>
+                    <p>{{ i18n "home_step_ai_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>naeos compile --all --input spec.yaml</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-github-stats">
+    <div class="container fade-in">
+        <h2 class="section-title github-stats-title fade-in">{{ i18n "home_community_title" }}</h2>
+        <div class="github-stats stagger-fade">
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-stars">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_stars" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-forks">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_forks" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-issues">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_issues" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-contributors">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_contributors" }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "use_cases_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_use_cases_desc" }}</p>
+        <div class="use-cases-grid stagger-fade">
+            <div class="use-case-card">
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="3" y="5" width="10" height="8" rx="2"/><rect x="19" y="5" width="10" height="8" rx="2"/><rect x="11" y="19" width="10" height="8" rx="2"/><path d="M8 13v3h8m8-3v3h-8m0 0v3"/></svg></span>
+                <h3>{{ i18n "home_use_case_microservices_title" }}</h3>
+                <p>{{ i18n "home_use_case_microservices_desc" }}</p>
+                <span class="badge badge-green">Go · TypeScript</span>
+            </div>
+            <div class="use-case-card">
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M18 2 7 18h8l-1 12 11-17h-8l1-11Z"/></svg></span>
+                <h3>{{ i18n "home_use_case_serverless_title" }}</h3>
+                <p>{{ i18n "home_use_case_serverless_desc" }}</p>
+                <span class="badge badge-green">Python · TypeScript</span>
+            </div>
+            <div class="use-case-card">
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M12 6a5 5 0 0 0-8 4 5 5 0 0 0 1 3 6 6 0 0 0 3 11h4V6Zm8 0a5 5 0 0 1 8 4 5 5 0 0 1-1 3 6 6 0 0 1-3 11h-4V6Z"/><path d="M8 13h4m-4 6h4m8-6h4m-4 6h4M16 4v24"/></svg></span>
+                <h3>{{ i18n "home_use_case_ai_title" }}</h3>
+                <p>{{ i18n "home_use_case_ai_desc" }}</p>
+                <span class="badge badge-blue">{{ i18n "home_ai_platforms_badge" }}</span>
+            </div>
+            <div class="use-case-card">
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m16 3 13 6H3l13-6Z"/><path d="M5 27h22M7 9v16m6-16v16m6-16v16m6-16v16"/></svg></span>
+                <h3>{{ i18n "home_use_case_governance_title" }}</h3>
+                <p>{{ i18n "home_use_case_governance_desc" }}</p>
+                <span class="badge badge-orange">{{ i18n "home_governance_badge" }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "home_playground_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_playground_desc" }}</p>
+        <div class="spec-playground">
+            <div class="playground-tabs">
+                <button class="playground-tab active" onclick="switchPlayground(this, 'yaml')">{{ i18n "home_tab_microservice" }}</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'serverless')">Serverless</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'monolith')">Monolith</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'ai-context')">{{ i18n "home_tab_ai_context" }}</button>
+            </div>
+            <div class="playground-body">
+                <div class="playground-editor">
+                    <textarea id="playground-input" placeholder="{{ i18n "home_playground_placeholder" }}" spellcheck="false"></textarea>
+                </div>
+                <div class="playground-preview" id="playground-output">
+                    <h4>{{ i18n "home_playground_preview" }}</h4>
+                    <div style="color:var(--color-text-dim);font-size:0.875rem;">{{ i18n "home_playground_hint" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "home_testimonials_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_testimonials_desc" }}</p>
+        <div class="testimonials-grid stagger-fade">
+            <div class="testimonial-card">
+                <p>{{ i18n "home_testimonial_one" }}</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">SK</div>
+                    <div class="testimonial-info">
+                        <h4>Sarah Kim</h4>
+                        <span>{{ i18n "home_testimonial_one_role" }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p>{{ i18n "home_testimonial_two" }}</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">JR</div>
+                    <div class="testimonial-info">
+                        <h4>James Reyes</h4>
+                        <span>{{ i18n "home_testimonial_two_role" }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p>{{ i18n "home_testimonial_three" }}</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">AN</div>
+                    <div class="testimonial-info">
+                        <h4>Aditya Nugraha</h4>
+                        <span>{{ i18n "home_testimonial_three_role" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "section_languages" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_languages_desc" }}</p>
+        <div class="languages-grid stagger-fade">
+            <span class="lang-badge"><span class="lang-dot" style="background:#00add8;"></span>Go</span>
+            <span class="lang-badge"><span class="lang-dot" style="background:#3178c6;"></span>TypeScript</span>
+            <span class="lang-badge"><span class="lang-dot" style="background:#3776ab;"></span>Python</span>
+            <span class="lang-badge"><span class="lang-dot" style="background:#ed8b00;"></span>Java</span>
+            <span class="lang-badge"><span class="lang-dot" style="background:#dea584;"></span>Rust</span>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "section_ai" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_ai_desc" }}</p>
+        <div class="ai-grid stagger-fade">
+            <div class="ai-card"><span class="ai-icon">⟐</span>GitHub Copilot</div>
+            <div class="ai-card"><span class="ai-icon">◉</span>Claude Code</div>
+            <div class="ai-card"><span class="ai-icon">⟡</span>Cursor</div>
+            <div class="ai-card"><span class="ai-icon">◇</span>Gemini CLI</div>
+            <div class="ai-card"><span class="ai-icon">⊡</span>Codex</div>
+            <div class="ai-card"><span class="ai-icon">◈</span>OpenCode</div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="cta-section fade-in">
+            <h2>{{ i18n "section_cta" }}</h2>
+            <p>{{ i18n "section_cta_desc" }}</p>
+            <a href="{{ "download/" | relLangURL }}" class="btn btn-primary">{{ i18n "cta_install_now" }}</a>
+        </div>
+    </div>
+</section>
+{{ end }}

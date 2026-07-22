@@ -1,0 +1,154 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: opencode
+kind: compiler
+version: "1.0.0"
+target: opencode
+files:
+  - path: "AGENTS.md"
+    kind: instructions
+    template: |
+      # AGENTS.md
+
+      Instructions for OpenCode agents working on this project.
+
+      {{if .Project.Name}}## Project: {{.Project.Name}}
+
+      {{if .Project.Description}}{{.Project.Description}}{{end}}
+      {{if .Project.Version}}Version: {{.Project.Version}}{{end}}
+      {{end}}
+      {{if .Architecture.Pattern}}## Architecture: {{.Architecture.Pattern}}
+
+      {{if .Architecture.Principles}}Principles:
+      {{range .Architecture.Principles}}- {{.}}
+      {{end}}{{end}}{{end}}
+      {{if .Modules}}## Modules
+
+      {{range .Modules}}### {{.Name}}
+      Path: {{code .Path}}
+      {{if .Description}}{{.Description}}{{end}}
+      {{if .Dependencies}}Dependencies: {{join .Dependencies ", "}}{{end}}
+
+      {{end}}{{end}}
+      {{if .Services}}## Services
+
+      {{range .Services}}### {{.Name}} ({{.Kind}}, port {{.Port}})
+      {{range .Endpoints}}- {{.Method}} {{.Path}} -> {{.Action}}
+      {{end}}
+
+      {{end}}{{end}}
+      {{if .Components}}## Components
+
+      {{range .Components}}- {{code .Name}} [{{.Kind}}] in {{code .Module}}
+      {{end}}
+
+      {{end}}
+      {{if .APIs}}## APIs
+
+      {{range .APIs}}### {{.Name}} v{{.Version}} ({{.Protocol}})
+      {{range .Endpoints}}- {{.Method}} {{.Path}}: {{.Summary}}
+      {{end}}{{end}}{{end}}
+      {{if .Security}}## Security
+
+      {{if .Security.Authentication}}- Auth: {{.Security.Authentication.Method}} via {{.Security.Authentication.Provider}}{{end}}
+      {{if .Security.Authorization}}- Authorization: {{.Security.Authorization.Model}}{{end}}
+      {{if .Security.Encryption}}- Encryption: in_transit={{.Security.Encryption.InTransit}}, at_rest={{.Security.Encryption.AtRest}}{{end}}
+
+      {{end}}
+      {{if .Deployment}}## Deployment: {{.Deployment.Strategy}}
+
+      {{end}}
+      {{if .Testing}}## Testing: {{.Testing.Strategy}}
+
+      {{end}}
+      ## Guidelines
+
+      1. Follow the established architecture pattern
+      2. Write clean, idiomatic code
+      3. Handle all error paths explicitly
+      4. Write tests for new functionality
+      5. Keep functions focused and under 50 lines
+      6. Use meaningful variable and function names
+      7. Follow the module dependency structure
+
+  - path: ".opencode/context.md"
+    kind: context
+    template: |
+      # OpenCode Context
+
+      {{if .Modules}}
+      ## Dependency Graph
+
+      {{range .Modules}}{{if .Dependencies}}{{.Name}} -> {{join .Dependencies ", "}}{{else}}{{.Name}} (root){{end}}
+      {{end}}{{end}}
+      {{if .Storage}}
+      ## Storage
+
+      {{range .Storage}}- {{.Name}} ({{.Type}}, {{.Provider}})
+      {{end}}{{end}}
+      {{if .Infrastructure}}
+      ## Infrastructure: {{.Infrastructure.Provider}} ({{.Infrastructure.Region}})
+
+      {{range .Infrastructure.Resources}}- {{.Name}} ({{.Kind}})
+      {{end}}{{end}}
+      {{if and .AI .AI.Models}}
+      ## AI Models
+
+      {{range .AI.Models}}- {{.Name}} ({{.Kind}} v{{.Version}})
+      {{end}}{{end}}
+      {{if .Documentation}}
+      ## Design Documents
+
+      {{range .Documentation.ADRs}}- ADR: {{.Title}}
+      {{end}}{{range .Documentation.RFCs}}- RFC: {{.Title}}
+      {{end}}{{end}}
+
+  - path: ".opencode/rules.md"
+    kind: rules
+    template: |
+      # OpenCode Rules
+
+      {{if .Architecture.Pattern}}Architecture: {{.Architecture.Pattern}}{{end}}
+
+      ## Code Rules
+
+      1. Never use panic for error handling
+      2. Always check error returns
+      3. Use table-driven tests
+      4. Keep package imports clean (no circular dependencies)
+      5. Follow existing code patterns in the project
+      6. Use dependency injection for testability
+
+      {{if .Modules}}
+      ## Module Boundaries
+
+      {{range .Modules}}- {{code .Name}} should only depend on: {{join .Dependencies ", "}}
+      {{end}}{{end}}
+      {{if .Security}}
+      ## Security Rules
+
+      - Never hardcode secrets
+      - Use environment variables for configuration
+      - Validate all external input
+      {{if and .Security.Encryption .Security.Encryption.InTransit}}- All network communication must use TLS
+      {{end}}{{end}}
+variables:
+  - name: Guidelines
+    type: "[]string"
+    default:
+      - "Follow the established architecture pattern"
+      - "Write clean, idiomatic code"
+      - "Handle all error paths explicitly"
+      - "Write tests for new functionality"
+      - "Keep functions focused and under 50 lines"
+      - "Use meaningful variable and function names"
+      - "Follow the module dependency structure"
+
+  - name: CodeRules
+    type: "[]string"
+    default:
+      - "Never use panic for error handling"
+      - "Always check error returns"
+      - "Use table-driven tests"
+      - "Keep package imports clean (no circular dependencies)"
+      - "Follow existing code patterns in the project"
+      - "Use dependency injection for testability"

@@ -1,0 +1,41 @@
+{{ define "main" }}
+<div class="not-found">
+    <div class="container">
+        <div class="not-found-content">
+            <div class="not-found-art" aria-hidden="true">
+                <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="40" width="50" height="55" rx="6" stroke="var(--color-border)" stroke-width="1.5" fill="var(--color-bg-surface)"/>
+                    <text x="45" y="74" text-anchor="middle" fill="var(--color-accent)" font-family="var(--font-mono)" font-size="20" font-weight="700">4</text>
+                    <circle cx="100" cy="67" r="20" stroke="var(--color-border)" stroke-width="1.5" fill="var(--color-bg-surface)"/>
+                    <circle cx="100" cy="67" r="8" fill="var(--color-accent)" fill-opacity="0.15" stroke="var(--color-accent)" stroke-width="1"/>
+                    <rect x="130" y="40" width="50" height="55" rx="6" stroke="var(--color-border)" stroke-width="1.5" fill="var(--color-bg-surface)"/>
+                    <text x="155" y="74" text-anchor="middle" fill="var(--color-accent)" font-family="var(--font-mono)" font-size="20" font-weight="700">4</text>
+                    <line x1="45" y1="95" x2="45" y2="105" stroke="var(--color-border)" stroke-width="1.5" stroke-dasharray="3"/>
+                    <line x1="155" y1="95" x2="155" y2="105" stroke="var(--color-border)" stroke-width="1.5" stroke-dasharray="3"/>
+                    <path d="M65 105 L100 112 L135 105" stroke="var(--color-accent)" stroke-width="1.5" opacity="0.5" fill="none"/>
+                </svg>
+            </div>
+            <h1>404</h1>
+            <p class="not-found-desc">{{ i18n "page_not_found_desc" }}</p>
+            <p class="not-found-hint">
+                {{ if eq .Language.Lang "id" }}
+                Halaman telah dipindahkan atau URL yang Anda ketik tidak benar.
+                {{ else }}
+                The page may have been moved or the URL you typed may be incorrect.
+                {{ end }}
+            </p>
+            <div class="not-found-actions">
+                <a href="{{ .Site.Home.RelPermalink }}" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    {{ i18n "back_home" }}
+                </a>
+                <button class="btn btn-secondary" onclick="openSearch()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    {{ i18n "nav_search" }}
+                </button>
+                <a href="{{ "docs/" | relLangURL }}" class="btn btn-secondary">{{ i18n "nav_docs" }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

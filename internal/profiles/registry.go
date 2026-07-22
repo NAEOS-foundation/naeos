@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 )
 
 //go:embed profiles.json
@@ -64,6 +65,7 @@ type TestTemplate struct {
 }
 
 type Registry struct {
+	mu       sync.RWMutex
 	profiles map[string]*Profile
 }
 
@@ -76,6 +78,8 @@ func NewRegistry() *Registry {
 }
 
 func (r *Registry) loadBuiltin() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	var profiles []Profile
 	if err := json.Unmarshal(builtinProfilesJSON, &profiles); err != nil {
 		return
@@ -86,15 +90,21 @@ func (r *Registry) loadBuiltin() {
 }
 
 func (r *Registry) Register(p *Profile) {
-	r.profiles[p.ID] = p
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.profiles[p.ID] = p.Clone()
 }
 
 func (r *Registry) Get(id string) (*Profile, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	p, ok := r.profiles[id]
 	return p, ok
 }
 
 func (r *Registry) List() []Profile {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	result := make([]Profile, 0, len(r.profiles))
 	for _, p := range r.profiles {
 		result = append(result, *p)
@@ -106,6 +116,8 @@ func (r *Registry) List() []Profile {
 }
 
 func (r *Registry) Search(query string) []Profile {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	query = strings.ToLower(query)
 	var result []Profile
 	for _, p := range r.profiles {
@@ -120,6 +132,8 @@ func (r *Registry) Search(query string) []Profile {
 }
 
 func (r *Registry) ByIndustry(industry string) []Profile {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	var result []Profile
 	for _, p := range r.profiles {
 		if strings.EqualFold(p.Industry, industry) {
@@ -127,6 +141,17 @@ func (r *Registry) ByIndustry(industry string) []Profile {
 		}
 	}
 	return result
+}
+
+func (p *Profile) Clone() *Profile {
+	out := *p
+	out.Modules = make([]ModuleTemplate, len(p.Modules))
+	copy(out.Modules, p.Modules)
+	out.Services = make([]ServiceTemplate, len(p.Services))
+	copy(out.Services, p.Services)
+	out.Tags = make([]string, len(p.Tags))
+	copy(out.Tags, p.Tags)
+	return &out
 }
 
 func (r *Registry) ToSpecYAML(p *Profile) string {

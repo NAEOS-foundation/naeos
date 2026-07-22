@@ -1,12 +1,14 @@
 package broker
 
 import (
-	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Message Broker Interface
@@ -62,14 +64,14 @@ func (s *stubBroker) close() error {
 
 func (s *stubBroker) ping() error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (s *stubBroker) publish(channel string, msg *Message) error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	s.mu.RLock()
@@ -84,7 +86,7 @@ func (s *stubBroker) publish(channel string, msg *Message) error {
 
 func (s *stubBroker) subscribe(channel string, handler MessageHandler) error {
 	if !s.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	s.mu.Lock()
@@ -215,8 +217,10 @@ func (m *Manager) ConnectAll(configs map[string]*Config) error {
 			continue
 		}
 		if err := broker.Connect(config); err != nil {
+			slog.Error("broker connect failed", "name", name, "error", err)
 			return fmt.Errorf("failed to connect to %s: %w", name, err)
 		}
+		slog.Info("broker connected", "name", name)
 	}
 	return nil
 }
@@ -227,6 +231,7 @@ func (m *Manager) CloseAll() error {
 
 	for name, broker := range m.brokers {
 		if err := broker.Close(); err != nil {
+			slog.Error("broker close failed", "name", name, "error", err)
 			return fmt.Errorf("failed to close %s: %w", name, err)
 		}
 	}
@@ -289,14 +294,14 @@ func (b *InMemoryBroker) Close() error {
 
 func (b *InMemoryBroker) Ping() error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (b *InMemoryBroker) Publish(channel string, msg *Message) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	if msg == nil {
 		return fmt.Errorf("message is nil")
@@ -329,7 +334,7 @@ func (b *InMemoryBroker) Publish(channel string, msg *Message) error {
 
 func (b *InMemoryBroker) Subscribe(channel string, handler MessageHandler) error {
 	if !b.connected {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -503,6 +508,7 @@ func PublishWithRetry(b Broker, channel string, msg *Message, rc *RetryConfig) e
 			time.Sleep(rc.delay(attempt))
 		}
 	}
+	slog.Error("publish failed after retries", "max_attempts", rc.MaxAttempts, "error", lastErr)
 	return fmt.Errorf("publish failed after %d attempts: %w", rc.MaxAttempts, lastErr)
 }
 
@@ -529,6 +535,7 @@ func (dlc *DeadLetterChannel) Handler() MessageHandler {
 		case dlc.messages <- msg:
 			return nil
 		default:
+			slog.Error("dead letter queue full")
 			return fmt.Errorf("dead letter queue full")
 		}
 	}
@@ -564,35 +571,106 @@ func (dlc *DeadLetterChannel) Close() {
 }
 
 // ConnectionPool manages a pool of Broker connections with round-robin
-// selection and optional health checking.
+// selection, health checking, and pool-level metrics.
+
+type PoolMetrics struct {
+	Total        int64
+	Healthy      int64
+	Unhealthy    int64
+	NextCalls    int64 `json:"-"`
+	HealthChecks int64 `json:"-"`
+}
 
 type ConnectionPool struct {
-	brokers []Broker
-	current uint64
-	healthy []bool
-	mu      sync.RWMutex
-	checkFn func(Broker) bool
+	brokers      []Broker
+	current      uint64
+	healthy      []bool
+	createdAt    []time.Time
+	maxLifetime  time.Duration
+	mu           sync.RWMutex
+	checkFn      func(Broker) bool
+	nextCalls    atomic.Int64
+	healthChecks atomic.Int64
+	stopCh       chan struct{}
+	running      bool
 }
 
 func NewConnectionPool(brokers ...Broker) *ConnectionPool {
 	healthy := make([]bool, len(brokers))
+	createdAt := make([]time.Time, len(brokers))
+	now := time.Now()
 	for i := range healthy {
 		healthy[i] = true
+		createdAt[i] = now
 	}
 	return &ConnectionPool{
-		brokers: brokers,
-		healthy: healthy,
-		checkFn: func(b Broker) bool { return b.Ping() == nil },
+		brokers:   brokers,
+		healthy:   healthy,
+		createdAt: createdAt,
+		checkFn:   func(b Broker) bool { return b.Ping() == nil },
+		stopCh:    make(chan struct{}),
 	}
 }
 
 func (cp *ConnectionPool) SetHealthCheck(fn func(Broker) bool) {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
 	cp.checkFn = fn
+}
+
+func (cp *ConnectionPool) SetMaxLifetime(d time.Duration) {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
+	cp.maxLifetime = d
+	now := time.Now()
+	for i := range cp.brokers {
+		if d <= 0 {
+			cp.healthy[i] = true
+		} else if now.Sub(cp.createdAt[i]) > d {
+			cp.healthy[i] = false
+		}
+	}
+}
+
+func (cp *ConnectionPool) StartHealthCheck(interval time.Duration) {
+	cp.mu.Lock()
+	if cp.running {
+		cp.mu.Unlock()
+		return
+	}
+	cp.running = true
+	stopCh := cp.stopCh
+	cp.mu.Unlock()
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				cp.CheckHealth()
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+}
+
+func (cp *ConnectionPool) StopHealthCheck() {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
+	if cp.running {
+		close(cp.stopCh)
+		cp.running = false
+		cp.stopCh = make(chan struct{})
+	}
 }
 
 func (cp *ConnectionPool) Next() Broker {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
+
+	cp.nextCalls.Add(1)
 
 	if len(cp.brokers) == 0 {
 		return nil
@@ -628,8 +706,15 @@ func (cp *ConnectionPool) HealthyCount() int {
 func (cp *ConnectionPool) CheckHealth() {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
+
+	cp.healthChecks.Add(1)
+
 	for i, b := range cp.brokers {
-		cp.healthy[i] = cp.checkFn(b)
+		healthy := cp.checkFn(b)
+		if healthy && cp.maxLifetime > 0 && time.Since(cp.createdAt[i]) > cp.maxLifetime {
+			healthy = false
+		}
+		cp.healthy[i] = healthy
 	}
 }
 
@@ -641,11 +726,30 @@ func (cp *ConnectionPool) SetHealthy(index int, healthy bool) {
 	}
 }
 
+func (cp *ConnectionPool) PoolMetrics() PoolMetrics {
+	cp.mu.RLock()
+	defer cp.mu.RUnlock()
+	healthy := int64(0)
+	for _, h := range cp.healthy {
+		if h {
+			healthy++
+		}
+	}
+	return PoolMetrics{
+		Total:        int64(len(cp.brokers)),
+		Healthy:      healthy,
+		Unhealthy:    int64(len(cp.brokers)) - healthy,
+		NextCalls:    cp.nextCalls.Load(),
+		HealthChecks: cp.healthChecks.Load(),
+	}
+}
+
 func (cp *ConnectionPool) CloseAll() error {
 	cp.mu.RLock()
 	defer cp.mu.RUnlock()
 	for _, b := range cp.brokers {
 		if err := b.Close(); err != nil {
+			slog.Error("connection pool close failed", "error", err)
 			return err
 		}
 	}
@@ -743,10 +847,3 @@ func (mb *MetricsBroker) Unsubscribe(channel string) error {
 }
 
 func (mb *MetricsBroker) Metrics() *Metrics { return mb.metrics }
-
-var (
-	ErrNotConnected   = errors.New("not connected")
-	ErrPoolEmpty      = errors.New("broker pool is empty")
-	ErrMessageNil     = errors.New("message is nil")
-	ErrDeadLetterFull = errors.New("dead letter queue full")
-)

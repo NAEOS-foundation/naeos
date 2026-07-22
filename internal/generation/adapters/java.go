@@ -18,6 +18,8 @@ func (JavaAdapter) Language() language.Language {
 	return language.LanguageJava
 }
 
+func (JavaAdapter) Framework() string { return "" }
+
 func (JavaAdapter) GenerateProject(projectName string) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 	javaPkg := pkgName(projectName)

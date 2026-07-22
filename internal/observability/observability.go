@@ -1,13 +1,40 @@
 package observability
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+type spanContextKey struct{}
+
+// ContextWithSpan returns a new context carrying the given span.
+func ContextWithSpan(ctx context.Context, span *Span) context.Context {
+	return context.WithValue(ctx, spanContextKey{}, span)
+}
+
+// SpanFromContext returns the span stored in the context, if any.
+func SpanFromContext(ctx context.Context) (*Span, bool) {
+	span, ok := ctx.Value(spanContextKey{}).(*Span)
+	return span, ok
+}
+
+// InjectTraceToCmd sets environment variables for W3C Trace Context propagation
+// on cmd if a span is found in ctx.
+func InjectTraceToCmd(ctx context.Context, cmd *exec.Cmd) {
+	span, ok := SpanFromContext(ctx)
+	if !ok || span == nil {
+		return
+	}
+	cmd.Env = append(cmd.Env,
+		fmt.Sprintf("TRACEPARENT=00-%s-%s-01", span.TraceID, span.SpanID),
+	)
+}
 
 var idCounter atomic.Int64
 

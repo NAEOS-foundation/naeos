@@ -51,7 +51,10 @@ func (l *loggingDatabase) Ping() error {
 }
 
 func (l *loggingDatabase) Exec(query string, args ...any) (Result, error) {
-	return l.ExecContext(context.Background(), query, args...)
+	start := time.Now()
+	result, err := l.inner.Exec(query, args...)
+	l.logQuery("exec", query, args, start, err)
+	return result, err
 }
 
 func (l *loggingDatabase) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
@@ -62,7 +65,10 @@ func (l *loggingDatabase) ExecContext(ctx context.Context, query string, args ..
 }
 
 func (l *loggingDatabase) Query(query string, args ...any) ([]Row, error) {
-	return l.QueryContext(context.Background(), query, args...)
+	start := time.Now()
+	rows, err := l.inner.Query(query, args...)
+	l.logQuery("query", query, args, start, err)
+	return rows, err
 }
 
 func (l *loggingDatabase) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
@@ -73,7 +79,10 @@ func (l *loggingDatabase) QueryContext(ctx context.Context, query string, args .
 }
 
 func (l *loggingDatabase) QueryRow(query string, args ...any) (Row, error) {
-	return l.QueryRowContext(context.Background(), query, args...)
+	start := time.Now()
+	row, err := l.inner.QueryRow(query, args...)
+	l.logQuery("query_row", query, args, start, err)
+	return row, err
 }
 
 func (l *loggingDatabase) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
@@ -84,7 +93,10 @@ func (l *loggingDatabase) QueryRowContext(ctx context.Context, query string, arg
 }
 
 func (l *loggingDatabase) Begin() (Transaction, error) {
-	return l.BeginTx(context.Background())
+	start := time.Now()
+	tx, err := l.inner.Begin()
+	l.logger.Debug("begin_tx", "driver", l.inner.Name(), "duration", time.Since(start), "error", err)
+	return tx, err
 }
 
 func (l *loggingDatabase) BeginTx(ctx context.Context) (Transaction, error) {
@@ -95,7 +107,15 @@ func (l *loggingDatabase) BeginTx(ctx context.Context) (Transaction, error) {
 }
 
 func (l *loggingDatabase) Migrate(migrations []Migration) error {
-	return l.MigrateContext(context.Background(), migrations)
+	start := time.Now()
+	err := l.inner.Migrate(migrations)
+	l.logger.Info("migrate",
+		"driver", l.inner.Name(),
+		"count", len(migrations),
+		"duration", time.Since(start),
+		"error", err,
+	)
+	return err
 }
 
 func (l *loggingDatabase) MigrateContext(ctx context.Context, migrations []Migration) error {
@@ -111,7 +131,15 @@ func (l *loggingDatabase) MigrateContext(ctx context.Context, migrations []Migra
 }
 
 func (l *loggingDatabase) Rollback(version int) error {
-	return l.RollbackContext(context.Background(), version)
+	start := time.Now()
+	err := l.inner.Rollback(version)
+	l.logger.Info("rollback",
+		"driver", l.inner.Name(),
+		"target_version", version,
+		"duration", time.Since(start),
+		"error", err,
+	)
+	return err
 }
 
 func (l *loggingDatabase) RollbackContext(ctx context.Context, version int) error {

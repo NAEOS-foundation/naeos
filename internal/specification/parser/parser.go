@@ -74,11 +74,18 @@ type SpecDocument struct {
 	Generation   *Generation
 }
 
-func NewParser() Parser {
+func NewParser(baseDir string) Parser {
 	return ParserFunc(func(input string) (*SpecDocument, error) {
 		if input == "" {
 			return nil, fmt.Errorf("input cannot be empty")
 		}
+
+		resolver := NewImportResolver(baseDir)
+		resolved, err := resolver.ResolveImports(input)
+		if err != nil {
+			return nil, fmt.Errorf("resolve imports: %w", err)
+		}
+		input = resolved
 
 		var root yaml.Node
 		if err := yaml.Unmarshal([]byte(input), &root); err != nil {

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ .Language.Lang }}" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}</title>
+    <meta name="description" content="{{ .Description | default .Site.Params.description }}">
+    <link rel="canonical" href="{{ .Permalink }}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="{{ .Site.Params.pwa.themeColor }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    {{ partial "head/seo.html" . }}
+    {{ partial "head/fonts.html" . }}
+    {{ $css := resources.Get "css/main.css" | resources.Minify | resources.Fingerprint "sha256" }}
+    <link rel="preload" href="{{ $css.RelPermalink }}" as="style" crossorigin>
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}"></noscript>
+    {{ partial "head/analytics.html" . }}
+    <style id="overlay-init">#transition-overlay{opacity:1!important;pointer-events:auto!important}</style>
+</head>
+<body>
+    <div id="transition-overlay"></div>
+    <a href="#main-content" class="skip-link">{{ i18n "skip_to_content" }}</a>
+    <div id="scroll-progress" class="scroll-progress" role="progressbar" aria-label="Scroll progress"></div>
+    {{ partial "header.html" . }}
+    <main id="main-content" class="page-transition">
+        {{ block "main" . }}{{ end }}
+    </main>
+    {{ partial "footer.html" . }}
+    {{ partial "search-modal.html" . }}
+    <button id="back-to-top" class="back-to-top" aria-label="{{ i18n "back_to_top" }}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+    </button>
+    <script>
+        var SEARCH_INDEX_URL = '{{ "index.json" | absURL }}';
+        var SEARCH_PLACEHOLDER = '{{ i18n "search_placeholder" }}';
+        var SEARCH_NO_RESULTS = '{{ i18n "search_no_results" }}';
+        var PLAYGROUND_I18N = {
+            preview: {{ i18n "home_playground_preview" | jsonify }},
+            modules: {{ i18n "home_playground_modules" | jsonify }},
+            services: {{ i18n "home_playground_services" | jsonify }},
+            dependencies: {{ i18n "home_playground_dependencies" | jsonify }},
+            languages: {{ i18n "home_playground_languages" | jsonify }},
+            project: {{ i18n "home_playground_project" | jsonify }},
+            generation: {{ i18n "home_playground_generation" | jsonify }},
+            unnamed: {{ i18n "home_playground_unnamed" | jsonify }},
+            invalidYaml: {{ i18n "home_playground_invalid_yaml" | jsonify }}
+        };
+        var NEWSLETTER_I18N = {
+            invalidEmail: {{ i18n "newsletter_invalid_email" | jsonify }},
+            loading: {{ i18n "newsletter_loading" | jsonify }},
+            success: {{ i18n "newsletter_success" | jsonify }},
+            error: {{ i18n "newsletter_error" | jsonify }}
+        };
+        {{ if .Site.Params.interactiveTerminal.websocketUrl }}
+        var NAEOS_WS_URL = '{{ .Site.Params.interactiveTerminal.websocketUrl }}';
+        {{ end }}
+    </script>
+    {{ $js := resources.Get "js/main.js" | resources.Minify | resources.Fingerprint "sha256" }}
+    <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{ $termJs := resources.Get "js/terminal.js" | resources.Minify | resources.Fingerprint "sha256" }}
+    <script src="{{ $termJs.RelPermalink }}" integrity="{{ $termJs.Data.Integrity }}" defer></script>
+</body>
+</html>

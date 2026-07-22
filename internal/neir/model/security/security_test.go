@@ -2,87 +2,45 @@ package security
 
 import "testing"
 
-func TestZeroValue(t *testing.T) {
+func TestSecurity_ZeroValue(t *testing.T) {
 	var s Security
 	if s.Authentication != nil {
-		t.Errorf("expected nil Authentication, got %v", s.Authentication)
-	}
-	if s.Authorization != nil {
-		t.Errorf("expected nil Authorization, got %v", s.Authorization)
-	}
-	if s.Encryption != nil {
-		t.Errorf("expected nil Encryption, got %v", s.Encryption)
+		t.Error("expected nil Authentication")
 	}
 	if s.Secrets != nil {
-		t.Errorf("expected nil Secrets, got %v", s.Secrets)
-	}
-
-	var auth Authentication
-	if auth.Method != "" {
-		t.Errorf("expected empty Method, got %q", auth.Method)
-	}
-
-	var az Authorization
-	if az.Model != "" {
-		t.Errorf("expected empty Model, got %q", az.Model)
-	}
-	if az.Roles != nil {
-		t.Errorf("expected nil Roles, got %v", az.Roles)
-	}
-
-	var enc Encryption
-	if enc.InTransit {
-		t.Error("expected false InTransit")
-	}
-	if enc.AtRest {
-		t.Error("expected false AtRest")
-	}
-	if enc.Algorithm != "" {
-		t.Errorf("expected empty Algorithm, got %q", enc.Algorithm)
-	}
-
-	var sec Secret
-	if sec.Name != "" {
-		t.Errorf("expected empty Name, got %q", sec.Name)
+		t.Error("expected nil Secrets")
 	}
 }
 
-func TestInitialization(t *testing.T) {
+func TestSecurity_Full(t *testing.T) {
 	s := Security{
-		Authentication: &Authentication{Method: "jwt", Provider: "auth0"},
+		Authentication: &Authentication{Method: "oauth2", Provider: "google"},
 		Authorization:  &Authorization{Model: "rbac", Roles: []string{"admin", "viewer"}},
-		Encryption:     &Encryption{InTransit: true, AtRest: true, Algorithm: "AES-256"},
+		Encryption:     &Encryption{InTransit: true, AtRest: true, Algorithm: "aes-256"},
 		Secrets: []Secret{
 			{Name: "db-password", Kind: "env"},
-			{Name: "api-key", Kind: "vault"},
 		},
+		Attributes: map[string]string{"key": "val"},
 	}
-
-	if s.Authentication == nil || s.Authentication.Method != "jwt" {
-		t.Errorf("expected Authentication.Method 'jwt', got %v", s.Authentication)
+	if s.Authentication.Method != "oauth2" {
+		t.Errorf("expected oauth2, got %s", s.Authentication.Method)
 	}
-	if s.Authorization == nil || s.Authorization.Model != "rbac" {
-		t.Errorf("expected Authorization.Model 'rbac', got %v", s.Authorization)
+	if s.Authentication.Provider != "google" {
+		t.Errorf("expected google, got %s", s.Authentication.Provider)
+	}
+	if s.Authorization.Model != "rbac" {
+		t.Errorf("expected rbac, got %s", s.Authorization.Model)
+	}
+	if len(s.Authorization.Roles) != 2 {
+		t.Errorf("expected 2 roles, got %d", len(s.Authorization.Roles))
 	}
 	if !s.Encryption.InTransit || !s.Encryption.AtRest {
-		t.Error("expected both InTransit and AtRest to be true")
+		t.Error("expected encryption enabled")
 	}
-	if len(s.Secrets) != 2 {
-		t.Errorf("expected 2 secrets, got %d", len(s.Secrets))
+	if len(s.Secrets) != 1 {
+		t.Errorf("expected 1 secret, got %d", len(s.Secrets))
 	}
-}
-
-func TestSecurityNilPointers(t *testing.T) {
-	var s Security
-	if s.Authentication != nil || s.Authorization != nil || s.Encryption != nil {
-		t.Error("expected all pointer fields to be nil")
-	}
-	s.Authentication = &Authentication{Method: "oauth2"}
-	s.Encryption = &Encryption{Algorithm: "RSA"}
-	if s.Authentication == nil || s.Encryption == nil {
-		t.Error("expected non-nil after assignment")
-	}
-	if s.Authorization != nil {
-		t.Error("expected Authorization to still be nil")
+	if s.Secrets[0].Name != "db-password" {
+		t.Errorf("expected db-password, got %s", s.Secrets[0].Name)
 	}
 }

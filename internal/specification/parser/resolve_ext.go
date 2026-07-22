@@ -6,9 +6,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 var includePattern = regexp.MustCompile(`\$include\{([^}]+)\}`)
+var importPattern = regexp.MustCompile(`\$import\{([^}]+(?:::[\w.]+)?)\}`)
 var fnPattern = regexp.MustCompile(`\$fn\{([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)\}`)
 var ifPattern = regexp.MustCompile(`^\$if\{([^}]+)\}\s*$`)
 
@@ -47,6 +52,15 @@ func (r *IncludeResolver) resolveWithDepth(input string, depth int) (string, err
 			filePath = filepath.Join(r.baseDir, filePath)
 		}
 		filePath = filepath.Clean(filePath)
+		if r.baseDir != "" {
+			var err error
+			filePath, err = securityext.ValidateFilePath(filePath, r.baseDir)
+			if err != nil {
+				return "", fmt.Errorf("path traversal in include: %w", err)
+			}
+		} else if strings.Contains(filePath, "..") {
+			return "", fmt.Errorf("path traversal detected in include: %s", matches[1])
+		}
 
 		if cached, ok := r.loaded[filePath]; ok {
 			result = strings.Replace(result, matches[0], cached, 1)
@@ -66,6 +80,119 @@ func (r *IncludeResolver) resolveWithDepth(input string, depth int) (string, err
 		}
 
 		result = strings.Replace(result, matches[0], resolved, 1)
+	}
+
+	return result, nil
+}
+
+type ImportResolver struct {
+	baseDir  string
+	loaded   map[string]string
+	maxDepth int
+}
+
+func NewImportResolver(baseDir string) *ImportResolver {
+	return &ImportResolver{
+		baseDir:  baseDir,
+		loaded:   make(map[string]string),
+		maxDepth: 10,
+	}
+}
+
+func (r *ImportResolver) ResolveImports(input string) (string, error) {
+	return r.resolveWithDepth(input, 0)
+}
+
+func (r *ImportResolver) resolveWithDepth(input string, depth int) (string, error) {
+	if depth > r.maxDepth {
+		return "", fmt.Errorf("import depth exceeded maximum (%d)", r.maxDepth)
+	}
+
+	result := input
+	for {
+		matches := importPattern.FindStringSubmatch(result)
+		if matches == nil {
+			break
+		}
+
+		raw := strings.TrimSpace(matches[1])
+		var filePath, section string
+		if idx := strings.Index(raw, "::"); idx >= 0 {
+			filePath = strings.TrimSpace(raw[:idx])
+			section = strings.TrimSpace(raw[idx+2:])
+		} else {
+			filePath = raw
+		}
+
+		if r.baseDir != "" && !filepath.IsAbs(filePath) {
+			filePath = filepath.Join(r.baseDir, filePath)
+		}
+		filePath = filepath.Clean(filePath)
+		if r.baseDir != "" {
+			var err error
+			filePath, err = securityext.ValidateFilePath(filePath, r.baseDir)
+			if err != nil {
+				return "", fmt.Errorf("path traversal in import: %w", err)
+			}
+		} else if strings.Contains(filePath, "..") {
+			return "", fmt.Errorf("path traversal detected in import: %s", matches[1])
+		}
+
+		cacheKey := filePath + "::" + section
+		if cached, ok := r.loaded[cacheKey]; ok {
+			result = strings.Replace(result, matches[0], cached, 1)
+			continue
+		}
+
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return "", fmt.Errorf("import %s: %w", matches[1], err)
+		}
+
+		var resolved string
+		if section != "" {
+			var root yaml.Node
+			if err := yaml.Unmarshal(content, &root); err != nil {
+				return "", fmt.Errorf("import %s: parse error: %w", matches[1], err)
+			}
+			data, err := parseYAMLNode(root.Content[0])
+			if err != nil {
+				return "", fmt.Errorf("import %s: %w", matches[1], err)
+			}
+			if m, ok := data.(map[string]any); ok {
+				parts := strings.Split(section, ".")
+				current := any(m)
+				for _, part := range parts {
+					if cm, ok := current.(map[string]any); ok {
+						current = cm[part]
+					} else {
+						current = nil
+						break
+					}
+				}
+				if current != nil {
+					out, err := yaml.Marshal(current)
+					if err != nil {
+						return "", fmt.Errorf("import %s: marshal error: %w", matches[1], err)
+					}
+					resolved = strings.TrimSpace(string(out))
+				} else {
+					return "", fmt.Errorf("import %s: section %q not found", matches[1], section)
+				}
+			} else {
+				resolved = strings.TrimSpace(string(content))
+			}
+		} else {
+			resolved = strings.TrimSpace(string(content))
+		}
+
+		recursed, err := r.resolveWithDepth(resolved, depth+1)
+		if err != nil {
+			return "", err
+		}
+
+		r.loaded[cacheKey] = recursed
+		result = strings.Replace(result, matches[0], recursed, 1)
 	}
 
 	return result, nil

@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/configschema"
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 func newConfigCmd() *cobra.Command {
@@ -18,7 +20,109 @@ func newConfigCmd() *cobra.Command {
 
 	cmd.AddCommand(newConfigValidateCommand())
 	cmd.AddCommand(newConfigShowCommand())
+	cmd.AddCommand(newConfigEncryptCommand())
+	cmd.AddCommand(newConfigDecryptCommand())
 
+	return cmd
+}
+
+func newConfigEncryptCommand() *cobra.Command {
+	var inputPath, outputPath, passphrase string
+
+	cmd := &cobra.Command{
+		Use:   "encrypt",
+		Short: "Encrypt a config file with AES-256-GCM",
+		Long: `Encrypt a configuration file at rest using AES-256-GCM with a passphrase.
+Output is written as base64-encoded ciphertext.
+
+Example:
+  naeos config encrypt --input config.yaml --output config.enc
+  naeos config encrypt --input config.yaml --passphrase "my-secret" --output config.enc`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if inputPath == "" {
+				return fmt.Errorf("--input is required")
+			}
+			if passphrase == "" {
+				return fmt.Errorf("--passphrase is required")
+			}
+
+			data, err := os.ReadFile(inputPath)
+			if err != nil {
+				return fmt.Errorf("read input: %w", err)
+			}
+
+			encrypted, err := securityext.EncryptConfig(data, passphrase)
+			if err != nil {
+				return fmt.Errorf("encrypt: %w", err)
+			}
+
+			if outputPath != "" {
+				outputPath = filepath.Clean(outputPath)
+				if err := os.WriteFile(outputPath, []byte(encrypted), 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
+					return fmt.Errorf("write output: %w", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Encrypted config written to %s\n", outputPath)
+			} else {
+				_, _ = cmd.OutOrStdout().Write([]byte(encrypted + "\n"))
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&inputPath, "input", "i", "", "path to config file (required)")
+	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "path to write encrypted output")
+	cmd.Flags().StringVarP(&passphrase, "passphrase", "p", "", "encryption passphrase (required)")
+	return cmd
+}
+
+func newConfigDecryptCommand() *cobra.Command {
+	var inputPath, outputPath, passphrase string
+
+	cmd := &cobra.Command{
+		Use:   "decrypt",
+		Short: "Decrypt an encrypted config file",
+		Long: `Decrypt a base64-encoded encrypted config file back to plaintext.
+
+Example:
+  naeos config decrypt --input config.enc --output config.yaml
+  naeos config decrypt --input config.enc --passphrase "my-secret" --output config.yaml`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if inputPath == "" {
+				return fmt.Errorf("--input is required")
+			}
+			if passphrase == "" {
+				return fmt.Errorf("--passphrase is required")
+			}
+
+			data, err := os.ReadFile(inputPath)
+			if err != nil {
+				return fmt.Errorf("read input: %w", err)
+			}
+
+			decrypted, err := securityext.DecryptConfig(strings.TrimSpace(string(data)), passphrase)
+			if err != nil {
+				return fmt.Errorf("decrypt: %w", err)
+			}
+
+			if outputPath != "" {
+				outputPath = filepath.Clean(outputPath)
+				if err := os.WriteFile(outputPath, decrypted, 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
+					return fmt.Errorf("write output: %w", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Decrypted config written to %s\n", outputPath)
+			} else {
+				_, _ = cmd.OutOrStdout().Write(decrypted)
+				_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&inputPath, "input", "i", "", "path to encrypted config file (required)")
+	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "path to write decrypted output")
+	cmd.Flags().StringVarP(&passphrase, "passphrase", "p", "", "decryption passphrase (required)")
 	return cmd
 }
 

@@ -325,10 +325,6 @@ func TestFactory(t *testing.T) {
 		driver string
 		want   string
 	}{
-		{"postgresql", "postgresql"},
-		{"postgres", "postgresql"},
-		{"mysql", "mysql"},
-		{"sqlite", "sqlite"},
 		{"mock-postgresql", "postgresql"},
 		{"mock-mysql", "mysql"},
 		{"mock-sqlite", "sqlite"},

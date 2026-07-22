@@ -10,18 +10,22 @@ import (
 
 func TestQueuePublishConsume(t *testing.T) {
 	q := NewQueue("test", 10)
-	var received string
+	received := make(chan string, 1)
 
 	q.Subscribe(func(msg *Message) error {
-		received = msg.Payload.(string)
+		received <- msg.Payload.(string)
 		return nil
 	})
 
 	q.Publish(NewMessage("test", "hello"))
-	time.Sleep(50 * time.Millisecond)
 
-	if received != "hello" {
-		t.Errorf("expected 'hello', got %q", received)
+	select {
+	case r := <-received:
+		if r != "hello" {
+			t.Errorf("expected 'hello', got %q", r)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("timeout waiting for message")
 	}
 
 	q.Stop()
@@ -109,18 +113,22 @@ func TestQueueMetrics(t *testing.T) {
 
 func TestTopicPubSub(t *testing.T) {
 	topic := NewTopic("events")
-	var received string
+	received := make(chan string, 1)
 
 	topic.Subscribe("sub1", func(msg *Message) error {
-		received = msg.Payload.(string)
+		received <- msg.Payload.(string)
 		return nil
 	})
 
 	topic.Publish(NewMessage("events", "data"))
-	time.Sleep(50 * time.Millisecond)
 
-	if received != "data" {
-		t.Errorf("expected 'data', got %q", received)
+	select {
+	case r := <-received:
+		if r != "data" {
+			t.Errorf("expected 'data', got %q", r)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("timeout waiting for message")
 	}
 
 	if topic.Subscribers() != 1 {
@@ -183,17 +191,18 @@ func TestBrokerPublishNotFound(t *testing.T) {
 func TestBrokerSubscribeAutoCreate(t *testing.T) {
 	broker := NewBroker()
 
-	var received bool
+	received := make(chan struct{}, 1)
 	broker.Subscribe("auto-topic", "sub1", func(msg *Message) error {
-		received = true
+		received <- struct{}{}
 		return nil
 	})
 
 	broker.Publish("auto-topic", NewMessage("auto-topic", "data"))
-	time.Sleep(50 * time.Millisecond)
 
-	if !received {
-		t.Error("expected to receive message")
+	select {
+	case <-received:
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for message")
 	}
 
 	broker.Stop()

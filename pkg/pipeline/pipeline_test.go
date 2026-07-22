@@ -337,3 +337,142 @@ func TestPipelineRendererIntegration(t *testing.T) {
 		t.Fatal("expected renderer to be set")
 	}
 }
+
+type mockCache struct {
+	data map[string]*Result
+}
+
+func newMockCache() *mockCache {
+	return &mockCache{data: make(map[string]*Result)}
+}
+
+func (c *mockCache) Get(hash string) (*Result, bool) {
+	r, ok := c.data[hash]
+	return r, ok
+}
+
+func (c *mockCache) Set(hash string, result *Result) {
+	c.data[hash] = result
+}
+
+func (c *mockCache) HashSpec(spec string) string {
+	return spec
+}
+
+func TestPipelineCacheHit(t *testing.T) {
+	cache := newMockCache()
+	p, err := New(Config{Cache: cache})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Validate("project: cached")
+	if err != nil {
+		t.Fatalf("Validate returned error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	_, exists := cache.data["project: cached"]
+	if !exists {
+		t.Fatal("expected result to be cached")
+	}
+
+	result2, err := p.Validate("project: cached")
+	if err != nil {
+		t.Fatalf("second Validate returned error: %v", err)
+	}
+	if result2 == nil {
+		t.Fatal("expected non-nil result on cache hit")
+	}
+}
+
+func TestPipelineCacheMiss(t *testing.T) {
+	cache := newMockCache()
+	p, err := New(Config{Cache: cache})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Validate("project: alpha")
+	if err != nil {
+		t.Fatalf("Validate alpha returned error: %v", err)
+	}
+
+	_, err = p.Validate("project: beta")
+	if err != nil {
+		t.Fatalf("Validate beta returned error: %v", err)
+	}
+
+	if len(cache.data) != 2 {
+		t.Fatalf("expected 2 cache entries, got %d", len(cache.data))
+	}
+}
+
+func TestPipelineValidateCacheBypass(t *testing.T) {
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Validate("project: no-cache")
+	if err != nil {
+		t.Fatalf("Validate returned error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+}
+
+type artifactRecorder struct {
+	artifacts []string
+}
+
+func (r *artifactRecorder) OnPipelineStart(pipelineID string) {}
+func (r *artifactRecorder) OnPipelineComplete(pid string, artifacts int, dur string) {}
+func (r *artifactRecorder) OnPipelineFailed(pid, errMsg string) {}
+func (r *artifactRecorder) OnArtifactGenerated(name, path string) {
+	r.artifacts = append(r.artifacts, name)
+}
+
+func TestPipelineObserverArtifactGenerated(t *testing.T) {
+	rec := &artifactRecorder{}
+	chain := ChainObservers(rec)
+	chain.OnArtifactGenerated("main.go", "/out/main.go")
+	if len(rec.artifacts) != 1 {
+		t.Fatal("expected OnArtifactGenerated to fan-out")
+	}
+}
+
+func TestPipelineObserverRunLifecycle(t *testing.T) {
+	type lifecycle struct {
+		started  bool
+		complete bool
+	}
+	obs := &lifecycleRecorder{}
+	p, err := New(Config{Observer: obs})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	_, err = p.Run("project: lifecycle\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if !obs.started {
+		t.Fatal("expected OnPipelineStart")
+	}
+	if !obs.complete {
+		t.Fatal("expected OnPipelineComplete")
+	}
+}
+
+type lifecycleRecorder struct {
+	started  bool
+	complete bool
+}
+
+func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)          { l.started = true }
+func (l *lifecycleRecorder) OnPipelineComplete(pid string, a int, d string) { l.complete = true }
+func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)        {}
+func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)      {}

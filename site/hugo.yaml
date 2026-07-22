@@ -1,0 +1,118 @@
+baseURL: https://naeos.dev/
+title: NAEOS — Declarative Platform Engineering System
+copyright: Copyright © 2026 NAEOS Foundation. All rights reserved.
+enableRobotsTXT: true
+enableGitInfo: false
+summaryLength: 20
+
+defaultContentLanguage: en
+defaultContentLanguageInSubdir: false
+
+languages:
+  en:
+    languageName: English
+    weight: 1
+    title: NAEOS — Declarative Platform Engineering System
+    params:
+      description: Transform YAML/JSON specifications into validated, multi-language project structures with full traceability from intent to implementation.
+  id:
+    languageName: Bahasa Indonesia
+    weight: 2
+    title: NAEOS — Sistem Rekayasa Platform Deklaratif
+    params:
+      description: Ubah spesifikasi YAML/JSON menjadi struktur proyek multi-bahasa yang tervalidasi dengan ketelusuran penuh dari niat hingga implementasi.
+
+module:
+  hugoVersion:
+    extended: true
+    min: 0.131.0
+
+outputs:
+  home:
+    - HTML
+    - JSON
+  section:
+    - HTML
+    - RSS
+    - JSON
+  page:
+    - HTML
+
+mediaTypes:
+  application/manifest+json:
+    suffixes:
+      - webmanifest
+
+outputFormats:
+  MANIFEST:
+    mediaType: application/manifest+json
+    baseName: manifest
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+    parser:
+      autoHeadingID: true
+      autoHeadingIDType: github
+    extensions:
+      definitionList: true
+      footnote: true
+      linkify: true
+      strikethrough: true
+      table: true
+      taskList: true
+      typographer: true
+  highlight:
+    style: monokai
+    lineNumbers: false
+    codeFences: true
+    noClasses: false
+
+params:
+  author: NAEOS Foundation
+  repo: https://github.com/NAEOS-foundation/naeos
+  version: 2.1.0
+  tagline: Specify Once. Build Anywhere.
+  tagline_id: Tentukan Sekali. Bangun di Mana Saja.
+  accentColor: "#00ff88"
+  social:
+    github: https://github.com/NAEOS-foundation/naeos
+    twitter: https://twitter.com/naeos_dev
+  stats:
+    cli: 35
+    languages: 5
+    ai_platforms: 6
+    specs: 56
+  search:
+    placeholder: Search docs, features, blog...
+    placeholder_id: Cari dokumen, fitur, blog...
+  pwa:
+    name: NAEOS
+    shortName: NAEOS
+    backgroundColor: "#0a0a0a"
+    themeColor: "#00ff88"
+  interactiveTerminal:
+    websocketUrl: wss://naeos-demo.fly.dev/ws
+
+permalinks:
+  blog: /blog/:slug/
+  features: /features/:slug/
+  docs: /docs/:slug/
+
+sitemap:
+  changefreq: weekly
+  priority: 0.5
+  filename: sitemap.xml
+
+disableKinds:
+  - taxonomy
+  - term
+
+build:
+  writeStats: false
+
+caches:
+  assets:
+    dir: :resourceDir/_gen
+    maxAge: -1

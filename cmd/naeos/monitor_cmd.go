@@ -35,6 +35,9 @@ func newMonitorCommand() *cobra.Command {
 			srv := &http.Server{
 				Addr:              monitorPort,
 				ReadHeaderTimeout: 10 * time.Second,
+				ReadTimeout:       15 * time.Second,
+				WriteTimeout:      15 * time.Second,
+				IdleTimeout:       60 * time.Second,
 			}
 			return srv.ListenAndServe()
 		},

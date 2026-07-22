@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
+	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
 
-type geminiAdapter struct{}
+type geminiAdapter struct {
+	library *promptlib.Library
+}
 
-func NewGeminiAdapter() compiler.Adapter {
-	return &geminiAdapter{}
+func NewGeminiAdapter(lib *promptlib.Library) compiler.Adapter {
+	return &geminiAdapter{library: lib}
 }
 
 func (a *geminiAdapter) Target() compiler.Target {
@@ -21,9 +25,45 @@ func (a *geminiAdapter) Target() compiler.Target {
 
 func (a *geminiAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "nil NEIR")
 	}
 
+	if a.library != nil {
+		return a.compileFromLibrary(neir)
+	}
+
+	return a.compileLegacy(neir)
+}
+
+func (a *geminiAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
+	rendered, err := a.library.RenderCompiler("gemini", neir)
+	if err != nil {
+		return nil, fmt.Errorf("render from library: %w", err)
+	}
+
+	var files []compiler.OutputFile
+	for _, f := range rendered {
+		files = append(files, compiler.OutputFile{
+			Path:    f.Path,
+			Content: f.Content,
+			Kind:    f.Kind,
+		})
+	}
+
+	projectName := "unknown"
+	if neir.Project != nil {
+		projectName = neir.Project.Name
+	}
+
+	return &compiler.CompiledOutput{
+		Target:     compiler.TargetGemini,
+		Files:      files,
+		Summary:    fmt.Sprintf("Generated %d files for Gemini CLI (%s)", len(files), projectName),
+		CompiledAt: time.Now(),
+	}, nil
+}
+
+func (a *geminiAdapter) compileLegacy(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	var files []compiler.OutputFile
 
 	geminiFile := a.buildGeminiConfig(neir)

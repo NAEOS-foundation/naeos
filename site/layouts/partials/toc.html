@@ -1,0 +1,6 @@
+{{ if and (hasPrefix .RelPermalink "/docs/") (gt (len .TableOfContents) 50) }}
+<div class="toc">
+    <div class="toc-title">{{ i18n "toc_title" | default "On this page" }}</div>
+    {{ .TableOfContents }}
+</div>
+{{ end }}

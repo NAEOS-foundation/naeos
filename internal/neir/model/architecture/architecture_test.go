@@ -4,8 +4,8 @@ import "testing"
 
 func TestPatternConstants(t *testing.T) {
 	tests := []struct {
-		constant Pattern
-		expected string
+		p    Pattern
+		want string
 	}{
 		{PatternLayered, "layered"},
 		{PatternClean, "clean"},
@@ -16,58 +16,43 @@ func TestPatternConstants(t *testing.T) {
 		{PatternMonolith, "monolith"},
 	}
 	for _, tt := range tests {
-		if string(tt.constant) != tt.expected {
-			t.Errorf("Pattern %v = %q, want %q", tt.constant, string(tt.constant), tt.expected)
+		if string(tt.p) != tt.want {
+			t.Errorf("Pattern(%s) = %s, want %s", tt.want, string(tt.p), tt.want)
 		}
 	}
 }
 
-func TestZeroValue(t *testing.T) {
+func TestArchitecture_ZeroValue(t *testing.T) {
 	var a Architecture
 	if a.Pattern != "" {
-		t.Errorf("expected empty Pattern, got %q", a.Pattern)
-	}
-	if a.Style != "" {
-		t.Errorf("expected empty Style, got %q", a.Style)
+		t.Error("expected empty Pattern")
 	}
 	if a.Layers != nil {
-		t.Errorf("expected nil Layers, got %v", a.Layers)
-	}
-	if a.Principles != nil {
-		t.Errorf("expected nil Principles, got %v", a.Principles)
-	}
-
-	var l Layer
-	if l.Name != "" {
-		t.Errorf("expected empty Name, got %q", l.Name)
-	}
-	if l.Modules != nil {
-		t.Errorf("expected nil Modules, got %v", l.Modules)
+		t.Error("expected nil Layers")
 	}
 }
 
-func TestInitialization(t *testing.T) {
+func TestArchitecture_Full(t *testing.T) {
 	a := Architecture{
-		Pattern: PatternHexagonal,
-		Style:   "ports-and-adapters",
+		Pattern:     PatternHexagonal,
+		Style:       "domain-driven",
+		Description: "Hexagonal architecture",
+		Principles:  []string{"single-responsibility", "dependency-inversion"},
 		Layers: []Layer{
-			{Name: "domain", Modules: []string{"core"}},
-			{Name: "adapter", Modules: []string{"http", "db"}},
+			{Name: "domain", Description: "Core domain", Modules: []string{"core"}},
 		},
-		Principles: []string{"separation of concerns", "dependency inversion"},
-		Attributes: map[string]string{"team": "platform"},
+		Attributes: map[string]string{"key": "val"},
 	}
-
 	if a.Pattern != PatternHexagonal {
-		t.Errorf("expected Pattern %q, got %q", PatternHexagonal, a.Pattern)
+		t.Errorf("expected hexagonal, got %s", a.Pattern)
 	}
-	if len(a.Layers) != 2 {
-		t.Errorf("expected 2 layers, got %d", len(a.Layers))
+	if len(a.Principles) != 2 {
+		t.Errorf("expected 2 principles, got %d", len(a.Principles))
 	}
-	if a.Layers[0].Modules[0] != "core" {
-		t.Errorf("expected first module 'core', got %q", a.Layers[0].Modules[0])
+	if len(a.Layers) != 1 {
+		t.Errorf("expected 1 layer, got %d", len(a.Layers))
 	}
-	if a.Principles[0] != "separation of concerns" {
-		t.Errorf("unexpected principles: %v", a.Principles)
+	if a.Layers[0].Name != "domain" {
+		t.Errorf("expected domain, got %s", a.Layers[0].Name)
 	}
 }

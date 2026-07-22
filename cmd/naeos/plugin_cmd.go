@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/pluginhost"
+	"github.com/NAEOS-foundation/naeos/internal/pluginsdk/scaffold"
 )
 
 func newPluginCommand() *cobra.Command {
@@ -209,7 +211,9 @@ Example:
 			}
 			defer func() { _ = mgr.Cleanup() }()
 
-			result, err := mgr.Execute(context.Background(), name, action, params)
+			execCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+			result, err := mgr.Execute(execCtx, name, action, params)
 			if err != nil {
 				return err
 			}
@@ -281,6 +285,7 @@ Example:
 	cmd.AddCommand(pluginTest)
 	cmd.AddCommand(newPluginSearchCommand())
 	cmd.AddCommand(newPluginCreateCommand())
+	cmd.AddCommand(newPluginInitCommand())
 	cmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", filepath.Join(os.Getenv("HOME"), ".naeos", "plugins"), "plugin directory")
 	return cmd
 }
@@ -301,6 +306,59 @@ func newPluginSearchCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newPluginInitCommand() *cobra.Command {
+	var author string
+	var desc string
+	var module string
+
+	cmd := &cobra.Command{
+		Use:   "init [name]",
+		Short: "Scaffold a new plugin project",
+		Long:  `Scaffold a complete plugin project with Go module, SDK boilerplate, tests, Makefile, and GitHub Actions CI.`,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			if module == "" {
+				module = "github.com/user/" + name
+			}
+			if desc == "" {
+				desc = "NAEOS plugin: " + name
+			}
+
+			f := scaffold.Files{
+				Dir:    name,
+				Module: module,
+				Name:   name,
+				Author: author,
+				Desc:   desc,
+			}
+
+			if err := f.WriteAll(); err != nil {
+				return fmt.Errorf("scaffold plugin: %w", err)
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Created plugin project: %s/\n", name)
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 plugin.go              — Plugin implementation")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 main.go                 — WASM entry point")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 plugin_test.go          — Tests")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 naeos.yaml              — Plugin manifest")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 Makefile                — Build + test targets")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 go.mod                  — Go module")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 .github/workflows/ci.yml — CI workflow")
+			fmt.Fprintln(cmd.OutOrStdout(), "  \xE2\x80\xA2 README.md               — Documentation")
+			fmt.Fprintln(cmd.OutOrStdout(), "")
+			fmt.Fprintf(cmd.OutOrStdout(), "Next: cd %s && go test ./...\n", name)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&author, "author", "a", "", "plugin author")
+	cmd.Flags().StringVarP(&desc, "desc", "d", "", "plugin description")
+	cmd.Flags().StringVarP(&module, "module", "m", "", "Go module path")
+
+	return cmd
 }
 
 func newPluginCreateCommand() *cobra.Command {

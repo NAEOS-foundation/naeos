@@ -198,3 +198,39 @@ func TestTracerClear(t *testing.T) {
 		t.Errorf("expected 0 spans after clear, got %d", tracer.SpanCount())
 	}
 }
+
+func BenchmarkTracerStartEnd(b *testing.B) {
+	tracer := NewTracer("bench")
+	for i := 0; i < b.N; i++ {
+		span := tracer.StartSpan("op")
+		tracer.EndSpan(span)
+	}
+}
+
+func BenchmarkLoggerInfo(b *testing.B) {
+	logger := NewLogger("bench", LogLevelDebug)
+	for i := 0; i < b.N; i++ {
+		logger.Info("message", map[string]any{"key": "value"})
+	}
+}
+
+func BenchmarkMetricsCollector(b *testing.B) {
+	mc := NewMetricsCollector("bench")
+	for i := 0; i < b.N; i++ {
+		mc.Counter("test_metric", map[string]string{"label": "val"})
+	}
+}
+
+func BenchmarkJSONExporter(b *testing.B) {
+	tracer := NewTracer("bench")
+	for i := 0; i < 100; i++ {
+		span := tracer.StartSpan("op")
+		tracer.EndSpan(span)
+	}
+	exporter := NewJSONExporter()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		exporter.ExportSpans(tracer.GetSpans())
+		exporter.Flush()
+	}
+}

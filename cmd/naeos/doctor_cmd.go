@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,7 +14,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/broker"
+	"github.com/NAEOS-foundation/naeos/internal/database"
 	"github.com/NAEOS-foundation/naeos/internal/lint"
+	"github.com/NAEOS-foundation/naeos/internal/observability"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
@@ -72,6 +76,8 @@ Checks include:
 			if !quick {
 				results = append(results, checkNetwork())
 			}
+			results = append(results, checkDatabase())
+			results = append(results, checkBroker())
 
 			if cliOutputFormat == "json" {
 				return renderDoctorJSON(cmd, results)
@@ -113,12 +119,20 @@ Checks include:
 	return cmd
 }
 
+func doctorCommandContext(name string, arg ...string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, name, arg...)
+	observability.InjectTraceToCmd(ctx, cmd)
+	return cmd.Output()
+}
+
 func checkGo() checkResult {
 	path, err := exec.LookPath("go")
 	if err != nil {
 		return checkResult{Name: "Go toolchain", Status: "fail", Detail: "go not found in PATH"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "version").Output()
+	out, err := doctorCommandContext(path, "version")
 	if err != nil {
 		return checkResult{Name: "Go toolchain", Status: "fail", Detail: "go version failed"}
 	}
@@ -130,7 +144,7 @@ func checkNode() checkResult {
 	if err != nil {
 		return checkResult{Name: "Node.js", Status: "warn", Detail: "not installed (optional for TypeScript/JS projects)"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "--version").Output()
+	out, err := doctorCommandContext(path, "--version")
 	if err != nil {
 		return checkResult{Name: "Node.js", Status: "warn", Detail: "installed but version check failed"}
 	}
@@ -150,7 +164,7 @@ func checkPython() checkResult {
 		if err != nil {
 			continue
 		}
-		out, err := exec.CommandContext(context.Background(), path, "--version").Output()
+		out, err := doctorCommandContext(path, "--version")
 		if err != nil {
 			continue
 		}
@@ -174,7 +188,7 @@ func checkJava() checkResult {
 	if err != nil {
 		return checkResult{Name: "Java", Status: "warn", Detail: "not installed (optional for Java projects)"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "-version").Output()
+	out, err := doctorCommandContext(path, "-version")
 	if err != nil {
 		return checkResult{Name: "Java", Status: "warn", Detail: "installed but version check failed"}
 	}
@@ -206,7 +220,7 @@ func checkRust() checkResult {
 	if err != nil {
 		return checkResult{Name: "Rust", Status: "warn", Detail: "not installed (optional for Rust projects)"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "--version").Output()
+	out, err := doctorCommandContext(path, "--version")
 	if err != nil {
 		return checkResult{Name: "Rust", Status: "warn", Detail: "installed but version check failed"}
 	}
@@ -225,7 +239,7 @@ func checkDocker() checkResult {
 	if err != nil {
 		return checkResult{Name: "Docker", Status: "warn", Detail: "not installed (optional for containerized deployment)"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "version", "--format", "{{.Server.Version}}").Output()
+	out, err := doctorCommandContext(path, "version", "--format", "{{.Server.Version}}")
 	if err != nil {
 		return checkResult{Name: "Docker", Status: "warn", Detail: "installed but daemon not running"}
 	}
@@ -237,7 +251,7 @@ func checkGit() checkResult {
 	if err != nil {
 		return checkResult{Name: "Git", Status: "fail", Detail: "git not found in PATH"}
 	}
-	out, err := exec.CommandContext(context.Background(), path, "version").Output()
+	out, err := doctorCommandContext(path, "version")
 	if err != nil {
 		return checkResult{Name: "Git", Status: "fail", Detail: "git version failed"}
 	}
@@ -303,7 +317,9 @@ func checkSpec(specFile string) checkResult {
 
 func checkNetwork() checkResult {
 	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequestWithContext(context.Background(), "GET", "https://github.com", nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com", nil)
 	if err != nil {
 		return checkResult{Name: "Network", Status: "warn", Detail: "cannot create request"}
 	}
@@ -311,6 +327,7 @@ func checkNetwork() checkResult {
 	if err != nil {
 		return checkResult{Name: "Network", Status: "warn", Detail: "cannot reach github.com"}
 	}
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
 	resp.Body.Close()
 	return checkResult{Name: "Network", Status: "pass", Detail: "github.com reachable"}
 }
@@ -319,7 +336,9 @@ func checkGoModule() checkResult {
 	if _, err := os.Stat("go.mod"); err != nil {
 		return checkResult{Name: "Go Module", Status: "warn", Detail: "go.mod not found in current directory"}
 	}
-	cmd := exec.CommandContext(context.Background(), "go", "mod", "verify")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "go", "mod", "verify")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return checkResult{Name: "Go Module", Status: "warn", Detail: "modules may need verification"}
@@ -348,6 +367,66 @@ func checkOutputWritable() checkResult {
 	f.Close()
 	os.Remove(tmpFile)
 	return checkResult{Name: "Output Dir", Status: "pass", Detail: "writable"}
+}
+
+func checkDatabase() checkResult {
+	store := database.NewConnectionStore()
+	list, err := store.List()
+	if err != nil {
+		return checkResult{Name: "Database", Status: "warn", Detail: fmt.Sprintf("cannot list connections: %v", err)}
+	}
+	if len(list) == 0 {
+		return checkResult{Name: "Database", Status: "warn", Detail: "no saved connections"}
+	}
+	detail := fmt.Sprintf("%d connection(s) saved", len(list))
+	for _, c := range list {
+		db := database.New(c.Driver)
+		if db == nil {
+			detail += fmt.Sprintf("\n  %s (%s): init failed", c.Name, c.Driver)
+			continue
+		}
+		if err := db.Connect(c.Config); err != nil {
+			detail += fmt.Sprintf("\n  %s (%s): connect failed", c.Name, c.Driver)
+			continue
+		}
+		if err := db.HealthCheck(); err != nil {
+			detail += fmt.Sprintf("\n  %s (%s): unhealthy — %v", c.Name, c.Driver, err)
+			db.Close()
+			continue
+		}
+		detail += fmt.Sprintf("\n  %s (%s): healthy", c.Name, c.Driver)
+		db.Close()
+	}
+	return checkResult{Name: "Database", Status: "pass", Detail: detail}
+}
+
+func checkBroker() checkResult {
+	store := broker.NewConnectionStore()
+	list, err := store.List()
+	if err != nil {
+		return checkResult{Name: "Broker", Status: "warn", Detail: fmt.Sprintf("cannot list connections: %v", err)}
+	}
+	if len(list) == 0 {
+		return checkResult{Name: "Broker", Status: "warn", Detail: "no saved connections"}
+	}
+	detail := fmt.Sprintf("%d connection(s) saved", len(list))
+	for _, c := range list {
+		b := broker.New(c.Driver)
+		if b == nil {
+			detail += fmt.Sprintf("\n  %s (%s): init failed", c.Name, c.Driver)
+			continue
+		}
+		if err := b.Connect(&broker.Config{
+			Host: c.Config.Host,
+			Port: c.Config.Port,
+		}); err != nil {
+			detail += fmt.Sprintf("\n  %s (%s): connect failed", c.Name, c.Driver)
+			continue
+		}
+		detail += fmt.Sprintf("\n  %s (%s): connected", c.Name, c.Driver)
+		b.Close()
+	}
+	return checkResult{Name: "Broker", Status: "pass", Detail: detail}
 }
 
 func renderDoctorJSON(cmd *cobra.Command, results []checkResult) error {

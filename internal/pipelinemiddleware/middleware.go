@@ -41,6 +41,10 @@ func (c *Chain) Use(stage string, mw Middleware) {
 }
 
 func (c *Chain) Execute(stage string, input *StageInput, handler StageFunc) (*StageOutput, error) {
+	return c.ExecuteContext(context.Background(), stage, input, handler)
+}
+
+func (c *Chain) ExecuteContext(ctx context.Context, stage string, input *StageInput, handler StageFunc) (*StageOutput, error) {
 	mws := c.middlewares[stage]
 	current := handler
 	for i := len(mws) - 1; i >= 0; i-- {
@@ -50,7 +54,7 @@ func (c *Chain) Execute(stage string, input *StageInput, handler StageFunc) (*St
 			return mw.Wrap(in.Stage, nextFn)(ctx, in)
 		}
 	}
-	return current(context.Background(), input)
+	return current(ctx, input)
 }
 
 type LogMiddleware struct {

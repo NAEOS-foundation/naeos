@@ -136,5 +136,33 @@ func (pw *PluginWatcher) reloadPlugins() {
 	if err != nil {
 		return
 	}
-	_ = append(pluginFiles, wasmFiles...)
+
+	onDisk := make(map[string]bool, len(pluginFiles)+len(wasmFiles))
+	for _, f := range pluginFiles {
+		onDisk[f] = true
+	}
+	for _, f := range wasmFiles {
+		onDisk[f] = true
+	}
+
+	for _, p := range pw.manager.List() {
+		if !onDisk[p.Path] {
+			_ = pw.manager.Uninstall(p.Name)
+		}
+	}
+
+	for _, f := range pluginFiles {
+		if !pw.isRegistered(f) {
+			_, _ = pw.manager.Install(f)
+		}
+	}
+}
+
+func (pw *PluginWatcher) isRegistered(path string) bool {
+	for _, p := range pw.manager.List() {
+		if p.Path == path {
+			return true
+		}
+	}
+	return false
 }

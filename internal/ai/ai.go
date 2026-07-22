@@ -5,15 +5,25 @@ import (
 	"strings"
 )
 
-// AIService provides rule-based analysis and suggestions for NAEOS specifications.
+// AIService provides analysis and suggestions for NAEOS specifications.
+// When an LLMService is configured, it uses LLM-powered analysis with rule-based fallback.
 type AIService struct {
 	context map[string]any
+	llm     *LLMService
 }
 
-// NewService creates a new AI service instance.
+// NewService creates a new AI service instance with rule-based analysis.
 func NewService() *AIService {
 	return &AIService{
 		context: make(map[string]any),
+	}
+}
+
+// NewServiceWithLLM creates an AI service that uses LLM when available, with rule-based fallback.
+func NewServiceWithLLM(llm *LLMService) *AIService {
+	return &AIService{
+		context: make(map[string]any),
+		llm:     llm,
 	}
 }
 
@@ -33,11 +43,24 @@ type Explanation struct {
 }
 
 // Suggest analyses a specification and returns improvement suggestions.
+// Uses LLM when available, falls back to rule-based analysis.
 func (s *AIService) Suggest(specContent string) ([]Suggestion, error) {
 	if specContent == "" {
 		return nil, fmt.Errorf("empty specification")
 	}
 
+	if s.llm != nil {
+		suggestions, err := s.llm.GenerateSuggestions(specContent)
+		if err == nil && len(suggestions) > 0 {
+			return suggestions, nil
+		}
+	}
+
+	return s.suggestRules(specContent)
+}
+
+// suggestRules returns rule-based suggestions when LLM is unavailable.
+func (s *AIService) suggestRules(specContent string) ([]Suggestion, error) {
 	var suggestions []Suggestion
 
 	if !strings.Contains(specContent, "architecture:") {
@@ -121,11 +144,27 @@ func (s *AIService) Suggest(specContent string) ([]Suggestion, error) {
 }
 
 // Explain returns a detailed explanation of the given topic.
+// Uses LLM when available for architecture topics, falls back to built-in knowledge.
 func (s *AIService) Explain(topic, specContent string) (*Explanation, error) {
 	if topic == "" {
 		return nil, fmt.Errorf("topic is required")
 	}
 
+	if s.llm != nil && specContent != "" && strings.ToLower(topic) == "architecture" {
+		content, err := s.llm.ExplainArchitecture(specContent, topic)
+		if err == nil && content != "" {
+			return &Explanation{
+				Topic:   topic,
+				Content: content,
+			}, nil
+		}
+	}
+
+	return s.explainRules(topic)
+}
+
+// explainRules returns built-in explanations when LLM is unavailable.
+func (s *AIService) explainRules(topic string) (*Explanation, error) {
 	exp := &Explanation{
 		Topic: topic,
 	}

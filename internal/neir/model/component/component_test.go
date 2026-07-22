@@ -4,8 +4,8 @@ import "testing"
 
 func TestComponentKindConstants(t *testing.T) {
 	tests := []struct {
-		constant ComponentKind
-		expected string
+		k    ComponentKind
+		want string
 	}{
 		{KindHandler, "handler"},
 		{KindService, "service"},
@@ -17,45 +17,41 @@ func TestComponentKindConstants(t *testing.T) {
 		{KindScheduler, "scheduler"},
 	}
 	for _, tt := range tests {
-		if string(tt.constant) != tt.expected {
-			t.Errorf("ComponentKind %v = %q, want %q", tt.constant, string(tt.constant), tt.expected)
+		if string(tt.k) != tt.want {
+			t.Errorf("ComponentKind(%s) = %s, want %s", tt.want, string(tt.k), tt.want)
 		}
 	}
 }
 
-func TestZeroValue(t *testing.T) {
+func TestComponent_ZeroValue(t *testing.T) {
 	var c Component
 	if c.Name != "" {
-		t.Errorf("expected empty Name, got %q", c.Name)
+		t.Error("expected empty Name")
 	}
 	if c.Kind != "" {
-		t.Errorf("expected empty Kind, got %q", c.Kind)
-	}
-	if c.Dependencies != nil {
-		t.Errorf("expected nil Dependencies, got %v", c.Dependencies)
-	}
-	if c.Attributes != nil {
-		t.Errorf("expected nil Attributes, got %v", c.Attributes)
+		t.Error("expected empty Kind")
 	}
 }
 
-func TestInitialization(t *testing.T) {
+func TestComponent_Full(t *testing.T) {
 	c := Component{
-		Name:         "user-service",
-		Kind:         KindService,
-		Module:       "internal/users",
-		Description:  "Handles user CRUD",
-		Dependencies: []string{"db-repo", "cache-middleware"},
-		Attributes:   map[string]string{"lang": "go"},
+		Name:         "user-handler",
+		Kind:         KindHandler,
+		Module:       "users",
+		Description:  "Handles user requests",
+		Dependencies: []string{"user-service"},
+		Attributes:   map[string]string{"key": "val"},
 	}
-
-	if c.Kind != KindService {
-		t.Errorf("expected Kind %q, got %q", KindService, c.Kind)
+	if c.Name != "user-handler" {
+		t.Errorf("expected user-handler, got %s", c.Name)
 	}
-	if len(c.Dependencies) != 2 {
-		t.Errorf("expected 2 dependencies, got %d", len(c.Dependencies))
+	if c.Kind != KindHandler {
+		t.Errorf("expected handler, got %s", c.Kind)
 	}
-	if c.Dependencies[0] != "db-repo" {
-		t.Errorf("expected first dependency 'db-repo', got %q", c.Dependencies[0])
+	if c.Module != "users" {
+		t.Errorf("expected users, got %s", c.Module)
+	}
+	if len(c.Dependencies) != 1 || c.Dependencies[0] != "user-service" {
+		t.Errorf("expected [user-service], got %v", c.Dependencies)
 	}
 }

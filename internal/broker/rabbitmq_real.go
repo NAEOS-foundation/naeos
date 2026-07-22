@@ -1,12 +1,17 @@
+//go:build !nobroker
+
 package broker
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealRabbitMQ struct {
@@ -39,15 +44,18 @@ func (r *RealRabbitMQ) Connect(config *Config) error {
 
 	conn, err := amqp.Dial(url)
 	if err != nil {
+		slog.Error("rabbitmq connect failed", "host", config.Host, "port", config.Port, "error", err)
 		return fmt.Errorf("connect to rabbitmq: %w", err)
 	}
 
 	ch, err := conn.Channel()
 	if err != nil {
 		conn.Close()
+		slog.Error("rabbitmq channel open failed", "error", err)
 		return fmt.Errorf("open channel: %w", err)
 	}
 
+	slog.Info("rabbitmq connected", "host", config.Host, "port", config.Port)
 	r.conn = conn
 	r.channel = ch
 	return nil
@@ -72,20 +80,21 @@ func (r *RealRabbitMQ) Close() error {
 
 func (r *RealRabbitMQ) Ping() error {
 	if r.conn == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 	if r.conn.IsClosed() {
-		return fmt.Errorf("connection closed")
+		return naeoserr.Wrap(naeoserr.ErrNetwork, "connection closed", nil)
 	}
 	return nil
 }
 
 func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 	if r.channel == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	r.mu.Lock()
+	defer r.mu.Unlock()
 	queue, ok := r.queues[channel]
 	if !ok {
 		var err error
@@ -93,12 +102,11 @@ func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 			channel, true, false, false, false, nil,
 		)
 		if err != nil {
-			r.mu.Unlock()
+			slog.Error("rabbitmq declare queue failed", "channel", channel, "error", err)
 			return fmt.Errorf("declare queue %s: %w", channel, err)
 		}
 		r.queues[channel] = queue
 	}
-	r.mu.Unlock()
 
 	data := msg.Payload
 	if data == nil {
@@ -118,10 +126,11 @@ func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 
 func (r *RealRabbitMQ) Subscribe(channel string, handler MessageHandler) error {
 	if r.channel == nil {
-		return fmt.Errorf("not connected")
+		return naeoserr.ErrNotConnected
 	}
 
 	r.mu.Lock()
+	defer r.mu.Unlock()
 	queue, ok := r.queues[channel]
 	if !ok {
 		var err error
@@ -129,17 +138,16 @@ func (r *RealRabbitMQ) Subscribe(channel string, handler MessageHandler) error {
 			channel, true, false, false, false, nil,
 		)
 		if err != nil {
-			r.mu.Unlock()
 			return fmt.Errorf("declare queue %s: %w", channel, err)
 		}
 		r.queues[channel] = queue
 	}
-	r.mu.Unlock()
 
 	deliveries, err := r.channel.Consume(
 		queue.Name, "", false, false, false, false, nil,
 	)
 	if err != nil {
+		slog.Error("rabbitmq consume failed", "channel", channel, "error", err)
 		return fmt.Errorf("consume from %s: %w", channel, err)
 	}
 

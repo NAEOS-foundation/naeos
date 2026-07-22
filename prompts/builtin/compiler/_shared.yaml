@@ -1,0 +1,69 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+# Shared variables and defaults used across compiler templates.
+# These are common variable definitions that individual adapter templates
+# may reference or override. When creating custom overrides, you can
+# inherit these defaults or replace them entirely.
+
+# Common variable groups shared across compiler adapters:
+
+guidelines:
+  description: "Coding guidelines included in adapter output files"
+  type: "[]string"
+  defaults:
+    - "Write clean, idiomatic code following the project's architecture pattern"
+    - "Include proper error handling"
+    - "Add comments for public APIs"
+    - "Follow the module dependency structure"
+
+code_rules:
+  description: "Code quality rules enforced across adapters"
+  type: "[]string"
+  defaults:
+    - "Always use explicit error returns, never panic"
+    - "Prefer table-driven tests"
+    - "Keep package boundaries clean"
+    - "Use dependency injection for testability"
+    - "Follow naming conventions of the target language"
+
+style_rules:
+  description: "Code style rules used by Cursor adapter"
+  type: "[]string"
+  defaults:
+    - "Use early returns"
+    - "Prefer const/readonly where possible"
+    - "Write self-documenting code with clear names"
+    - "Handle all error paths"
+    - "Keep functions under 50 lines"
+
+agent_guidelines:
+  description: "Agent behavior guidelines used by Codex adapter"
+  type: "[]string"
+  defaults:
+    - "Follow the architecture pattern"
+    - "Write clean, idiomatic code for the target language"
+    - "Handle errors explicitly"
+    - "Write tests for new code"
+    - "Keep functions focused and small"
+    - "Document public APIs"
+
+# Template helper functions available in compiler templates:
+#
+#   {{.Project.Name}}            - Project name from spec
+#   {{.Project.Description}}     - Project description
+#   {{.Project.Version}}         - Project version
+#   {{.Architecture.Pattern}}    - Architecture pattern name
+#   {{.Architecture.Principles}} - List of architecture principles
+#   {{.Modules}}                 - List of modules (iterate with {{range}})
+#   {{.Components}}              - List of components
+#   {{.Services}}                - List of services
+#   {{.APIs}}                    - List of API specifications
+#   {{.Security}}                - Security configuration
+#   {{.Deployment}}              - Deployment configuration
+#   {{.Testing}}                 - Testing configuration
+#   {{.Storage}}                 - Storage backends
+#   {{.Infrastructure}}          - Infrastructure configuration
+#   {{.AI}}                      - AI/ML configuration
+#   {{.Documentation}}           - Design documents (ADRs, RFCs)
+#
+#   {{code .Value}}              - Wraps value in code backticks
+#   {{join .Slice ", "}}         - Joins a string slice with separator

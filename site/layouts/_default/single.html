@@ -1,0 +1,68 @@
+{{ define "main" }}
+<div class="page-header">
+    <div class="container">
+        {{ if not .IsHome }}
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="{{ .Site.Home.RelPermalink }}">{{ i18n "nav_home" | default "Home" }}</a>
+            {{ range .Ancestors.Reverse }}{{ if ne . $.Site.Home }}
+            <span class="separator" aria-hidden="true">/</span>
+            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+            {{ end }}{{ end }}
+            <span class="separator" aria-hidden="true">/</span>
+            <span aria-current="page">{{ .Title }}</span>
+        </nav>
+        {{ end }}
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}<p>{{ . }}</p>{{ end }}
+    </div>
+</div>
+<section class="content-section">
+    <div class="container">
+        <div class="{{ if hasPrefix .RelPermalink "/docs/" }}doc-layout{{ end }}">
+            {{ if hasPrefix .RelPermalink "/docs/" }}
+            <aside class="doc-sidebar" role="complementary" aria-label="Documentation sidebar">
+                <h4>{{ i18n "nav_docs" }}</h4>
+                <div class="doc-sidebar-search">
+                    <svg class="doc-sidebar-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" class="doc-sidebar-input" id="sidebar-search" placeholder="Filter pages..." aria-label="Filter documentation pages">
+                </div>
+                <nav id="sidebar-nav">
+                    <a href="{{ "docs/getting-started/" | relLangURL }}" data-title="{{ i18n "footer_getting_started" }}"{{ if eq .RelPermalink (relLangURL "/docs/getting-started/") }} class="active"{{ end }}>{{ i18n "footer_getting_started" }}</a>
+                    <a href="{{ "docs/installation/" | relLangURL }}" data-title="{{ i18n "footer_installation" }}"{{ if eq .RelPermalink (relLangURL "/docs/installation/") }} class="active"{{ end }}>{{ i18n "footer_installation" }}</a>
+                    <a href="{{ "docs/quick-reference/" | relLangURL }}" data-title="Quick Reference"{{ if eq .RelPermalink (relLangURL "/docs/quick-reference/") }} class="active"{{ end }}>Quick Reference</a>
+                    <a href="{{ "docs/core-principles/" | relLangURL }}" data-title="Core Principles"{{ if eq .RelPermalink (relLangURL "/docs/core-principles/") }} class="active"{{ end }}>Core Principles</a>
+                    <a href="{{ "docs/architecture/" | relLangURL }}" data-title="{{ i18n "footer_architecture" }}"{{ if eq .RelPermalink (relLangURL "/docs/architecture/") }} class="active"{{ end }}>{{ i18n "footer_architecture" }}</a>
+                    <a href="{{ "docs/project-structure/" | relLangURL }}" data-title="Project Structure"{{ if eq .RelPermalink (relLangURL "/docs/project-structure/") }} class="active"{{ end }}>Project Structure</a>
+                    <a href="{{ "docs/spec-language/" | relLangURL }}" data-title="{{ i18n "nav_spec_language" | default "Spec Language" }}"{{ if eq .RelPermalink (relLangURL "/docs/spec-language/") }} class="active"{{ end }}>{{ i18n "nav_spec_language" | default "Spec Language" }}</a>
+                    <a href="{{ "docs/neir-model/" | relLangURL }}" data-title="NEIR Model"{{ if eq .RelPermalink (relLangURL "/docs/neir-model/") }} class="active"{{ end }}>NEIR Model</a>
+                    <a href="{{ "docs/pipeline-engine/" | relLangURL }}" data-title="Pipeline Engine"{{ if eq .RelPermalink (relLangURL "/docs/pipeline-engine/") }} class="active"{{ end }}>Pipeline Engine</a>
+                    <a href="{{ "docs/ai-compiler/" | relLangURL }}" data-title="{{ i18n "nav_ai_compiler" | default "AI Compiler" }}"{{ if eq .RelPermalink (relLangURL "/docs/ai-compiler/") }} class="active"{{ end }}>{{ i18n "nav_ai_compiler" | default "AI Compiler" }}</a>
+                    <a href="{{ "docs/context-bundles/" | relLangURL }}" data-title="Context Bundles"{{ if eq .RelPermalink (relLangURL "/docs/context-bundles/") }} class="active"{{ end }}>Context Bundles</a>
+                    <a href="{{ "docs/profiles/" | relLangURL }}" data-title="Profiles"{{ if eq .RelPermalink (relLangURL "/docs/profiles/") }} class="active"{{ end }}>Profiles</a>
+                    <a href="{{ "docs/plugin-sdk/" | relLangURL }}" data-title="Plugin SDK"{{ if eq .RelPermalink (relLangURL "/docs/plugin-sdk/") }} class="active"{{ end }}>Plugin SDK</a>
+                    <a href="{{ "docs/validation/" | relLangURL }}" data-title="Validation"{{ if eq .RelPermalink (relLangURL "/docs/validation/") }} class="active"{{ end }}>Validation</a>
+                    <a href="{{ "docs/governance/" | relLangURL }}" data-title="Governance"{{ if eq .RelPermalink (relLangURL "/docs/governance/") }} class="active"{{ end }}>Governance</a>
+                    <a href="{{ "docs/cloud-deployment/" | relLangURL }}" data-title="Cloud Deployment"{{ if eq .RelPermalink (relLangURL "/docs/cloud-deployment/") }} class="active"{{ end }}>Cloud Deployment</a>
+                    <a href="{{ "docs/cli-reference/" | relLangURL }}" data-title="{{ i18n "footer_cli_reference" }}"{{ if eq .RelPermalink (relLangURL "/docs/cli-reference/") }} class="active"{{ end }}>{{ i18n "footer_cli_reference" }}</a>
+                    <a href="{{ "docs/api-reference/" | relLangURL }}" data-title="API Reference"{{ if eq .RelPermalink (relLangURL "/docs/api-reference/") }} class="active"{{ end }}>API Reference</a>
+                    <a href="{{ "docs/troubleshooting/" | relLangURL }}" data-title="Troubleshooting"{{ if eq .RelPermalink (relLangURL "/docs/troubleshooting/") }} class="active"{{ end }}>Troubleshooting</a>
+                    <a href="{{ "docs/glossary/" | relLangURL }}" data-title="Glossary"{{ if eq .RelPermalink (relLangURL "/docs/glossary/") }} class="active"{{ end }}>Glossary</a>
+                    <a href="{{ "docs/contributing/" | relLangURL }}" data-title="Contributing"{{ if eq .RelPermalink (relLangURL "/docs/contributing/") }} class="active"{{ end }}>Contributing</a>
+                </nav>
+            </aside>
+            <div class="doc-drawer-overlay" id="doc-drawer-overlay"></div>
+            {{ end }}
+            <button class="doc-drawer-toggle" id="doc-drawer-toggle" aria-label="Toggle documentation sidebar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                {{ i18n "nav_docs" }}
+            </button>
+            <div class="{{ if hasPrefix .RelPermalink "/docs/" }}single-content{{ end }}">
+                {{ partial "toc.html" . }}
+                {{ .Content }}
+                {{ partial "docs/edit-link.html" . }}
+                {{ partial "docs/pagination.html" . }}
+            </div>
+        </div>
+    </div>
+</section>
+{{ end }}

@@ -15,7 +15,7 @@ services:
     port: 8080
 `
 
-	p := NewParser()
+	p := NewParser(".")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = p.Parse(spec)
@@ -88,7 +88,7 @@ generation:
   moduleDir: ./modules
 `
 
-	p := NewParser()
+	p := NewParser(".")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = p.Parse(spec)
@@ -107,7 +107,7 @@ services:
     port: $env{SERVICE_PORT}
 `
 
-	p := NewParser()
+	p := NewParser(".")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = p.Parse(spec)

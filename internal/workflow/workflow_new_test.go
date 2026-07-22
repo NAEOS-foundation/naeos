@@ -259,7 +259,7 @@ func TestManagerExecuteWithContext(t *testing.T) {
 
 	m := NewManager()
 	w := NewWorkflow("test", steps)
-	m.Register("test", w)
+	_ = m.Register("test", w)
 
 	err := m.ExecuteWithContext(context.Background(), "test")
 	if err != nil {

@@ -39,7 +39,7 @@ func TestExecuteEmptyPath(t *testing.T) {
 }
 
 func TestExecute(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	result, err := e.Execute(Artifact{Path: "test.go", Content: []byte("package main")})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -53,7 +53,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestExecuteDuplicate(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	_, _ = e.Execute(Artifact{Path: "test.go", Content: []byte("package main")})
 	result, err := e.Execute(Artifact{Path: "test.go", Content: []byte("package main")})
 	if err != nil {
@@ -68,7 +68,7 @@ func TestExecuteDuplicate(t *testing.T) {
 }
 
 func TestHistory(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	_, _ = e.Execute(Artifact{Path: "a.go", Content: []byte("package a")})
 	_, _ = e.Execute(Artifact{Path: "b.go", Content: []byte("package b")})
 
@@ -79,7 +79,7 @@ func TestHistory(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	_, _ = e.Execute(Artifact{Path: "test.go", Content: []byte("package main")})
 	e.Reset()
 
@@ -125,7 +125,7 @@ func TestValidateEmptyPath(t *testing.T) {
 }
 
 func TestExecuteAll(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	artifacts := []Artifact{
 		{Path: "a.go", Content: []byte("package a")},
 		{Path: "b.go", Content: []byte("package b")},
@@ -166,7 +166,7 @@ func TestExecuteAllValidationFailure(t *testing.T) {
 }
 
 func TestFailedCount(t *testing.T) {
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	_, _ = e.Execute(Artifact{Path: "a.go", Content: []byte("package a")})
 	if e.FailedCount() != 0 {
 		t.Fatalf("expected 0 failed, got %d", e.FailedCount())
@@ -175,7 +175,7 @@ func TestFailedCount(t *testing.T) {
 
 func TestExecuteWritesFile(t *testing.T) {
 	dir := t.TempDir()
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	e.SetOutputDir(dir)
 
 	result, err := e.Execute(Artifact{Path: "test.txt", Content: []byte("hello")})
@@ -200,7 +200,7 @@ func TestExecuteWritesFile(t *testing.T) {
 
 func TestExecuteWritesNestedFile(t *testing.T) {
 	dir := t.TempDir()
-	e := NewEngine().(*DefaultRuntimeEngine)
+	e := NewEngine()
 	e.SetOutputDir(dir)
 
 	result, err := e.Execute(Artifact{Path: "internal/app/main.go", Content: []byte("package main")})

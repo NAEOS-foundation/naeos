@@ -1,0 +1,65 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: gemini
+kind: compiler
+version: "1.0.0"
+target: gemini
+files:
+  - path: ".gemini/CONFIG.md"
+    kind: instructions
+    template: |
+      # Gemini CLI Configuration
+
+      {{if .Project.Name}}Project: {{.Project.Name}}
+      {{if .Project.Description}}Description: {{.Project.Description}}{{end}}
+      {{end}}
+      {{if .Architecture.Pattern}}
+
+      Architecture: {{.Architecture.Pattern}}{{end}}
+
+      ## Project Structure
+
+      {{range .Modules}}- {{code .Name}} -> {{code .Path}}
+      {{if .Description}}  {{.Description}}{{end}}
+      {{end}}
+      {{if .Services}}
+      ## Services
+
+      {{range .Services}}- {{.Name}} ({{.Kind}}, port {{.Port}})
+      {{end}}{{end}}
+
+      ## Guidelines
+
+      - Follow established patterns in the codebase
+      - Write clean, maintainable code
+      - Include proper error handling
+      - Add tests for new functionality
+
+  - path: ".gemini/context.md"
+    kind: context
+    template: |
+      # Gemini Context
+
+      {{if .Components}}
+      ## Components
+
+      {{range .Components}}- {{.Name}} ({{.Kind}}) in module {{.Module}}
+      {{end}}{{end}}
+      {{if .APIs}}
+      ## APIs
+
+      {{range .APIs}}### {{.Name}} ({{.Protocol}})
+      {{range .Endpoints}}- {{.Method}} {{.Path}}: {{.Summary}}
+      {{end}}{{end}}{{end}}
+      {{if .Testing}}
+
+      ## Testing: {{.Testing.Strategy}} strategy
+      {{if .Testing.Frameworks}}Frameworks: {{join .Testing.Frameworks ", "}}{{end}}
+      {{end}}
+variables:
+  - name: Guidelines
+    type: "[]string"
+    default:
+      - "Follow established patterns in the codebase"
+      - "Write clean, maintainable code"
+      - "Include proper error handling"
+      - "Add tests for new functionality"

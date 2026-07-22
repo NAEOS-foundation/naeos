@@ -1,0 +1,33 @@
+{{ define "main" }}
+<div class="page-header">
+    <div class="container">
+        {{ if not .IsHome }}
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="{{ .Site.Home.RelPermalink }}">{{ i18n "nav_home" | default "Home" }}</a>
+            {{ range .Ancestors.Reverse }}{{ if ne . $.Site.Home }}
+            <span class="separator" aria-hidden="true">/</span>
+            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+            {{ end }}{{ end }}
+            <span class="separator" aria-hidden="true">/</span>
+            <span aria-current="page">{{ .Title }}</span>
+        </nav>
+        {{ end }}
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}<p>{{ . }}</p>{{ end }}
+    </div>
+</div>
+<section class="content-section">
+    <div class="container">
+        {{ .Content }}
+        <div class="blog-grid stagger-fade">
+            {{ range .Pages }}
+            <article class="blog-card">
+                <div class="blog-date">{{ .Date | time.Format "January 2, 2006" }}</div>
+                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+                <p>{{ .Description | default .Summary | truncate 120 }}</p>
+            </article>
+            {{ end }}
+        </div>
+    </div>
+</section>
+{{ end }}

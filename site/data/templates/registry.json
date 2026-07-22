@@ -1,0 +1,108 @@
+{
+  "templates": [
+    {
+      "name": "microservices-go",
+      "version": "1.0.0",
+      "description": "Go microservices starter project with gRPC, REST API, and event-driven communication",
+      "author": "NAEOS Foundation",
+      "tags": ["go", "microservices", "grpc", "rest", "official"],
+      "repo_url": "https://github.com/naeos-templates/microservices-go",
+      "download_url": "",
+      "languages": ["go"],
+      "frameworks": ["grpc", "rest", "nats"],
+      "downloads": 320,
+      "updated_at": "2026-06-01"
+    },
+    {
+      "name": "serverless-ts",
+      "version": "1.1.0",
+      "description": "TypeScript serverless project with AWS Lambda, API Gateway, and DynamoDB",
+      "author": "NAEOS Foundation",
+      "tags": ["typescript", "serverless", "aws", "official"],
+      "repo_url": "https://github.com/naeos-templates/serverless-ts",
+      "download_url": "",
+      "languages": ["typescript"],
+      "frameworks": ["aws-lambda", "api-gateway", "dynamodb"],
+      "downloads": 210,
+      "updated_at": "2026-05-28"
+    },
+    {
+      "name": "web-api-py",
+      "version": "1.0.0",
+      "description": "Python FastAPI REST API starter with SQLAlchemy, PostgreSQL, and Docker",
+      "author": "NAEOS Foundation",
+      "tags": ["python", "fastapi", "rest", "postgres", "official"],
+      "repo_url": "https://github.com/naeos-templates/web-api-py",
+      "download_url": "",
+      "languages": ["python"],
+      "frameworks": ["fastapi", "sqlalchemy", "postgresql"],
+      "downloads": 180,
+      "updated_at": "2026-06-10"
+    },
+    {
+      "name": "rust-cli-tool",
+      "version": "0.9.0",
+      "description": "Rust CLI application starter with clap, tracing, and cross-platform builds",
+      "author": "NAEOS Foundation",
+      "tags": ["rust", "cli", "official"],
+      "repo_url": "https://github.com/naeos-templates/rust-cli-tool",
+      "download_url": "",
+      "languages": ["rust"],
+      "frameworks": ["clap"],
+      "downloads": 95,
+      "updated_at": "2026-04-20"
+    },
+    {
+      "name": "fullstack-js",
+      "version": "2.0.0",
+      "description": "Full-stack JavaScript/TypeScript with Next.js, Prisma, and PostgreSQL",
+      "author": "NAEOS Foundation",
+      "tags": ["typescript", "javascript", "nextjs", "fullstack", "postgres", "official"],
+      "repo_url": "https://github.com/naeos-templates/fullstack-js",
+      "download_url": "",
+      "languages": ["typescript", "javascript"],
+      "frameworks": ["nextjs", "prisma", "postgresql"],
+      "downloads": 450,
+      "updated_at": "2026-06-15"
+    },
+    {
+      "name": "event-driven-java",
+      "version": "1.0.0",
+      "description": "Java event-driven microservices with Kafka, Spring Boot, and Kubernetes",
+      "author": "NAEOS Foundation",
+      "tags": ["java", "spring", "kafka", "kubernetes", "official"],
+      "repo_url": "https://github.com/naeos-templates/event-driven-java",
+      "download_url": "",
+      "languages": ["java"],
+      "frameworks": ["spring-boot", "kafka", "kubernetes"],
+      "downloads": 140,
+      "updated_at": "2026-05-10"
+    },
+    {
+      "name": "go-http-api",
+      "version": "1.0.0",
+      "description": "Minimal Go HTTP API with chi router, structured logging, and health check endpoint",
+      "author": "Community",
+      "tags": ["go", "http", "api", "community"],
+      "repo_url": "https://github.com/naeos-templates/go-http-api",
+      "download_url": "",
+      "languages": ["go"],
+      "frameworks": ["chi"],
+      "downloads": 78,
+      "updated_at": "2026-03-15"
+    },
+    {
+      "name": "python-ml-service",
+      "version": "0.8.0",
+      "description": "Python ML model serving with FastAPI, ONNX Runtime, and Prometheus metrics",
+      "author": "Community",
+      "tags": ["python", "ml", "service", "community"],
+      "repo_url": "https://github.com/naeos-templates/python-ml-service",
+      "download_url": "",
+      "languages": ["python"],
+      "frameworks": ["fastapi", "onnx", "prometheus"],
+      "downloads": 62,
+      "updated_at": "2026-02-20"
+    }
+  ]
+}

@@ -69,6 +69,13 @@ func (m *RealMySQL) Connect(config *Config) error {
 	return nil
 }
 
+func (m *RealMySQL) defaultContext() (context.Context, context.CancelFunc) {
+	if m.config != nil && m.config.Timeout > 0 {
+		return context.WithTimeout(context.Background(), m.config.Timeout)
+	}
+	return context.WithTimeout(context.Background(), 30*time.Second)
+}
+
 func (m *RealMySQL) Close() error {
 	if m.db != nil {
 		return m.db.Close()
@@ -78,18 +85,22 @@ func (m *RealMySQL) Close() error {
 
 func (m *RealMySQL) Ping() error {
 	if m.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
-	return m.db.PingContext(context.Background())
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.db.PingContext(ctx)
 }
 
 func (m *RealMySQL) Exec(query string, args ...any) (Result, error) {
-	return m.ExecContext(context.Background(), query, args...)
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.ExecContext(ctx, query, args...)
 }
 
 func (m *RealMySQL) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if m.db == nil {
-		return Result{}, fmt.Errorf("not connected")
+		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	res, err := m.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -101,12 +112,14 @@ func (m *RealMySQL) ExecContext(ctx context.Context, query string, args ...any) 
 }
 
 func (m *RealMySQL) Query(query string, args ...any) ([]Row, error) {
-	return m.QueryContext(context.Background(), query, args...)
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.QueryContext(ctx, query, args...)
 }
 
 func (m *RealMySQL) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -139,12 +152,14 @@ func (m *RealMySQL) QueryContext(ctx context.Context, query string, args ...any)
 }
 
 func (m *RealMySQL) QueryRow(query string, args ...any) (Row, error) {
-	return m.QueryRowContext(context.Background(), query, args...)
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.QueryRowContext(ctx, query, args...)
 }
 
 func (m *RealMySQL) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -181,12 +196,14 @@ func (m *RealMySQL) QueryRowContext(ctx context.Context, query string, args ...a
 }
 
 func (m *RealMySQL) Begin() (Transaction, error) {
-	return m.BeginTx(context.Background())
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.BeginTx(ctx)
 }
 
 func (m *RealMySQL) BeginTx(ctx context.Context) (Transaction, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("not connected")
+		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 	tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -196,12 +213,14 @@ func (m *RealMySQL) BeginTx(ctx context.Context) (Transaction, error) {
 }
 
 func (m *RealMySQL) Migrate(migrations []Migration) error {
-	return m.MigrateContext(context.Background(), migrations)
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.MigrateContext(ctx, migrations)
 }
 
 func (m *RealMySQL) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if m.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	_, err := m.db.ExecContext(ctx, `
@@ -250,12 +269,14 @@ func (m *RealMySQL) MigrateContext(ctx context.Context, migrations []Migration) 
 }
 
 func (m *RealMySQL) Rollback(version int) error {
-	return m.RollbackContext(context.Background(), version)
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.RollbackContext(ctx, version)
 }
 
 func (m *RealMySQL) RollbackContext(ctx context.Context, version int) error {
 	if m.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
 
 	var migrations []Migration
@@ -301,9 +322,11 @@ func (m *RealMySQL) RollbackContext(ctx context.Context, version int) error {
 
 func (m *RealMySQL) HealthCheck() error {
 	if m.db == nil {
-		return fmt.Errorf("not connected")
+		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
 	}
-	return m.db.PingContext(context.Background())
+	ctx, cancel := m.defaultContext()
+	defer cancel()
+	return m.db.PingContext(ctx)
 }
 
 type RealMySQLTx struct {
@@ -311,7 +334,9 @@ type RealMySQLTx struct {
 }
 
 func (t *RealMySQLTx) Exec(query string, args ...any) (Result, error) {
-	return t.ExecContext(context.Background(), query, args...)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	return t.ExecContext(ctx, query, args...)
 }
 
 func (t *RealMySQLTx) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
@@ -325,7 +350,9 @@ func (t *RealMySQLTx) ExecContext(ctx context.Context, query string, args ...any
 }
 
 func (t *RealMySQLTx) Query(query string, args ...any) ([]Row, error) {
-	return t.QueryContext(context.Background(), query, args...)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	return t.QueryContext(ctx, query, args...)
 }
 
 func (t *RealMySQLTx) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {

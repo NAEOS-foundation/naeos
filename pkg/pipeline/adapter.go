@@ -18,11 +18,19 @@ type PipelineAdapter struct {
 }
 
 func NewAdapter(p *Pipeline) *PipelineAdapter {
-	return &PipelineAdapter{
+	a := &PipelineAdapter{
 		pipeline:   p,
 		middleware: pm.NewChain(),
 		eventStore: eventsourcing.NewInMemoryStore(),
 	}
+	a.middleware.Use("pre-process", &pm.MetricsMiddleware{
+		RecordFunc: func(stage string, duration time.Duration, err error) {
+			if a.telemetryFn != nil {
+				a.telemetryFn(stage, duration, err)
+			}
+		},
+	})
+	return a
 }
 
 func (a *PipelineAdapter) UseMiddleware(stage string, mw pm.Middleware) {
@@ -45,7 +53,7 @@ func (a *PipelineAdapter) RunWithMiddleware(ctx context.Context, input string) (
 
 	start := time.Now()
 
-	out, err := a.middleware.Execute("pre-process", &pm.StageInput{
+	out, err := a.middleware.ExecuteContext(ctx, "pre-process", &pm.StageInput{
 		Stage:  "pre-process",
 		Data:   []byte(input),
 		Labels: map[string]string{"run_id": a.runID},

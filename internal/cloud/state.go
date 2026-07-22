@@ -10,6 +10,7 @@ import (
 	"time"
 
 	naeoserrors "github.com/NAEOS-foundation/naeos/internal/errors"
+	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
 // DeploymentRecord stores the state of a completed cloud deployment.
@@ -58,6 +59,13 @@ func (s *StateManager) Save(record *DeploymentRecord) error {
 		return naeoserrors.New(naeoserrors.ErrValidation, "provider is required")
 	}
 
+	if err := securityext.ValidatePluginName(record.Project); err != nil {
+		return naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid project name", err)
+	}
+	if err := securityext.ValidatePluginName(string(record.Provider)); err != nil {
+		return naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid provider name", err)
+	}
+
 	if record.Timestamp.IsZero() {
 		record.Timestamp = time.Now()
 	}
@@ -83,6 +91,13 @@ func (s *StateManager) Save(record *DeploymentRecord) error {
 func (s *StateManager) Load(project string, provider CloudProvider) (*DeploymentRecord, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
+	if err := securityext.ValidatePluginName(project); err != nil {
+		return nil, naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid project name", err)
+	}
+	if err := securityext.ValidatePluginName(string(provider)); err != nil {
+		return nil, naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid provider name", err)
+	}
 
 	path := s.deploymentPath(project, string(provider))
 	data, err := os.ReadFile(path)
@@ -151,6 +166,13 @@ func (s *StateManager) List() ([]DeploymentRecord, error) {
 func (s *StateManager) Delete(project string, provider CloudProvider) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if err := securityext.ValidatePluginName(project); err != nil {
+		return naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid project name", err)
+	}
+	if err := securityext.ValidatePluginName(string(provider)); err != nil {
+		return naeoserrors.Wrap(naeoserrors.ErrValidation, "invalid provider name", err)
+	}
 
 	dir := filepath.Join(s.baseDir, project, string(provider))
 	if _, err := os.Stat(dir); os.IsNotExist(err) {

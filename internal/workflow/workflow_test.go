@@ -232,7 +232,7 @@ func TestManager(t *testing.T) {
 		}},
 	})
 
-	m.Register("test", wf)
+	_ = m.Register("test", wf)
 
 	got, ok := m.Get("test")
 	if !ok {
@@ -247,7 +247,7 @@ func TestManager(t *testing.T) {
 		t.Errorf("expected 1 workflow, got %d", len(names))
 	}
 
-	m.Remove("test")
+	_ = m.Remove("test")
 	_, ok = m.Get("test")
 	if ok {
 		t.Error("expected workflow to be removed")
@@ -263,7 +263,7 @@ func TestManagerExecute(t *testing.T) {
 		}},
 	})
 
-	m.Register("test", wf)
+	_ = m.Register("test", wf)
 
 	err := m.Execute("test")
 	if err != nil {

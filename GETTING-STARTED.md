@@ -1,47 +1,47 @@
 # Getting Started
 
-Dokumen ini membantu Anda memulai dengan repositori NAEOS secara cepat dan memahami arah utama proyek.
+This document helps you get started with the NAEOS repository quickly and understand the project's main direction.
 
-## 1. Pahami tujuan repositori
-Repositori ini berisi spesifikasi, konstitusi, governance, dan arsitektur acuan untuk membangun sistem engineering berbasis AI yang terstruktur, dapat diaudit, dan konsisten.
+## 1. Understand the repository's purpose
+This repository contains specifications, constitution, governance, and reference architecture for building a structured, auditable, and consistent AI-based engineering system.
 
-## 2. Baca dokumen inti secara berurutan
-Disarankan untuk membaca dokumen berikut dalam urutan ini:
-1. [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) — gambaran umum konsep NAEOS.
-2. [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md) — aturan normatif tertinggi.
-3. [governance/NAEOS-GOV-001.md](governance/NAEOS-GOV-001.md) — model governance dan proses.
-4. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) — model policy compiler dan policy graph.
-5. [Reference Architecture/NAEOS-NRA-001.md](Reference%20Architecture/NAEOS-NRA-001.md) — panduan arsitektur acuan.
+## 2. Read core documents in sequence
+It is recommended to read the following documents in this order:
+1. [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) — overview of NAEOS concepts.
+2. [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md) — highest normative rules.
+3. [governance/NAEOS-GOV-001.md](governance/NAEOS-GOV-001.md) — governance model and processes.
+4. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) — policy compiler model and policy graph.
+5. [Reference Architecture/NAEOS-NRA-001.md](Reference%20Architecture/NAEOS-NRA-001.md) — reference architecture guide.
 
-## 3. Tentukan peran Anda
-Anda bisa datang ke repositori ini sebagai:
-- kontributor dokumen,
-- reviewer spesifikasi,
-- implementer referensi,
-- pengelola governance,
-- pengembang tooling atau validator.
+## 3. Determine your role
+You can approach this repository as:
+- a document contributor,
+- a specification reviewer,
+- a reference implementer,
+- a governance manager,
+- a tooling or validator developer.
 
-## 4. Saat berkontribusi
-Pastikan perubahan Anda:
-- konsisten dengan prinsip NAEOS,
-- dilengkapi alasan dan konteks,
-- mengikuti format dokumen yang sudah ada,
-- memperhatikan traceability, dependency, dan kompatibilitas.
+## 4. When contributing
+Ensure your changes:
+- are consistent with NAEOS principles,
+- include reasoning and context,
+- follow existing document formats,
+- respect traceability, dependencies, and compatibility.
 
-## 5. Alur kerja yang disarankan
-1. Buat branch terpisah untuk perubahan Anda.
-2. Edit dokumen yang relevan atau tambahkan dokumen baru bila perlu.
-3. Jelaskan perubahan secara ringkas dan berikan alasan yang jelas.
-4. Ajukan pull request dengan konteks yang cukup.
+## 5. Recommended workflow
+1. Create a separate branch for your changes.
+2. Edit relevant documents or add new ones as needed.
+3. Describe your changes concisely with clear reasoning.
+4. Submit a pull request with sufficient context.
 
-## 6. Checklist sebelum mengajukan perubahan
-- [ ] Dokumen sudah sesuai dengan struktur yang ada.
-- [ ] Istilah yang digunakan konsisten.
-- [ ] Tidak ada konflik dengan dokumen yang lebih tinggi levelnya.
-- [ ] Tautan internal masih valid.
-- [ ] Perubahan dijelaskan dengan jelas.
+## 6. Pre-submission checklist
+- [ ] Document conforms to the existing structure.
+- [ ] Terminology is used consistently.
+- [ ] No conflicts with higher-level documents.
+- [ ] Internal links are still valid.
+- [ ] Changes are clearly described.
 
-## 7. Dokumen pendukung lain
+## 7. Additional supporting documents
 - [GLOSSARY.md](GLOSSARY.md)
 - [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md)
 - [ROADMAP.md](ROADMAP.md)

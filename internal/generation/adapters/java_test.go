@@ -6,6 +6,7 @@ import (
 )
 
 func TestJavaAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateProject("MyProject")
 	if len(artifacts) < 3 {
@@ -34,6 +35,7 @@ func TestJavaAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "MyProject")
 	if len(artifacts) < 5 {
@@ -57,6 +59,7 @@ func TestJavaAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "MyProject")
 	if len(artifacts) < 1 {
@@ -78,6 +81,7 @@ func TestJavaAdapter_GenerateService(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateServiceNonHTTP(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateService("worker", "grpc", 9090, "MyProject")
 	if len(artifacts) != 0 {
@@ -86,6 +90,7 @@ func TestJavaAdapter_GenerateServiceNonHTTP(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateDockerfile("MyProject")
 	if len(artifacts) != 1 {
@@ -101,6 +106,7 @@ func TestJavaAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateCI("MyProject")
 	if len(artifacts) != 1 {
@@ -116,6 +122,7 @@ func TestJavaAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateDockerCompose("MyProject")
 	if len(artifacts) != 1 {
@@ -128,6 +135,7 @@ func TestJavaAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestJavaAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := JavaAdapter{}
 	artifacts := a.GenerateArchitectureDoc("MyProject", "hexagonal")
 	if len(artifacts) != 1 {

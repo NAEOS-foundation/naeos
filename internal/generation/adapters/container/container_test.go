@@ -8,6 +8,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
 func TestGenerateDockerfileGo(t *testing.T) {
@@ -33,7 +34,7 @@ func TestGenerateDockerfileGo(t *testing.T) {
 		if a.Path == "Dockerfile" {
 			found = true
 			content := string(a.Content)
-			if !contains(content, "golang") {
+			if !testutil.Contains(content, "golang") {
 				t.Error("expected Go Dockerfile")
 			}
 		}
@@ -60,7 +61,7 @@ func TestGenerateDockerCompose(t *testing.T) {
 		if a.Path == "docker-compose.yaml" {
 			found = true
 			content := string(a.Content)
-			if !contains(content, "api:") || !contains(content, "worker:") {
+			if !testutil.Contains(content, "api:") || !testutil.Contains(content, "worker:") {
 				t.Error("expected both services in docker-compose")
 			}
 		}
@@ -115,7 +116,7 @@ func TestGeneratePython(t *testing.T) {
 	for _, a := range artifacts {
 		if a.Path == "Dockerfile" {
 			content := string(a.Content)
-			if !contains(content, "python") {
+			if !testutil.Contains(content, "python") {
 				t.Error("expected Python Dockerfile")
 			}
 		}
@@ -139,22 +140,11 @@ func TestGenerateNode(t *testing.T) {
 	for _, a := range artifacts {
 		if a.Path == "Dockerfile" {
 			content := string(a.Content)
-			if !contains(content, "node") {
+			if !testutil.Contains(content, "node") {
 				t.Error("expected Node Dockerfile")
 			}
 		}
 	}
 }
 
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && searchSubstring(s, substr)
-}
 
-func searchSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}

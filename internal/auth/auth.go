@@ -24,8 +24,9 @@ type User struct {
 // Role
 
 type Role struct {
-	Name        string
-	Permissions []string
+	Name            string
+	Permissions     []string
+	ResourceActions map[string][]string
 }
 
 type Permission struct {
@@ -91,6 +92,23 @@ func (r *RBAC) HasPermission(user *User, resource, action string) bool {
 		role, ok := r.roles[roleName]
 		if !ok {
 			continue
+		}
+
+		if role.ResourceActions != nil {
+			if actions, ok := role.ResourceActions[resource]; ok {
+				for _, a := range actions {
+					if a == "*" || a == action {
+						return true
+					}
+				}
+			}
+			if actions, ok := role.ResourceActions["*"]; ok {
+				for _, a := range actions {
+					if a == "*" || a == action {
+						return true
+					}
+				}
+			}
 		}
 
 		for _, permName := range role.Permissions {
@@ -423,21 +441,29 @@ func (m *SessionManager) Cleanup() int {
 // Auth Manager
 
 type Manager struct {
-	rbac     *RBAC
-	apiKeys  *APIKeyManager
-	sessions *SessionManager
-	oauth2   map[string]OAuth2ProviderInterface
-	users    map[string]*User
-	mu       sync.RWMutex
+	rbac       *RBAC
+	apiKeys    *APIKeyManager
+	sessions   *SessionManager
+	oauth2     map[string]OAuth2ProviderInterface
+	users      map[string]*User
+	mu         sync.RWMutex
+	userStore  *UserStore
+	passphrase string
 }
 
-func NewManager() *Manager {
+func NewManager(passphrase ...string) *Manager {
+	p := ""
+	if len(passphrase) > 0 {
+		p = passphrase[0]
+	}
 	return &Manager{
-		rbac:     NewRBAC(),
-		apiKeys:  NewAPIKeyManager(),
-		sessions: NewSessionManager(),
-		oauth2:   make(map[string]OAuth2ProviderInterface),
-		users:    make(map[string]*User),
+		rbac:       NewRBAC(),
+		apiKeys:    NewAPIKeyManager(),
+		sessions:   NewSessionManager(),
+		oauth2:     make(map[string]OAuth2ProviderInterface),
+		users:      make(map[string]*User),
+		userStore:  NewUserStore(p),
+		passphrase: p,
 	}
 }
 
@@ -507,7 +533,9 @@ func (m *Manager) ListUsers() []*User {
 
 func generateToken() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
 	return hex.EncodeToString(b)
 }
 

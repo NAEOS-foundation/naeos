@@ -33,7 +33,7 @@ architecture:
   pattern: hexagonal`)
 
 	f.Fuzz(func(t *testing.T, input string) {
-		p := NewParser()
+		p := NewParser(".")
 		doc, err := p.Parse(input)
 
 		if err != nil {

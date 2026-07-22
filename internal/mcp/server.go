@@ -313,12 +313,18 @@ func (s *Server) listTools() []Tool {
 func (s *Server) callTool(name string, args map[string]any) (*CallResult, error) {
 	spec, _ := args["spec"].(string)
 
+	tools := map[string]bool{
+		"parse_spec": true, "validate_spec": true, "generate_context": true,
+		"compile_spec": true, "export_terraform": true,
+	}
+
+	if tools[name] && spec == "" {
+		return nil, fmt.Errorf("%s: the 'spec' parameter is required; provide a valid YAML specification string", name)
+	}
+
 	switch name {
 	case "parse_spec":
-		if spec == "" {
-			return nil, fmt.Errorf("spec is required")
-		}
-		p := parser.NewParser()
+		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
 			return &CallResult{
@@ -333,10 +339,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		}, nil
 
 	case "validate_spec":
-		if spec == "" {
-			return nil, fmt.Errorf("spec is required")
-		}
-		p := parser.NewParser()
+		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
 			return &CallResult{
@@ -360,10 +363,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		}, nil
 
 	case "generate_context":
-		if spec == "" {
-			return nil, fmt.Errorf("spec is required")
-		}
-		p := parser.NewParser()
+		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
 			return nil, fmt.Errorf("parse failed: %w", err)
@@ -385,10 +385,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		}, nil
 
 	case "compile_spec":
-		if spec == "" {
-			return nil, fmt.Errorf("spec is required")
-		}
-		p := parser.NewParser()
+		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
 			return nil, fmt.Errorf("parse failed: %w", err)
@@ -417,21 +414,18 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 	case "get_pipeline_status":
 		jobID, _ := args["job_id"].(string)
 		if jobID == "" {
-			return nil, fmt.Errorf("job_id is required")
+			return nil, fmt.Errorf("get_pipeline_status: 'job_id' is required; use 'list_artifacts' to find active job IDs")
 		}
 		return s.handleGetPipelineStatus(jobID)
 
 	case "export_terraform":
-		if spec == "" {
-			return nil, fmt.Errorf("spec is required")
-		}
 		return s.handleExportTerraform(spec)
 
 	case "list_plugins":
 		return s.handleListPlugins()
 
 	default:
-		return nil, fmt.Errorf("unknown tool: %s", name)
+		return nil, fmt.Errorf("unknown tool %q; available tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept, list_artifacts, get_pipeline_status, export_terraform, list_plugins", name)
 	}
 }
 
@@ -491,7 +485,7 @@ func (s *Server) handleGetPipelineStatus(jobID string) (*CallResult, error) {
 }
 
 func (s *Server) handleExportTerraform(spec string) (*CallResult, error) {
-	p := parser.NewParser()
+	p := parser.NewParser(".")
 	doc, err := p.Parse(spec)
 	if err != nil {
 		return nil, fmt.Errorf("parse failed: %w", err)

@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man
+.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf og schema
 
 # Variables
 BINARY := naeos
@@ -62,8 +62,13 @@ clean:
 version:
 	@echo $(VERSION)
 
+## fmt-check: Check formatting without modifying files
+fmt-check:
+	@echo "Checking code formatting..."
+	@unformatted=$$(gofmt -l .); if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
+
 ## check: Run all checks (fmt, vet, lint, test)
-check: fmt vet lint test
+check: fmt fmt-check vet lint test
 
 ## run: Build and run
 run: build
@@ -115,6 +120,43 @@ install-completion: build
 	@mkdir -p $(HOME)/.config/fish/completions
 	@./$(BINARY) completion fish > $(HOME)/.config/fish/completions/naeos.fish
 	@echo "Completions installed. Restart your shell or source the completion files."
+
+## og: Generate OG images (dark + light PNG from SVG)
+og:
+	@echo "Generating OG images..."
+	@cd site && npm install 2>&1 | tail -2 && node \
+		-e "const s=require('sharp'),f=require('fs'); \
+		Promise.all([s(f.readFileSync('static/images/og-dark.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default.png'),s(f.readFileSync('static/images/og-light.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default-light.png')]).then(()=>console.log('  OG images generated')).catch(e=>{console.error(e);process.exit(1)})"
+
+## site: Build the Hugo website
+site: og
+	@echo "Building website..."
+	cp docs/openapi.yaml site/static/openapi.yaml
+	cd site && hugo --minify
+
+## pdf: Generate PDF documentation
+pdf:
+	@echo "Generating PDF documentation..."
+	@mkdir -p site/static/downloads
+	pandoc site/content/docs/cli-reference.md --pdf-engine=xelatex \
+		-V geometry:margin=1in \
+		-V title="NAEOS CLI Reference" \
+		-V subtitle="Version $(shell cat VERSION)" \
+		-V author="NAEOS Foundation" \
+		-V date="$(shell date +%Y-%m-%d)" \
+		-o site/static/downloads/naeos-cli-reference.pdf
+	pandoc site/content/docs/getting-started.md --pdf-engine=xelatex \
+		-V geometry:margin=1in \
+		-V title="NAEOS Getting Started" \
+		-V subtitle="Version $(shell cat VERSION)" \
+		-V author="NAEOS Foundation" \
+		-V date="$(shell date +%Y-%m-%d)" \
+		-o site/static/downloads/naeos-getting-started.pdf
+
+## schema: Generate NEIR JSON Schema from Go types
+schema:
+	@echo "Generating NEIR JSON Schema..."
+	go run ./cmd/neir-schema-gen/
 
 ## man: Generate man pages (requires cobra-doc)
 man: build

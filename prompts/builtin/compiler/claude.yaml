@@ -1,0 +1,111 @@
+# Reference prompt template - edit overrides in .naeos/prompts/
+name: claude
+kind: compiler
+version: "1.0.0"
+target: claude
+files:
+  - path: "CLAUDE.md"
+    kind: instructions
+    template: |
+      # CLAUDE.md
+
+      This file provides context for Claude Code when working on this project.
+
+      {{if .Project.Name}}## Project: {{.Project.Name}}
+
+      {{if .Project.Description}}{{.Project.Description}}{{end}}
+      {{end}}
+      {{if .Architecture.Pattern}}## Architecture
+
+      Pattern: **{{.Architecture.Pattern}}**
+
+      {{if .Architecture.Principles}}Principles:
+      {{range .Architecture.Principles}}- {{.}}
+      {{end}}{{end}}{{end}}
+      {{if .Modules}}## Modules
+
+      {{range .Modules}}### {{.Name}}
+      Path: {{code .Path}}
+      {{if .Description}}Description: {{.Description}}{{end}}
+      {{if .Dependencies}}Dependencies: {{join .Dependencies ", "}}{{end}}
+
+      {{end}}{{end}}
+      {{if .Services}}## Services
+
+      {{range .Services}}### {{.Name}}
+      Type: {{.Kind}}, Port: {{.Port}}
+
+      {{if .Endpoints}}Endpoints:
+      {{range .Endpoints}}- {{code (printf "%s %s" .Method .Path)}} -> {{.Action}}
+      {{end}}{{end}}
+      {{end}}{{end}}
+      {{if and .Security .Security.Authentication}}## Security
+
+      Authentication: {{.Security.Authentication.Method}} via {{.Security.Authentication.Provider}}
+      {{end}}
+
+      ## Guidelines
+
+      - Follow the architecture pattern strictly
+      - Write clean, well-tested code
+      - Handle errors explicitly
+      - Keep functions focused and small
+      - Document public APIs with godoc/JSDoc/docstrings
+
+  - path: ".claude/context.md"
+    kind: context
+    template: |
+      # Context Bundle for Claude Code
+
+      Project structure and key design decisions.
+
+      {{if .Modules}}
+      ## Dependency Graph
+
+      {{range .Modules}}{{if .Dependencies}}{{.Name}} -> {{join .Dependencies ", "}}{{else}}{{.Name}} (no dependencies){{end}}
+      {{end}}{{end}}
+
+      {{if .Components}}
+      ## Component Map
+
+      {{range .Components}}- **{{.Name}}** ({{.Kind}}) in {{code .Module}}
+      {{end}}{{end}}
+
+  - path: ".claude/rules.md"
+    kind: rules
+    template: |
+      # Claude Code Rules
+
+      {{if .Architecture.Pattern}}Architecture pattern: {{.Architecture.Pattern}}{{end}}
+
+      ## Code Rules
+
+      1. Always use explicit error returns, never panic
+      2. Prefer table-driven tests
+      3. Keep package boundaries clean
+      4. Use dependency injection for testability
+      5. Follow naming conventions of the target language
+
+      {{if .Modules}}
+      ## Module Rules
+
+      {{range .Modules}}- {{code .Name}} should not import from unrelated modules
+      {{end}}{{end}}
+variables:
+  - name: Guidelines
+    type: "[]string"
+    default:
+      - "Follow the architecture pattern strictly"
+      - "Write clean, well-tested code"
+      - "Handle errors explicitly"
+      - "Keep functions focused and small"
+      - "Document public APIs with godoc/JSDoc/docstrings"
+
+  - name: CodeRules
+    type: "[]string"
+    default:
+      - "Always use explicit error returns, never panic"
+      - "Prefer table-driven tests"
+      - "Keep package boundaries clean"
+      - "Use dependency injection for testability"
+      - "Follow naming conventions of the target language"

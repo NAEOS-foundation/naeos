@@ -1,0 +1,5 @@
+{{- $title := .Get "title" -}}
+<div class="card card-lg">
+    {{- with $title }}<h3>{{ . | markdownify }}</h3>{{ end -}}
+    {{ .Inner | markdownify }}
+</div>

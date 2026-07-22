@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -182,6 +184,22 @@ Example:
   naeos observability dashboard --port 9090`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			stack := observability.NewStack("naeos-dashboard")
+
+			span := stack.Tracer.StartSpan("pipeline.execute")
+			stack.Tracer.SetStatus(span, observability.SpanStatusOK, "completed")
+			stack.Tracer.EndSpan(span)
+
+			stack.Logger.Info("pipeline started", map[string]any{"spec": "demo"})
+			stack.Logger.Info("pipeline completed", map[string]any{"duration_ms": 125})
+			stack.Logger.Warn("slow pipeline detected", map[string]any{"threshold_ms": 100})
+
+			stack.Metrics.Counter("pipelines_total", map[string]string{"status": "success"})
+			stack.Metrics.Counter("pipelines_total", map[string]string{"status": "success"})
+			stack.Metrics.Gauge("active_workers", 3, nil)
+			stack.Metrics.Histogram("pipeline_duration_ms", 125.5, nil)
+			stack.Metrics.Histogram("pipeline_duration_ms", 89.2, nil)
+
 			mux := http.NewServeMux()
 			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/html")
@@ -200,15 +218,70 @@ Example:
 			})
 			mux.HandleFunc("/traces", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(w, `{"traces":[]}`)
+				spans := stack.Tracer.GetSpans()
+				type spanJSON struct {
+					TraceID   string `json:"trace_id"`
+					SpanID    string `json:"span_id"`
+					Name      string `json:"name"`
+					Status    string `json:"status"`
+					StartTime string `json:"start_time"`
+					EndTime   string `json:"end_time"`
+				}
+				result := make([]spanJSON, 0, len(spans))
+				for _, s := range spans {
+					status := "unset"
+					switch s.Status.Code {
+					case observability.SpanStatusOK:
+						status = "ok"
+					case observability.SpanStatusError:
+						status = "error"
+					}
+					result = append(result, spanJSON{
+						TraceID:   s.TraceID,
+						SpanID:    s.SpanID,
+						Name:      s.Name,
+						Status:    status,
+						StartTime: s.StartTime.Format("2006-01-02T15:04:05Z"),
+						EndTime:   s.EndTime.Format("2006-01-02T15:04:05Z"),
+					})
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"traces": result})
 			})
 			mux.HandleFunc("/logs", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(w, `{"logs":[]}`)
+				entries := stack.Logger.GetEntries()
+				type logJSON struct {
+					Timestamp string         `json:"timestamp"`
+					Level     string         `json:"level"`
+					Message   string         `json:"message"`
+					Source    string         `json:"source"`
+					Attrs     map[string]any `json:"attributes,omitempty"`
+				}
+				result := make([]logJSON, 0, len(entries))
+				for _, e := range entries {
+					level := "info"
+					switch e.Level {
+					case observability.LogLevelDebug:
+						level = "debug"
+					case observability.LogLevelWarn:
+						level = "warn"
+					case observability.LogLevelError:
+						level = "error"
+					}
+					result = append(result, logJSON{
+						Timestamp: e.Timestamp.Format("2006-01-02T15:04:05Z"),
+						Level:     level,
+						Message:   e.Message,
+						Source:    e.Source,
+						Attrs:     e.Attributes,
+					})
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"logs": result})
 			})
 			mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(w, `{"metrics":[]}`)
+				metrics := stack.Metrics.GetMetrics()
+				_ = json.NewEncoder(w).Encode(map[string]any{"metrics": metrics})
 			})
 			mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -217,8 +290,12 @@ Example:
 
 			addr := fmt.Sprintf(":%d", port)
 			srv := &http.Server{
-				Addr:    addr,
-				Handler: mux,
+				Addr:              addr,
+				Handler:           mux,
+				ReadHeaderTimeout: 10 * time.Second,
+				ReadTimeout:       15 * time.Second,
+				WriteTimeout:      15 * time.Second,
+				IdleTimeout:       60 * time.Second,
 			}
 
 			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
@@ -228,7 +305,9 @@ Example:
 
 			go func() {
 				<-ctx.Done()
-				srv.Shutdown(context.Background())
+				shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_ = srv.Shutdown(shutdownCtx)
 			}()
 
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

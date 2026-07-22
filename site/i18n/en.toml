@@ -1,0 +1,590 @@
+[nav_features]
+other = "Features"
+
+[nav_docs]
+other = "Docs"
+
+[nav_blog]
+other = "Blog"
+
+[nav_download]
+other = "Download"
+
+[nav_community]
+other = "Community"
+
+[nav_plugins]
+other = "Plugins"
+
+[plugins_install]
+other = "Install"
+
+[cta_get_started]
+other = "Get Started"
+
+[cta_install_now]
+other = "Install Now"
+
+[cta_view_on_github]
+other = "View on GitHub"
+
+[cta_read_docs]
+other = "Read the Docs"
+
+[hero_title]
+other = "Specify Once.<br>Build Anywhere."
+
+[hero_subtitle]
+other = "NAEOS is a declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems — with full traceability from intent to implementation."
+
+[hero_cta_primary]
+other = "Get Started"
+
+[hero_cta_secondary]
+other = "View on GitHub"
+
+[section_what_is]
+other = "What is NAEOS?"
+
+[section_what_is_desc]
+other = "NAEOS (Nusantara Engineering & Architecture Operating System) is not just a project generator. It is an engineering runtime that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle."
+
+[section_features]
+other = "Core Features"
+
+[section_quick_start]
+other = "Quick Start"
+
+[section_languages]
+other = "Supported Languages"
+
+[section_ai]
+other = "AI Integration"
+
+[section_cta]
+other = "Ready to build?"
+
+[section_cta_desc]
+other = "Start engineering your next project with NAEOS."
+
+[footer_product]
+other = "Product"
+
+[footer_docs]
+other = "Documentation"
+
+[footer_community]
+other = "Community"
+
+[footer_roadmap]
+other = "Roadmap"
+
+[footer_getting_started]
+other = "Getting Started"
+
+[footer_installation]
+other = "Installation"
+
+[footer_architecture]
+other = "Architecture"
+
+[footer_contribute]
+other = "Contribute"
+
+[stats_cli_commands]
+other = "CLI Commands"
+
+[stats_languages]
+other = "Languages"
+
+[stats_ai_platforms]
+other = "AI Platforms"
+
+[stats_specs]
+other = "Specifications"
+
+[feature_pipeline]
+other = "Pipeline Engine"
+
+[feature_pipeline_desc]
+other = "9-stage DAG pipeline from parsing to export. Parse, normalize, resolve, build, validate, schedule, generate, compile, and export — with full observability at every stage."
+
+[feature_compiler]
+other = "AI Compiler"
+
+[feature_compiler_desc]
+other = "Transform NEIR into AI instruction sets for 6 platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode."
+
+[feature_generator]
+other = "Code Generator"
+
+[feature_generator_desc]
+other = "Generate production-ready code in Go, TypeScript, Python, Java, and Rust. Template-driven with per-language adapters."
+
+[feature_neir]
+other = "NEIR Model"
+
+[feature_neir_desc]
+other = "NAEOS Engineering Intermediate Representation — a canonical model that describes the entire system: project, architecture, modules, services, APIs, infrastructure, and security."
+
+[feature_governance]
+other = "Governance & Policy"
+
+[feature_governance_desc]
+other = "Built-in policy engine with 7 operators, RBAC, audit trails, and artifact review. Keep your team aligned with organizational rules."
+
+[feature_marketplace]
+other = "Marketplace"
+
+[feature_marketplace_desc]
+other = "Publish, discover, and install industry profiles and plugins. 5 built-in profiles: SaaS, AI Agent, FinTech, Healthcare, Government."
+
+[download_title]
+other = "Install NAEOS"
+
+[download_subtitle]
+other = "Choose your preferred installation method."
+
+[download_go_install]
+other = "Go Install"
+
+[download_go_install_desc]
+other = "Install directly using Go (requires Go 1.25+):"
+
+[download_docker]
+other = "Docker"
+
+[download_docker_desc]
+other = "Run using Docker:"
+
+[download_binary]
+other = "Binary Release"
+
+[download_binary_desc]
+other = "Download the latest binary for your platform from GitHub Releases."
+
+[download_source]
+other = "Build from Source"
+
+[download_source_desc]
+other = "Clone the repository and build:"
+
+[community_title]
+other = "Join the Community"
+
+[community_subtitle]
+other = "NAEOS is an open-source project. We welcome contributions, feedback, and collaboration."
+
+[features_page_title]
+other = "Features"
+
+[features_page_desc]
+other = "Explore the complete feature set of NAEOS — from specification parsing to AI-assisted code generation."
+
+[docs_page_title]
+other = "Documentation"
+
+[docs_page_desc]
+other = "Learn how to use NAEOS with comprehensive guides and references."
+
+[blog_page_title]
+other = "Blog"
+
+[blog_page_desc]
+other = "News, release notes, tutorials, and community updates."
+
+[page_not_found]
+other = "Page Not Found"
+
+[page_not_found_desc]
+other = "The page you're looking for doesn't exist."
+
+[back_home]
+other = "Back to Home"
+
+[footer_newsletter]
+other = "Stay Updated"
+
+[footer_subscribe]
+other = "Subscribe"
+
+[newsletter_email_placeholder]
+other = "your@email.com"
+
+[newsletter_invalid_email]
+other = "Please enter a valid email address."
+
+[newsletter_loading]
+other = "Subscribing..."
+
+[newsletter_success]
+other = "Thank you! You have been subscribed."
+
+[newsletter_error]
+other = "Subscription is unavailable right now. Please try again."
+
+[nav_about]
+other = "About"
+
+[nav_faq]
+other = "FAQ"
+
+[nav_use_cases]
+other = "Use Cases"
+
+[about_title]
+other = "About NAEOS Foundation"
+
+[about_desc]
+other = "Learn about the mission, vision, and team behind NAEOS."
+
+[faq_title]
+other = "Frequently Asked Questions"
+
+[faq_desc]
+other = "Common questions about NAEOS and declarative engineering."
+
+[use_cases_title]
+other = "Use Cases"
+
+[use_cases_desc]
+other = "See how NAEOS is used across different architectures and teams."
+
+[skip_to_content]
+other = "Skip to main content"
+
+[cookie_consent]
+other = "We use cookies to analyze traffic and improve your experience. By using our site, you consent to our use of cookies."
+
+[cookie_accept]
+other = "Accept"
+
+[footer_releases]
+other = "Releases"
+
+[footer_use_cases]
+other = "Use Cases"
+
+[footer_cli_reference]
+other = "CLI Reference"
+
+[footer_faq]
+other = "FAQ"
+
+[footer_about]
+other = "About"
+
+[footer_discussions]
+other = "Discussions"
+
+[footer_issues]
+other = "Issues"
+
+[search_placeholder]
+other = "Search docs, features, blog..."
+
+[search_hint]
+other = "Type to search — press ↑↓ to navigate, Enter to select, Esc to close"
+
+[search_no_results]
+other = "No results found"
+
+[search_results_for]
+other = "Results for"
+
+[nav_search]
+other = "Search"
+
+[toggle_theme]
+other = "Toggle theme"
+
+[theme_dark]
+other = "Dark"
+
+[back_to_top]
+other = "Back to top"
+
+[toggle_menu]
+other = "Toggle menu"
+
+[nav_home]
+other = "Home"
+
+[nav_spec_language]
+other = "Spec Language"
+
+[nav_ai_compiler]
+other = "AI Compiler"
+
+[toc_title]
+other = "On this page"
+
+[blog_read]
+other = "read"
+
+[share_this]
+other = "Share:"
+
+[theme_light]
+other = "Light"
+
+[releases_title]
+other = "Releases"
+
+[releases_desc]
+other = "Version history and release notes for NAEOS."
+
+[roadmap_title]
+other = "Roadmap"
+
+[roadmap_desc]
+other = "The development roadmap for NAEOS."
+
+[contributors_title]
+other = "Contributors"
+
+[contributors_desc]
+other = "The amazing people who contribute to NAEOS."
+
+[security_title]
+other = "Security"
+
+[security_desc]
+other = "Security policy and vulnerability reporting."
+
+[status_title]
+other = "System Status"
+
+[status_desc]
+other = "Current status of NAEOS services and infrastructure."
+
+[privacy_title]
+other = "Privacy Policy"
+
+[privacy_desc]
+other = "How we handle your data and privacy."
+
+[terms_title]
+other = "Terms of Service"
+
+[terms_desc]
+other = "Terms and conditions for using NAEOS."
+
+[cookie_decline]
+other = "Decline"
+
+[share]
+other = "Share:"
+
+[copy]
+other = "Copy"
+
+[copied]
+other = "Copied!"
+
+[previous]
+other = "Previous"
+
+[next]
+other = "Next"
+
+[filter_pages]
+other = "Filter pages..."
+
+[loading_contributors]
+other = "Loading contributors..."
+
+[edit_page]
+other = "Edit this page"
+
+[loading_releases]
+other = "Loading releases from GitHub..."
+
+[nav_api_reference]
+other = "API Reference"
+
+[nav_glossary]
+other = "Glossary"
+
+[nav_contributing]
+other = "Contributing"
+
+[nav_context_bundles]
+other = "Context Bundles"
+
+[nav_profiles]
+other = "Industry Profiles"
+
+[nav_validation]
+other = "Validation"
+
+[nav_governance]
+other = "Governance"
+
+[nav_project_structure]
+other = "Project Structure"
+
+[nav_core_principles]
+other = "Core Principles"
+
+[hero_open_source]
+other = "Open Source"
+
+[home_what_is_extended]
+other = "From a single YAML specification, NAEOS generates complete project structures, code, documentation, CI/CD pipelines, deployment manifests, and AI context across 5 programming languages and 6 AI platforms."
+
+[home_features_subtitle]
+other = "{{ .CLI }}+ CLI commands, 5 languages, 6 AI platforms, and 56+ specifications working as one engineering system."
+
+[home_quick_start_subtitle]
+other = "Move from specification to generated code in four clear steps."
+
+[home_step_install_title]
+other = "Install NAEOS"
+
+[home_step_install_desc]
+other = "Install with Go, use Docker, or download a ready-to-run binary."
+
+[home_step_spec_title]
+other = "Create a Specification"
+
+[home_step_spec_desc]
+other = "Describe your project structure in YAML or JSON."
+
+[home_step_run_title]
+other = "Run the Pipeline"
+
+[home_step_run_desc]
+other = "Parse, validate, generate, and export the complete project."
+
+[home_step_ai_title]
+other = "Compile AI Context"
+
+[home_step_ai_desc]
+other = "Generate instruction sets for Copilot, Claude, Cursor, and other coding assistants."
+
+[copy_code]
+other = "Copy code"
+
+[home_community_title]
+other = "Trusted by the Open Source Community"
+
+[home_github_stars]
+other = "GitHub Stars"
+
+[home_github_forks]
+other = "Forks"
+
+[home_github_issues]
+other = "Open Issues"
+
+[home_github_contributors]
+other = "Contributors"
+
+[home_use_cases_desc]
+other = "NAEOS fits engineering workflows from microservices to monoliths and from individual developers to enterprise teams."
+
+[home_use_case_microservices_title]
+other = "Microservices Architecture"
+
+[home_use_case_microservices_desc]
+other = "Define services, APIs, and dependencies in one specification. Generate Go and TypeScript code with REST endpoints, Dockerfiles, and Kubernetes manifests."
+
+[home_use_case_serverless_title]
+other = "Serverless Applications"
+
+[home_use_case_serverless_desc]
+other = "Describe functions and event sources. Generate Python and TypeScript handlers with framework configuration and IAM policies."
+
+[home_use_case_ai_title]
+other = "AI-Assisted Development"
+
+[home_use_case_ai_desc]
+other = "Compile your architecture into instruction sets so coding assistants understand the full project context without repeated manual prompts."
+
+[home_ai_platforms_badge]
+other = "6 AI Platforms"
+
+[home_use_case_governance_title]
+other = "Enterprise Governance"
+
+[home_use_case_governance_desc]
+other = "Enforce architecture policies, security rules, and coding standards across teams with audit trails and role-based access control."
+
+[home_governance_badge]
+other = "Governance"
+
+[home_playground_title]
+other = "Try It Live"
+
+[home_playground_desc]
+other = "Edit a specification and inspect the resulting NEIR model structure immediately."
+
+[home_tab_microservice]
+other = "Microservice"
+
+[home_tab_ai_context]
+other = "AI Context"
+
+[home_playground_placeholder]
+other = "Paste your NAEOS YAML specification here..."
+
+[home_playground_preview]
+other = "NEIR Model Preview"
+
+[home_playground_hint]
+other = "Edit the specification on the left to update this preview."
+
+[home_playground_modules]
+other = "Modules"
+
+[home_playground_services]
+other = "Services"
+
+[home_playground_dependencies]
+other = "Dependencies"
+
+[home_playground_languages]
+other = "Languages"
+
+[home_playground_project]
+other = "Project"
+
+[home_playground_generation]
+other = "Generation"
+
+[home_playground_unnamed]
+other = "unnamed"
+
+[home_playground_invalid_yaml]
+other = "Invalid YAML"
+
+[home_testimonials_title]
+other = "Testimonials"
+
+[home_testimonials_desc]
+other = "What engineering practitioners say about working with NAEOS."
+
+[home_testimonial_one]
+other = "NAEOS replaced three separate code generators and a wiki. One YAML file now drives our project scaffolding across Go and TypeScript services."
+
+[home_testimonial_one_role]
+other = "Platform Engineer · GitHub Sponsors"
+
+[home_testimonial_two]
+other = "The AI compiler output is remarkably useful. Claude Code starts with full architectural context, without repeatedly copying README content into prompts."
+
+[home_testimonial_two_role]
+other = "Full-Stack Developer · OSS Contributor"
+
+[home_testimonial_three]
+other = "We migrated 12 microservices to NAEOS specifications. The governance layer caught three architecture violations before production."
+
+[home_testimonial_three_role]
+other = "Engineering Lead · NAEOS Community"
+
+[home_languages_desc]
+other = "Generate production-ready code in 5 languages through dedicated language adapters."
+
+[home_ai_desc]
+other = "Transform NEIR into instruction sets for 6 leading AI coding assistants."

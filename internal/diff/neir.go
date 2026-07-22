@@ -382,3 +382,114 @@ func FormatNEIRDiff(diff *NEIRDiff) string {
 
 	return sb.String()
 }
+
+// RenderVisualDiff generates an HTML page with a visual side-by-side comparison of two NEIR specs.
+// The output is a self-contained HTML page with inline CSS.
+func RenderVisualDiff(old, new *model.NEIR) string {
+	diff := ComputeNEIRDiff(old, new)
+
+	var addedRows, removedRows, modifiedRows string
+
+	if diff.ServicesDiff != nil {
+		for _, s := range diff.ServicesDiff.Added {
+			addedRows += fmt.Sprintf(`<tr class="added"><td>%s</td><td>%d</td><td>%s</td></tr>`, s.Name, s.Port, s.Kind)
+		}
+		for _, s := range diff.ServicesDiff.Removed {
+			removedRows += fmt.Sprintf(`<tr class="removed"><td>%s</td><td>%d</td><td>%s</td></tr>`, s.Name, s.Port, s.Kind)
+		}
+		for _, m := range diff.ServicesDiff.Modified {
+			var changes string
+			for _, c := range m.Changes {
+				changes += fmt.Sprintf(`<li><strong>%s</strong>: <span class="old">%v</span> → <span class="new">%v</span></li>`, c.Field, c.OldValue, c.NewValue)
+			}
+			modifiedRows += fmt.Sprintf(`<tr class="modified"><td>%s</td><td colspan="2"><ul>%s</ul></td></tr>`, m.Name, changes)
+		}
+	}
+
+	projectInfo := ""
+	if diff.ProjectDiff != nil {
+		if diff.ProjectDiff.NameChanged {
+			projectInfo = fmt.Sprintf(`<div class="project-name"><span class="old">%s</span> → <span class="new">%s</span></div>`, diff.ProjectDiff.OldName, diff.ProjectDiff.NewName)
+		}
+		if len(diff.ProjectDiff.FieldsModified) > 0 {
+			projectInfo += `<div class="project-fields"><strong>Modified fields:</strong> ` + strings.Join(diff.ProjectDiff.FieldsModified, ", ") + `</div>`
+		}
+	}
+
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>NEIR Architecture Diff</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; color: #333; }
+  h1 { font-size: 1.4em; margin-bottom: 5px; }
+  .summary { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+  .project-name { margin: 10px 0; padding: 8px; background: #fff; border-left: 3px solid #2196F3; border-radius: 3px; }
+  .project-fields { margin: 5px 0 15px 0; font-size: 0.9em; color: #555; }
+  .old { color: #d32f2f; text-decoration: line-through; }
+  .new { color: #388e3c; font-weight: bold; }
+  table { width: 100%%; border-collapse: collapse; margin-bottom: 20px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; }
+  th { background: #f0f0f0; padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+  .added td { background: #e8f5e9; }
+  .added td:first-child::before { content: "+ "; color: #388e3c; font-weight: bold; }
+  .removed td { background: #ffebee; }
+  .removed td:first-child::before { content: "- "; color: #d32f2f; font-weight: bold; }
+  .modified td { background: #fff8e1; }
+  .modified td:first-child::before { content: "~ "; color: #f57c00; font-weight: bold; }
+  ul { margin: 0; padding-left: 16px; }
+  .section-title { font-weight: 600; margin: 15px 0 5px 0; padding: 4px 8px; border-radius: 3px; display: inline-block; }
+  .section-title.added-title { background: #e8f5e9; color: #388e3c; }
+  .section-title.removed-title { background: #ffebee; color: #d32f2f; }
+  .section-title.modified-title { background: #fff8e1; color: #f57c00; }
+  .graph { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+  .graph-node { padding: 8px 12px; border-radius: 4px; font-size: 0.85em; border: 1px solid #ddd; background: #fff; }
+  .graph-node.added { border-color: #388e3c; background: #e8f5e9; }
+  .graph-node.removed { border-color: #d32f2f; background: #ffebee; }
+  .graph-node.modified { border-color: #f57c00; background: #fff8e1; }
+  .graph-arrow { color: #999; font-size: 1.2em; align-self: center; }
+</style>
+</head><body>
+<h1>NEIR Architecture Diff</h1>
+<div class="summary">%s</div>
+%s
+<div class="graph">
+%s
+</div>
+<div class="section-title added-title">Added (%d)</div>
+<table><tr><th>Service</th><th>Port</th><th>Type</th></tr>%s</table>
+<div class="section-title removed-title">Removed (%d)</div>
+<table><tr><th>Service</th><th>Port</th><th>Type</th></tr>%s</table>
+<div class="section-title modified-title">Modified (%d)</div>
+<table><tr><th>Service</th><th>Changes</th></tr>%s</table>
+</body></html>`,
+		diff.Summary,
+		projectInfo,
+		renderGraphNodes(diff),
+		len(diff.ServicesDiff.Added), addedRows,
+		len(diff.ServicesDiff.Removed), removedRows,
+		len(diff.ServicesDiff.Modified), modifiedRows,
+	)
+}
+
+func renderGraphNodes(diff *NEIRDiff) string {
+	if diff.ServicesDiff == nil {
+		return ""
+	}
+	var nodes []string
+	for _, s := range diff.ServicesDiff.Added {
+		nodes = append(nodes, fmt.Sprintf(`<div class="graph-node added">+ %s</div>`, s.Name))
+		nodes = append(nodes, `<div class="graph-arrow">→</div>`)
+	}
+	for _, s := range diff.ServicesDiff.Removed {
+		nodes = append(nodes, fmt.Sprintf(`<div class="graph-node removed">- %s</div>`, s.Name))
+		nodes = append(nodes, `<div class="graph-arrow">→</div>`)
+	}
+	for _, m := range diff.ServicesDiff.Modified {
+		nodes = append(nodes, fmt.Sprintf(`<div class="graph-node modified">~ %s</div>`, m.Name))
+		nodes = append(nodes, `<div class="graph-arrow">→</div>`)
+	}
+	if len(nodes) > 0 {
+		nodes = nodes[:len(nodes)-1]
+	}
+	return strings.Join(nodes, "\n")
+}

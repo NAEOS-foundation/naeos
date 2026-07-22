@@ -1,12 +1,10 @@
 package service
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestServiceKindConstants(t *testing.T) {
 	tests := []struct {
-		kind ServiceKind
+		k    ServiceKind
 		want string
 	}{
 		{KindHTTP, "http"},
@@ -16,49 +14,53 @@ func TestServiceKindConstants(t *testing.T) {
 		{KindJob, "job"},
 	}
 	for _, tt := range tests {
-		if string(tt.kind) != tt.want {
-			t.Errorf("ServiceKind = %q, want %q", tt.kind, tt.want)
+		if string(tt.k) != tt.want {
+			t.Errorf("ServiceKind(%s) = %s, want %s", tt.want, string(tt.k), tt.want)
 		}
 	}
 }
 
-func TestServiceZeroValue(t *testing.T) {
-	s := &Service{}
+func TestService_ZeroValue(t *testing.T) {
+	var s Service
 	if s.Name != "" {
-		t.Errorf("zero-value Service.Name = %q, want empty", s.Name)
+		t.Error("expected empty Name")
 	}
-	if s.Port != 0 {
-		t.Errorf("zero-value Service.Port = %d, want 0", s.Port)
+	if s.Kind != "" {
+		t.Error("expected empty Kind")
+	}
+	if s.Endpoints != nil {
+		t.Error("expected nil Endpoints")
 	}
 }
 
-func TestServiceWithEndpoints(t *testing.T) {
-	s := &Service{
-		Name: "gateway",
-		Kind: KindHTTP,
-		Port: 8080,
+func TestService_Full(t *testing.T) {
+	s := Service{
+		Name:        "user-api",
+		Kind:        KindHTTP,
+		Port:        8080,
+		Description: "User service",
 		Endpoints: []Endpoint{
-			{Method: "GET", Path: "/health", Action: "healthCheck"},
-			{Method: "POST", Path: "/api/v1/users", Action: "createUser"},
+			{Method: "GET", Path: "/users", Action: "list"},
 		},
+		Middleware: []string{"auth", "logging"},
+		Attributes: map[string]string{"key": "val"},
 	}
-	if len(s.Endpoints) != 2 {
-		t.Errorf("Endpoints has %d entries, want 2", len(s.Endpoints))
+	if s.Name != "user-api" {
+		t.Errorf("expected user-api, got %s", s.Name)
 	}
-	if s.Endpoints[0].Method != "GET" {
-		t.Errorf("Endpoints[0].Method = %q, want %q", s.Endpoints[0].Method, "GET")
+	if s.Kind != KindHTTP {
+		t.Errorf("expected http, got %s", s.Kind)
 	}
-	if s.Endpoints[1].Path != "/api/v1/users" {
-		t.Errorf("Endpoints[1].Path = %q, want %q", s.Endpoints[1].Path, "/api/v1/users")
+	if s.Port != 8080 {
+		t.Errorf("expected 8080, got %d", s.Port)
 	}
-}
-
-func TestServiceWithMiddleware(t *testing.T) {
-	s := &Service{
-		Name:       "api",
-		Middleware: []string{"logging", "auth", "cors"},
+	if len(s.Endpoints) != 1 {
+		t.Errorf("expected 1 endpoint, got %d", len(s.Endpoints))
 	}
-	if len(s.Middleware) != 3 {
-		t.Errorf("Middleware has %d entries, want 3", len(s.Middleware))
+	if s.Endpoints[0].Action != "list" {
+		t.Errorf("expected list, got %s", s.Endpoints[0].Action)
+	}
+	if len(s.Middleware) != 2 {
+		t.Errorf("expected 2 middleware, got %d", len(s.Middleware))
 	}
 }

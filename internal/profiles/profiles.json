@@ -161,6 +161,47 @@
     "tags": ["healthcare", "fhir", "hipaa", "clinical"]
   },
   {
+    "id": "education",
+    "name": "Education Learning Platform",
+    "description": "Educational technology platform with course management, student assessments, and collaborative learning",
+    "industry": "education",
+    "version": "1.0.0",
+    "modules": [
+      {"name": "courses", "path": "./internal/courses", "description": "Course creation and curriculum management", "dependencies": ["core"]},
+      {"name": "enrollment", "path": "./internal/enrollment", "description": "Student enrollment and progress tracking", "dependencies": ["core", "courses"]},
+      {"name": "assessments", "path": "./internal/assessments", "description": "Quiz, exam and grading system", "dependencies": ["core", "courses"]},
+      {"name": "collaboration", "path": "./internal/collaboration", "description": "Real-time collaborative learning tools", "dependencies": ["core"]},
+      {"name": "core", "path": "./internal/core", "description": "Core domain types and shared utilities"},
+      {"name": "api", "path": "./internal/api", "description": "REST and WebSocket API for all services", "dependencies": ["courses", "core", "auth"]},
+      {"name": "auth", "path": "./internal/auth", "description": "Multi-tenant SSO with LTI integration", "dependencies": ["core"]}
+    ],
+    "services": [
+      {"name": "api", "kind": "http", "port": 8080, "description": "Learning platform REST API"},
+      {"name": "ws", "kind": "http", "port": 8081, "description": "WebSocket for real-time collaboration"},
+      {"name": "worker", "kind": "worker", "port": 0, "description": "Background grading and notification worker"}
+    ],
+    "architecture": {
+      "pattern": "hexagonal",
+      "principles": ["accessibility first", "offline-capable", "real-time sync", "data portability"]
+    },
+    "security": {
+      "authentication": "sso",
+      "authorization": "rbac",
+      "roles": ["admin", "instructor", "ta", "student"],
+      "encryption": true
+    },
+    "deployment": {
+      "strategy": "rolling",
+      "environments": ["development", "staging", "production"]
+    },
+    "testing": {
+      "strategy": "unit-integration-e2e",
+      "coverage": "85%",
+      "frameworks": ["testing", "testify", "playwright"]
+    },
+    "tags": ["education", "learning", "lms", "collaboration"]
+  },
+  {
     "id": "government",
     "name": "Government Digital Service",
     "description": "Government digital service platform with citizen portal, case management, and compliance",

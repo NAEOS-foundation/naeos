@@ -1,41 +1,42 @@
 package module
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestModuleZeroValue(t *testing.T) {
-	m := &Module{}
+func TestModule_ZeroValue(t *testing.T) {
+	var m Module
 	if m.Name != "" {
-		t.Errorf("zero-value Module.Name = %q, want empty", m.Name)
+		t.Error("expected empty Name")
 	}
 	if m.Path != "" {
-		t.Errorf("zero-value Module.Path = %q, want empty", m.Path)
+		t.Error("expected empty Path")
+	}
+	if m.Packages != nil {
+		t.Error("expected nil Packages")
 	}
 }
 
-func TestModuleWithFields(t *testing.T) {
-	m := &Module{
-		Name:         "auth",
-		Path:         "./internal/auth",
-		Description:  "Authentication module",
-		Packages:     []string{"auth", "auth/domain"},
-		Dependencies: []string{"user", "crypto"},
-		Attributes:   map[string]string{"layer": "domain"},
+func TestModule_Full(t *testing.T) {
+	m := Module{
+		Name:         "core",
+		Path:         "./core",
+		Description:  "Core module",
+		Packages:     []string{"domain", "application"},
+		Dependencies: []string{"shared"},
+		Attributes:   map[string]string{"language": "go"},
 	}
-	if m.Name != "auth" {
-		t.Errorf("Name = %q, want %q", m.Name, "auth")
+	if m.Name != "core" {
+		t.Errorf("expected core, got %s", m.Name)
 	}
-	if m.Path != "./internal/auth" {
-		t.Errorf("Path = %q, want %q", m.Path, "./internal/auth")
+	if m.Path != "./core" {
+		t.Errorf("expected ./core, got %s", m.Path)
 	}
 	if len(m.Packages) != 2 {
-		t.Errorf("Packages has %d entries, want 2", len(m.Packages))
+		t.Errorf("expected 2 packages, got %d", len(m.Packages))
 	}
-	if len(m.Dependencies) != 2 {
-		t.Errorf("Dependencies has %d entries, want 2", len(m.Dependencies))
+	if len(m.Dependencies) != 1 || m.Dependencies[0] != "shared" {
+		t.Errorf("expected [shared], got %v", m.Dependencies)
 	}
-	if m.Attributes["layer"] != "domain" {
-		t.Errorf("Attributes[layer] = %q, want %q", m.Attributes["layer"], "domain")
+	if m.Attributes["language"] != "go" {
+		t.Errorf("expected go, got %s", m.Attributes["language"])
 	}
 }

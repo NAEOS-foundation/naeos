@@ -181,3 +181,197 @@ func TestFormatNEIRDiffNil(t *testing.T) {
 		t.Error("expected empty string for nil diff")
 	}
 }
+
+func TestNEIRDiffModifiedKind(t *testing.T) {
+	old := &model.NEIR{
+		Project:  &project.Project{Name: "myapp"},
+		Services: []service.Service{{Name: "api", Kind: service.KindHTTP}},
+	}
+	new := &model.NEIR{
+		Project:  &project.Project{Name: "myapp"},
+		Services: []service.Service{{Name: "api", Kind: service.KindGRPC}},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Modified) != 1 {
+		t.Fatalf("expected 1 modified, got %d", len(diff.ServicesDiff.Modified))
+	}
+	if diff.ServicesDiff.Modified[0].Changes[0].Field != "kind" {
+		t.Errorf("expected kind change, got %v", diff.ServicesDiff.Modified[0].Changes)
+	}
+}
+
+func TestNEIRDiffModifiedDescription(t *testing.T) {
+	old := &model.NEIR{
+		Project:  &project.Project{Name: "myapp"},
+		Services: []service.Service{{Name: "api", Description: "old desc"}},
+	}
+	new := &model.NEIR{
+		Project:  &project.Project{Name: "myapp"},
+		Services: []service.Service{{Name: "api", Description: "new desc"}},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Modified) != 1 {
+		t.Fatalf("expected 1 modified, got %d", len(diff.ServicesDiff.Modified))
+	}
+}
+
+func TestNEIRDiffEndpointChanges(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name: "api",
+			Endpoints: []service.Endpoint{
+				{Method: "GET", Path: "/users", Action: "list"},
+			},
+		}},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name: "api",
+			Endpoints: []service.Endpoint{
+				{Method: "GET", Path: "/users", Action: "list"},
+				{Method: "POST", Path: "/users", Action: "create"},
+			},
+		}},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Modified) != 1 {
+		t.Fatalf("expected 1 modified, got %d", len(diff.ServicesDiff.Modified))
+	}
+}
+
+func TestNEIRDiffMiddlewareChanges(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name:       "api",
+			Middleware: []string{"auth", "logging"},
+		}},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name:       "api",
+			Middleware: []string{"auth", "ratelimit"},
+		}},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Modified) != 1 {
+		t.Fatalf("expected 1 modified, got %d", len(diff.ServicesDiff.Modified))
+	}
+}
+
+func TestNEIRDiffAttributeChanges(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name:       "api",
+			Attributes: map[string]string{"env": "dev"},
+		}},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{{
+			Name:       "api",
+			Attributes: map[string]string{"env": "prod"},
+		}},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Modified) != 1 {
+		t.Fatalf("expected 1 modified, got %d", len(diff.ServicesDiff.Modified))
+	}
+}
+
+func TestNEIRDiffAddedAndRemoved(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080},
+			{Name: "worker", Port: 9090},
+		},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080},
+			{Name: "cron", Port: 7070},
+		},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ServicesDiff.Added) != 1 {
+		t.Errorf("expected 1 added, got %d", len(diff.ServicesDiff.Added))
+	}
+	if len(diff.ServicesDiff.Removed) != 1 {
+		t.Errorf("expected 1 removed, got %d", len(diff.ServicesDiff.Removed))
+	}
+}
+
+func TestNEIRDiffVersionChanged(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp", Version: "1.0"},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp", Version: "2.0"},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if len(diff.ProjectDiff.FieldsModified) == 0 {
+		t.Error("expected version change detected")
+	}
+}
+
+func TestNEIRDiffNilOldProject(t *testing.T) {
+	old := &model.NEIR{Project: nil}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	if !diff.ProjectDiff.NameChanged {
+		t.Error("expected name changed when old project is nil")
+	}
+}
+
+func TestNEIRDiffNilNewProject(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+	}
+	new := &model.NEIR{Project: nil}
+	diff := ComputeNEIRDiff(old, new)
+	if !diff.ProjectDiff.NameChanged {
+		t.Error("expected name changed when new project is nil")
+	}
+}
+
+func TestFormatNEIRDiffAddedOnly(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080},
+		},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	formatted := FormatNEIRDiff(diff)
+	if !strings.Contains(formatted, "Added services") {
+		t.Error("expected 'Added services' in formatted output")
+	}
+}
+
+func TestFormatNEIRDiffRemovedOnly(t *testing.T) {
+	old := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+		Services: []service.Service{
+			{Name: "api", Port: 8080},
+		},
+	}
+	new := &model.NEIR{
+		Project: &project.Project{Name: "myapp"},
+	}
+	diff := ComputeNEIRDiff(old, new)
+	formatted := FormatNEIRDiff(diff)
+	if !strings.Contains(formatted, "Removed services") {
+		t.Error("expected 'Removed services' in formatted output")
+	}
+}

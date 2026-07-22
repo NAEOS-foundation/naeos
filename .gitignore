@@ -43,7 +43,8 @@ cmd/naeos/out/
 .env
 .env.local
 
-# SQLite temporary files
+# SQLite database files
+*.db
 *.db-shm
 *.db-wal
 
@@ -53,5 +54,10 @@ cmd/naeos/out/
 # Temp
 tmp/
 .tmp/
+
+# Hugo build output
+site/public/
 documentation.o
 cmd/naeos/nonexistent/
+internal/api/.naeos/
+naeos-demo
