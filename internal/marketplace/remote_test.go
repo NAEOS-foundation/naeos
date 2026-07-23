@@ -150,7 +150,7 @@ func TestRemoteRegistryInstall(t *testing.T) {
 	serverURL = server.URL
 
 	installDir := t.TempDir()
-	rr := NewRemoteRegistry(server.URL+"/plugins", installDir)
+	rr := NewRemoteRegistry(server.URL, installDir)
 
 	path, err := rr.Install("test-plugin", "1.0.0")
 	if err != nil {
