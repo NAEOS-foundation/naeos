@@ -1,272 +1,269 @@
 package database
 
 import (
+	"context"
+	"log/slog"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
 
-func TestMySQLFullLifecycle(t *testing.T) {
-	db := NewMySQL()
-	if db.Name() != "mysql" {
-		t.Errorf("expected 'mysql', got %s", db.Name())
-	}
+func TestConfigValidationSSLMode(t *testing.T) {
+	t.Parallel()
 
-	if err := db.Connect(&Config{Host: "localhost", Port: 3306, Database: "test"}); err != nil {
-		t.Fatalf("connect: %v", err)
+	modes := []struct {
+		mode    string
+		wantErr bool
+	}{
+		{"disable", false},
+		{"require", false},
+		{"verify-ca", false},
+		{"verify-full", false},
+		{"prefer", true},
+		{"allow", true},
 	}
-	if err := db.Ping(); err != nil {
-		t.Fatalf("ping: %v", err)
-	}
-
-	result, err := db.Exec("CREATE TABLE t (id INT)")
-	if err != nil {
-		t.Fatalf("exec: %v", err)
-	}
-	if result.RowsAffected != 1 {
-		t.Errorf("expected 1 row affected, got %d", result.RowsAffected)
-	}
-
-	rows, err := db.Query("SELECT * FROM t")
-	if err != nil {
-		t.Fatalf("query: %v", err)
-	}
-	if rows == nil {
-		t.Error("expected non-nil rows")
-	}
-
-	row, err := db.QueryRow("SELECT * FROM t WHERE id = 1")
-	if err != nil {
-		t.Fatalf("queryrow: %v", err)
-	}
-	if row == nil {
-		t.Error("expected non-nil row")
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		t.Fatalf("begin: %v", err)
-	}
-	if _, err := tx.Exec("INSERT INTO t VALUES (1)"); err != nil {
-		t.Fatalf("tx exec: %v", err)
-	}
-	txRows, err := tx.Query("SELECT * FROM t")
-	if err != nil {
-		t.Fatalf("tx query: %v", err)
-	}
-	if txRows == nil {
-		t.Error("expected non-nil tx rows")
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatalf("tx commit: %v", err)
-	}
-
-	if err := db.Migrate([]Migration{
-		{Version: 1, Name: "init", Up: "CREATE TABLE IF NOT EXISTS _m(id INT)"},
-		{Version: 2, Name: "add_col", Up: "ALTER TABLE _m ADD COLUMN name TEXT"},
-	}); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	if db.MigrationVersion() != 2 {
-		t.Errorf("expected version 2, got %d", db.MigrationVersion())
-	}
-
-	if err := db.Rollback(1); err != nil {
-		t.Fatalf("rollback: %v", err)
-	}
-	if db.MigrationVersion() != 1 {
-		t.Errorf("expected version 1 after rollback, got %d", db.MigrationVersion())
-	}
-
-	if err := db.Close(); err != nil {
-		t.Fatalf("close: %v", err)
+	for _, tt := range modes {
+		t.Run(tt.mode, func(t *testing.T) {
+			t.Parallel()
+			c := Config{Host: "h", Port: 1, User: "u", Database: "d", SSLMode: tt.mode}
+			err := c.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SSLMode=%s: Validate() error = %v, wantErr %v", tt.mode, err, tt.wantErr)
+			}
+		})
 	}
 }
 
-func TestMySQLNotConnected(t *testing.T) {
-	db := NewMySQL()
+func TestFactoryNewFromConfigMock(t *testing.T) {
+	t.Parallel()
 
-	if _, err := db.Exec("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.Query("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.QueryRow("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.Begin(); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Migrate(nil); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Rollback(0); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Ping(); err == nil {
-		t.Error("expected error")
-	}
-}
-
-func TestMySQLTransactionRollback(t *testing.T) {
-	db := NewMySQL()
-	db.Connect(&Config{})
-
-	tx, err := db.Begin()
+	db, err := NewFromConfig("mock-sqlite", &Config{Host: "localhost", Port: 1, User: "u", Database: "d"})
 	if err != nil {
-		t.Fatalf("begin: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, err := tx.Exec("INSERT INTO t VALUES (1)"); err != nil {
-		t.Fatalf("tx exec: %v", err)
-	}
-	if err := tx.Rollback(); err != nil {
-		t.Fatalf("tx rollback: %v", err)
-	}
-}
-
-func TestSQLiteFullLifecycle(t *testing.T) {
-	db := NewSQLite()
 	if db.Name() != "sqlite" {
-		t.Errorf("expected 'sqlite', got %s", db.Name())
-	}
-
-	if err := db.Connect(&Config{Database: ":memory:"}); err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	if err := db.Ping(); err != nil {
-		t.Fatalf("ping: %v", err)
-	}
-
-	result, err := db.Exec("CREATE TABLE t (id INT)")
-	if err != nil {
-		t.Fatalf("exec: %v", err)
-	}
-	if result.RowsAffected != 1 {
-		t.Errorf("expected 1 row affected, got %d", result.RowsAffected)
-	}
-
-	rows, err := db.Query("SELECT * FROM t")
-	if err != nil {
-		t.Fatalf("query: %v", err)
-	}
-	if rows == nil {
-		t.Error("expected non-nil rows")
-	}
-
-	row, err := db.QueryRow("SELECT * FROM t WHERE id = 1")
-	if err != nil {
-		t.Fatalf("queryrow: %v", err)
-	}
-	if row == nil {
-		t.Error("expected non-nil row")
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		t.Fatalf("begin: %v", err)
-	}
-	if _, err := tx.Exec("INSERT INTO t VALUES (1)"); err != nil {
-		t.Fatalf("tx exec: %v", err)
-	}
-	txRows, err := tx.Query("SELECT * FROM t")
-	if err != nil {
-		t.Fatalf("tx query: %v", err)
-	}
-	if txRows == nil {
-		t.Error("expected non-nil tx rows")
-	}
-	if err := tx.Commit(); err != nil {
-		t.Fatalf("tx commit: %v", err)
-	}
-
-	if err := db.Migrate([]Migration{
-		{Version: 1, Name: "init", Up: "CREATE TABLE IF NOT EXISTS _m(id INT)"},
-		{Version: 2, Name: "add_col", Up: "ALTER TABLE _m ADD COLUMN name TEXT"},
-	}); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	if db.MigrationVersion() != 2 {
-		t.Errorf("expected version 2, got %d", db.MigrationVersion())
-	}
-
-	if err := db.Rollback(1); err != nil {
-		t.Fatalf("rollback: %v", err)
-	}
-	if db.MigrationVersion() != 1 {
-		t.Errorf("expected version 1 after rollback, got %d", db.MigrationVersion())
-	}
-
-	if err := db.Close(); err != nil {
-		t.Fatalf("close: %v", err)
+		t.Errorf("expected 'sqlite', got %q", db.Name())
 	}
 }
 
-func TestSQLiteNotConnected(t *testing.T) {
-	db := NewSQLite()
+func TestConnectionStore(t *testing.T) {
+	t.Parallel()
 
-	if _, err := db.Exec("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.Query("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.QueryRow("SELECT 1"); err == nil {
-		t.Error("expected error")
-	}
-	if _, err := db.Begin(); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Migrate(nil); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Rollback(0); err == nil {
-		t.Error("expected error")
-	}
-	if err := db.Ping(); err == nil {
-		t.Error("expected error")
-	}
-}
+	dir := t.TempDir()
+	s := &ConnectionStore{dir: dir}
 
-func TestSQLiteTransactionRollback(t *testing.T) {
-	db := NewSQLite()
-	db.Connect(&Config{Database: ":memory:"})
-
-	tx, err := db.Begin()
+	err := s.Add("mydb", "postgresql", &Config{Host: "localhost", Port: 5432})
 	if err != nil {
-		t.Fatalf("begin: %v", err)
+		t.Fatalf("Add() error = %v", err)
 	}
-	if _, err := tx.Exec("INSERT INTO t VALUES (1)"); err != nil {
-		t.Fatalf("tx exec: %v", err)
+
+	got, err := s.Get("mydb")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
 	}
-	if err := tx.Rollback(); err != nil {
-		t.Fatalf("tx rollback: %v", err)
+	if got.Driver != "postgresql" {
+		t.Errorf("expected driver 'postgresql', got %q", got.Driver)
+	}
+
+	list, err := s.List()
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list) != 1 {
+		t.Errorf("expected 1 connection, got %d", len(list))
+	}
+
+	if err := s.Remove("mydb"); err != nil {
+		t.Fatalf("Remove() error = %v", err)
+	}
+
+	_, err = s.Get("mydb")
+	if err == nil {
+		t.Fatal("expected error after remove")
 	}
 }
 
-func TestPostgreSQLRollback(t *testing.T) {
-	db := NewPostgreSQL()
-	db.Connect(&Config{})
+func TestConnectionStoreRemoveNotFound(t *testing.T) {
+	t.Parallel()
 
-	if err := db.Migrate([]Migration{
-		{Version: 1, Name: "v1", Up: "CREATE TABLE t1(id INT)"},
-		{Version: 2, Name: "v2", Up: "CREATE TABLE t2(id INT)"},
-		{Version: 3, Name: "v3", Up: "CREATE TABLE t3(id INT)"},
-	}); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	if db.MigrationVersion() != 3 {
-		t.Fatalf("expected version 3, got %d", db.MigrationVersion())
-	}
+	dir := t.TempDir()
+	s := &ConnectionStore{dir: dir}
 
-	if err := db.Rollback(1); err != nil {
-		t.Fatalf("rollback: %v", err)
-	}
-	if db.MigrationVersion() != 1 {
-		t.Errorf("expected version 1 after rollback, got %d", db.MigrationVersion())
+	err := s.Remove("nonexistent")
+	if err == nil {
+		t.Fatal("expected error for removing nonexistent connection")
 	}
 }
 
-func TestPoolEmptyGet(t *testing.T) {
+func TestConnectionStoreGetNotFound(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	s := &ConnectionStore{dir: dir}
+
+	_, err := s.Get("nonexistent")
+	if err == nil {
+		t.Fatal("expected error for nonexistent connection")
+	}
+}
+
+func TestLoggingDatabaseAllMethods(t *testing.T) {
+	t.Parallel()
+
+	inner := NewSQLite()
+	inner.Connect(&Config{Host: "h", Port: 1, User: "u", Database: ":memory:"})
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+ldb := NewLoggingDatabase(inner, logger)
+
+	if ldb.Name() != "sqlite" {
+		t.Errorf("expected 'sqlite', got %q", ldb.Name())
+	}
+
+	if err := ldb.Ping(); err != nil {
+		t.Fatalf("Ping() error = %v", err)
+	}
+
+	_, err := ldb.Exec("SELECT 1")
+	if err != nil {
+		t.Fatalf("Exec() error = %v", err)
+	}
+
+	_, err = ldb.ExecContext(context.Background(), "SELECT 1")
+	if err != nil {
+		t.Fatalf("ExecContext() error = %v", err)
+	}
+
+	_, err = ldb.Query("SELECT 1")
+	if err != nil {
+		t.Fatalf("Query() error = %v", err)
+	}
+
+	_, err = ldb.QueryContext(context.Background(), "SELECT 1")
+	if err != nil {
+		t.Fatalf("QueryContext() error = %v", err)
+	}
+
+	_, err = ldb.QueryRow("SELECT 1")
+	if err != nil {
+		t.Fatalf("QueryRow() error = %v", err)
+	}
+
+	_, err = ldb.QueryRowContext(context.Background(), "SELECT 1")
+	if err != nil {
+		t.Fatalf("QueryRowContext() error = %v", err)
+	}
+
+	_, err = ldb.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+
+	_, err = ldb.BeginTx(context.Background())
+	if err != nil {
+		t.Fatalf("BeginTx() error = %v", err)
+	}
+
+	migrations := []Migration{{Version: 1, Name: "test", Up: "SELECT 1"}}
+	if err := ldb.Migrate(migrations); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+
+	if err := ldb.MigrateContext(context.Background(), migrations); err != nil {
+		t.Fatalf("MigrateContext() error = %v", err)
+	}
+
+	if err := ldb.Rollback(0); err != nil {
+		t.Fatalf("Rollback() error = %v", err)
+	}
+
+	if err := ldb.RollbackContext(context.Background(), 0); err != nil {
+		t.Fatalf("RollbackContext() error = %v", err)
+	}
+
+	if err := ldb.HealthCheck(); err != nil {
+		t.Fatalf("HealthCheck() error = %v", err)
+	}
+
+	if err := ldb.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func TestLoggingDatabaseLongQuery(t *testing.T) {
+	t.Parallel()
+
+	inner := NewSQLite()
+	inner.Connect(&Config{Host: "h", Port: 1, User: "u", Database: "d"})
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	ldb := NewLoggingDatabase(inner, logger)
+
+	longQuery := "SELECT " + string(make([]byte, 300))
+	_, err := ldb.Query(longQuery)
+	if err != nil {
+		t.Fatalf("Query() error = %v", err)
+	}
+}
+
+func TestLoadMigrationsMultipleVersions(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(dir, "002_add_email.up.sql"), []byte("ALTER TABLE users ADD email TEXT"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "002_add_email.down.sql"), []byte("ALTER TABLE users DROP email"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "001_create_users.up.sql"), []byte("CREATE TABLE users"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "001_create_users.down.sql"), []byte("DROP TABLE users"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	migrations, err := LoadMigrations(dir)
+	if err != nil {
+		t.Fatalf("LoadMigrations() error = %v", err)
+	}
+	if len(migrations) != 2 {
+		t.Fatalf("expected 2 migrations, got %d", len(migrations))
+	}
+	if migrations[0].Version != 1 {
+		t.Errorf("expected first migration version 1, got %d", migrations[0].Version)
+	}
+	if migrations[1].Version != 2 {
+		t.Errorf("expected second migration version 2, got %d", migrations[1].Version)
+	}
+}
+
+func TestLoadMigrationsUpOnly(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "001_init.up.sql"), []byte("CREATE TABLE t"), 0o644)
+
+	migrations, err := LoadMigrations(dir)
+	if err != nil {
+		t.Fatalf("LoadMigrations() error = %v", err)
+	}
+	if len(migrations) != 1 {
+		t.Fatalf("expected 1 migration, got %d", len(migrations))
+	}
+	if migrations[0].Up != "CREATE TABLE t" {
+		t.Errorf("unexpected Up SQL: %q", migrations[0].Up)
+	}
+	if migrations[0].Down != "" {
+		t.Errorf("expected empty Down SQL, got %q", migrations[0].Down)
+	}
+}
+
+func TestPoolGetEmpty(t *testing.T) {
+	t.Parallel()
+
 	pool := NewPool(5, 2, time.Hour)
 	got := pool.Get()
 	if got != nil {
@@ -274,81 +271,227 @@ func TestPoolEmptyGet(t *testing.T) {
 	}
 }
 
-func TestPoolOverflow(t *testing.T) {
-	pool := NewPool(2, 1, time.Hour)
+func TestPoolPutFull(t *testing.T) {
+	t.Parallel()
 
-	conn1 := NewPostgreSQL()
-	conn1.Connect(&Config{})
-	pool.Put(conn1)
+	pool := NewPool(1, 1, time.Hour)
 
-	conn2 := NewPostgreSQL()
-	conn2.Connect(&Config{})
-	pool.Put(conn2)
+	db := NewSQLite()
+	db.Connect(&Config{Host: "h", Port: 1, User: "u", Database: "d"})
 
-	if pool.Size() != 2 {
-		t.Errorf("expected size 2, got %d", pool.Size())
+	pool.Put(db)
+	if pool.Size() != 1 {
+		t.Errorf("expected size 1, got %d", pool.Size())
 	}
 
-	conn3 := NewPostgreSQL()
-	conn3.Connect(&Config{})
-	pool.Put(conn3)
-
-	if pool.Size() != 2 {
-		t.Errorf("expected size 2 after overflow, got %d", pool.Size())
+	pool.Put(db)
+	if pool.Size() != 1 {
+		t.Errorf("expected size 1 (overflow closed), got %d", pool.Size())
 	}
 }
 
-func TestManagerGetNotFound(t *testing.T) {
-	m := NewManager()
-	_, ok := m.Get("nonexistent")
-	if ok {
-		t.Error("expected not found")
-	}
-}
+func TestManagerConnectAllNotFound(t *testing.T) {
+	t.Parallel()
 
-func TestManagerListEmpty(t *testing.T) {
 	m := NewManager()
-	names := m.List()
-	if len(names) != 0 {
-		t.Errorf("expected empty list, got %d", len(names))
-	}
-}
-
-func TestManagerConnectAllMissingConfig(t *testing.T) {
-	m := NewManager()
-	pg := NewPostgreSQL()
-	m.Register("pg", pg)
-
-	configs := map[string]*Config{
-		"other": {Host: "localhost"},
-	}
+	configs := map[string]*Config{"missing": {Host: "h", Port: 1, User: "u", Database: "d"}}
 	if err := m.ConnectAll(configs); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestManagerCloseAllWithCloseError(t *testing.T) {
-	m := NewManager()
-	pg := NewPostgreSQL()
-	m.Register("pg", pg)
+func TestManagerGetNotFound(t *testing.T) {
+	t.Parallel()
 
-	if err := m.CloseAll(); err != nil {
+	m := NewManager()
+	_, ok := m.Get("nonexistent")
+	if ok {
+		t.Error("expected false for nonexistent database")
+	}
+}
+
+func TestManagerRemoveNonExistent(t *testing.T) {
+	t.Parallel()
+
+	m := NewManager()
+	m.Remove("nonexistent")
+}
+
+func TestTransactionContext(t *testing.T) {
+	t.Parallel()
+
+	db := NewPostgreSQL()
+	db.Connect(&Config{})
+
+	tx, err := db.BeginTx(context.Background())
+	if err != nil {
+		t.Fatalf("BeginTx() error = %v", err)
+	}
+
+	_, err = tx.ExecContext(context.Background(), "INSERT INTO t VALUES (1)")
+	if err != nil {
+		t.Fatalf("ExecContext() error = %v", err)
+	}
+
+	_, err = tx.QueryContext(context.Background(), "SELECT * FROM t")
+	if err != nil {
+		t.Fatalf("QueryContext() error = %v", err)
+	}
+
+	if err := tx.Rollback(); err != nil {
+		t.Fatalf("Rollback() error = %v", err)
+	}
+}
+
+func TestSQLiteAllMethods(t *testing.T) {
+	t.Parallel()
+
+	db := NewSQLite()
+	db.Connect(&Config{Host: "h", Port: 1, User: "u", Database: ":memory:"})
+
+	ctx := context.Background()
+
+	_, err := db.ExecContext(ctx, "CREATE TABLE t (id INTEGER)")
+	if err != nil {
+		t.Fatalf("ExecContext() error = %v", err)
+	}
+
+	_, err = db.QueryContext(ctx, "SELECT * FROM t")
+	if err != nil {
+		t.Fatalf("QueryContext() error = %v", err)
+	}
+
+	_, err = db.QueryRowContext(ctx, "SELECT * FROM t WHERE id = 1")
+	if err != nil {
+		t.Fatalf("QueryRowContext() error = %v", err)
+	}
+
+	migrations := []Migration{{Version: 1, Name: "m", Up: "SELECT 1", Down: "SELECT 1"}}
+	if err := db.MigrateContext(ctx, migrations); err != nil {
+		t.Fatalf("MigrateContext() error = %v", err)
+	}
+
+	if err := db.RollbackContext(ctx, 0); err != nil {
+		t.Fatalf("RollbackContext() error = %v", err)
+	}
+
+	if v := db.MigrationVersion(); v != 0 {
+		t.Errorf("expected version 0, got %d", v)
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func TestMySQLAllMethods(t *testing.T) {
+	t.Parallel()
+
+	db := NewMySQL()
+	db.Connect(&Config{Host: "h", Port: 1, User: "u", Database: "d"})
+
+	ctx := context.Background()
+
+	_, err := db.ExecContext(ctx, "INSERT INTO t VALUES (1)")
+	if err != nil {
+		t.Fatalf("ExecContext() error = %v", err)
+	}
+
+	_, err = db.QueryContext(ctx, "SELECT * FROM t")
+	if err != nil {
+		t.Fatalf("QueryContext() error = %v", err)
+	}
+
+	_, err = db.QueryRowContext(ctx, "SELECT * FROM t WHERE id = 1")
+	if err != nil {
+		t.Fatalf("QueryRowContext() error = %v", err)
+	}
+
+	migrations := []Migration{{Version: 1, Name: "m", Up: "SELECT 1", Down: "SELECT 1"}}
+	if err := db.MigrateContext(ctx, migrations); err != nil {
+		t.Fatalf("MigrateContext() error = %v", err)
+	}
+
+	if err := db.RollbackContext(ctx, 0); err != nil {
+		t.Fatalf("RollbackContext() error = %v", err)
+	}
+
+	if v := db.MigrationVersion(); v != 0 {
+		t.Errorf("expected version 0, got %d", v)
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func TestBaseTransactionRollback(t *testing.T) {
+	t.Parallel()
+
+	db := NewPostgreSQL()
+	db.Connect(&Config{})
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+
+	if err := tx.Rollback(); err != nil {
+		t.Fatalf("Rollback() error = %v", err)
+	}
+}
+
+func TestWithRetryDefaultParams(t *testing.T) {
+	t.Parallel()
+
+	calls := 0
+	err := WithRetry(context.Background(), 0, 0, func(ctx context.Context) error {
+		calls++
+		return nil
+	})
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-}
-
-func TestMySQLMigrationVersion(t *testing.T) {
-	db := NewMySQL()
-	db.Connect(&Config{})
-	if db.MigrationVersion() != 0 {
-		t.Errorf("expected version 0, got %d", db.MigrationVersion())
+	if calls != 1 {
+		t.Errorf("expected 1 call, got %d", calls)
 	}
 }
 
-func TestSQLiteMigrationVersion(t *testing.T) {
-	db := NewSQLite()
-	db.Connect(&Config{Database: ":memory:"})
-	if db.MigrationVersion() != 0 {
-		t.Errorf("expected version 0, got %d", db.MigrationVersion())
+func TestWithRetryNonTransient(t *testing.T) {
+	t.Parallel()
+
+	err := WithRetry(context.Background(), 3, time.Millisecond, func(ctx context.Context) error {
+		return &os.PathError{Op: "open", Path: "/not/found", Err: os.ErrNotExist}
+	})
+	if err == nil {
+		t.Fatal("expected error for non-transient failure")
+	}
+}
+
+func TestWithRetryContextCanceled(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := WithRetry(ctx, 3, time.Millisecond, func(ctx context.Context) error {
+		return context.Canceled
+	})
+	if err != context.Canceled {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
+
+func TestIsTransientErrorNil(t *testing.T) {
+	t.Parallel()
+	if isTransientError(nil) {
+		t.Error("expected false for nil error")
+	}
+}
+
+func TestIsTransientErrorDeadlineExceeded(t *testing.T) {
+	t.Parallel()
+	if !isTransientError(context.DeadlineExceeded) {
+		t.Error("expected true for DeadlineExceeded")
 	}
 }

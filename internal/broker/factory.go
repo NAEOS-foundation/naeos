@@ -57,6 +57,7 @@ func NewFromConfig(driver string, config *Config) (Broker, error) {
 	b := New(driver)
 	if b == nil {
 		slog.Error("unsupported broker driver", "driver", driver)
+		return nil, naeoserr.Wrap(naeoserr.ErrConfig, fmt.Sprintf("unsupported broker driver: %s", driver), nil)
 		return nil, naeoserr.New(naeoserr.ErrConfig, fmt.Sprintf("unsupported broker driver: %s", driver))
 	}
 	if err := b.Connect(config); err != nil {

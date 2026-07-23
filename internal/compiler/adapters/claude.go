@@ -37,7 +37,7 @@ func (a *claudeAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, err
 func (a *claudeAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	rendered, err := a.library.RenderCompiler("claude", neir)
 	if err != nil {
-		return nil, fmt.Errorf("render claude template: %w", err)
+		return nil, fmt.Errorf("render from library: %w", err)
 	}
 
 	var files []compiler.OutputFile
