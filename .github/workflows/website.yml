@@ -41,12 +41,12 @@ jobs:
       - name: Generate OG images
         run: |
           npm ci 2>&1 | tail -3
-          node -e "
-            const s=require('sharp'),f=require('fs');
+          node -e '
+            const s=require("sharp"),f=require("fs");
             Promise.all([
-              s(f.readFileSync('static/images/og-dark.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default.png'),
-              s(f.readFileSync('static/images/og-light.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default-light.png')
-            ]).then(()=>console.log('OG images generated')).catch(e=>{console.error(e);process.exit(1)});
+              s(f.readFileSync("static/images/og-dark.svg")).resize(1200,630,{fit:"fill"}).png().toFile("static/images/og-default.png"),
+              s(f.readFileSync("static/images/og-light.svg")).resize(1200,630,{fit:"fill"}).png().toFile("static/images/og-default-light.png")
+            ]).then(()=>console.log("OG images generated")).catch(e=>{console.error(e);process.exit(1)});
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
