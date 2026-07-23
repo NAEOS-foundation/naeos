@@ -2,6 +2,7 @@ package supabase
 
 import (
 	"fmt"
+	"strings"
 )
 
 type QueryParams struct {
@@ -39,14 +40,14 @@ func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
 	}
 	resp, err := c.do("POST", path, headers, params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("execute SQL: %w", err)
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		body := make([]byte, 4096)
-		resp.Body.Read(body)
-		return nil, fmt.Errorf("SQL query failed (%d): %s", resp.StatusCode, string(body))
+		n, _ := resp.Body.Read(body)
+		return nil, fmt.Errorf("execute SQL: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 
 	return decodeResponse[QueryResult](resp)

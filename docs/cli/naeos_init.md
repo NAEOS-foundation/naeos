@@ -12,8 +12,9 @@ Available templates:
   rest-api       — Single REST API service
   fullstack      — Fullstack with backend + frontend + worker
   kubernetes     — Production-ready Kubernetes deployment
+  supabase       — Supabase backend with pipeline + auth + storage
   hcl            — HCL format specification
-
+ 
 Example:
   naeos init
   naeos init --template microservices
@@ -31,7 +32,7 @@ naeos init [flags]
       --list-templates    list all available templates
   -n, --name string       project name (replaces default in template)
   -o, --output string     path for the generated config file (default "naeos.yaml")
-  -t, --template string   template to use (basic, microservices, rest-api, fullstack, kubernetes, hcl) (default "basic")
+  -t, --template string   template to use (basic, microservices, rest-api, fullstack, kubernetes, supabase, hcl) (default "basic")
 ```
 
 ### Options inherited from parent commands

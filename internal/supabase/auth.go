@@ -80,13 +80,13 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 func (c *Client) SignOut() error {
 	resp, err := c.doAuth("POST", "/auth/v1/logout", nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("sign out: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		body := make([]byte, 1024)
-		resp.Body.Read(body)
-		return fmt.Errorf("sign out failed: %s", strings.TrimSpace(string(body)))
+		n, _ := resp.Body.Read(body)
+		return fmt.Errorf("sign out: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	c.SetAuthToken("")
 	return nil

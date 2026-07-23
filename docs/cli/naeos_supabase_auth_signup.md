@@ -1,15 +1,17 @@
-## naeos plugin uninstall
+## naeos supabase auth signup
 
-Uninstall a plugin
+Sign up a new user
 
 ```
-naeos plugin uninstall [name] [flags]
+naeos supabase auth signup [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for uninstall
+      --email string      user email (required)
+  -h, --help              help for signup
+      --password string   user password (required)
 ```
 
 ### Options inherited from parent commands
@@ -17,11 +19,10 @@ naeos plugin uninstall [name] [flags]
 ```
       --dry-run                global dry-run mode: preview without writing to disk
       --output-format string   output format: json, yaml, table (default "table")
-      --plugin-dir string      plugin directory (default "/home/bayu/.naeos/plugins")
       --verbose                enable verbose logging
 ```
 
 ### SEE ALSO
 
-* [naeos plugin](naeos_plugin.md)	 - Manage NAEOS plugins
+* [naeos supabase auth](naeos_supabase_auth.md)	 - Supabase authentication management
 

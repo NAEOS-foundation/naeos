@@ -17,7 +17,7 @@ naeos plugin install [path] [flags]
 ```
       --dry-run                global dry-run mode: preview without writing to disk
       --output-format string   output format: json, yaml, table (default "table")
-      --plugin-dir string      plugin directory (default "/home/codespace/.naeos/plugins")
+      --plugin-dir string      plugin directory (default "/home/bayu/.naeos/plugins")
       --verbose                enable verbose logging
 ```
 

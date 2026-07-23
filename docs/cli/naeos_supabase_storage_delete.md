@@ -1,15 +1,17 @@
-## naeos plugin uninstall
+## naeos supabase storage delete
 
-Uninstall a plugin
+Delete a file from storage
 
 ```
-naeos plugin uninstall [name] [flags]
+naeos supabase storage delete [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for uninstall
+      --bucket string   bucket name (required)
+  -h, --help            help for delete
+      --path string     file path (required)
 ```
 
 ### Options inherited from parent commands
@@ -17,11 +19,10 @@ naeos plugin uninstall [name] [flags]
 ```
       --dry-run                global dry-run mode: preview without writing to disk
       --output-format string   output format: json, yaml, table (default "table")
-      --plugin-dir string      plugin directory (default "/home/bayu/.naeos/plugins")
       --verbose                enable verbose logging
 ```
 
 ### SEE ALSO
 
-* [naeos plugin](naeos_plugin.md)	 - Manage NAEOS plugins
+* [naeos supabase storage](naeos_supabase_storage.md)	 - Supabase storage management
 

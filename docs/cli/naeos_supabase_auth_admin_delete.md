@@ -1,15 +1,16 @@
-## naeos plugin uninstall
+## naeos supabase auth admin delete
 
-Uninstall a plugin
+Delete a user (admin)
 
 ```
-naeos plugin uninstall [name] [flags]
+naeos supabase auth admin delete [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for uninstall
+  -h, --help             help for delete
+      --user-id string   user ID (required)
 ```
 
 ### Options inherited from parent commands
@@ -17,11 +18,10 @@ naeos plugin uninstall [name] [flags]
 ```
       --dry-run                global dry-run mode: preview without writing to disk
       --output-format string   output format: json, yaml, table (default "table")
-      --plugin-dir string      plugin directory (default "/home/bayu/.naeos/plugins")
       --verbose                enable verbose logging
 ```
 
 ### SEE ALSO
 
-* [naeos plugin](naeos_plugin.md)	 - Manage NAEOS plugins
+* [naeos supabase auth admin](naeos_supabase_auth_admin.md)	 - Admin auth operations (requires service_role_key)
 

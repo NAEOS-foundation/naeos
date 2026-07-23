@@ -73,6 +73,7 @@ Specify Once. Build Anywhere.
 * [naeos search](naeos_search.md)	 - Full-text search engine management
 * [naeos security](naeos_security.md)	 - Security and secrets management
 * [naeos status](naeos_status.md)	 - Show current pipeline, system and project status
+* [naeos supabase](naeos_supabase.md)	 - Supabase backend management
 * [naeos template](naeos_template.md)	 - Manage generation templates, prompt library, and template marketplace
 * [naeos test](naeos_test.md)	 - Run tests for generated code
 * [naeos tui](naeos_tui.md)	 - Interactive project wizard

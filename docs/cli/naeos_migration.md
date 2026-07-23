@@ -19,5 +19,5 @@ Database migration management
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-* [naeos migration status](naeos_migration_status.md)	 - Show migration status
+* [naeos migration status](naeos_migration_status.md)	 - Show migration status for all configured databases
 

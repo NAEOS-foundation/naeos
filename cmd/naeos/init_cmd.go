@@ -89,6 +89,20 @@ services:
     type: backend
     replicas: 3
 `,
+	"supabase": `pipeline:
+  name: my-supabase-project
+  mode: development
+  verbose: true
+  output_dir: ./out
+  language:
+    - go
+    - typescript
+supabase:
+  project_ref: your-project-ref
+  url: https://your-project-ref.supabase.co
+  anon_key: "${SUPABASE_ANON_KEY}"
+  service_role_key: "${SUPABASE_SERVICE_ROLE_KEY}"
+`,
 	"hcl": `project "my-project" {
   version     = "1.0.0"
   description = "A new NAEOS project"
@@ -129,8 +143,9 @@ Available templates:
   rest-api       — Single REST API service
   fullstack      — Fullstack with backend + frontend + worker
   kubernetes     — Production-ready Kubernetes deployment
+  supabase       — Supabase backend with pipeline + auth + storage
   hcl            — HCL format specification
-
+ 
 Example:
   naeos init
   naeos init --template microservices
@@ -186,7 +201,7 @@ Example:
 	}
 
 	cmd.Flags().StringVarP(&output, "output", "o", "naeos.yaml", "path for the generated config file")
-	cmd.Flags().StringVarP(&template, "template", "t", "basic", "template to use (basic, microservices, rest-api, fullstack, kubernetes, hcl)")
+  cmd.Flags().StringVarP(&template, "template", "t", "basic", "template to use (basic, microservices, rest-api, fullstack, kubernetes, supabase, hcl)")
 	cmd.Flags().StringVarP(&projectName, "name", "n", "", "project name (replaces default in template)")
 	cmd.Flags().BoolVar(&listTemplates, "list-templates", false, "list all available templates")
 	return cmd
@@ -199,6 +214,7 @@ func templateDescription(name string) string {
 		"rest-api":      "Single REST API service",
 		"fullstack":     "Fullstack: backend + frontend + worker",
 		"kubernetes":    "Production-ready Kubernetes deployment",
+		"supabase":      "Supabase project with pipeline config",
 		"hcl":           "HCL format specification",
 	}
 	if d, ok := descriptions[name]; ok {

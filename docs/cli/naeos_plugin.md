@@ -19,7 +19,7 @@ Example:
 
 ```
   -h, --help                help for plugin
-      --plugin-dir string   plugin directory (default "/home/codespace/.naeos/plugins")
+      --plugin-dir string   plugin directory (default "/home/bayu/.naeos/plugins")
 ```
 
 ### Options inherited from parent commands

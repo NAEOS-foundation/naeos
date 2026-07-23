@@ -1,10 +1,12 @@
 ## naeos migration status
 
-Show migration status
+Show migration status for all configured databases
 
 ### Synopsis
 
 Display the current migration status of all configured databases.
+
+Reads saved connections and queries each database's _migrations table.
 
 Example:
   naeos migration status
@@ -17,7 +19,8 @@ naeos migration status [flags]
 ### Options
 
 ```
-  -h, --help   help for status
+  -h, --help            help for status
+  -o, --output string   output format: text, json, yaml
 ```
 
 ### Options inherited from parent commands

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Bucket struct {
@@ -71,11 +72,13 @@ func (c *Client) GetBucket(id string) (*Bucket, error) {
 func (c *Client) DeleteBucket(id string) error {
 	resp, err := c.doAuth("DELETE", "/storage/v1/bucket/"+id, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete bucket: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("delete bucket failed: status %d", resp.StatusCode)
+		body := make([]byte, 1024)
+		n, _ := resp.Body.Read(body)
+		return fmt.Errorf("delete bucket: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	return nil
 }
@@ -184,11 +187,13 @@ func (c *Client) DeleteFile(bucket, path string) error {
 	}
 	resp, err := c.doAuth("DELETE", "/storage/v1/object/"+bucket, params)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete file: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("delete failed: status %d", resp.StatusCode)
+		body := make([]byte, 1024)
+		n, _ := resp.Body.Read(body)
+		return fmt.Errorf("delete file: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	return nil
 }

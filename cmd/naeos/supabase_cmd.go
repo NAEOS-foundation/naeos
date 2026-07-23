@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -53,10 +54,32 @@ func newSupabaseInitCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize Supabase project configuration",
-		Args:  cobra.NoArgs,
+		Long: `Configure a Supabase project. Reads SUPABASE_URL, SUPABASE_ANON_KEY,
+and SUPABASE_SERVICE_ROLE_KEY from environment variables if flags are not set.
+
+Examples:
+  naeos supabase init --project-ref abcdefg
+  naeos supabase init --project-ref abcdefg --anon-key "eyJ..." --service-role-key "eyJ..."
+  SUPABASE_URL=https://abc.supabase.co SUPABASE_ANON_KEY=eyJ... naeos supabase init --project-ref abc`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if projectRef == "" {
-				return fmt.Errorf("--project-ref is required")
+				projectRef = os.Getenv("SUPABASE_PROJECT_REF")
+			}
+			if projectRef == "" {
+				return fmt.Errorf("--project-ref is required (or set SUPABASE_PROJECT_REF)")
+			}
+			if url == "" {
+				url = os.Getenv("SUPABASE_URL")
+			}
+			if url == "" {
+				url = "https://" + projectRef + ".supabase.co"
+			}
+			if anonKey == "" {
+				anonKey = os.Getenv("SUPABASE_ANON_KEY")
+			}
+			if serviceRoleKey == "" {
+				serviceRoleKey = os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 			}
 			if url == "" {
 				url = "https://" + projectRef + ".supabase.co"
