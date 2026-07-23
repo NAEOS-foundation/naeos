@@ -684,7 +684,3 @@ func newSupabaseStatusCommand() *cobra.Command {
 		},
 	}
 }
-
-
-
-

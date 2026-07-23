@@ -22,12 +22,12 @@ func newMigrationCmd() *cobra.Command {
 }
 
 type migrationStatusRow struct {
-	Name       string `json:"name" yaml:"name"`
-	Driver     string `json:"driver" yaml:"driver"`
-	Database   string `json:"database" yaml:"database"`
-	Version    int    `json:"version" yaml:"version"`
-	AppliedAt  string `json:"applied_at" yaml:"applied_at"`
-	Status     string `json:"status" yaml:"status"`
+	Name      string `json:"name" yaml:"name"`
+	Driver    string `json:"driver" yaml:"driver"`
+	Database  string `json:"database" yaml:"database"`
+	Version   int    `json:"version" yaml:"version"`
+	AppliedAt string `json:"applied_at" yaml:"applied_at"`
+	Status    string `json:"status" yaml:"status"`
 }
 
 func newMigrationStatusCommand() *cobra.Command {

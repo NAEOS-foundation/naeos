@@ -201,7 +201,7 @@ Example:
 	}
 
 	cmd.Flags().StringVarP(&output, "output", "o", "naeos.yaml", "path for the generated config file")
-  cmd.Flags().StringVarP(&template, "template", "t", "basic", "template to use (basic, microservices, rest-api, fullstack, kubernetes, supabase, hcl)")
+	cmd.Flags().StringVarP(&template, "template", "t", "basic", "template to use (basic, microservices, rest-api, fullstack, kubernetes, supabase, hcl)")
 	cmd.Flags().StringVarP(&projectName, "name", "n", "", "project name (replaces default in template)")
 	cmd.Flags().BoolVar(&listTemplates, "list-templates", false, "list all available templates")
 	return cmd

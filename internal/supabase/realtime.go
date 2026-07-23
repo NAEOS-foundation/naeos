@@ -127,7 +127,7 @@ func (rc *RealtimeClient) Unsubscribe(ch *RealtimeChannel) {
 	}
 	rc.mu.Unlock()
 
-	rc.send(map[string]any{
+	_ = rc.send(map[string]any{
 		"topic":   ch.Topic,
 		"event":   "phx_leave",
 		"payload": map[string]any{},
