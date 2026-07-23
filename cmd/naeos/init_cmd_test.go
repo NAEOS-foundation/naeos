@@ -8,7 +8,7 @@ import (
 )
 
 func TestInitCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init")
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -19,7 +19,7 @@ func TestInitDefaultTemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--output", output)
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -38,7 +38,7 @@ func TestInitMicroservicesTemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--template", "microservices", "--output", output)
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -57,7 +57,7 @@ func TestInitRESTAPITemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--template", "rest-api", "--output", output)
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -76,7 +76,7 @@ func TestInitFullstackTemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--template", "fullstack", "--output", output)
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -95,7 +95,7 @@ func TestInitKubernetesTemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--template", "kubernetes", "--output", output)
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -114,7 +114,7 @@ func TestInitWithProjectName(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--output", output, "--name", "my-app")
 	if err != nil {
 		t.Fatalf("execute init failed: %v", err)
@@ -133,7 +133,7 @@ func TestInitWithProjectName(t *testing.T) {
 }
 
 func TestInitListTemplates(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "init", "--list-templates")
 	if err != nil {
 		t.Fatalf("execute init --list-templates failed: %v", err)
@@ -147,7 +147,7 @@ func TestInitUnknownTemplate(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "config.yaml")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "init", "--template", "nonexistent", "--output", output)
 	if err == nil {
 		t.Fatal("expected error for unknown template")

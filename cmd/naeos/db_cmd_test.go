@@ -12,7 +12,7 @@ func dbTestName(prefix string) string {
 }
 
 func TestDBCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db")
 	if err != nil {
 		t.Fatalf("execute db failed: %v", err)
@@ -21,7 +21,7 @@ func TestDBCommandShowsHelp(t *testing.T) {
 
 func TestDBConnectSQLite(t *testing.T) {
 	name := dbTestName("testdb")
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "db", "connect", "--type", "sqlite", "--name", name, "--database", "test.db", "--user", "testuser")
 	if err != nil {
 		t.Fatalf("db connect failed: %v", err)
@@ -34,7 +34,7 @@ func TestDBConnectSQLite(t *testing.T) {
 
 func TestDBDisconnect(t *testing.T) {
 	name := dbTestName("disconndb")
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db", "connect", "--type", "sqlite", "--name", name, "--database", "test.db", "--user", "testuser")
 	if err != nil {
 		t.Fatalf("db connect failed: %v", err)
@@ -51,7 +51,7 @@ func TestDBDisconnect(t *testing.T) {
 
 func TestDBStatus(t *testing.T) {
 	name := dbTestName("statusdb")
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db", "connect", "--type", "sqlite", "--name", name, "--database", ":memory:", "--user", "testuser")
 	if err != nil {
 		t.Fatalf("db connect failed: %v", err)
@@ -68,7 +68,7 @@ func TestDBStatus(t *testing.T) {
 }
 
 func TestDBConnectInvalidType(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db", "connect", "--type", "invalid", "--name", "faildb")
 	if err == nil {
 		t.Fatal("expected error for invalid database type")
@@ -76,7 +76,7 @@ func TestDBConnectInvalidType(t *testing.T) {
 }
 
 func TestDBMigrateNoSavedConnection(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db", "migrate", "--name", "nonexistent")
 	if err == nil {
 		t.Fatal("expected error for nonexistent connection")
@@ -85,7 +85,7 @@ func TestDBMigrateNoSavedConnection(t *testing.T) {
 
 func TestDBList(t *testing.T) {
 	name := dbTestName("listdb")
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "db", "connect", "--type", "sqlite", "--name", name, "--database", "list.db", "--user", "testuser")
 	if err != nil {
 		t.Fatalf("db connect failed: %v", err)

@@ -6,7 +6,7 @@ import (
 )
 
 func TestArtifactsListUsesCommandOutput(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "artifacts", "list")
 	if err != nil {
 		t.Fatalf("execute artifacts list failed: %v", err)

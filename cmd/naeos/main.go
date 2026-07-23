@@ -21,12 +21,12 @@ func main() {
 }
 
 func run(args []string) error {
-	root := newRootCommand()
+	root := NewRootCommand()
 	root.SetArgs(args)
 	return root.Execute()
 }
 
-func newRootCommand() *cobra.Command {
+func NewRootCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "naeos",
 		Short:         "NAEOS CLI - Declarative Engineering Runtime",
@@ -110,5 +110,6 @@ func newRootCommand() *cobra.Command {
 	root.AddCommand(newBuildCommand())
 	root.AddCommand(newComplianceCommand())
 	root.AddCommand(newSchemaCommand())
+	root.AddCommand(newCLIDocsGenCommand())
 	return root
 }

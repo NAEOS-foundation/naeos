@@ -8,7 +8,7 @@ import (
 )
 
 func TestAICommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "ai")
 	if err != nil {
 		t.Fatalf("execute ai failed: %v", err)
@@ -16,7 +16,7 @@ func TestAICommandShowsHelp(t *testing.T) {
 }
 
 func TestAISuggestRequiresInputFile(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "ai", "suggest")
 	if err == nil {
 		t.Fatal("expected error when --input-file is missing")
@@ -30,7 +30,7 @@ func TestAISuggestWithFile(t *testing.T) {
 		t.Fatalf("write spec: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "ai", "suggest", "--input-file", specPath)
 	if err != nil {
 		t.Fatalf("execute ai suggest failed: %v", err)
@@ -41,7 +41,7 @@ func TestAISuggestWithFile(t *testing.T) {
 }
 
 func TestAIExplainRequiresArgs(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "ai", "explain")
 	if err == nil {
 		t.Fatal("expected error when no topic is provided")
@@ -49,7 +49,7 @@ func TestAIExplainRequiresArgs(t *testing.T) {
 }
 
 func TestAIExplainPipeline(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "ai", "explain", "pipeline")
 	if err != nil {
 		t.Fatalf("execute ai explain failed: %v", err)
@@ -60,7 +60,7 @@ func TestAIExplainPipeline(t *testing.T) {
 }
 
 func TestAIExplainNEIR(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "ai", "explain", "neir")
 	if err != nil {
 		t.Fatalf("execute ai explain neir failed: %v", err)

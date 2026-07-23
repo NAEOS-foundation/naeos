@@ -94,6 +94,8 @@ func (s *ConnectionStore) Remove(name string) error {
 			return s.save()
 		}
 	}
+
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q", name))
 	return naeoserr.Wrap(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q not found", name), nil)
 }
 

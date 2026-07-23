@@ -47,7 +47,7 @@ func TestDoctorQuickFlag(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "doctor", "--config", configPath, "--quick")
 	if err != nil {
 		t.Fatalf("execute doctor --quick failed: %v", err)
