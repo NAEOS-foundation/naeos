@@ -48,7 +48,7 @@ jobs:
           hugo-version: '0.145.0'
           extended: false
       - name: Build
-        run: hugo --minify
+        run: hugo --minify --baseURL https://naeos-foundation.github.io/naeos/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
