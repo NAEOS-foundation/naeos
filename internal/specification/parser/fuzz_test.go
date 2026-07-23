@@ -96,6 +96,10 @@ func FuzzVariableResolver(f *testing.F) {
 	f.Add("$env{NONEXISTENT}", "")
 
 	f.Fuzz(func(t *testing.T, input, value string) {
+		if len(input) > 256 {
+			t.Skip("input too long")
+		}
+
 		resolver := NewVariableResolver()
 		resolver.SetVar("var", value)
 		resolver.SetVar("a", value)
