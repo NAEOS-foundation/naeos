@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-07-23
+
+### Fixed
+- **Broker merge artifacts** — removed duplicate `return` statements in `factory.go` and `store.go` (unreachable code).
+- **Marketplace test URL** — `TestRemoteRegistryInstall` now uses correct base URL without double path segment.
+- **`.golangci.yml` merge artifacts** — removed leftover `typecheck` linter (v1-only) and duplicate config keys.
+- **Fuzz test ambiguity** — `FuzzParse` regex narrowed to `^FuzzParse$` to avoid matching `FuzzParseYAMLNode`.
+- **Fuzz test timeout** — `FuzzVariableResolver` input length limited to 256 bytes to prevent regex-engine hangs.
+- **Priority test race** — `TestSubmitPriorityOrder` moved `Start()` after all task submissions to guarantee priority ordering.
+- **Demo lint suppression** — added `//nolint:errcheck` to `cmd/naeos-demo/main.go`.
+- **Scaffold GOSEK lint** — `internal/pluginsdk/scaffold/scaffold.go:272` file permission exclusion added.
+
+### Changed
+- **CI: golangci-lint-action** — upgraded from `@v6` (v1.64.8) to `@v7` with `version: v2.12.2` for golangci-lint v2 config compatibility.
+- **CI: lint exclusions** — expanded `.golangci.yml` exclusion rules for test files (errorlint, noctx, unparam) and tool dirs (`cmd/gentest/`, `cmd/neir-schema-gen/`, `cmd/naeos-demo/`).
+- **Code formatting** — `gofmt -w` applied to 16 files across the codebase.
+- **Website OG image generation** — extracted inline `node -e` script to `site/scripts/og.mjs` to fix shell quoting issues.
+- **Website deployment** — added `--baseURL` override for GitHub Pages compatibility.
+
+### Added
+- **Gentest tool** (`cmd/gentest/`) — test skeleton generator for rapid test scaffolding.
+- **CLI docsgen** — hidden `docsgen` command to auto-generate CLI reference documentation.
+- **Website deploy** — GitHub Pages deployment via `website.yml` workflow (build + deploy jobs).
+
 ## [2.1.0] - 2026-07-20
 
 ### Added
