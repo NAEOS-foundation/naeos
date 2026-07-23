@@ -127,6 +127,37 @@ func TestSQLite(t *testing.T) {
 	}
 }
 
+func TestSupabase(t *testing.T) {
+	db := NewSupabase()
+
+	if db.Name() != "supabase" {
+		t.Errorf("expected name 'supabase', got %s", db.Name())
+	}
+
+	err := db.Connect(&Config{Host: "localhost", Port: 5432})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, err := db.Exec("INSERT INTO users (name) VALUES ($1)", "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.RowsAffected != 1 {
+		t.Errorf("expected 1 row affected, got %d", result.RowsAffected)
+	}
+
+	err = db.Close()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestTransaction(t *testing.T) {
 	db := NewPostgreSQL()
 	db.Connect(&Config{})
@@ -161,10 +192,12 @@ func TestManager(t *testing.T) {
 	pg := NewPostgreSQL()
 	mysql := NewMySQL()
 	sqlite := NewSQLite()
+	supabase := NewSupabase()
 
 	m.Register("pg", pg)
 	m.Register("mysql", mysql)
 	m.Register("sqlite", sqlite)
+	m.Register("supabase", supabase)
 
 	got, ok := m.Get("pg")
 	if !ok {
@@ -175,8 +208,8 @@ func TestManager(t *testing.T) {
 	}
 
 	names := m.List()
-	if len(names) != 3 {
-		t.Errorf("expected 3 databases, got %d", len(names))
+	if len(names) != 4 {
+		t.Errorf("expected 4 databases, got %d", len(names))
 	}
 
 	m.Remove("pg")
@@ -328,6 +361,7 @@ func TestFactory(t *testing.T) {
 		{"mock-postgresql", "postgresql"},
 		{"mock-mysql", "mysql"},
 		{"mock-sqlite", "sqlite"},
+		{"mock-supabase", "supabase"},
 		{"unknown", ""},
 	}
 

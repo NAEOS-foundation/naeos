@@ -57,6 +57,23 @@ jobs:
           file: ./coverage.out
           fail_ci_if_error: false
 
+  supabase-integration:
+    name: Supabase Integration
+    runs-on: ubuntu-latest
+    if: github.repository == 'NAEOS-foundation/naeos' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache: true
+      - name: Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
+
   fuzz:
     name: Fuzz
     runs-on: ubuntu-latest

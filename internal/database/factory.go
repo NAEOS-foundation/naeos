@@ -21,6 +21,10 @@ func New(driver string) Database {
 		return NewMySQL()
 	case "mock-sqlite":
 		return NewSQLite()
+	case "supabase":
+		return NewRealSupabase()
+	case "mock-supabase":
+		return NewSupabase()
 	default:
 		return nil
 	}

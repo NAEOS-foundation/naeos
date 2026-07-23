@@ -429,6 +429,65 @@ func (s *SQLite) RollbackContext(_ context.Context, version int) error {
 
 func (s *SQLite) MigrationVersion() int { return s.migrationVersion() }
 
+// Supabase Adapter
+
+type Supabase struct {
+	BaseDatabase
+}
+
+func NewSupabase() *Supabase {
+	return &Supabase{
+		BaseDatabase: BaseDatabase{
+			tables: make(map[string][]Row),
+		},
+	}
+}
+
+func (s *Supabase) Name() string { return "supabase" }
+
+func (s *Supabase) Connect(config *Config) error { s.connect(config); return nil }
+func (s *Supabase) Close() error                 { s.close(); return nil }
+func (s *Supabase) Ping() error                  { return s.ping() }
+func (s *Supabase) HealthCheck() error           { return s.healthCheck() }
+
+func (s *Supabase) Exec(query string, args ...any) (Result, error) {
+	return s.exec(query, args...)
+}
+func (s *Supabase) ExecContext(_ context.Context, query string, args ...any) (Result, error) {
+	return s.exec(query, args...)
+}
+
+func (s *Supabase) Query(query string, args ...any) ([]Row, error) {
+	return s.query(query, args...)
+}
+func (s *Supabase) QueryContext(_ context.Context, query string, args ...any) ([]Row, error) {
+	return s.query(query, args...)
+}
+
+func (s *Supabase) QueryRow(query string, args ...any) (Row, error) {
+	return s.queryRow(query, args...)
+}
+func (s *Supabase) QueryRowContext(_ context.Context, query string, args ...any) (Row, error) {
+	return s.queryRow(query, args...)
+}
+
+func (s *Supabase) Begin() (Transaction, error)                    { return s.begin() }
+func (s *Supabase) BeginTx(_ context.Context) (Transaction, error) { return s.begin() }
+
+func (s *Supabase) Migrate(migrations []Migration) error {
+	return s.migrate(migrations)
+}
+func (s *Supabase) MigrateContext(_ context.Context, migrations []Migration) error {
+	return s.migrate(migrations)
+}
+
+func (s *Supabase) Rollback(version int) error { return s.rollback(version) }
+func (s *Supabase) RollbackContext(_ context.Context, version int) error {
+	return s.rollback(version)
+}
+
+func (s *Supabase) MigrationVersion() int { return s.migrationVersion() }
+
 // Database Manager
 
 type Manager struct {
