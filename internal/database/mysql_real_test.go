@@ -138,6 +138,7 @@ func TestRealMySQLConnectNoOptionalConfig(t *testing.T) {
 		User:     "test",
 		Password: "test",
 		Database: "test",
+		Timeout:  1 * time.Second,
 	})
 	if err == nil {
 		t.Error("expected error when connecting to unreachable host")
