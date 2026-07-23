@@ -33,13 +33,14 @@ func configDir() string {
 }
 
 type Config struct {
-	ProjectRef    string `json:"project_ref"`
-	URL           string `json:"url"`
-	AnonKey       string `json:"anon_key"`
+	ProjectRef     string `json:"project_ref"`
+	URL            string `json:"url"`
+	AnonKey        string `json:"anon_key"`
 	ServiceRoleKey string `json:"service_role_key"`
-	DBHost        string `json:"db_host"`
-	DBPort        int    `json:"db_port"`
-	DBPassword    string `json:"db_password"`
+	JWKSURL        string `json:"jwks_url"`
+	DBHost         string `json:"db_host"`
+	DBPort         int    `json:"db_port"`
+	DBPassword     string `json:"db_password"`
 }
 
 type Client struct {

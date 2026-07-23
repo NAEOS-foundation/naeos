@@ -49,18 +49,21 @@ func getSupabaseClient() (*supabase.Client, error) {
 // --- init ---
 
 func newSupabaseInitCommand() *cobra.Command {
-	var projectRef, url, anonKey, serviceRoleKey string
+	var projectRef, url, anonKey, serviceRoleKey, jwksURL string
 
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize Supabase project configuration",
-		Long: `Configure a Supabase project. Reads SUPABASE_URL, SUPABASE_ANON_KEY,
-and SUPABASE_SERVICE_ROLE_KEY from environment variables if flags are not set.
+		Long: `Configure a Supabase project. Reads from environment variables if flags are not set.
+
+Env vars:
+  SUPABASE_PROJECT_REF, SUPABASE_URL, SUPABASE_PUBLISHABEL_KEY (anon),
+  SUPABASE_SECRET_KEY (service role), SUPABASE_JWKS_URL
 
 Examples:
   naeos supabase init --project-ref abcdefg
   naeos supabase init --project-ref abcdefg --anon-key "eyJ..." --service-role-key "eyJ..."
-  SUPABASE_URL=https://abc.supabase.co SUPABASE_ANON_KEY=eyJ... naeos supabase init --project-ref abc`,
+  SUPABASE_URL=https://abc.supabase.co SUPABASE_PUBLISHABEL_KEY=eyJ... naeos supabase init --project-ref abc`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if projectRef == "" {
@@ -78,18 +81,28 @@ Examples:
 			if anonKey == "" {
 				anonKey = os.Getenv("SUPABASE_ANON_KEY")
 			}
+			if anonKey == "" {
+				anonKey = os.Getenv("SUPABASE_PUBLISHABEL_KEY")
+			}
+			if anonKey == "" {
+				anonKey = os.Getenv("SUPABASE_PUBLISHABLE_KEY")
+			}
 			if serviceRoleKey == "" {
 				serviceRoleKey = os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 			}
-			if url == "" {
-				url = "https://" + projectRef + ".supabase.co"
+			if serviceRoleKey == "" {
+				serviceRoleKey = os.Getenv("SUPABASE_SECRET_KEY")
+			}
+			if jwksURL == "" {
+				jwksURL = os.Getenv("SUPABASE_JWKS_URL")
 			}
 
 			cfg := &supabase.Config{
-				ProjectRef:    projectRef,
-				URL:           url,
-				AnonKey:       anonKey,
+				ProjectRef:     projectRef,
+				URL:            url,
+				AnonKey:        anonKey,
 				ServiceRoleKey: serviceRoleKey,
+				JWKSURL:        jwksURL,
 			}
 
 			if err := supabase.SaveConfig(cfg); err != nil {
@@ -106,6 +119,7 @@ Examples:
 	cmd.Flags().StringVar(&url, "url", "", "Supabase project URL (default: https://<ref>.supabase.co)")
 	cmd.Flags().StringVar(&anonKey, "anon-key", "", "Supabase anon/public key")
 	cmd.Flags().StringVar(&serviceRoleKey, "service-role-key", "", "Supabase service role key")
+	cmd.Flags().StringVar(&jwksURL, "jwks-url", "", "Supabase JWKS URL for JWT verification")
 	_ = cmd.MarkFlagRequired("project-ref")
 	return cmd
 }
@@ -645,6 +659,9 @@ func newSupabaseStatusCommand() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "URL:         %s\n", cfg.URL)
 			fmt.Fprintf(cmd.OutOrStdout(), "Anon key:    %s\n", supabase.MaskKey(cfg.AnonKey))
 			fmt.Fprintf(cmd.OutOrStdout(), "Service key: %s\n", supabase.MaskKey(cfg.ServiceRoleKey))
+			if cfg.JWKSURL != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "JWKS URL:    %s\n", cfg.JWKSURL)
+			}
 
 			if cfg.AnonKey == "" {
 				fmt.Fprintf(cmd.OutOrStdout(), "Status: PARTIAL (anon key not set)\n")

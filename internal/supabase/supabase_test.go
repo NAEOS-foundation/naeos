@@ -9,7 +9,17 @@ import (
 func supabaseEnvConfig() *Config {
 	url := os.Getenv("SUPABASE_URL")
 	anonKey := os.Getenv("SUPABASE_ANON_KEY")
+	if anonKey == "" {
+		anonKey = os.Getenv("SUPABASE_PUBLISHABEL_KEY")
+	}
+	if anonKey == "" {
+		anonKey = os.Getenv("SUPABASE_PUBLISHABLE_KEY")
+	}
 	serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	if serviceKey == "" {
+		serviceKey = os.Getenv("SUPABASE_SECRET_KEY")
+	}
+	jwksURL := os.Getenv("SUPABASE_JWKS_URL")
 	if url == "" || anonKey == "" {
 		return nil
 	}
@@ -17,6 +27,7 @@ func supabaseEnvConfig() *Config {
 		URL:            url,
 		AnonKey:        anonKey,
 		ServiceRoleKey: serviceKey,
+		JWKSURL:        jwksURL,
 	}
 }
 
