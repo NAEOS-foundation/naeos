@@ -344,7 +344,7 @@ The package directory must contain a naeos.yaml manifest with name, version, and
 Example:
   naeos marketplace publish ./my-template
   naeos marketplace publish ./my-plugin --registry https://registry.naeos.dev`,
-		Args:              cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			return nil, cobra.ShellCompDirectiveDefault
 		},

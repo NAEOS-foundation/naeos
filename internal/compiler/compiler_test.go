@@ -117,5 +117,3 @@ func TestResolveLanguages(t *testing.T) {
 		t.Errorf("expected 1 default language, got %d", len(langs))
 	}
 }
-
-

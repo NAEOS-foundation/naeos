@@ -34,6 +34,9 @@ linters:
       - linters:
           - errcheck
           - gosec
+          - errorlint
+          - noctx
+          - unparam
         path: _test\.go
       - linters:
           - errcheck
@@ -42,6 +45,39 @@ linters:
           - staticcheck
           - unused
         path: zz_generated.*
+
+      - linters:
+          - gosec
+          - staticcheck
+          - govet
+          - unparam
+          - unused
+        path: cmd/gentest/
+      - linters:
+          - gosec
+          - staticcheck
+          - govet
+          - unparam
+        path: cmd/neir-schema-gen/
+      - linters:
+          - gosec
+          - govet
+        path: cmd/naeos-demo/
+      - linters:
+          - unparam
+        path: internal/broker/concurrency_test\.go
+      - linters:
+          - unused
+        path: pkg/pipeline/pipeline_test\.go
+      - linters:
+          - unused
+        path: cmd/naeos/cmd_test\.go
+      - linters:
+          - noctx
+        path: internal/schemaregistry/client\.go
+      - linters:
+          - staticcheck
+        path: internal/pluginsdk/scaffold/scaffold\.go
     paths:
       - third_party$
       - builtin$

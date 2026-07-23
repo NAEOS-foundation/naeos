@@ -429,9 +429,9 @@ type artifactRecorder struct {
 	artifacts []string
 }
 
-func (r *artifactRecorder) OnPipelineStart(pipelineID string) {}
+func (r *artifactRecorder) OnPipelineStart(pipelineID string)                        {}
 func (r *artifactRecorder) OnPipelineComplete(pid string, artifacts int, dur string) {}
-func (r *artifactRecorder) OnPipelineFailed(pid, errMsg string) {}
+func (r *artifactRecorder) OnPipelineFailed(pid, errMsg string)                      {}
 func (r *artifactRecorder) OnArtifactGenerated(name, path string) {
 	r.artifacts = append(r.artifacts, name)
 }
@@ -472,7 +472,7 @@ type lifecycleRecorder struct {
 	complete bool
 }
 
-func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)          { l.started = true }
+func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)              { l.started = true }
 func (l *lifecycleRecorder) OnPipelineComplete(pid string, a int, d string) { l.complete = true }
-func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)        {}
-func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)      {}
+func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)            {}
+func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)          {}

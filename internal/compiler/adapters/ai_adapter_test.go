@@ -147,5 +147,3 @@ func TestBuildNEIRContextWithNilFields(t *testing.T) {
 		t.Error("should not contain Testing for nil testing")
 	}
 }
-
-

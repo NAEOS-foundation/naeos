@@ -425,10 +425,10 @@ func TestRealSQLiteRollbackWithInvalidDownSQL(t *testing.T) {
 func TestRealSQLiteConnectAllConfigOptions(t *testing.T) {
 	db := NewRealSQLite()
 	err := db.Connect(&Config{
-		Database:       ":memory:",
-		MaxOpenConns:   10,
-		MaxIdleConns:   5,
-		Timeout:        5 * time.Second,
+		Database:        ":memory:",
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		Timeout:         5 * time.Second,
 		ConnMaxLifetime: 10 * time.Minute,
 		ConnMaxIdleTime: 5 * time.Minute,
 	})

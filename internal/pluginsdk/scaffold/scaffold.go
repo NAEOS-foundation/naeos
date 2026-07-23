@@ -7,12 +7,12 @@ import (
 )
 
 type Files struct {
-	Dir      string
-	Module   string
-	Name     string
-	Author   string
-	Desc     string
-	UseWASM  bool
+	Dir     string
+	Module  string
+	Name    string
+	Author  string
+	Desc    string
+	UseWASM bool
 }
 
 func (f Files) goMod() string {
@@ -257,14 +257,14 @@ func (f Files) WriteAll() error {
 	}
 
 	files := map[string]string{
-		"naeos.yaml":             f.naeosYAML(),
-		"plugin.go":              f.pluginGo(),
-		"plugin_test.go":         f.pluginTestGo(),
-		"main.go":                f.wasmMainGo(),
-		"Makefile":               f.makefile(),
+		"naeos.yaml":               f.naeosYAML(),
+		"plugin.go":                f.pluginGo(),
+		"plugin_test.go":           f.pluginTestGo(),
+		"main.go":                  f.wasmMainGo(),
+		"Makefile":                 f.makefile(),
 		".github/workflows/ci.yml": f.ciYML(),
-		"README.md":              f.readme(),
-		"go.mod":                 f.goMod(),
+		"README.md":                f.readme(),
+		"go.mod":                   f.goMod(),
 	}
 
 	for path, content := range files {

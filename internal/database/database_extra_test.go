@@ -115,7 +115,7 @@ func TestLoggingDatabaseAllMethods(t *testing.T) {
 	inner.Connect(&Config{Host: "h", Port: 1, User: "u", Database: ":memory:"})
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-ldb := NewLoggingDatabase(inner, logger)
+	ldb := NewLoggingDatabase(inner, logger)
 
 	if ldb.Name() != "sqlite" {
 		t.Errorf("expected 'sqlite', got %q", ldb.Name())

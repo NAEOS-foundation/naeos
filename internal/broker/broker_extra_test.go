@@ -297,13 +297,15 @@ func TestMetricsBrokerSubscribeUnsubscribe(t *testing.T) {
 
 type failingBroker struct{}
 
-func (f *failingBroker) Name() string                                           { return "failing" }
-func (f *failingBroker) Connect(config *Config) error                           { return nil }
-func (f *failingBroker) Close() error                                           { return nil }
-func (f *failingBroker) Ping() error                                            { return nil }
-func (f *failingBroker) Publish(channel string, msg *Message) error             { return fmt.Errorf("fail") }
-func (f *failingBroker) Subscribe(channel string, handler MessageHandler) error { return fmt.Errorf("fail") }
-func (f *failingBroker) Unsubscribe(channel string) error                       { return fmt.Errorf("fail") }
+func (f *failingBroker) Name() string                               { return "failing" }
+func (f *failingBroker) Connect(config *Config) error               { return nil }
+func (f *failingBroker) Close() error                               { return nil }
+func (f *failingBroker) Ping() error                                { return nil }
+func (f *failingBroker) Publish(channel string, msg *Message) error { return fmt.Errorf("fail") }
+func (f *failingBroker) Subscribe(channel string, handler MessageHandler) error {
+	return fmt.Errorf("fail")
+}
+func (f *failingBroker) Unsubscribe(channel string) error { return fmt.Errorf("fail") }
 
 func TestMetricsBrokerSubscribeFail(t *testing.T) {
 	t.Parallel()
@@ -353,10 +355,10 @@ type retryBroker struct {
 	attempts  *int
 }
 
-func (r *retryBroker) Name() string                                           { return "retry" }
-func (r *retryBroker) Connect(config *Config) error                           { return nil }
-func (r *retryBroker) Close() error                                           { return nil }
-func (r *retryBroker) Ping() error                                            { return nil }
+func (r *retryBroker) Name() string                 { return "retry" }
+func (r *retryBroker) Connect(config *Config) error { return nil }
+func (r *retryBroker) Close() error                 { return nil }
+func (r *retryBroker) Ping() error                  { return nil }
 func (r *retryBroker) Publish(channel string, msg *Message) error {
 	*r.attempts++
 	if *r.attempts <= r.failUntil {

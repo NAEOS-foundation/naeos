@@ -259,5 +259,3 @@ func TestDeprecatedField(t *testing.T) {
 		t.Error("expected deprecation warning")
 	}
 }
-
-

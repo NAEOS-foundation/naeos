@@ -146,5 +146,3 @@ func TestGenerateNode(t *testing.T) {
 		}
 	}
 }
-
-

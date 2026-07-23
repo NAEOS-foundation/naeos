@@ -7,8 +7,6 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
-
-
 // --- DocGenerator tests ---
 
 func TestNewGenerator(t *testing.T) {
@@ -38,7 +36,7 @@ func TestGenerateAPIDocs(t *testing.T) {
 	if content == "" {
 		t.Error("expected non-empty content")
 	}
-		if !testutil.Contains(content, "/health") {
+	if !testutil.Contains(content, "/health") {
 		t.Error("expected /health endpoint in docs")
 	}
 }

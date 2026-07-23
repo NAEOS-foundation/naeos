@@ -623,5 +623,3 @@ func TestGenerateForLanguageWithServices(t *testing.T) {
 		t.Error("expected module Go file")
 	}
 }
-
-

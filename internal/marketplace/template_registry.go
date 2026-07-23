@@ -17,17 +17,17 @@ import (
 const DefaultTemplateRegistryURL = "https://naeos.dev/templates/registry.json"
 
 type TemplateEntry struct {
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Description  string   `json:"description"`
-	Author       string   `json:"author"`
-	Tags         []string `json:"tags"`
-	RepoURL      string   `json:"repo_url"`
-	DownloadURL  string   `json:"download_url"`
-	Languages    []string `json:"languages"`
-	Frameworks   []string `json:"frameworks"`
-	Downloads    int      `json:"downloads"`
-	UpdatedAt    string   `json:"updated_at"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Description string   `json:"description"`
+	Author      string   `json:"author"`
+	Tags        []string `json:"tags"`
+	RepoURL     string   `json:"repo_url"`
+	DownloadURL string   `json:"download_url"`
+	Languages   []string `json:"languages"`
+	Frameworks  []string `json:"frameworks"`
+	Downloads   int      `json:"downloads"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 type TemplateList struct {
@@ -55,7 +55,7 @@ func NewRemoteTemplateRegistry(baseURL string) *RemoteTemplateRegistry {
 		baseURL = DefaultTemplateRegistryURL
 	}
 	return &RemoteTemplateRegistry{
-		baseURL: baseURL,
+		baseURL:    baseURL,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
