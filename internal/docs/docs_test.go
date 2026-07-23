@@ -3,11 +3,11 @@ package docs
 import (
 	"strings"
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
-}
+
 
 // --- DocGenerator tests ---
 
@@ -38,7 +38,7 @@ func TestGenerateAPIDocs(t *testing.T) {
 	if content == "" {
 		t.Error("expected non-empty content")
 	}
-	if !contains(content, "/health") {
+		if !testutil.Contains(content, "/health") {
 		t.Error("expected /health endpoint in docs")
 	}
 }
@@ -46,10 +46,10 @@ func TestGenerateAPIDocs(t *testing.T) {
 func TestGenerateAPIDocsEmpty(t *testing.T) {
 	gen := NewGenerator("test-project", nil)
 	content := gen.GenerateAPIDocs([]Endpoint{})
-	if !contains(content, "API Documentation") {
+	if !testutil.Contains(content, "API Documentation") {
 		t.Error("expected header even with no endpoints")
 	}
-	if !contains(content, "| Method |") {
+	if !testutil.Contains(content, "| Method |") {
 		t.Error("expected table header")
 	}
 }
@@ -59,7 +59,7 @@ func TestGenerateAPIDocsProjectName(t *testing.T) {
 	content := gen.GenerateAPIDocs([]Endpoint{
 		{Method: "GET", Path: "/", Description: "root"},
 	})
-	if !contains(content, "# my-api API Documentation") {
+	if !testutil.Contains(content, "# my-api API Documentation") {
 		t.Error("expected project name in header")
 	}
 }
@@ -73,7 +73,7 @@ func TestGenerateArchitectureDiagram(t *testing.T) {
 	if content == "" {
 		t.Error("expected non-empty content")
 	}
-	if !contains(content, "mermaid") {
+	if !testutil.Contains(content, "mermaid") {
 		t.Error("expected mermaid diagram")
 	}
 }
@@ -81,7 +81,7 @@ func TestGenerateArchitectureDiagram(t *testing.T) {
 func TestGenerateArchitectureDiagramNoServices(t *testing.T) {
 	gen := NewGenerator("proj", nil)
 	content := gen.GenerateArchitectureDiagram([]string{}, []string{"core"})
-	if !contains(content, "core") {
+	if !testutil.Contains(content, "core") {
 		t.Error("expected core module in diagram")
 	}
 }
@@ -89,7 +89,7 @@ func TestGenerateArchitectureDiagramNoServices(t *testing.T) {
 func TestGenerateArchitectureDiagramNoModules(t *testing.T) {
 	gen := NewGenerator("proj", nil)
 	content := gen.GenerateArchitectureDiagram([]string{"api"}, []string{})
-	if !contains(content, "api") {
+	if !testutil.Contains(content, "api") {
 		t.Error("expected api service in diagram")
 	}
 }
@@ -102,7 +102,7 @@ func TestGenerateProjectDocs(t *testing.T) {
 	if content == "" {
 		t.Error("expected non-empty content")
 	}
-	if !contains(content, "test-project") {
+	if !testutil.Contains(content, "test-project") {
 		t.Error("expected project name in docs")
 	}
 }
@@ -113,7 +113,7 @@ func TestGenerateProjectDocsMultipleArtifacts(t *testing.T) {
 		{Path: "b.go", Size: 200, Type: "go"},
 	})
 	content := gen.GenerateProjectDocs()
-	if !contains(content, "a.go") || !contains(content, "b.go") {
+	if !testutil.Contains(content, "a.go") || !testutil.Contains(content, "b.go") {
 		t.Error("expected both artifacts in docs")
 	}
 }
@@ -121,7 +121,7 @@ func TestGenerateProjectDocsMultipleArtifacts(t *testing.T) {
 func TestGenerateProjectDocsEmpty(t *testing.T) {
 	gen := NewGenerator("proj", nil)
 	content := gen.GenerateProjectDocs()
-	if !contains(content, "Quick Start") {
+	if !testutil.Contains(content, "Quick Start") {
 		t.Error("expected Quick Start section")
 	}
 }
@@ -141,16 +141,16 @@ func TestChangelogGeneratorGenerate(t *testing.T) {
 		},
 	})
 	content := cg.Generate()
-	if !contains(content, "## 1.0.0 (2024-01-15)") {
+	if !testutil.Contains(content, "## 1.0.0 (2024-01-15)") {
 		t.Error("expected version header")
 	}
-	if !contains(content, "### Added") {
+	if !testutil.Contains(content, "### Added") {
 		t.Error("expected Added category")
 	}
-	if !contains(content, "- Initial release") {
+	if !testutil.Contains(content, "- Initial release") {
 		t.Error("expected change item")
 	}
-	if !contains(content, "### Fixed") {
+	if !testutil.Contains(content, "### Fixed") {
 		t.Error("expected Fixed category")
 	}
 }
@@ -206,10 +206,10 @@ func TestChangelogGeneratorMultipleVersions(t *testing.T) {
 		}},
 	})
 	content := cg.Generate()
-	if !contains(content, "1.0.0") || !contains(content, "0.9.0") {
+	if !testutil.Contains(content, "1.0.0") || !testutil.Contains(content, "0.9.0") {
 		t.Error("expected both versions")
 	}
-	if !contains(content, "### Deprecated") {
+	if !testutil.Contains(content, "### Deprecated") {
 		t.Error("expected Deprecated category")
 	}
 }
@@ -219,13 +219,13 @@ func TestChangelogGeneratorMultipleVersions(t *testing.T) {
 func TestContributorGuideGenerateDefault(t *testing.T) {
 	cg := NewContributorGuide("my-app", "")
 	content := cg.Generate()
-	if !contains(content, "# Contributing to my-app") {
+	if !testutil.Contains(content, "# Contributing to my-app") {
 		t.Error("expected title")
 	}
-	if !contains(content, "Fork the repository") {
+	if !testutil.Contains(content, "Fork the repository") {
 		t.Error("expected default getting started section")
 	}
-	if !contains(content, "Code of Conduct") {
+	if !testutil.Contains(content, "Code of Conduct") {
 		t.Error("expected default code of conduct")
 	}
 }
@@ -233,7 +233,7 @@ func TestContributorGuideGenerateDefault(t *testing.T) {
 func TestContributorGuideWithRepoURL(t *testing.T) {
 	cg := NewContributorGuide("app", "https://github.com/org/app")
 	content := cg.Generate()
-	if !contains(content, "https://github.com/org/app") {
+	if !testutil.Contains(content, "https://github.com/org/app") {
 		t.Error("expected repo URL in output")
 	}
 }
@@ -243,16 +243,16 @@ func TestContributorGuideCustomSections(t *testing.T) {
 	cg.AddSection("Prerequisites", "Install Go 1.21+\n")
 	cg.AddSection("Running Tests", "Run `go test ./...`\n")
 	content := cg.Generate()
-	if !contains(content, "## Prerequisites") {
+	if !testutil.Contains(content, "## Prerequisites") {
 		t.Error("expected Prerequisites section")
 	}
-	if !contains(content, "Install Go 1.21+") {
+	if !testutil.Contains(content, "Install Go 1.21+") {
 		t.Error("expected prerequisites content")
 	}
-	if !contains(content, "## Running Tests") {
+	if !testutil.Contains(content, "## Running Tests") {
 		t.Error("expected Running Tests section")
 	}
-	if contains(content, "Fork the repository") {
+	if testutil.Contains(content, "Fork the repository") {
 		t.Error("default sections should not appear when custom sections exist")
 	}
 }
@@ -283,16 +283,16 @@ func TestConfigDocGenerate(t *testing.T) {
 		},
 	})
 	content := cd.Generate()
-	if !contains(content, "# my-app Configuration") {
+	if !testutil.Contains(content, "# my-app Configuration") {
 		t.Error("expected config header")
 	}
-	if !contains(content, "server.port") {
+	if !testutil.Contains(content, "server.port") {
 		t.Error("expected server.port field")
 	}
-	if !contains(content, "database.host") {
+	if !testutil.Contains(content, "database.host") {
 		t.Error("expected database.host field")
 	}
-	if !contains(content, "Environment Variables") {
+	if !testutil.Contains(content, "Environment Variables") {
 		t.Error("expected environment variables section")
 	}
 }
@@ -338,7 +338,7 @@ func TestConfigDocEnvVarMapping(t *testing.T) {
 		"server.port": {Name: "server.port", Type: "int"},
 	})
 	content := cd.Generate()
-	if !contains(content, "SERVER_PORT") {
+	if !testutil.Contains(content, "SERVER_PORT") {
 		t.Error("expected env var SERVER_PORT mapped from server.port")
 	}
 }
@@ -346,7 +346,7 @@ func TestConfigDocEnvVarMapping(t *testing.T) {
 func TestConfigDocEmpty(t *testing.T) {
 	cd := NewConfigDoc("app", map[string]ConfigField{})
 	content := cd.Generate()
-	if !contains(content, "Configuration") {
+	if !testutil.Contains(content, "Configuration") {
 		t.Error("expected header even with no fields")
 	}
 	if cd.FieldCount() != 0 {
@@ -361,13 +361,13 @@ func TestMarkdownSectionRender(t *testing.T) {
 	ms.WriteParagraph("Some text here.")
 	ms.WriteList([]string{"item 1", "item 2"})
 	content := ms.Render()
-	if !contains(content, "## My Title") {
+	if !testutil.Contains(content, "## My Title") {
 		t.Error("expected h2 title")
 	}
-	if !contains(content, "Some text here.") {
+	if !testutil.Contains(content, "Some text here.") {
 		t.Error("expected paragraph content")
 	}
-	if !contains(content, "- item 1") {
+	if !testutil.Contains(content, "- item 1") {
 		t.Error("expected list items")
 	}
 }
@@ -376,10 +376,10 @@ func TestMarkdownSectionWriteCodeBlock(t *testing.T) {
 	ms := NewMarkdownSection("Code", 3)
 	ms.WriteCodeBlock("go", "fmt.Println(\"hello\")")
 	content := ms.Render()
-	if !contains(content, "```go") {
+	if !testutil.Contains(content, "```go") {
 		t.Error("expected go code block")
 	}
-	if !contains(content, "fmt.Println") {
+	if !testutil.Contains(content, "fmt.Println") {
 		t.Error("expected code content")
 	}
 }
@@ -394,10 +394,10 @@ func TestMarkdownSectionWriteTable(t *testing.T) {
 		},
 	)
 	content := ms.Render()
-	if !contains(content, "| Name | Value |") {
+	if !testutil.Contains(content, "| Name | Value |") {
 		t.Error("expected table header")
 	}
-	if !contains(content, "| a | 1 |") {
+	if !testutil.Contains(content, "| a | 1 |") {
 		t.Error("expected table row")
 	}
 }
@@ -407,12 +407,12 @@ func TestMarkdownSectionLevelClamping(t *testing.T) {
 	if ms1.Render() == "" {
 		t.Error("expected non-empty")
 	}
-	if !contains(ms1.Render(), "# ") {
+	if !testutil.Contains(ms1.Render(), "# ") {
 		t.Error("expected level 1 (clamped from 0)")
 	}
 
 	ms2 := NewMarkdownSection("Title", 10)
-	if !contains(ms2.Render(), "###### ") {
+	if !testutil.Contains(ms2.Render(), "###### ") {
 		t.Error("expected level 6 (clamped from 10)")
 	}
 }
@@ -420,10 +420,10 @@ func TestMarkdownSectionLevelClamping(t *testing.T) {
 func TestMarkdownSectionEmptyContent(t *testing.T) {
 	ms := NewMarkdownSection("Empty", 1)
 	content := ms.Render()
-	if !contains(content, "# Empty") {
+	if !testutil.Contains(content, "# Empty") {
 		t.Error("expected title")
 	}
-	if !contains(content, "\n\n") {
+	if !testutil.Contains(content, "\n\n") {
 		t.Error("expected empty content between title and end")
 	}
 }
@@ -439,13 +439,13 @@ func TestMarkdownDocumentRender(t *testing.T) {
 	doc.AddSection(s1)
 	doc.AddSection(s2)
 	content := doc.Render()
-	if !contains(content, "# My Doc") {
+	if !testutil.Contains(content, "# My Doc") {
 		t.Error("expected document title")
 	}
-	if !contains(content, "Welcome.") {
+	if !testutil.Contains(content, "Welcome.") {
 		t.Error("expected intro content")
 	}
-	if !contains(content, "point one") {
+	if !testutil.Contains(content, "point one") {
 		t.Error("expected details content")
 	}
 }
@@ -465,7 +465,7 @@ func TestMarkdownDocumentSectionCount(t *testing.T) {
 func TestMarkdownDocumentEmpty(t *testing.T) {
 	doc := NewMarkdownDocument("Empty Doc")
 	content := doc.Render()
-	if !contains(content, "# Empty Doc") {
+	if !testutil.Contains(content, "# Empty Doc") {
 		t.Error("expected title")
 	}
 }
@@ -475,13 +475,13 @@ func TestMarkdownDocumentEmpty(t *testing.T) {
 func TestReadmeGeneratorBasic(t *testing.T) {
 	rg := NewReadmeGenerator("my-app", "A great app")
 	content := rg.Generate()
-	if !contains(content, "# my-app") {
+	if !testutil.Contains(content, "# my-app") {
 		t.Error("expected title")
 	}
-	if !contains(content, "> A great app") {
+	if !testutil.Contains(content, "> A great app") {
 		t.Error("expected description")
 	}
-	if !contains(content, "## Features") {
+	if !testutil.Contains(content, "## Features") {
 		t.Error("expected features section")
 	}
 }
@@ -490,10 +490,10 @@ func TestReadmeGeneratorWithRepoURL(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc").
 		WithRepoURL("https://github.com/org/app")
 	content := rg.Generate()
-	if !contains(content, "CONTRIBUTING.md") {
+	if !testutil.Contains(content, "CONTRIBUTING.md") {
 		t.Error("expected contributing link")
 	}
-	if !contains(content, "badge") || !contains(content, "shields.io") {
+	if !testutil.Contains(content, "badge") || !testutil.Contains(content, "shields.io") {
 		t.Error("expected badges")
 	}
 }
@@ -502,7 +502,7 @@ func TestReadmeGeneratorWithLicense(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc").
 		WithLicense("MIT")
 	content := rg.Generate()
-	if !contains(content, "**License:** MIT") {
+	if !testutil.Contains(content, "**License:** MIT") {
 		t.Error("expected license")
 	}
 }
@@ -512,7 +512,7 @@ func TestReadmeGeneratorWithLicenseAndRepo(t *testing.T) {
 		WithRepoURL("https://github.com/org/app").
 		WithLicense("MIT")
 	content := rg.Generate()
-	if !contains(content, "license-MIT") {
+	if !testutil.Contains(content, "license-MIT") {
 		t.Error("expected license badge")
 	}
 }
@@ -522,16 +522,16 @@ func TestReadmeGeneratorWithInstallAndUsage(t *testing.T) {
 		WithInstall("go install github.com/org/app@latest").
 		WithUsage("app serve --port 8080")
 	content := rg.Generate()
-	if !contains(content, "## Installation") {
+	if !testutil.Contains(content, "## Installation") {
 		t.Error("expected installation section")
 	}
-	if !contains(content, "go install") {
+	if !testutil.Contains(content, "go install") {
 		t.Error("expected install command")
 	}
-	if !contains(content, "## Usage") {
+	if !testutil.Contains(content, "## Usage") {
 		t.Error("expected usage section")
 	}
-	if !contains(content, "app serve") {
+	if !testutil.Contains(content, "app serve") {
 		t.Error("expected usage command")
 	}
 }
@@ -540,16 +540,16 @@ func TestReadmeGeneratorWithFeatures(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc").
 		WithFeatures([]string{"Fast", "Secure", "Scalable"})
 	content := rg.Generate()
-	if !contains(content, "- Fast") {
+	if !testutil.Contains(content, "- Fast") {
 		t.Error("expected Fast feature")
 	}
-	if !contains(content, "- Secure") {
+	if !testutil.Contains(content, "- Secure") {
 		t.Error("expected Secure feature")
 	}
-	if !contains(content, "- Scalable") {
+	if !testutil.Contains(content, "- Scalable") {
 		t.Error("expected Scalable feature")
 	}
-	if contains(content, "TODO") {
+	if testutil.Contains(content, "TODO") {
 		t.Error("should not contain TODO when features provided")
 	}
 }
@@ -557,7 +557,7 @@ func TestReadmeGeneratorWithFeatures(t *testing.T) {
 func TestReadmeGeneratorNoFeatures(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc")
 	content := rg.Generate()
-	if !contains(content, "TODO") {
+	if !testutil.Contains(content, "TODO") {
 		t.Error("expected TODO placeholder when no features")
 	}
 }
@@ -565,10 +565,10 @@ func TestReadmeGeneratorNoFeatures(t *testing.T) {
 func TestReadmeGeneratorNoRepoURL(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc")
 	content := rg.Generate()
-	if contains(content, "shields.io") {
+	if testutil.Contains(content, "shields.io") {
 		t.Error("expected no badges without repo URL")
 	}
-	if contains(content, "CONTRIBUTING.md") {
+	if testutil.Contains(content, "CONTRIBUTING.md") {
 		t.Error("expected no contributing link without repo URL")
 	}
 }
@@ -581,19 +581,19 @@ func TestReadmeGeneratorFullBuilder(t *testing.T) {
 		WithUsage("make run").
 		WithFeatures([]string{"Feature A", "Feature B"})
 	content := rg.Generate()
-	if !contains(content, "# full-app") {
+	if !testutil.Contains(content, "# full-app") {
 		t.Error("expected title")
 	}
-	if !contains(content, "make install") {
+	if !testutil.Contains(content, "make install") {
 		t.Error("expected install command")
 	}
-	if !contains(content, "make run") {
+	if !testutil.Contains(content, "make run") {
 		t.Error("expected usage command")
 	}
-	if !contains(content, "Apache-2.0") {
+	if !testutil.Contains(content, "Apache-2.0") {
 		t.Error("expected license")
 	}
-	if !contains(content, "Feature A") {
+	if !testutil.Contains(content, "Feature A") {
 		t.Error("expected feature A")
 	}
 }

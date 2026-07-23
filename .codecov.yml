@@ -1,0 +1,20 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 60%
+        threshold: 2%
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+
+comment:
+  layout: "header, diff, flags, components"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "**/zz_generated*"
+  - "**/*_real.go"
+  - "**/*_stub.go"

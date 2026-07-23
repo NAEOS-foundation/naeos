@@ -9,16 +9,16 @@
       .text-secondary-light { fill: #666666; }
       .text-muted-dark { fill: #555555; }
       .text-muted-light { fill: #999999; }
-      .accent { fill: #00ff88; }
-      .accent-dim { fill: #00cc6a; }
+      .accent { fill: #08d6ff; }
+      .accent-dim { fill: #1ab0fc; }
       .grid-dark { stroke: rgba(255,255,255,0.03); }
       .grid-light { stroke: rgba(0,0,0,0.03); }
       .glow-dark { fill: url(#glow-dark); }
       .glow-light { fill: url(#glow-light); }
       .badge-dark { fill: #1a1a1a; stroke: #333333; }
       .badge-light { fill: #f0f0f0; stroke: #dddddd; }
-      .badge-text-dark { fill: #00ff88; }
-      .badge-text-light { fill: #00cc6a; }
+      .badge-text-dark { fill: #08d6ff; }
+      .badge-text-light { fill: #1ab0fc; }
 
       @media (prefers-color-scheme: light) {
         .theme-aware-bg { fill: #ffffff; }
@@ -28,7 +28,7 @@
         .theme-aware-grid { stroke: rgba(0,0,0,0.03); }
         .theme-aware-glow { fill: url(#glow-light); }
         .theme-aware-badge { fill: #f0f0f0; stroke: #dddddd; }
-        .theme-aware-badge-text { fill: #00cc6a; }
+        .theme-aware-badge-text { fill: #1ab0fc; }
       }
       @media (prefers-color-scheme: dark) {
         .theme-aware-bg { fill: #0a0a0a; }
@@ -38,20 +38,21 @@
         .theme-aware-grid { stroke: rgba(255,255,255,0.03); }
         .theme-aware-glow { fill: url(#glow-dark); }
         .theme-aware-badge { fill: #1a1a1a; stroke: #333333; }
-        .theme-aware-badge-text { fill: #00ff88; }
+        .theme-aware-badge-text { fill: #08d6ff; }
       }
     </style>
     <linearGradient id="glow-dark" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#00ff88" stop-opacity="0.15"/>
-      <stop offset="50%" stop-color="#00ff88" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#08d6ff" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#08d6ff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="glow-light" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#00cc6a" stop-opacity="0.08"/>
-      <stop offset="50%" stop-color="#00cc6a" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#1ab0fc" stop-opacity="0.08"/>
+      <stop offset="50%" stop-color="#1ab0fc" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="accent-grad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#00ff88"/>
-      <stop offset="100%" stop-color="#00cc6a"/>
+    <linearGradient id="accent-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#08d6ff"/>
+      <stop offset="50%" stop-color="#6056f5"/>
+      <stop offset="100%" stop-color="#9333ea"/>
     </linearGradient>
   </defs>
 
@@ -73,14 +74,17 @@
     <line x1="1000" y1="0" x2="1000" y2="630"/>
   </g>
 
-  <!-- Accent hexagon pattern -->
-  <polygon points="100,100 140,80 180,100 180,140 140,160 100,140" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.15"/>
-  <polygon points="180,100 220,80 260,100 260,140 220,160 180,140" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.1"/>
-  <polygon points="260,100 300,80 340,100 340,140 300,160 260,140" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.05"/>
+  <!-- Decorative hex pattern -->
+  <polygon points="100,100 140,80 180,100 180,140 140,160 100,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.15"/>
+  <polygon points="180,100 220,80 260,100 260,140 220,160 180,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.1"/>
+  <polygon points="260,100 300,80 340,100 340,140 300,160 260,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.05"/>
 
-  <!-- Brand mark (N icon) -->
-  <circle cx="120" cy="315" r="60" fill="none" stroke="url(#accent-grad)" stroke-width="4" opacity="0.3"/>
-  <text x="100" y="335" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="52" font-weight="800" fill="url(#accent-grad)">N</text>
+  <!-- Brand N mark icon -->
+  <g fill="url(#accent-grad)">
+    <polygon points="106,282 124,282 124,348 106,348"/>
+    <polygon points="148,282 166,282 166,348 148,348"/>
+    <polygon points="106,282 124,282 166,348 148,348"/>
+  </g>
 
   <!-- Main title -->
   <text x="200" y="260" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="96" font-weight="800" class="theme-aware-text-primary" letter-spacing="-2">NAEOS</text>
@@ -99,16 +103,16 @@
   <text class="theme-aware-badge-text" x="280" y="424" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600" text-anchor="middle">v2.1.0</text>
 
   <!-- Right side decorative elements -->
-  <circle cx="1050" cy="180" r="80" fill="none" stroke="#00ff88" stroke-width="2" opacity="0.08"/>
-  <circle cx="1050" cy="180" r="120" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.05"/>
-  <circle cx="1050" cy="450" r="60" fill="none" stroke="#00ff88" stroke-width="2" opacity="0.06"/>
-  <rect x="920" y="400" width="160" height="3" rx="1.5" fill="#00ff88" opacity="0.2"/>
-  <rect x="920" y="410" width="100" height="3" rx="1.5" fill="#00ff88" opacity="0.15"/>
-  <rect x="920" y="420" width="130" height="3" rx="1.5" fill="#00ff88" opacity="0.1"/>
+  <circle cx="1050" cy="180" r="80" fill="none" stroke="#08d6ff" stroke-width="2" opacity="0.08"/>
+  <circle cx="1050" cy="180" r="120" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.05"/>
+  <circle cx="1050" cy="450" r="60" fill="none" stroke="#08d6ff" stroke-width="2" opacity="0.06"/>
+  <rect x="920" y="400" width="160" height="3" rx="1.5" fill="#9333ea" opacity="0.2"/>
+  <rect x="920" y="410" width="100" height="3" rx="1.5" fill="#6056f5" opacity="0.15"/>
+  <rect x="920" y="420" width="130" height="3" rx="1.5" fill="#08d6ff" opacity="0.1"/>
 
   <!-- Circuit board traces -->
-  <path d="M920 315 h40 v-40 h60" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.15"/>
-  <path d="M940 315 h20 v60 h80" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.1"/>
-  <circle cx="1020" cy="275" r="3" fill="#00ff88" opacity="0.2"/>
-  <circle cx="1040" cy="375" r="3" fill="#00ff88" opacity="0.2"/>
+  <path d="M920 315 h40 v-40 h60" fill="none" stroke="#08d6ff" stroke-width="1.5" opacity="0.15"/>
+  <path d="M940 315 h20 v60 h80" fill="none" stroke="#9333ea" stroke-width="1.5" opacity="0.1"/>
+  <circle cx="1020" cy="275" r="3" fill="#08d6ff" opacity="0.2"/>
+  <circle cx="1040" cy="375" r="3" fill="#9333ea" opacity="0.2"/>
 </svg>

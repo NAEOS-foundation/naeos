@@ -12,6 +12,7 @@ import (
 )
 
 func TestGenerateForNEIR_Nil(t *testing.T) {
+	t.Parallel()
 	artifacts, err := GenerateForNEIR(nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -22,6 +23,7 @@ func TestGenerateForNEIR_Nil(t *testing.T) {
 }
 
 func TestGenerateForNEIR_EmptyNEIR(t *testing.T) {
+	t.Parallel()
 	neir := &model.NEIR{}
 	artifacts, err := GenerateForNEIR(neir)
 	if err != nil {
@@ -33,6 +35,7 @@ func TestGenerateForNEIR_EmptyNEIR(t *testing.T) {
 }
 
 func TestGenerateForNEIR_WithGeneration(t *testing.T) {
+	t.Parallel()
 	neir := &model.NEIR{
 		Project: &project.Project{Name: "test-proj"},
 		Modules: []module.Module{
@@ -55,6 +58,7 @@ func TestGenerateForNEIR_WithGeneration(t *testing.T) {
 }
 
 func TestGenerateForNEIR_UnknownLanguageSkipped(t *testing.T) {
+	t.Parallel()
 	neir := &model.NEIR{
 		Project: &project.Project{Name: "test-proj"},
 		Modules: []module.Module{
@@ -74,6 +78,7 @@ func TestGenerateForNEIR_UnknownLanguageSkipped(t *testing.T) {
 }
 
 func TestResolveLanguages_Empty(t *testing.T) {
+	t.Parallel()
 	neir := &model.NEIR{}
 	langs := resolveLanguages(neir)
 	if len(langs) != 1 {
@@ -85,6 +90,7 @@ func TestResolveLanguages_Empty(t *testing.T) {
 }
 
 func TestResolveLanguages_FromGeneration(t *testing.T) {
+	t.Parallel()
 	neir := &model.NEIR{
 		Generation: &generation.GenerationConfig{
 			Languages: []language.Language{language.LanguagePython, language.LanguageRust},
@@ -100,6 +106,7 @@ func TestResolveLanguages_FromGeneration(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Parallel()
 	all := All()
 	if len(all) == 0 {
 		t.Fatal("expected registered adapters, got none")

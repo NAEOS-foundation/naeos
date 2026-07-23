@@ -6,6 +6,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
 func TestNewAICompilerAdapter(t *testing.T) {
@@ -116,13 +117,13 @@ func TestBuildNEIRContextProjectOnly(t *testing.T) {
 		},
 	}
 	ctx := buildNEIRContext(neir)
-	if !contains(ctx, "test-proj") {
+	if !testutil.Contains(ctx, "test-proj") {
 		t.Error("expected project name in context")
 	}
-	if !contains(ctx, "A test") {
+	if !testutil.Contains(ctx, "A test") {
 		t.Error("expected project description")
 	}
-	if !contains(ctx, "1.0.0") {
+	if !testutil.Contains(ctx, "1.0.0") {
 		t.Error("expected project version")
 	}
 }
@@ -133,25 +134,18 @@ func TestBuildNEIRContextWithNilFields(t *testing.T) {
 		Project: &project.Project{Name: "test"},
 	}
 	ctx := buildNEIRContext(neir)
-	if !contains(ctx, "test") {
+	if !testutil.Contains(ctx, "test") {
 		t.Error("expected project name")
 	}
-	if contains(ctx, "Security") {
+	if testutil.Contains(ctx, "Security") {
 		t.Error("should not contain Security for nil security")
 	}
-	if contains(ctx, "Deployment") {
+	if testutil.Contains(ctx, "Deployment") {
 		t.Error("should not contain Deployment for nil deployment")
 	}
-	if contains(ctx, "Testing") {
+	if testutil.Contains(ctx, "Testing") {
 		t.Error("should not contain Testing for nil testing")
 	}
 }
 
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
+

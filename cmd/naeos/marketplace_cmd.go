@@ -27,7 +27,6 @@ Example:
   naeos marketplace plugin list`,
 	}
 
-	// Template commands
 	var searchOutputFormat string
 	searchCmd := &cobra.Command{
 		Use:   "search [query]",
@@ -87,6 +86,18 @@ Example:
 		Use:   "install [name]",
 		Short: "Install a template",
 		Args:  cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			client := marketplace.NewClient(cacheDir)
+			results, err := client.Search(marketplace.SearchFilter{Query: toComplete, Limit: 20})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			var names []string
+			for _, r := range results {
+				names = append(names, r.Name+"\t"+r.Description)
+			}
+			return names, cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := marketplace.NewClient(cacheDir)
 			if err := client.Install(args[0], "."); err != nil {
@@ -97,7 +108,6 @@ Example:
 		},
 	}
 
-	// Profile commands
 	profileCmd := &cobra.Command{
 		Use:   "profile",
 		Short: "Manage marketplace profiles",
@@ -141,6 +151,20 @@ Example:
 		Use:   "download [name]",
 		Short: "Download a profile",
 		Args:  cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			pm := marketplace.NewProfileMarketplace(cacheDir)
+			profiles, err := pm.List()
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			var names []string
+			for _, p := range profiles {
+				if strings.HasPrefix(p.Name, toComplete) {
+					names = append(names, p.Name+"\t"+p.Description)
+				}
+			}
+			return names, cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pm := marketplace.NewProfileMarketplace(cacheDir)
 			if err := pm.Download(args[0], "."); err != nil {
@@ -167,16 +191,33 @@ Example:
 
 	profileCmd.AddCommand(profileListCmd, profileSearchCmd, profileDownloadCmd, profilePublishCmd)
 
-	// Plugin commands
 	pluginCmd := &cobra.Command{
 		Use:   "plugin",
 		Short: "Manage marketplace plugins",
 	}
 
+	var pluginRegistryURL string
+	pluginCmd.PersistentFlags().StringVar(&pluginRegistryURL, "registry", "", "remote registry URL (default uses local cache)")
+
 	pluginListCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if pluginRegistryURL != "" {
+				rr := marketplace.NewRemoteRegistry(pluginRegistryURL, filepath.Join(".", ".naeos", "plugins"))
+				plugins, err := rr.List()
+				if err != nil {
+					return err
+				}
+				for _, p := range plugins {
+					platform := p.Platform
+					if platform == "" {
+						platform = "any"
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "%-25s %-10s %-12s %s\n", p.Name, p.Version, platform, p.Description)
+				}
+				return nil
+			}
 			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
 			plugins, err := pm.List()
 			if err != nil {
@@ -197,7 +238,30 @@ Example:
 		Use:   "install [name]",
 		Short: "Install a plugin",
 		Args:  cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
+			plugins, err := pm.List()
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			var names []string
+			for _, p := range plugins {
+				if !p.Installed && strings.HasPrefix(p.Name, toComplete) {
+					names = append(names, p.Name+"\t"+p.Description)
+				}
+			}
+			return names, cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if pluginRegistryURL != "" {
+				rr := marketplace.NewRemoteRegistry(pluginRegistryURL, filepath.Join(".", ".naeos", "plugins"))
+				path, err := rr.Install(args[0], "")
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Installed plugin %s to %s\n", args[0], path)
+				return nil
+			}
 			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
 			if err := pm.Install(args[0]); err != nil {
 				return err
@@ -211,6 +275,20 @@ Example:
 		Use:   "uninstall [name]",
 		Short: "Uninstall a plugin",
 		Args:  cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
+			plugins, err := pm.List()
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			var names []string
+			for _, p := range plugins {
+				if p.Installed && strings.HasPrefix(p.Name, toComplete) {
+					names = append(names, p.Name)
+				}
+			}
+			return names, cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
 			if err := pm.Uninstall(args[0]); err != nil {
@@ -226,8 +304,23 @@ Example:
 		Short: "Search plugins",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
 			query := strings.Join(args, " ")
+			if pluginRegistryURL != "" {
+				rr := marketplace.NewRemoteRegistry(pluginRegistryURL, filepath.Join(".", ".naeos", "plugins"))
+				results, err := rr.Search(query)
+				if err != nil {
+					return err
+				}
+				for _, p := range results {
+					platform := p.Platform
+					if platform == "" {
+						platform = "any"
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "%-25s %-10s %-12s %s\n", p.Name, p.Version, platform, p.Description)
+				}
+				return nil
+			}
+			pm := marketplace.NewPluginMarketplace(cacheDir, filepath.Join(".", ".naeos", "plugins"))
 			results, err := pm.Search(query, nil)
 			if err != nil {
 				return err
@@ -251,7 +344,10 @@ The package directory must contain a naeos.yaml manifest with name, version, and
 Example:
   naeos marketplace publish ./my-template
   naeos marketplace publish ./my-plugin --registry https://registry.naeos.dev`,
-		Args: cobra.ExactArgs(1),
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgDir := args[0]
 			manifest := filepath.Join(pkgDir, "naeos.yaml")

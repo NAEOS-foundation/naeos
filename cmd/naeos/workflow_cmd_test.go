@@ -6,7 +6,7 @@ import (
 )
 
 func TestWorkflowCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "workflow")
 	if err != nil {
 		t.Fatalf("execute workflow failed: %v", err)
@@ -14,7 +14,7 @@ func TestWorkflowCommandShowsHelp(t *testing.T) {
 }
 
 func TestWorkflowCreateAndList(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "workflow", "create", "--name", "deploy", "--steps", "build,test,deploy")
 	if err != nil {
 		t.Fatalf("workflow create failed: %v", err)
@@ -33,7 +33,7 @@ func TestWorkflowCreateAndList(t *testing.T) {
 }
 
 func TestWorkflowExecuteNotFound(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "workflow", "execute", "--name", "nonexistent")
 	if err == nil {
 		t.Fatal("expected error for nonexistent workflow")
@@ -41,7 +41,7 @@ func TestWorkflowExecuteNotFound(t *testing.T) {
 }
 
 func TestWorkflowRequestsEmpty(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "workflow", "requests", "--status", "pending")
 	if err != nil {
 		t.Fatalf("workflow requests failed: %v", err)
