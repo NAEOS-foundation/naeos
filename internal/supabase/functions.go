@@ -73,16 +73,6 @@ func (c *Client) DeleteFunction(slug string) error {
 	return nil
 }
 
-func (c *Client) DeployFunctionFromFile(slug string, filePath string) (*EdgeFunction, error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("read file: %w", err)
-	}
-	name := slug
-	entrypoint := "index.ts"
-	return c.DeployFunction(slug, name, entrypoint, string(data), true, false)
-}
-
 func (c *Client) GetFunctionURL(slug string) string {
 	return c.config.URL + "/functions/v1/" + slug
 }

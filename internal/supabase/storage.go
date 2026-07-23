@@ -99,11 +99,6 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	}
 	defer file.Close()
 
-	stat, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("stat file: %w", err)
-	}
-
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 	part, err := writer.CreateFormFile("file", filepath.Base(localPath))
@@ -124,7 +119,6 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
 	req.Header.Set("apikey", c.config.AnonKey)
-	req.ContentLength = stat.Size()
 
 	resp, err := c.http.Do(req)
 	if err != nil {

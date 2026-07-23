@@ -54,7 +54,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          files: ./coverage.out
           fail_ci_if_error: false
 
   supabase-integration:

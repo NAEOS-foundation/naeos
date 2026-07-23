@@ -496,6 +496,91 @@ func TestInvokeFunctionWithAuth(t *testing.T) {
 	}
 }
 
+func TestUploadFile(t *testing.T) {
+	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" || r.URL.Path != "/storage/v1/object/mybucket/remote/path.txt" {
+			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
+		}
+		if r.Header.Get("apikey") != "test-anon-key" {
+			t.Errorf("apikey = %q", r.Header.Get("apikey"))
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	defer srv.Close()
+
+	tmpDir := t.TempDir()
+	srcFile := tmpDir + "/test.txt"
+	if err := os.WriteFile(srcFile, []byte("hello storage"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := c.UploadFile("mybucket", srcFile, "remote/path.txt"); err != nil {
+		t.Fatalf("UploadFile: %v", err)
+	}
+}
+
+func TestUploadFileError(t *testing.T) {
+	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"error":"invalid bucket"}`))
+	})
+	defer srv.Close()
+
+	tmpDir := t.TempDir()
+	srcFile := tmpDir + "/test.txt"
+	if err := os.WriteFile(srcFile, []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := c.UploadFile("mybucket", srcFile, "path.txt"); err == nil {
+		t.Fatal("expected error for 400 UploadFile")
+	}
+}
+
+func TestUploadFileNotExist(t *testing.T) {
+	c := NewClient(&Config{URL: "http://localhost:1"})
+	if err := c.UploadFile("b", "/nonexistent/file", "path"); err == nil {
+		t.Fatal("expected error for missing file")
+	}
+}
+
+func TestDownloadFile(t *testing.T) {
+	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" || r.URL.Path != "/storage/v1/object/mybucket/remote/path.txt" {
+			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("downloaded content"))
+	})
+	defer srv.Close()
+
+	tmpDir := t.TempDir()
+	dest := tmpDir + "/downloaded.txt"
+
+	if err := c.DownloadFile("mybucket", "remote/path.txt", dest); err != nil {
+		t.Fatalf("DownloadFile: %v", err)
+	}
+
+	data, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "downloaded content" {
+		t.Errorf("content = %q, want %q", string(data), "downloaded content")
+	}
+}
+
+func TestDownloadFileError(t *testing.T) {
+	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+	defer srv.Close()
+
+	if err := c.DownloadFile("mybucket", "nonexistent", t.TempDir()+"/out"); err == nil {
+		t.Fatal("expected error for 404 DownloadFile")
+	}
+}
+
 func TestGetFunctionURL(t *testing.T) {
 	c := NewClient(&Config{URL: "https://example.supabase.co"})
 	u := c.GetFunctionURL("hello")
