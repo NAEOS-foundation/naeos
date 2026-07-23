@@ -2,6 +2,7 @@ package supabase
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,10 +45,10 @@ type Config struct {
 }
 
 type Client struct {
-	config  *Config
-	http    *http.Client
+	config    *Config
+	http      *http.Client
 	authToken string
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 }
 
 func DefaultConfigPath() string {
@@ -110,7 +111,7 @@ func (c *Client) AuthToken() string {
 	return c.authToken
 }
 
-func (c *Client) do(method, path string, headers map[string]string, body any) (*http.Response, error) {
+func (c *Client) do(method, path string, headers map[string]string, body any) ([]byte, error) {
 	url := c.config.URL + path
 
 	var reqBody io.Reader
@@ -122,7 +123,7 @@ func (c *Client) do(method, path string, headers map[string]string, body any) (*
 		reqBody = bytes.NewReader(data)
 	}
 
-	req, err := http.NewRequest(method, url, reqBody)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -142,26 +143,8 @@ func (c *Client) do(method, path string, headers map[string]string, body any) (*
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-
-	return resp, nil
-}
-
-func (c *Client) doAuth(method, path string, body any) (*http.Response, error) {
-	headers := map[string]string{
-		"apikey": c.config.AnonKey,
-	}
-	return c.do(method, path, headers, body)
-}
-
-func (c *Client) doAdmin(method, path string, body any) (*http.Response, error) {
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	return c.do(method, path, headers, body)
-}
-
-func decodeResponse[T any](resp *http.Response) (*T, error) {
 	defer resp.Body.Close()
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
@@ -169,6 +152,25 @@ func decodeResponse[T any](resp *http.Response) (*T, error) {
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(data))
 	}
+
+	return data, nil
+}
+
+func (c *Client) doAuth(method, path string, body any) ([]byte, error) {
+	headers := map[string]string{
+		"apikey": c.config.AnonKey,
+	}
+	return c.do(method, path, headers, body)
+}
+
+func (c *Client) doAdmin(method, path string, body any) ([]byte, error) {
+	headers := map[string]string{
+		"apikey": c.config.ServiceRoleKey,
+	}
+	return c.do(method, path, headers, body)
+}
+
+func jsonUnmarshal[T any](data []byte) (*T, error) {
 	var result T
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
@@ -181,16 +183,4 @@ func MaskKey(key string) string {
 		return key
 	}
 	return key[:4] + "..." + key[len(key)-4:]
-}
-
-func decodeRaw(resp *http.Response) ([]byte, error) {
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
-	}
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(data))
-	}
-	return data, nil
 }

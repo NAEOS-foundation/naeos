@@ -2,13 +2,13 @@ package supabase
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type Bucket struct {
@@ -29,23 +29,23 @@ type FileObject struct {
 	UpdatedAt      string `json:"updated_at"`
 	LastAccessedAt string `json:"last_accessed_at"`
 	Metadata       struct {
-		Size       int    `json:"size"`
-		Mimetype   string `json:"mimetype"`
+		Size         int    `json:"size"`
+		Mimetype     string `json:"mimetype"`
 		CacheControl string `json:"cacheControl"`
 	} `json:"metadata"`
 }
 
 type CreateBucketParams struct {
-	Name          string `json:"name"`
-	Public        bool   `json:"public"`
+	Name   string `json:"name"`
+	Public bool   `json:"public"`
 }
 
 func (c *Client) ListBuckets() ([]Bucket, error) {
-	resp, err := c.doAuth("GET", "/storage/v1/bucket", nil)
+	data, err := c.doAuth("GET", "/storage/v1/bucket", nil)
 	if err != nil {
 		return nil, err
 	}
-	result, err := decodeResponse[[]Bucket](resp)
+	result, err := jsonUnmarshal[[]Bucket](data)
 	if err != nil {
 		return nil, err
 	}
@@ -54,31 +54,25 @@ func (c *Client) ListBuckets() ([]Bucket, error) {
 
 func (c *Client) CreateBucket(name string, public bool) (*Bucket, error) {
 	params := CreateBucketParams{Name: name, Public: public}
-	resp, err := c.doAuth("POST", "/storage/v1/bucket", params)
+	data, err := c.doAuth("POST", "/storage/v1/bucket", params)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[Bucket](resp)
+	return jsonUnmarshal[Bucket](data)
 }
 
 func (c *Client) GetBucket(id string) (*Bucket, error) {
-	resp, err := c.doAuth("GET", "/storage/v1/bucket/"+id, nil)
+	data, err := c.doAuth("GET", "/storage/v1/bucket/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[Bucket](resp)
+	return jsonUnmarshal[Bucket](data)
 }
 
 func (c *Client) DeleteBucket(id string) error {
-	resp, err := c.doAuth("DELETE", "/storage/v1/bucket/"+id, nil)
+	_, err := c.doAuth("DELETE", "/storage/v1/bucket/"+id, nil)
 	if err != nil {
 		return fmt.Errorf("delete bucket: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body := make([]byte, 1024)
-		n, _ := resp.Body.Read(body)
-		return fmt.Errorf("delete bucket: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	return nil
 }
@@ -87,11 +81,11 @@ func (c *Client) ListFiles(bucket, prefix string) ([]FileObject, error) {
 	params := map[string]any{
 		"prefix": prefix,
 	}
-	resp, err := c.doAuth("POST", "/storage/v1/object/list/"+bucket, params)
+	data, err := c.doAuth("POST", "/storage/v1/object/list/"+bucket, params)
 	if err != nil {
 		return nil, err
 	}
-	result, err := decodeResponse[[]FileObject](resp)
+	result, err := jsonUnmarshal[[]FileObject](data)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +116,7 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	writer.Close()
 
 	url := c.config.URL + "/storage/v1/object/" + bucket + "/" + remotePath
-	req, err := http.NewRequest("POST", url, &buf)
+	req, err := http.NewRequestWithContext(context.Background(), "POST", url, &buf)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -147,7 +141,7 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 
 func (c *Client) DownloadFile(bucket, remotePath, localPath string) error {
 	url := c.config.URL + "/storage/v1/object/" + bucket + "/" + remotePath
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -185,15 +179,9 @@ func (c *Client) DeleteFile(bucket, path string) error {
 	params := map[string]any{
 		"prefixes": []string{path},
 	}
-	resp, err := c.doAuth("DELETE", "/storage/v1/object/"+bucket, params)
+	_, err := c.doAuth("DELETE", "/storage/v1/object/"+bucket, params)
 	if err != nil {
 		return fmt.Errorf("delete file: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body := make([]byte, 1024)
-		n, _ := resp.Body.Read(body)
-		return fmt.Errorf("delete file: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	return nil
 }

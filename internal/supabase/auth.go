@@ -3,21 +3,20 @@ package supabase
 import (
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 type SignUpParams struct {
-	Email    string                 `json:"email"`
-	Password string                 `json:"password"`
-	Data     map[string]any         `json:"data,omitempty"`
+	Email    string         `json:"email"`
+	Password string         `json:"password"`
+	Data     map[string]any `json:"data,omitempty"`
 }
 
 type SignUpResponse struct {
-	ID        string     `json:"id"`
-	Email     string     `json:"email"`
-	Aud       string     `json:"aud"`
-	Role      string     `json:"role"`
-	CreatedAt string     `json:"created_at"`
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	Aud       string `json:"aud"`
+	Role      string `json:"role"`
+	CreatedAt string `json:"created_at"`
 }
 
 type Session struct {
@@ -29,18 +28,18 @@ type Session struct {
 }
 
 type User struct {
-	ID              string                 `json:"id"`
-	Aud             string                 `json:"aud"`
-	Role            string                 `json:"role"`
-	Email           string                 `json:"email"`
-	EmailConfirmedAt string                `json:"email_confirmed_at,omitempty"`
-	Phone           string                 `json:"phone,omitempty"`
-	ConfirmedAt     string                 `json:"confirmed_at,omitempty"`
-	LastSignInAt    string                 `json:"last_sign_in_at,omitempty"`
-	CreatedAt       string                 `json:"created_at"`
-	UpdatedAt       string                 `json:"updated_at"`
-	UserMetadata    map[string]any         `json:"user_metadata"`
-	AppMetadata     map[string]any         `json:"app_metadata"`
+	ID               string         `json:"id"`
+	Aud              string         `json:"aud"`
+	Role             string         `json:"role"`
+	Email            string         `json:"email"`
+	EmailConfirmedAt string         `json:"email_confirmed_at,omitempty"`
+	Phone            string         `json:"phone,omitempty"`
+	ConfirmedAt      string         `json:"confirmed_at,omitempty"`
+	LastSignInAt     string         `json:"last_sign_in_at,omitempty"`
+	CreatedAt        string         `json:"created_at"`
+	UpdatedAt        string         `json:"updated_at"`
+	UserMetadata     map[string]any `json:"user_metadata"`
+	AppMetadata      map[string]any `json:"app_metadata"`
 }
 
 type AdminUserResponse struct {
@@ -52,11 +51,11 @@ type GoTrueError struct {
 }
 
 func (c *Client) SignUp(params SignUpParams) (*SignUpResponse, error) {
-	resp, err := c.doAuth("POST", "/auth/v1/signup", params)
+	data, err := c.doAuth("POST", "/auth/v1/signup", params)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[SignUpResponse](resp)
+	return jsonUnmarshal[SignUpResponse](data)
 }
 
 func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
@@ -65,11 +64,11 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 		"password": password,
 	}
 	path := "/auth/v1/token?grant_type=password"
-	resp, err := c.doAuth("POST", path, params)
+	data, err := c.doAuth("POST", path, params)
 	if err != nil {
 		return nil, err
 	}
-	session, err := decodeResponse[Session](resp)
+	session, err := jsonUnmarshal[Session](data)
 	if err != nil {
 		return nil, err
 	}
@@ -78,26 +77,20 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 }
 
 func (c *Client) SignOut() error {
-	resp, err := c.doAuth("POST", "/auth/v1/logout", nil)
+	_, err := c.doAuth("POST", "/auth/v1/logout", nil)
 	if err != nil {
 		return fmt.Errorf("sign out: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body := make([]byte, 1024)
-		n, _ := resp.Body.Read(body)
-		return fmt.Errorf("sign out: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	c.SetAuthToken("")
 	return nil
 }
 
 func (c *Client) GetUser() (*User, error) {
-	resp, err := c.doAuth("GET", "/auth/v1/user", nil)
+	data, err := c.doAuth("GET", "/auth/v1/user", nil)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[User](resp)
+	return jsonUnmarshal[User](data)
 }
 
 func (c *Client) RefreshToken(refreshToken string) (*Session, error) {
@@ -105,11 +98,11 @@ func (c *Client) RefreshToken(refreshToken string) (*Session, error) {
 		"refresh_token": refreshToken,
 	}
 	path := "/auth/v1/token?grant_type=refresh_token"
-	resp, err := c.doAuth("POST", path, params)
+	data, err := c.doAuth("POST", path, params)
 	if err != nil {
 		return nil, err
 	}
-	session, err := decodeResponse[Session](resp)
+	session, err := jsonUnmarshal[Session](data)
 	if err != nil {
 		return nil, err
 	}
@@ -130,11 +123,11 @@ func (c *Client) SignInWithOAuth(provider string) (string, error) {
 }
 
 func (c *Client) AdminListUsers() ([]User, error) {
-	resp, err := c.doAdmin("GET", "/auth/v1/admin/users", nil)
+	data, err := c.doAdmin("GET", "/auth/v1/admin/users", nil)
 	if err != nil {
 		return nil, err
 	}
-	result, err := decodeResponse[AdminUserResponse](resp)
+	result, err := jsonUnmarshal[AdminUserResponse](data)
 	if err != nil {
 		return nil, err
 	}
@@ -147,21 +140,17 @@ func (c *Client) AdminCreateUser(email, password string, data map[string]any) (*
 		"password": password,
 		"data":     data,
 	}
-	resp, err := c.doAdmin("POST", "/auth/v1/admin/users", params)
+	body, err := c.doAdmin("POST", "/auth/v1/admin/users", params)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[User](resp)
+	return jsonUnmarshal[User](body)
 }
 
 func (c *Client) AdminDeleteUser(userID string) error {
-	resp, err := c.doAdmin("DELETE", "/auth/v1/admin/users/"+userID, nil)
+	_, err := c.doAdmin("DELETE", "/auth/v1/admin/users/"+userID, nil)
 	if err != nil {
 		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("delete user failed: status %d", resp.StatusCode)
 	}
 	return nil
 }

@@ -2,7 +2,6 @@ package supabase
 
 import (
 	"fmt"
-	"strings"
 )
 
 type QueryParams struct {
@@ -38,30 +37,22 @@ func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
 	headers := map[string]string{
 		"apikey": c.config.ServiceRoleKey,
 	}
-	resp, err := c.do("POST", path, headers, params)
+	data, err := c.do("POST", path, headers, params)
 	if err != nil {
 		return nil, fmt.Errorf("execute SQL: %w", err)
 	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body := make([]byte, 4096)
-		n, _ := resp.Body.Read(body)
-		return nil, fmt.Errorf("execute SQL: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
-	}
-
-	return decodeResponse[QueryResult](resp)
+	return jsonUnmarshal[QueryResult](data)
 }
 
 func (c *Client) GetRoles() ([]Role, error) {
 	headers := map[string]string{
 		"apikey": c.config.ServiceRoleKey,
 	}
-	resp, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/database/roles", headers, nil)
+	data, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/database/roles", headers, nil)
 	if err != nil {
 		return nil, err
 	}
-	result, err := decodeResponse[[]Role](resp)
+	result, err := jsonUnmarshal[[]Role](data)
 	if err != nil {
 		return nil, err
 	}

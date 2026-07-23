@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type EdgeFunction struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Slug         string `json:"slug"`
-	Status       string `json:"status"`
-	Version      int    `json:"version"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
-	Entrypoint   string `json:"entrypoint_path"`
-	ImportMap    bool   `json:"import_map"`
-	VerifyJWT    bool   `json:"verify_jwt"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Slug       string `json:"slug"`
+	Status     string `json:"status"`
+	Version    int    `json:"version"`
+	CreatedAt  string `json:"created_at"`
+	UpdatedAt  string `json:"updated_at"`
+	Entrypoint string `json:"entrypoint_path"`
+	ImportMap  bool   `json:"import_map"`
+	VerifyJWT  bool   `json:"verify_jwt"`
 }
 
 type DeployFunctionParams struct {
@@ -33,11 +32,11 @@ func (c *Client) ListFunctions() ([]EdgeFunction, error) {
 	headers := map[string]string{
 		"apikey": c.config.ServiceRoleKey,
 	}
-	resp, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, nil)
+	data, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, nil)
 	if err != nil {
 		return nil, err
 	}
-	result, err := decodeResponse[[]EdgeFunction](resp)
+	result, err := jsonUnmarshal[[]EdgeFunction](data)
 	if err != nil {
 		return nil, err
 	}
@@ -56,26 +55,20 @@ func (c *Client) DeployFunction(slug, name, entrypoint, body string, verifyJWT, 
 	headers := map[string]string{
 		"apikey": c.config.ServiceRoleKey,
 	}
-	resp, err := c.do("POST", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, params)
+	data, err := c.do("POST", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, params)
 	if err != nil {
 		return nil, err
 	}
-	return decodeResponse[EdgeFunction](resp)
+	return jsonUnmarshal[EdgeFunction](data)
 }
 
 func (c *Client) DeleteFunction(slug string) error {
 	headers := map[string]string{
 		"apikey": c.config.ServiceRoleKey,
 	}
-	resp, err := c.do("DELETE", "/api/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, headers, nil)
+	_, err := c.do("DELETE", "/api/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, headers, nil)
 	if err != nil {
 		return fmt.Errorf("delete function: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body := make([]byte, 1024)
-		n, _ := resp.Body.Read(body)
-		return fmt.Errorf("delete function: %d %s", resp.StatusCode, strings.TrimSpace(string(body[:n])))
 	}
 	return nil
 }
@@ -101,11 +94,7 @@ func (c *Client) InvokeFunction(slug string, body map[string]any) ([]byte, error
 	if token := c.AuthToken(); token != "" {
 		headers["Authorization"] = "Bearer " + token
 	}
-	resp, err := c.do("POST", "/functions/v1/"+slug, headers, body)
-	if err != nil {
-		return nil, err
-	}
-	return decodeRaw(resp)
+	return c.do("POST", "/functions/v1/"+slug, headers, body)
 }
 
 func DefaultFunctionsDir() string {

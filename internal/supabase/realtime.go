@@ -11,17 +11,17 @@ import (
 )
 
 type RealtimeChannel struct {
-	Topic      string
-	Event      string
-	Callback   func(msg RealtimeMessage)
-	unsub      chan struct{}
+	Topic    string
+	Event    string
+	Callback func(msg RealtimeMessage)
+	unsub    chan struct{}
 }
 
 type RealtimeMessage struct {
-	Topic    string         `json:"topic"`
-	Event    string         `json:"event"`
-	Payload  map[string]any `json:"payload"`
-	Ref      string         `json:"ref"`
+	Topic   string         `json:"topic"`
+	Event   string         `json:"event"`
+	Payload map[string]any `json:"payload"`
+	Ref     string         `json:"ref"`
 }
 
 type RealtimeClient struct {
@@ -35,13 +35,14 @@ func (c *Client) NewRealtimeClient() (*RealtimeClient, error) {
 	u := c.config.URL + "/realtime/v1/websocket?vsn=1.0.0&apikey=" + c.config.AnonKey
 
 	dialer := websocket.DefaultDialer
-	conn, _, err := dialer.Dial(u, http.Header{
+	conn, resp, err := dialer.Dial(u, http.Header{
 		"Authorization": []string{"Bearer " + c.AuthToken()},
 		"apikey":        []string{c.config.AnonKey},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("dial realtime: %w", err)
 	}
+	resp.Body.Close()
 
 	rc := &RealtimeClient{
 		conn:     conn,
@@ -98,10 +99,10 @@ func (rc *RealtimeClient) Subscribe(topic, event string, callback func(msg Realt
 	rc.mu.Unlock()
 
 	msg := map[string]any{
-		"topic":    topic,
-		"event":    "phx_join",
-		"payload":  map[string]any{},
-		"ref":      fmt.Sprintf("%d", time.Now().UnixNano()),
+		"topic":   topic,
+		"event":   "phx_join",
+		"payload": map[string]any{},
+		"ref":     fmt.Sprintf("%d", time.Now().UnixNano()),
 	}
 	if err := rc.send(msg); err != nil {
 		return nil, err

@@ -205,8 +205,7 @@ func randString(n int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[int(i*7+13)%len(letters)]
+		b[i] = letters[(i*7+13)%len(letters)]
 	}
 	return string(b)
 }
-
