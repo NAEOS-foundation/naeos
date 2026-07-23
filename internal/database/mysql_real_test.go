@@ -110,3 +110,81 @@ func TestRealMySQLHealthCheck(t *testing.T) {
 		t.Error("expected error when not connected")
 	}
 }
+
+func TestRealMySQLConnectAllConfigOptions(t *testing.T) {
+	db := NewRealMySQL()
+	err := db.Connect(&Config{
+		Host:            "192.0.2.1",
+		Port:            1,
+		User:            "test",
+		Password:        "test",
+		Database:        "test",
+		Timeout:         1 * time.Second,
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 10 * time.Minute,
+		ConnMaxIdleTime: 5 * time.Minute,
+	})
+	if err == nil {
+		t.Error("expected error when connecting to unreachable host")
+	}
+}
+
+func TestRealMySQLConnectNoOptionalConfig(t *testing.T) {
+	db := NewRealMySQL()
+	err := db.Connect(&Config{
+		Host:     "192.0.2.1",
+		Port:     1,
+		User:     "test",
+		Password: "test",
+		Database: "test",
+	})
+	if err == nil {
+		t.Error("expected error when connecting to unreachable host")
+	}
+}
+
+func TestRealMySQLDefaultContextWithTimeout(t *testing.T) {
+	db := NewRealMySQL()
+	db.config = &Config{Timeout: 5 * time.Second}
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealMySQLDefaultContextWithoutTimeout(t *testing.T) {
+	db := NewRealMySQL()
+	db.config = &Config{}
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealMySQLDefaultContextNilConfig(t *testing.T) {
+	db := NewRealMySQL()
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealMySQLCloseNil(t *testing.T) {
+	db := NewRealMySQL()
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close nil: %v", err)
+	}
+}

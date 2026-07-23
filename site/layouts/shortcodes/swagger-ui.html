@@ -1,0 +1,27 @@
+<div class="swagger-ui-container" style="min-height: 600px; margin: 1.5rem 0;">
+  <div id="swagger-ui" style="min-height: 600px;"></div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+  (function() {
+    var container = document.getElementById('swagger-ui');
+    if (!container) return;
+    if (typeof SwaggerUIBundle !== 'undefined') {
+      SwaggerUIBundle({
+        url: '{{ "openapi.yaml" | relURL }}',
+        dom_id: '#swagger-ui',
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+        layout: 'StandaloneLayout',
+        deepLinking: true,
+        docExpansion: 'list',
+        defaultModelsExpandDepth: -1,
+        filter: true,
+        tryItOutEnabled: false
+      });
+    } else {
+      container.innerHTML = '<p style="color:var(--color-text-dim);padding:2rem;text-align:center;">Loading API documentation...</p>';
+    }
+  })();
+</script>

@@ -124,7 +124,7 @@ func TestNewLLMServiceAnthropicDefaults(t *testing.T) {
 
 func TestEnrichSpecEmpty(t *testing.T) {
 	s := &LLMService{}
-	_, err := s.EnrichSpecContext(context.TODO(), "")
+	_, err := 	s.EnrichSpecContext(context.Background(), "")
 	if err == nil {
 		t.Error("expected error for empty spec")
 	}

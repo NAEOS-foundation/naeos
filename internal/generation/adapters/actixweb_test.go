@@ -6,6 +6,7 @@ import (
 )
 
 func TestActixWebAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateProject("myproj")
 	if len(artifacts) == 0 {
@@ -42,6 +43,7 @@ func TestActixWebAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "myproj")
 	if len(artifacts) == 0 {
@@ -99,6 +101,7 @@ func TestActixWebAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "myproj")
 	if len(artifacts) == 0 {
@@ -126,6 +129,7 @@ func TestActixWebAdapter_GenerateService(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateDockerfile("myproj")
 	if len(artifacts) != 1 {
@@ -140,6 +144,7 @@ func TestActixWebAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateCI("myproj")
 	if len(artifacts) != 1 {
@@ -154,6 +159,7 @@ func TestActixWebAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateDockerCompose("myproj")
 	if len(artifacts) != 1 {
@@ -168,6 +174,7 @@ func TestActixWebAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestActixWebAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := ActixWebAdapter{}
 	artifacts := a.GenerateArchitectureDoc("myproj", "event-driven")
 	if len(artifacts) != 1 {

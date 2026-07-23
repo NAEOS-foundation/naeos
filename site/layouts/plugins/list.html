@@ -1,0 +1,100 @@
+{{ define "main" }}
+{{ $data := .Site.Data.plugins.plugins }}
+<section class="section section-first">
+    <div class="container">
+        <h1 class="page-title">{{ .Title }}</h1>
+        <p class="page-subtitle">{{ .Description }}</p>
+
+        <div class="plugins-toolbar">
+            <input type="text" id="plugin-search" class="input" placeholder="Search plugins..." oninput="filterPlugins()">
+            <div class="plugins-tags" id="plugin-tags">
+                <button class="tag-btn active" data-tag="all" onclick="filterByTag(this, 'all')">All</button>
+                <button class="tag-btn" data-tag="official" onclick="filterByTag(this, 'official')">Official</button>
+                <button class="tag-btn" data-tag="community" onclick="filterByTag(this, 'community')">Community</button>
+            </div>
+        </div>
+
+        <div class="plugins-grid" id="plugins-grid">
+            {{ range $data }}
+            <div class="plugin-card" data-name="{{ .name }}" data-tags="{{ delimit .tags "," }}">
+                <div class="plugin-card-header">
+                    <div class="plugin-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="plugin-name">{{ .name }}</h3>
+                        <span class="plugin-version">v{{ .version }}</span>
+                        {{ if in (printf "%s" (delimit .tags ",")) "official" }}
+                        <span class="badge badge-green">Official</span>
+                        {{ else }}
+                        <span class="badge badge-blue">Community</span>
+                        {{ end }}
+                    </div>
+                </div>
+                <p class="plugin-desc">{{ .description }}</p>
+                <div class="plugin-meta">
+                    <span class="plugin-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                        {{ .type }}
+                    </span>
+                    <span class="plugin-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        {{ .downloads }}
+                    </span>
+                    <span class="plugin-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        {{ .updated_at | time.Format "Jan 2006" }}
+                    </span>
+                </div>
+                <div class="plugin-tags-row">
+                    {{ range .tags }}
+                    <span class="plugin-tag">{{ . }}</span>
+                    {{ end }}
+                </div>
+                <div class="plugin-actions">
+                    <a href="{{ .repo_url }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <button class="btn btn-primary btn-sm" onclick="copyInstallCmd('naeos marketplace plugin install {{ .name }}')">
+                        {{ i18n "plugins_install" }}
+                    </button>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+
+<script>
+function filterPlugins() {
+    var q = document.getElementById('plugin-search').value.toLowerCase();
+    var cards = document.querySelectorAll('.plugin-card');
+    cards.forEach(function(c) {
+        var name = c.getAttribute('data-name').toLowerCase();
+        var tags = c.getAttribute('data-tags').toLowerCase();
+        c.style.display = (!q || name.includes(q) || tags.includes(q)) ? '' : 'none';
+    });
+}
+
+function filterByTag(btn, tag) {
+    document.querySelectorAll('.tag-btn').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    var cards = document.querySelectorAll('.plugin-card');
+    cards.forEach(function(c) {
+        c.style.display = (tag === 'all' || c.getAttribute('data-tags').includes(tag)) ? '' : 'none';
+    });
+}
+
+function copyInstallCmd(cmd) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(cmd).then(function() {
+            var btn = event.target;
+            var orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = orig; }, 2000);
+        });
+    }
+}
+</script>
+{{ end }}

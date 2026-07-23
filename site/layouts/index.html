@@ -28,7 +28,7 @@
             <div class="what-is-text">
                 <h2 class="section-title" style="text-align:left;">{{ i18n "section_what_is" }}</h2>
                 <p>{{ i18n "section_what_is_desc" }}</p>
-                <p>From a single YAML specification, NAEOS generates complete project structures, code, documentation, CI/CD pipelines, deployment manifests, and AI context — across 5 programming languages and 6 AI platforms.</p>
+                <p>{{ i18n "home_what_is_extended" }}</p>
                 <a href="{{ "docs/architecture/" | relLangURL }}" class="btn btn-secondary">{{ i18n "cta_read_docs" }}</a>
             </div>
             <div class="what-is-diagram">
@@ -67,7 +67,7 @@
 <section class="section">
     <div class="container">
         <h2 class="section-title fade-in">{{ i18n "section_features" }}</h2>
-        <p class="section-subtitle fade-in">{{ i18n "section_features" }} — {{ .Site.Params.stats.cli }}+ CLI commands, 5 languages, 6 AI platforms, 56+ specifications.</p>
+        <p class="section-subtitle fade-in">{{ i18n "home_features_subtitle" (dict "CLI" .Site.Params.stats.cli) }}</p>
         <div class="features-grid stagger-fade">
             <div class="feature-card">
                 <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -106,15 +106,15 @@
 <section class="section">
     <div class="container">
         <h2 class="section-title fade-in">{{ i18n "section_quick_start" }}</h2>
-        <p class="section-subtitle fade-in">{{ i18n "section_quick_start" }} — from spec to code in 4 steps.</p>
+        <p class="section-subtitle fade-in">{{ i18n "home_quick_start_subtitle" }}</p>
         <div class="quick-start-steps stagger-fade">
             <div class="quick-start-step">
                 <div class="step-number">1</div>
                 <div class="step-content">
-                    <h4>Install NAEOS</h4>
-                    <p>Install via Go, Docker, or download the binary.</p>
+                    <h4>{{ i18n "home_step_install_title" }}</h4>
+                    <p>{{ i18n "home_step_install_desc" }}</p>
                     <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
                         <pre><code>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest</code></pre>
                     </div>
                 </div>
@@ -122,10 +122,10 @@
             <div class="quick-start-step">
                 <div class="step-number">2</div>
                 <div class="step-content">
-                    <h4>Create a Specification</h4>
-                    <p>Define your project in YAML or JSON.</p>
+                    <h4>{{ i18n "home_step_spec_title" }}</h4>
+                    <p>{{ i18n "home_step_spec_desc" }}</p>
                     <div class="code-block">
-                        <div class="code-block-header"><span>yaml</span><button class="copy-btn" aria-label="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
+                        <div class="code-block-header"><span>yaml</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
                         <pre><code>project: my-app
 modules:
   - name: auth
@@ -145,10 +145,10 @@ generation:
             <div class="quick-start-step">
                 <div class="step-number">3</div>
                 <div class="step-content">
-                    <h4>Run the Pipeline</h4>
-                    <p>Execute the full pipeline — parse, validate, generate, and export.</p>
+                    <h4>{{ i18n "home_step_run_title" }}</h4>
+                    <p>{{ i18n "home_step_run_desc" }}</p>
                     <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
                         <pre><code>naeos run --input spec.yaml --output-dir ./out</code></pre>
                     </div>
                 </div>
@@ -156,10 +156,10 @@ generation:
             <div class="quick-start-step">
                 <div class="step-number">4</div>
                 <div class="step-content">
-                    <h4>Compile for AI Assistance</h4>
-                    <p>Generate AI instruction sets for Copilot, Claude, Cursor, and more.</p>
+                    <h4>{{ i18n "home_step_ai_title" }}</h4>
+                    <p>{{ i18n "home_step_ai_desc" }}</p>
                     <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
                         <pre><code>naeos compile --all --input spec.yaml</code></pre>
                     </div>
                 </div>
@@ -168,25 +168,25 @@ generation:
     </div>
 </section>
 
-<section class="section" style="padding:2rem 0;">
+<section class="section section-github-stats">
     <div class="container fade-in">
-        <h2 class="section-title" style="font-size:1rem;color:var(--color-text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2rem;">Trusted by the Open Source Community</h2>
+        <h2 class="section-title github-stats-title fade-in">{{ i18n "home_community_title" }}</h2>
         <div class="github-stats stagger-fade">
             <div class="github-stat">
                 <div class="github-stat-number" id="gh-stars">—</div>
-                <div class="github-stat-label">GitHub Stars</div>
+                <div class="github-stat-label">{{ i18n "home_github_stars" }}</div>
             </div>
             <div class="github-stat">
                 <div class="github-stat-number" id="gh-forks">—</div>
-                <div class="github-stat-label">Forks</div>
+                <div class="github-stat-label">{{ i18n "home_github_forks" }}</div>
             </div>
             <div class="github-stat">
                 <div class="github-stat-number" id="gh-issues">—</div>
-                <div class="github-stat-label">Open Issues</div>
+                <div class="github-stat-label">{{ i18n "home_github_issues" }}</div>
             </div>
             <div class="github-stat">
                 <div class="github-stat-number" id="gh-contributors">—</div>
-                <div class="github-stat-label">Contributors</div>
+                <div class="github-stat-label">{{ i18n "home_github_contributors" }}</div>
             </div>
         </div>
     </div>
@@ -194,32 +194,32 @@ generation:
 
 <section class="section">
     <div class="container fade-in">
-        <h2 class="section-title">Use Cases</h2>
-        <p class="section-subtitle">NAEOS fits into any engineering workflow — from microservices to monoliths, from solo devs to enterprise teams.</p>
+        <h2 class="section-title">{{ i18n "use_cases_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_use_cases_desc" }}</p>
         <div class="use-cases-grid stagger-fade">
             <div class="use-case-card">
-                <span class="use-case-icon" role="img" aria-label="Microservices">🏗️</span>
-                <h3>Microservices Architecture</h3>
-                <p>Define services, APIs, and dependencies in a single spec. Generate Go and TypeScript code with REST endpoints, Dockerfiles, and Kubernetes manifests.</p>
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="3" y="5" width="10" height="8" rx="2"/><rect x="19" y="5" width="10" height="8" rx="2"/><rect x="11" y="19" width="10" height="8" rx="2"/><path d="M8 13v3h8m8-3v3h-8m0 0v3"/></svg></span>
+                <h3>{{ i18n "home_use_case_microservices_title" }}</h3>
+                <p>{{ i18n "home_use_case_microservices_desc" }}</p>
                 <span class="badge badge-green">Go · TypeScript</span>
             </div>
             <div class="use-case-card">
-                <span class="use-case-icon" role="img" aria-label="Serverless">⚡</span>
-                <h3>Serverless Applications</h3>
-                <p>Describe Lambda functions and event sources. Generate Python and TypeScript handlers with serverless framework configs and IAM policies.</p>
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M18 2 7 18h8l-1 12 11-17h-8l1-11Z"/></svg></span>
+                <h3>{{ i18n "home_use_case_serverless_title" }}</h3>
+                <p>{{ i18n "home_use_case_serverless_desc" }}</p>
                 <span class="badge badge-green">Python · TypeScript</span>
             </div>
             <div class="use-case-card">
-                <span class="use-case-icon" role="img" aria-label="AI">🧠</span>
-                <h3>AI-Assisted Development</h3>
-                <p>Compile your architecture into AI instruction sets. Your coding assistants understand the full project context — no more manual prompts.</p>
-                <span class="badge badge-blue">6 AI Platforms</span>
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M12 6a5 5 0 0 0-8 4 5 5 0 0 0 1 3 6 6 0 0 0 3 11h4V6Zm8 0a5 5 0 0 1 8 4 5 5 0 0 1-1 3 6 6 0 0 1-3 11h-4V6Z"/><path d="M8 13h4m-4 6h4m8-6h4m-4 6h4M16 4v24"/></svg></span>
+                <h3>{{ i18n "home_use_case_ai_title" }}</h3>
+                <p>{{ i18n "home_use_case_ai_desc" }}</p>
+                <span class="badge badge-blue">{{ i18n "home_ai_platforms_badge" }}</span>
             </div>
             <div class="use-case-card">
-                <span class="use-case-icon" role="img" aria-label="Enterprise">🏛️</span>
-                <h3>Enterprise Governance</h3>
-                <p>Enforce architecture policies, security rules, and coding standards across teams. Audit trail and RBAC keep your organization compliant.</p>
-                <span class="badge badge-orange">Governance</span>
+                <span class="use-case-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m16 3 13 6H3l13-6Z"/><path d="M5 27h22M7 9v16m6-16v16m6-16v16m6-16v16"/></svg></span>
+                <h3>{{ i18n "home_use_case_governance_title" }}</h3>
+                <p>{{ i18n "home_use_case_governance_desc" }}</p>
+                <span class="badge badge-orange">{{ i18n "home_governance_badge" }}</span>
             </div>
         </div>
     </div>
@@ -227,22 +227,22 @@ generation:
 
 <section class="section">
     <div class="container fade-in">
-        <h2 class="section-title">Try It Live</h2>
-        <p class="section-subtitle">Write a spec in the editor below and see the NEIR model structure.</p>
+        <h2 class="section-title">{{ i18n "home_playground_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_playground_desc" }}</p>
         <div class="spec-playground">
             <div class="playground-tabs">
-                <button class="playground-tab active" onclick="switchPlayground(this, 'yaml')">Microservice</button>
+                <button class="playground-tab active" onclick="switchPlayground(this, 'yaml')">{{ i18n "home_tab_microservice" }}</button>
                 <button class="playground-tab" onclick="switchPlayground(this, 'serverless')">Serverless</button>
                 <button class="playground-tab" onclick="switchPlayground(this, 'monolith')">Monolith</button>
-                <button class="playground-tab" onclick="switchPlayground(this, 'ai-context')">AI Context</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'ai-context')">{{ i18n "home_tab_ai_context" }}</button>
             </div>
             <div class="playground-body">
                 <div class="playground-editor">
-                    <textarea id="playground-input" placeholder="Paste your NAEOS specification YAML here..." spellcheck="false"></textarea>
+                    <textarea id="playground-input" placeholder="{{ i18n "home_playground_placeholder" }}" spellcheck="false"></textarea>
                 </div>
                 <div class="playground-preview" id="playground-output">
-                    <h4>NEIR Model Preview</h4>
-                    <div style="color:var(--color-text-dim);font-size:0.875rem;">Edit the spec on the left to see the preview update...</div>
+                    <h4>{{ i18n "home_playground_preview" }}</h4>
+                    <div style="color:var(--color-text-dim);font-size:0.875rem;">{{ i18n "home_playground_hint" }}</div>
                 </div>
             </div>
         </div>
@@ -251,36 +251,36 @@ generation:
 
 <section class="section">
     <div class="container fade-in">
-        <h2 class="section-title">Testimonials</h2>
-        <p class="section-subtitle">What the engineering community is saying about NAEOS.</p>
+        <h2 class="section-title">{{ i18n "home_testimonials_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "home_testimonials_desc" }}</p>
         <div class="testimonials-grid stagger-fade">
             <div class="testimonial-card">
-                <p>NAEOS transformed how our team approaches new projects. From spec to production code in minutes instead of days.</p>
+                <p>{{ i18n "home_testimonial_one" }}</p>
                 <div class="testimonial-author">
-                    <div class="testimonial-avatar">AR</div>
+                    <div class="testimonial-avatar">SK</div>
                     <div class="testimonial-info">
-                        <h4>Alex Rivera</h4>
-                        <span>Staff Engineer at TechCorp</span>
+                        <h4>Sarah Kim</h4>
+                        <span>{{ i18n "home_testimonial_one_role" }}</span>
                     </div>
                 </div>
             </div>
             <div class="testimonial-card">
-                <p>The AI compiler is a game-changer. Our Claude and Copilot finally understand our architecture without endless context files.</p>
+                <p>{{ i18n "home_testimonial_two" }}</p>
                 <div class="testimonial-author">
-                    <div class="testimonial-avatar">ML</div>
+                    <div class="testimonial-avatar">JR</div>
                     <div class="testimonial-info">
-                        <h4>Maya Liu</h4>
-                        <span>Principal Architect at ScaleUp</span>
+                        <h4>James Reyes</h4>
+                        <span>{{ i18n "home_testimonial_two_role" }}</span>
                     </div>
                 </div>
             </div>
             <div class="testimonial-card">
-                <p>We standardized our microservices generation across 4 teams. NAEOS ensures consistency while letting each team use their language of choice.</p>
+                <p>{{ i18n "home_testimonial_three" }}</p>
                 <div class="testimonial-author">
-                    <div class="testimonial-avatar">DK</div>
+                    <div class="testimonial-avatar">AN</div>
                     <div class="testimonial-info">
-                        <h4>David Kim</h4>
-                        <span>Engineering Director at FinStack</span>
+                        <h4>Aditya Nugraha</h4>
+                        <span>{{ i18n "home_testimonial_three_role" }}</span>
                     </div>
                 </div>
             </div>
@@ -291,7 +291,7 @@ generation:
 <section class="section">
     <div class="container fade-in">
         <h2 class="section-title">{{ i18n "section_languages" }}</h2>
-        <p class="section-subtitle">Generate production-ready code in 5 languages with per-language adapters.</p>
+        <p class="section-subtitle">{{ i18n "home_languages_desc" }}</p>
         <div class="languages-grid stagger-fade">
             <span class="lang-badge"><span class="lang-dot" style="background:#00add8;"></span>Go</span>
             <span class="lang-badge"><span class="lang-dot" style="background:#3178c6;"></span>TypeScript</span>
@@ -305,7 +305,7 @@ generation:
 <section class="section">
     <div class="container fade-in">
         <h2 class="section-title">{{ i18n "section_ai" }}</h2>
-        <p class="section-subtitle">Transform NEIR into AI instruction sets for 6 leading coding assistants.</p>
+        <p class="section-subtitle">{{ i18n "home_ai_desc" }}</p>
         <div class="ai-grid stagger-fade">
             <div class="ai-card"><span class="ai-icon">⟐</span>GitHub Copilot</div>
             <div class="ai-card"><span class="ai-icon">◉</span>Claude Code</div>

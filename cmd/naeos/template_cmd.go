@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/marketplace"
 	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 	"github.com/NAEOS-foundation/naeos/internal/templates"
 )
@@ -15,18 +17,15 @@ import (
 func newTemplateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "template",
-		Short: "Manage generation templates and prompt library",
-		Long: `Manage NAEOS generation templates and prompt library.
+		Short: "Manage generation templates, prompt library, and template marketplace",
+		Long: `Manage NAEOS generation templates, prompt library, and template marketplace.
 
-Example:
+Examples:
   naeos template list
-  naeos template list --kind code
-  naeos template list --kind prompt-llm
-  naeos template list --kind prompt-compiler
-  naeos template show enrich-spec
-  naeos template show claude
-  naeos template add my-template "template content"
-  naeos template remove my-template`,
+  naeos template publish ./my-template
+  naeos template search microservices
+  naeos template init go-http-api
+  naeos template show enrich-spec`,
 	}
 
 	var templatesDir string
@@ -262,7 +261,201 @@ variables:
 	cmd.AddCommand(templateRemove)
 	cmd.AddCommand(promptCreate)
 	cmd.AddCommand(promptRemove)
+	cmd.AddCommand(newTemplatePublishCommand())
+	cmd.AddCommand(newTemplateSearchCommand())
+	cmd.AddCommand(newTemplateInitCommand())
 	cmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", filepath.Join(".", ".naeos", "templates"), "templates directory")
+	return cmd
+}
+
+func newTemplatePublishCommand() *cobra.Command {
+	var registryURL string
+	var outputJSON bool
+
+	cmd := &cobra.Command{
+		Use:   "publish [path]",
+		Short: "Publish a starter project template to the marketplace",
+		Long: `Publish a starter project template to the NAEOS template marketplace.
+
+The template directory must contain:
+  - template.yaml or naeos.yaml — manifest with name, version, description
+  - README.md — documentation
+  - Project source files
+
+Example:
+  naeos template publish ./my-template
+  naeos template publish ./my-template --registry https://registry.naeos.dev
+
+To generate a local registry entry without publishing:
+  naeos template publish ./my-template --registry file://./local-registry.json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			templateDir := args[0]
+
+			info, err := os.Stat(templateDir)
+			if err != nil {
+				return fmt.Errorf("template directory: %w", err)
+			}
+			if !info.IsDir() {
+				return fmt.Errorf("%s is not a directory", templateDir)
+			}
+
+			entry, err := marketplace.PublishTemplate(templateDir, registryURL)
+			if err != nil {
+				return fmt.Errorf("publish failed: %w", err)
+			}
+
+			if outputJSON {
+				data, _ := json.MarshalIndent(entry, "", "  ")
+				_, _ = cmd.OutOrStdout().Write(data)
+				_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+				return nil
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "✓ Template '%s' v%s published\n", entry.Name, entry.Version)
+			fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", entry.Description)
+			fmt.Fprintf(cmd.OutOrStdout(), "  Author:      %s\n", entry.Author)
+			fmt.Fprintf(cmd.OutOrStdout(), "  Languages:   %s\n", strings.Join(entry.Languages, ", "))
+			fmt.Fprintf(cmd.OutOrStdout(), "  Tags:        %s\n", strings.Join(entry.Tags, ", "))
+
+			if strings.HasPrefix(registryURL, "file://") || registryURL == "" {
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+				fmt.Fprintln(cmd.OutOrStdout(), "To add this template to the official registry, submit a PR at:")
+				fmt.Fprintln(cmd.OutOrStdout(), "  https://github.com/NAEOS-foundation/naeos")
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+				fmt.Fprintln(cmd.OutOrStdout(), "Template entry (add to site/static/templates/registry.json):")
+				entryData, _ := json.MarshalIndent(entry, "", "  ")
+				_, _ = cmd.OutOrStdout().Write(entryData)
+				_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "  Registry:    %s\n", registryURL)
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&registryURL, "registry", "", "template registry URL (default: generate entry only, use --registry to publish remotely)")
+	cmd.Flags().BoolVarP(&outputJSON, "json", "j", false, "output template entry as JSON")
+
+	return cmd
+}
+
+func newTemplateSearchCommand() *cobra.Command {
+	var registryURL string
+	var outputFormat string
+
+	cmd := &cobra.Command{
+		Use:   "search [query]",
+		Short: "Search for starter project templates in the marketplace",
+		Long: `Search the template marketplace for starter project templates.
+
+Examples:
+  naeos template search go
+  naeos template search "machine learning"
+  naeos template search python --output json`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			query := strings.Join(args, " ")
+			reg := marketplace.NewRemoteTemplateRegistry(registryURL)
+
+			results, err := reg.Search(query)
+			if err != nil {
+				return fmt.Errorf("search templates: %w", err)
+			}
+
+			switch outputFormat {
+			case "json":
+				data, _ := json.MarshalIndent(map[string]any{
+					"query":   query,
+					"results": results,
+					"count":   len(results),
+				}, "", "  ")
+				_, _ = cmd.OutOrStdout().Write(data)
+				_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+			default:
+				if len(results) == 0 {
+					fmt.Fprintf(cmd.OutOrStdout(), "No templates found for %q\n", query)
+					return nil
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Found %d template(s) for %q:\n\n", len(results), query)
+				fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %-10s %-12s %s\n", "Name", "Version", "Languages", "Description")
+				fmt.Fprintln(cmd.OutOrStdout(), strings.Repeat("─", 80))
+				for _, t := range results {
+					languages := strings.Join(t.Languages, ",")
+					if len(languages) > 12 {
+						languages = languages[:12]
+					}
+					desc := t.Description
+					if len(desc) > 40 {
+						desc = desc[:37] + "..."
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %-10s %-12s %s\n", t.Name, "v"+t.Version, languages, desc)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), "")
+				fmt.Fprintln(cmd.OutOrStdout(), "Use 'naeos template init <name>' to get started with a template.")
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&registryURL, "registry", marketplace.DefaultTemplateRegistryURL, "template registry URL")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "text", "output format: text, json")
+
+	return cmd
+}
+
+func newTemplateInitCommand() *cobra.Command {
+	var registryURL string
+	var outputDir string
+
+	cmd := &cobra.Command{
+		Use:   "init [name]",
+		Short: "Initialize a project from a template in the marketplace",
+		Long: `Initialize a new project from a starter template in the marketplace.
+
+Templates include complete project structures with:
+  - Source code boilerplate
+  - Build configuration (Makefile, Dockerfile)
+  - CI/CD workflows
+  - NAEOS specification file
+
+Examples:
+  naeos template init microservices-go
+  naeos template init microservices-go --output ./my-project`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+
+			reg := marketplace.NewRemoteTemplateRegistry(registryURL)
+			entry, err := reg.Get(name)
+			if err != nil {
+				return fmt.Errorf("template %q not found in registry: %w", name, err)
+			}
+
+			targetDir := outputDir
+			if targetDir == "" {
+				targetDir = name
+			}
+
+			if entry.RepoURL != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "Template: %s v%s\n", entry.Name, entry.Version)
+				fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", entry.Description)
+				fmt.Fprintf(cmd.OutOrStdout(), "\nTo use this template, clone the repository:\n")
+				fmt.Fprintf(cmd.OutOrStdout(), "  git clone %s %s\n", entry.RepoURL, targetDir)
+				fmt.Fprintf(cmd.OutOrStdout(), "  cd %s\n", targetDir)
+				fmt.Fprintf(cmd.OutOrStdout(), "  naeos init\n")
+				return nil
+			}
+
+			return fmt.Errorf("template %q has no download URL configured", name)
+		},
+	}
+
+	cmd.Flags().StringVar(&registryURL, "registry", marketplace.DefaultTemplateRegistryURL, "template registry URL")
+	cmd.Flags().StringVarP(&outputDir, "output", "o", "", "output directory (defaults to template name)")
+
 	return cmd
 }
 

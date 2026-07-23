@@ -13,6 +13,12 @@ other = "Unduh"
 [nav_community]
 other = "Komunitas"
 
+[nav_plugins]
+other = "Plugin"
+
+[plugins_install]
+other = "Pasang"
+
 [cta_get_started]
 other = "Mulai"
 
@@ -173,7 +179,7 @@ other = "NAEOS adalah proyek open-source. Kami menyambut kontribusi, masukan, da
 other = "Fitur"
 
 [features_page_desc]
-other = "Jelajahi rangkaian fitur lengkap NAEOS — dari parsing spesifikasi hingga生成 kode berbantuan AI."
+other = "Jelajahi rangkaian fitur lengkap NAEOS — dari parsing spesifikasi hingga generasi kode berbantuan AI."
 
 [docs_page_title]
 other = "Dokumentasi"
@@ -201,6 +207,21 @@ other = "Tetap Terupdate"
 
 [footer_subscribe]
 other = "Langganan"
+
+[newsletter_email_placeholder]
+other = "email@anda.com"
+
+[newsletter_invalid_email]
+other = "Masukkan alamat email yang valid."
+
+[newsletter_loading]
+other = "Mendaftarkan..."
+
+[newsletter_success]
+other = "Terima kasih! Email Anda telah terdaftar."
+
+[newsletter_error]
+other = "Pendaftaran sedang tidak tersedia. Silakan coba lagi."
 
 [nav_about]
 other = "Tentang"
@@ -348,3 +369,222 @@ other = "Ketentuan Layanan"
 
 [terms_desc]
 other = "Ketentuan dan syarat penggunaan NAEOS."
+
+[cookie_decline]
+other = "Tolak"
+
+[share]
+other = "Bagikan:"
+
+[copy]
+other = "Salin"
+
+[copied]
+other = "Disalin!"
+
+[previous]
+other = "Sebelumnya"
+
+[next]
+other = "Berikutnya"
+
+[filter_pages]
+other = "Filter halaman..."
+
+[loading_contributors]
+other = "Memuat kontributor..."
+
+[edit_page]
+other = "Edit halaman ini"
+
+[loading_releases]
+other = "Memuat rilis dari GitHub..."
+
+[nav_api_reference]
+other = "Referensi API"
+
+[nav_glossary]
+other = "Glosarium"
+
+[nav_contributing]
+other = "Berkontribusi"
+
+[nav_context_bundles]
+other = "Context Bundles"
+
+[nav_profiles]
+other = "Profil Industri"
+
+[nav_validation]
+other = "Validasi"
+
+[nav_governance]
+other = "Governance"
+
+[nav_project_structure]
+other = "Struktur Proyek"
+
+[nav_core_principles]
+other = "Prinsip Inti"
+
+[hero_open_source]
+other = "Sumber Terbuka"
+
+[home_what_is_extended]
+other = "Dari satu spesifikasi YAML, NAEOS menghasilkan struktur proyek lengkap, kode, dokumentasi, pipeline CI/CD, manifes deployment, dan konteks AI untuk 5 bahasa pemrograman dan 6 platform AI."
+
+[home_features_subtitle]
+other = "{{ .CLI }}+ perintah CLI, 5 bahasa, 6 platform AI, dan 56+ spesifikasi yang bekerja sebagai satu sistem rekayasa."
+
+[home_quick_start_subtitle]
+other = "Bergerak dari spesifikasi ke kode yang dihasilkan dalam empat langkah jelas."
+
+[home_step_install_title]
+other = "Pasang NAEOS"
+
+[home_step_install_desc]
+other = "Pasang melalui Go, gunakan Docker, atau unduh binary yang siap dijalankan."
+
+[home_step_spec_title]
+other = "Buat Spesifikasi"
+
+[home_step_spec_desc]
+other = "Jelaskan struktur proyek Anda dalam YAML atau JSON."
+
+[home_step_run_title]
+other = "Jalankan Pipeline"
+
+[home_step_run_desc]
+other = "Parse, validasi, hasilkan, dan ekspor proyek secara lengkap."
+
+[home_step_ai_title]
+other = "Kompilasi Konteks AI"
+
+[home_step_ai_desc]
+other = "Hasilkan set instruksi untuk Copilot, Claude, Cursor, dan asisten pemrograman lainnya."
+
+[copy_code]
+other = "Salin kode"
+
+[home_community_title]
+other = "Dipercaya Komunitas Sumber Terbuka"
+
+[home_github_stars]
+other = "Bintang GitHub"
+
+[home_github_forks]
+other = "Fork"
+
+[home_github_issues]
+other = "Isu Terbuka"
+
+[home_github_contributors]
+other = "Kontributor"
+
+[home_use_cases_desc]
+other = "NAEOS cocok untuk alur kerja rekayasa dari microservices hingga monolit, serta dari pengembang individu hingga tim enterprise."
+
+[home_use_case_microservices_title]
+other = "Arsitektur Microservices"
+
+[home_use_case_microservices_desc]
+other = "Definisikan layanan, API, dan dependensi dalam satu spesifikasi. Hasilkan kode Go dan TypeScript beserta endpoint REST, Dockerfile, dan manifes Kubernetes."
+
+[home_use_case_serverless_title]
+other = "Aplikasi Serverless"
+
+[home_use_case_serverless_desc]
+other = "Jelaskan fungsi dan sumber event. Hasilkan handler Python dan TypeScript beserta konfigurasi framework dan kebijakan IAM."
+
+[home_use_case_ai_title]
+other = "Pengembangan Berbantuan AI"
+
+[home_use_case_ai_desc]
+other = "Kompilasi arsitektur menjadi set instruksi agar asisten pemrograman memahami konteks proyek lengkap tanpa prompt manual berulang."
+
+[home_ai_platforms_badge]
+other = "6 Platform AI"
+
+[home_use_case_governance_title]
+other = "Tata Kelola Enterprise"
+
+[home_use_case_governance_desc]
+other = "Terapkan kebijakan arsitektur, aturan keamanan, dan standar pemrograman lintas tim dengan jejak audit dan kontrol akses berbasis peran."
+
+[home_governance_badge]
+other = "Tata Kelola"
+
+[home_playground_title]
+other = "Coba Langsung"
+
+[home_playground_desc]
+other = "Edit spesifikasi dan periksa struktur model NEIR yang dihasilkan secara langsung."
+
+[home_tab_microservice]
+other = "Microservice"
+
+[home_tab_ai_context]
+other = "Konteks AI"
+
+[home_playground_placeholder]
+other = "Tempel spesifikasi YAML NAEOS Anda di sini..."
+
+[home_playground_preview]
+other = "Pratinjau Model NEIR"
+
+[home_playground_hint]
+other = "Edit spesifikasi di sebelah kiri untuk memperbarui pratinjau ini."
+
+[home_playground_modules]
+other = "Modul"
+
+[home_playground_services]
+other = "Layanan"
+
+[home_playground_dependencies]
+other = "Dependensi"
+
+[home_playground_languages]
+other = "Bahasa"
+
+[home_playground_project]
+other = "Proyek"
+
+[home_playground_generation]
+other = "Generasi"
+
+[home_playground_unnamed]
+other = "tanpa nama"
+
+[home_playground_invalid_yaml]
+other = "YAML tidak valid"
+
+[home_testimonials_title]
+other = "Testimoni"
+
+[home_testimonials_desc]
+other = "Pendapat praktisi rekayasa setelah bekerja dengan NAEOS."
+
+[home_testimonial_one]
+other = "NAEOS menggantikan tiga generator kode terpisah dan sebuah wiki. Satu file YAML kini menggerakkan scaffolding proyek kami untuk layanan Go dan TypeScript."
+
+[home_testimonial_one_role]
+other = "Platform Engineer · GitHub Sponsors"
+
+[home_testimonial_two]
+other = "Keluaran kompiler AI sangat berguna. Claude Code langsung memiliki konteks arsitektur lengkap tanpa berulang kali menyalin isi README ke dalam prompt."
+
+[home_testimonial_two_role]
+other = "Pengembang Full-Stack · Kontributor OSS"
+
+[home_testimonial_three]
+other = "Kami memigrasikan 12 microservice ke spesifikasi NAEOS. Lapisan tata kelola menemukan tiga pelanggaran arsitektur sebelum masuk produksi."
+
+[home_testimonial_three_role]
+other = "Engineering Lead · Komunitas NAEOS"
+
+[home_languages_desc]
+other = "Hasilkan kode siap produksi dalam 5 bahasa melalui adapter khusus tiap bahasa."
+
+[home_ai_desc]
+other = "Ubah NEIR menjadi set instruksi untuk 6 asisten pemrograman AI terkemuka."

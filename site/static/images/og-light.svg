@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08d6ff" stop-opacity="0.08"/>
+      <stop offset="50%" stop-color="#08d6ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#08d6ff"/>
+      <stop offset="50%" stop-color="#6056f5"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+  </defs>
+  <rect fill="#ffffff" width="1200" height="630"/>
+  <rect fill="url(#glow)" width="1200" height="630"/>
+  <g stroke="rgba(0,0,0,0.03)" stroke-width="1" fill="none">
+    <line x1="0" y1="105" x2="1200" y2="105"/>
+    <line x1="0" y1="210" x2="1200" y2="210"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="525" x2="1200" y2="525"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  </g>
+  <polygon points="100,100 140,80 180,100 180,140 140,160 100,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.12"/>
+  <polygon points="180,100 220,80 260,100 260,140 220,160 180,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.08"/>
+  <polygon points="260,100 300,80 340,100 340,140 300,160 260,140" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.04"/>
+  <g fill="url(#accent-grad)">
+    <polygon points="106,282 124,282 124,348 106,348"/>
+    <polygon points="148,282 166,282 166,348 148,348"/>
+    <polygon points="106,282 124,282 166,348 148,348"/>
+  </g>
+  <text x="200" y="260" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="96" font-weight="800" fill="#0a0a0a" letter-spacing="-2">NAEOS</text>
+  <rect x="200" y="280" width="120" height="4" rx="2" fill="url(#accent-grad)"/>
+  <text x="200" y="330" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="32" font-weight="500" fill="#666666" letter-spacing="-0.5">Specify Once. Build Anywhere.</text>
+  <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" fill="#999999">Declarative Platform Engineering System</text>
+  <rect x="200" y="400" width="160" height="36" rx="18" fill="#f0f0f0" stroke="#dddddd" stroke-width="1"/>
+  <text x="280" y="424" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600" fill="#08d6ff" text-anchor="middle">v2.1.0</text>
+  <circle cx="1050" cy="180" r="80" fill="none" stroke="#08d6ff" stroke-width="2" opacity="0.07"/>
+  <circle cx="1050" cy="180" r="120" fill="none" stroke="#08d6ff" stroke-width="1" opacity="0.04"/>
+  <circle cx="1050" cy="450" r="60" fill="none" stroke="#08d6ff" stroke-width="2" opacity="0.05"/>
+  <rect x="920" y="400" width="160" height="3" rx="1.5" fill="#9333ea" opacity="0.18"/>
+  <rect x="920" y="410" width="100" height="3" rx="1.5" fill="#6056f5" opacity="0.13"/>
+  <rect x="920" y="420" width="130" height="3" rx="1.5" fill="#08d6ff" opacity="0.08"/>
+  <path d="M920 315 h40 v-40 h60" fill="none" stroke="#08d6ff" stroke-width="1.5" opacity="0.13"/>
+  <path d="M940 315 h20 v60 h80" fill="none" stroke="#9333ea" stroke-width="1.5" opacity="0.08"/>
+  <circle cx="1020" cy="275" r="3" fill="#08d6ff" opacity="0.18"/>
+  <circle cx="1040" cy="375" r="3" fill="#9333ea" opacity="0.18"/>
+</svg>

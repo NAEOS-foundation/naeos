@@ -19,6 +19,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/storage"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
 func fullNEIR() *model.NEIR {
@@ -148,7 +149,7 @@ func TestBuildNEIRContextRich(t *testing.T) {
 		"rolling", "unit",
 	}
 	for _, c := range checks {
-		if !contains(ctx, c) {
+		if !testutil.Contains(ctx, c) {
 			t.Errorf("expected %q in context", c)
 		}
 	}
@@ -162,7 +163,7 @@ func TestBuildNEIRContextSecurityNoAuth(t *testing.T) {
 		},
 	}
 	ctx := buildNEIRContext(neir)
-	if !contains(ctx, "Security") {
+	if !testutil.Contains(ctx, "Security") {
 		t.Error("expected Security section")
 	}
 }
@@ -211,7 +212,7 @@ func TestClaudeAdapterWithSecurity(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if f.Path == "CLAUDE.md" && contains(f.Content, "oauth2") {
+		if f.Path == "CLAUDE.md" && testutil.Contains(f.Content, "oauth2") {
 			found = true
 			break
 		}
@@ -243,7 +244,7 @@ func TestClaudeAdapterWithArchitecture(t *testing.T) {
 	if rulesFile == "" {
 		t.Fatal("expected .claude/rules.md")
 	}
-	if !contains(rulesFile, "clean") {
+	if !testutil.Contains(rulesFile, "clean") {
 		t.Error("expected architecture pattern in rules")
 	}
 }
@@ -262,7 +263,7 @@ func TestClaudeAdapterLegacyRulesNoArchitecture(t *testing.T) {
 	}
 	for _, f := range out.Files {
 		if f.Path == ".claude/rules.md" {
-			if !contains(f.Content, "m1") {
+			if !testutil.Contains(f.Content, "m1") {
 				t.Error("expected module name in rules")
 			}
 		}
@@ -283,7 +284,7 @@ func TestClaudeAdapterContextWithComponents(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "Handler") {
+		if testutil.Contains(f.Content, "Handler") {
 			found = true
 			break
 		}
@@ -321,7 +322,7 @@ func TestOpenCodeAdapterSecurityWithEncryption(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if f.Path == "AGENTS.md" && contains(f.Content, "api-key") {
+		if f.Path == "AGENTS.md" && testutil.Contains(f.Content, "api-key") {
 			found = true
 			break
 		}
@@ -349,7 +350,7 @@ func TestOpenCodeAdapterWithInfrastructure(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "gcp") {
+		if testutil.Contains(f.Content, "gcp") {
 			found = true
 		}
 	}
@@ -372,7 +373,7 @@ func TestOpenCodeAdapterWithAIModels(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "gpt4") {
+		if testutil.Contains(f.Content, "gpt4") {
 			found = true
 		}
 	}
@@ -396,7 +397,7 @@ func TestOpenCodeAdapterWithDocs(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "ADR-1") {
+		if testutil.Contains(f.Content, "ADR-1") {
 			found = true
 		}
 	}
@@ -419,7 +420,7 @@ func TestOpenCodeAdapterWithStorage(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "cache") {
+		if testutil.Contains(f.Content, "cache") {
 			found = true
 		}
 	}
@@ -441,7 +442,7 @@ func TestOpenCodeAdapterWithDeploymentAndTesting(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "canary") {
+		if testutil.Contains(f.Content, "canary") {
 			found = true
 		}
 	}
@@ -462,7 +463,7 @@ func TestOpenCodeAdapterRulesNoArchitecture(t *testing.T) {
 	}
 	for _, f := range out.Files {
 		if f.Path == ".opencode/rules.md" {
-			if !contains(f.Content, "m1") {
+			if !testutil.Contains(f.Content, "m1") {
 				t.Error("expected module name in rules")
 			}
 		}
@@ -504,7 +505,7 @@ func TestGeminiAdapterContextWithComponentsAndAPIs(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if contains(f.Content, "Ctrl") {
+		if testutil.Contains(f.Content, "Ctrl") {
 			found = true
 		}
 	}
@@ -560,7 +561,7 @@ func TestCodexAdapterWithStorageAndAI(t *testing.T) {
 	}
 	found := false
 	for _, f := range out.Files {
-		if f.Path == ".codex/context.md" && contains(f.Content, "db") {
+		if f.Path == ".codex/context.md" && testutil.Contains(f.Content, "db") {
 			found = true
 		}
 	}
@@ -581,7 +582,7 @@ func TestCodexAdapterContextEmpty(t *testing.T) {
 	}
 	for _, f := range out.Files {
 		if f.Path == ".codex/context.md" {
-			if !contains(f.Content, "Codex Context") {
+			if !testutil.Contains(f.Content, "Codex Context") {
 				t.Error("expected context header")
 			}
 		}

@@ -64,3 +64,7 @@ NAEOS provides 35+ CLI commands for every stage of the engineering pipeline.
 | `naeos lock` | Lock dependencies |
 
 For detailed usage of each command, run `naeos <command> --help`.
+
+## Download
+
+- [CLI Reference PDF](/downloads/naeos-cli-reference.pdf)

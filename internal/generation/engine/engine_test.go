@@ -11,6 +11,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
 func TestGeneratorCreatesArtifactsFromNEIR(t *testing.T) {
@@ -60,19 +61,19 @@ func TestGenerateForLanguageGo(t *testing.T) {
 	for _, a := range artifacts {
 		if a.Path == "go.mod" {
 			foundGoMod = true
-			if !contains(a.Content, "module github.com/example/acme-api") {
+			if !testutil.ContainsBytes(a.Content, "module github.com/example/acme-api") {
 				t.Errorf("go.mod should contain module path")
 			}
 		}
 		if a.Path == "src/main.go" {
 			foundMain = true
-			if !contains(a.Content, "hello from acme-api") {
+			if !testutil.ContainsBytes(a.Content, "hello from acme-api") {
 				t.Errorf("main.go should contain project name")
 			}
 		}
 		if a.Path == "Dockerfile" {
 			foundDockerfile = true
-			if !contains(a.Content, "golang:1.22") {
+			if !testutil.ContainsBytes(a.Content, "golang:1.22") {
 				t.Errorf("Dockerfile should use Go image")
 			}
 		}
@@ -133,13 +134,13 @@ func TestGenerateForLanguageTypeScript(t *testing.T) {
 	for _, a := range artifacts {
 		if a.Path == "package.json" {
 			foundPackageJson = true
-			if !contains(a.Content, "web-app") {
+			if !testutil.ContainsBytes(a.Content, "web-app") {
 				t.Errorf("package.json should contain project name")
 			}
 		}
 		if a.Path == "src/main.ts" {
 			foundMain = true
-			if !contains(a.Content, "hello from web-app") {
+			if !testutil.ContainsBytes(a.Content, "hello from web-app") {
 				t.Errorf("main.ts should contain project name")
 			}
 		}
@@ -168,7 +169,7 @@ func TestGenerateForLanguagePython(t *testing.T) {
 	for _, a := range artifacts {
 		if a.Path == "pyproject.toml" {
 			foundPyproject = true
-			if !contains(a.Content, "ml-service") {
+			if !testutil.ContainsBytes(a.Content, "ml-service") {
 				t.Errorf("pyproject.toml should contain project name")
 			}
 		}
@@ -197,10 +198,10 @@ func TestGenerateForLanguageWithModules(t *testing.T) {
 	authFiles := 0
 	apiFiles := 0
 	for _, a := range artifacts {
-		if contains([]byte(a.Path), "auth") {
+		if testutil.Contains(a.Path, "auth") {
 			authFiles++
 		}
-		if contains([]byte(a.Path), "api") {
+		if testutil.Contains(a.Path, "api") {
 			apiFiles++
 		}
 	}
@@ -623,6 +624,4 @@ func TestGenerateForLanguageWithServices(t *testing.T) {
 	}
 }
 
-func contains(haystack []byte, needle string) bool {
-	return strings.Contains(string(haystack), needle)
-}
+

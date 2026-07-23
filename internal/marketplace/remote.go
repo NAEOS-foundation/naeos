@@ -12,10 +12,14 @@ import (
 	"time"
 )
 
-const DefaultRegistryURL = "https://registry.naeos.dev/v1"
+const (
+	DefaultRegistryURL  = "https://naeos.dev"
+	DefaultRegistryPath = "/api/v1/plugins"
+)
 
 type RemoteRegistry struct {
 	baseURL    string
+	apiPath    string
 	installDir string
 	httpClient *http.Client
 }
@@ -26,6 +30,7 @@ func NewRemoteRegistry(baseURL, installDir string) *RemoteRegistry {
 	}
 	return &RemoteRegistry{
 		baseURL:    baseURL,
+		apiPath:    DefaultRegistryPath,
 		installDir: installDir,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
@@ -48,8 +53,15 @@ type RemotePluginList struct {
 	Plugins []RemotePlugin `json:"plugins"`
 }
 
+type RemoteSearchFilter struct {
+	Query    string
+	Author   string
+	Platform string
+	Tags     []string
+}
+
 func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
-	url := r.baseURL + "/plugins"
+	url := r.baseURL + r.apiPath
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -75,6 +87,10 @@ func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
 }
 
 func (r *RemoteRegistry) Search(query string) ([]RemotePlugin, error) {
+	return r.SearchFilter(RemoteSearchFilter{Query: query})
+}
+
+func (r *RemoteRegistry) SearchFilter(filter RemoteSearchFilter) ([]RemotePlugin, error) {
 	plugins, err := r.List()
 	if err != nil {
 		return nil, err
@@ -82,20 +98,41 @@ func (r *RemoteRegistry) Search(query string) ([]RemotePlugin, error) {
 
 	var results []RemotePlugin
 	for _, p := range plugins {
-		if query == "" {
-			results = append(results, p)
-			continue
-		}
-		if containsStr(p.Name, query) || containsStr(p.Description, query) {
-			results = append(results, p)
-			continue
-		}
-		for _, tag := range p.Tags {
-			if containsStr(tag, query) {
-				results = append(results, p)
-				break
+		if filter.Query != "" {
+			if !containsStr(p.Name, filter.Query) && !containsStr(p.Description, filter.Query) {
+				matchedTag := false
+				for _, tag := range p.Tags {
+					if containsStr(tag, filter.Query) {
+						matchedTag = true
+						break
+					}
+				}
+				if !matchedTag {
+					continue
+				}
 			}
 		}
+		if filter.Author != "" && !containsStr(p.Author, filter.Author) {
+			continue
+		}
+		if filter.Platform != "" && p.Platform != filter.Platform {
+			continue
+		}
+		if len(filter.Tags) > 0 {
+			hasTag := false
+			for _, ft := range filter.Tags {
+				for _, pt := range p.Tags {
+					if pt == ft {
+						hasTag = true
+						break
+					}
+				}
+			}
+			if !hasTag {
+				continue
+			}
+		}
+		results = append(results, p)
 	}
 	return results, nil
 }

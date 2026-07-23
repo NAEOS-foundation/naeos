@@ -33,6 +33,15 @@ jobs:
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.1.2
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
+      - name: Check formatting
+        run: |
+          gofmt_files=$(gofmt -l .)
+          if [ -n "$gofmt_files" ]; then
+            echo "Unformatted files:"
+            echo "$gofmt_files"
+            exit 1
+          fi
+
       - name: Lint
         run: golangci-lint run ./...
 

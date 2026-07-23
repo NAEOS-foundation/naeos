@@ -221,12 +221,10 @@ pkg/
   config/           # Configuration
   plugin/           # Plugin system
 docs/               # Documentation (56 NES specs)
-wiki/               # Project wiki (19 pages)
 ```
 
 ## Documentation
 
-- [Wiki](wiki/) — 19 pages of comprehensive documentation
 - [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — document index
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines

@@ -104,3 +104,83 @@ func TestRealPostgreSQLNotConnected(t *testing.T) {
 		t.Error("expected error when not connected")
 	}
 }
+
+func TestRealPostgreSQLConnectAllConfigOptions(t *testing.T) {
+	db := NewRealPostgreSQL()
+	err := db.Connect(&Config{
+		Host:            "192.0.2.1",
+		Port:            1,
+		User:            "test",
+		Password:        "test",
+		Database:        "test",
+		SSLMode:         "disable",
+		Timeout:         1 * time.Second,
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 10 * time.Minute,
+		ConnMaxIdleTime: 5 * time.Minute,
+	})
+	if err == nil {
+		t.Error("expected error when connecting to unreachable host")
+	}
+}
+
+func TestRealPostgreSQLConnectNoOptionalConfig(t *testing.T) {
+	db := NewRealPostgreSQL()
+	err := db.Connect(&Config{
+		Host:     "192.0.2.1",
+		Port:     1,
+		User:     "test",
+		Password: "test",
+		Database: "test",
+		SSLMode:  "disable",
+	})
+	if err == nil {
+		t.Error("expected error when connecting to unreachable host")
+	}
+}
+
+func TestRealPostgreSQLDefaultContextWithTimeout(t *testing.T) {
+	db := NewRealPostgreSQL()
+	db.config = &Config{Timeout: 5 * time.Second}
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealPostgreSQLDefaultContextWithoutTimeout(t *testing.T) {
+	db := NewRealPostgreSQL()
+	db.config = &Config{}
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealPostgreSQLDefaultContextNilConfig(t *testing.T) {
+	db := NewRealPostgreSQL()
+	ctx, cancel := db.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealPostgreSQLCloseNil(t *testing.T) {
+	db := NewRealPostgreSQL()
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close nil: %v", err)
+	}
+}

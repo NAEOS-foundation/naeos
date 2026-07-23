@@ -21,7 +21,7 @@ func TestRemoteRegistryList(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rr := NewRemoteRegistry(server.URL, t.TempDir())
+	rr := NewRemoteRegistry(server.URL+"/plugins", t.TempDir())
 	plugins, err := rr.List()
 	if err != nil {
 		t.Fatal(err)
@@ -44,7 +44,7 @@ func TestRemoteRegistrySearch(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rr := NewRemoteRegistry(server.URL, t.TempDir())
+	rr := NewRemoteRegistry(server.URL+"/plugins", t.TempDir())
 
 	results, err := rr.Search("python")
 	if err != nil {
@@ -63,11 +63,77 @@ func TestRemoteRegistrySearch(t *testing.T) {
 	}
 }
 
+func TestRemoteRegistrySearchFilter(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		list := RemotePluginList{
+			Plugins: []RemotePlugin{
+				{Name: "plug-a", Version: "1.0.0", Description: "alpha", Author: "team-a", Platform: "linux/amd64", Tags: []string{"go"}},
+				{Name: "plug-b", Version: "2.0.0", Description: "beta", Author: "team-b", Platform: "linux/arm64", Tags: []string{"python"}},
+				{Name: "plug-c", Version: "1.5.0", Description: "gamma", Author: "team-a", Platform: "linux/amd64", Tags: []string{"go", "http"}},
+			},
+		}
+		json.NewEncoder(w).Encode(list)
+	}))
+	defer server.Close()
+
+	rr := NewRemoteRegistry(server.URL, t.TempDir())
+
+	t.Run("filter by author", func(t *testing.T) {
+		results, err := rr.SearchFilter(RemoteSearchFilter{Author: "team-a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 2 {
+			t.Errorf("expected 2, got %d", len(results))
+		}
+	})
+
+	t.Run("filter by platform", func(t *testing.T) {
+		results, err := rr.SearchFilter(RemoteSearchFilter{Platform: "linux/arm64"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 1 || results[0].Name != "plug-b" {
+			t.Errorf("expected plug-b, got %v", results)
+		}
+	})
+
+	t.Run("filter by tags", func(t *testing.T) {
+		results, err := rr.SearchFilter(RemoteSearchFilter{Tags: []string{"http"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 1 || results[0].Name != "plug-c" {
+			t.Errorf("expected plug-c, got %v", results)
+		}
+	})
+
+	t.Run("filter by query and author", func(t *testing.T) {
+		results, err := rr.SearchFilter(RemoteSearchFilter{Query: "alpha", Author: "team-a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 1 || results[0].Name != "plug-a" {
+			t.Errorf("expected plug-a, got %v", results)
+		}
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		results, err := rr.SearchFilter(RemoteSearchFilter{Platform: "windows/amd64"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 0 {
+			t.Errorf("expected 0, got %d", len(results))
+		}
+	})
+}
+
 func TestRemoteRegistryInstall(t *testing.T) {
 	var serverURL string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/plugins":
+		case "/api/v1/plugins":
 			list := RemotePluginList{
 				Plugins: []RemotePlugin{
 					{Name: "test-plugin", Version: "1.0.0", Description: "test", Platform: "linux/amd64", DownloadURL: serverURL + "/download"},
@@ -84,7 +150,7 @@ func TestRemoteRegistryInstall(t *testing.T) {
 	serverURL = server.URL
 
 	installDir := t.TempDir()
-	rr := NewRemoteRegistry(server.URL, installDir)
+	rr := NewRemoteRegistry(server.URL+"/plugins", installDir)
 
 	path, err := rr.Install("test-plugin", "1.0.0")
 	if err != nil {
@@ -134,7 +200,7 @@ func TestRemoteRegistryNotFound(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rr := NewRemoteRegistry(server.URL, t.TempDir())
+	rr := NewRemoteRegistry(server.URL+"/plugins", t.TempDir())
 	_, err := rr.Install("nonexistent", "")
 	if err == nil {
 		t.Error("expected error for nonexistent plugin")

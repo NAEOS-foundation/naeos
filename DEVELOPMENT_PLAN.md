@@ -14,19 +14,19 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Wiki → Hugo migration | Site | Pindah 19 halaman `wiki/` ke `site/content/docs/`. Hapus wiki/ setelah landing page verified |
+| Wiki → Hugo migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke Hugo site. Wiki/ dihapus. |
 | API docs auto-generate | Site | CI job baca `docs/openapi.yaml` → generate Swagger UI page di `/docs/api/` |
 | Blog content pipeline | Site | GitHub Action: detect release tag → auto-create blog post dari changelog |
-| Interactive playground | Site | Integrasi xterm.js + WebSocket ke server demo di homepage |
-| PDF generation | Site | CLI reference + getting-started sebagai PDF download |
-| Dark mode OG image | Site | Generate PNG OG image yang sesuai dark theme + light theme |
+| Interactive playground ✅ | Site | xterm.js + WebSocket ke server demo di homepage. Hero terminal interaktif, fallback ke animasi statis. Demo server di `cmd/naeos-demo/` |
+| PDF generation ✅ | Site | CLI reference + getting-started sebagai PDF download via GitHub Action (`pdf-docs.yml`). Tersedia di `/downloads/` |
+| Dark mode OG image ✅ | Site | SVG OG image dengan `prefers-color-scheme` CSS + PNG fallback (dark & light) via sharp. Tersedia di `/images/og-default.svg` |
 
 ## Fase 3: Platform & Ekosistem
 
 | Item | Area | Detail |
 |------|------|--------|
-| Plugin registry publik | Backend/Site | Bikin `marketplace.naeos.dev` API + halaman browse plugin dari GitHub topic `naeos-plugin` |
-| Plugin template generator | CLI | `naeos plugin init` — scaffolding plugin project dengan SDK boilerplate, testing, CI template |
+| Plugin registry publik ✅ | Backend/Site | `registry.json` di `/plugins/`, halaman browse di `/plugins/`, `RemoteRegistry` client di `internal/marketplace/`, GitHub workflow auto-discover `naeos-plugin` topic |
+| Plugin template generator ✅ | CLI | `naeos plugin init` — scaffolding dengan SDK boilerplate, tests, Makefile, GitHub Actions CI, WASM entry point |
 | NEIR schema registry | Backend | Host NEIR JSON Schema di `schemaregistry/` dengan versioning, validasi spec terhadap schema terbaru |
 | Template marketplace | CLI/Site | Publikasi template starter project (microservices-go, serverless-ts, dll) via `naeos template publish` |
 

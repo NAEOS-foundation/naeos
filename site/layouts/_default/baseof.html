@@ -38,8 +38,30 @@
         var SEARCH_INDEX_URL = '{{ "index.json" | absURL }}';
         var SEARCH_PLACEHOLDER = '{{ i18n "search_placeholder" }}';
         var SEARCH_NO_RESULTS = '{{ i18n "search_no_results" }}';
+        var PLAYGROUND_I18N = {
+            preview: {{ i18n "home_playground_preview" | jsonify }},
+            modules: {{ i18n "home_playground_modules" | jsonify }},
+            services: {{ i18n "home_playground_services" | jsonify }},
+            dependencies: {{ i18n "home_playground_dependencies" | jsonify }},
+            languages: {{ i18n "home_playground_languages" | jsonify }},
+            project: {{ i18n "home_playground_project" | jsonify }},
+            generation: {{ i18n "home_playground_generation" | jsonify }},
+            unnamed: {{ i18n "home_playground_unnamed" | jsonify }},
+            invalidYaml: {{ i18n "home_playground_invalid_yaml" | jsonify }}
+        };
+        var NEWSLETTER_I18N = {
+            invalidEmail: {{ i18n "newsletter_invalid_email" | jsonify }},
+            loading: {{ i18n "newsletter_loading" | jsonify }},
+            success: {{ i18n "newsletter_success" | jsonify }},
+            error: {{ i18n "newsletter_error" | jsonify }}
+        };
+        {{ if .Site.Params.interactiveTerminal.websocketUrl }}
+        var NAEOS_WS_URL = '{{ .Site.Params.interactiveTerminal.websocketUrl }}';
+        {{ end }}
     </script>
     {{ $js := resources.Get "js/main.js" | resources.Minify | resources.Fingerprint "sha256" }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{ $termJs := resources.Get "js/terminal.js" | resources.Minify | resources.Fingerprint "sha256" }}
+    <script src="{{ $termJs.RelPermalink }}" integrity="{{ $termJs.Data.Integrity }}" defer></script>
 </body>
 </html>

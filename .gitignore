@@ -43,7 +43,8 @@ cmd/naeos/out/
 .env
 .env.local
 
-# SQLite temporary files
+# SQLite database files
+*.db
 *.db-shm
 *.db-wal
 
@@ -59,3 +60,4 @@ site/public/
 documentation.o
 cmd/naeos/nonexistent/
 internal/api/.naeos/
+naeos-demo

@@ -6,6 +6,7 @@ import (
 )
 
 func TestFastAPIAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateProject("myproj")
 	if len(artifacts) == 0 {
@@ -33,6 +34,7 @@ func TestFastAPIAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "myproj")
 	if len(artifacts) == 0 {
@@ -64,6 +66,7 @@ func TestFastAPIAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "myproj")
 	if len(artifacts) == 0 {
@@ -96,6 +99,7 @@ func TestFastAPIAdapter_GenerateService(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateDockerfile("myproj")
 	if len(artifacts) != 1 {
@@ -113,6 +117,7 @@ func TestFastAPIAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateCI("myproj")
 	if len(artifacts) != 1 {
@@ -127,6 +132,7 @@ func TestFastAPIAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateDockerCompose("myproj")
 	if len(artifacts) != 1 {
@@ -141,6 +147,7 @@ func TestFastAPIAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestFastAPIAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := FastAPIAdapter{}
 	artifacts := a.GenerateArchitectureDoc("myproj", "hexagonal")
 	if len(artifacts) != 1 {

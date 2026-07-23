@@ -30,6 +30,8 @@ type PluginEntry struct {
 	Tags           []string           `json:"tags"`
 	Dependencies   []PluginDependency `json:"dependencies,omitempty"`
 	Downloads      int                `json:"downloads"`
+	Checksum       string             `json:"checksum,omitempty"`
+	DownloadURL    string             `json:"download_url,omitempty"`
 	Installed      bool               `json:"installed,omitempty"`
 	VersionHistory []VersionEntry     `json:"version_history,omitempty"`
 	Config         map[string]any     `json:"config,omitempty"`

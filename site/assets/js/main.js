@@ -189,7 +189,7 @@ function initPlayground() {
   if (!input || !output) return;
   input.value = playgroundSamples.yaml;
   updatePlaygroundPreview();
-  input.addEventListener('input', updatePlaygroundPreview);
+  input.addEventListener('input', debounce(updatePlaygroundPreview, 200));
 }
 
 function switchPlayground(btn, name) {
@@ -203,35 +203,190 @@ function switchPlayground(btn, name) {
   }
 }
 
+function debounce(fn, ms) {
+  var timer;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(fn, ms);
+  };
+}
+
+function parseYAML(text) {
+  var result = {};
+  var stack = [{ obj: result, indent: -1 }];
+  var lines = text.split('\n');
+  var currentKey = null;
+  var inListItem = false;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line.trim() || line.trim().charAt(0) === '#') continue;
+
+    var indent = line.search(/\S/);
+    var trimmed = line.trim();
+
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+
+    var parent = stack[stack.length - 1].obj;
+
+    if (trimmed.startsWith('- ')) {
+      var itemContent = trimmed.substring(2);
+      if (itemContent.indexOf(': ') > 0) {
+        var kv = itemContent.split(': ');
+        var key = kv[0].trim();
+        var val = kv.slice(1).join(': ').trim();
+        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
+        var item = {};
+        item[key] = parseValue(val);
+        parent[currentKey].push(item);
+        inListItem = true;
+        currentKey = null;
+      } else if (itemContent.indexOf(':') === itemContent.length - 1) {
+        var objKey = itemContent.slice(0, -1).trim();
+        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
+        var newObj = {};
+        parent[currentKey].push(newObj);
+        stack.push({ obj: newObj, indent: indent });
+        currentKey = objKey;
+        newObj[objKey] = {};
+        inListItem = true;
+      } else {
+        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
+        parent[currentKey].push(parseValue(itemContent));
+        inListItem = true;
+      }
+    } else if (trimmed.indexOf(': ') > 0 || trimmed.charAt(trimmed.length - 1) === ':') {
+      var colonIdx = trimmed.indexOf(': ');
+      var key, val;
+      if (colonIdx > 0) {
+        key = trimmed.substring(0, colonIdx).trim();
+        val = trimmed.substring(colonIdx + 2).trim();
+      } else {
+        key = trimmed.slice(0, -1).trim();
+        val = null;
+      }
+      inListItem = false;
+      currentKey = key;
+      if (val !== null) {
+        parent[key] = parseValue(val);
+      } else {
+        parent[key] = {};
+        stack.push({ obj: parent[key], indent: indent });
+      }
+    }
+  }
+  return result;
+}
+
+function parseValue(v) {
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (v === 'null' || v === '~') return null;
+  if (/^-?\d+$/.test(v)) return parseInt(v, 10);
+  if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
+  if ((v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') || (v.charAt(0) === "'" && v.charAt(v.length - 1) === "'")) {
+    return v.slice(1, -1);
+  }
+  if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') {
+    return v.slice(1, -1).split(',').map(function (s) { return s.trim(); });
+  }
+  return v;
+}
+
+function countDeps(modules) {
+  if (!modules || !Array.isArray(modules)) return 0;
+  var count = 0;
+  modules.forEach(function (m) {
+    if (m && m.dependencies && Array.isArray(m.dependencies)) {
+      count += m.dependencies.length;
+    }
+  });
+  return count;
+}
+
 function updatePlaygroundPreview() {
   var input = document.getElementById('playground-input');
   var output = document.getElementById('playground-output');
   if (!input || !output) return;
   var text = input.value;
-  var lines = text.split('\n').filter(function (l) { return l.trim(); });
-  var html = '<h4>NEIR Model Preview</h4>';
-  html += '<div style="font-family:var(--font-mono);font-size:0.8125rem;line-height:1.8;">';
-  var indent = 0;
-  lines.forEach(function (line) {
-    var trimmed = line.trim();
-    if (trimmed.endsWith(':')) {
-      html += '<div class="tree-node" style="margin-left:' + (indent * 16) + 'px"><span class="tree-key">' + escapeHtml(trimmed) + '</span></div>';
-      indent++;
-    } else if (trimmed.startsWith('- ')) {
-      var parts = trimmed.split(': ');
-      if (parts.length === 2) {
-        html += '<div class="tree-node" style="margin-left:' + (indent * 16) + 'px"><span class="tree-key">' + escapeHtml(parts[0]) + ':</span> <span class="tree-str">' + escapeHtml(parts[1]) + '</span></div>';
-      } else {
-        html += '<div class="tree-node" style="margin-left:' + (indent * 16) + 'px"><span class="tree-val">' + escapeHtml(trimmed) + '</span></div>';
-      }
-    } else {
-      var parts = trimmed.split(': ');
-      if (parts.length === 2) {
-        html += '<div class="tree-node" style="margin-left:' + ((indent - 1) * 16) + 'px"><span class="tree-key">' + escapeHtml(parts[0]) + ':</span> <span class="tree-str">' + escapeHtml(parts[1]) + '</span></div>';
-      }
+
+  var labels = window.PLAYGROUND_I18N || {};
+  var html = '<h4>' + escapeHtml(labels.preview || 'NEIR Model Preview') + '</h4>';
+
+  try {
+    var spec = parseYAML(text);
+    var modules = spec.modules || [];
+    var services = spec.services || [];
+    var arch = spec.architecture || {};
+    var gen = spec.generation || {};
+    var deps = countDeps(modules);
+
+    html += '<div class="playground-stats">';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + (modules.length || 0) + '</span><span class="playground-stat-label">' + escapeHtml(labels.modules || 'Modules') + '</span></div>';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + (services.length || 0) + '</span><span class="playground-stat-label">' + escapeHtml(labels.services || 'Services') + '</span></div>';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + deps + '</span><span class="playground-stat-label">' + escapeHtml(labels.dependencies || 'Dependencies') + '</span></div>';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + (Array.isArray(gen.languages) ? gen.languages.length : 0) + '</span><span class="playground-stat-label">' + escapeHtml(labels.languages || 'Languages') + '</span></div>';
+    html += '</div>';
+
+    if (spec.project) {
+      html += '<div class="playground-tree-section">';
+      html += '<div class="playground-tree-header">' + escapeHtml(labels.project || 'Project') + '</div>';
+      html += '<div class="tree-node"><span class="tree-key">name:</span> <span class="tree-str">' + escapeHtml(String(spec.project)) + '</span></div>';
+      if (spec.version) html += '<div class="tree-node"><span class="tree-key">version:</span> <span class="tree-str">' + escapeHtml(String(spec.version)) + '</span></div>';
+      if (arch.pattern) html += '<div class="tree-node"><span class="tree-key">pattern:</span> <span class="tree-val">' + escapeHtml(String(arch.pattern)) + '</span></div>';
+      html += '</div>';
     }
-  });
-  html += '</div>';
+
+    if (modules.length) {
+      html += '<div class="playground-tree-section">';
+      html += '<div class="playground-tree-header">' + escapeHtml(labels.modules || 'Modules') + '</div>';
+      modules.forEach(function (m) {
+        if (typeof m === 'object' && m !== null) {
+          var name = m.name || '(' + (labels.unnamed || 'unnamed') + ')';
+          var depsList = (m.dependencies && Array.isArray(m.dependencies)) ? m.dependencies.join(', ') : 'none';
+          html += '<div class="tree-node"><span class="tree-key">' + escapeHtml(name) + '</span>';
+          if (m.path) html += ' <span class="tree-dim">' + escapeHtml(m.path) + '</span>';
+          html += '</div>';
+          if (depsList !== 'none') {
+            html += '<div class="tree-node tree-dep"><span class="tree-dim">  └─ deps:</span> <span class="tree-str">' + escapeHtml(depsList) + '</span></div>';
+          }
+        }
+      });
+      html += '</div>';
+    }
+
+    if (services.length) {
+      html += '<div class="playground-tree-section">';
+      html += '<div class="playground-tree-header">' + escapeHtml(labels.services || 'Services') + '</div>';
+      services.forEach(function (s) {
+        if (typeof s === 'object' && s !== null) {
+          var sname = s.name || '(' + (labels.unnamed || 'unnamed') + ')';
+          var kind = s.kind || 'unknown';
+          var port = s.port ? ':' + s.port : '';
+          var kindColors = { rest: '#60a5fa', grpc: '#a78bfa', websocket: '#34d399', lambda: '#fbbf24', 'reverse-proxy': '#f87171', http: '#60a5fa', worker: '#fb923c' };
+          var color = kindColors[kind] || '#999';
+          html += '<div class="tree-node"><span class="tree-key">' + escapeHtml(sname) + '</span> <span class="tree-badge" style="color:' + color + ';border-color:' + color + ';">' + escapeHtml(kind) + '</span>';
+          if (port) html += ' <span class="tree-dim">' + port + '</span>';
+          html += '</div>';
+        }
+      });
+      html += '</div>';
+    }
+
+    if (Array.isArray(gen.languages) && gen.languages.length) {
+      html += '<div class="playground-tree-section">';
+      html += '<div class="playground-tree-header">' + escapeHtml(labels.generation || 'Generation') + '</div>';
+      html += '<div class="tree-node"><span class="tree-key">languages:</span> <span class="tree-str">' + escapeHtml(gen.languages.join(', ')) + '</span></div>';
+      if (gen.output_dir) html += '<div class="tree-node"><span class="tree-key">output:</span> <span class="tree-str">' + escapeHtml(gen.output_dir) + '</span></div>';
+      html += '</div>';
+    }
+
+  } catch (e) {
+    html += '<div class="playground-error">' + escapeHtml(labels.invalidYaml || 'Invalid YAML') + ': ' + escapeHtml(e.message) + '</div>';
+  }
+
   output.innerHTML = html;
 }
 
@@ -281,14 +436,49 @@ function initNewsletter() {
   var form = document.querySelector('.newsletter-form');
   var msg = document.querySelector('.newsletter-message');
   if (!form || !msg) return;
-  form.addEventListener('submit', function (e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
-    var email = form.querySelector('input').value.trim();
-    if (!email) { msg.textContent = 'Please enter your email.'; return; }
-    msg.textContent = 'Thank you! You\'ve been subscribed.';
-    msg.style.color = 'var(--color-accent)';
-    form.querySelector('input').value = '';
-    setTimeout(function () { msg.textContent = ''; }, 3000);
+    var labels = window.NEWSLETTER_I18N || {};
+    var emailInput = form.querySelector('.newsletter-email');
+    var honeypot = form.querySelector('.newsletter-honeypot');
+    var submitButton = form.querySelector('button[type="submit"]');
+    var email = emailInput.value.trim();
+
+    msg.classList.remove('is-success', 'is-error');
+    if (!emailInput.validity.valid || !email) {
+      msg.textContent = labels.invalidEmail || 'Please enter a valid email address.';
+      msg.classList.add('is-error');
+      emailInput.focus();
+      return;
+    }
+
+    submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    msg.textContent = labels.loading || 'Subscribing...';
+
+    try {
+      var response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          locale: document.documentElement.lang || 'en',
+          website: honeypot ? honeypot.value : ''
+        })
+      });
+      var result = await response.json();
+      if (!response.ok || !result.ok) throw new Error('newsletter_request_failed');
+
+      msg.textContent = labels.success || 'Thank you! You have been subscribed.';
+      msg.classList.add('is-success');
+      emailInput.value = '';
+    } catch (error) {
+      msg.textContent = labels.error || 'Subscription is unavailable right now. Please try again.';
+      msg.classList.add('is-error');
+    } finally {
+      submitButton.disabled = false;
+      form.removeAttribute('aria-busy');
+    }
   });
 }
 

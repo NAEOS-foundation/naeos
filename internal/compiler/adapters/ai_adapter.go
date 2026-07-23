@@ -9,6 +9,7 @@ import (
 
 	"github.com/NAEOS-foundation/naeos/internal/ai"
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 )
 
@@ -40,12 +41,12 @@ func (a *AICompilerAdapter) CompileContext(ctx context.Context, neir *model.NEIR
 
 	var buf structuredBuffer
 	if err := a.llm.StreamCompileSpec(ctx, string(a.target), neirContext, &buf); err != nil {
-		return nil, fmt.Errorf("ai compile %s: %w", a.target, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "ai compile %s", a.target)
 	}
 
 	files, err := parseCompiledFiles(buf.String())
 	if err != nil {
-		return nil, fmt.Errorf("parse ai output for %s: %w", a.target, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse ai output for %s", a.target)
 	}
 
 	projectName := "unknown"
@@ -81,7 +82,7 @@ func parseCompiledFiles(output string) ([]compiler.OutputFile, error) {
 		return nil, err
 	}
 	if len(files) == 0 {
-		return nil, fmt.Errorf("no files in AI output")
+		return nil, naeoserr.New(naeoserr.ErrInternal, "no files in AI output")
 	}
 	return files, nil
 }
