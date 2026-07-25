@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -39,28 +40,45 @@ func (s *Server) Completion() *CompletionProvider { return s.completion }
 func (s *Server) Diagnostic() *DiagnosticProvider { return s.diagnostic }
 
 func (s *Server) Run() error {
-	scanner := bufio.NewScanner(s.reader)
-	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024)
+	br := bufio.NewReader(s.reader)
+	for {
+		raw, err := readMessage(br)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("read message: %w", err)
+		}
+		s.handleMessage(string(raw))
+	}
+}
 
-	for scanner.Scan() {
-		line := scanner.Text()
-
+func readMessage(r *bufio.Reader) ([]byte, error) {
+	var length int
+	for {
+		line, err := r.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		line = strings.TrimRight(line, "\r\n")
 		if line == "" {
-			continue
+			break
 		}
-
 		if strings.HasPrefix(line, "Content-Length:") {
-			continue
+			val := strings.TrimSpace(line[len("Content-Length:"):])
+			length, err = strconv.Atoi(val)
+			if err != nil {
+				return nil, fmt.Errorf("invalid Content-Length: %s", val)
+			}
 		}
-
-		if line == "" || line[0] != '{' {
-			continue
-		}
-
-		s.handleMessage(line)
 	}
 
-	return scanner.Err()
+	body := make([]byte, length)
+	_, err := io.ReadFull(r, body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+	return body, nil
 }
 
 func (s *Server) handleMessage(raw string) {

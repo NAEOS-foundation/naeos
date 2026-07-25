@@ -127,61 +127,86 @@ func (p *CompletionProvider) init() {
 		{Label: "java", Kind: CompletionEnumMember, Detail: "Java language"},
 		{Label: "rust", Kind: CompletionEnumMember, Detail: "Rust language"},
 	}
+
+	p.suggestions = append(p.suggestions, []NEIRSuggestion{
+		{Label: "$if{condition}", Kind: CompletionSnippet, Detail: "Conditional block", InsertText: "$if{ $1 }:\n  $0\n$endif", Documentation: "Conditional section evaluated against env vars"},
+		{Label: "$import", Kind: CompletionSnippet, Detail: "Import file", InsertText: "$import{$1}", Documentation: "Import another spec file"},
+		{Label: "$include", Kind: CompletionSnippet, Detail: "Include raw file", InsertText: "$include{$1}", Documentation: "Include raw file content"},
+		{Label: "$fn{upper}", Kind: CompletionSnippet, Detail: "Uppercase function", InsertText: "$fn{upper($1)}", Documentation: "Convert to uppercase"},
+		{Label: "$fn{lower}", Kind: CompletionSnippet, Detail: "Lowercase function", InsertText: "$fn{lower($1)}", Documentation: "Convert to lowercase"},
+		{Label: "$fn{slug}", Kind: CompletionSnippet, Detail: "Slugify function", InsertText: "$fn{slug($1)}", Documentation: "Convert to URL-safe slug"},
+		{Label: "$fn{default}", Kind: CompletionSnippet, Detail: "Default value", InsertText: "$fn{default($1, $2)}", Documentation: "Return first non-empty value"},
+		{Label: "$env{VAR}", Kind: CompletionSnippet, Detail: "Environment variable", InsertText: "$env{$1}", Documentation: "Reference environment variable"},
+		{Label: "$ref{path}", Kind: CompletionSnippet, Detail: "Reference path", InsertText: "$ref{$1}", Documentation: "Reference another spec path"},
+	}...)
 }
 
 func (p *CompletionProvider) Provide(text string, line, character int) *CompletionList {
 	lineText := p.lineAt(text, line)
-	prefix := p.prefixBeforeChar(lineText, character)
 
-	beforeColon := strings.TrimSpace(lineText[:character])
-	if strings.Contains(beforeColon, ":") && !strings.HasSuffix(strings.TrimSpace(beforeColon), ":") {
-		afterLastColon := beforeColon[strings.LastIndex(beforeColon, ":")+1:]
-		if strings.TrimSpace(afterLastColon) != "" {
-			return &CompletionList{Items: []CompletionItem{}}
-		}
-	}
-
-	contextKey := p.detectContext(text, line, lineText, prefix)
+	contextKey := p.detectContext(text, line, lineText, "")
+	valuePrefix, fieldPrefix := p.extractPrefixes(lineText, character, contextKey)
 
 	var items []CompletionItem
 
 	switch contextKey {
 	case "kind":
-		items = p.toItems(p.keywords["kind_values"])
+		items = p.toItemsFilter(p.keywords["kind_values"], valuePrefix)
 	case "method":
-		items = p.toItems(p.keywords["method_values"])
+		items = p.toItemsFilter(p.keywords["method_values"], valuePrefix)
 	case "pattern":
-		items = p.toItems(p.keywords["pattern_values"])
+		items = p.toItemsFilter(p.keywords["pattern_values"], valuePrefix)
 	case "strategy":
-		items = p.toItems(p.keywords["strategy_values"])
+		items = p.toItemsFilter(p.keywords["strategy_values"], valuePrefix)
 	case "language":
-		items = p.toItems(p.keywords["language_values"])
+		items = p.toItemsFilter(p.keywords["language_values"], valuePrefix)
 	default:
 		if contextKey != "" {
 			if suggestions, ok := p.keywords[contextKey]; ok {
-				items = p.toItems(suggestions)
+				items = p.toItemsFilter(suggestions, fieldPrefix)
 			}
 		}
 		if len(items) == 0 {
-			items = p.toItems(p.suggestions)
+			items = p.toItemsFilter(p.suggestions, fieldPrefix)
 		}
-	}
-
-	if prefix != "" {
-		lower := strings.ToLower(prefix)
-		var filtered []CompletionItem
-		for _, item := range items {
-			if strings.HasPrefix(strings.ToLower(item.Label), lower) {
-				filtered = append(filtered, item)
-			}
-		}
-		items = filtered
 	}
 
 	return &CompletionList{
 		IsIncomplete: false,
 		Items:        items,
 	}
+}
+
+func (p *CompletionProvider) extractPrefixes(lineText string, character int, contextKey string) (valuePrefix, fieldPrefix string) {
+	if character > len(lineText) {
+		character = len(lineText)
+	}
+	before := lineText[:character]
+	trimmed := strings.TrimLeft(before, " \t-")
+
+	colonIdx := strings.Index(trimmed, ":")
+	if colonIdx >= 0 {
+		afterColon := strings.TrimSpace(trimmed[colonIdx+1:])
+		return afterColon, ""
+	}
+
+	fieldTrimmed := strings.TrimSpace(trimmed)
+	return "", fieldTrimmed
+}
+
+func (p *CompletionProvider) toItemsFilter(suggestions []NEIRSuggestion, prefix string) []CompletionItem {
+	items := p.toItems(suggestions)
+	if prefix == "" {
+		return items
+	}
+	lower := strings.ToLower(prefix)
+	var filtered []CompletionItem
+	for _, item := range items {
+		if strings.HasPrefix(strings.ToLower(item.Label), lower) {
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered
 }
 
 func (p *CompletionProvider) toItems(suggestions []NEIRSuggestion) []CompletionItem {
