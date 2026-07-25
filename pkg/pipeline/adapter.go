@@ -15,6 +15,7 @@ type PipelineAdapter struct {
 	eventStore  eventsourcing.EventStore
 	runID       string
 	telemetryFn func(stage string, duration time.Duration, err error)
+	stageCache  *StageCache
 }
 
 func NewAdapter(p *Pipeline) *PipelineAdapter {
@@ -39,6 +40,22 @@ func (a *PipelineAdapter) UseMiddleware(stage string, mw pm.Middleware) {
 
 func (a *PipelineAdapter) OnTelemetryRecord(fn func(stage string, duration time.Duration, err error)) {
 	a.telemetryFn = fn
+}
+
+func (a *PipelineAdapter) EnableStageCache(sc *StageCache) {
+	a.stageCache = sc
+	a.UseMiddleware("pre-process", &pm.CacheMiddleware{
+		Get: func(key string) ([]byte, bool) {
+			return sc.Get("pre-process", []byte(key))
+		},
+		Set: func(key string, data []byte) {
+			sc.Set("pre-process", []byte(key), data)
+		},
+	})
+}
+
+func (a *PipelineAdapter) StageCache() *StageCache {
+	return a.stageCache
 }
 
 func (a *PipelineAdapter) RunWithMiddleware(ctx context.Context, input string) (*Result, error) {
