@@ -58,11 +58,11 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| NEIR v2.0 specification | Core | ⚠️ NEIR model: v0.1.0 (belum v2). ✅ Spec language sudah punya `$if{}/$endif` (conditional), `$include{}` (multi-file), `$import{}` (section import), `$fn{}` (builtin functions). Target: port feature ini ke NEIR model level (conditional modules, environment profiles, inheritance) |
+| NEIR v2.0 specification ✅ | Core | Conditional modules (`Condition` field + `ConditionalResolver`), environment profiles (`ActiveProfile`/`Inherits` pada model + `ProfileResolver`), `$if{}/$endif` di parser + resolver level |
 | GUI Dashboard ✅ | Site | `naeos dashboard` — web dashboard dengan stats, activity log, component health, WebSocket live updates |
-| RBAC ✅ | Backend | `internal/auth/rbac.go` — admin/developer/viewer roles, resource-based permissions |
-| OAuth2/OIDC ✅ | Backend | Google OAuth2 provider + `/.well-known/openid-configuration` + `/.well-known/jwks.json` |
-| Enterprise features | Backend | ✅ RBAC + OAuth2/OIDC dasar. ❌ SSO framework, SAML, LDAP, audit log export (JSON/Splunk), compliance reports (SOC2, HIPAA) |
+| RBAC ✅ | Backend | `internal/auth/rbac.go` — admin/developer/viewer roles, **hierarchy (`Parents`) + deny rules (`Deny`) override**, `SetupRoleTemplate()` untuk 4 compliance templates |
+| OAuth2/OIDC ✅ | Backend | Google OAuth2 provider + `/.well-known/openid-configuration` + `/.well-known/jwks.json`. **OIDC Provider** (discovery, JWKS RSA sig verify, auth code flow) |
+| Enterprise features ✅ | Backend | **SSO**: OIDC, SAML 2.0 (XML parsing, NameID/attribute extraction), LDAP (TCP/TLS bind, ASN.1 BER search). **Audit**: hashed chain (`HashedAuditor`), encrypted (`EncryptedAuditor` AES-256-GCM), cloud export (AWS SigV4, GCS HMAC, Azure SharedKey). **Compliance**: SOC2 (8 controls), HIPAA (11), GDPR (8), `GenerateReport()`, CLI `naeos compliance report/list-frameworks/verify/cloud-export` |
 | v3.0.0 release | All | Changelog, migration guide v2→v3, release party blog post, deprecation notices |
 
 ## Metrik Progress
@@ -79,7 +79,7 @@
 | CI lint pass rate | 100% ✅ | 100% | 100% |
 | `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
 
-## Completed (v2.2.0)
+## Completed (v2.2.0 → v3.0.0)
 
 - **Supabase backend integration** — database adapter, Auth, Storage, Edge Functions, Admin API, CLI, CI
 - **Lint zero-failure** — 28 lint issues fixed (`bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck`)
@@ -91,6 +91,13 @@
 - **v2.2.0 release** — GoReleaser binary builds for linux/darwin/windows × amd64/arm64 + Docker image
 - **Coverage audit** — ditemukan 5 package sudah ≥80%: `supabase` (84.1%), `messagequeue` (93.5%), `marketplace` (88.7%), `mcp` (85.1%), `migration` (97.9%)
 - **Feature inventory** — dikonfirmasi 12 fitur sudah implement: errors package, ai suggest, template publish, OpenAPI CI, blog pipeline, dashboard, RBAC, OAuth2/OIDC
+- **NEIR v2.0 spec** — conditional modules (`Condition` field, `ConditionalResolver`), environment profiles (`ActiveProfile`/`Inherits`, `ProfileResolver`), builtin function `env()`/`eq()`/`has_prefix()`, validator `validateConditionExpr()` + 8 resolver tests
+- **RBAC hierarchy + deny** — `Parents []string` parent chain, `Deny` override (deny wins over allow), `hasPermissionRecursive()`, 4 compliance role templates (auditor, soc2_auditor, gdpr_admin, hipaa_admin), CLI `naeos auth create-role --parents --deny`
+- **Audit hashed chain** — `HashedAuditor` dengan SHA256 previous-hash chain, `VerifyChain()`/`VerifyChainFile()` tamper detection
+- **Audit encrypted** — `EncryptedAuditor` AES-256-GCM, `DecryptedReader`, `NewEncryptedFileAuditor()`
+- **Audit cloud export** — `CloudExporter` interface, `S3Exporter` (AWS SigV4), `GCSExporter` (GOOG1 HMAC), `AzureBlobExporter` (SharedKey), CLI `naeos compliance cloud-export`
+- **Compliance frameworks** — SOC2 (8 controls: CC1.1–CC8.1), HIPAA (11 controls: 164.308–164.312), GDPR (8 articles: 5, 7, 17, 25, 30, 32, 33, 35), `GenerateReport()` evaluasi audit events + evidence, CLI `naeos compliance report/list-frameworks/verify`
+- **SSO framework** — OIDC (discovery `.well-known/openid-configuration`, JWKS RSA signature verification, auth code + token exchange), SAML 2.0 (XML Response parsing, NameID/attribute extraction), LDAP (TCP/TLS bind, ASN.1 BER search encode/decode), `SSORegistry` di `Manager`, CLI `naeos auth sso configure/list/remove`
 
 ## Notes
 
