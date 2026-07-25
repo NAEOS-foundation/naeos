@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Entry struct {
@@ -54,10 +56,10 @@ func (r *Registry) RegisterWithMeta(name, version, category string, component an
 	defer r.mu.Unlock()
 
 	if name == "" {
-		return fmt.Errorf("entry name must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "entry name must not be empty")
 	}
 	if _, exists := r.entries[name]; exists {
-		return fmt.Errorf("entry %s already registered", name)
+		return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("entry %s already registered", name))
 	}
 
 	entry := &Entry{
@@ -81,7 +83,7 @@ func (r *Registry) Resolve(name string) (any, error) {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return nil, fmt.Errorf("entry %s not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 	if r.onResolve != nil {
 		r.onResolve(entry)
@@ -95,7 +97,7 @@ func (r *Registry) GetEntry(name string) (*Entry, error) {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return nil, fmt.Errorf("entry %s not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 	return entry, nil
 }
@@ -106,7 +108,7 @@ func (r *Registry) Unregister(name string) error {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return fmt.Errorf("entry %s not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 
 	if r.onUnregister != nil {
@@ -230,7 +232,7 @@ func (r *Registry) AddTags(name string, tags ...string) error {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return fmt.Errorf("entry %s not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 
 	if r.tags[name] == nil {
@@ -267,7 +269,7 @@ func (r *Registry) RemoveTags(name string, tags ...string) error {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return fmt.Errorf("entry %s not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 
 	tagSet := r.tags[name]
@@ -287,7 +289,7 @@ func (r *Registry) GetTags(name string) ([]string, error) {
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return nil, fmt.Errorf("entry %s not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 	result := make([]string, len(entry.Tags))
 	copy(result, entry.Tags)
@@ -340,7 +342,7 @@ func (r *Registry) Snapshot() *Snapshot {
 
 func (r *Registry) Restore(snap *Snapshot) error {
 	if snap == nil {
-		return fmt.Errorf("snapshot is nil")
+		return naeoserr.New(naeoserr.ErrValidation, "snapshot is nil")
 	}
 
 	r.mu.Lock()
@@ -389,7 +391,7 @@ func (r *Registry) Replace(name, version, category string, component any, metada
 
 	entry, exists := r.entries[name]
 	if !exists {
-		return fmt.Errorf("entry %s not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("entry %s not found", name))
 	}
 
 	entry.Version = version

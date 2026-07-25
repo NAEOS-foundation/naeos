@@ -9,6 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -37,7 +38,7 @@ func (r *IncludeResolver) ResolveIncludes(input string) (string, error) {
 
 func (r *IncludeResolver) resolveWithDepth(input string, depth int) (string, error) {
 	if depth > r.maxDepth {
-		return "", fmt.Errorf("include depth exceeded maximum (%d)", r.maxDepth)
+		return "", naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("include depth exceeded maximum (%d)", r.maxDepth))
 	}
 
 	result := input
@@ -56,10 +57,10 @@ func (r *IncludeResolver) resolveWithDepth(input string, depth int) (string, err
 			var err error
 			filePath, err = securityext.ValidateFilePath(filePath, r.baseDir)
 			if err != nil {
-				return "", fmt.Errorf("path traversal in include: %w", err)
+				return "", naeoserr.Wrapf(err, naeoserr.ErrPermDenied, "path traversal in include")
 			}
 		} else if strings.Contains(filePath, "..") {
-			return "", fmt.Errorf("path traversal detected in include: %s", matches[1])
+			return "", naeoserr.New(naeoserr.ErrPermDenied, fmt.Sprintf("path traversal detected in include: %s", matches[1]))
 		}
 
 		if cached, ok := r.loaded[filePath]; ok {
@@ -69,7 +70,7 @@ func (r *IncludeResolver) resolveWithDepth(input string, depth int) (string, err
 
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return "", fmt.Errorf("include %s: %w", matches[1], err)
+			return "", naeoserr.Wrapf(err, naeoserr.ErrNotFound, "include %s", matches[1])
 		}
 
 		r.loaded[filePath] = string(content)
@@ -105,7 +106,7 @@ func (r *ImportResolver) ResolveImports(input string) (string, error) {
 
 func (r *ImportResolver) resolveWithDepth(input string, depth int) (string, error) {
 	if depth > r.maxDepth {
-		return "", fmt.Errorf("import depth exceeded maximum (%d)", r.maxDepth)
+		return "", naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("import depth exceeded maximum (%d)", r.maxDepth))
 	}
 
 	result := input
@@ -132,10 +133,10 @@ func (r *ImportResolver) resolveWithDepth(input string, depth int) (string, erro
 			var err error
 			filePath, err = securityext.ValidateFilePath(filePath, r.baseDir)
 			if err != nil {
-				return "", fmt.Errorf("path traversal in import: %w", err)
+				return "", naeoserr.Wrapf(err, naeoserr.ErrPermDenied, "path traversal in import")
 			}
 		} else if strings.Contains(filePath, "..") {
-			return "", fmt.Errorf("path traversal detected in import: %s", matches[1])
+			return "", naeoserr.New(naeoserr.ErrPermDenied, fmt.Sprintf("path traversal detected in import: %s", matches[1]))
 		}
 
 		cacheKey := filePath + "::" + section
@@ -146,18 +147,18 @@ func (r *ImportResolver) resolveWithDepth(input string, depth int) (string, erro
 
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return "", fmt.Errorf("import %s: %w", matches[1], err)
+			return "", naeoserr.Wrapf(err, naeoserr.ErrNotFound, "import %s", matches[1])
 		}
 
 		var resolved string
 		if section != "" {
 			var root yaml.Node
 			if err := yaml.Unmarshal(content, &root); err != nil {
-				return "", fmt.Errorf("import %s: parse error: %w", matches[1], err)
+				return "", naeoserr.Wrapf(err, naeoserr.ErrParse, "import %s: parse error", matches[1])
 			}
 			data, err := parseYAMLNode(root.Content[0])
 			if err != nil {
-				return "", fmt.Errorf("import %s: %w", matches[1], err)
+				return "", naeoserr.Wrapf(err, naeoserr.ErrParse, "import %s", matches[1])
 			}
 			if m, ok := data.(map[string]any); ok {
 				parts := strings.Split(section, ".")
@@ -173,11 +174,11 @@ func (r *ImportResolver) resolveWithDepth(input string, depth int) (string, erro
 				if current != nil {
 					out, err := yaml.Marshal(current)
 					if err != nil {
-						return "", fmt.Errorf("import %s: marshal error: %w", matches[1], err)
+						return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "import %s: marshal error", matches[1])
 					}
 					resolved = strings.TrimSpace(string(out))
 				} else {
-					return "", fmt.Errorf("import %s: section %q not found", matches[1], section)
+					return "", naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("import %s: section %q not found", matches[1], section))
 				}
 			} else {
 				resolved = strings.TrimSpace(string(content))
@@ -326,6 +327,12 @@ func (r *ConditionalResolver) Resolve(input string) string {
 	}
 
 	return strings.Join(result, "\n")
+}
+
+func EvaluateCondition(cond string, env map[string]string) bool {
+	r := NewConditionalResolver()
+	r.SetEnvs(env)
+	return r.evaluateCondition(cond)
 }
 
 func (r *ConditionalResolver) evaluateCondition(cond string) bool {

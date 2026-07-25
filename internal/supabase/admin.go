@@ -1,7 +1,9 @@
 package supabase
 
 import (
-	"fmt"
+	"encoding/json"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type QueryParams struct {
@@ -12,6 +14,8 @@ type QueryResult struct {
 	Rows  []map[string]any `json:"rows"`
 	Error string           `json:"error"`
 }
+
+type managementQueryResponse []map[string]any
 
 type ProjectInfo struct {
 	ID           string `json:"id"`
@@ -32,23 +36,25 @@ type APIInfo struct {
 }
 
 func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
-	path := "/api/v1/projects/" + c.config.ProjectRef + "/database/query"
+	path := "/v1/projects/" + c.config.ProjectRef + "/database/query"
 	params := QueryParams{Query: query}
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	data, err := c.do("POST", path, headers, params)
+	data, err := c.doManagement("POST", path, nil, params)
 	if err != nil {
-		return nil, fmt.Errorf("execute SQL: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrCloud, "execute SQL")
 	}
-	return jsonUnmarshal[QueryResult](data)
+	var rows managementQueryResponse
+	if err := json.Unmarshal(data, &rows); err != nil {
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode response")
+	}
+	result := &QueryResult{Rows: make([]map[string]any, len(rows))}
+	for i, r := range rows {
+		result.Rows[i] = r
+	}
+	return result, nil
 }
 
 func (c *Client) GetRoles() ([]Role, error) {
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	data, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/database/roles", headers, nil)
+	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/database/roles", nil, nil)
 	if err != nil {
 		return nil, err
 	}

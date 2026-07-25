@@ -11,6 +11,8 @@ import (
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Request struct {
@@ -61,13 +63,13 @@ type WASMPlugin struct {
 func (w *WASMRuntime) Load(wasmPath string) (*WASMPlugin, error) {
 	wasmBytes, err := os.ReadFile(wasmPath)
 	if err != nil {
-		return nil, fmt.Errorf("read wasm file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "read wasm file")
 	}
 
 	ctx := context.Background()
 	compiled, err := w.rt.CompileModule(ctx, wasmBytes)
 	if err != nil {
-		return nil, fmt.Errorf("compile wasm module: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "compile wasm module")
 	}
 
 	name := filepath.Base(wasmPath)
@@ -96,7 +98,7 @@ func (p *WASMPlugin) Execute(action string, params map[string]any) (any, error) 
 	}
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "marshal request")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), p.wasmRuntime.timeout)

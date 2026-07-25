@@ -354,19 +354,26 @@ func TestDeleteFile(t *testing.T) {
 }
 
 func TestExecuteSQL(t *testing.T) {
-	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" || r.URL.Path != "/api/v1/projects/test-proj/database/query" {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" || r.URL.Path != "/v1/projects/test-proj/database/query" {
 			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
 		}
-		if r.Header.Get("apikey") != "test-svc-role-key" {
-			t.Errorf("apikey = %q", r.Header.Get("apikey"))
+		if r.Header.Get("Authorization") != "Bearer test-access-token" {
+			t.Errorf("Authorization = %q", r.Header.Get("Authorization"))
 		}
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(QueryResult{
-			Rows: []map[string]any{{"num": float64(1)}},
-		})
-	})
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode([]map[string]any{{"num": float64(1)}})
+	}))
 	defer srv.Close()
+
+	c := NewClient(&Config{
+		URL:            srv.URL,
+		AnonKey:        "test-anon-key",
+		ServiceRoleKey: "test-svc-role-key",
+		ProjectRef:     "test-proj",
+		AccessToken:    "test-access-token",
+		ManagementURL:  srv.URL,
+	})
 
 	result, err := c.ExecuteSQL("SELECT 1")
 	if err != nil {
@@ -381,14 +388,23 @@ func TestExecuteSQL(t *testing.T) {
 }
 
 func TestGetRoles(t *testing.T) {
-	c, srv := newTestServer(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" || r.URL.Path != "/api/v1/projects/test-proj/database/roles" {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" || r.URL.Path != "/v1/projects/test-proj/database/roles" {
 			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
 		}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode([]Role{{Name: "anon"}, {Name: "authenticated"}})
-	})
+	}))
 	defer srv.Close()
+
+	c := NewClient(&Config{
+		URL:            srv.URL,
+		AnonKey:        "test-anon-key",
+		ServiceRoleKey: "test-svc-role-key",
+		ProjectRef:     "test-proj",
+		AccessToken:    "test-access-token",
+		ManagementURL:  srv.URL,
+	})
 
 	roles, err := c.GetRoles()
 	if err != nil {

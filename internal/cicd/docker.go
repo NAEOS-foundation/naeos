@@ -3,6 +3,8 @@ package cicd
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type DockerComposeGenerator struct{}
@@ -114,7 +116,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 	var sb strings.Builder
 
 	if len(config.Languages) == 0 {
-		return "", fmt.Errorf("no languages specified for Dockerfile generation")
+		return "", naeoserr.New(naeoserr.ErrPipeline, "no languages specified for Dockerfile generation")
 	}
 
 	switch config.Languages[0] {
@@ -173,7 +175,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("COPY --from=builder /app/target/release/app /usr/local/bin/app\n")
 		sb.WriteString("CMD [\"app\"]\n")
 	default:
-		return "", fmt.Errorf("unsupported language for Dockerfile: %s", config.Languages[0])
+		return "", naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported language for Dockerfile: %s", config.Languages[0]))
 	}
 
 	return sb.String(), nil

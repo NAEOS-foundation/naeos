@@ -9,6 +9,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type spanContextKey struct{}
@@ -133,7 +135,7 @@ type FileExporter struct {
 func NewFileExporter(path string) (*FileExporter, error) {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		return nil, fmt.Errorf("open file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "open file")
 	}
 	return &FileExporter{path: path, file: f}, nil
 }

@@ -38,7 +38,7 @@ func (a *cursorAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, err
 func (a *cursorAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	rendered, err := a.library.RenderCompiler("cursor", neir)
 	if err != nil {
-		return nil, fmt.Errorf("render from library: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "render from library")
 	}
 
 	var files []compiler.OutputFile

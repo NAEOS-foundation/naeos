@@ -1,9 +1,10 @@
 package supabase
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type EdgeFunction struct {
@@ -68,7 +69,7 @@ func (c *Client) DeleteFunction(slug string) error {
 	}
 	_, err := c.do("DELETE", "/api/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, headers, nil)
 	if err != nil {
-		return fmt.Errorf("delete function: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "delete function")
 	}
 	return nil
 }

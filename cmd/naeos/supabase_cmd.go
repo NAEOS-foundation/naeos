@@ -49,7 +49,7 @@ func getSupabaseClient() (*supabase.Client, error) {
 // --- init ---
 
 func newSupabaseInitCommand() *cobra.Command {
-	var projectRef, url, anonKey, serviceRoleKey, jwksURL string
+	var projectRef, url, anonKey, serviceRoleKey, jwksURL, accessToken string
 
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -57,13 +57,13 @@ func newSupabaseInitCommand() *cobra.Command {
 		Long: `Configure a Supabase project. Reads from environment variables if flags are not set.
 
 Env vars:
-  SUPABASE_PROJECT_REF, SUPABASE_URL, SUPABASE_PUBLISHABEL_KEY (anon),
-  SUPABASE_SECRET_KEY (service role), SUPABASE_JWKS_URL
+  SUPABASE_PROJECT_REF, SUPABASE_URL, SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWKS_URL, SUPABASE_ACCESS_TOKEN
 
 Examples:
   naeos supabase init --project-ref abcdefg
   naeos supabase init --project-ref abcdefg --anon-key "eyJ..." --service-role-key "eyJ..."
-  SUPABASE_URL=https://abc.supabase.co SUPABASE_PUBLISHABEL_KEY=eyJ... naeos supabase init --project-ref abc`,
+  SUPABASE_URL=https://abc.supabase.co SUPABASE_ANON_KEY=eyJ... naeos supabase init --project-ref abc`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if projectRef == "" {
@@ -82,9 +82,6 @@ Examples:
 				anonKey = os.Getenv("SUPABASE_ANON_KEY")
 			}
 			if anonKey == "" {
-				anonKey = os.Getenv("SUPABASE_PUBLISHABEL_KEY")
-			}
-			if anonKey == "" {
 				anonKey = os.Getenv("SUPABASE_PUBLISHABLE_KEY")
 			}
 			if serviceRoleKey == "" {
@@ -96,6 +93,9 @@ Examples:
 			if jwksURL == "" {
 				jwksURL = os.Getenv("SUPABASE_JWKS_URL")
 			}
+			if accessToken == "" {
+				accessToken = os.Getenv("SUPABASE_ACCESS_TOKEN")
+			}
 
 			cfg := &supabase.Config{
 				ProjectRef:     projectRef,
@@ -103,6 +103,7 @@ Examples:
 				AnonKey:        anonKey,
 				ServiceRoleKey: serviceRoleKey,
 				JWKSURL:        jwksURL,
+				AccessToken:    accessToken,
 			}
 
 			if err := supabase.SaveConfig(cfg); err != nil {
@@ -115,12 +116,12 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringVar(&projectRef, "project-ref", "", "Supabase project reference (required)")
+	cmd.Flags().StringVar(&projectRef, "project-ref", "", "Supabase project reference (or set SUPABASE_PROJECT_REF)")
 	cmd.Flags().StringVar(&url, "url", "", "Supabase project URL (default: https://<ref>.supabase.co)")
 	cmd.Flags().StringVar(&anonKey, "anon-key", "", "Supabase anon/public key")
 	cmd.Flags().StringVar(&serviceRoleKey, "service-role-key", "", "Supabase service role key")
 	cmd.Flags().StringVar(&jwksURL, "jwks-url", "", "Supabase JWKS URL for JWT verification")
-	_ = cmd.MarkFlagRequired("project-ref")
+	cmd.Flags().StringVar(&accessToken, "access-token", "", "Supabase Personal Access Token (or set SUPABASE_ACCESS_TOKEN)")
 	return cmd
 }
 

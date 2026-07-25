@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
@@ -23,7 +24,7 @@ func (a *AWSAdapter) Provider() CloudProvider {
 
 func (a *AWSAdapter) Validate(config *DeployConfig) error {
 	if config.Region == "" {
-		return fmt.Errorf("AWS region is required")
+		return naeoserr.New(naeoserr.ErrValidation, "AWS region is required")
 	}
 	validRegions := []string{
 		"us-east-1", "us-east-2", "us-west-1", "us-west-2",
@@ -40,7 +41,7 @@ func (a *AWSAdapter) Validate(config *DeployConfig) error {
 		}
 	}
 	if !valid {
-		return fmt.Errorf("invalid AWS region: %s", config.Region)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid AWS region: %s", config.Region))
 	}
 	return nil
 }
@@ -254,7 +255,7 @@ func (a *AWSAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 	if len(planResult.Resources) == 0 {
-		return fmt.Errorf("no resources to destroy")
+		return naeoserr.New(naeoserr.ErrValidation, "no resources to destroy")
 	}
 
 	tf, err := a.ExportTerraform(config)

@@ -3,6 +3,8 @@ package cicd
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type CICDPlatform string
@@ -49,7 +51,7 @@ func GetGenerator(platform CICDPlatform) (PipelineGenerator, error) {
 	case Jenkins:
 		return &JenkinsGenerator{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported platform: %s", platform)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported platform: %s", platform))
 	}
 }
 
@@ -152,7 +154,7 @@ func NewConfigTemplate(name, description string, platform CICDPlatform, base *Pi
 
 func (t *ConfigTemplate) Render() (*PipelineConfig, error) {
 	if t.Base == nil {
-		return nil, fmt.Errorf("template %s has no base config", t.Name)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("template %s has no base config", t.Name))
 	}
 
 	config := *t.Base

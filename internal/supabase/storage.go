@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Bucket struct {
@@ -72,7 +74,7 @@ func (c *Client) GetBucket(id string) (*Bucket, error) {
 func (c *Client) DeleteBucket(id string) error {
 	_, err := c.doAuth("DELETE", "/storage/v1/bucket/"+id, nil)
 	if err != nil {
-		return fmt.Errorf("delete bucket: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "delete bucket")
 	}
 	return nil
 }
@@ -95,7 +97,7 @@ func (c *Client) ListFiles(bucket, prefix string) ([]FileObject, error) {
 func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	file, err := os.Open(localPath)
 	if err != nil {
-		return fmt.Errorf("open file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "open file")
 	}
 	defer file.Close()
 
@@ -103,17 +105,17 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	writer := multipart.NewWriter(&buf)
 	part, err := writer.CreateFormFile("file", filepath.Base(localPath))
 	if err != nil {
-		return fmt.Errorf("create form file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create form file")
 	}
 	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("copy file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "copy file")
 	}
 	writer.Close()
 
 	url := c.config.URL + "/storage/v1/object/" + bucket + "/" + remotePath
 	req, err := http.NewRequestWithContext(context.Background(), "POST", url, &buf)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -122,13 +124,13 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("upload request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "upload request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("upload failed: %s", string(body))
+		return naeoserr.New(naeoserr.ErrCloud, fmt.Sprintf("upload failed: %s", string(body)))
 	}
 	return nil
 }
@@ -137,7 +139,7 @@ func (c *Client) DownloadFile(bucket, remotePath, localPath string) error {
 	url := c.config.URL + "/storage/v1/object/" + bucket + "/" + remotePath
 	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
@@ -145,26 +147,26 @@ func (c *Client) DownloadFile(bucket, remotePath, localPath string) error {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("download request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "download request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("download failed: status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrCloud, fmt.Sprintf("download failed: status %d", resp.StatusCode))
 	}
 
 	if err := os.MkdirAll(filepath.Dir(localPath), 0o755); err != nil {
-		return fmt.Errorf("create parent dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create parent dir")
 	}
 
 	out, err := os.Create(localPath)
 	if err != nil {
-		return fmt.Errorf("create local file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create local file")
 	}
 	defer out.Close()
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		return fmt.Errorf("write file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "write file")
 	}
 	return nil
 }
@@ -175,7 +177,7 @@ func (c *Client) DeleteFile(bucket, path string) error {
 	}
 	_, err := c.doAuth("DELETE", "/storage/v1/object/"+bucket, params)
 	if err != nil {
-		return fmt.Errorf("delete file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "delete file")
 	}
 	return nil
 }

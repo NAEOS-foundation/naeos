@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"strings"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // JWTClaims represents the claims in a JSON Web Token.
@@ -68,7 +70,7 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		slog.Error("jwt validation failed", "reason", "invalid token format")
-		return nil, fmt.Errorf("invalid token format")
+		return nil, naeoserr.New(naeoserr.ErrAuth, "invalid token format")
 	}
 
 	signingInput := fmt.Sprintf("%s.%s", parts[0], parts[1])
@@ -76,24 +78,24 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 
 	if !hmac.Equal([]byte(parts[2]), []byte(expectedSig)) {
 		slog.Error("jwt validation failed", "reason", "invalid signature")
-		return nil, fmt.Errorf("invalid signature")
+		return nil, naeoserr.New(naeoserr.ErrAuth, "invalid signature")
 	}
 
 	claimsJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims encoding", "error", err)
-		return nil, fmt.Errorf("invalid claims encoding: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "invalid claims encoding")
 	}
 
 	var claims JWTClaims
 	if err := json.Unmarshal(claimsJSON, &claims); err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims format", "error", err)
-		return nil, fmt.Errorf("invalid claims format: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "invalid claims format")
 	}
 
 	if claims.ExpiresAt < time.Now().Unix() {
 		slog.Error("jwt validation failed", "reason", "token expired")
-		return nil, fmt.Errorf("token expired")
+		return nil, naeoserr.New(naeoserr.ErrAuth, "token expired")
 	}
 
 	return &claims, nil

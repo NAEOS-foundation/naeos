@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
@@ -23,10 +24,10 @@ func (a *AzureAdapter) Provider() CloudProvider {
 
 func (a *AzureAdapter) Validate(config *DeployConfig) error {
 	if config.Project == "" {
-		return fmt.Errorf("azure resource group is required")
+		return naeoserr.New(naeoserr.ErrValidation, "azure resource group is required")
 	}
 	if config.Region == "" {
-		return fmt.Errorf("azure region is required")
+		return naeoserr.New(naeoserr.ErrValidation, "azure region is required")
 	}
 	return nil
 }
@@ -242,7 +243,7 @@ func (a *AzureAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 	if len(planResult.Resources) == 0 {
-		return fmt.Errorf("no resources to destroy")
+		return naeoserr.New(naeoserr.ErrValidation, "no resources to destroy")
 	}
 
 	tf, err := a.ExportTerraform(config)

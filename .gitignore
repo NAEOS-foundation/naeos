@@ -54,6 +54,11 @@ cmd/naeos/out/
 # Temp
 tmp/
 .tmp/
+supabase/.temp/
+
+# Generated
+cmd/naeos/naeos.lock
+cmd/naeos/spec.yaml
 
 # Hugo build output
 site/public/

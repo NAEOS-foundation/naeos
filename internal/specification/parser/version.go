@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type SchemaVersion struct {
@@ -16,7 +18,7 @@ func ParseSchemaVersion(version string) (SchemaVersion, error) {
 	version = strings.TrimPrefix(strings.TrimSpace(version), "v")
 	parts := strings.Split(version, ".")
 	if len(parts) < 1 || len(parts) > 3 {
-		return SchemaVersion{}, fmt.Errorf("invalid version format: %s", version)
+		return SchemaVersion{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid version format: %s", version))
 	}
 
 	var sv SchemaVersion
@@ -24,29 +26,29 @@ func ParseSchemaVersion(version string) (SchemaVersion, error) {
 
 	sv.Major, err = strconv.Atoi(parts[0])
 	if err != nil {
-		return SchemaVersion{}, fmt.Errorf("invalid major version: %w", err)
+		return SchemaVersion{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "invalid major version")
 	}
 	if sv.Major < 0 {
-		return SchemaVersion{}, fmt.Errorf("major version cannot be negative")
+		return SchemaVersion{}, naeoserr.New(naeoserr.ErrValidation, "major version cannot be negative")
 	}
 
 	if len(parts) > 1 {
 		sv.Minor, err = strconv.Atoi(parts[1])
 		if err != nil {
-			return SchemaVersion{}, fmt.Errorf("invalid minor version: %w", err)
+			return SchemaVersion{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "invalid minor version")
 		}
 		if sv.Minor < 0 {
-			return SchemaVersion{}, fmt.Errorf("minor version cannot be negative")
+			return SchemaVersion{}, naeoserr.New(naeoserr.ErrValidation, "minor version cannot be negative")
 		}
 	}
 
 	if len(parts) > 2 {
 		sv.Patch, err = strconv.Atoi(parts[2])
 		if err != nil {
-			return SchemaVersion{}, fmt.Errorf("invalid patch version: %w", err)
+			return SchemaVersion{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "invalid patch version")
 		}
 		if sv.Patch < 0 {
-			return SchemaVersion{}, fmt.Errorf("patch version cannot be negative")
+			return SchemaVersion{}, naeoserr.New(naeoserr.ErrValidation, "patch version cannot be negative")
 		}
 	}
 

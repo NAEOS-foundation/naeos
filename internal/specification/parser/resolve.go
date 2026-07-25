@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var varPattern = regexp.MustCompile(`\$\{([^}]+)\}`)
@@ -80,7 +82,7 @@ func (r *VariableResolver) ResolveMap(m map[string]any) (map[string]any, error) 
 	for k, v := range m {
 		resolved, err := r.resolveValue(v)
 		if err != nil {
-			return nil, fmt.Errorf("resolve key %q: %w", k, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "resolve key %q", k)
 		}
 		result[k] = resolved
 	}

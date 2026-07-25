@@ -74,7 +74,7 @@ func TestEmitHandlerError(t *testing.T) {
 	if len(errs) != 1 {
 		t.Fatalf("expected 1 error, got %d", len(errs))
 	}
-	if errs[0].Error() != "plugin failing: handler failed" {
+	if errs[0].Error() != "PLUGIN_ERROR: plugin failing: handler failed" {
 		t.Errorf("unexpected error: %v", errs[0])
 	}
 }

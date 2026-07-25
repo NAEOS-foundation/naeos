@@ -13,6 +13,7 @@ import (
 
 func newDiffCommand() *cobra.Command {
 	var configPath, input, inputFile, outputDir, format string
+	var visual bool
 
 	cmd := &cobra.Command{
 		Use:   "diff",
@@ -22,7 +23,8 @@ func newDiffCommand() *cobra.Command {
 Example:
   naeos diff --config config.yaml --input spec.yaml
   naeos diff --config config.yaml --input spec.yaml --output-dir ./out
-  naeos diff --config config.yaml --input spec.yaml --format unified`,
+  naeos diff --config config.yaml --input spec.yaml --format unified
+  naeos diff --config config.yaml --input spec.yaml --visual`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if input == "" && inputFile == "" {
@@ -69,7 +71,11 @@ Example:
 			}
 
 			for _, d := range diffs {
-				fmt.Fprint(cmd.OutOrStdout(), diff.FormatDiff(d))
+				if visual {
+					fmt.Fprint(cmd.OutOrStdout(), diff.FormatSideBySide(d, 0))
+				} else {
+					fmt.Fprint(cmd.OutOrStdout(), diff.FormatDiff(d))
+				}
 			}
 
 			added, removed, modified, unchanged := diff.Summary(diffs)
@@ -84,5 +90,6 @@ Example:
 	cmd.Flags().StringVar(&inputFile, "input-file", "", "path to a specification file")
 	cmd.Flags().StringVar(&outputDir, "output-dir", "", "existing output directory to compare against")
 	cmd.Flags().StringVar(&format, "format", "unified", "diff format: unified")
+	cmd.Flags().BoolVar(&visual, "visual", false, "show side-by-side tree view")
 	return cmd
 }

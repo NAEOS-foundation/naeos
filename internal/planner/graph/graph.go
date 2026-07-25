@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type NodeKind string
@@ -54,10 +56,10 @@ func New() *PlannerGraph {
 
 func (g *PlannerGraph) AddNode(n Node) error {
 	if n.ID == "" {
-		return fmt.Errorf("node ID must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "node ID must not be empty")
 	}
 	if _, exists := g.nodes[n.ID]; exists {
-		return fmt.Errorf("node %s already exists", n.ID)
+		return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("node %s already exists", n.ID))
 	}
 	g.nodes[n.ID] = n
 	return nil
@@ -70,7 +72,7 @@ func (g *PlannerGraph) GetNode(id string) (Node, bool) {
 
 func (g *PlannerGraph) RemoveNode(id string) error {
 	if _, exists := g.nodes[id]; !exists {
-		return fmt.Errorf("node %s not found", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("node %s not found", id))
 	}
 	delete(g.nodes, id)
 	filtered := g.edges[:0]
@@ -85,14 +87,14 @@ func (g *PlannerGraph) RemoveNode(id string) error {
 
 func (g *PlannerGraph) AddEdge(e Edge) error {
 	if _, exists := g.nodes[e.From]; !exists {
-		return fmt.Errorf("source node %s not found", e.From)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("source node %s not found", e.From))
 	}
 	if _, exists := g.nodes[e.To]; !exists {
-		return fmt.Errorf("target node %s not found", e.To)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("target node %s not found", e.To))
 	}
 	for _, existing := range g.edges {
 		if existing.From == e.From && existing.To == e.To && existing.Kind == e.Kind {
-			return fmt.Errorf("edge from %s to %s with kind %s already exists", e.From, e.To, e.Kind)
+			return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("edge from %s to %s with kind %s already exists", e.From, e.To, e.Kind))
 		}
 	}
 	g.edges = append(g.edges, e)
@@ -166,7 +168,7 @@ func (g *PlannerGraph) TopologicalSort() ([]Node, error) {
 	}
 
 	if len(sorted) != len(g.nodes) {
-		return nil, fmt.Errorf("cycle detected in graph")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "cycle detected in graph")
 	}
 
 	return sorted, nil
@@ -297,7 +299,7 @@ func (g *PlannerGraph) findAllPathsDFS(current, target string, visited map[strin
 func (g *PlannerGraph) Merge(other *PlannerGraph) error {
 	for _, n := range other.nodes {
 		if _, exists := g.nodes[n.ID]; exists {
-			return fmt.Errorf("node %s already exists in graph", n.ID)
+			return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("node %s already exists in graph", n.ID))
 		}
 	}
 	for _, n := range other.nodes {
@@ -503,7 +505,7 @@ func FromDOT(dot string) (*PlannerGraph, error) {
 func parseDOTNode(line string) (Node, error) {
 	parts := strings.SplitN(line, " [", 2)
 	if len(parts) < 2 {
-		return Node{}, fmt.Errorf("invalid DOT node: %s", line)
+		return Node{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid DOT node: %s", line))
 	}
 	id := strings.TrimSpace(parts[0])
 	id = strings.Trim(id, "\"")
@@ -531,7 +533,7 @@ func parseDOTNode(line string) (Node, error) {
 func parseDOTEdge(line string) (Edge, error) {
 	parts := strings.SplitN(line, " -> ", 2)
 	if len(parts) < 2 {
-		return Edge{}, fmt.Errorf("invalid DOT edge: %s", line)
+		return Edge{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid DOT edge: %s", line))
 	}
 	from := strings.Trim(strings.TrimSpace(parts[0]), "\"")
 	right := strings.SplitN(parts[1], " [", 2)
@@ -558,10 +560,10 @@ func parseDOTEdge(line string) (Edge, error) {
 
 func (g *PlannerGraph) ShortestPath(from, to string) ([]Node, error) {
 	if _, ok := g.nodes[from]; !ok {
-		return nil, fmt.Errorf("node %s not found", from)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("node %s not found", from))
 	}
 	if _, ok := g.nodes[to]; !ok {
-		return nil, fmt.Errorf("node %s not found", to)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("node %s not found", to))
 	}
 	if from == to {
 		return []Node{g.nodes[from]}, nil
@@ -590,7 +592,7 @@ func (g *PlannerGraph) ShortestPath(from, to string) ([]Node, error) {
 	}
 
 	if !found {
-		return nil, fmt.Errorf("no path from %s to %s", from, to)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("no path from %s to %s", from, to))
 	}
 
 	var path []Node

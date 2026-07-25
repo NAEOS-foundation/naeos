@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Contract interface {
@@ -155,7 +157,7 @@ func (r *InMemoryRegistry) Register(component any) error {
 	}
 	name := n.Name()
 	if _, exists := r.components[name]; exists {
-		return fmt.Errorf("component %q already registered", name)
+		return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("component %q already registered", name))
 	}
 	r.components[name] = component
 	return nil
@@ -163,7 +165,7 @@ func (r *InMemoryRegistry) Register(component any) error {
 
 func (r *InMemoryRegistry) Unregister(name string) error {
 	if _, exists := r.components[name]; !exists {
-		return fmt.Errorf("component %q not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("component %q not found", name))
 	}
 	delete(r.components, name)
 	return nil
@@ -336,14 +338,14 @@ func Any(contractFns ...ContractFunc) ContractFunc {
 				errs = append(errs, err.Error())
 			}
 		}
-		return fmt.Errorf("none of the contracts satisfied: %s", strings.Join(errs, "; "))
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("none of the contracts satisfied: %s", strings.Join(errs, "; ")))
 	}
 }
 
 func Not(fn ContractFunc) ContractFunc {
 	return func() error {
 		if err := fn(); err == nil {
-			return fmt.Errorf("expected contract to fail but it passed")
+			return naeoserr.New(naeoserr.ErrValidation, "expected contract to fail but it passed")
 		}
 		return nil
 	}
@@ -351,14 +353,14 @@ func Not(fn ContractFunc) ContractFunc {
 
 func RequireNonEmpty(name, value string) error {
 	if strings.TrimSpace(value) == "" {
-		return fmt.Errorf("%s must not be empty", name)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s must not be empty", name))
 	}
 	return nil
 }
 
 func RequireRange(name string, value, min, max int) error {
 	if value < min || value > max {
-		return fmt.Errorf("%s must be between %d and %d, got %d", name, min, max, value)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s must be between %d and %d, got %d", name, min, max, value))
 	}
 	return nil
 }
@@ -369,12 +371,12 @@ func RequireOneOf(name, value string, allowed ...string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("%s must be one of [%s], got %q", name, strings.Join(allowed, ", "), value)
+	return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s must be one of [%s], got %q", name, strings.Join(allowed, ", "), value))
 }
 
 func RequireGreaterThan(name string, value, threshold int) error {
 	if value <= threshold {
-		return fmt.Errorf("%s must be greater than %d, got %d", name, threshold, value)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s must be greater than %d, got %d", name, threshold, value))
 	}
 	return nil
 }

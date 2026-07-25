@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Files struct {
@@ -252,7 +254,7 @@ func (f Files) WriteAll() error {
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {
-			return fmt.Errorf("create dir %s: %w", d, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir %s", d)
 		}
 	}
 
@@ -270,7 +272,7 @@ func (f Files) WriteAll() error {
 	for path, content := range files {
 		full := filepath.Join(f.Dir, path)
 		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", path)
 		}
 	}
 

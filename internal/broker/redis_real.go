@@ -49,7 +49,7 @@ func (r *RealRedis) Connect(config *Config) error {
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		rdb.Close()
 		slog.Error("redis connect failed", "host", config.Host, "port", config.Port, "error", err)
-		return fmt.Errorf("connect to redis: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "connect to redis")
 	}
 
 	slog.Info("redis connected", "host", config.Host, "port", config.Port)
@@ -105,7 +105,7 @@ func (r *RealRedis) Subscribe(channel string, handler MessageHandler) error {
 
 	if err := sub.Ping(context.Background()); err != nil {
 		_ = sub.Close()
-		return fmt.Errorf("subscribe to %s: %w", channel, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "subscribe to %s", channel)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

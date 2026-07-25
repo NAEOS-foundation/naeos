@@ -1,13 +1,13 @@
 package configreload
 
 import (
-	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 )
 
@@ -30,7 +30,7 @@ func (hr *HotReloader) Start() error {
 	hr.mu.Lock()
 	if hr.running {
 		hr.mu.Unlock()
-		return fmt.Errorf("hot reloader already running")
+		return naeoserr.New(naeoserr.ErrConfig, "hot reloader already running")
 	}
 	hr.running = true
 	hr.stopCh = make(chan struct{})
@@ -41,7 +41,7 @@ func (hr *HotReloader) Start() error {
 		hr.mu.Lock()
 		hr.running = false
 		hr.mu.Unlock()
-		return fmt.Errorf("create watcher: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "create watcher")
 	}
 	hr.watcher = watcher
 
@@ -54,7 +54,7 @@ func (hr *HotReloader) Start() error {
 		hr.mu.Lock()
 		hr.running = false
 		hr.mu.Unlock()
-		return fmt.Errorf("watch config directory %s: %w", dir, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "watch config directory %s", dir)
 	}
 
 	go hr.loop()

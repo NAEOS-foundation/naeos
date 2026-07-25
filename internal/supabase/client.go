@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var configFile = "config.json"
@@ -42,6 +44,8 @@ type Config struct {
 	DBHost         string `json:"db_host"`
 	DBPort         int    `json:"db_port"`
 	DBPassword     string `json:"db_password"`
+	ManagementURL  string `json:"management_url"`
+	AccessToken    string `json:"access_token"`
 }
 
 type Client struct {
@@ -62,11 +66,11 @@ func configFilePath() string {
 func SaveConfig(cfg *Config) error {
 	dir := configDir()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("create config dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "create config dir")
 	}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal config: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal config")
 	}
 	return os.WriteFile(configFilePath(), data, 0o600)
 }
@@ -75,24 +79,28 @@ func LoadConfig() (*Config, error) {
 	data, err := os.ReadFile(configFilePath())
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("supabase not configured; run 'naeos supabase init'")
+			return nil, naeoserr.New(naeoserr.ErrConfig, "supabase not configured; run 'naeos supabase init'")
 		}
-		return nil, fmt.Errorf("read config: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrConfig, "read config")
 	}
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse config")
 	}
 	return &cfg, nil
 }
 
 func NewClient(cfg *Config) *Client {
-	return &Client{
+	c := &Client{
 		config: cfg,
 		http: &http.Client{
 			Timeout: 30 * time.Second,
 		},
 	}
+	if cfg.AccessToken != "" {
+		c.SetAuthToken(cfg.AccessToken)
+	}
+	return c
 }
 
 func (c *Client) Config() *Config {
@@ -118,14 +126,14 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 	if body != nil {
 		data, err := json.Marshal(body)
 		if err != nil {
-			return nil, fmt.Errorf("marshal request: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal request")
 		}
 		reqBody = bytes.NewReader(data)
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), method, url, reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -141,16 +149,16 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "request")
 	}
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read response")
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(data))
+		return nil, naeoserr.New(naeoserr.ErrCloud, fmt.Sprintf("API error %d: %s", resp.StatusCode, string(data)))
 	}
 
 	return data, nil
@@ -170,12 +178,65 @@ func (c *Client) doAdmin(method, path string, body any) ([]byte, error) {
 	return c.do(method, path, headers, body)
 }
 
+func (c *Client) doManagement(method, path string, headers map[string]string, body any) ([]byte, error) {
+	baseURL := c.managementURL()
+	fullURL := baseURL + path
+
+	var reqBody io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal request")
+		}
+		reqBody = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), method, fullURL, reqBody)
+	if err != nil {
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	if token := c.AuthToken(); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "request")
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read response")
+	}
+	if resp.StatusCode >= 400 {
+		return nil, naeoserr.New(naeoserr.ErrCloud, fmt.Sprintf("API error %d: %s", resp.StatusCode, string(data)))
+	}
+
+	return data, nil
+}
+
 func jsonUnmarshal[T any](data []byte) (*T, error) {
 	var result T
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode response")
 	}
 	return &result, nil
+}
+
+func (c *Client) managementURL() string {
+	if c.config.ManagementURL != "" {
+		return c.config.ManagementURL
+	}
+	return "https://api.supabase.com"
 }
 
 func MaskKey(key string) string {

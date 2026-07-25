@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -91,7 +92,7 @@ func NewStore(root string) *Store {
 // Add inserts an artifact into the store, deduplicating by content hash.
 func (s *Store) Add(path string, content []byte, kind ArtifactKind, opts ...Option) (*Artifact, error) {
 	if _, err := securityext.ValidateFilePath(filepath.Join(s.root, path), s.root); err != nil {
-		return nil, fmt.Errorf("invalid path: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "invalid path")
 	}
 	hash := computeHash(content)
 	if existing, ok := s.byHash[hash]; ok {
@@ -182,27 +183,27 @@ func (s *Store) Remove(path string) bool {
 // WriteToDisk persists the artifact manifest and all artifact contents to disk.
 func (s *Store) WriteToDisk() error {
 	if err := os.MkdirAll(s.root, 0o755); err != nil {
-		return fmt.Errorf("create store dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create store dir")
 	}
 
 	for _, a := range s.manifest.Artifacts {
 		filePath, err := securityext.ValidateFilePath(filepath.Join(s.root, a.Path), s.root)
 		if err != nil {
-			return fmt.Errorf("invalid artifact path %s: %w", a.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "invalid artifact path %s", a.Path)
 		}
 		dir := filepath.Dir(filePath)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("create dir %s: %w", dir, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir %s", dir)
 		}
 		if err := os.WriteFile(filePath, a.Content, 0o600); err != nil {
-			return fmt.Errorf("write %s: %w", a.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", a.Path)
 		}
 	}
 
 	manifestPath := filepath.Join(s.root, ".artifacts.json")
 	data, err := json.MarshalIndent(s.manifest, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal manifest: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal manifest")
 	}
 	return os.WriteFile(manifestPath, data, 0o600)
 }
@@ -215,12 +216,12 @@ func (s *Store) LoadFromDisk() error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("read manifest: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "read manifest")
 	}
 
 	var manifest StoreManifest
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return fmt.Errorf("unmarshal manifest: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "unmarshal manifest")
 	}
 
 	s.manifest = manifest

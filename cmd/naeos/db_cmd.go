@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/database"
+	"github.com/NAEOS-foundation/naeos/internal/supabase"
 )
 
 func newDBCommand() *cobra.Command {
@@ -37,6 +38,7 @@ Example:
 func newDBConnectCommand() *cobra.Command {
 	var dbType, name, host, user, pass, dbname, sslmode string
 	var port int
+	var fromSupabase bool
 
 	cmd := &cobra.Command{
 		Use:   "connect",
@@ -50,6 +52,18 @@ func newDBConnectCommand() *cobra.Command {
 				Password: pass,
 				Database: dbname,
 				SSLMode:  sslmode,
+			}
+
+			if fromSupabase {
+				supaCfg, err := supabase.LoadConfig()
+				if err != nil {
+					return fmt.Errorf("load supabase config: %w (run 'naeos supabase init' first)", err)
+				}
+				cfg.SupabaseProjectRef = supaCfg.ProjectRef
+				cfg.SupabaseServiceRoleKey = supaCfg.ServiceRoleKey
+				cfg.SupabaseURL = supaCfg.URL
+				cfg.SupabaseAccessToken = supaCfg.AccessToken
+				dbType = "supabase"
 			}
 
 			if err := cfg.Validate(); err != nil {
@@ -76,7 +90,7 @@ func newDBConnectCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&dbType, "type", "sqlite", "database type (sqlite, postgresql, mysql)")
+	cmd.Flags().StringVar(&dbType, "type", "sqlite", "database type (sqlite, postgresql, mysql, supabase)")
 	cmd.Flags().StringVar(&name, "name", "", "connection name (required)")
 	cmd.Flags().StringVar(&host, "host", "localhost", "database host")
 	cmd.Flags().IntVar(&port, "port", 5432, "database port")
@@ -84,6 +98,7 @@ func newDBConnectCommand() *cobra.Command {
 	cmd.Flags().StringVar(&pass, "pass", "", "database password")
 	cmd.Flags().StringVar(&dbname, "database", "", "database name")
 	cmd.Flags().StringVar(&sslmode, "sslmode", "disable", "SSL mode")
+	cmd.Flags().BoolVar(&fromSupabase, "supabase", false, "use supabase init config (reads ~/.naeos/supabase/config.json)")
 	_ = cmd.MarkFlagRequired("name")
 	return cmd
 }

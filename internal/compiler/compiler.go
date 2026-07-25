@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/promptlib"
@@ -75,7 +76,7 @@ func (c *Compiler) Compile(neir *model.NEIR, target Target) (*CompiledOutput, er
 	a, ok := c.adapters[target]
 	if !ok {
 		slog.Error("unknown compile target", "target", target)
-		return nil, fmt.Errorf("unknown target: %s", target)
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("unknown target: %s", target))
 	}
 	return a.Compile(neir)
 }

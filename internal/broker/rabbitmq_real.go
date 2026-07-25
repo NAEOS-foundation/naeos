@@ -45,14 +45,14 @@ func (r *RealRabbitMQ) Connect(config *Config) error {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		slog.Error("rabbitmq connect failed", "host", config.Host, "port", config.Port, "error", err)
-		return fmt.Errorf("connect to rabbitmq: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "connect to rabbitmq")
 	}
 
 	ch, err := conn.Channel()
 	if err != nil {
 		conn.Close()
 		slog.Error("rabbitmq channel open failed", "error", err)
-		return fmt.Errorf("open channel: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "open channel")
 	}
 
 	slog.Info("rabbitmq connected", "host", config.Host, "port", config.Port)
@@ -103,7 +103,7 @@ func (r *RealRabbitMQ) Publish(channel string, msg *Message) error {
 		)
 		if err != nil {
 			slog.Error("rabbitmq declare queue failed", "channel", channel, "error", err)
-			return fmt.Errorf("declare queue %s: %w", channel, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "declare queue %s", channel)
 		}
 		r.queues[channel] = queue
 	}
@@ -138,7 +138,7 @@ func (r *RealRabbitMQ) Subscribe(channel string, handler MessageHandler) error {
 			channel, true, false, false, false, nil,
 		)
 		if err != nil {
-			return fmt.Errorf("declare queue %s: %w", channel, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "declare queue %s", channel)
 		}
 		r.queues[channel] = queue
 	}
@@ -148,7 +148,7 @@ func (r *RealRabbitMQ) Subscribe(channel string, handler MessageHandler) error {
 	)
 	if err != nil {
 		slog.Error("rabbitmq consume failed", "channel", channel, "error", err)
-		return fmt.Errorf("consume from %s: %w", channel, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "consume from %s", channel)
 	}
 
 	r.mu.Lock()

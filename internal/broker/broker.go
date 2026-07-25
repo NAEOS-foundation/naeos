@@ -1,7 +1,6 @@
 package broker
 
 import (
-	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -218,7 +217,7 @@ func (m *Manager) ConnectAll(configs map[string]*Config) error {
 		}
 		if err := broker.Connect(config); err != nil {
 			slog.Error("broker connect failed", "name", name, "error", err)
-			return fmt.Errorf("failed to connect to %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "failed to connect to %s", name)
 		}
 		slog.Info("broker connected", "name", name)
 	}
@@ -232,7 +231,7 @@ func (m *Manager) CloseAll() error {
 	for name, broker := range m.brokers {
 		if err := broker.Close(); err != nil {
 			slog.Error("broker close failed", "name", name, "error", err)
-			return fmt.Errorf("failed to close %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "failed to close %s", name)
 		}
 	}
 	return nil
@@ -304,7 +303,7 @@ func (b *InMemoryBroker) Publish(channel string, msg *Message) error {
 		return naeoserr.ErrNotConnected
 	}
 	if msg == nil {
-		return fmt.Errorf("message is nil")
+		return naeoserr.New(naeoserr.ErrValidation, "message is nil")
 	}
 	msg.Channel = channel
 
@@ -509,7 +508,7 @@ func PublishWithRetry(b Broker, channel string, msg *Message, rc *RetryConfig) e
 		}
 	}
 	slog.Error("publish failed after retries", "max_attempts", rc.MaxAttempts, "error", lastErr)
-	return fmt.Errorf("publish failed after %d attempts: %w", rc.MaxAttempts, lastErr)
+	return naeoserr.Wrapf(lastErr, naeoserr.ErrNetwork, "publish failed after %d attempts", rc.MaxAttempts)
 }
 
 // DeadLetterChannel provides a channel-based dead letter queue for messages
@@ -536,7 +535,7 @@ func (dlc *DeadLetterChannel) Handler() MessageHandler {
 			return nil
 		default:
 			slog.Error("dead letter queue full")
-			return fmt.Errorf("dead letter queue full")
+			return naeoserr.New(naeoserr.ErrInternal, "dead letter queue full")
 		}
 	}
 }

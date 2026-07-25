@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
@@ -23,10 +24,10 @@ func (a *GCPAdapter) Provider() CloudProvider {
 
 func (a *GCPAdapter) Validate(config *DeployConfig) error {
 	if config.Project == "" {
-		return fmt.Errorf("GCP project is required")
+		return naeoserr.New(naeoserr.ErrValidation, "GCP project is required")
 	}
 	if config.Region == "" {
-		return fmt.Errorf("GCP region is required")
+		return naeoserr.New(naeoserr.ErrValidation, "GCP region is required")
 	}
 	return nil
 }
@@ -251,7 +252,7 @@ func (a *GCPAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 	if len(planResult.Resources) == 0 {
-		return fmt.Errorf("no resources to destroy")
+		return naeoserr.New(naeoserr.ErrValidation, "no resources to destroy")
 	}
 
 	tf, err := a.ExportTerraform(config)

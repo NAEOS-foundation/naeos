@@ -8,8 +8,8 @@
 | CI lint zero-failure ✅ | Backend | Semua pelanggaran `bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck` diperbaiki. Lint lulus 100% |
 | Integration test suite | Backend | ✅ Supabase integration tests (Auth, Storage, SQL, Admin) di CI tiap commit dengan secrets |
 | Fuzz testing | Backend | ✅ 5 fuzz targets jalan di CI tiap commit |
-| Error message audit ✅ | UX | `internal/errors/` — 15 error codes (`PARSE_ERROR`, `VALIDATION_ERROR`, `AUTH_ERROR`, dll) + sentinel errors + `ErrorGroup`. Tinggal audit penggunaan di seluruh package |
-| Logging standardization | Backend | ✅ 0 `log.Print` sisa. ❌ 7 `fmt.Println` di `internal/create/create.go` (CLI wizard) — perlu migrasi ke `slog` |
+| Error message audit ✅ | UX | `internal/errors/` — 15 error codes (`PARSE_ERROR`, `VALIDATION_ERROR`, `AUTH_ERROR`, dll) + sentinel errors + `ErrorGroup`. ✅ Semua `fmt.Errorf` di production code sudah migrasi ke `naeoserr.New`/`naeoserr.Wrapf` |
+| Logging standardization | Backend | ✅ 0 `log.Print` sisa. ✅ 7 `fmt.Println` di `create.go` → helper methods `output`/`outputLine`/`errorLine` (stdout/stderr terpusat) |
 
 ## Fase 2: Website & Dokumentasi
 
@@ -58,7 +58,7 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| NEIR v2.0 specification | Core | ❌ Saat ini NEIR v0.1.0. Target: conditional modules, environment profiles, inheritance, multi-file |
+| NEIR v2.0 specification | Core | ⚠️ NEIR model: v0.1.0 (belum v2). ✅ Spec language sudah punya `$if{}/$endif` (conditional), `$include{}` (multi-file), `$import{}` (section import), `$fn{}` (builtin functions). Target: port feature ini ke NEIR model level (conditional modules, environment profiles, inheritance) |
 | GUI Dashboard ✅ | Site | `naeos dashboard` — web dashboard dengan stats, activity log, component health, WebSocket live updates |
 | RBAC ✅ | Backend | `internal/auth/rbac.go` — admin/developer/viewer roles, resource-based permissions |
 | OAuth2/OIDC ✅ | Backend | Google OAuth2 provider + `/.well-known/openid-configuration` + `/.well-known/jwks.json` |
@@ -77,7 +77,7 @@
 | Plugin ecosystem | 0 | 5+ community plugins | 20+ |
 | Build time (pipeline) | ~2s (small) | <1s (small) | <5s (medium) |
 | CI lint pass rate | 100% ✅ | 100% | 100% |
-| `fmt.Println`/`log.Print` sisa | 7 (`create.go`) | 0 | 0 |
+| `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
 
 ## Completed (v2.2.0)
 

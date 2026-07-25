@@ -253,6 +253,106 @@ func FormatDiff(diff *FileDiff) string {
 	return sb.String()
 }
 
+func FormatSideBySide(diff *FileDiff, maxWidth int) string {
+	if diff == nil {
+		return ""
+	}
+	var sb strings.Builder
+
+	switch diff.Type {
+	case ChangeAdded:
+		fmt.Fprintf(&sb, "\033[32m+++ %s (added)\033[0m\n", diff.Path)
+	case ChangeRemoved:
+		fmt.Fprintf(&sb, "\033[31m--- %s (removed)\033[0m\n", diff.Path)
+	case ChangeUnchanged:
+		fmt.Fprintf(&sb, "    %s (unchanged)\n", diff.Path)
+		return sb.String()
+	case ChangeModified:
+		fmt.Fprintf(&sb, "\033[33m~~~ %s (modified: %d -> %d bytes)\033[0m\n", diff.Path, diff.OldSize, diff.NewSize)
+	}
+
+	if maxWidth <= 0 {
+		maxWidth = 120
+	}
+	half := (maxWidth - 3) / 2
+
+	fmt.Fprintf(&sb, "\033[90m%s\033[0m\n", strings.Repeat("─", maxWidth))
+	fmt.Fprintf(&sb, "\033[90m  %-*s ┃ %s\033[0m\n", half, "Old", "New")
+	fmt.Fprintf(&sb, "\033[90m%s\033[0m\n", strings.Repeat("─", maxWidth))
+
+	oldLines := make([]DiffLine, 0)
+	newLines := make([]DiffLine, 0)
+	for _, line := range diff.Lines {
+		switch line.Type {
+		case ChangeRemoved:
+			oldLines = append(oldLines, line)
+		case ChangeAdded:
+			newLines = append(newLines, line)
+		default:
+			oldLines = append(oldLines, line)
+			newLines = append(newLines, line)
+		}
+	}
+
+	maxOldLines := len(oldLines)
+	maxNewLines := len(newLines)
+	maxTotal := maxOldLines
+	if maxNewLines > maxTotal {
+		maxTotal = maxNewLines
+	}
+
+	for i := 0; i < maxTotal; i++ {
+		left := ""
+		leftType := ChangeUnchanged
+		right := ""
+		rightType := ChangeUnchanged
+
+		if i < maxOldLines {
+			left = oldLines[i].Content
+			leftType = oldLines[i].Type
+		}
+		if i < maxNewLines {
+			right = newLines[i].Content
+			rightType = newLines[i].Type
+		}
+
+		leftFormatted := formatSide(left, half, leftType)
+		rightFormatted := formatSide(right, half, rightType)
+		fmt.Fprintf(&sb, "%s ┃ %s\n", leftFormatted, rightFormatted)
+	}
+
+	fmt.Fprintf(&sb, "\033[90m%s\033[0m\n", strings.Repeat("─", maxWidth))
+	return sb.String()
+}
+
+func formatSide(content string, width int, changeType ChangeType) string {
+	if width <= 0 {
+		width = 50
+	}
+	truncated := content
+	if len(truncated) > width-3 {
+		truncated = truncated[:width-6] + "..."
+	}
+	padded := fmt.Sprintf("%-*s", width, truncated)
+
+	var prefix string
+	switch changeType {
+	case ChangeAdded:
+		prefix = "\033[32m+"
+	case ChangeRemoved:
+		prefix = "\033[31m-"
+	default:
+		prefix = " "
+	}
+
+	var suffix string
+	if changeType == ChangeAdded || changeType == ChangeRemoved {
+		suffix = "\033[0m"
+	}
+
+	return prefix + padded + suffix
+}
+
 func FormatUnified(diff *FileDiff, contextLines int) string {
 	if diff == nil || diff.Type == ChangeUnchanged {
 		return ""

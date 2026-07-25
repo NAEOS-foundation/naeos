@@ -1,8 +1,9 @@
 package supabase
 
 import (
-	"fmt"
 	"net/url"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type SignUpParams struct {
@@ -79,7 +80,7 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 func (c *Client) SignOut() error {
 	_, err := c.doAuth("POST", "/auth/v1/logout", nil)
 	if err != nil {
-		return fmt.Errorf("sign out: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrAuth, "sign out")
 	}
 	c.SetAuthToken("")
 	return nil

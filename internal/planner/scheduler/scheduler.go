@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 )
 
@@ -36,7 +37,7 @@ func NewScheduler() Scheduler {
 
 func (DefaultScheduler) Schedule(neir any) ([]Task, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("neir is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "neir is nil")
 	}
 
 	neirModel, ok := neir.(*model.NEIR)
@@ -152,7 +153,7 @@ type dagNode struct {
 
 func (d *DAGScheduler) Schedule(neir any) ([]Task, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("neir is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "neir is nil")
 	}
 
 	neirModel, ok := neir.(*model.NEIR)
@@ -478,7 +479,7 @@ func ValidateSchedule(tasks []Task) error {
 	idSet := make(map[string]bool)
 	for _, t := range tasks {
 		if idSet[t.ID] {
-			return fmt.Errorf("duplicate task ID: %s", t.ID)
+			return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("duplicate task ID: %s", t.ID))
 		}
 		idSet[t.ID] = true
 	}
@@ -486,7 +487,7 @@ func ValidateSchedule(tasks []Task) error {
 	for _, t := range tasks {
 		for _, dep := range t.Dependencies {
 			if !idSet[dep] {
-				return fmt.Errorf("task %s depends on unknown task %s", t.ID, dep)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("task %s depends on unknown task %s", t.ID, dep))
 			}
 		}
 	}
@@ -530,7 +531,7 @@ func dfsCycle(id string, adj map[string][]string, visited map[string]int) error 
 	visited[id] = gray
 	for _, child := range adj[id] {
 		if visited[child] == gray {
-			return fmt.Errorf("cycle detected involving tasks %s and %s", id, child)
+			return naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("cycle detected involving tasks %s and %s", id, child))
 		}
 		if visited[child] == white {
 			if err := dfsCycle(child, adj, visited); err != nil {

@@ -3,6 +3,8 @@ package cloud
 import (
 	"fmt"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // CloudProvider identifies a supported cloud infrastructure provider.
@@ -108,5 +110,5 @@ func GetAdapter(provider CloudProvider) (CloudAdapter, error) {
 	if adapter, ok := adapterCache[provider]; ok {
 		return adapter, nil
 	}
-	return nil, fmt.Errorf("unsupported provider: %s", provider)
+	return nil, naeoserr.New(naeoserr.ErrCloud, fmt.Sprintf("unsupported provider: %s", provider))
 }

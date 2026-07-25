@@ -38,7 +38,7 @@ func (a *openCodeAdapter) Compile(neir *model.NEIR) (*compiler.CompiledOutput, e
 func (a *openCodeAdapter) compileFromLibrary(neir *model.NEIR) (*compiler.CompiledOutput, error) {
 	rendered, err := a.library.RenderCompiler("opencode", neir)
 	if err != nil {
-		return nil, fmt.Errorf("render from library: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "render from library")
 	}
 
 	var files []compiler.OutputFile

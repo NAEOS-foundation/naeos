@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,28 +56,28 @@ func (c *NEIRClient) FetchSchema() (map[string]any, error) {
 		var err error
 		body, err = os.ReadFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("read local schema: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read local schema")
 		}
 	} else {
 		resp, err := c.httpClient.Get(c.registryURL)
 		if err != nil {
-			return nil, fmt.Errorf("fetch schema: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "fetch schema")
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("fetch schema: HTTP %d", resp.StatusCode)
+			return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("fetch schema: HTTP %d", resp.StatusCode))
 		}
 
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("read schema: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read schema")
 		}
 	}
 
 	var schema map[string]any
 	if err := json.Unmarshal(body, &schema); err != nil {
-		return nil, fmt.Errorf("parse schema: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse schema")
 	}
 
 	return schema, nil
@@ -99,7 +100,7 @@ func (c *NEIRClient) FetchSchemaVersion(version string) (map[string]any, error) 
 func ValidateNEIRSpec(specPath string, schema map[string]any) (NEIRValidationResult, error) {
 	data, err := os.ReadFile(specPath)
 	if err != nil {
-		return NEIRValidationResult{}, fmt.Errorf("read spec: %w", err)
+		return NEIRValidationResult{}, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read spec")
 	}
 
 	ext := filepath.Ext(specPath)
@@ -107,11 +108,11 @@ func ValidateNEIRSpec(specPath string, schema map[string]any) (NEIRValidationRes
 	switch ext {
 	case ".yaml", ".yml":
 		if err := yaml.Unmarshal(data, &spec); err != nil {
-			return NEIRValidationResult{}, fmt.Errorf("parse YAML: %w", err)
+			return NEIRValidationResult{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse YAML")
 		}
 	default:
 		if err := json.Unmarshal(data, &spec); err != nil {
-			return NEIRValidationResult{}, fmt.Errorf("parse JSON: %w", err)
+			return NEIRValidationResult{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse JSON")
 		}
 	}
 

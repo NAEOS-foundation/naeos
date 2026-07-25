@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/pluginsdk/wasm"
 )
 
@@ -63,7 +64,7 @@ func (s *Sandbox) Exec(ctx context.Context, pluginPath string, req Request) (*Re
 
 	data, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal request")
 	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, s.timeout)
@@ -79,7 +80,7 @@ func (s *Sandbox) Exec(ctx context.Context, pluginPath string, req Request) (*Re
 	cmd.Env = s.buildEnv()
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start plugin: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "start plugin")
 	}
 
 	done := make(chan error, 1)
@@ -122,7 +123,7 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 
 	plugin, err := rt.Load(wasmPath)
 	if err != nil {
-		return nil, fmt.Errorf("load wasm plugin: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "load wasm plugin")
 	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, s.timeout)
@@ -169,7 +170,7 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 func (s *Sandbox) ExecWASM(ctx context.Context, wasmPath string, req Request) (*Response, error) {
 	data, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal request")
 	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, s.timeout)
@@ -177,7 +178,7 @@ func (s *Sandbox) ExecWASM(ctx context.Context, wasmPath string, req Request) (*
 
 	tmpDir, err := os.MkdirTemp("", "naeos-wasm-*")
 	if err != nil {
-		return nil, fmt.Errorf("create temp dir: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create temp dir")
 	}
 	defer os.RemoveAll(tmpDir)
 
@@ -185,7 +186,7 @@ func (s *Sandbox) ExecWASM(ctx context.Context, wasmPath string, req Request) (*
 	outputPath := filepath.Join(tmpDir, "output.json")
 
 	if err := os.WriteFile(inputPath, data, 0o600); err != nil {
-		return nil, fmt.Errorf("write input: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "write input")
 	}
 
 	cmd := exec.CommandContext(reqCtx, "wasmtime", wasmPath,
@@ -198,17 +199,17 @@ func (s *Sandbox) ExecWASM(ctx context.Context, wasmPath string, req Request) (*
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("wasm execution: %w, stderr: %s", err, stderr.String())
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "wasm execution: stderr: %s", stderr.String())
 	}
 
 	outputData, err := os.ReadFile(outputPath)
 	if err != nil {
-		return nil, fmt.Errorf("read output: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read output")
 	}
 
 	var resp Response
 	if err := json.Unmarshal(outputData, &resp); err != nil {
-		return nil, fmt.Errorf("parse output: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse output")
 	}
 
 	return &resp, nil

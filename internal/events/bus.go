@@ -6,6 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Event struct {
@@ -191,7 +193,7 @@ func (b *Bus) Publish(topic string, payload any) error {
 
 func (b *Bus) Subscribe(topic string, handler Handler) error {
 	if handler == nil {
-		return fmt.Errorf("handler must not be nil")
+		return naeoserr.New(naeoserr.ErrInternal, "handler must not be nil")
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -203,7 +205,7 @@ func (b *Bus) Unsubscribe(topic string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if _, exists := b.subscribers[topic]; !exists {
-		return fmt.Errorf("no subscribers for topic %s", topic)
+		return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("no subscribers for topic %s", topic))
 	}
 	delete(b.subscribers, topic)
 	return nil

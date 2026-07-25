@@ -30,7 +30,7 @@ func (r *ExecCommandRunner) Run(name string, args []string, dir string) ([]byte,
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%s %s: %w\nstderr: %s", name, strings.Join(args, " "), err, stderr.String())
+		return nil, naeoserrors.Wrapf(err, naeoserrors.ErrCloud, "%s %s\nstderr: %s", name, strings.Join(args, " "), stderr.String())
 	}
 	return stdout.Bytes(), nil
 }

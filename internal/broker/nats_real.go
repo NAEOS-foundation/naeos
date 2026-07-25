@@ -45,7 +45,7 @@ func (n *RealNATS) Connect(config *Config) error {
 	conn, err := nats.Connect(url, opts...)
 	if err != nil {
 		slog.Error("nats connect failed", "host", config.Host, "port", config.Port, "error", err)
-		return fmt.Errorf("connect to NATS: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "connect to NATS")
 	}
 
 	slog.Info("nats connected", "host", config.Host, "port", config.Port)
@@ -106,7 +106,7 @@ func (n *RealNATS) Subscribe(channel string, handler MessageHandler) error {
 		_ = handler(msg)
 	})
 	if err != nil {
-		return fmt.Errorf("subscribe to %s: %w", channel, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "subscribe to %s", channel)
 	}
 
 	n.mu.Lock()

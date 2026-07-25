@@ -2,10 +2,10 @@ package promptlib
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"text/template"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,7 +32,7 @@ var FuncMap = template.FuncMap{
 func toJSONFunc(v any) (string, error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("json marshal: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "json marshal")
 	}
 	return string(b), nil
 }
@@ -40,7 +40,7 @@ func toJSONFunc(v any) (string, error) {
 func toYAMLFunc(v any) (string, error) {
 	b, err := yaml.Marshal(v)
 	if err != nil {
-		return "", fmt.Errorf("yaml marshal: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "yaml marshal")
 	}
 	return string(b), nil
 }

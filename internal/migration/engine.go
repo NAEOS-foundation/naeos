@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
 
@@ -41,19 +42,19 @@ func (e *MigrationEngine) Migrate(data map[string]any, fromVersion, toVersion st
 	for current != toVersion {
 		next := e.nextVersion(current)
 		if next == "" {
-			return nil, fmt.Errorf("no migration path from %s to %s", current, toVersion)
+			return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("no migration path from %s to %s", current, toVersion))
 		}
 
 		key := fmt.Sprintf("%s->%s", current, next)
 		step, ok := e.steps[key]
 		if !ok {
-			return nil, fmt.Errorf("missing migration step: %s", key)
+			return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("missing migration step: %s", key))
 		}
 
 		var err error
 		result, err = step.Transform(result)
 		if err != nil {
-			return nil, fmt.Errorf("migration %s failed: %w", key, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "migration %s failed", key)
 		}
 
 		current = next

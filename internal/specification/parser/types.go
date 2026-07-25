@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Type System v3
@@ -85,7 +87,7 @@ func (r *TypeRegistry) Resolve(ref string) (*TypeDefinition, error) {
 	if def, ok := r.types[ref]; ok {
 		return def, nil
 	}
-	return nil, fmt.Errorf("type not found: %s", ref)
+	return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("type not found: %s", ref))
 }
 
 // Type Builder
@@ -242,7 +244,7 @@ func (v *ValidationEngine) validateType(val any, def *TypeDefinition) error {
 	case TypeString:
 		s, ok := val.(string)
 		if !ok {
-			return fmt.Errorf("expected string, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected string, got %T", val))
 		}
 		return v.validateString(s, def)
 	case TypeInteger:
@@ -251,29 +253,29 @@ func (v *ValidationEngine) validateType(val any, def *TypeDefinition) error {
 		case int, int64, float64:
 			return v.validateNumber(val, def)
 		default:
-			return fmt.Errorf("expected integer, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected integer, got %T", val))
 		}
 	case TypeFloat:
 		switch val.(type) {
 		case float64, int, int64:
 			return nil
 		default:
-			return fmt.Errorf("expected float, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected float, got %T", val))
 		}
 	case TypeBoolean:
 		if _, ok := val.(bool); !ok {
-			return fmt.Errorf("expected boolean, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected boolean, got %T", val))
 		}
 		return nil
 	case TypeArray:
 		arr, ok := val.([]any)
 		if !ok {
-			return fmt.Errorf("expected array, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected array, got %T", val))
 		}
 		if def.Items != nil {
 			for i, item := range arr {
 				if err := v.validateType(item, def.Items); err != nil {
-					return fmt.Errorf("item %d: %w", i, err)
+					return naeoserr.Wrapf(err, naeoserr.ErrValidation, "item %d", i)
 				}
 			}
 		}
@@ -281,23 +283,23 @@ func (v *ValidationEngine) validateType(val any, def *TypeDefinition) error {
 	case TypeObject:
 		obj, ok := val.(map[string]any)
 		if !ok {
-			return fmt.Errorf("expected object, got %T", val)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected object, got %T", val))
 		}
 		if def.Properties != nil {
 			for name, propDef := range def.Properties {
 				if propVal, ok := obj[name]; ok {
 					if err := v.validateType(propVal, propDef); err != nil {
-						return fmt.Errorf("property '%s': %w", name, err)
+						return naeoserr.Wrapf(err, naeoserr.ErrValidation, "property '%s'", name)
 					}
 				} else if propDef.Required {
-					return fmt.Errorf("property '%s' is required", name)
+					return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("property '%s' is required", name))
 				}
 			}
 		}
 		return nil
 	case TypeRef:
 		if def.Ref == "" {
-			return fmt.Errorf("ref type must have a reference")
+			return naeoserr.New(naeoserr.ErrValidation, "ref type must have a reference")
 		}
 		return nil
 	case TypeUnion:
@@ -306,7 +308,7 @@ func (v *ValidationEngine) validateType(val any, def *TypeDefinition) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("value does not match any type in union")
+		return naeoserr.New(naeoserr.ErrValidation, "value does not match any type in union")
 	}
 
 	return nil
@@ -322,10 +324,10 @@ func (v *ValidationEngine) validateString(s string, def *TypeDefinition) error {
 			}
 			matched, err := regexp.MatchString(pattern, s)
 			if err != nil {
-				return fmt.Errorf("invalid pattern: %s", pattern)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid pattern: %s", pattern))
 			}
 			if !matched {
-				return fmt.Errorf("string does not match pattern: %s", pattern)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("string does not match pattern: %s", pattern))
 			}
 		case "oneOf":
 			values, ok := c.Value.([]string)
@@ -340,17 +342,17 @@ func (v *ValidationEngine) validateString(s string, def *TypeDefinition) error {
 				}
 			}
 			if !found {
-				return fmt.Errorf("string must be one of: %s", strings.Join(values, ", "))
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("string must be one of: %s", strings.Join(values, ", ")))
 			}
 		case "min":
 			min, ok := c.Value.(int)
 			if ok && len(s) < min {
-				return fmt.Errorf("string length must be at least %d", min)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("string length must be at least %d", min))
 			}
 		case "max":
 			max, ok := c.Value.(int)
 			if ok && len(s) > max {
-				return fmt.Errorf("string length must be at most %d", max)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("string length must be at most %d", max))
 			}
 		}
 	}
@@ -367,18 +369,18 @@ func (v *ValidationEngine) validateNumber(val any, def *TypeDefinition) error {
 	case float64:
 		num = n
 	default:
-		return fmt.Errorf("expected number, got %T", val)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected number, got %T", val))
 	}
 
 	for _, c := range def.Constraints {
 		switch c.Type {
 		case "min":
 			if min, ok := c.Value.(int); ok && num < float64(min) {
-				return fmt.Errorf("number must be at least %d", min)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("number must be at least %d", min))
 			}
 		case "max":
 			if max, ok := c.Value.(int); ok && num > float64(max) {
-				return fmt.Errorf("number must be at most %d", max)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("number must be at most %d", max))
 			}
 		}
 	}
@@ -394,18 +396,18 @@ func (v *ValidationEngine) applyRule(data map[string]any, rule *ValidationRule) 
 	switch rule.Operator {
 	case "equals":
 		if fmt.Sprintf("%v", val) != fmt.Sprintf("%v", rule.Value) {
-			return fmt.Errorf("field '%s' must equal %v", rule.Field, rule.Value)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("field '%s' must equal %v", rule.Field, rule.Value))
 		}
 	case "notEquals":
 		if fmt.Sprintf("%v", val) == fmt.Sprintf("%v", rule.Value) {
-			return fmt.Errorf("field '%s' must not equal %v", rule.Field, rule.Value)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("field '%s' must not equal %v", rule.Field, rule.Value))
 		}
 	case "contains":
 		s, ok := val.(string)
 		if ok {
 			substr, ok := rule.Value.(string)
 			if ok && !strings.Contains(s, substr) {
-				return fmt.Errorf("field '%s' must contain '%s'", rule.Field, substr)
+				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("field '%s' must contain '%s'", rule.Field, substr))
 			}
 		}
 	case "matches":
@@ -415,7 +417,7 @@ func (v *ValidationEngine) applyRule(data map[string]any, rule *ValidationRule) 
 			if ok {
 				matched, _ := regexp.MatchString(pattern, s)
 				if !matched {
-					return fmt.Errorf("field '%s' must match pattern '%s'", rule.Field, pattern)
+					return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("field '%s' must match pattern '%s'", rule.Field, pattern))
 				}
 			}
 		}

@@ -115,16 +115,16 @@ func (m *Manager) GetInfo(name string) (*PluginInfo, bool) {
 func (m *Manager) Install(path string) (*PluginInfo, error) {
 	goPlugin, err := goplugin.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open plugin %s: %w", path, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "open plugin %s", path)
 	}
 
 	symName, err := goPlugin.Lookup("PluginName")
 	if err != nil {
-		return nil, fmt.Errorf("plugin %s does not export PluginName: %w", path, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "plugin %s does not export PluginName", path)
 	}
 	namePtr, ok := symName.(*string)
 	if !ok {
-		return nil, fmt.Errorf("plugin %q: exported PluginName must be a *string; rebuild the plugin with the correct type", path)
+		return nil, naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("plugin %q: exported PluginName must be a *string; rebuild the plugin with the correct type", path))
 	}
 
 	version := "0.0.0"
@@ -306,12 +306,12 @@ func (m *Manager) loadGoPlugin(path string) (Plugin, error) {
 
 	sym, err := goPlugin.Lookup("NaeosPlugin")
 	if err != nil {
-		return nil, fmt.Errorf("plugin does not export NaeosPlugin: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "plugin does not export NaeosPlugin")
 	}
 
 	p, ok := sym.(Plugin)
 	if !ok {
-		return nil, fmt.Errorf("NaeosPlugin does not implement pluginhost.Plugin interface")
+		return nil, naeoserr.New(naeoserr.ErrPlugin, "NaeosPlugin does not implement pluginhost.Plugin interface")
 	}
 
 	return p, nil
@@ -407,11 +407,11 @@ func (m *Manager) lazyLoad(name string, ctx *PluginContext) error {
 				return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("plugin %s is disabled or has no path", name), nil)
 			}
 			if err := m.sandbox.ValidatePath(pInfo.Path); err != nil {
-				return fmt.Errorf("sandbox validation failed for plugin %q: %w", name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "sandbox validation failed for plugin %q", name)
 			}
 			p, err := m.loadGoPlugin(pInfo.Path)
 			if err != nil {
-				return fmt.Errorf("load plugin %q: %w", name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "load plugin %q", name)
 			}
 			if err := p.Initialize(ctx); err != nil {
 				m.updateStateLocked(name, StateError, err)

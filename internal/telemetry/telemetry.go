@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // SpanStatus represents the status of a span.
@@ -169,24 +171,24 @@ func (e *HTTPExporter) Flush() error {
 
 	data, err := json.Marshal(batch)
 	if err != nil {
-		return fmt.Errorf("marshal spans: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal spans")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), e.client.Timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "POST", e.endpoint+"/v1/traces", bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("export spans: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "export spans")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("export failed with status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("export failed with status %d", resp.StatusCode))
 	}
 	return nil
 }
@@ -548,7 +550,7 @@ func (bp *BatchProcessor) AddSpan(span Span) error {
 	bp.mu.Lock()
 	defer bp.mu.Unlock()
 	if len(bp.queue) >= bp.maxQueue {
-		return fmt.Errorf("queue full: %d spans", len(bp.queue))
+		return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("queue full: %d spans", len(bp.queue)))
 	}
 	bp.queue = append(bp.queue, span)
 	if len(bp.queue) >= bp.batchSize {
@@ -649,11 +651,11 @@ func (c *ConsoleExporter) ExportSpans(spans []Span) error {
 	for _, span := range spans {
 		data, err := json.Marshal(span)
 		if err != nil {
-			return fmt.Errorf("marshal span: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal span")
 		}
 		_, err = fmt.Fprintf(c.writer, "%s\n", data)
 		if err != nil {
-			return fmt.Errorf("write span: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write span")
 		}
 	}
 	return nil

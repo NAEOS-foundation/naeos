@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Spec defines the top-level configuration structure parsed from HCL files.
@@ -73,7 +75,7 @@ func newParseError(filename string, line, col int, msg, ctx string) *ParseError 
 func ParseFile(path string) (*Spec, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "read file")
 	}
 	return Parse(data, path)
 }
@@ -228,7 +230,7 @@ func Parse(data []byte, filename string) (*Spec, error) {
 		for _, e := range errors_ {
 			msgs = append(msgs, e.Error())
 		}
-		return spec, fmt.Errorf("parse errors:\n%s", strings.Join(msgs, "\n"))
+		return spec, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("parse errors:\n%s", strings.Join(msgs, "\n")))
 	}
 
 	return spec, nil

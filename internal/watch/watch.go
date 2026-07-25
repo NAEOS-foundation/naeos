@@ -10,6 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 )
 
@@ -62,7 +63,7 @@ func (pw *PipelineWatcher) Start() error {
 	})
 
 	if err := pw.watcher.AddDirectory(specDir); err != nil {
-		return fmt.Errorf("watch spec dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "watch spec dir")
 	}
 
 	if pw.outputDir != "" {
@@ -95,7 +96,7 @@ func (pw *PipelineWatcher) shouldProcess(path string) bool {
 func (pw *PipelineWatcher) runPipeline() error {
 	data, err := os.ReadFile(pw.specPath)
 	if err != nil {
-		return fmt.Errorf("read spec: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "read spec")
 	}
 
 	return pw.pipeline(pw.ctx, string(data))
@@ -114,10 +115,10 @@ func NewWatcher(interval time.Duration, onChange func(path string)) *Watcher {
 func (w *Watcher) AddDirectory(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil {
-		return fmt.Errorf("cannot watch %s: %w", dir, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "cannot watch %s", dir)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("%s is not a directory", dir)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s is not a directory", dir))
 	}
 	w.directories = append(w.directories, dir)
 	return nil
@@ -127,7 +128,7 @@ func (w *Watcher) Start() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.running {
-		return fmt.Errorf("watcher already running")
+		return naeoserr.New(naeoserr.ErrInternal, "watcher already running")
 	}
 	w.running = true
 	return nil
@@ -191,13 +192,13 @@ func (w *Watcher) DetectChanges(prev map[string]int64) []WatchEvent {
 func (w *Watcher) Run(fn func() error) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("create fsnotify watcher: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create fsnotify watcher")
 	}
 	defer watcher.Close()
 
 	for _, dir := range w.directories {
 		if err := watcher.Add(dir); err != nil {
-			return fmt.Errorf("watch directory %s: %w", dir, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "watch directory %s", dir)
 		}
 	}
 

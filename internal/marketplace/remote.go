@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const (
@@ -66,21 +68,21 @@ func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetch plugin list: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "fetch plugin list")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
+		return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("registry returned status %d", resp.StatusCode))
 	}
 
 	var list RemotePluginList
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
-		return nil, fmt.Errorf("decode plugin list: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode plugin list")
 	}
 
 	return list.Plugins, nil
@@ -144,18 +146,18 @@ func (r *RemoteRegistry) Install(name, version string) (string, error) {
 	}
 
 	if err := os.MkdirAll(r.installDir, 0o755); err != nil {
-		return "", fmt.Errorf("create install dir: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create install dir")
 	}
 
 	destPath := filepath.Join(r.installDir, name+".so")
 	if err := r.downloadFile(plugin.DownloadURL, destPath); err != nil {
-		return "", fmt.Errorf("download plugin: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "download plugin")
 	}
 
 	if plugin.SHA256 != "" {
 		if err := VerifyPlugin(destPath, plugin.SHA256); err != nil {
 			os.Remove(destPath)
-			return "", fmt.Errorf("verify plugin checksum: %w", err)
+			return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "verify plugin checksum")
 		}
 	}
 
@@ -232,9 +234,9 @@ func (r *RemoteRegistry) resolvePlugin(name, version string) (*RemotePlugin, err
 	}
 
 	if version != "" {
-		return nil, fmt.Errorf("plugin %s@%s not found", name, version)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %s@%s not found", name, version))
 	}
-	return nil, fmt.Errorf("plugin %s not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %s not found", name))
 }
 
 func (r *RemoteRegistry) downloadFile(url, destPath string) error {
@@ -242,7 +244,7 @@ func (r *RemoteRegistry) downloadFile(url, destPath string) error {
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -251,7 +253,7 @@ func (r *RemoteRegistry) downloadFile(url, destPath string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download returned status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("download returned status %d", resp.StatusCode))
 	}
 
 	out, err := os.Create(destPath)

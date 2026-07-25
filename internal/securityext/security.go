@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Secret Manager
@@ -126,7 +128,7 @@ func NewFileSecretManager(key string) (*FileSecretManager, error) {
 	}
 	dir := filepath.Join(home, ".config", "naeos")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, fmt.Errorf("create config dir: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrConfig, "create config dir")
 	}
 	fp := filepath.Join(dir, "secrets.enc")
 	fsm := &FileSecretManager{
@@ -181,10 +183,10 @@ func (fsm *FileSecretManager) Save() error {
 	}
 	data, err := json.Marshal(entries)
 	if err != nil {
-		return fmt.Errorf("marshal secrets: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal secrets")
 	}
 	if err := os.WriteFile(fsm.filePath, data, 0o600); err != nil {
-		return fmt.Errorf("write secrets file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "write secrets file")
 	}
 	return nil
 }
@@ -258,7 +260,7 @@ func (sm *SecretManager) decrypt(encrypted string) (string, error) {
 
 	nonceSize := aesGCM.NonceSize()
 	if len(data) < nonceSize {
-		return "", fmt.Errorf("ciphertext too short")
+		return "", naeoserr.New(naeoserr.ErrParse, "ciphertext too short")
 	}
 
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
@@ -335,14 +337,14 @@ func ValidateFilePath(path, allowedBase string) (string, error) {
 	cleanPath := filepath.Clean(path)
 	absPath, err := filepath.Abs(cleanPath)
 	if err != nil {
-		return "", fmt.Errorf("resolve path: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "resolve path")
 	}
 	absBase, err := filepath.Abs(allowedBase)
 	if err != nil {
-		return "", fmt.Errorf("resolve base: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "resolve base")
 	}
 	if !strings.HasPrefix(absPath, absBase+string(os.PathSeparator)) && absPath != absBase {
-		return "", fmt.Errorf("path traversal detected: %s", path)
+		return "", naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("path traversal detected: %s", path))
 	}
 	return absPath, nil
 }
@@ -351,17 +353,17 @@ func ValidateFilePath(path, allowedBase string) (string, error) {
 // It rejects empty names, names with path separators or relative components.
 func ValidatePluginName(name string) error {
 	if name == "" {
-		return fmt.Errorf("name must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "name must not be empty")
 	}
 	if strings.Contains(name, "/") || strings.Contains(name, "\\") {
-		return fmt.Errorf("name must not contain path separators")
+		return naeoserr.New(naeoserr.ErrValidation, "name must not contain path separators")
 	}
 	if strings.Contains(name, "..") {
-		return fmt.Errorf("name must not contain relative path components")
+		return naeoserr.New(naeoserr.ErrValidation, "name must not contain relative path components")
 	}
 	clean := filepath.Clean(name)
 	if clean != name {
-		return fmt.Errorf("name must be a simple name without path components")
+		return naeoserr.New(naeoserr.ErrValidation, "name must be a simple name without path components")
 	}
 	return nil
 }
@@ -419,7 +421,7 @@ func (v *Validator) Validate(name, value string) error {
 
 	rule, ok := v.rules[name]
 	if !ok {
-		return fmt.Errorf("rule not found: %s", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("rule not found: %s", name))
 	}
 	return rule(value)
 }
@@ -439,7 +441,7 @@ func (v *Validator) ValidateAll(values map[string]string) []error {
 
 func RequiredRule(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return fmt.Errorf("value is required")
+		return naeoserr.New(naeoserr.ErrValidation, "value is required")
 	}
 	return nil
 }
@@ -447,7 +449,7 @@ func RequiredRule(value string) error {
 func MinLengthRule(min int) func(string) error {
 	return func(value string) error {
 		if len(value) < min {
-			return fmt.Errorf("value must be at least %d characters", min)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("value must be at least %d characters", min))
 		}
 		return nil
 	}
@@ -456,7 +458,7 @@ func MinLengthRule(min int) func(string) error {
 func MaxLengthRule(max int) func(string) error {
 	return func(value string) error {
 		if len(value) > max {
-			return fmt.Errorf("value must be at most %d characters", max)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("value must be at most %d characters", max))
 		}
 		return nil
 	}
@@ -505,7 +507,7 @@ func DecryptConfig(encrypted string, passphrase string) ([]byte, error) {
 
 	nonceSize := aesGCM.NonceSize()
 	if len(data) < nonceSize {
-		return nil, fmt.Errorf("ciphertext too short")
+		return nil, naeoserr.New(naeoserr.ErrParse, "ciphertext too short")
 	}
 
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
@@ -521,12 +523,12 @@ func PatternRule(pattern string) func(string) error {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		return func(string) error {
-			return fmt.Errorf("invalid pattern %q: %w", pattern, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid pattern %q", pattern)
 		}
 	}
 	return func(value string) error {
 		if !re.MatchString(value) {
-			return fmt.Errorf("value does not match pattern")
+			return naeoserr.New(naeoserr.ErrValidation, "value does not match pattern")
 		}
 		return nil
 	}

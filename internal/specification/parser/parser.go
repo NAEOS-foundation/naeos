@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Parser interface {
@@ -75,25 +77,38 @@ type SpecDocument struct {
 }
 
 func NewParser(baseDir string) Parser {
+	return NewParserWithEnv(baseDir, nil)
+}
+
+func NewParserWithEnv(baseDir string, envs map[string]string) Parser {
 	return ParserFunc(func(input string) (*SpecDocument, error) {
 		if input == "" {
-			return nil, fmt.Errorf("input cannot be empty")
+			return nil, naeoserr.New(naeoserr.ErrValidation, "input cannot be empty")
 		}
 
 		resolver := NewImportResolver(baseDir)
 		resolved, err := resolver.ResolveImports(input)
 		if err != nil {
-			return nil, fmt.Errorf("resolve imports: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "resolve imports")
 		}
 		input = resolved
 
+		cond := NewConditionalResolver()
+		if envs != nil {
+			cond.SetEnvs(envs)
+		}
+		input = cond.Resolve(input)
+
+		fn := NewFuncRegistry()
+		input = fn.Resolve(input)
+
 		var root yaml.Node
 		if err := yaml.Unmarshal([]byte(input), &root); err != nil {
-			return nil, fmt.Errorf("parse spec: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse spec")
 		}
 
 		if len(root.Content) == 0 {
-			return nil, fmt.Errorf("empty specification document")
+			return nil, naeoserr.New(naeoserr.ErrValidation, "empty specification document")
 		}
 
 		value, err := parseYAMLNode(root.Content[0])
@@ -137,7 +152,7 @@ func NewParser(baseDir string) Parser {
 			if versionStr := ExtractVersionFromData(m); versionStr != "" {
 				result := CheckSpecVersion(versionStr)
 				if !result.Valid {
-					return nil, fmt.Errorf("spec version check: %s", result.Message)
+					return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("spec version check: %s", result.Message))
 				}
 			}
 		}
@@ -271,7 +286,7 @@ func parseYAMLNode(node *yaml.Node) (any, error) {
 	switch node.Kind {
 	case yaml.DocumentNode:
 		if len(node.Content) == 0 {
-			return nil, fmt.Errorf("empty document")
+			return nil, naeoserr.New(naeoserr.ErrParse, "empty document")
 		}
 		return parseYAMLNode(node.Content[0])
 	case yaml.MappingNode:
@@ -280,7 +295,7 @@ func parseYAMLNode(node *yaml.Node) (any, error) {
 			keyNode := node.Content[i]
 			valueNode := node.Content[i+1]
 			if keyNode.Kind != yaml.ScalarNode {
-				return nil, fmt.Errorf("map keys must be scalar")
+				return nil, naeoserr.New(naeoserr.ErrParse, "map keys must be scalar")
 			}
 			value, err := parseYAMLNode(valueNode)
 			if err != nil {
@@ -303,11 +318,11 @@ func parseYAMLNode(node *yaml.Node) (any, error) {
 		return parseYAMLScalar(node)
 	case yaml.AliasNode:
 		if node.Alias == nil {
-			return nil, fmt.Errorf("invalid alias node")
+			return nil, naeoserr.New(naeoserr.ErrParse, "invalid alias node")
 		}
 		return parseYAMLNode(node.Alias)
 	default:
-		return nil, fmt.Errorf("unsupported YAML node kind %d", node.Kind)
+		return nil, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("unsupported YAML node kind %d", node.Kind))
 	}
 }
 
@@ -395,7 +410,7 @@ func Slugify(value string) string {
 func parsePort(line string) (int, error) {
 	parts := strings.SplitN(line, ":", 2)
 	if len(parts) != 2 {
-		return 0, fmt.Errorf("invalid port line")
+		return 0, naeoserr.New(naeoserr.ErrValidation, "invalid port line")
 	}
 	var port int
 	_, err := fmt.Sscanf(parts[1], "%d", &port)

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -62,7 +63,7 @@ func (s *SnapshotStore) Create(outputDir string, artifacts []SnapshotArtifact) (
 	snapDir := filepath.Join(s.snapshotDir(), id)
 
 	if err := os.MkdirAll(snapDir, 0o755); err != nil {
-		return nil, fmt.Errorf("create snapshot dir: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create snapshot dir")
 	}
 
 	var files []ManifestFile
@@ -103,10 +104,10 @@ func (s *SnapshotStore) Create(outputDir string, artifacts []SnapshotArtifact) (
 	manifestPath := filepath.Join(snapDir, "manifest.json")
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("marshal manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "marshal manifest")
 	}
 	if err := os.WriteFile(manifestPath, data, 0o600); err != nil {
-		return nil, fmt.Errorf("write manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "write manifest")
 	}
 
 	snap := &Snapshot{
@@ -163,18 +164,18 @@ func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	info, err := os.Stat(snapDir)
 	if err != nil {
-		return fmt.Errorf("snapshot %s not found: %w", snapshotID, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNotFound, "snapshot %s not found", snapshotID)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("snapshot %s is not a directory", snapshotID)
+		return naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("snapshot %s is not a directory", snapshotID))
 	}
 
 	tmpDir := targetDir + ".tmp-rollback"
 	if err := os.RemoveAll(tmpDir); err != nil {
-		return fmt.Errorf("cleanup temp dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "cleanup temp dir")
 	}
 	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-		return fmt.Errorf("create temp dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create temp dir")
 	}
 
 	err = filepath.Walk(snapDir, func(path string, info os.FileInfo, err error) error {
@@ -203,7 +204,7 @@ func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
 	})
 	if err != nil {
 		os.RemoveAll(tmpDir)
-		return fmt.Errorf("restore to temp: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "restore to temp")
 	}
 
 	manifestPath := filepath.Join(snapDir, "manifest.json")
@@ -212,19 +213,19 @@ func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
 		if json.Unmarshal(data, &m) == nil {
 			if err := s.verifyIntegrity(tmpDir, &m); err != nil {
 				os.RemoveAll(tmpDir)
-				return fmt.Errorf("integrity check failed: %w", err)
+				return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "integrity check failed")
 			}
 		}
 	}
 
 	if err := os.RemoveAll(targetDir); err != nil && !os.IsNotExist(err) {
 		os.RemoveAll(tmpDir)
-		return fmt.Errorf("remove old target: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "remove old target")
 	}
 
 	if err := os.Rename(tmpDir, targetDir); err != nil {
 		os.RemoveAll(tmpDir)
-		return fmt.Errorf("atomic rename: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "atomic rename")
 	}
 
 	return nil
@@ -235,13 +236,13 @@ func (s *SnapshotStore) verifyIntegrity(dir string, manifest *Manifest) error {
 		path := filepath.Join(dir, f.Path)
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("read %s: %w", f.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "read %s", f.Path)
 		}
 		hasher := sha256.New()
 		hasher.Write(data)
 		checksum := fmt.Sprintf("%x", hasher.Sum(nil))
 		if checksum != f.Checksum {
-			return fmt.Errorf("checksum mismatch for %s: expected %s, got %s", f.Path, f.Checksum, checksum)
+			return naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("checksum mismatch for %s: expected %s, got %s", f.Path, f.Checksum, checksum))
 		}
 	}
 	return nil
@@ -253,7 +254,7 @@ func (s *SnapshotStore) Delete(snapshotID string) error {
 	}
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	if _, err := os.Stat(snapDir); os.IsNotExist(err) {
-		return fmt.Errorf("snapshot %s not found", snapshotID)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("snapshot %s not found", snapshotID))
 	}
 	return os.RemoveAll(snapDir)
 }
@@ -264,7 +265,7 @@ func (s *SnapshotStore) Latest() (*Snapshot, error) {
 		return nil, err
 	}
 	if len(snaps) == 0 {
-		return nil, fmt.Errorf("no snapshots found")
+		return nil, naeoserr.New(naeoserr.ErrNotFound, "no snapshots found")
 	}
 	latest := snaps[0]
 	for _, snap := range snaps[1:] {
@@ -281,12 +282,12 @@ func (s *SnapshotStore) Export(snapshotID, destPath string) error {
 	}
 	snapDir := filepath.Join(s.snapshotDir(), snapshotID)
 	if _, err := os.Stat(snapDir); os.IsNotExist(err) {
-		return fmt.Errorf("snapshot %s not found", snapshotID)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("snapshot %s not found", snapshotID))
 	}
 
 	f, err := os.Create(destPath)
 	if err != nil {
-		return fmt.Errorf("create export file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create export file")
 	}
 	defer f.Close()
 
@@ -327,13 +328,13 @@ func (s *SnapshotStore) Export(snapshotID, destPath string) error {
 func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 	f, err := os.Open(srcPath)
 	if err != nil {
-		return nil, fmt.Errorf("open import file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "open import file")
 	}
 	defer f.Close()
 
 	gz, err := gzip.NewReader(f)
 	if err != nil {
-		return nil, fmt.Errorf("gzip reader: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "gzip reader")
 	}
 	defer gz.Close()
 
@@ -342,7 +343,7 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 	id := fmt.Sprintf("snap-%d", time.Now().UnixMilli())
 	snapDir := filepath.Join(s.snapshotDir(), id)
 	if err := os.MkdirAll(snapDir, 0o755); err != nil {
-		return nil, fmt.Errorf("create snapshot dir: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create snapshot dir")
 	}
 
 	for {
@@ -356,12 +357,12 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 
 		target, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Name), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
 		if err != nil {
-			return nil, fmt.Errorf("invalid path in archive: %s", header.Name)
+			return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("invalid path in archive: %s", header.Name))
 		}
 		if header.Typeflag == tar.TypeSymlink || header.Typeflag == tar.TypeLink {
 			linkTarget, err := securityext.ValidateFilePath(filepath.Join(snapDir, header.Linkname), snapDir) //nolint:gosec // G305: validated by ValidateFilePath
 			if err != nil {
-				return nil, fmt.Errorf("symlink target escapes snapshot directory: %s", header.Linkname)
+				return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("symlink target escapes snapshot directory: %s", header.Linkname))
 			}
 			_ = linkTarget
 		}
@@ -404,13 +405,13 @@ func (s *SnapshotStore) Import(srcPath string) (*Snapshot, error) {
 
 func validateSnapshotID(id string) error {
 	if id == "" {
-		return fmt.Errorf("snapshot ID must not be empty")
+		return naeoserr.New(naeoserr.ErrPipeline, "snapshot ID must not be empty")
 	}
 	if strings.Contains(id, "/") || strings.Contains(id, "\\") {
-		return fmt.Errorf("snapshot ID must not contain path separators")
+		return naeoserr.New(naeoserr.ErrPipeline, "snapshot ID must not contain path separators")
 	}
 	if strings.Contains(id, "..") {
-		return fmt.Errorf("snapshot ID must not contain relative path components")
+		return naeoserr.New(naeoserr.ErrPipeline, "snapshot ID must not contain relative path components")
 	}
 	return nil
 }

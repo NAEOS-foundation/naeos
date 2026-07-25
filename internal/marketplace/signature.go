@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type SignatureVerifier interface {
@@ -22,14 +24,14 @@ func (v *SHA256Verifier) Verify(data []byte, signature []byte, publicKey []byte)
 func VerifyPlugin(pluginPath, expectedChecksum string) error {
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
-		return fmt.Errorf("read plugin file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "read plugin file")
 	}
 
 	h := sha256.Sum256(data)
 	actual := hex.EncodeToString(h[:])
 
 	if actual != expectedChecksum {
-		return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedChecksum, actual)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("checksum mismatch: expected %s, got %s", expectedChecksum, actual))
 	}
 
 	return nil
@@ -38,7 +40,7 @@ func VerifyPlugin(pluginPath, expectedChecksum string) error {
 func GenerateChecksum(pluginPath string) (string, error) {
 	data, err := os.ReadFile(pluginPath)
 	if err != nil {
-		return "", fmt.Errorf("read plugin file: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrPlugin, "read plugin file")
 	}
 
 	h := sha256.Sum256(data)

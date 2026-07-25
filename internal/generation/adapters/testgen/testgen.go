@@ -7,6 +7,7 @@ import (
 	xlanguage "golang.org/x/text/language"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/shared/strutil"
@@ -14,7 +15,7 @@ import (
 
 func GenerateTests(neir *model.NEIR) ([]engine.Artifact, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("neir is nil")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "neir is nil")
 	}
 
 	var artifacts []engine.Artifact

@@ -88,6 +88,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newMonitorCommand())
 	root.AddCommand(newAuthCommand())
 	root.AddCommand(newDBCommand())
+	root.AddCommand(newLSPCommand())
 	root.AddCommand(newBrokerCommand())
 	root.AddCommand(newSearchCommand())
 	root.AddCommand(newWorkflowCommand())

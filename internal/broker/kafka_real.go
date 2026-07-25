@@ -113,7 +113,7 @@ func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
 	k.subMu.Lock()
 	if _, ok := k.subCtx[channel]; ok {
 		k.subMu.Unlock()
-		return fmt.Errorf("already subscribed to %s", channel)
+		return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("already subscribed to %s", channel))
 	}
 	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec // cancel stored in subCtx, called by Unsubscribe
 	k.subCtx[channel] = cancel
