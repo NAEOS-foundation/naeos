@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -270,11 +271,18 @@ func (s *Server) savePipelines() {
 	}
 }
 
+//go:embed openapi.yaml
+var openAPISpec []byte
+
 func (s *Server) setupRoutes() {
 	// Monitoring endpoints
 	s.Router.HandleFunc("/metrics", s.handleMetrics)
 	s.Router.HandleFunc("/healthz", s.handleHealthz)
 	s.Router.HandleFunc("/readyz", s.handleReadyz)
+
+	// API documentation
+	s.Router.HandleFunc("/api/v1/openapi.yaml", s.handleOpenAPISpec)
+	s.Router.HandleFunc("/api/v1/docs", s.handleDocs)
 
 	// Health
 	s.Router.HandleFunc("/api/v1/health", s.handleHealth)
@@ -2064,6 +2072,56 @@ func (s *Server) issuerFromRequest(r *http.Request) string {
 		issuer = fmt.Sprintf("http://%s", fwd)
 	}
 	return issuer
+}
+
+func (s *Server) handleOpenAPISpec(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/x-yaml")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(openAPISpec)
+}
+
+const swaggerUIHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAEOS API Reference</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #1a1a2e; }
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { color: #e0e0e0; }
+    .swagger-ui .info { margin: 20px 0; }
+    .swagger-ui .scheme-container { background: #16213e; }
+    .swagger-ui { color: #c0c0c0; }
+    .swagger-ui .opblock-tag { color: #e0e0e0; }
+    .swagger-ui .opblock .opblock-summary-operation-id,
+    .swagger-ui .opblock .opblock-summary-path,
+    .swagger-ui .opblock .opblock-summary-description { color: #c0c0c0; }
+    .swagger-ui .parameter__name { color: #e0e0e0; }
+    .swagger-ui .model-box { background: #16213e; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: '/api/v1/openapi.yaml',
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      presets: [SwaggerUIBundle.presets.apis],
+      layout: "BaseLayout"
+    });
+  </script>
+</body>
+</html>`
+
+func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(swaggerUIHTML))
 }
 
 func (s *Server) handleOIDCDiscovery(w http.ResponseWriter, r *http.Request) {

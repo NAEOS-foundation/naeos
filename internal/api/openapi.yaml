@@ -1,0 +1,1250 @@
+openapi: "3.0.3"
+
+info:
+  title: NAEOS API
+  description: Neural Architecture Engine for Orchestration & Synthesis
+  version: "1.5.0"
+  contact:
+    name: NAEOS Foundation
+    url: https://github.com/NAEOS-foundation/naeos
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      tags: [System]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/specs:
+    get:
+      operationId: listSpecs
+      summary: List all specifications
+      tags: [Specifications]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Spec count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+    post:
+      operationId: createSpec
+      summary: Create a new specification
+      tags: [Specifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecCreateRequest"
+      responses:
+        "201":
+          description: Spec created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecCreateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/specs/validate:
+    post:
+      operationId: validateSpec
+      summary: Validate a specification
+      tags: [Specifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecTextRequest"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecValidateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/specs/compile:
+    post:
+      operationId: compileSpec
+      summary: Compile a specification
+      tags: [Specifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecCompileRequest"
+      responses:
+        "200":
+          description: Compilation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecCompileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/pipeline/run:
+    post:
+      operationId: runPipeline
+      summary: Execute a pipeline
+      tags: [Pipeline]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PipelineRunRequest"
+      responses:
+        "202":
+          description: Pipeline accepted and queued for execution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/pipeline/status:
+    get:
+      operationId: getPipelineStatus
+      summary: Get pipeline execution status
+      tags: [Pipeline]
+      responses:
+        "200":
+          description: Pipeline status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineStatusResponse"
+
+  /api/v1/artifacts:
+    get:
+      operationId: listArtifacts
+      summary: List artifacts
+      tags: [Artifacts]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: List of artifacts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactListResponse"
+    post:
+      operationId: uploadArtifact
+      summary: Upload an artifact
+      tags: [Artifacts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactUploadRequest"
+      responses:
+        "201":
+          description: Artifact uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/context/generate:
+    post:
+      operationId: generateContext
+      summary: Generate context for a spec
+      tags: [Context]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContextGenerateRequest"
+      responses:
+        "200":
+          description: Generated context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextGenerateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/ai/enrich/stream:
+    post:
+      operationId: aiEnrichStream
+      summary: Enrich a specification using AI (streaming SSE)
+      description: Sends a spec to the configured LLM provider and streams enriched suggestions via Server-Sent Events.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIEnrichStreamRequest"
+      responses:
+        "200":
+          description: SSE stream of enrichment chunks
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SSEStreamResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/ai/explain/stream:
+    post:
+      operationId: aiExplainStream
+      summary: Explain architecture using AI (streaming SSE)
+      description: Sends a spec and optional architecture description to the configured LLM provider and streams architectural explanation via Server-Sent Events.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIExplainStreamRequest"
+      responses:
+        "200":
+          description: SSE stream of explanation chunks
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SSEStreamResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/ai/compile/stream:
+    post:
+      operationId: aiCompileStream
+      summary: Compile spec for AI assistant using LLM (streaming SSE)
+      description: Parses a spec, generates a NEIR context bundle, and streams AI compile instructions for the specified target assistant via Server-Sent Events.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AICompileStreamRequest"
+      responses:
+        "200":
+          description: SSE stream of compiled instructions
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SSEStreamResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/cloud/plan:
+    post:
+      operationId: cloudPlan
+      summary: Generate a cloud deployment plan
+      tags: [Cloud]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloudPlanRequest"
+      responses:
+        "200":
+          description: Deployment plan generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudPlanResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/cloud/deploy:
+    post:
+      operationId: cloudDeploy
+      summary: Deploy to cloud provider
+      tags: [Cloud]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloudDeployRequest"
+      responses:
+        "200":
+          description: Deployment completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudDeployResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/cloud/destroy:
+    post:
+      operationId: cloudDestroy
+      summary: Destroy cloud resources
+      tags: [Cloud]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloudDestroyRequest"
+      responses:
+        "200":
+          description: Resources destroyed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudDestroyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/cloud/status:
+    get:
+      operationId: cloudStatus
+      summary: Get cloud deployment status
+      tags: [Cloud]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Cloud deployment status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloudStatusResponse"
+
+  /api/v1/plugins:
+    get:
+      operationId: listPlugins
+      summary: List installed plugins
+      tags: [Plugins]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: List of plugins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginListResponse"
+    post:
+      operationId: installPlugin
+      summary: Install a plugin
+      tags: [Plugins]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginInstallRequest"
+      responses:
+        "201":
+          description: Plugin installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/plugins/execute:
+    post:
+      operationId: executePlugin
+      summary: Execute a plugin command
+      tags: [Plugins]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PluginExecuteRequest"
+      responses:
+        "200":
+          description: Plugin execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginExecuteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/plugins/{name}:
+    get:
+      operationId: getPlugin
+      summary: Get plugin details
+      tags: [Plugins]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plugin details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: uninstallPlugin
+      summary: Uninstall a plugin
+      tags: [Plugins]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Plugin uninstalled
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/mcp/message:
+    post:
+      operationId: mcpMessage
+      summary: Send an MCP message
+      tags: [MCP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MCPMessageRequest"
+      responses:
+        "200":
+          description: MCP response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPMessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+
+  /api/v1/version:
+    get:
+      operationId: getVersion
+      summary: Get API version
+      tags: [System]
+      responses:
+        "200":
+          description: Version info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+
+  /api/v1/config/schema:
+    get:
+      operationId: getConfigSchema
+      summary: Get configuration schema
+      tags: [System]
+      responses:
+        "200":
+          description: Config schema (JSON Schema)
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/pipelines:
+    get:
+      operationId: listPipelines
+      summary: List pipeline runs
+      tags: [Pipeline]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineListResponse"
+
+  /.well-known/openid-configuration:
+    get:
+      operationId: oidcDiscovery
+      summary: OIDC discovery document
+      tags: [System]
+      responses:
+        "200":
+          description: OIDC discovery document
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: OIDC not configured
+
+  /metrics:
+    get:
+      operationId: getMetrics
+      summary: Prometheus metrics
+      tags: [System]
+      responses:
+        "200":
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /healthz:
+    get:
+      operationId: healthz
+      summary: Liveness probe
+      tags: [System]
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthzResponse"
+
+  /readyz:
+    get:
+      operationId: readyz
+      summary: Readiness probe
+      tags: [System]
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyzResponse"
+
+components:
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    MethodNotAllowed:
+      description: Method not allowed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: Service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: healthy
+            version:
+              type: string
+            uptime:
+              type: string
+            database:
+              type: string
+              description: "Database health status (not_configured, healthy, or unhealthy: <error>)"
+              example: healthy
+
+    HealthzResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadyzResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ready
+
+    SpecTextRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+
+    SpecCreateRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+
+    SpecCreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+            project:
+              type: string
+            modules:
+              type: integer
+            services:
+              type: integer
+
+    SpecValidateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            valid:
+              type: boolean
+            errors:
+              type: array
+              items:
+                type: string
+            warnings:
+              type: array
+              items:
+                type: string
+
+    SpecCompileRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        target:
+          type: string
+          description: Compilation target
+
+    SpecCompileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            compiled:
+              type: boolean
+            targets:
+              type: array
+              items:
+                type: string
+            bundle:
+              type: string
+            project:
+              type: string
+            modules:
+              type: integer
+            services:
+              type: integer
+
+    PipelineRunRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        target:
+          type: string
+          description: Pipeline target
+
+    PipelineRunResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            job_id:
+              type: string
+            status:
+              type: string
+              example: running
+
+    PipelineStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [idle, running]
+            total:
+              type: integer
+            last_run:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                status:
+                  type: string
+                project:
+                  type: string
+                modules:
+                  type: integer
+                services:
+                  type: integer
+                created_at:
+                  type: string
+                  format: date-time
+
+    PipelineListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pipelines:
+              type: array
+              items:
+                type: object
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    ArtifactUploadRequest:
+      type: object
+      required: [path, content]
+      properties:
+        path:
+          type: string
+          description: Artifact file path
+        content:
+          type: string
+          description: Artifact content
+        kind:
+          type: string
+          description: Artifact kind (auto-detected from path if empty)
+
+    ArtifactUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+            artifact:
+              type: object
+
+    ArtifactListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            artifacts:
+              type: array
+              items:
+                type: object
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    ContextGenerateRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        format:
+          type: string
+          enum: [markdown, plain]
+          default: markdown
+
+    ContextGenerateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            context:
+              type: string
+            format:
+              type: string
+            project:
+              type: string
+
+    AIEnrichStreamRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        model:
+          type: string
+          description: LLM model override (e.g. gpt-4o-mini, claude-3-haiku)
+        provider:
+          type: string
+          enum: [openai, anthropic, ollama]
+          description: LLM provider override
+        api_key:
+          type: string
+          description: API key override (falls back to NAEOS_LLM_API_KEY env var)
+
+    AIExplainStreamRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        architecture:
+          type: string
+          description: Optional architecture description for context
+        model:
+          type: string
+          description: LLM model override
+        provider:
+          type: string
+          enum: [openai, anthropic, ollama]
+          description: LLM provider override
+        api_key:
+          type: string
+          description: API key override
+
+    AICompileStreamRequest:
+      type: object
+      required: [spec]
+      properties:
+        spec:
+          type: string
+          description: Raw NEIR specification text
+        target:
+          type: string
+          description: Target AI assistant (defaults to opencode)
+          default: opencode
+        model:
+          type: string
+          description: LLM model override
+        provider:
+          type: string
+          enum: [openai, anthropic, ollama]
+          description: LLM provider override
+        api_key:
+          type: string
+          description: API key override
+
+    SSEStreamResponse:
+      type: object
+      description: "Server-Sent Events stream. Each event is one of: data (chunk), error, or done."
+      properties:
+        event:
+          type: string
+          enum: [chunk, error, done]
+          description: SSE event type
+        data:
+          type: string
+          description: Event payload (text chunk, error message, or empty for done)
+
+    CloudResourceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        spec:
+          type: object
+          additionalProperties: true
+
+    CloudPlanRequest:
+      type: object
+      required: [provider, project]
+      properties:
+        provider:
+          type: string
+          enum: [aws, gcp, azure]
+        project:
+          type: string
+        region:
+          type: string
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudResourceRequest"
+
+    CloudPlanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            provider:
+              type: string
+            project:
+              type: string
+            hcl:
+              type: string
+              description: Generated Terraform HCL
+
+    CloudDeployRequest:
+      type: object
+      required: [provider, project]
+      properties:
+        provider:
+          type: string
+          enum: [aws, gcp, azure]
+        project:
+          type: string
+        region:
+          type: string
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudResourceRequest"
+
+    CloudDeployResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deployment_id:
+              type: string
+            provider:
+              type: string
+            project:
+              type: string
+            status:
+              type: string
+            resources:
+              type: array
+              items:
+                type: object
+
+    CloudDestroyRequest:
+      type: object
+      required: [provider, project]
+      properties:
+        provider:
+          type: string
+          enum: [aws, gcp, azure]
+        project:
+          type: string
+        region:
+          type: string
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CloudResourceRequest"
+
+    CloudDestroyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            provider:
+              type: string
+            project:
+              type: string
+            status:
+              type: string
+              example: destroyed
+
+    CloudStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deployments:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  provider:
+                    type: string
+                  project:
+                    type: string
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    PluginListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            plugins:
+              type: array
+              items:
+                $ref: "#/components/schemas/PluginResponse"
+            count:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    PluginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            name:
+              type: string
+            version:
+              type: string
+            description:
+              type: string
+            kind:
+              type: string
+              enum: [native, wasm]
+            enabled:
+              type: boolean
+            installed_at:
+              type: string
+              format: date-time
+
+    PluginInstallRequest:
+      type: object
+      required: [name, source]
+      properties:
+        name:
+          type: string
+        source:
+          type: string
+          description: Registry name or URL
+        version:
+          type: string
+
+    PluginExecuteRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        action:
+          type: string
+          default: execute
+        params:
+          type: object
+          additionalProperties: true
+
+    PluginExecuteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            plugin:
+              type: string
+            action:
+              type: string
+            result:
+              type: object
+
+    MCPMessageRequest:
+      type: object
+      required: [method]
+      properties:
+        jsonrpc:
+          type: string
+          default: "2.0"
+        method:
+          type: string
+        params:
+          type: object
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+
+    MCPMessageResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          example: "2.0"
+        result:
+          type: object
+        error:
+          type: object
+          nullable: true
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+
+    VersionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            version:
+              type: string
+            go:
+              type: string
+              description: Go version
+            platform:
+              type: string
+              example: naeos-api
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+            message:
+              type: string

@@ -1297,6 +1297,43 @@ type mockDB struct{}
 func (m *mockDB) Name() string                          { return "mock" }
 func (m *mockDB) Connect(config *database.Config) error { return nil }
 func (m *mockDB) Close() error                          { return nil }
+func TestDocsEndpoints(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+
+	t.Run("serve openapi spec", func(t *testing.T) {
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/openapi.yaml", nil)
+		w := httptest.NewRecorder()
+		s.handleOpenAPISpec(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+		if ct := w.Header().Get("Content-Type"); ct != "application/x-yaml" {
+			t.Errorf("expected yaml content type, got %s", ct)
+		}
+		if w.Body.Len() == 0 {
+			t.Error("expected non-empty spec body")
+		}
+	})
+
+	t.Run("serve swagger ui", func(t *testing.T) {
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/docs", nil)
+		w := httptest.NewRecorder()
+		s.handleDocs(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+		body := w.Body.String()
+		if !strings.Contains(body, "swagger-ui") {
+			t.Error("expected swagger-ui in response")
+		}
+		if !strings.Contains(body, "/api/v1/openapi.yaml") {
+			t.Error("expected spec URL in response")
+		}
+	})
+}
+
 func (m *mockDB) Ping() error                           { return nil }
 func (m *mockDB) Exec(query string, args ...any) (database.Result, error) {
 	return database.Result{}, nil
