@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type VersionInfo struct {
@@ -26,22 +28,22 @@ func ParseSemVer(s string) (SemVer, error) {
 	s = strings.TrimPrefix(s, "v")
 	parts := strings.Split(s, ".")
 	if len(parts) != 3 {
-		return SemVer{}, fmt.Errorf("invalid semver format: %s", s)
+		return SemVer{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid semver format: %s", s))
 	}
 	major, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return SemVer{}, fmt.Errorf("invalid major version: %s", parts[0])
+		return SemVer{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid major version: %s", parts[0]))
 	}
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return SemVer{}, fmt.Errorf("invalid minor version: %s", parts[1])
+		return SemVer{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid minor version: %s", parts[1]))
 	}
 	patch, err := strconv.Atoi(parts[2])
 	if err != nil {
-		return SemVer{}, fmt.Errorf("invalid patch version: %s", parts[2])
+		return SemVer{}, naeoserr.New(naeoserr.ErrParse, fmt.Sprintf("invalid patch version: %s", parts[2]))
 	}
 	if major < 0 || minor < 0 || patch < 0 {
-		return SemVer{}, fmt.Errorf("version components must be non-negative")
+		return SemVer{}, naeoserr.New(naeoserr.ErrValidation, "version components must be non-negative")
 	}
 	return SemVer{Major: major, Minor: minor, Patch: patch}, nil
 }
@@ -81,16 +83,16 @@ func IsCompatible(required, actual SemVer) bool {
 
 func (vi VersionInfo) Validate() error {
 	if vi.NEIRVersion == "" {
-		return fmt.Errorf("NEIRVersion must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "NEIRVersion must not be empty")
 	}
 	if _, err := ParseSemVer(vi.NEIRVersion); err != nil {
-		return fmt.Errorf("invalid NEIRVersion: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "invalid NEIRVersion")
 	}
 	if vi.SchemaVersion == "" {
-		return fmt.Errorf("SchemaVersion must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "SchemaVersion must not be empty")
 	}
 	if _, err := ParseSemVer(vi.SchemaVersion); err != nil {
-		return fmt.Errorf("invalid SchemaVersion: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "invalid SchemaVersion")
 	}
 	return nil
 }

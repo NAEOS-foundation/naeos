@@ -15,6 +15,7 @@ type Service struct {
 	Kind        ServiceKind       `json:"kind,omitempty"`
 	Port        int               `json:"port,omitempty"`
 	Description string            `json:"description,omitempty"`
+	Condition   string            `json:"condition,omitempty"`
 	Endpoints   []Endpoint        `json:"endpoints,omitempty"`
 	Middleware  []string          `json:"middleware,omitempty"`
 	Attributes  map[string]string `json:"attributes,omitempty"`
