@@ -3,8 +3,9 @@
 package database
 
 import (
-	"fmt"
 	"log/slog"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 func New(driver string) Database {
@@ -33,16 +34,16 @@ func New(driver string) Database {
 func NewFromConfig(driver string, config *Config) (Database, error) {
 	if err := config.Validate(); err != nil {
 		slog.Error("invalid database config", "driver", driver, "error", err)
-		return nil, fmt.Errorf("invalid config: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "invalid config")
 	}
 	db := New(driver)
 	if db == nil {
 		slog.Error("unsupported database driver", "driver", driver)
-		return nil, fmt.Errorf("unsupported driver: %s", driver)
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "unsupported driver: "+driver)
 	}
 	if err := db.Connect(config); err != nil {
 		slog.Error("database connect failed", "driver", driver, "error", err)
-		return nil, fmt.Errorf("connect: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "connect")
 	}
 	return db, nil
 }

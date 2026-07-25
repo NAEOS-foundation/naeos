@@ -2,7 +2,7 @@
 
 package database
 
-import "fmt"
+import naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 
 func New(driver string) Database {
 	switch driver {
@@ -21,14 +21,14 @@ func New(driver string) Database {
 
 func NewFromConfig(driver string, config *Config) (Database, error) {
 	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "invalid config")
 	}
 	db := New(driver)
 	if db == nil {
-		return nil, fmt.Errorf("unsupported driver: %s", driver)
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "unsupported driver: "+driver)
 	}
 	if err := db.Connect(config); err != nil {
-		return nil, fmt.Errorf("connect: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "connect")
 	}
 	return db, nil
 }

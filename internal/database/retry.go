@@ -72,6 +72,9 @@ func isTransientError(err error) bool {
 		"no connection",
 		"bad connection",
 		"invalid connection",
+		"api error 429",
+		"api error 502",
+		"api error 503",
 	}
 	for _, pattern := range transientPatterns {
 		if strings.Contains(errStr, pattern) {

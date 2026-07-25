@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var migrationPattern = regexp.MustCompile(`^(\d+)_(.+)\.(up|down)\.sql$`)
@@ -24,7 +26,7 @@ type MigrationFile struct {
 func LoadMigrations(dir string) ([]Migration, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("read migration directory: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "read migration directory")
 	}
 
 	files := make(map[int]*MigrationFile)
@@ -55,7 +57,7 @@ func LoadMigrations(dir string) ([]Migration, error) {
 		fullPath := filepath.Join(dir, entry.Name())
 		content, err := os.ReadFile(fullPath)
 		if err != nil {
-			return nil, fmt.Errorf("read migration file %s: %w", entry.Name(), err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "read migration file %s", entry.Name())
 		}
 
 		switch direction {

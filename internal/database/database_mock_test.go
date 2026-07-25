@@ -170,6 +170,8 @@ func TestFactoryNewAllDrivers(t *testing.T) {
 		{"mock-postgresql", "postgresql"},
 		{"mock-mysql", "mysql"},
 		{"mock-sqlite", "sqlite"},
+		{"supabase", "supabase"},
+		{"mock-supabase", "supabase"},
 		{"unknown-driver", ""},
 	}
 

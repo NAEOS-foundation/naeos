@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const connectionsDir = ".naeos/db"
@@ -42,18 +44,18 @@ func (s *ConnectionStore) load() error {
 			s.entries = nil
 			return nil
 		}
-		return fmt.Errorf("read connections file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "read connections file")
 	}
 	return json.Unmarshal(data, &s.entries)
 }
 
 func (s *ConnectionStore) save() error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return fmt.Errorf("create connections dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create connections dir")
 	}
 	data, err := json.MarshalIndent(s.entries, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal connections: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "marshal connections")
 	}
 	return os.WriteFile(s.filePath(), data, 0o600)
 }
@@ -68,7 +70,7 @@ func (s *ConnectionStore) Add(name, driver string, config *Config) error {
 
 	for _, e := range s.entries {
 		if e.Name == name {
-			return fmt.Errorf("connection %q already exists", name)
+			return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("connection %q already exists", name))
 		}
 	}
 
@@ -90,7 +92,7 @@ func (s *ConnectionStore) Remove(name string) error {
 			return s.save()
 		}
 	}
-	return fmt.Errorf("connection %q not found", name)
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("connection %q not found", name))
 }
 
 func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
@@ -106,7 +108,7 @@ func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
 			return &s.entries[i], nil
 		}
 	}
-	return nil, fmt.Errorf("connection %q not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("connection %q not found", name))
 }
 
 func (s *ConnectionStore) List() ([]SavedConnection, error) {
