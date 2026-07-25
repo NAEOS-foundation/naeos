@@ -35,6 +35,12 @@ Example:
 	cmd.AddCommand(newAuthListRolesCommand())
 	cmd.AddCommand(newAuthLoginCommand())
 	cmd.AddCommand(newAuthLogoutCommand())
+	cmd.AddCommand(newAuthCreateRoleCommand())
+	cmd.AddCommand(newAuthDeleteRoleCommand())
+	cmd.AddCommand(newAuthAssignRoleCommand())
+	cmd.AddCommand(newAuthCreateRoleFromTemplateCommand())
+	cmd.AddCommand(newAuthListRoleTemplatesCommand())
+	cmd.AddCommand(newSSOCommand())
 
 	return cmd
 }
@@ -236,6 +242,154 @@ func newAuthLogoutCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Fprintln(cmd.OutOrStdout(), "Logged out successfully.")
+			return nil
+		},
+	}
+}
+
+func newAuthCreateRoleCommand() *cobra.Command {
+	var permissions, deny []string
+	var parents []string
+
+	cmd := &cobra.Command{
+		Use:   "create-role <name>",
+		Short: "Create a custom RBAC role",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			mgr := auth.NewManager()
+			rbac := mgr.RBAC()
+
+			ra := make(map[string][]string)
+			for _, p := range permissions {
+				parts := strings.SplitN(p, ":", 2)
+				if len(parts) != 2 {
+					return fmt.Errorf("invalid permission format %q, use resource:action (e.g., spec:read)", p)
+				}
+				ra[parts[0]] = append(ra[parts[0]], parts[1])
+			}
+
+			var denyMap map[string][]string
+			if len(deny) > 0 {
+				denyMap = make(map[string][]string)
+				for _, d := range deny {
+					parts := strings.SplitN(d, ":", 2)
+					if len(parts) != 2 {
+						return fmt.Errorf("invalid deny format %q, use resource:action", d)
+					}
+					denyMap[parts[0]] = append(denyMap[parts[0]], parts[1])
+				}
+			}
+
+			rbac.AddRole(&auth.Role{
+				Name:            name,
+				ResourceActions: ra,
+				Deny:            denyMap,
+				Parents:         parents,
+			})
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Created role: %s\n", name)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringArrayVar(&permissions, "permission", nil, "permissions (resource:action, e.g., spec:read)")
+	cmd.Flags().StringArrayVar(&deny, "deny", nil, "denied permissions (resource:action)")
+	cmd.Flags().StringArrayVar(&parents, "parent", nil, "parent roles to inherit from")
+	return cmd
+}
+
+func newAuthDeleteRoleCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete-role <name>",
+		Short: "Delete an RBAC role",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			mgr := auth.NewManager()
+			rbac := mgr.RBAC()
+
+			_, ok := rbac.GetRole(name)
+			if !ok {
+				return fmt.Errorf("role %q not found", name)
+			}
+
+			rbac.RemoveRole(name)
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted role: %s\n", name)
+			return nil
+		},
+	}
+}
+
+func newAuthAssignRoleCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "assign-role <user-id> <role-name>",
+		Short: "Assign a role to a user",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			userID, roleName := args[0], args[1]
+			mgr := auth.NewManager()
+
+			user, ok := mgr.GetUser(userID)
+			if !ok {
+				return fmt.Errorf("user %q not found", userID)
+			}
+
+			_, ok = mgr.RBAC().GetRole(roleName)
+			if !ok {
+				return fmt.Errorf("role %q not found", roleName)
+			}
+
+			mgr.RBAC().AssignRole(user, roleName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Assigned role %q to user %q\n", roleName, userID)
+			return nil
+		},
+	}
+}
+
+func newAuthCreateRoleFromTemplateCommand() *cobra.Command {
+	var roleName string
+	var parents []string
+
+	cmd := &cobra.Command{
+		Use:   "create-role-from-template <template-name>",
+		Short: "Create a role from a compliance template (auditor, soc2_auditor, gdpr_admin, hipaa_admin)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			templateName := args[0]
+			if roleName == "" {
+				roleName = templateName
+			}
+
+			mgr := auth.NewManager()
+			rbac := mgr.RBAC()
+
+			auth.SetupRoleTemplate(rbac, templateName, roleName, parents)
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Created role %q from template %q\n", roleName, templateName)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&roleName, "role-name", "", "custom role name (defaults to template name)")
+	cmd.Flags().StringArrayVar(&parents, "parent", nil, "parent roles to inherit from")
+	return cmd
+}
+
+func newAuthListRoleTemplatesCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list-role-templates",
+		Short: "List available role templates for compliance frameworks",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "%-25s %s\n", "TEMPLATE", "DESCRIPTION")
+			fmt.Fprintf(out, "%-25s %s\n", "-------------------------", "-----------")
+			fmt.Fprintf(out, "%-25s %s\n", "auditor", "Read-only audit, spec, pipeline access")
+			fmt.Fprintf(out, "%-25s %s\n", "soc2_auditor", "SOC 2 auditor — read access to audit, spec, pipeline, cloud")
+			fmt.Fprintf(out, "%-25s %s\n", "gdpr_admin", "GDPR admin — user data management with audit trail")
+			fmt.Fprintf(out, "%-25s %s\n", "hipaa_admin", "HIPAA admin — healthcare compliance with audit & config")
+			fmt.Fprintf(out, "\nUse: naeos auth create-role-from-template <template-name> --role-name <name>\n")
 			return nil
 		},
 	}
