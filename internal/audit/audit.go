@@ -9,20 +9,24 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type AuditEvent struct {
-	ID         string            `json:"id"`
-	Timestamp  time.Time         `json:"timestamp"`
-	UserID     string            `json:"user_id"`
-	Action     string            `json:"action"`
-	Resource   string            `json:"resource"`
-	ResourceID string            `json:"resource_id,omitempty"`
-	IP         string            `json:"ip,omitempty"`
-	UserAgent  string            `json:"user_agent,omitempty"`
-	Status     string            `json:"status"`
-	Details    string            `json:"details,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	ID           string            `json:"id"`
+	Timestamp    time.Time         `json:"timestamp"`
+	UserID       string            `json:"user_id"`
+	Action       string            `json:"action"`
+	Resource     string            `json:"resource"`
+	ResourceID   string            `json:"resource_id,omitempty"`
+	IP           string            `json:"ip,omitempty"`
+	UserAgent    string            `json:"user_agent,omitempty"`
+	Status       string            `json:"status"`
+	Details      string            `json:"details,omitempty"`
+	Metadata     map[string]string `json:"metadata,omitempty"`
+	PreviousHash string            `json:"previous_hash,omitempty"`
+	Hash         string            `json:"hash,omitempty"`
 }
 
 type Auditor interface {
@@ -37,7 +41,7 @@ type FileAuditor struct {
 func NewFileAuditor(homeDir string) (*FileAuditor, error) {
 	dir := filepath.Join(homeDir, ".naeos")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, fmt.Errorf("failed to create audit directory: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to create audit directory")
 	}
 	return &FileAuditor{
 		path: filepath.Join(dir, "audit.log"),
@@ -57,18 +61,18 @@ func (f *FileAuditor) Log(event AuditEvent) error {
 
 	data, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("failed to marshal audit event: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to marshal audit event")
 	}
 
 	file, err := os.OpenFile(f.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
-		return fmt.Errorf("failed to open audit log: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to open audit log")
 	}
 	defer file.Close()
 
 	data = append(data, '\n')
 	if _, err := file.Write(data); err != nil {
-		return fmt.Errorf("failed to write audit event: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to write audit event")
 	}
 
 	return nil
@@ -271,7 +275,7 @@ func (m *MemoryAuditor) ExportJSON(path string) error {
 
 	data, err := json.MarshalIndent(events, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal events: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal events")
 	}
 	return os.WriteFile(path, data, 0o600)
 }
@@ -333,6 +337,31 @@ func (m *MemoryAuditor) FailedEvents() []AuditEvent {
 		}
 	}
 	return result
+}
+
+type StdoutAuditor struct {
+	prefix string
+}
+
+func NewStdoutAuditor() *StdoutAuditor {
+	return &StdoutAuditor{}
+}
+
+func (s *StdoutAuditor) Log(event AuditEvent) error {
+	if event.ID == "" {
+		event.ID = generateID()
+	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now()
+	}
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal audit event")
+	}
+
+	fmt.Fprintln(os.Stdout, string(data))
+	return nil
 }
 
 func generateID() string {

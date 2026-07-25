@@ -27,6 +27,8 @@ type Role struct {
 	Name            string
 	Permissions     []string
 	ResourceActions map[string][]string
+	Parents         []string
+	Deny            map[string][]string
 }
 
 type Permission struct {
@@ -88,44 +90,96 @@ func (r *RBAC) HasPermission(user *User, resource, action string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	seen := make(map[string]bool)
 	for _, roleName := range user.Roles {
-		role, ok := r.roles[roleName]
-		if !ok {
-			continue
+		if r.hasPermissionRecursive(roleName, resource, action, seen) {
+			return true
 		}
+	}
+	return false
+}
 
-		if role.ResourceActions != nil {
-			if actions, ok := role.ResourceActions[resource]; ok {
-				for _, a := range actions {
-					if a == "*" || a == action {
-						return true
-					}
+func (r *RBAC) hasPermissionRecursive(roleName, resource, action string, seen map[string]bool) bool {
+	if seen[roleName] {
+		return false
+	}
+	seen[roleName] = true
+
+	role, ok := r.roles[roleName]
+	if !ok {
+		return false
+	}
+
+	if r.checkDeny(role, resource, action) {
+		return false
+	}
+
+	if r.checkAllow(role, resource, action) {
+		return true
+	}
+
+	for _, parentName := range role.Parents {
+		if r.hasPermissionRecursive(parentName, resource, action, seen) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *RBAC) checkDeny(role *Role, resource, action string) bool {
+	if role.Deny == nil {
+		return false
+	}
+	if actions, ok := role.Deny[resource]; ok {
+		for _, a := range actions {
+			if a == "*" || a == action {
+				return true
+			}
+		}
+	}
+	if actions, ok := role.Deny["*"]; ok {
+		for _, a := range actions {
+			if a == "*" || a == action {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (r *RBAC) checkAllow(role *Role, resource, action string) bool {
+	if role.ResourceActions != nil {
+		if actions, ok := role.ResourceActions[resource]; ok {
+			for _, a := range actions {
+				if a == "*" || a == action {
+					return true
 				}
 			}
-			if actions, ok := role.ResourceActions["*"]; ok {
-				for _, a := range actions {
-					if a == "*" || a == action {
-						return true
-					}
-				}
-			}
 		}
-
-		for _, permName := range role.Permissions {
-			perm, ok := r.permissions[permName]
-			if !ok {
-				continue
-			}
-
-			if perm.Resource == "*" || perm.Resource == resource {
-				for _, a := range perm.Actions {
-					if a == "*" || a == action {
-						return true
-					}
+		if actions, ok := role.ResourceActions["*"]; ok {
+			for _, a := range actions {
+				if a == "*" || a == action {
+					return true
 				}
 			}
 		}
 	}
+
+	for _, permName := range role.Permissions {
+		perm, ok := r.permissions[permName]
+		if !ok {
+			continue
+		}
+		if perm.Resource == "*" || perm.Resource == resource {
+			for _, a := range perm.Actions {
+				if a == "*" || a == action {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 
@@ -156,6 +210,8 @@ type OAuth2Token struct {
 	AccessToken  string
 	TokenType    string
 	RefreshToken string
+	IDToken      string
+	UserID       string
 	ExpiresAt    time.Time
 	Scope        string
 }
@@ -449,6 +505,7 @@ type Manager struct {
 	mu         sync.RWMutex
 	userStore  *UserStore
 	passphrase string
+	sso        *SSORegistry
 }
 
 func NewManager(passphrase ...string) *Manager {
@@ -464,11 +521,16 @@ func NewManager(passphrase ...string) *Manager {
 		users:      make(map[string]*User),
 		userStore:  NewUserStore(p),
 		passphrase: p,
+		sso:        NewSSORegistry(),
 	}
 }
 
 func (m *Manager) RBAC() *RBAC {
 	return m.rbac
+}
+
+func (m *Manager) SSO() *SSORegistry {
+	return m.sso
 }
 
 func (m *Manager) APIKeys() *APIKeyManager {

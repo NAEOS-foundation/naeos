@@ -3,11 +3,11 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -54,7 +54,7 @@ func (s *UserStore) load() error {
 			s.entries = nil
 			return nil
 		}
-		return fmt.Errorf("read auth file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "read auth file")
 	}
 
 	if s.key != nil {
@@ -69,17 +69,17 @@ func (s *UserStore) load() error {
 
 func (s *UserStore) save() error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return fmt.Errorf("create auth config dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create auth config dir")
 	}
 	data, err := json.MarshalIndent(s.entries, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal users: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal users")
 	}
 
 	if s.key != nil {
 		encrypted, err := securityext.EncryptConfig(data, s.passphrase)
 		if err != nil {
-			return fmt.Errorf("encrypt auth data: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "encrypt auth data")
 		}
 		return os.WriteFile(s.filePath(), []byte(encrypted), 0o600)
 	}
