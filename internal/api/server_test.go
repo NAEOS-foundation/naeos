@@ -1334,7 +1334,7 @@ func TestDocsEndpoints(t *testing.T) {
 	})
 }
 
-func (m *mockDB) Ping() error                           { return nil }
+func (m *mockDB) Ping() error { return nil }
 func (m *mockDB) Exec(query string, args ...any) (database.Result, error) {
 	return database.Result{}, nil
 }

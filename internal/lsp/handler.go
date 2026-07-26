@@ -16,10 +16,10 @@ func NewHandler(s *Server) *Handler {
 func (h *Handler) Initialize(params InitializeParams) InitializeResult {
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:   1,
-			CompletionProvider: &CompletionOptions{TriggerCharacters: []string{":", " ", "-"}},
-			HoverProvider:      true,
-			DefinitionProvider: true,
+			TextDocumentSync:       1,
+			CompletionProvider:     &CompletionOptions{TriggerCharacters: []string{":", " ", "-"}},
+			HoverProvider:          true,
+			DefinitionProvider:     true,
 			DocumentSymbolProvider: true,
 		},
 	}
@@ -144,27 +144,27 @@ func (h *Handler) wordAtPosition(text string, line, character int) string {
 
 func (h *Handler) lookupDocumentation(word string) string {
 	docs := map[string]string{
-		"project":       "**project** (required)\nThe name of your project. Must be lowercase alphanumeric with hyphens.\n\nExample: `project: e-commerce-platform`",
-		"version":       "**version**\nProject version in semver format.\n\nExample: `version: 1.0.0`",
-		"description":   "**description**\nA short description of the project.",
-		"modules":       "**modules**\nList of code modules in the project.\n\nEach module has: `name`, `path`, `description`, `dependencies`",
-		"services":      "**services**\nList of runnable services.\n\nEach service has: `name`, `kind`, `port`, `description`, `endpoints`",
-		"architecture":  "**architecture**\nArchitecture pattern and principles.\n\nPatterns: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
-		"deployment":    "**deployment**\nDeployment configuration.\n\nStrategies: `rolling`, `blue-green`, `canary`, `recreate`",
-		"testing":       "**testing**\nTesting strategy and coverage targets.\n\nStrategies: `unit`, `integration`, `e2e`, `contract`",
-		"generation":    "**generation**\nCode generation configuration.\n\nLanguages: `go`, `typescript`, `python`, `java`, `rust`",
-		"kind":          "**kind**\nService kind.\n\nValues: `http`, `grpc`, `worker`, `cli`, `job`",
-		"port":          "**port**\nService port number (1-65535).",
-		"endpoints":     "**endpoints**\nList of API endpoints.\n\nEach endpoint has: `method`, `path`, `action`",
-		"method":        "**method**\nHTTP method.\n\nValues: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`",
-		"path":          "**path**\nURL path for the endpoint.\n\nExample: `path: /auth/login`",
-		"action":        "**action**\nHandler function name.\n\nExample: `action: login`",
-		"name":          "**name**\nIdentifier name.",
-		"pattern":       "**pattern**\nArchitecture pattern.\n\nValues: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
-		"strategy":      "**strategy**\nDeployment or testing strategy.",
-		"languages":     "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
-		"coverage":      "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
-		"dependencies":  "**dependencies**\nList of module dependencies.",
+		"project":      "**project** (required)\nThe name of your project. Must be lowercase alphanumeric with hyphens.\n\nExample: `project: e-commerce-platform`",
+		"version":      "**version**\nProject version in semver format.\n\nExample: `version: 1.0.0`",
+		"description":  "**description**\nA short description of the project.",
+		"modules":      "**modules**\nList of code modules in the project.\n\nEach module has: `name`, `path`, `description`, `dependencies`",
+		"services":     "**services**\nList of runnable services.\n\nEach service has: `name`, `kind`, `port`, `description`, `endpoints`",
+		"architecture": "**architecture**\nArchitecture pattern and principles.\n\nPatterns: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
+		"deployment":   "**deployment**\nDeployment configuration.\n\nStrategies: `rolling`, `blue-green`, `canary`, `recreate`",
+		"testing":      "**testing**\nTesting strategy and coverage targets.\n\nStrategies: `unit`, `integration`, `e2e`, `contract`",
+		"generation":   "**generation**\nCode generation configuration.\n\nLanguages: `go`, `typescript`, `python`, `java`, `rust`",
+		"kind":         "**kind**\nService kind.\n\nValues: `http`, `grpc`, `worker`, `cli`, `job`",
+		"port":         "**port**\nService port number (1-65535).",
+		"endpoints":    "**endpoints**\nList of API endpoints.\n\nEach endpoint has: `method`, `path`, `action`",
+		"method":       "**method**\nHTTP method.\n\nValues: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`",
+		"path":         "**path**\nURL path for the endpoint.\n\nExample: `path: /auth/login`",
+		"action":       "**action**\nHandler function name.\n\nExample: `action: login`",
+		"name":         "**name**\nIdentifier name.",
+		"pattern":      "**pattern**\nArchitecture pattern.\n\nValues: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
+		"strategy":     "**strategy**\nDeployment or testing strategy.",
+		"languages":    "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
+		"coverage":     "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
+		"dependencies": "**dependencies**\nList of module dependencies.",
 	}
 
 	if info, ok := docs[word]; ok {

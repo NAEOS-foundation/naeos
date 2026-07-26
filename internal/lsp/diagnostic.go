@@ -176,7 +176,7 @@ func diagFromError(nerr *naeoserr.NaeosError, text string) *Diagnostic {
 		msg = nerr.Error()
 	}
 
-	sev := DiagError
+	var sev DiagnosticSeverity
 	switch nerr.Code {
 	case naeoserr.ErrValidation:
 		sev = DiagError

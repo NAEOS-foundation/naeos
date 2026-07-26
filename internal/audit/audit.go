@@ -339,9 +339,7 @@ func (m *MemoryAuditor) FailedEvents() []AuditEvent {
 	return result
 }
 
-type StdoutAuditor struct {
-	prefix string
-}
+type StdoutAuditor struct{}
 
 func NewStdoutAuditor() *StdoutAuditor {
 	return &StdoutAuditor{}

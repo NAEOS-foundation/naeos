@@ -68,11 +68,11 @@ LDAP example:
 
 			var provider auth.SSOProvider
 			cfg := auth.SSOConfig{
-				Name:         name,
-				RedirectURL:  redirectURL,
-				Scopes:       scopes,
-				CertFile:     certFile,
-				Enabled:      true,
+				Name:        name,
+				RedirectURL: redirectURL,
+				Scopes:      scopes,
+				CertFile:    certFile,
+				Enabled:     true,
 			}
 
 			switch providerType {

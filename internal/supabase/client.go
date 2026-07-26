@@ -68,7 +68,7 @@ func SaveConfig(cfg *Config) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "create config dir")
 	}
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := json.MarshalIndent(cfg, "", "  ") //nolint:gosec // intentional storage of session token
 	if err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal config")
 	}

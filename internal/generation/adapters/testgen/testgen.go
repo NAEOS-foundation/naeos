@@ -6,8 +6,8 @@ import (
 	"golang.org/x/text/cases"
 	xlanguage "golang.org/x/text/language"
 
-	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
+	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/shared/strutil"

@@ -8,9 +8,9 @@ import (
 type ProviderType string
 
 const (
-	ProviderOIDC  ProviderType = "oidc"
-	ProviderSAML  ProviderType = "saml"
-	ProviderLDAP  ProviderType = "ldap"
+	ProviderOIDC ProviderType = "oidc"
+	ProviderSAML ProviderType = "saml"
+	ProviderLDAP ProviderType = "ldap"
 )
 
 type SSOConfig struct {

@@ -2,6 +2,7 @@ package audit
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -23,13 +24,13 @@ const (
 )
 
 type CloudConfig struct {
-	Provider   CloudProvider
-	Bucket     string
-	Prefix     string
-	Region     string
-	Endpoint   string
-	AccessKey  string
-	SecretKey  string
+	Provider    CloudProvider
+	Bucket      string
+	Prefix      string
+	Region      string
+	Endpoint    string
+	AccessKey   string
+	SecretKey   string
 	AccountName string
 	AccountKey  string
 }
@@ -53,7 +54,7 @@ func NewCloudExporter(cfg CloudConfig) CloudExporter {
 }
 
 type S3Exporter struct {
-	cfg CloudConfig
+	cfg    CloudConfig
 	client *http.Client
 }
 
@@ -73,7 +74,7 @@ func (e *S3Exporter) Upload(path string, data []byte) error {
 	url := fmt.Sprintf("%s/%s", endpoint, path)
 	body := bytes.NewReader(data)
 
-	req, err := http.NewRequest("PUT", url, body)
+	req, err := http.NewRequestWithContext(context.Background(), "PUT", url, body)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -107,7 +108,7 @@ func (e *S3Exporter) List(path string) ([]string, error) {
 	}
 
 	url := fmt.Sprintf("%s/?prefix=%s", endpoint, path)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create list request: %w", err)
 	}
@@ -126,7 +127,7 @@ func (e *S3Exporter) List(path string) ([]string, error) {
 	defer resp.Body.Close()
 
 	var listResult struct {
-		XMLName xml.Name `xml:"ListBucketResult"`
+		XMLName  xml.Name `xml:"ListBucketResult"`
 		Contents []struct {
 			Key string `xml:"Key"`
 		} `xml:"Contents"`
@@ -203,7 +204,7 @@ func (e *GCSExporter) Upload(path string, data []byte) error {
 	url := fmt.Sprintf("https://storage.googleapis.com/%s/%s", e.cfg.Bucket, path)
 	body := bytes.NewReader(data)
 
-	req, err := http.NewRequest("PUT", url, body)
+	req, err := http.NewRequestWithContext(context.Background(), "PUT", url, body)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -231,7 +232,7 @@ func (e *GCSExporter) Upload(path string, data []byte) error {
 
 func (e *GCSExporter) List(path string) ([]string, error) {
 	url := fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o?prefix=%s", e.cfg.Bucket, path)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create list request: %w", err)
 	}
@@ -306,7 +307,7 @@ func (e *AzureBlobExporter) Upload(path string, data []byte) error {
 	url := fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", e.cfg.AccountName, e.cfg.Bucket, path)
 	body := bytes.NewReader(data)
 
-	req, err := http.NewRequest("PUT", url, body)
+	req, err := http.NewRequestWithContext(context.Background(), "PUT", url, body)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -337,7 +338,7 @@ func (e *AzureBlobExporter) Upload(path string, data []byte) error {
 func (e *AzureBlobExporter) List(path string) ([]string, error) {
 	url := fmt.Sprintf("https://%s.blob.core.windows.net/%s?restype=container&comp=list&prefix=%s",
 		e.cfg.AccountName, e.cfg.Bucket, path)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create list request: %w", err)
 	}
@@ -429,5 +430,3 @@ func ExportToCloud(cfg CloudConfig, events []AuditEvent) (string, error) {
 	}
 	return UploadToCloud(exporter, cfg.Prefix, events)
 }
-
-

@@ -309,7 +309,7 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 	}
 
 	for _, group := range groups {
-			if ctx.Err() != nil {
+		if ctx.Err() != nil {
 			_ = w.Machine.Trigger("cancel")
 			return ctx.Err()
 		}

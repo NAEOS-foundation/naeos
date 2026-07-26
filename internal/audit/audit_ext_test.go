@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"os"
@@ -274,12 +275,12 @@ func TestUploadToCloud(t *testing.T) {
 	mem.Log(AuditEvent{UserID: "u1", Action: "test", Status: "success"})
 
 	cfg := CloudConfig{
-		Provider:   CloudS3,
-		Bucket:     "test-bucket",
-		AccessKey:  "test-access-key",
-		SecretKey:  "test-secret-key",
-		Region:     "us-east-1",
-		Endpoint:   "http://localhost:9000", // MinIO-style
+		Provider:  CloudS3,
+		Bucket:    "test-bucket",
+		AccessKey: "test-access-key",
+		SecretKey: "test-secret-key",
+		Region:    "us-east-1",
+		Endpoint:  "http://localhost:9000", // MinIO-style
 	}
 
 	exporter := NewCloudExporter(cfg)
@@ -360,7 +361,7 @@ func TestS3Signing(t *testing.T) {
 	})
 
 	// Just verify signing doesn't panic
-	req, _ := http.NewRequest("PUT", "https://test-bucket.s3.us-east-1.amazonaws.com/test.txt", nil)
+	req, _ := http.NewRequestWithContext(context.Background(), "PUT", "https://test-bucket.s3.us-east-1.amazonaws.com/test.txt", nil)
 	req.Host = req.URL.Host
 	req.Header.Set("x-amz-date", "20240101T000000Z")
 	req.Header.Set("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")

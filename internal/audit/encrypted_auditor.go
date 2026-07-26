@@ -51,9 +51,9 @@ func (e *EncryptedAuditor) Log(event AuditEvent) error {
 		Status:    "success",
 		Details:   encrypted,
 		Metadata: map[string]string{
-			"encrypted": "true",
-			"algorithm": "AES-256-GCM",
-			"original_action": event.Action,
+			"encrypted":         "true",
+			"algorithm":         "AES-256-GCM",
+			"original_action":   event.Action,
 			"original_resource": event.Resource,
 		},
 	}
@@ -103,5 +103,3 @@ func NewEncryptedFileAuditor(homeDir, passphrase string) (*EncryptedAuditor, err
 	}
 	return NewEncryptedAuditor(inner, passphrase), nil
 }
-
-

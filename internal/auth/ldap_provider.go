@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type LDAPProvider struct {
@@ -81,7 +81,7 @@ func (p *LDAPProvider) Authenticate(username, password string) (*OAuth2User, err
 		}
 	}
 
-	filter := strings.Replace(p.config.UserFilter, "%s", username, -1)
+	filter := strings.ReplaceAll(p.config.UserFilter, "%s", username)
 	attrs, err := conn.search(userDN, filter, p.config.BaseDN)
 	if err != nil {
 		return nil, fmt.Errorf("ldap search: %w", err)
@@ -121,10 +121,12 @@ func (p *LDAPProvider) dial() (*ldapConn, error) {
 	var conn net.Conn
 	var err error
 
+	var dialer net.Dialer
+	ctx := context.Background()
 	if p.config.Port == 636 {
-		conn, err = tls.Dial("tcp", addr, &tls.Config{InsecureSkipVerify: false})
+		conn, err = (&tls.Dialer{NetDialer: &dialer, Config: &tls.Config{InsecureSkipVerify: false}}).DialContext(ctx, "tcp", addr)
 	} else {
-		conn, err = net.DialTimeout("tcp", addr, 5*time.Second)
+		conn, err = dialer.DialContext(ctx, "tcp", addr)
 	}
 	if err != nil {
 		return nil, err
@@ -156,15 +158,15 @@ func (c *ldapConn) bind(dn, password string) error {
 
 	version := []byte{0x02, 0x01, 0x03} // LDAPv3
 	name := encodeOctetString(dnBytes)
-	auth := []byte{0x80, byte(len(passBytes))}
+	auth := []byte{0x80, encLen(len(passBytes))}
 	auth = append(auth, passBytes...)
 
 	bindRequest := append(version, name...)
 	bindRequest = append(bindRequest, auth...)
-	bindRequest = append([]byte{0x60, byte(len(bindRequest))}, bindRequest...)
+	bindRequest = append([]byte{0x60, encLen(len(bindRequest))}, bindRequest...)
 
 	ldapMsg := append(msgID, bindRequest...)
-	ldapMsg = append([]byte{0x30, byte(len(ldapMsg))}, ldapMsg...)
+	ldapMsg = append([]byte{0x30, encLen(len(ldapMsg))}, ldapMsg...)
 
 	if _, err := c.conn.Write(ldapMsg); err != nil {
 		return fmt.Errorf("write bind: %w", err)
@@ -201,7 +203,7 @@ func (c *ldapConn) bind(dn, password string) error {
 	return nil
 }
 
-func (c *ldapConn) search(bindDN, filter, baseDN string) (map[string]string, error) {
+func (c *ldapConn) search(_, filter, baseDN string) (map[string]string, error) {
 	// Simple LDAP SEARCH request
 	msgID := []byte{0x02, 0x01, 0x02}
 
@@ -211,8 +213,8 @@ func (c *ldapConn) search(bindDN, filter, baseDN string) (map[string]string, err
 	sizeLimit := []byte{0x02, 0x01, 0x00}
 	timeLimit := []byte{0x02, 0x01, 0x00}
 	typesOnly := []byte{0x01, 0x01, 0x00}
-	filterEnc := []byte{0xa7, byte(len(filter) + 2)}
-	filterEnc = append(filterEnc, []byte{0x04, byte(len(filter))}...)
+	filterEnc := []byte{0xa7, encLen(len(filter) + 2)}
+	filterEnc = append(filterEnc, []byte{0x04, encLen(len(filter))}...)
 	filterEnc = append(filterEnc, []byte(filter)...)
 
 	searchRequest := baseObject
@@ -222,10 +224,10 @@ func (c *ldapConn) search(bindDN, filter, baseDN string) (map[string]string, err
 	searchRequest = append(searchRequest, timeLimit...)
 	searchRequest = append(searchRequest, typesOnly...)
 	searchRequest = append(searchRequest, filterEnc...)
-	searchRequest = append([]byte{0x63, byte(len(searchRequest))}, searchRequest...)
+	searchRequest = append([]byte{0x63, encLen(len(searchRequest))}, searchRequest...)
 
 	ldapMsg := append(msgID, searchRequest...)
-	ldapMsg = append([]byte{0x30, byte(len(ldapMsg))}, ldapMsg...)
+	ldapMsg = append([]byte{0x30, encLen(len(ldapMsg))}, ldapMsg...)
 
 	if _, err := c.conn.Write(ldapMsg); err != nil {
 		return nil, fmt.Errorf("write search: %w", err)
@@ -240,8 +242,15 @@ func (c *ldapConn) search(bindDN, filter, baseDN string) (map[string]string, err
 	return parseLDAPResult(resp[:n]), nil
 }
 
+func encLen(n int) byte {
+	if n > 255 {
+		return 255
+	}
+	return byte(n)
+}
+
 func encodeOctetString(data []byte) []byte {
-	return append([]byte{0x04, byte(len(data))}, data...)
+	return append([]byte{0x04, encLen(len(data))}, data...)
 }
 
 func parseLDAPResult(data []byte) map[string]string {

@@ -3,17 +3,17 @@ package lsp
 type Method string
 
 const (
-	MethodInitialize       Method = "initialize"
-	MethodShutdown         Method = "shutdown"
-	MethodExit             Method = "exit"
-	MethodDidOpen          Method = "textDocument/didOpen"
-	MethodDidChange        Method = "textDocument/didChange"
-	MethodDidClose         Method = "textDocument/didClose"
-	MethodCompletion       Method = "textDocument/completion"
-	MethodHover            Method = "textDocument/hover"
-	MethodDefinition       Method = "textDocument/definition"
-	MethodDocumentSymbol   Method = "textDocument/documentSymbol"
-	MethodPublishDiag      Method = "textDocument/publishDiagnostics"
+	MethodInitialize     Method = "initialize"
+	MethodShutdown       Method = "shutdown"
+	MethodExit           Method = "exit"
+	MethodDidOpen        Method = "textDocument/didOpen"
+	MethodDidChange      Method = "textDocument/didChange"
+	MethodDidClose       Method = "textDocument/didClose"
+	MethodCompletion     Method = "textDocument/completion"
+	MethodHover          Method = "textDocument/hover"
+	MethodDefinition     Method = "textDocument/definition"
+	MethodDocumentSymbol Method = "textDocument/documentSymbol"
+	MethodPublishDiag    Method = "textDocument/publishDiagnostics"
 )
 
 type Request struct {
@@ -42,8 +42,8 @@ type Notification struct {
 }
 
 type InitializeParams struct {
-	ProcessID int    `json:"processId"`
-	RootURI   string `json:"rootUri"`
+	ProcessID    int                `json:"processId"`
+	RootURI      string             `json:"rootUri"`
 	Capabilities ClientCapabilities `json:"capabilities"`
 }
 
@@ -52,11 +52,11 @@ type ClientCapabilities struct {
 }
 
 type TextDocumentClientCapabilities struct {
-	Completion           *CompletionCapability    `json:"completion,omitempty"`
-	Hover                *HoverCapability          `json:"hover,omitempty"`
-	Definition           *DefinitionCapability      `json:"definition,omitempty"`
-	DocumentSymbol       *DocumentSymbolCapability  `json:"documentSymbol,omitempty"`
-	PublishDiagnostics   *DiagnosticCapability      `json:"publishDiagnostics,omitempty"`
+	Completion         *CompletionCapability     `json:"completion,omitempty"`
+	Hover              *HoverCapability          `json:"hover,omitempty"`
+	Definition         *DefinitionCapability     `json:"definition,omitempty"`
+	DocumentSymbol     *DocumentSymbolCapability `json:"documentSymbol,omitempty"`
+	PublishDiagnostics *DiagnosticCapability     `json:"publishDiagnostics,omitempty"`
 }
 
 type CompletionCapability struct{}
@@ -70,11 +70,11 @@ type InitializeResult struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync   int                `json:"textDocumentSync"`
-	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
-	HoverProvider      bool               `json:"hoverProvider,omitempty"`
-	DefinitionProvider bool               `json:"definitionProvider,omitempty"`
-	DocumentSymbolProvider bool           `json:"documentSymbolProvider,omitempty"`
+	TextDocumentSync       int                `json:"textDocumentSync"`
+	CompletionProvider     *CompletionOptions `json:"completionProvider,omitempty"`
+	HoverProvider          bool               `json:"hoverProvider,omitempty"`
+	DefinitionProvider     bool               `json:"definitionProvider,omitempty"`
+	DocumentSymbolProvider bool               `json:"documentSymbolProvider,omitempty"`
 }
 
 type CompletionOptions struct {
@@ -86,7 +86,7 @@ type DidOpenTextDocumentParams struct {
 }
 
 type DidChangeTextDocumentParams struct {
-	TextDocument   VersionedTextDocumentIdentifier `json:"textDocument"`
+	TextDocument   VersionedTextDocumentIdentifier  `json:"textDocument"`
 	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
 }
 
@@ -116,17 +116,17 @@ type TextDocumentContentChangeEvent struct {
 
 type CompletionParams struct {
 	TextDocument TextDocumentIdentifier `json:"textDocument"`
-	Position    Position                `json:"position"`
+	Position     Position               `json:"position"`
 }
 
 type HoverParams struct {
 	TextDocument TextDocumentIdentifier `json:"textDocument"`
-	Position    Position                `json:"position"`
+	Position     Position               `json:"position"`
 }
 
 type DefinitionParams struct {
 	TextDocument TextDocumentIdentifier `json:"textDocument"`
-	Position    Position                `json:"position"`
+	Position     Position               `json:"position"`
 }
 
 type DocumentSymbolParams struct {
@@ -149,40 +149,40 @@ type CompletionList struct {
 }
 
 type CompletionItem struct {
-	Label         string          `json:"label"`
-	Kind          CompletionKind  `json:"kind,omitempty"`
-	Detail        string          `json:"detail,omitempty"`
-	Documentation string          `json:"documentation,omitempty"`
-	InsertText    string          `json:"insertText,omitempty"`
+	Label         string         `json:"label"`
+	Kind          CompletionKind `json:"kind,omitempty"`
+	Detail        string         `json:"detail,omitempty"`
+	Documentation string         `json:"documentation,omitempty"`
+	InsertText    string         `json:"insertText,omitempty"`
 }
 
 type CompletionKind int
 
 const (
 	CompletionText        CompletionKind = 1
-	CompletionMethod     CompletionKind = 2
-	CompletionFunction   CompletionKind = 3
+	CompletionMethod      CompletionKind = 2
+	CompletionFunction    CompletionKind = 3
 	CompletionConstructor CompletionKind = 4
-	CompletionField      CompletionKind = 5
-	CompletionVariable   CompletionKind = 6
-	CompletionClass      CompletionKind = 7
-	CompletionInterface  CompletionKind = 8
-	CompletionModule     CompletionKind = 9
-	CompletionProperty   CompletionKind = 10
-	CompletionValue      CompletionKind = 12
-	CompletionEnum       CompletionKind = 13
-	CompletionKeyword    CompletionKind = 14
-	CompletionSnippet    CompletionKind = 15
-	CompletionColor      CompletionKind = 16
-	CompletionFile       CompletionKind = 17
-	CompletionReference  CompletionKind = 18
-	CompletionFolder     CompletionKind = 19
-	CompletionEnumMember CompletionKind = 20
-	CompletionConstant   CompletionKind = 21
-	CompletionStruct     CompletionKind = 22
-	CompletionEvent      CompletionKind = 23
-	CompletionOperator   CompletionKind = 24
-	CompletionTypeParam  CompletionKind = 25
+	CompletionField       CompletionKind = 5
+	CompletionVariable    CompletionKind = 6
+	CompletionClass       CompletionKind = 7
+	CompletionInterface   CompletionKind = 8
+	CompletionModule      CompletionKind = 9
+	CompletionProperty    CompletionKind = 10
+	CompletionValue       CompletionKind = 12
+	CompletionEnum        CompletionKind = 13
+	CompletionKeyword     CompletionKind = 14
+	CompletionSnippet     CompletionKind = 15
+	CompletionColor       CompletionKind = 16
+	CompletionFile        CompletionKind = 17
+	CompletionReference   CompletionKind = 18
+	CompletionFolder      CompletionKind = 19
+	CompletionEnumMember  CompletionKind = 20
+	CompletionConstant    CompletionKind = 21
+	CompletionStruct      CompletionKind = 22
+	CompletionEvent       CompletionKind = 23
+	CompletionOperator    CompletionKind = 24
+	CompletionTypeParam   CompletionKind = 25
 )
 
 type Hover struct {
@@ -232,11 +232,11 @@ const (
 )
 
 type DocumentSymbol struct {
-	Name           string     `json:"name"`
-	Detail         string     `json:"detail,omitempty"`
-	Kind           SymbolKind `json:"kind"`
-	Range          Range      `json:"range"`
-	SelectionRange Range      `json:"selectionRange"`
+	Name           string           `json:"name"`
+	Detail         string           `json:"detail,omitempty"`
+	Kind           SymbolKind       `json:"kind"`
+	Range          Range            `json:"range"`
+	SelectionRange Range            `json:"selectionRange"`
 	Children       []DocumentSymbol `json:"children,omitempty"`
 }
 
@@ -246,9 +246,9 @@ type PublishDiagnosticsParams struct {
 }
 
 type Diagnostic struct {
-	Range    Range           `json:"range"`
+	Range    Range              `json:"range"`
 	Severity DiagnosticSeverity `json:"severity,omitempty"`
-	Message  string          `json:"message"`
+	Message  string             `json:"message"`
 }
 
 type DiagnosticSeverity int

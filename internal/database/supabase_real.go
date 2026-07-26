@@ -16,7 +16,7 @@ import (
 )
 
 type cachedResult struct {
-	rows []Row
+	rows      []Row
 	expiresAt time.Time
 }
 

@@ -459,7 +459,7 @@ func TestHandlerHover(t *testing.T) {
 
 	hover := h.Hover(HoverParams{
 		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
-		Position:    Position{Line: 1, Character: 2},
+		Position:     Position{Line: 1, Character: 2},
 	})
 	if hover == nil {
 		t.Fatal("expected non-nil hover result")
@@ -478,7 +478,7 @@ func TestHandlerDefinition(t *testing.T) {
 	// "name" at line 4, char 7 (inside "name" value) → should find line 2 "name:" key
 	loc := h.Definition(DefinitionParams{
 		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
-		Position:    Position{Line: 4, Character: 7},
+		Position:     Position{Line: 4, Character: 7},
 	})
 	if loc == nil {
 		t.Fatal("expected non-nil definition result")
@@ -537,7 +537,7 @@ func TestDocumentManager(t *testing.T) {
 	}
 
 	dm.Close("test.yaml")
-	doc, ok = dm.Get("test.yaml")
+	_, ok = dm.Get("test.yaml")
 	if ok {
 		t.Error("expected nil after close")
 	}

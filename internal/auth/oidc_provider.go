@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -23,13 +24,13 @@ type OIDCProvider struct {
 }
 
 type OIDCDiscoveryDocument struct {
-	Issuer                string   `json:"issuer"`
-	JWKSUri               string   `json:"jwks_uri"`
-	AuthorizationEndpoint string   `json:"authorization_endpoint"`
-	TokenEndpoint         string   `json:"token_endpoint"`
-	UserinfoEndpoint      string   `json:"userinfo_endpoint"`
-	ResponseTypesSupported []string `json:"response_types_supported"`
-	SubjectTypesSupported  []string `json:"subject_types_supported"`
+	Issuer                           string   `json:"issuer"`
+	JWKSUri                          string   `json:"jwks_uri"`
+	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
+	TokenEndpoint                    string   `json:"token_endpoint"`
+	UserinfoEndpoint                 string   `json:"userinfo_endpoint"`
+	ResponseTypesSupported           []string `json:"response_types_supported"`
+	SubjectTypesSupported            []string `json:"subject_types_supported"`
 	IDTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"`
 }
 
@@ -38,12 +39,12 @@ type JWKSResponse struct {
 }
 
 type JWK struct {
-	Kty string `json:"kty"`
-	Alg string `json:"alg,omitempty"`
-	Kid string `json:"kid,omitempty"`
-	Use string `json:"use,omitempty"`
-	N   string `json:"n"`
-	E   string `json:"e"`
+	Kty string   `json:"kty"`
+	Alg string   `json:"alg,omitempty"`
+	Kid string   `json:"kid,omitempty"`
+	Use string   `json:"use,omitempty"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
 	X5c []string `json:"x5c,omitempty"`
 }
 
@@ -130,7 +131,7 @@ func (p *OIDCProvider) ExchangeCode(code string) (*OAuth2Token, error) {
 		code, p.config.RedirectURL, p.config.ClientID, p.config.ClientSecret,
 	)
 
-	req, err := http.NewRequest("POST", p.discovery.TokenEndpoint, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", p.discovery.TokenEndpoint, strings.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create token request: %w", err)
 	}
@@ -170,7 +171,7 @@ func (p *OIDCProvider) GetUser(token *OAuth2Token) (*OAuth2User, error) {
 		return p.extractUserFromIDToken(token)
 	}
 
-	req, err := http.NewRequest("GET", p.discovery.UserinfoEndpoint, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", p.discovery.UserinfoEndpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create userinfo request: %w", err)
 	}
@@ -265,14 +266,15 @@ func (p *OIDCProvider) verifyIDToken(idToken string) (*OIDCUserInfo, error) {
 
 	var ui OIDCUserInfo
 	payloadBytes, _ := base64.RawURLEncoding.DecodeString(parts[1])
-	json.Unmarshal(payloadBytes, &ui)
+	_ = json.Unmarshal(payloadBytes, &ui)
 
 	return &ui, nil
 }
 
 func fetchOIDCDiscovery(issuer string, client *http.Client) (*OIDCDiscoveryDocument, error) {
 	issuer = strings.TrimRight(issuer, "/")
-	resp, err := client.Get(issuer + "/.well-known/openid-configuration")
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", issuer+"/.well-known/openid-configuration", nil)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch discovery: %w", err)
 	}
@@ -286,7 +288,8 @@ func fetchOIDCDiscovery(issuer string, client *http.Client) (*OIDCDiscoveryDocum
 }
 
 func fetchJWKS(uri string, client *http.Client) (*JWKSResponse, error) {
-	resp, err := client.Get(uri)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", uri, nil)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch jwks: %w", err)
 	}
@@ -324,5 +327,3 @@ func ParseCertificatePEM(pemData []byte) (*x509.Certificate, error) {
 	}
 	return x509.ParseCertificate(block.Bytes)
 }
-
-

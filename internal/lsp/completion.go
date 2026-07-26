@@ -145,7 +145,7 @@ func (p *CompletionProvider) Provide(text string, line, character int) *Completi
 	lineText := p.lineAt(text, line)
 
 	contextKey := p.detectContext(text, line, lineText, "")
-	valuePrefix, fieldPrefix := p.extractPrefixes(lineText, character, contextKey)
+	valuePrefix, fieldPrefix := p.extractPrefixes(lineText, character)
 
 	var items []CompletionItem
 
@@ -177,7 +177,7 @@ func (p *CompletionProvider) Provide(text string, line, character int) *Completi
 	}
 }
 
-func (p *CompletionProvider) extractPrefixes(lineText string, character int, contextKey string) (valuePrefix, fieldPrefix string) {
+func (p *CompletionProvider) extractPrefixes(lineText string, character int) (valuePrefix, fieldPrefix string) {
 	if character > len(lineText) {
 		character = len(lineText)
 	}
@@ -233,19 +233,6 @@ func (p *CompletionProvider) lineAt(text string, line int) string {
 		return lines[line]
 	}
 	return ""
-}
-
-func (p *CompletionProvider) prefixBeforeChar(line string, character int) string {
-	if character > len(line) {
-		character = len(line)
-	}
-	before := line[:character]
-	trimmed := strings.TrimLeft(before, " \t-")
-	colonIdx := strings.Index(trimmed, ":")
-	if colonIdx >= 0 {
-		trimmed = strings.TrimSpace(trimmed[:colonIdx])
-	}
-	return trimmed
 }
 
 func (p *CompletionProvider) detectContext(text string, line int, lineText, prefix string) string {

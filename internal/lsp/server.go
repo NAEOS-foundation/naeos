@@ -3,6 +3,7 @@ package lsp
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -35,7 +36,7 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) Documents() *DocumentManager { return s.documents }
+func (s *Server) Documents() *DocumentManager     { return s.documents }
 func (s *Server) Completion() *CompletionProvider { return s.completion }
 func (s *Server) Diagnostic() *DiagnosticProvider { return s.diagnostic }
 
@@ -44,7 +45,7 @@ func (s *Server) Run() error {
 	for {
 		raw, err := readMessage(br)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return fmt.Errorf("read message: %w", err)
@@ -93,7 +94,7 @@ func (s *Server) handleMessage(raw string) {
 		var params InitializeParams
 		if request.Params != nil {
 			data, _ := json.Marshal(request.Params)
-			json.Unmarshal(data, &params)
+			_ = json.Unmarshal(data, &params)
 		}
 		result := s.handler.Initialize(params)
 		s.sendResponse(request.ID, result)
@@ -107,46 +108,46 @@ func (s *Server) handleMessage(raw string) {
 	case MethodDidOpen:
 		var params DidOpenTextDocumentParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		s.handler.DidOpen(params)
 
 	case MethodDidChange:
 		var params DidChangeTextDocumentParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		s.handler.DidChange(params)
 
 	case MethodDidClose:
 		var params DidCloseTextDocumentParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		s.handler.DidClose(params)
 
 	case MethodCompletion:
 		var params CompletionParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		result := s.handler.Completion(params)
 		s.sendResponse(request.ID, result)
 
 	case MethodHover:
 		var params HoverParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		result := s.handler.Hover(params)
 		s.sendResponse(request.ID, result)
 
 	case MethodDefinition:
 		var params DefinitionParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		result := s.handler.Definition(params)
 		s.sendResponse(request.ID, result)
 
 	case MethodDocumentSymbol:
 		var params DocumentSymbolParams
 		data, _ := json.Marshal(request.Params)
-		json.Unmarshal(data, &params)
+		_ = json.Unmarshal(data, &params)
 		result := s.handler.DocumentSymbol(params)
 		s.sendResponse(request.ID, result)
 
@@ -195,6 +196,6 @@ func (s *Server) writeMessage(msg any) {
 		return
 	}
 	if f, ok := s.writer.(*os.File); ok {
-		f.Sync()
+		_ = f.Sync()
 	}
 }

@@ -16,24 +16,24 @@ type SAMLProvider struct {
 }
 
 type SAMLResponse struct {
-	XMLName    xml.Name `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
-	Assertion  *SAMLAssertion `xml:"Assertion"`
-	Status     *SAMLStatus    `xml:"Status"`
+	XMLName   xml.Name       `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
+	Assertion *SAMLAssertion `xml:"Assertion"`
+	Status    *SAMLStatus    `xml:"Status"`
 }
 
 type SAMLAssertion struct {
-	XMLName            xml.Name       `xml:"urn:oasis:names:tc:SAML:2.0:assertion Assertion"`
-	ID                 string         `xml:"ID,attr"`
-	IssueInstant       string         `xml:"IssueInstant,attr"`
-	Issuer             string         `xml:"Issuer"`
-	Subject            *SAMLSubject   `xml:"Subject"`
-	Conditions         *SAMLConditions `xml:"Conditions"`
+	XMLName            xml.Name                `xml:"urn:oasis:names:tc:SAML:2.0:assertion Assertion"`
+	ID                 string                  `xml:"ID,attr"`
+	IssueInstant       string                  `xml:"IssueInstant,attr"`
+	Issuer             string                  `xml:"Issuer"`
+	Subject            *SAMLSubject            `xml:"Subject"`
+	Conditions         *SAMLConditions         `xml:"Conditions"`
 	AttributeStatement *SAMLAttributeStatement `xml:"AttributeStatement"`
-	AuthnStatement     *SAMLAuthnStatement    `xml:"AuthnStatement"`
+	AuthnStatement     *SAMLAuthnStatement     `xml:"AuthnStatement"`
 }
 
 type SAMLSubject struct {
-	NameID   string `xml:"NameID"`
+	NameID              string                   `xml:"NameID"`
 	SubjectConfirmation *SAMLSubjectConfirmation `xml:"SubjectConfirmation"`
 }
 
@@ -51,8 +51,8 @@ type SAMLAttributeStatement struct {
 }
 
 type SAMLAttribute struct {
-	Name           string   `xml:"Name,attr"`
-	FriendlyName   string   `xml:"FriendlyName,attr,omitempty"`
+	Name            string               `xml:"Name,attr"`
+	FriendlyName    string               `xml:"FriendlyName,attr,omitempty"`
 	AttributeValues []SAMLAttributeValue `xml:"AttributeValue"`
 }
 

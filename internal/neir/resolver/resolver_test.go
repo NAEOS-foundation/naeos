@@ -6,8 +6,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/deployment"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
-	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 )
 
 func TestResolveNilModel(t *testing.T) {

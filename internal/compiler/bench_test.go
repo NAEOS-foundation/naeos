@@ -73,8 +73,8 @@ func mediumNEIR() *model.NEIR {
 	}
 
 	return &model.NEIR{
-		Project: &project.Project{Name: "medium", Version: "2.0.0"},
-		Modules: mods,
+		Project:  &project.Project{Name: "medium", Version: "2.0.0"},
+		Modules:  mods,
 		Services: svcs,
 		Architecture: &architecture.Architecture{
 			Pattern:    "clean",
@@ -127,11 +127,11 @@ func largeNEIR() *model.NEIR {
 	}
 
 	return &model.NEIR{
-		Project: &project.Project{Name: "large", Version: "3.0.0", Description: "Large project with 50 modules"},
-		Modules:  mods,
-		Services: svcs,
+		Project:    &project.Project{Name: "large", Version: "3.0.0", Description: "Large project with 50 modules"},
+		Modules:    mods,
+		Services:   svcs,
 		Components: comps,
-		APIs: apis,
+		APIs:       apis,
 		Architecture: &architecture.Architecture{
 			Pattern:    "hexagonal",
 			Principles: []string{"DI", "SRP", "OCP", "LSP", "ISP", "DIP"},

@@ -14,12 +14,12 @@ func FuzzParseLDAPResult(f *testing.F) {
 		0x31, 0x02, // SET of length 2
 		0x04, 0x00, // empty attribute value
 	})
-	f.Add([]byte{0x30, 0x00})                                              // empty SEQUENCE
-	f.Add([]byte{0x30, 0x02, 0x04, 0x00})                                 // SEQUENCE with empty string
-	f.Add([]byte{0x30, 0x05, 0x04, 0x03, 0x66, 0x6f, 0x6f})              // SEQUENCE with "foo"
+	f.Add([]byte{0x30, 0x00})                                           // empty SEQUENCE
+	f.Add([]byte{0x30, 0x02, 0x04, 0x00})                               // SEQUENCE with empty string
+	f.Add([]byte{0x30, 0x05, 0x04, 0x03, 0x66, 0x6f, 0x6f})             // SEQUENCE with "foo"
 	f.Add([]byte{0x30, 0x07, 0x64, 0x05, 0x30, 0x03, 0x04, 0x01, 0x61}) // SEQUENCE > SearchResultEntry > string "a"
-	f.Add([]byte{})                                                        // empty
-	f.Add([]byte{0xff, 0xff, 0xff, 0xff})                                 // invalid tags
+	f.Add([]byte{})                                                     // empty
+	f.Add([]byte{0xff, 0xff, 0xff, 0xff})                               // invalid tags
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		result := parseLDAPResult(data)
@@ -29,14 +29,14 @@ func FuzzParseLDAPResult(f *testing.F) {
 }
 
 func FuzzParseLDAPSequence(f *testing.F) {
-	f.Add([]byte{0x30, 0x00})                              // empty SEQUENCE
+	f.Add([]byte{0x30, 0x00})                               // empty SEQUENCE
 	f.Add([]byte{0x30, 0x05, 0x04, 0x03, 0x61, 0x62, 0x63}) // SEQUENCE with "abc"
-	f.Add([]byte{0x64, 0x03, 0x04, 0x01, 0x78})           // SearchResultEntry with "x"
-	f.Add([]byte{0x31, 0x02, 0x04, 0x00})                 // SET with empty string
-	f.Add([]byte{})                                        // empty
-	f.Add([]byte{0x30})                                    // truncated tag
-	f.Add([]byte{0x30, 0x01})                              // truncated length
-	f.Add([]byte{0x30, 0x10, 0x04, 0x0f})                 // body shorter than declared length
+	f.Add([]byte{0x64, 0x03, 0x04, 0x01, 0x78})             // SearchResultEntry with "x"
+	f.Add([]byte{0x31, 0x02, 0x04, 0x00})                   // SET with empty string
+	f.Add([]byte{})                                         // empty
+	f.Add([]byte{0x30})                                     // truncated tag
+	f.Add([]byte{0x30, 0x01})                               // truncated length
+	f.Add([]byte{0x30, 0x10, 0x04, 0x0f})                   // body shorter than declared length
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		_, items := parseLDAPSequence(data)
@@ -46,12 +46,12 @@ func FuzzParseLDAPSequence(f *testing.F) {
 
 func FuzzParseLDAPString(f *testing.F) {
 	f.Add([]byte{0x04, 0x03, 0x66, 0x6f, 0x6f}) // OCTET STRING "foo"
-	f.Add([]byte{0x04, 0x00})                    // empty string
-	f.Add([]byte{})                              // empty
-	f.Add([]byte{0x04})                          // truncated
+	f.Add([]byte{0x04, 0x00})                   // empty string
+	f.Add([]byte{})                             // empty
+	f.Add([]byte{0x04})                         // truncated
 	f.Add([]byte{0x04, 0x05, 0x61})             // body shorter than declared length
 	f.Add([]byte{0x04, 0xff})                   // max single-byte length (no body)
-	f.Add(make([]byte, 256))                     // long slice with byte(0) length
+	f.Add(make([]byte, 256))                    // long slice with byte(0) length
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		result := parseLDAPString(data)

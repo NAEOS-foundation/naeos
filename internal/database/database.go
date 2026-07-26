@@ -33,17 +33,17 @@ type Database interface {
 }
 
 type Config struct {
-	Host                  string
-	Port                  int
-	User                  string
-	Password              string
-	Database              string
-	SSLMode               string
-	Timeout               time.Duration
-	MaxOpenConns          int
-	MaxIdleConns          int
-	ConnMaxLifetime       time.Duration
-	ConnMaxIdleTime       time.Duration
+	Host                   string
+	Port                   int
+	User                   string
+	Password               string
+	Database               string
+	SSLMode                string
+	Timeout                time.Duration
+	MaxOpenConns           int
+	MaxIdleConns           int
+	ConnMaxLifetime        time.Duration
+	ConnMaxIdleTime        time.Duration
 	SupabaseProjectRef     string
 	SupabaseURL            string
 	SupabaseServiceRoleKey string

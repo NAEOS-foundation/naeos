@@ -47,9 +47,7 @@ func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode response")
 	}
 	result := &QueryResult{Rows: make([]map[string]any, len(rows))}
-	for i, r := range rows {
-		result.Rows[i] = r
-	}
+	copy(result.Rows, rows)
 	return result, nil
 }
 
