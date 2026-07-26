@@ -107,8 +107,9 @@ func LintConfig(config *PipelineConfig) *LintResult {
 		result.Errors = append(result.Errors, LintError{Field: "languages", Message: "at least one language is required"})
 	}
 
-	validLanguages := map[string]bool{
-		"go": true, "node": true, "typescript": true, "python": true, "java": true, "rust": true,
+	validLanguages := make(map[string]bool, len(supportedLangs()))
+	for _, l := range supportedLangs() {
+		validLanguages[l] = true
 	}
 	for _, lang := range config.Languages {
 		if !validLanguages[lang] {

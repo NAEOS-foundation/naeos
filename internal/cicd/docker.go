@@ -30,22 +30,12 @@ func (g *DockerComposeGenerator) Generate(config *PipelineConfig) (string, error
 	sb.WriteString("      dockerfile: Dockerfile\n")
 
 	if len(config.Languages) > 0 {
-		switch config.Languages[0] {
-		case "go":
-			sb.WriteString("    image: golang:1.22\n")
-			sb.WriteString("    command: go run main.go\n")
-		case "node", "typescript":
-			sb.WriteString("    image: node:20\n")
-			sb.WriteString("    command: npm start\n")
-		case "python":
-			sb.WriteString("    image: python:3.12\n")
-			sb.WriteString("    command: python main.py\n")
-		case "java":
-			sb.WriteString("    image: eclipse-temurin:21\n")
-			sb.WriteString("    command: java -jar app.jar\n")
-		case "rust":
-			sb.WriteString("    image: rust:latest\n")
-			sb.WriteString("    command: ./target/release/app\n")
+		primary := config.Languages[0]
+		if img := runImage(primary); img != "" {
+			fmt.Fprintf(&sb, "    image: %s\n", img)
+		}
+		if cmd := runCommand(primary); cmd != "" {
+			fmt.Fprintf(&sb, "    command: %s\n", cmd)
 		}
 	}
 
@@ -63,35 +53,29 @@ func (g *DockerComposeGenerator) Generate(config *PipelineConfig) (string, error
 	sb.WriteString("      - app-network\n")
 
 	// Add database service for common patterns
-	if len(config.Languages) > 0 {
-		switch config.Languages[0] {
-		case "go", "node", "typescript", "java", "python":
-			sb.WriteString("\n  db:\n")
-			sb.WriteString("    image: postgres:16\n")
-			sb.WriteString("    environment:\n")
-			sb.WriteString("      POSTGRES_DB: app\n")
-			sb.WriteString("      POSTGRES_USER: postgres\n")
-			sb.WriteString("      POSTGRES_PASSWORD: postgres\n")
-			sb.WriteString("    volumes:\n")
-			sb.WriteString("      - db-data:/var/lib/postgresql/data\n")
-			sb.WriteString("    ports:\n")
-			sb.WriteString("      - '5432:5432'\n")
-			sb.WriteString("    networks:\n")
-			sb.WriteString("      - app-network\n")
-		}
+	if len(config.Languages) > 0 && needsDB[config.Languages[0]] {
+		sb.WriteString("\n  db:\n")
+		sb.WriteString("    image: postgres:16\n")
+		sb.WriteString("    environment:\n")
+		sb.WriteString("      POSTGRES_DB: app\n")
+		sb.WriteString("      POSTGRES_USER: postgres\n")
+		sb.WriteString("      POSTGRES_PASSWORD: postgres\n")
+		sb.WriteString("    volumes:\n")
+		sb.WriteString("      - db-data:/var/lib/postgresql/data\n")
+		sb.WriteString("    ports:\n")
+		sb.WriteString("      - '5432:5432'\n")
+		sb.WriteString("    networks:\n")
+		sb.WriteString("      - app-network\n")
 	}
 
 	// Redis cache service for node/java/go
-	if len(config.Languages) > 0 {
-		switch config.Languages[0] {
-		case "go", "node", "typescript", "java":
-			sb.WriteString("\n  redis:\n")
-			sb.WriteString("    image: redis:7-alpine\n")
-			sb.WriteString("    ports:\n")
-			sb.WriteString("      - '6379:6379'\n")
-			sb.WriteString("    networks:\n")
-			sb.WriteString("      - app-network\n")
-		}
+	if len(config.Languages) > 0 && needsRedis[config.Languages[0]] {
+		sb.WriteString("\n  redis:\n")
+		sb.WriteString("    image: redis:7-alpine\n")
+		sb.WriteString("    ports:\n")
+		sb.WriteString("      - '6379:6379'\n")
+		sb.WriteString("    networks:\n")
+		sb.WriteString("      - app-network\n")
 	}
 
 	sb.WriteString("\nvolumes:\n")
@@ -119,9 +103,15 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		return "", naeoserr.New(naeoserr.ErrPipeline, "no languages specified for Dockerfile generation")
 	}
 
-	switch config.Languages[0] {
+	lang := config.Languages[0]
+	img := langImage(lang)
+	if img == "" {
+		return "", naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported language for Dockerfile: %s", lang))
+	}
+
+	switch lang {
 	case "go":
-		sb.WriteString("FROM golang:1.22 AS builder\n")
+		fmt.Fprintf(&sb, "FROM %s AS builder\n", img)
 		sb.WriteString("WORKDIR /app\n")
 		sb.WriteString("COPY go.mod go.sum ./\n")
 		sb.WriteString("RUN go mod download\n")
@@ -131,7 +121,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("COPY --from=builder /app/main /\n")
 		sb.WriteString("CMD [\"/main\"]\n")
 	case "node", "typescript":
-		sb.WriteString("FROM node:20 AS builder\n")
+		fmt.Fprintf(&sb, "FROM %s AS builder\n", img)
 		sb.WriteString("WORKDIR /app\n")
 		sb.WriteString("COPY package*.json ./\n")
 		sb.WriteString("RUN npm ci\n")
@@ -144,7 +134,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("EXPOSE 3000\n")
 		sb.WriteString("CMD [\"node\", \"dist/index.js\"]\n")
 	case "python":
-		sb.WriteString("FROM python:3.12-slim\n")
+		fmt.Fprintf(&sb, "FROM %s-slim\n", img)
 		sb.WriteString("WORKDIR /app\n")
 		sb.WriteString("COPY requirements.txt .\n")
 		sb.WriteString("RUN pip install --no-cache-dir -r requirements.txt\n")
@@ -152,7 +142,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("EXPOSE 8000\n")
 		sb.WriteString("CMD [\"python\", \"main.py\"]\n")
 	case "java":
-		sb.WriteString("FROM eclipse-temurin:21 AS builder\n")
+		fmt.Fprintf(&sb, "FROM %s AS builder\n", img)
 		sb.WriteString("WORKDIR /app\n")
 		sb.WriteString("COPY pom.xml .\n")
 		sb.WriteString("RUN mvn dependency:go-offline\n")
@@ -163,7 +153,7 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("EXPOSE 8080\n")
 		sb.WriteString("CMD [\"java\", \"-jar\", \"/app/app.jar\"]\n")
 	case "rust":
-		sb.WriteString("FROM rust:latest AS builder\n")
+		fmt.Fprintf(&sb, "FROM %s AS builder\n", img)
 		sb.WriteString("WORKDIR /app\n")
 		sb.WriteString("COPY Cargo.toml Cargo.lock ./\n")
 		sb.WriteString("RUN mkdir src && echo 'fn main() {}' > src/main.rs\n")
@@ -174,8 +164,6 @@ func (g *DockerComposeGenerator) GenerateDockerfile(config *PipelineConfig) (str
 		sb.WriteString("FROM debian:bookworm-slim\n")
 		sb.WriteString("COPY --from=builder /app/target/release/app /usr/local/bin/app\n")
 		sb.WriteString("CMD [\"app\"]\n")
-	default:
-		return "", naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported language for Dockerfile: %s", config.Languages[0]))
 	}
 
 	return sb.String(), nil

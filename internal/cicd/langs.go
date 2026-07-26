@@ -60,6 +60,35 @@ func langImage(lang string) string {
 	return ""
 }
 
+var runImageMap = map[string]string{
+	"go":         "golang:1.22",
+	"node":       "node:20",
+	"typescript": "node:20",
+	"python":     "python:3.12",
+	"java":       "eclipse-temurin:21",
+	"rust":       "rust:latest",
+}
+
+var runCommandMap = map[string]string{
+	"go":         "go run main.go",
+	"node":       "npm start",
+	"typescript": "npm start",
+	"python":     "python main.py",
+	"java":       "java -jar app.jar",
+	"rust":       "./target/release/app",
+}
+
+var needsDB = map[string]bool{
+	"go": true, "node": true, "typescript": true, "python": true, "java": true,
+}
+
+var needsRedis = map[string]bool{
+	"go": true, "node": true, "typescript": true, "java": true,
+}
+
+func runImage(lang string) string  { return runImageMap[lang] }
+func runCommand(lang string) string { return runCommandMap[lang] }
+
 func supportedLangs() []string {
 	keys := make([]string, 0, len(langMap))
 	for k := range langMap {
