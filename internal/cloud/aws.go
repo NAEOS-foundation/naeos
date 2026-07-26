@@ -2,9 +2,7 @@ package cloud
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
-	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
@@ -157,137 +155,17 @@ func (a *AWSAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 }
 
 func (a *AWSAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
-	if err := a.Validate(config); err != nil {
-		return nil, err
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return nil, err
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return nil, err
-	}
-
-	pool := GetDefaultPool()
-	tr, pooled := pool.Get(config.Project, AWS)
-	if pooled {
-		if err := tr.writeHCL(tf); err != nil {
-			return nil, err
-		}
-		if err := tr.Apply(); err != nil {
-			return nil, err
-		}
-	} else {
-		workDir, err := TempWorkDir("naeos-aws")
-		if err != nil {
-			return nil, err
-		}
-		tr = NewTerraformRunner(workDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if err := tr.Deploy(tf); err != nil {
-			return nil, err
-		}
-		pool.Put(config.Project, AWS, tr, true)
-	}
-
-	deployed := []DeployedResource{}
-	for _, res := range planResult.Resources {
-		deployed = append(deployed, DeployedResource{
-			Name: res.Name,
-			Type: res.Type,
-			ID:   fmt.Sprintf("arn:aws:%s:%s:%s", res.Type, config.Region, res.Name),
-		})
-	}
-
-	result := &DeployResult{
-		Provider:  AWS,
-		Resources: deployed,
-		Terraform: tf,
-		Status:    "deployed",
-		Timestamp: time.Now(),
-	}
-
-	sm := NewStateManager()
-	_ = sm.Save(&DeploymentRecord{
-		Project:      config.Project,
-		Provider:     AWS,
-		Environment:  config.Environment,
-		Region:       config.Region,
-		Resources:    deployed,
-		TerraformDir: tr.WorkDir,
-		Timestamp:    result.Timestamp,
-		Status:       "deployed",
+	return deployAdapter(a, config, deployConfig{
+		Provider:      AWS,
+		TempDirPrefix: "naeos-aws",
+		ResourceIDFunc: func(name, resType string) string {
+			return fmt.Sprintf("arn:aws:%s:%s:%s", resType, config.Region, name)
+		},
 	})
-
-	return result, nil
 }
 
 func (a *AWSAdapter) Destroy(config *DeployConfig) error {
-	pool := GetDefaultPool()
-	if tr, pooled := pool.Get(config.Project, AWS); pooled {
-		if err := tr.ApplyDestroy(); err == nil {
-			pool.Remove(config.Project, AWS)
-			sm := NewStateManager()
-			if err := sm.Delete(config.Project, AWS); err != nil {
-				slog.Warn("failed to delete aws state after pool destroy", "project", config.Project, "error", err)
-			}
-			return nil
-		}
-	}
-
-	sm := NewStateManager()
-	record, err := sm.Load(config.Project, AWS)
-	if err == nil && record.TerraformDir != "" {
-		tr := NewTerraformRunner(record.TerraformDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if derr := tr.DestroyAll(); derr == nil {
-			if err := sm.Delete(config.Project, AWS); err != nil {
-				slog.Warn("failed to delete aws state after destroy", "project", config.Project, "error", err)
-			}
-			return nil
-		}
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return err
-	}
-	if len(planResult.Resources) == 0 {
-		return naeoserr.New(naeoserr.ErrValidation, "no resources to destroy")
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return err
-	}
-
-	workDir, werr := TempWorkDir("naeos-aws-destroy")
-	if werr != nil {
-		return werr
-	}
-
-	tr := NewTerraformRunner(workDir)
-	if a.Runner != nil {
-		tr.Runner = a.Runner
-	}
-	if err := tr.writeHCL(tf); err != nil {
-		return err
-	}
-	if err := tr.DestroyAll(); err != nil {
-		return err
-	}
-
-	if err := sm.Delete(config.Project, AWS); err != nil {
-		slog.Warn("failed to delete aws state after terraform destroy", "project", config.Project, "error", err)
-	}
-	return nil
+	return destroyAdapter(a, config, AWS, "naeos-aws-destroy")
 }
 
 func (a *AWSAdapter) ExportTerraform(config *DeployConfig) (string, error) {

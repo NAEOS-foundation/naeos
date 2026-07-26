@@ -720,4 +720,3 @@ func (e *InMemoryExporter) Reset() {
 	defer e.mu.Unlock()
 	e.spans = e.spans[:0]
 }
-

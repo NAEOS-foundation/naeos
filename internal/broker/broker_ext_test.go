@@ -95,9 +95,8 @@ func TestMatchGlobMultiPartWildcard(t *testing.T) {
 	if !matchGlob("a*b*c", "abc") {
 		t.Error("expected match with empty wildcards")
 	}
-	if matchGlob("a*b*c", "aXbYc") {
-		t.Log("multi-wildcard matches interleaved content via contains")
-	}
+	// matchGlob with 3+ wildcards falls back to contains,
+	// so "a*b*c" does NOT match "aXbYc" (no "abc" substring).
 }
 
 func TestPow(t *testing.T) {

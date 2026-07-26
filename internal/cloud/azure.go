@@ -2,9 +2,7 @@ package cloud
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
-	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
@@ -145,137 +143,17 @@ func (a *AzureAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 }
 
 func (a *AzureAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
-	if err := a.Validate(config); err != nil {
-		return nil, err
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return nil, err
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return nil, err
-	}
-
-	pool := GetDefaultPool()
-	tr, pooled := pool.Get(config.Project, Azure)
-	if pooled {
-		if err := tr.writeHCL(tf); err != nil {
-			return nil, err
-		}
-		if err := tr.Apply(); err != nil {
-			return nil, err
-		}
-	} else {
-		workDir, err := TempWorkDir("naeos-azure")
-		if err != nil {
-			return nil, err
-		}
-		tr = NewTerraformRunner(workDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if err := tr.Deploy(tf); err != nil {
-			return nil, err
-		}
-		pool.Put(config.Project, Azure, tr, true)
-	}
-
-	deployed := []DeployedResource{}
-	for _, res := range planResult.Resources {
-		deployed = append(deployed, DeployedResource{
-			Name: res.Name,
-			Type: res.Type,
-			ID:   fmt.Sprintf("/subscriptions/.../resourceGroups/%s/providers/%s/%s", config.Project, res.Type, res.Name),
-		})
-	}
-
-	result := &DeployResult{
-		Provider:  Azure,
-		Resources: deployed,
-		Terraform: tf,
-		Status:    "deployed",
-		Timestamp: time.Now(),
-	}
-
-	sm := NewStateManager()
-	_ = sm.Save(&DeploymentRecord{
-		Project:      config.Project,
-		Provider:     Azure,
-		Environment:  config.Environment,
-		Region:       config.Region,
-		Resources:    deployed,
-		TerraformDir: tr.WorkDir,
-		Timestamp:    result.Timestamp,
-		Status:       "deployed",
+	return deployAdapter(a, config, deployConfig{
+		Provider:      Azure,
+		TempDirPrefix: "naeos-azure",
+		ResourceIDFunc: func(name, resType string) string {
+			return fmt.Sprintf("/subscriptions/.../resourceGroups/%s/providers/%s/%s", config.Project, resType, name)
+		},
 	})
-
-	return result, nil
 }
 
 func (a *AzureAdapter) Destroy(config *DeployConfig) error {
-	pool := GetDefaultPool()
-	if tr, pooled := pool.Get(config.Project, Azure); pooled {
-		if err := tr.ApplyDestroy(); err == nil {
-			pool.Remove(config.Project, Azure)
-			sm := NewStateManager()
-			if err := sm.Delete(config.Project, Azure); err != nil {
-				slog.Warn("failed to delete azure state after pool destroy", "project", config.Project, "error", err)
-			}
-			return nil
-		}
-	}
-
-	sm := NewStateManager()
-	record, err := sm.Load(config.Project, Azure)
-	if err == nil && record.TerraformDir != "" {
-		tr := NewTerraformRunner(record.TerraformDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if derr := tr.DestroyAll(); derr == nil {
-			if err := sm.Delete(config.Project, Azure); err != nil {
-				slog.Warn("failed to delete azure state after destroy", "project", config.Project, "error", err)
-			}
-			return nil
-		}
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return err
-	}
-	if len(planResult.Resources) == 0 {
-		return naeoserr.New(naeoserr.ErrValidation, "no resources to destroy")
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return err
-	}
-
-	workDir, werr := TempWorkDir("naeos-azure-destroy")
-	if werr != nil {
-		return werr
-	}
-
-	tr := NewTerraformRunner(workDir)
-	if a.Runner != nil {
-		tr.Runner = a.Runner
-	}
-	if err := tr.writeHCL(tf); err != nil {
-		return err
-	}
-	if err := tr.DestroyAll(); err != nil {
-		return err
-	}
-
-	if err := sm.Delete(config.Project, Azure); err != nil {
-		slog.Warn("failed to delete azure state after terraform destroy", "project", config.Project, "error", err)
-	}
-	return nil
+	return destroyAdapter(a, config, Azure, "naeos-azure-destroy")
 }
 
 func (a *AzureAdapter) ExportTerraform(config *DeployConfig) (string, error) {

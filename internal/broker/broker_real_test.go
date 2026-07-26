@@ -394,4 +394,3 @@ func TestBrokerStoreRemoveFirst(t *testing.T) {
 		t.Errorf("expected b2, got %s", list[0].Name)
 	}
 }
-

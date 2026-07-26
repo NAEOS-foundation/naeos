@@ -719,4 +719,3 @@ func ListResolver(items []any) Resolver {
 		return items, nil
 	}
 }
-

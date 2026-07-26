@@ -74,8 +74,7 @@ func TestConnectionPoolCloseAllError(t *testing.T) {
 func TestNewFromConfigConnectFailure(t *testing.T) {
 	_, err := NewFromConfig("memory", nil)
 	if err != nil {
-		// InMemoryBroker.Connect(nil) does not fail, so this should succeed
-		t.Logf("got error (unexpected): %v", err)
+		t.Errorf("NewFromConfig(memory, nil) unexpected error: %v", err)
 	}
 }
 

@@ -415,11 +415,11 @@ func (v *ValidationEngine) applyRule(data map[string]any, rule *ValidationRule) 
 		if ok {
 			pattern, ok := rule.Value.(string)
 			if ok {
-			matched, err := regexp.MatchString(pattern, s)
-			if err != nil {
-				return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid regex pattern '%s' for field '%s': %v", pattern, rule.Field, err))
-			}
-			if !matched {
+				matched, err := regexp.MatchString(pattern, s)
+				if err != nil {
+					return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid regex pattern '%s' for field '%s': %v", pattern, rule.Field, err))
+				}
+				if !matched {
 					return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("field '%s' must match pattern '%s'", rule.Field, pattern))
 				}
 			}
