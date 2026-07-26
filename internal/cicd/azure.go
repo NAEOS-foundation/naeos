@@ -62,40 +62,7 @@ func (g *AzurePipelinesGenerator) Generate(config *PipelineConfig) (string, erro
 	sb.WriteString("      - job: BuildJob\n")
 	sb.WriteString("        steps:\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("          - task: GoTool@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              version: '1.22'\n")
-			sb.WriteString("          - script: go build ./...\n")
-			sb.WriteString("            displayName: 'Build'\n")
-		case "node", "typescript":
-			sb.WriteString("          - task: NodeTool@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '20.x'\n")
-			sb.WriteString("          - script: npm ci && npm run build\n")
-			sb.WriteString("            displayName: 'Build'\n")
-		case "python":
-			sb.WriteString("          - task: UsePythonVersion@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '3.12'\n")
-			sb.WriteString("          - script: pip install -r requirements.txt\n")
-			sb.WriteString("            displayName: 'Install'\n")
-		case "java":
-			sb.WriteString("          - task: JavaToolInstaller@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '21'\n")
-			sb.WriteString("              jdkArchitectureOption: 'x64'\n")
-			sb.WriteString("              jdkSourceOption: 'PreInstalled'\n")
-			sb.WriteString("          - script: mvn clean compile\n")
-			sb.WriteString("            displayName: 'Build'\n")
-		case "rust":
-			sb.WriteString("          - script: |\n")
-			sb.WriteString("              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y\n")
-			sb.WriteString("              source $HOME/.cargo/env\n")
-			sb.WriteString("              cargo build --release\n")
-			sb.WriteString("            displayName: 'Build'\n")
-		}
+		sb.WriteString(azureBuildSteps(lang))
 	}
 
 	// Test stage
@@ -105,39 +72,7 @@ func (g *AzurePipelinesGenerator) Generate(config *PipelineConfig) (string, erro
 	sb.WriteString("      - job: TestJob\n")
 	sb.WriteString("        steps:\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("          - task: GoTool@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              version: '1.22'\n")
-			sb.WriteString("          - script: go test ./...\n")
-			sb.WriteString("            displayName: 'Test'\n")
-		case "node", "typescript":
-			sb.WriteString("          - task: NodeTool@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '20.x'\n")
-			sb.WriteString("          - script: npm ci && npm test\n")
-			sb.WriteString("            displayName: 'Test'\n")
-		case "python":
-			sb.WriteString("          - task: UsePythonVersion@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '3.12'\n")
-			sb.WriteString("          - script: pytest\n")
-			sb.WriteString("            displayName: 'Test'\n")
-		case "java":
-			sb.WriteString("          - task: JavaToolInstaller@0\n")
-			sb.WriteString("            inputs:\n")
-			sb.WriteString("              versionSpec: '21'\n")
-			sb.WriteString("              jdkArchitectureOption: 'x64'\n")
-			sb.WriteString("              jdkSourceOption: 'PreInstalled'\n")
-			sb.WriteString("          - script: mvn test\n")
-			sb.WriteString("            displayName: 'Test'\n")
-		case "rust":
-			sb.WriteString("          - script: |\n")
-			sb.WriteString("              source $HOME/.cargo/env\n")
-			sb.WriteString("              cargo test\n")
-			sb.WriteString("            displayName: 'Test'\n")
-		}
+		sb.WriteString(azureTestSteps(lang))
 	}
 
 	// Deploy stage
@@ -159,4 +94,78 @@ func (g *AzurePipelinesGenerator) Generate(config *PipelineConfig) (string, erro
 	}
 
 	return sb.String(), nil
+}
+
+func azureBuildSteps(lang string) string {
+	var sb strings.Builder
+	switch lang {
+	case "go":
+		sb.WriteString("          - task: GoTool@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              version: '1.22'\n")
+	case "node", "typescript":
+		sb.WriteString("          - task: NodeTool@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '20.x'\n")
+	case "python":
+		sb.WriteString("          - task: UsePythonVersion@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '3.12'\n")
+	case "java":
+		sb.WriteString("          - task: JavaToolInstaller@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '21'\n")
+		sb.WriteString("              jdkArchitectureOption: 'x64'\n")
+		sb.WriteString("              jdkSourceOption: 'PreInstalled'\n")
+	case "rust":
+		sb.WriteString("          - script: |\n")
+		sb.WriteString("              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y\n")
+		sb.WriteString("              source $HOME/.cargo/env\n")
+	}
+	if cmd := buildCommand(lang); cmd != "" {
+		if lang == "rust" {
+			sb.WriteString("              " + cmd + "\n")
+			sb.WriteString("            displayName: 'Build'\n")
+		} else {
+			fmt.Fprintf(&sb, "          - script: %s\n", cmd)
+			sb.WriteString("            displayName: 'Build'\n")
+		}
+	}
+	return sb.String()
+}
+
+func azureTestSteps(lang string) string {
+	var sb strings.Builder
+	switch lang {
+	case "go":
+		sb.WriteString("          - task: GoTool@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              version: '1.22'\n")
+	case "node", "typescript":
+		sb.WriteString("          - task: NodeTool@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '20.x'\n")
+	case "python":
+		sb.WriteString("          - task: UsePythonVersion@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '3.12'\n")
+	case "java":
+		sb.WriteString("          - task: JavaToolInstaller@0\n")
+		sb.WriteString("            inputs:\n")
+		sb.WriteString("              versionSpec: '21'\n")
+		sb.WriteString("              jdkArchitectureOption: 'x64'\n")
+		sb.WriteString("              jdkSourceOption: 'PreInstalled'\n")
+	}
+	if cmd := testCommand(lang); cmd != "" {
+		if lang == "rust" {
+			sb.WriteString("          - script: |\n")
+			sb.WriteString("              source $HOME/.cargo/env\n")
+			sb.WriteString("              " + cmd + "\n")
+			sb.WriteString("            displayName: 'Test'\n")
+		} else {
+			fmt.Fprintf(&sb, "          - script: %s\n", cmd)
+			sb.WriteString("            displayName: 'Test'\n")
+		}
+	}
+	return sb.String()
 }

@@ -10,9 +10,10 @@ import (
 type CICDPlatform string
 
 const (
-	GitHubActions CICDPlatform = "github"
-	GitLabCI      CICDPlatform = "gitlab"
-	Jenkins       CICDPlatform = "jenkins"
+	GitHubActions   CICDPlatform = "github"
+	GitLabCI        CICDPlatform = "gitlab"
+	AzurePipelines  CICDPlatform = "azure"
+	Jenkins         CICDPlatform = "jenkins"
 )
 
 type PipelineConfig struct {
@@ -48,6 +49,8 @@ func GetGenerator(platform CICDPlatform) (PipelineGenerator, error) {
 		return &GitHubActionsGenerator{}, nil
 	case GitLabCI:
 		return &GitLabCIGenerator{}, nil
+	case AzurePipelines:
+		return &AzurePipelinesGenerator{}, nil
 	case Jenkins:
 		return &JenkinsGenerator{}, nil
 	default:
@@ -89,9 +92,10 @@ func LintConfig(config *PipelineConfig) *LintResult {
 	}
 
 	validPlatforms := map[CICDPlatform]bool{
-		GitHubActions: true,
-		GitLabCI:      true,
-		Jenkins:       true,
+		GitHubActions:  true,
+		GitLabCI:       true,
+		AzurePipelines: true,
+		Jenkins:        true,
 	}
 	if config.Platform != "" && !validPlatforms[config.Platform] {
 		result.Valid = false

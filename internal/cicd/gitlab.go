@@ -21,17 +21,8 @@ func (g *GitLabCIGenerator) Generate(config *PipelineConfig) (string, error) {
 
 	// Default image
 	if len(config.Languages) > 0 {
-		switch config.Languages[0] {
-		case "go":
-			sb.WriteString("image: golang:1.22\n\n")
-		case "node", "typescript":
-			sb.WriteString("image: node:20\n\n")
-		case "python":
-			sb.WriteString("image: python:3.12\n\n")
-		case "java":
-			sb.WriteString("image: maven:3.9-eclipse-temurin-21\n\n")
-		case "rust":
-			sb.WriteString("image: rust:latest\n\n")
+		if img := langImage(config.Languages[0]); img != "" {
+			fmt.Fprintf(&sb, "image: %s\n\n", img)
 		}
 	}
 
@@ -40,18 +31,10 @@ func (g *GitLabCIGenerator) Generate(config *PipelineConfig) (string, error) {
 	sb.WriteString("  stage: build\n")
 	sb.WriteString("  script:\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("    - go build ./...\n")
-		case "node", "typescript":
-			sb.WriteString("    - npm ci\n")
-			sb.WriteString("    - npm run build\n")
-		case "python":
-			sb.WriteString("    - pip install -r requirements.txt\n")
-		case "java":
-			sb.WriteString("    - mvn clean compile\n")
-		case "rust":
-			sb.WriteString("    - cargo build --release\n")
+		if cmd := buildCommand(lang); cmd != "" {
+			for _, line := range strings.Split(cmd, " && ") {
+				fmt.Fprintf(&sb, "    - %s\n", line)
+			}
 		}
 	}
 	sb.WriteString("\n")
@@ -61,17 +44,8 @@ func (g *GitLabCIGenerator) Generate(config *PipelineConfig) (string, error) {
 	sb.WriteString("  stage: test\n")
 	sb.WriteString("  script:\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("    - go test ./...\n")
-		case "node", "typescript":
-			sb.WriteString("    - npm test\n")
-		case "python":
-			sb.WriteString("    - pytest\n")
-		case "java":
-			sb.WriteString("    - mvn test\n")
-		case "rust":
-			sb.WriteString("    - cargo test\n")
+		if cmd := testCommand(lang); cmd != "" {
+			fmt.Fprintf(&sb, "    - %s\n", cmd)
 		}
 	}
 	sb.WriteString("\n")

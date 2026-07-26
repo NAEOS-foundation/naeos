@@ -33,18 +33,10 @@ func (g *JenkinsGenerator) Generate(config *PipelineConfig) (string, error) {
 	sb.WriteString("        stage('Build') {\n")
 	sb.WriteString("            steps {\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("                sh 'go build ./...'\n")
-		case "node", "typescript":
-			sb.WriteString("                sh 'npm ci'\n")
-			sb.WriteString("                sh 'npm run build'\n")
-		case "python":
-			sb.WriteString("                sh 'pip install -r requirements.txt'\n")
-		case "java":
-			sb.WriteString("                sh 'mvn clean compile'\n")
-		case "rust":
-			sb.WriteString("                sh 'cargo build --release'\n")
+		if cmd := buildCommand(lang); cmd != "" {
+			for _, line := range strings.Split(cmd, " && ") {
+				fmt.Fprintf(&sb, "                sh '%s'\n", line)
+			}
 		}
 	}
 	sb.WriteString("            }\n")
@@ -54,17 +46,8 @@ func (g *JenkinsGenerator) Generate(config *PipelineConfig) (string, error) {
 	sb.WriteString("        stage('Test') {\n")
 	sb.WriteString("            steps {\n")
 	for _, lang := range config.Languages {
-		switch lang {
-		case "go":
-			sb.WriteString("                sh 'go test ./...'\n")
-		case "node", "typescript":
-			sb.WriteString("                sh 'npm test'\n")
-		case "python":
-			sb.WriteString("                sh 'pytest'\n")
-		case "java":
-			sb.WriteString("                sh 'mvn test'\n")
-		case "rust":
-			sb.WriteString("                sh 'cargo test'\n")
+		if cmd := testCommand(lang); cmd != "" {
+			fmt.Fprintf(&sb, "                sh '%s'\n", cmd)
 		}
 	}
 	sb.WriteString("            }\n")
