@@ -36,24 +36,25 @@ func (k *RealKafka) Name() string {
 }
 
 func (k *RealKafka) Connect(config *Config) error {
-	k.config = config
 	broker := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
-	slog.Info("kafka connected", "host", config.Host, "port", config.Port)
+	k.mu.Lock()
+	k.config = config
 	k.writer = &kafka.Writer{
 		Addr:         kafka.TCP(broker),
 		Balancer:     &kafka.LeastBytes{},
 		BatchTimeout: 10 * time.Millisecond,
 		Compression:  compress.Snappy,
 	}
-
 	k.reader = kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{broker},
 		Topic:    "default",
 		MinBytes: 1,
 		MaxBytes: 10e6,
 	})
+	k.mu.Unlock()
 
+	slog.Info("kafka connected", "host", config.Host, "port", config.Port)
 	return nil
 }
 
@@ -71,14 +72,21 @@ func (k *RealKafka) Close() error {
 }
 
 func (k *RealKafka) Ping() error {
-	if k.writer == nil {
+	k.mu.RLock()
+	writer := k.writer
+	k.mu.RUnlock()
+	if writer == nil {
 		return naeoserr.ErrNotConnected
 	}
 	return nil
 }
 
 func (k *RealKafka) Publish(channel string, msg *Message) error {
-	if k.writer == nil {
+	k.mu.RLock()
+	writer := k.writer
+	config := k.config
+	k.mu.RUnlock()
+	if writer == nil {
 		return naeoserr.ErrNotConnected
 	}
 
@@ -88,13 +96,13 @@ func (k *RealKafka) Publish(channel string, msg *Message) error {
 	}
 
 	timeout := 30 * time.Second
-	if k.config != nil && k.config.Timeout > 0 {
-		timeout = k.config.Timeout
+	if config != nil && config.Timeout > 0 {
+		timeout = config.Timeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	return k.writer.WriteMessages(ctx,
+	return writer.WriteMessages(ctx,
 		kafka.Message{
 			Key:   []byte(channel),
 			Value: data,
@@ -104,11 +112,14 @@ func (k *RealKafka) Publish(channel string, msg *Message) error {
 }
 
 func (k *RealKafka) Subscribe(channel string, handler MessageHandler) error {
-	if k.config == nil {
+	k.mu.RLock()
+	config := k.config
+	k.mu.RUnlock()
+	if config == nil {
 		return naeoserr.ErrNotConnected
 	}
 
-	broker := fmt.Sprintf("%s:%d", k.config.Host, k.config.Port)
+	broker := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
 	k.subMu.Lock()
 	if _, ok := k.subCtx[channel]; ok {

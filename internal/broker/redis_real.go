@@ -33,7 +33,6 @@ func (r *RealRedis) Name() string {
 }
 
 func (r *RealRedis) Connect(config *Config) error {
-	r.config = config
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", config.Host, config.Port),
 		Password:     config.Password,
@@ -52,9 +51,13 @@ func (r *RealRedis) Connect(config *Config) error {
 		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "connect to redis")
 	}
 
-	slog.Info("redis connected", "host", config.Host, "port", config.Port)
+	r.mu.Lock()
 	r.client = rdb
+	r.config = config
 	_, r.cancel = context.WithCancel(context.Background())
+	r.mu.Unlock()
+
+	slog.Info("redis connected", "host", config.Host, "port", config.Port)
 	return nil
 }
 
@@ -77,14 +80,20 @@ func (r *RealRedis) Close() error {
 }
 
 func (r *RealRedis) Ping() error {
-	if r.client == nil {
+	r.mu.RLock()
+	client := r.client
+	r.mu.RUnlock()
+	if client == nil {
 		return naeoserr.ErrNotConnected
 	}
-	return r.client.Ping(context.Background()).Err()
+	return client.Ping(context.Background()).Err()
 }
 
 func (r *RealRedis) Publish(channel string, msg *Message) error {
-	if r.client == nil {
+	r.mu.RLock()
+	client := r.client
+	r.mu.RUnlock()
+	if client == nil {
 		return naeoserr.ErrNotConnected
 	}
 
@@ -93,15 +102,18 @@ func (r *RealRedis) Publish(channel string, msg *Message) error {
 		data = []byte{}
 	}
 
-	return r.client.Publish(context.Background(), channel, data).Err()
+	return client.Publish(context.Background(), channel, data).Err()
 }
 
 func (r *RealRedis) Subscribe(channel string, handler MessageHandler) error {
-	if r.client == nil {
+	r.mu.RLock()
+	client := r.client
+	r.mu.RUnlock()
+	if client == nil {
 		return naeoserr.ErrNotConnected
 	}
 
-	sub := r.client.Subscribe(context.Background(), channel)
+	sub := client.Subscribe(context.Background(), channel)
 
 	if err := sub.Ping(context.Background()); err != nil {
 		_ = sub.Close()
