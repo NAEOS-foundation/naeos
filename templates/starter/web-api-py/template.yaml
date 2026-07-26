@@ -1,0 +1,7 @@
+name: web-api-py
+version: "1.0.0"
+description: Python FastAPI REST API starter with SQLAlchemy, PostgreSQL, and Docker
+author: NAEOS Foundation
+tags: [python, fastapi, rest, postgres, official]
+languages: [python]
+frameworks: [fastapi, sqlalchemy, postgresql]

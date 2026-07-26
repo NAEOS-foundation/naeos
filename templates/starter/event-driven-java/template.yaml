@@ -1,0 +1,7 @@
+name: event-driven-java
+version: "1.0.0"
+description: Java event-driven microservices with Kafka, Spring Boot, and Kubernetes
+author: NAEOS Foundation
+tags: [java, spring, kafka, kubernetes, official]
+languages: [java]
+frameworks: [spring-boot, kafka, kubernetes]

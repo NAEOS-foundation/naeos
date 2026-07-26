@@ -67,7 +67,7 @@ func TestRemoteRegistryInstall(t *testing.T) {
 	var serverURL string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/plugins":
+		case "/":
 			list := RemotePluginList{
 				Plugins: []RemotePlugin{
 					{Name: "test-plugin", Version: "1.0.0", Description: "test", Platform: "linux/amd64", DownloadURL: serverURL + "/download"},

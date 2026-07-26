@@ -1,0 +1,7 @@
+name: serverless-ts
+version: "1.1.0"
+description: TypeScript serverless project with AWS Lambda, API Gateway, and DynamoDB
+author: NAEOS Foundation
+tags: [typescript, serverless, aws, official]
+languages: [typescript]
+frameworks: [aws-lambda, api-gateway, dynamodb]

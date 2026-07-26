@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/architecture"
@@ -238,6 +239,126 @@ func extractTesting(m map[string]any) *testingmodel.Testing {
 		test.Coverage = &testingmodel.Coverage{MinPercent: minPercent}
 	}
 	return test
+}
+
+type ModuleLoader interface {
+	LoadModules(resolved any) ([]module.Module, error)
+	LoadServices(resolved any) ([]service.Service, error)
+}
+
+type DefaultModuleLoader struct{}
+
+func NewModuleLoader() ModuleLoader {
+	return DefaultModuleLoader{}
+}
+
+func (DefaultModuleLoader) LoadModules(resolved any) ([]module.Module, error) {
+	resolvedSpec, ok := resolved.(*resolver.ResolvedSpec)
+	if !ok {
+		return nil, nil
+	}
+	rawModules, exists := resolvedSpec.Context["modules"]
+	if !exists {
+		return nil, nil
+	}
+	var modules []module.Module
+	switch mods := rawModules.(type) {
+	case []map[string]any:
+		for _, m := range mods {
+			modules = append(modules, extractModule(m))
+		}
+	case []any:
+		for _, raw := range mods {
+			if m, ok := raw.(map[string]any); ok {
+				modules = append(modules, extractModule(m))
+			}
+		}
+	}
+	return modules, nil
+}
+
+func (DefaultModuleLoader) LoadServices(resolved any) ([]service.Service, error) {
+	resolvedSpec, ok := resolved.(*resolver.ResolvedSpec)
+	if !ok {
+		return nil, nil
+	}
+	rawServices, exists := resolvedSpec.Context["services"]
+	if !exists {
+		return nil, nil
+	}
+	var services []service.Service
+	switch svcs := rawServices.(type) {
+	case []map[string]any:
+		for _, s := range svcs {
+			services = append(services, extractService(s))
+		}
+	case []any:
+		for _, raw := range svcs {
+			if s, ok := raw.(map[string]any); ok {
+				services = append(services, extractService(s))
+			}
+		}
+	}
+	return services, nil
+}
+
+type LazyBuilder struct {
+	inner  Builder
+	loader ModuleLoader
+	mu     sync.Mutex
+	neir   *model.NEIR
+	built  bool
+}
+
+func NewLazyBuilder(inner Builder, loader ModuleLoader) *LazyBuilder {
+	if inner == nil {
+		inner = DefaultBuilder{}
+	}
+	if loader == nil {
+		loader = DefaultModuleLoader{}
+	}
+	return &LazyBuilder{inner: inner, loader: loader}
+}
+
+func (lb *LazyBuilder) Build(resolved any) (*model.NEIR, error) {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+
+	if lb.built {
+		return lb.neir, nil
+	}
+
+	neir, err := lb.inner.Build(resolved)
+	if err != nil {
+		return nil, err
+	}
+
+	modules, err := lb.loader.LoadModules(resolved)
+	if err == nil && len(modules) > 0 {
+		neir.Modules = modules
+	}
+
+	services, err := lb.loader.LoadServices(resolved)
+	if err == nil && len(services) > 0 {
+		neir.Services = services
+	}
+
+	lb.neir = neir
+	lb.built = true
+	return lb.neir, nil
+}
+
+func (lb *LazyBuilder) Reset() {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+	lb.built = false
+	lb.neir = nil
+}
+
+func (lb *LazyBuilder) IsBuilt() bool {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+	return lb.built
 }
 
 func extractCloud(m map[string]any) *infrastructure.Infrastructure {

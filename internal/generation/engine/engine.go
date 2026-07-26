@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"golang.org/x/text/cases"
 	xlanguage "golang.org/x/text/language"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
@@ -34,6 +37,141 @@ type DefaultEngine struct{}
 
 func NewEngine() GeneratorEngine {
 	return DefaultEngine{}
+}
+
+func GenerateParallel(neir any, concurrency int) ([]Artifact, error) {
+	if neir == nil {
+		return nil, fmt.Errorf("neir is nil")
+	}
+
+	var projectName string
+	var modules []any
+	var services []any
+	var archPattern string
+	var deployStrategy string
+
+	if neirMap, ok := neir.(map[string]any); ok {
+		if project, ok := neirMap["project"]; ok {
+			projectName = fmt.Sprint(project)
+		}
+		if rawModules, ok := neirMap["modules"].([]any); ok {
+			modules = rawModules
+		}
+		if rawServices, ok := neirMap["services"].([]any); ok {
+			services = rawServices
+		}
+	} else if neirStruct, ok := neir.(*model.NEIR); ok {
+		if neirStruct.Project != nil {
+			projectName = neirStruct.Project.Name
+		}
+		for _, m := range neirStruct.Modules {
+			modules = append(modules, map[string]any{"name": m.Name, "path": m.Path})
+		}
+		for _, s := range neirStruct.Services {
+			services = append(services, map[string]any{"name": s.Name, "port": s.Port, "kind": string(s.Kind)})
+		}
+		if neirStruct.Architecture != nil {
+			archPattern = string(neirStruct.Architecture.Pattern)
+		}
+		if neirStruct.Deployment != nil {
+			deployStrategy = string(neirStruct.Deployment.Strategy)
+		}
+	}
+
+	var artifacts []Artifact
+	var mu sync.Mutex
+
+	if deployStrategy != "" {
+		artifacts = append(artifacts, Artifact{
+			Path:    "docker-compose.yml",
+			Content: []byte("services:\n  app:\n    build: .\n    ports:\n      - '8080:8080'\n    deploy:\n      replicas: 2\n"),
+		})
+	}
+
+	if archPattern != "" {
+		artifacts = append(artifacts, Artifact{
+			Path:    "docs/architecture.md",
+			Content: []byte(fmt.Sprintf("# Architecture\n\nPattern: %s\n\n## Overview\n\nThis document describes the architectural decisions for %s.\n", archPattern, projectName)),
+		})
+	}
+
+	if concurrency <= 0 {
+		concurrency = 4
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(concurrency)
+
+	for _, module := range modules {
+		module := module
+		g.Go(func() error {
+			var name string
+			var path string
+
+			if moduleMap, ok := module.(map[string]any); ok {
+				name = fmt.Sprint(moduleMap["name"])
+				path = fmt.Sprint(moduleMap["path"])
+			} else if moduleStruct, ok := module.(map[string]string); ok {
+				name = moduleStruct["name"]
+				path = moduleStruct["path"]
+			}
+
+			if name == "" {
+				return nil
+			}
+			if path == "" {
+				path = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+			}
+			moduleDir := strings.TrimPrefix(path, "./")
+			if moduleDir == "" {
+				moduleDir = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+			}
+			pkg := strutil.Slugify(name)
+
+			mu.Lock()
+			artifacts = append(artifacts,
+				Artifact{Path: fmt.Sprintf("%s/README.md", moduleDir), Content: []byte(fmt.Sprintf("# %s\n\nModule for %s project.\n", name, projectName))},
+				Artifact{Path: fmt.Sprintf("%s/package.go", moduleDir), Content: []byte(fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name))},
+				Artifact{Path: fmt.Sprintf("%s/config.yaml", moduleDir), Content: []byte(fmt.Sprintf("name: %s\nmodule: %s\n", name, name))},
+			)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	for _, svc := range services {
+		svc := svc
+		g.Go(func() error {
+			var name string
+			var port int
+			var kind string
+			if serviceMap, ok := svc.(map[string]any); ok {
+				name = fmt.Sprint(serviceMap["name"])
+				if rawPort, ok := serviceMap["port"].(int); ok {
+					port = rawPort
+				}
+				kind = fmt.Sprint(serviceMap["kind"])
+			}
+			if name == "" {
+				return nil
+			}
+			serviceDir := fmt.Sprintf("internal/%s", strutil.Slugify(name))
+
+			mu.Lock()
+			artifacts = append(artifacts, Artifact{
+				Path:    fmt.Sprintf("%s/config.yaml", serviceDir),
+				Content: []byte(fmt.Sprintf("name: %s\nport: %d\nkind: %s\n", name, port, kind)),
+			})
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return artifacts, nil
 }
 
 func (DefaultEngine) Generate(neir any) ([]Artifact, error) {

@@ -20,7 +20,9 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/validator"
 	"github.com/NAEOS-foundation/naeos/internal/planner/graph"
 	"github.com/NAEOS-foundation/naeos/internal/planner/scheduler"
+	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/internal/registry"
+	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 	"github.com/NAEOS-foundation/naeos/internal/specification/normalizer"
@@ -44,6 +46,7 @@ type Config struct {
 	OutputDir  string
 	Languages  []string
 	Parallel   *bool
+	Profiling  bool
 	Parser     parser.Parser
 	Normalizer normalizer.Normalizer
 	Resolver   resolver.Resolver
@@ -101,6 +104,8 @@ type Pipeline struct {
 	verbose        bool
 	dryRun         bool
 	parallel       bool
+	profiling      bool
+	profile        *profiling.PipelineProfile
 	hooks          *Hooks
 	cache          ParseCache
 	observer       PipelineObserver
@@ -147,6 +152,11 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	if cfg.Parallel != nil {
 		parallel = *cfg.Parallel
 	}
+	profilingEnabled := cfg.Profiling
+	var profile *profiling.PipelineProfile
+	if profilingEnabled {
+		profile = profiling.NewProfile()
+	}
 	p := &Pipeline{
 		name:           cfg.Name,
 		parser:         cfg.Parser,
@@ -168,6 +178,8 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		verbose:        cfg.Verbose,
 		dryRun:         cfg.DryRun,
 		parallel:       parallel,
+		profiling:      profilingEnabled,
+		profile:        profile,
 		hooks:          cfg.Hooks,
 	}
 
@@ -294,6 +306,21 @@ func (p *Pipeline) logVerbose(format string, args ...any) {
 	if p.verbose {
 		naeoslog.Info(fmt.Sprintf(format, args...))
 	}
+}
+
+func (p *Pipeline) Profile() *profiling.PipelineProfile {
+	return p.profile
+}
+
+func (p *Pipeline) ProfileEnabled() bool {
+	return p.profiling
+}
+
+func (p *Pipeline) ProfileSave(path string) error {
+	if p.profile == nil {
+		return fmt.Errorf("profiling not enabled")
+	}
+	return profiling.SaveProfile(path, p.profile)
 }
 
 func (p *Pipeline) executeHooks(hookFuncs []HookFunc, stage string) error {
@@ -446,6 +473,29 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		return nil, err
 	}
 
+	if p.verbose {
+		client := schemaregistry.NewNEIRClient(schemaregistry.DefaultNEIRSchemaURL)
+		schema, fetchErr := client.FetchSchema()
+		if fetchErr == nil && schema != nil {
+			specPath := ""
+			if parsed != nil && parsed.Raw != "" {
+				tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("naeos-spec-%d.yaml", time.Now().UnixNano()))
+				if writeErr := os.WriteFile(tmpFile, []byte(parsed.Raw), 0o600); writeErr == nil {
+					specPath = tmpFile
+					defer os.Remove(tmpFile)
+				}
+			}
+			if specPath != "" {
+				if vr, ve := schemaregistry.ValidateNEIRSpec(specPath, schema); ve == nil && !vr.Valid {
+					naeoslog.Warn("schema validation: spec does not conform to NEIR JSON Schema")
+					for _, e := range vr.Errors {
+						naeoslog.Warn("  schema: %s: %s", e.Field, e.Message)
+					}
+				}
+			}
+		}
+	}
+
 	result := &Result{
 		Source: parsed.Raw,
 		NEIR:   neir,
@@ -487,64 +537,135 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.observer.OnPipelineStart(pipelineID)
 	}
 
+	if p.profile != nil {
+		p.profile.Start()
+	}
+
 	startTime := time.Now()
 	result, err := p.executeWithKernel(func() (*Result, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf("context canceled: %w", err)
 		}
 
+		if p.profile != nil {
+			p.profile.StartStage("hooks.before_run")
+		}
 		if err := p.executeHooks(p.getHookFuncs().BeforeRun, "run"); err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("hooks.before_run")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("validate")
+		}
 		result, err := p.validateWithoutKernel(input)
 		if err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("validate")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("build_graph")
+		}
 		p.logVerbose("building execution graph")
 		execGraph := p.buildExecutionGraph(result.NEIR)
 		result.Graph = execGraph
+		if p.profile != nil {
+			p.profile.EndStage("build_graph")
+		}
 
 		if len(p.policies) > 0 {
+			if p.profile != nil {
+				p.profile.StartStage("policy_eval")
+			}
 			p.logVerbose("evaluating %d policy rules", len(p.policies))
-			ctx := map[string]any{
+			policyCtx := map[string]any{
 				"project":  result.NEIR.Project.Name,
 				"modules":  len(result.NEIR.Modules),
 				"services": len(result.NEIR.Services),
 			}
-			if _, err := p.evaluator.EvaluateRules(p.policies, ctx); err != nil {
+			if _, err := p.evaluator.EvaluateRules(p.policies, policyCtx); err != nil {
 				return nil, fmt.Errorf("policy evaluation failed: %w", err)
+			}
+			if p.profile != nil {
+				p.profile.EndStage("policy_eval")
 			}
 		}
 
+		if p.profile != nil {
+			p.profile.StartStage("schedule")
+		}
 		p.logVerbose("scheduling %d tasks", len(result.NEIR.Modules)+len(result.NEIR.Services)+2)
 		tasks, err := p.scheduler.Schedule(result.NEIR)
 		if err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("schedule")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("hooks.before_generate")
+		}
 		if err := p.executeHooks(p.getHookFuncs().BeforeGenerate, "generate"); err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("hooks.before_generate")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("generate")
+		}
 		p.logVerbose("generating artifacts")
-		artifacts, err := p.generator.Generate(result.NEIR)
-		if err != nil {
-			return nil, err
+		var artifacts []engine.Artifact
+		if p.parallel {
+			engineArtifacts, err := engine.GenerateParallel(result.NEIR, 4)
+			if err != nil {
+				return nil, err
+			}
+			artifacts = engineArtifacts
+
+			p.logVerbose("running language adapters (parallel)")
+			adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
+			if err != nil {
+				return nil, fmt.Errorf("adapter generation failed: %w", err)
+			}
+			artifacts = append(artifacts, adapterArtifacts...)
+		} else {
+			artifacts, err = p.generator.Generate(result.NEIR)
+			if err != nil {
+				return nil, err
+			}
+
+			p.logVerbose("running language adapters")
+			adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
+			if err != nil {
+				return nil, fmt.Errorf("adapter generation failed: %w", err)
+			}
+			artifacts = append(artifacts, adapterArtifacts...)
+		}
+		if p.profile != nil {
+			p.profile.EndStage("generate")
 		}
 
-		p.logVerbose("running language adapters")
-		adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
-		if err != nil {
-			return nil, fmt.Errorf("adapter generation failed: %w", err)
+		if p.profile != nil {
+			p.profile.StartStage("hooks.after_generate")
 		}
-		artifacts = append(artifacts, adapterArtifacts...)
-
 		if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("hooks.after_generate")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("review")
+		}
 		p.logVerbose("reviewing %d artifacts", len(artifacts))
 		var reviews []*review.ReviewResult
 		for _, artifact := range artifacts {
@@ -555,7 +676,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			}
 		}
 		result.Reviews = reviews
+		if p.profile != nil {
+			p.profile.EndStage("review")
+		}
 
+		if p.profile != nil {
+			p.profile.StartStage("write")
+		}
 		if outputDir := p.outputDirValue; outputDir != "" && !p.dryRun {
 			p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
 			for _, artifact := range artifacts {
@@ -573,6 +700,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		} else if p.dryRun {
 			p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
 		}
+		if p.profile != nil {
+			p.profile.EndStage("write")
+		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
@@ -585,12 +715,21 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			"graph_edges": execGraph.EdgeCount(),
 		})
 
+		if p.profile != nil {
+			p.profile.StartStage("hooks.after_run")
+		}
 		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
 			return nil, err
+		}
+		if p.profile != nil {
+			p.profile.EndStage("hooks.after_run")
 		}
 
 		return result, nil
 	})
+	if p.profile != nil {
+		p.profile.Finish()
+	}
 	if err != nil && p.observer != nil {
 		p.observer.OnPipelineFailed(pipelineID, err.Error())
 	} else if err == nil && p.observer != nil {

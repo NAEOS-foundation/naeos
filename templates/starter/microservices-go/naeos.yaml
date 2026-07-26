@@ -1,0 +1,24 @@
+project:
+  name: microservices-go
+  version: "1.0.0"
+  modules:
+    - name: api-gateway
+      path: ./api-gateway
+    - name: user-service
+      path: ./services/user
+    - name: order-service
+      path: ./services/order
+  services:
+    - name: api-gateway
+      port: 8080
+      kind: http
+    - name: user-service
+      port: 50051
+      kind: grpc
+    - name: order-service
+      port: 50052
+      kind: grpc
+  deployment:
+    strategy: rolling
+  architecture:
+    pattern: microservices

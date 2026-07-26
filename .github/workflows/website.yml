@@ -38,6 +38,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Generate static API docs from OpenAPI spec
+        run: |
+          npm install -g redoc-cli 2>&1 | tail -3
+          mkdir -p static/docs/api
+          redoc-cli bundle ../docs/openapi.yaml \
+            -o static/docs/api/index.html \
+            --title "NAEOS API Reference" \
+            --options.sortPropsAlphabetically \
+            --options.hideDownloadButton=false \
+            --options.theme.colors.primary.main="#08d6ff" 2>&1 | tail -5
+          # Create Hugo content page that includes the generated HTML
+          cat > content/docs/api/_index.md << 'EOF'
+          ---
+          title: API Reference
+          description: Statically generated API documentation from the OpenAPI specification
+          weight: 17
+          ---
+
+          {{< api-docs >}}
+          EOF
       - name: Generate OG images
         run: |
           npm ci 2>&1 | tail -3

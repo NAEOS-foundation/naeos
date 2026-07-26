@@ -1,0 +1,8 @@
+project:
+  name: rust-cli-tool
+  version: "0.9.0"
+  modules:
+    - name: cli
+      path: ./src
+  architecture:
+    pattern: monolith

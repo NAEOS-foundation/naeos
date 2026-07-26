@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,12 @@ func (c *Cache) SetMaxAge(d time.Duration) {
 	c.maxAge = d
 }
 
+type ModuleCacheKey struct {
+	SpecHash string
+	Module   string
+	Stage    string
+}
+
 func (c *Cache) Get(specHash string) (*pipeline.Result, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -81,6 +88,64 @@ func (c *Cache) Set(specHash string, result *pipeline.Result) {
 	}
 
 	c.saveToDisk(specHash)
+}
+
+func (c *Cache) ModuleKey(specHash, moduleName, stage string) string {
+	return fmt.Sprintf("%s_%s_%s", specHash, moduleName, stage)
+}
+
+func (c *Cache) GetModuleStage(key string) ([]byte, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	entry, ok := c.entries[key]
+	if !ok {
+		return nil, false
+	}
+	if c.maxAge > 0 && time.Since(entry.Timestamp) > c.maxAge {
+		delete(c.entries, key)
+		os.Remove(filepath.Join(c.dir, key+".json"))
+		return nil, false
+	}
+	entry.HitCount++
+	entry.Timestamp = time.Now()
+	return []byte(fmt.Sprintf("%v", entry.Result)), true
+}
+
+func (c *Cache) SetModuleStage(key string, data []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.entries) >= c.maxSize {
+		c.evictLRU()
+	}
+	c.entries[key] = &CacheEntry{
+		Key:       key,
+		Timestamp: time.Now(),
+	}
+	_ = os.WriteFile(filepath.Join(c.dir, key+".json"), data, 0o600)
+}
+
+func (c *Cache) InvalidateModule(specHash, moduleName string) {
+	for key := range c.entries {
+		if strings.Contains(key, specHash+"_"+moduleName) {
+			delete(c.entries, key)
+			os.Remove(filepath.Join(c.dir, key+".json"))
+		}
+	}
+}
+
+func (c *Cache) UnchangedModules(specHash string, moduleHashes map[string]string) []string {
+	var unchanged []string
+	for moduleName, moduleHash := range moduleHashes {
+		key := c.ModuleKey(specHash, moduleName, "content")
+		if _, ok := c.entries[key]; ok {
+			unchanged = append(unchanged, moduleName)
+		} else {
+			c.SetModuleStage(key, []byte(moduleHash))
+		}
+	}
+	return unchanged
 }
 
 func (c *Cache) HashSpec(spec string) string {

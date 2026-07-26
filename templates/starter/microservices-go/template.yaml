@@ -1,0 +1,7 @@
+name: microservices-go
+version: "1.0.0"
+description: Go microservices starter project with gRPC, REST API, and event-driven communication
+author: NAEOS Foundation
+tags: [go, microservices, grpc, rest, official]
+languages: [go]
+frameworks: [grpc, rest, nats]
