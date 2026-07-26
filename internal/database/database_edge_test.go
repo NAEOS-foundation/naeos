@@ -48,7 +48,7 @@ func TestManagerCloseAllWithErrorDetail(t *testing.T) {
 func TestStoreLoadFileNotFound(t *testing.T) {
 	dir := t.TempDir()
 	s := &ConnectionStore{dir: dir}
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		t.Fatalf("expected no error for missing file: %v", err)
 	}
 }

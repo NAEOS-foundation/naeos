@@ -37,7 +37,7 @@ func (s *ConnectionStore) filePath() string {
 	return filepath.Join(s.dir, connectionsFile)
 }
 
-func (s *ConnectionStore) load() error {
+func (s *ConnectionStore) loadLocked() error {
 	data, err := os.ReadFile(s.filePath())
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -49,7 +49,7 @@ func (s *ConnectionStore) load() error {
 	return json.Unmarshal(data, &s.entries)
 }
 
-func (s *ConnectionStore) save() error {
+func (s *ConnectionStore) saveLocked() error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create connections dir")
 	}
@@ -64,7 +64,7 @@ func (s *ConnectionStore) Add(name, driver string, config *Config) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return err
 	}
 
@@ -75,31 +75,31 @@ func (s *ConnectionStore) Add(name, driver string, config *Config) error {
 	}
 
 	s.entries = append(s.entries, SavedConnection{Name: name, Driver: driver, Config: config})
-	return s.save()
+	return s.saveLocked()
 }
 
 func (s *ConnectionStore) Remove(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return err
 	}
 
 	for i, e := range s.entries {
 		if e.Name == name {
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
-			return s.save()
+			return s.saveLocked()
 		}
 	}
 	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("connection %q not found", name))
 }
 
 func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return nil, err
 	}
 
@@ -112,10 +112,10 @@ func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
 }
 
 func (s *ConnectionStore) List() ([]SavedConnection, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return nil, err
 	}
 	result := make([]SavedConnection, len(s.entries))
