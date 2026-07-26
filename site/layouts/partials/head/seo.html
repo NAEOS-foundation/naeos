@@ -1,37 +1,29 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}</title>
+<meta name="description" content="{{ .Description | default .Site.Params.description }}">
 <meta name="keywords" content="NAEOS, declarative engineering, platform engineering, NEIR, specification, code generation, AI compiler, open source">
 <meta name="robots" content="index, follow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="author" content="NAEOS Foundation">
 <link rel="canonical" href="{{ .Permalink }}">
 <link rel="apple-touch-icon" href="/images/icon-192.svg">
 <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}">
 <meta property="og:description" content="{{ .Description | default .Site.Params.description }}">
 <meta property="og:type" content="{{ if or .IsHome (ne .Section "blog") }}website{{ else }}article{{ end }}">
 <meta property="og:url" content="{{ .Permalink }}">
-{{ $ogImage := .Params.og_image | default "" }}
-{{ if $ogImage }}
+{{ $ogImage := .Params.og_image | default "images/og-default.png" }}
 <meta property="og:image" content="{{ $ogImage | absURL }}">
 <meta property="og:image:type" content="image/{{ if hasSuffix $ogImage ".png" }}png{{ else if hasSuffix $ogImage ".jpg" }}jpeg{{ else }}svg+xml{{ end }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-{{ else }}
-<meta property="og:image" content="{{ "images/og-default.svg" | absURL }}">
-<meta property="og:image:type" content="image/svg+xml">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image" content="{{ "images/og-default.png" | absURL }}">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image" content="{{ "images/og-default-light.png" | absURL }}">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-{{ end }}
 <meta property="og:site_name" content="NAEOS">
 <meta property="og:locale" content="{{ if eq .Lang "id" }}id_ID{{ else }}en_US{{ end }}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@naeos_dev">
 <meta name="twitter:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} — {{ .Site.Title }}{{ end }}">
 <meta name="twitter:description" content="{{ .Description | default .Site.Params.description }}">
-<meta name="twitter:image" content="{{ "images/og-default.svg" | absURL }}">
+<meta name="twitter:image" content="{{ "images/og-default.png" | absURL }}">
 <meta name="twitter:image:width" content="1200">
 <meta name="twitter:image:height" content="630">
 {{ range .Translations }}
@@ -41,6 +33,9 @@
 <link rel="alternate" hreflang="en" href="{{ .Site.BaseURL }}">
 {{ if .Date }}
 <meta property="article:published_time" content="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+{{ end }}
+{{ if .Lastmod }}
+<meta property="article:modified_time" content="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
 {{ end }}
 {{ with .Params.categories }}{{ range . }}
 <meta property="article:tag" content="{{ . }}">
@@ -60,7 +55,7 @@
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "softwareVersion": "{{ .Site.Params.version }}",
             "downloadUrl": "{{ "download/" | absURL }}",
-            "screenshot": "{{ "images/og-default.svg" | absURL }}"
+            "screenshot": "{{ "images/og-default.png" | absURL }}"
         },
         {
             "@type": "WebSite",

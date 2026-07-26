@@ -18,7 +18,7 @@
                 <a href="{{ "docs/architecture/" | relLangURL }}" class="btn btn-secondary">{{ i18n "cta_read_docs" }}</a>
             </div>
             <div class="what-is-diagram">
-                <svg class="arch-svg" viewBox="0 0 400 320" fill="none">
+                <svg class="arch-svg" viewBox="0 0 400 320" fill="none" role="img" aria-label="NAEOS pipeline architecture diagram showing Spec YAML/JSON and CLI Commands flowing into Core Runtime, then Parser, NEIR Model, and Generator, outputting Go, TypeScript, Python, Java, and Rust">
                     <rect x="10" y="10" width="380" height="300" rx="12" stroke="#2a2a2a" stroke-width="1.5" fill="#111"/>
                     <text x="200" y="40" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="2">NAEOS PIPELINE</text>
                     <rect x="30" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
@@ -52,20 +52,20 @@
 
 <div class="container">
     <div class="stats-grid stagger-fade">
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}">0</div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}" aria-hidden="true">0</div>
             <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}">0</div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}" aria-hidden="true">0</div>
             <div class="stat-label">{{ i18n "stats_languages" }}</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}">0</div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}" aria-hidden="true">0</div>
             <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}">0</div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}" aria-hidden="true">0</div>
             <div class="stat-label">{{ i18n "stats_specs" }}</div>
         </div>
     </div>
@@ -77,32 +77,32 @@
         <p class="section-subtitle fade-in">{{ i18n "home_features_subtitle" (dict "CLI" .Site.Params.stats.cli) }}</p>
         <div class="features-grid stagger-fade">
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 <h3>{{ i18n "feature_pipeline" }}</h3>
                 <p>{{ i18n "feature_pipeline_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 2 12"/><path d="M12 2 12 12"/><path d="M12 12 12 22"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 2 12"/><path d="M12 2 12 12"/><path d="M12 12 12 22"/></svg>
                 <h3>{{ i18n "feature_compiler" }}</h3>
                 <p>{{ i18n "feature_compiler_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 <h3>{{ i18n "feature_generator" }}</h3>
                 <p>{{ i18n "feature_generator_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
                 <h3>{{ i18n "feature_neir" }}</h3>
                 <p>{{ i18n "feature_neir_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <h3>{{ i18n "feature_governance" }}</h3>
                 <p>{{ i18n "feature_governance_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
                 <h3>{{ i18n "feature_marketplace" }}</h3>
                 <p>{{ i18n "feature_marketplace_desc" }}</p>
             </div>
