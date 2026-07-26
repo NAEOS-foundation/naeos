@@ -467,6 +467,24 @@ func TestPipelineObserverRunLifecycle(t *testing.T) {
 	}
 }
 
+func TestPipelineObserverArtifactGeneratedDuringRun(t *testing.T) {
+	rec := &artifactRecorder{}
+	p, err := New(Config{
+		Observer:  rec,
+		OutputDir: t.TempDir(),
+	})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	_, err = p.Run("project: artifacts\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if len(rec.artifacts) == 0 {
+		t.Fatal("expected OnArtifactGenerated to be called during Run")
+	}
+}
+
 type lifecycleRecorder struct {
 	started  bool
 	complete bool

@@ -696,6 +696,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 				if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
 					return nil, fmt.Errorf("write artifact %s: %w", artifact.Path, err)
 				}
+				if p.observer != nil {
+					p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
+				}
 			}
 		} else if p.dryRun {
 			p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
