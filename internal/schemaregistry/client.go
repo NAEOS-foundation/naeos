@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const (

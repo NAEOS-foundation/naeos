@@ -6,8 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var specProjectStartRe = regexp.MustCompile(`^[a-zA-Z0-9]`)

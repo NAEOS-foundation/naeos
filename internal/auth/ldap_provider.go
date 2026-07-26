@@ -243,7 +243,7 @@ func (c *ldapConn) search(_, filter, baseDN string) (map[string]string, error) {
 }
 
 func encLen(n int) byte {
-	if n > 255 {
+	if n > 255 || n < 0 {
 		return 255
 	}
 	return byte(n)

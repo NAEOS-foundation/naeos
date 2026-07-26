@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealPostgreSQL struct {

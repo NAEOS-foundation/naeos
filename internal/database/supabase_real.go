@@ -10,8 +10,9 @@ import (
 	"sync"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/supabase"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 

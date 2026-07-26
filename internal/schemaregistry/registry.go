@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"golang.org/x/mod/semver"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // SchemaEntry represents a versioned schema in the registry.

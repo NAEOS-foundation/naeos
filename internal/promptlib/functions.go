@@ -5,8 +5,9 @@ import (
 	"strings"
 	"text/template"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // FuncMap provides custom template functions for prompt rendering.

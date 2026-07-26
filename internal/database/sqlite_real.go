@@ -7,8 +7,9 @@ import (
 	"database/sql"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	_ "modernc.org/sqlite"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealSQLite struct {

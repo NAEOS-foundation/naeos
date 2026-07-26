@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	_ "github.com/go-sql-driver/mysql"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealMySQL struct {

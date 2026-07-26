@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Manifest represents the registry of all prompt templates in the library.
