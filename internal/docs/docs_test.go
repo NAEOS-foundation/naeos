@@ -471,7 +471,8 @@ func TestMarkdownDocumentEmpty(t *testing.T) {
 // --- ReadmeGenerator tests ---
 
 func TestReadmeGeneratorBasic(t *testing.T) {
-	rg := NewReadmeGenerator("my-app", "A great app")
+	rg := NewReadmeGenerator("my-app", "A great app").
+		WithFeatures([]string{"fast", "reliable"})
 	content := rg.Generate()
 	if !testutil.Contains(content, "# my-app") {
 		t.Error("expected title")
@@ -555,8 +556,8 @@ func TestReadmeGeneratorWithFeatures(t *testing.T) {
 func TestReadmeGeneratorNoFeatures(t *testing.T) {
 	rg := NewReadmeGenerator("app", "Desc")
 	content := rg.Generate()
-	if !testutil.Contains(content, "TODO") {
-		t.Error("expected TODO placeholder when no features")
+	if testutil.Contains(content, "Features") {
+		t.Error("expected no features section when no features provided")
 	}
 }
 
