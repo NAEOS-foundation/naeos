@@ -166,7 +166,7 @@ func (w *Watcher) Snapshot() (map[string]int64, error) {
 func (w *Watcher) DetectChanges(prev map[string]int64) []WatchEvent {
 	var events []WatchEvent
 	for _, dir := range w.directories {
-		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
 			}
@@ -185,6 +185,9 @@ func (w *Watcher) DetectChanges(prev map[string]int64) []WatchEvent {
 			}
 			return nil
 		})
+		if err != nil {
+			naeoslog.Warn("file walk error during change detection", "dir", dir, "error", err)
+		}
 	}
 	return events
 }

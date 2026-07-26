@@ -3,6 +3,7 @@ package eventsourcing
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -241,7 +242,10 @@ func (s *FileStore) Append(streamID string, events []Event) error {
 		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "invalid streamID")
 	}
 
-	existing, _ := s.loadRaw(streamID)
+	existing, err := s.loadRaw(streamID)
+	if err != nil {
+		slog.Warn("failed to load existing events, starting fresh", "stream", streamID, "error", err)
+	}
 	startVersion := len(existing) + 1
 	for i := range events {
 		events[i].Version = startVersion + i

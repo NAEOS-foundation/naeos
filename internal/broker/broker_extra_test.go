@@ -400,8 +400,6 @@ func TestConnectionStoreCorruptedJSON(t *testing.T) {
 
 	dir := t.TempDir()
 	s := &ConnectionStore{dir: dir}
-	_ = fmt.Sprintf // ensure fmt is used
-
 	_, err := s.Get("test")
 	if err == nil {
 		t.Fatal("expected error for empty store")

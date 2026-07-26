@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -232,7 +233,9 @@ func (a *AWSAdapter) Destroy(config *DeployConfig) error {
 		if err := tr.ApplyDestroy(); err == nil {
 			pool.Remove(config.Project, AWS)
 			sm := NewStateManager()
-			_ = sm.Delete(config.Project, AWS)
+			if err := sm.Delete(config.Project, AWS); err != nil {
+				slog.Warn("failed to delete aws state after pool destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -245,7 +248,9 @@ func (a *AWSAdapter) Destroy(config *DeployConfig) error {
 			tr.Runner = a.Runner
 		}
 		if derr := tr.DestroyAll(); derr == nil {
-			_ = sm.Delete(config.Project, AWS)
+			if err := sm.Delete(config.Project, AWS); err != nil {
+				slog.Warn("failed to delete aws state after destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -279,7 +284,9 @@ func (a *AWSAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 
-	_ = sm.Delete(config.Project, AWS)
+	if err := sm.Delete(config.Project, AWS); err != nil {
+		slog.Warn("failed to delete aws state after terraform destroy", "project", config.Project, "error", err)
+	}
 	return nil
 }
 

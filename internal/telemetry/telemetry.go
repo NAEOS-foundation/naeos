@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
@@ -722,5 +721,3 @@ func (e *InMemoryExporter) Reset() {
 	e.spans = e.spans[:0]
 }
 
-// Ensure unused import suppression.
-var _ = atomic.LoadInt64

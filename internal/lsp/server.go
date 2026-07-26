@@ -196,6 +196,8 @@ func (s *Server) writeMessage(msg any) {
 		return
 	}
 	if f, ok := s.writer.(*os.File); ok {
-		_ = f.Sync()
+		if err := f.Sync(); err != nil {
+			log.Printf("Failed to sync file: %v", err)
+		}
 	}
 }

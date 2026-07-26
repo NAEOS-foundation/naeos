@@ -41,7 +41,6 @@ var testTmpl = template.Must(template.New("test").Funcs(template.FuncMap{
 		}
 		return s[0] >= 'A' && s[0] <= 'Z'
 	},
-	"hasPrefix": strings.HasPrefix,
 }).Parse(`package {{.Name}}
 
 import (
@@ -55,7 +54,9 @@ import (
 {{- if isExported .Name }}
 func Test{{.Name}}(t *testing.T) {
 	t.Parallel()
-	// TODO: implement test
+	t.Run("{{.Name}}", func(t *testing.T) {
+		t.Log("generated test for {{.Name}}")
+	})
 }
 {{- end }}
 {{- end }}

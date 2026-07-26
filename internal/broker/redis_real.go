@@ -66,7 +66,9 @@ func (r *RealRedis) Close() error {
 	defer r.mu.Unlock()
 
 	for channel, sub := range r.subscribers {
-		_ = sub.Close()
+		if err := sub.Close(); err != nil {
+			slog.Warn("redis subscriber close error", "channel", channel, "error", err)
+		}
 		delete(r.subscribers, channel)
 	}
 
@@ -116,7 +118,9 @@ func (r *RealRedis) Subscribe(channel string, handler MessageHandler) error {
 	sub := client.Subscribe(context.Background(), channel)
 
 	if err := sub.Ping(context.Background()); err != nil {
-		_ = sub.Close()
+		if cerr := sub.Close(); cerr != nil {
+			slog.Warn("redis subscriber close error after ping failure", "channel", channel, "error", cerr)
+		}
 		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "subscribe to %s", channel)
 	}
 
@@ -156,7 +160,9 @@ func (r *RealRedis) Unsubscribe(channel string) error {
 	defer r.mu.Unlock()
 
 	if sub, ok := r.subscribers[channel]; ok {
-		_ = sub.Close()
+		if err := sub.Close(); err != nil {
+			slog.Warn("redis subscriber close error during unsubscribe", "channel", channel, "error", err)
+		}
 		delete(r.subscribers, channel)
 	}
 	return nil

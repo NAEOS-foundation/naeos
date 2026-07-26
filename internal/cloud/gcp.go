@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -229,7 +230,9 @@ func (a *GCPAdapter) Destroy(config *DeployConfig) error {
 		if err := tr.ApplyDestroy(); err == nil {
 			pool.Remove(config.Project, GCP)
 			sm := NewStateManager()
-			_ = sm.Delete(config.Project, GCP)
+			if err := sm.Delete(config.Project, GCP); err != nil {
+				slog.Warn("failed to delete gcp state after pool destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -242,7 +245,9 @@ func (a *GCPAdapter) Destroy(config *DeployConfig) error {
 			tr.Runner = a.Runner
 		}
 		if derr := tr.DestroyAll(); derr == nil {
-			_ = sm.Delete(config.Project, GCP)
+			if err := sm.Delete(config.Project, GCP); err != nil {
+				slog.Warn("failed to delete gcp state after destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -276,7 +281,9 @@ func (a *GCPAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 
-	_ = sm.Delete(config.Project, GCP)
+	if err := sm.Delete(config.Project, GCP); err != nil {
+		slog.Warn("failed to delete gcp state after terraform destroy", "project", config.Project, "error", err)
+	}
 	return nil
 }
 

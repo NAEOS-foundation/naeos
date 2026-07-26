@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 )
 
 type StageCacheEntry struct {
@@ -156,5 +158,7 @@ func (s *StageCache) saveToDisk(key string, entry *StageCacheEntry) {
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(filepath.Join(s.dir, key+".json"), data, 0o600)
+	if err := os.WriteFile(filepath.Join(s.dir, key+".json"), data, 0o600); err != nil {
+		naeoslog.Warn("failed to write stage cache", "key", key, "error", err)
+	}
 }

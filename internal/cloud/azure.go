@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -220,7 +221,9 @@ func (a *AzureAdapter) Destroy(config *DeployConfig) error {
 		if err := tr.ApplyDestroy(); err == nil {
 			pool.Remove(config.Project, Azure)
 			sm := NewStateManager()
-			_ = sm.Delete(config.Project, Azure)
+			if err := sm.Delete(config.Project, Azure); err != nil {
+				slog.Warn("failed to delete azure state after pool destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -233,7 +236,9 @@ func (a *AzureAdapter) Destroy(config *DeployConfig) error {
 			tr.Runner = a.Runner
 		}
 		if derr := tr.DestroyAll(); derr == nil {
-			_ = sm.Delete(config.Project, Azure)
+			if err := sm.Delete(config.Project, Azure); err != nil {
+				slog.Warn("failed to delete azure state after destroy", "project", config.Project, "error", err)
+			}
 			return nil
 		}
 	}
@@ -267,7 +272,9 @@ func (a *AzureAdapter) Destroy(config *DeployConfig) error {
 		return err
 	}
 
-	_ = sm.Delete(config.Project, Azure)
+	if err := sm.Delete(config.Project, Azure); err != nil {
+		slog.Warn("failed to delete azure state after terraform destroy", "project", config.Project, "error", err)
+	}
 	return nil
 }
 

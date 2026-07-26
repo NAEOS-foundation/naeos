@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
@@ -721,4 +720,3 @@ func ListResolver(items []any) Resolver {
 	}
 }
 
-var _ = time.Now

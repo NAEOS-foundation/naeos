@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"os"
 	"sort"
@@ -93,7 +94,9 @@ func persistStats() {
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(statsFile, data, 0o600)
+	if err := os.WriteFile(statsFile, data, 0o600); err != nil {
+		slog.Warn("failed to persist stats", "file", statsFile, "error", err)
+	}
 }
 
 func loadStats() {
@@ -104,7 +107,9 @@ func loadStats() {
 	if err != nil {
 		return
 	}
-	_ = json.Unmarshal(data, &globalStats)
+	if err := json.Unmarshal(data, &globalStats); err != nil {
+		slog.Warn("failed to parse stats", "file", statsFile, "error", err)
+	}
 }
 
 // --- DashboardConfig ---

@@ -3,7 +3,6 @@
 package broker
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -396,4 +395,3 @@ func TestBrokerStoreRemoveFirst(t *testing.T) {
 	}
 }
 
-var _ = fmt.Sprintf
