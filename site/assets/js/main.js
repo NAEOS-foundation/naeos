@@ -22,9 +22,12 @@ document.addEventListener('DOMContentLoaded', function () {
   initSidebarFilter();
   initImageLightbox();
   initPageTransitions();
+  initDownloadOS();
+  initBlogFilter();
   initDocsDrawer();
   initTocScrollspy();
   initSyntaxLabels();
+
 });
 
 function toggleMobileMenu(force) {
@@ -177,29 +180,83 @@ function initGitHubStats() {
 }
 
 var playgroundSamples = {
-  yaml: 'project: my-service\nversion: "1.0"\nmodules:\n  - name: api-gateway\n    path: ./api-gateway\n    dependencies: [user-service, order-service]\n  - name: user-service\n    path: ./services/users\n    dependencies: [database]\n  - name: order-service\n    path: ./services/orders\n    dependencies: [user-service, payment-service]\n  - name: payment-service\n    path: ./services/payments\n  - name: database\n    path: ./infra/db\nservices:\n  - name: api-gateway\n    kind: reverse-proxy\n    port: 8080\n  - name: user-api\n    kind: rest\n    port: 9001\n  - name: order-api\n    kind: rest\n    port: 9002\narchitecture:\n  pattern: microservices\ngeneration:\n  languages: [go, typescript]\n  output_dir: ./generated',
+  microservices: 'project: my-service\nversion: "1.0"\nmodules:\n  - name: api-gateway\n    path: ./api-gateway\n    dependencies: [user-service, order-service]\n  - name: user-service\n    path: ./services/users\n    dependencies: [database]\n  - name: order-service\n    path: ./services/orders\n    dependencies: [user-service, payment-service]\n  - name: payment-service\n    path: ./services/payments\n  - name: database\n    path: ./infra/db\nservices:\n  - name: api-gateway\n    kind: reverse-proxy\n    port: 8080\n  - name: user-api\n    kind: rest\n    port: 9001\n  - name: order-api\n    kind: rest\n    port: 9002\narchitecture:\n  pattern: microservices\ngeneration:\n  languages: [go, typescript]\n  output_dir: ./generated',
   serverless: 'project: serverless-app\nversion: "1.0"\nmodules:\n  - name: auth\n    path: ./functions/auth\n  - name: api\n    path: ./functions/api\n    dependencies: [auth]\n  - name: processor\n    path: ./functions/processor\n    dependencies: [api]\nservices:\n  - name: auth-function\n    kind: lambda\n  - name: api-function\n    kind: lambda\n  - name: processor-function\n    kind: lambda\narchitecture:\n  pattern: serverless\ndeployment:\n  strategy: serverless-framework\ngeneration:\n  languages: [python, typescript]',
   monolith: 'project: monolith-app\nversion: "1.0"\nmodules:\n  - name: core\n    path: ./core\n  - name: web\n    path: ./web\n    dependencies: [core]\n  - name: database\n    path: ./infra/db\n    dependencies: [core]\nservices:\n  - name: web-server\n    kind: http\n    port: 8080\narchitecture:\n  pattern: monolithic\ndeployment:\n  strategy: docker-compose\ngeneration:\n  languages: [go]\n  output_dir: ./cmd',
+  hexagonal: 'project: clean-arch-app\nversion: "1.0"\nmodules:\n  - name: domain\n    path: ./internal/domain\n  - name: application\n    path: ./internal/application\n    dependencies: [domain]\n  - name: adapters-inbound\n    path: ./internal/adapters/inbound\n    dependencies: [application]\n  - name: adapters-outbound\n    path: ./internal/adapters/outbound\n    dependencies: [application]\n  - name: infrastructure\n    path: ./internal/infrastructure\n    dependencies: [adapters-outbound]\nservices:\n  - name: rest-api\n    kind: rest\n    port: 8080\n  - name: grpc-api\n    kind: grpc\n    port: 9090\narchitecture:\n  pattern: hexagonal\ngeneration:\n  languages: [go, java]\n  output_dir: ./src',
+  'event-driven': 'project: events-platform\nversion: "1.0"\nmodules:\n  - name: event-ingestor\n    path: ./ingest\n  - name: stream-processor\n    path: ./process\n    dependencies: [event-ingestor]\n  - name: analytics\n    path: ./analytics\n    dependencies: [stream-processor]\n  - name: notification\n    path: ./notify\n    dependencies: [stream-processor]\nservices:\n  - name: ingestion-api\n    kind: rest\n    port: 8080\n  - name: stream-worker\n    kind: worker\n    port: 9001\n  - name: notification-ws\n    kind: websocket\n    port: 9002\narchitecture:\n  pattern: event-driven\ndeployment:\n  strategy: kubernetes\ngeneration:\n  languages: [go, typescript, python]\n  output_dir: ./generated',
   'ai-context': 'project: my-genai-service\nversion: "1.0"\nmodules:\n  - name: agent-orchestrator\n    path: ./orchestrator\n    dependencies: [llm-provider, memory-store]\n  - name: llm-provider\n    path: ./providers/llm\n    dependencies: [vector-db]\n  - name: memory-store\n    path: ./stores/memory\n  - name: vector-db\n    path: ./infra/vector\n    kind: database\n    engine: qdrant\nservices:\n  - name: api-gateway\n    kind: reverse-proxy\n    port: 8080\n  - name: chat-api\n    kind: rest\n    port: 9001\n  - name: streaming-ws\n    kind: websocket\n    port: 9002\narchitecture:\n  pattern: microservices\nai:\n  providers:\n    - name: openai\n      models: [gpt-4o, gpt-4o-mini]\n    - name: anthropic\n      models: [claude-opus-4, claude-sonnet-4]\n  context:\n    format: neir\n    compression: semantic\n    max_tokens: 128000\ngeneration:\n  languages: [go, typescript, python]\n  ai_instructions: true\n  output_dir: ./generated'
 };
 
+var playgroundEditor = null;
+
 function initPlayground() {
-  var input = document.getElementById('playground-input');
+  var textarea = document.getElementById('playground-input');
   var output = document.getElementById('playground-output');
-  if (!input || !output) return;
-  input.value = playgroundSamples.yaml;
+  if (!textarea || !output) return;
+
+  if (typeof CodeMirror !== 'undefined') {
+    playgroundEditor = CodeMirror.fromTextArea(textarea, {
+      mode: 'yaml',
+      theme: 'material-darker',
+      lineNumbers: true,
+      lineWrapping: false,
+      indentUnit: 2,
+      tabSize: 2,
+      styleActiveLine: true,
+      matchBrackets: true,
+      viewportMargin: Infinity
+    });
+    playgroundEditor.setValue(playgroundSamples.microservices);
+    playgroundEditor.on('change', debounce(updatePlaygroundPreview, 200));
+  } else {
+    textarea.value = playgroundSamples.microservices;
+    textarea.addEventListener('input', debounce(updatePlaygroundPreview, 200));
+  }
   updatePlaygroundPreview();
-  input.addEventListener('input', debounce(updatePlaygroundPreview, 200));
+}
+
+function getPlaygroundValue() {
+  if (playgroundEditor) return playgroundEditor.getValue();
+  return (document.getElementById('playground-input') || {}).value || '';
+}
+
+function setPlaygroundValue(val) {
+  if (playgroundEditor) {
+    playgroundEditor.setValue(val);
+  } else {
+    var input = document.getElementById('playground-input');
+    if (input) input.value = val;
+  }
+  updatePlaygroundPreview();
 }
 
 function switchPlayground(btn, name) {
   var tabs = document.querySelectorAll('.playground-tab');
   tabs.forEach(function (t) { t.classList.remove('active'); });
   btn.classList.add('active');
-  var input = document.getElementById('playground-input');
-  if (input && playgroundSamples[name]) {
-    input.value = playgroundSamples[name];
-    updatePlaygroundPreview();
+  if (playgroundSamples[name]) {
+    setPlaygroundValue(playgroundSamples[name]);
+  }
+}
+
+function copyPlaygroundSpec() {
+  var text = getPlaygroundValue();
+  navigator.clipboard.writeText(text).then(function () {
+    var btn = document.querySelector('.playground-toolbar-actions .btn');
+    var orig = btn.textContent;
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(function () { btn.innerHTML = orig; }, 2000);
+  });
+}
+
+function tryInTerminal() {
+  var terminal = document.getElementById('interactive-terminal');
+  var staticTerminal = document.getElementById('hero-terminal-static');
+  if (terminal && staticTerminal) {
+    staticTerminal.style.display = 'none';
+    terminal.style.display = 'block';
+    terminal.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
@@ -209,90 +266,6 @@ function debounce(fn, ms) {
     clearTimeout(timer);
     timer = setTimeout(fn, ms);
   };
-}
-
-function parseYAML(text) {
-  var result = {};
-  var stack = [{ obj: result, indent: -1 }];
-  var lines = text.split('\n');
-  var currentKey = null;
-  var inListItem = false;
-
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (!line.trim() || line.trim().charAt(0) === '#') continue;
-
-    var indent = line.search(/\S/);
-    var trimmed = line.trim();
-
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
-      stack.pop();
-    }
-
-    var parent = stack[stack.length - 1].obj;
-
-    if (trimmed.startsWith('- ')) {
-      var itemContent = trimmed.substring(2);
-      if (itemContent.indexOf(': ') > 0) {
-        var kv = itemContent.split(': ');
-        var key = kv[0].trim();
-        var val = kv.slice(1).join(': ').trim();
-        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
-        var item = {};
-        item[key] = parseValue(val);
-        parent[currentKey].push(item);
-        inListItem = true;
-        currentKey = null;
-      } else if (itemContent.indexOf(':') === itemContent.length - 1) {
-        var objKey = itemContent.slice(0, -1).trim();
-        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
-        var newObj = {};
-        parent[currentKey].push(newObj);
-        stack.push({ obj: newObj, indent: indent });
-        currentKey = objKey;
-        newObj[objKey] = {};
-        inListItem = true;
-      } else {
-        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
-        parent[currentKey].push(parseValue(itemContent));
-        inListItem = true;
-      }
-    } else if (trimmed.indexOf(': ') > 0 || trimmed.charAt(trimmed.length - 1) === ':') {
-      var colonIdx = trimmed.indexOf(': ');
-      var key, val;
-      if (colonIdx > 0) {
-        key = trimmed.substring(0, colonIdx).trim();
-        val = trimmed.substring(colonIdx + 2).trim();
-      } else {
-        key = trimmed.slice(0, -1).trim();
-        val = null;
-      }
-      inListItem = false;
-      currentKey = key;
-      if (val !== null) {
-        parent[key] = parseValue(val);
-      } else {
-        parent[key] = {};
-        stack.push({ obj: parent[key], indent: indent });
-      }
-    }
-  }
-  return result;
-}
-
-function parseValue(v) {
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  if (v === 'null' || v === '~') return null;
-  if (/^-?\d+$/.test(v)) return parseInt(v, 10);
-  if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
-  if ((v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') || (v.charAt(0) === "'" && v.charAt(v.length - 1) === "'")) {
-    return v.slice(1, -1);
-  }
-  if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') {
-    return v.slice(1, -1).split(',').map(function (s) { return s.trim(); });
-  }
-  return v;
 }
 
 function countDeps(modules) {
@@ -307,16 +280,17 @@ function countDeps(modules) {
 }
 
 function updatePlaygroundPreview() {
-  var input = document.getElementById('playground-input');
   var output = document.getElementById('playground-output');
-  if (!input || !output) return;
-  var text = input.value;
+  if (!output) return;
+  var text = getPlaygroundValue();
 
   var labels = window.PLAYGROUND_I18N || {};
   var html = '<h4>' + escapeHtml(labels.preview || 'NEIR Model Preview') + '</h4>';
 
   try {
-    var spec = parseYAML(text);
+    var spec = jsyaml.load(text);
+    if (!spec || typeof spec !== 'object') throw new Error('Empty spec');
+
     var modules = spec.modules || [];
     var services = spec.services || [];
     var arch = spec.architecture || {};
@@ -381,6 +355,10 @@ function updatePlaygroundPreview() {
       html += '<div class="tree-node"><span class="tree-key">languages:</span> <span class="tree-str">' + escapeHtml(gen.languages.join(', ')) + '</span></div>';
       if (gen.output_dir) html += '<div class="tree-node"><span class="tree-key">output:</span> <span class="tree-str">' + escapeHtml(gen.output_dir) + '</span></div>';
       html += '</div>';
+    }
+
+    if (arch.pattern && arch.pattern === 'hexagonal') {
+      html += '<div class="tree-node tree-dep" style="margin-top:0.5rem;"><span class="tree-dim">  └─ architecture:</span> <span class="tree-str">Domain → Application → Adapters → Infrastructure</span></div>';
     }
 
   } catch (e) {
@@ -1040,5 +1018,193 @@ function initSyntaxLabels() {
   document.querySelectorAll('.highlight code[data-lang]').forEach(function (code) {
     var highlight = code.closest('.highlight');
     if (highlight) highlight.dataset.lang = code.dataset.lang;
+  });
+  document.querySelectorAll('.highlight').forEach(function (el) {
+    var pre = el.querySelector('pre');
+    if (pre && !pre.querySelector('.line-numbers-rows')) {
+      var code = pre.querySelector('code');
+      if (code && code.textContent.split('\n').length > 3) {
+        var lines = code.textContent.split('\n').length;
+        var nums = document.createElement('span');
+        nums.className = 'line-numbers-rows';
+        for (var i = 1; i < lines; i++) {
+          var n = document.createElement('span');
+          n.textContent = i;
+          nums.appendChild(n);
+        }
+        pre.insertBefore(nums, pre.firstChild);
+      }
+    }
+  });
+}
+
+var _playgroundView = 'neir';
+
+function switchPlaygroundView(view) {
+  _playgroundView = view;
+  document.querySelectorAll('.view-toggle-btn').forEach(function (b) {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  updatePlaygroundPreview();
+}
+
+
+// Override updatePlaygroundPreview to support AI context view
+var _origUpdatePreview = updatePlaygroundPreview;
+updatePlaygroundPreview = function () {
+  var output = document.getElementById('playground-output');
+  if (!output) return;
+  var text = getPlaygroundValue();
+  if (_playgroundView === 'ai') {
+    renderAIContext(output, text);
+    return;
+  }
+  _origUpdatePreview();
+};
+
+function renderAIContext(output, text) {
+  var labels = window.PLAYGROUND_I18N || {};
+  var html = '<h4>AI Context Bundle</h4>';
+  try {
+    var spec = jsyaml.load(text);
+    if (!spec || typeof spec !== 'object') throw new Error('Empty spec');
+    var project = spec.project || 'unnamed';
+    var modules = spec.modules || [];
+    var services = spec.services || [];
+    var gen = spec.generation || {};
+    var arch = spec.architecture || {};
+    var languages = Array.isArray(gen.languages) ? gen.languages.join(', ') : 'not specified';
+
+    html += '<div class="playground-stats">';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + modules.length + '</span><span class="playground-stat-label">Modules</span></div>';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + services.length + '</span><span class="playground-stat-label">Services</span></div>';
+    html += '<div class="playground-stat"><span class="playground-stat-num">' + languages.split(',').length + '</span><span class="playground-stat-label">Languages</span></div>';
+    html += '</div>';
+
+    html += '<div class="ai-context-section">';
+    html += '<div class="ai-context-header">System Overview</div>';
+    html += '<div class="ai-context-block">';
+    html += 'Project <strong>' + escapeHtml(project) + '</strong> is a ' + (arch.pattern || 'microservices') + ' system with ' + modules.length + ' modules and ' + services.length + ' services.';
+    html += '<br><br>Code will be generated in: <strong>' + escapeHtml(languages) + '</strong>';
+    if (gen.output_dir) html += '<br>Output directory: <strong>' + escapeHtml(gen.output_dir) + '</strong>';
+    html += '</div></div>';
+
+    if (modules.length) {
+      html += '<div class="ai-context-section">';
+      html += '<div class="ai-context-header">Module Dependency Graph</div>';
+      html += '<div class="ai-context-block">';
+      modules.forEach(function (m) {
+        if (typeof m === 'object' && m !== null) {
+          var deps = (m.dependencies && Array.isArray(m.dependencies)) ? ' → depends on: ' + m.dependencies.join(', ') : ' (no dependencies)';
+          html += '• <strong>' + escapeHtml(m.name || 'unnamed') + '</strong>' + escapeHtml(deps) + '\n';
+        }
+      });
+      html += '</div></div>';
+    }
+
+    if (services.length) {
+      html += '<div class="ai-context-section">';
+      html += '<div class="ai-context-header">Service Interface Contracts</div>';
+      html += '<div class="ai-context-block">';
+      services.forEach(function (s) {
+        if (typeof s === 'object' && s !== null) {
+          var port = s.port ? ':' + s.port : '';
+          html += '• <strong>' + escapeHtml(s.name || 'unnamed') + '</strong> — ' + escapeHtml(s.kind || 'http') + port + '\n';
+        }
+      });
+      html += '</div></div>';
+    }
+
+    html += '<div class="ai-context-section">';
+    html += '<div class="ai-context-header">AI Instructions</div>';
+    html += '<div class="ai-context-block ai-context-prompt">';
+    html += 'You are working on project <strong>' + escapeHtml(project) + '</strong>. ';
+    html += 'The system uses ' + (arch.pattern || 'microservices') + ' architecture. ';
+    html += 'When writing code, follow the existing module structure. ';
+    html += 'All new services should be added to the appropriate module path. ';
+    html += 'Generate code in ' + escapeHtml(languages) + '. ';
+    html += 'Maintain the dependency direction: downstream modules should not import upstream modules.';
+    html += '</div></div>';
+
+    if (spec.ai && spec.ai.providers) {
+      html += '<div class="ai-context-section">';
+      html += '<div class="ai-context-header">AI Provider Configuration</div>';
+      html += '<div class="ai-context-block">';
+      if (Array.isArray(spec.ai.providers)) {
+        spec.ai.providers.forEach(function (p) {
+          if (typeof p === 'object' && p !== null) {
+            html += '• <strong>' + escapeHtml(p.name) + '</strong>';
+            if (Array.isArray(p.models)) html += ': ' + p.models.join(', ');
+            html += '\n';
+          }
+        });
+      }
+      html += '</div></div>';
+    }
+  } catch (e) {
+    html += '<div class="playground-error">' + escapeHtml(labels.invalidYaml || 'Invalid YAML') + ': ' + escapeHtml(e.message) + '</div>';
+  }
+  output.innerHTML = html;
+}
+
+function initDownloadOS() {
+  var downloadPage = document.querySelector('.download-page');
+  if (!downloadPage) return;
+
+  var os = navigator.platform || '';
+  var osName = 'Linux';
+  var tab = 'linux';
+  if (os.indexOf('Mac') !== -1) { tab = 'macos'; osName = 'macOS'; }
+  else if (os.indexOf('Win') !== -1) { tab = 'windows'; osName = 'Windows'; }
+
+  var detectedEl = document.getElementById('detected-os');
+  if (detectedEl) detectedEl.textContent = osName;
+
+  var tabs = downloadPage.querySelectorAll('.os-tab');
+  tabs.forEach(function (t) {
+    t.classList.remove('active');
+    if (t.dataset.os === tab) t.classList.add('active');
+  });
+
+  var panes = downloadPage.querySelectorAll('.os-pane');
+  panes.forEach(function (p) {
+    p.classList.remove('active');
+    if (p.dataset.os === tab) p.classList.add('active');
+  });
+
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.remove('active'); });
+      panes.forEach(function (p) { p.classList.remove('active'); });
+      t.classList.add('active');
+      var target = t.dataset.os;
+      panes.forEach(function (p) {
+        if (p.dataset.os === target) p.classList.add('active');
+      });
+    });
+  });
+}
+
+function initBlogFilter() {
+  var blogCategories = document.querySelector('.blog-categories');
+  if (!blogCategories) return;
+
+  var buttons = blogCategories.querySelectorAll('.category-btn');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      buttons.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      var cat = btn.dataset.category;
+      var cards = document.querySelectorAll('.blog-card');
+      cards.forEach(function (card) {
+        if (cat === 'all') {
+          card.style.display = '';
+        } else {
+          var cats = (card.dataset.categories || '').trim();
+          card.style.display = cats.indexOf(cat) !== -1 ? '' : 'none';
+        }
+      });
+    });
   });
 }

@@ -2,6 +2,7 @@
 title: "Mengapa Rekayasa Deklaratif? Kasus untuk Pengembangan Berbasis Spesifikasi"
 description: "Generator kode tradisional memiliki batas. Rekayasa deklaratif dengan NAEOS mengambil pendekatan yang fundamentally berbeda."
 date: 2026-07-10
+author: "NAEOS Foundation"
 categories: ["concept"]
 ---
 

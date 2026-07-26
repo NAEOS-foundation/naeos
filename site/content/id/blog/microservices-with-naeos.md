@@ -2,6 +2,7 @@
 title: Membangun Microservices dengan NAEOS — Panduan Langkah demi Langkah
 description: Pelajari cara mendesain, menghasilkan, dan men-deploy microservices menggunakan spesifikasi deklaratif NAEOS.
 date: 2026-06-15
+author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 

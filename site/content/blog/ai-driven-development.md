@@ -2,6 +2,7 @@
 title: "AI-Driven Development with NAEOS: Teaching Your Assistants to Think in Architecture"
 description: "How NAEOS compiles NEIR into AI instruction sets that give Copilot, Claude, and Cursor real architectural context."
 date: 2026-07-15
+author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 
