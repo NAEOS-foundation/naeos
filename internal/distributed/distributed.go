@@ -243,8 +243,8 @@ func (c *Coordinator) workerLoop(ctx context.Context, w Worker) {
 			c.mu.Unlock()
 			return
 		}
-		c.mu.Unlock()
 		c.drainWg.Add(1)
+		c.mu.Unlock()
 		result := c.executeWithRetry(ctx, w, task)
 		c.drainWg.Done()
 		if result != nil {
