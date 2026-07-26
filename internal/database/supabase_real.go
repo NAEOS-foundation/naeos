@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/supabase"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/NAEOS-foundation/naeos/internal/supabase"
 )
 
 type cachedResult struct {
