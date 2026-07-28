@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/adapters"
@@ -36,6 +37,10 @@ type ParseCache interface {
 	Get(specHash string) (*Result, bool)
 	Set(specHash string, result *Result)
 	HashSpec(spec string) string
+	ModuleKey(specHash, moduleName, stage string) string
+	GetModuleStage(key string) ([]byte, bool)
+	SetModuleStage(key string, data []byte)
+	UnchangedModules(specHash string, moduleHashes map[string]string) []string
 }
 
 type Config struct {
@@ -109,6 +114,8 @@ type Pipeline struct {
 	hooks          *Hooks
 	cache          ParseCache
 	observer       PipelineObserver
+	neirOnce       sync.Once
+	neirResolved   any
 }
 
 type PipelineObserver interface {
@@ -496,6 +503,10 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		}
 	}
 
+	p.neirResolved = resolved
+	neir.Modules = nil
+	neir.Services = nil
+
 	result := &Result{
 		Source: parsed.Raw,
 		NEIR:   neir,
@@ -508,6 +519,21 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 	}
 
 	return result, nil
+}
+
+func (p *Pipeline) materializeNEIR(neir *model.NEIR) {
+	p.neirOnce.Do(func() {
+		if p.neirResolved == nil || len(neir.Modules) > 0 {
+			return
+		}
+		loader := builder.NewModuleLoader()
+		if modules, err := loader.LoadModules(p.neirResolved); err == nil && len(modules) > 0 {
+			neir.Modules = modules
+		}
+		if services, err := loader.LoadServices(p.neirResolved); err == nil && len(services) > 0 {
+			neir.Services = services
+		}
+	})
 }
 
 func (p *Pipeline) normalizeParallel(parsed *parser.SpecDocument) (*normalizer.NormalizedSpec, error) {
@@ -564,6 +590,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err != nil {
 			return nil, err
 		}
+		p.materializeNEIR(result.NEIR)
 		if p.profile != nil {
 			p.profile.EndStage("validate")
 		}
@@ -621,22 +648,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if p.profile != nil {
 			p.profile.StartStage("generate")
 		}
-		p.logVerbose("generating artifacts")
-		var artifacts []engine.Artifact
-		if p.parallel {
-			engineArtifacts, err := engine.GenerateParallel(result.NEIR, 4)
-			if err != nil {
-				return nil, err
-			}
-			artifacts = engineArtifacts
 
-			p.logVerbose("running language adapters (parallel)")
-			adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
-			if err != nil {
-				return nil, fmt.Errorf("adapter generation failed: %w", err)
-			}
-			artifacts = append(artifacts, adapterArtifacts...)
+		var artifacts []engine.Artifact
+		if p.cache != nil && len(result.Artifacts) > 0 {
+			p.logVerbose("generation cache hit, reusing %d artifacts", len(result.Artifacts))
+			artifacts = result.Artifacts
 		} else {
+			p.logVerbose("generating artifacts")
 			artifacts, err = p.generator.Generate(result.NEIR)
 			if err != nil {
 				return nil, err
@@ -648,6 +666,12 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 				return nil, fmt.Errorf("adapter generation failed: %w", err)
 			}
 			artifacts = append(artifacts, adapterArtifacts...)
+
+			result.Artifacts = artifacts
+			if p.cache != nil {
+				specHash := p.cache.HashSpec(input)
+				p.cache.Set(specHash, result)
+			}
 		}
 		if p.profile != nil {
 			p.profile.EndStage("generate")

@@ -15,6 +15,8 @@ func newRunCommand() *cobra.Command {
 	var languages []string
 	var dryRun, profiling bool
 
+	var cacheDir string
+
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Execute the NAEOS pipeline",
@@ -23,7 +25,8 @@ func newRunCommand() *cobra.Command {
 Example:
   naeos run --config config.yaml --input spec.yaml
   naeos run --config config.yaml --input-file spec.yaml --output json
-  naeos run --config config.yaml --input spec.yaml --language go --language typescript`,
+  naeos run --config config.yaml --input spec.yaml --language go --language typescript
+  naeos run --config config.yaml --input spec.yaml --cache-dir .naeos/cache`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if pprofAddr != "" {
@@ -44,7 +47,7 @@ Example:
 				return err
 			}
 
-			cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun)
+			cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun, cacheDir)
 			if err != nil {
 				return err
 			}
@@ -104,5 +107,6 @@ Example:
 	cmd.Flags().BoolVar(&profiling, "profile", false, "enable pipeline profiling")
 	cmd.Flags().StringVar(&profileOut, "profile-out", "profile.json", "path to write profile JSON")
 	cmd.Flags().StringVar(&pprofAddr, "pprof", "", "pprof HTTP server address (e.g. :6060)")
+	cmd.Flags().StringVar(&cacheDir, "cache-dir", "", "enable pipeline caching using the given directory")
 	return cmd
 }

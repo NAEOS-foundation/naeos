@@ -15,7 +15,8 @@ import (
 
 type CacheEntry struct {
 	Key       string           `json:"key"`
-	Result    *pipeline.Result `json:"-"`
+	Result    *pipeline.Result `json:"result,omitempty"`
+	Data      json.RawMessage  `json:"data,omitempty"`
 	Timestamp time.Time        `json:"timestamp"`
 	HitCount  int              `json:"hit_count"`
 }
@@ -109,7 +110,7 @@ func (c *Cache) GetModuleStage(key string) ([]byte, bool) {
 	}
 	entry.HitCount++
 	entry.Timestamp = time.Now()
-	return []byte(fmt.Sprintf("%v", entry.Result)), true
+	return []byte(entry.Data), entry.Data != nil
 }
 
 func (c *Cache) SetModuleStage(key string, data []byte) {
@@ -121,9 +122,10 @@ func (c *Cache) SetModuleStage(key string, data []byte) {
 	}
 	c.entries[key] = &CacheEntry{
 		Key:       key,
+		Data:      json.RawMessage(data),
 		Timestamp: time.Now(),
 	}
-	_ = os.WriteFile(filepath.Join(c.dir, key+".json"), data, 0o600)
+	c.saveToDisk(key)
 }
 
 func (c *Cache) InvalidateModule(specHash, moduleName string) {

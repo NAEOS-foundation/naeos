@@ -125,6 +125,7 @@ func resolveLanguages(neir *model.NEIR) []language.Language {
 
 func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artifact {
 	var artifacts []engine.Artifact
+	var mu sync.Mutex
 
 	projectName := ""
 	if neir.Project != nil {
@@ -135,14 +136,6 @@ func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artif
 	artifacts = append(artifacts, adapter.GenerateDockerfile(projectName)...)
 	artifacts = append(artifacts, adapter.GenerateCI(projectName)...)
 
-	for _, m := range neir.Modules {
-		artifacts = append(artifacts, adapter.GenerateModule(m.Name, m.Path, projectName)...)
-	}
-
-	for _, s := range neir.Services {
-		artifacts = append(artifacts, adapter.GenerateService(s.Name, string(s.Kind), s.Port, projectName)...)
-	}
-
 	if neir.Deployment != nil && string(neir.Deployment.Strategy) != "" {
 		artifacts = append(artifacts, adapter.GenerateDockerCompose(projectName)...)
 	}
@@ -151,5 +144,29 @@ func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artif
 		artifacts = append(artifacts, adapter.GenerateArchitectureDoc(projectName, string(neir.Architecture.Pattern))...)
 	}
 
+	g, _ := errgroup.WithContext(context.Background())
+	for _, m := range neir.Modules {
+		m := m
+		g.Go(func() error {
+			moduleArtifacts := adapter.GenerateModule(m.Name, m.Path, projectName)
+			mu.Lock()
+			artifacts = append(artifacts, moduleArtifacts...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	for _, s := range neir.Services {
+		s := s
+		g.Go(func() error {
+			serviceArtifacts := adapter.GenerateService(s.Name, string(s.Kind), s.Port, projectName)
+			mu.Lock()
+			artifacts = append(artifacts, serviceArtifacts...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	_ = g.Wait()
 	return artifacts
 }

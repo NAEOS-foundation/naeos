@@ -57,7 +57,7 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 		return err
 	}
 
-	cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun)
+	cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun, "")
 	if err != nil {
 		return err
 	}
@@ -100,9 +100,9 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 }
 
 func runBuildDistributed(cmd *cobra.Command, configPath string, workerCount int) error {
-	_, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun)
+	_, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun, "")
 	if err != nil {
-		return err
+		return fmt.Errorf("config: %w", err)
 	}
 
 	workers := make([]distributed.Worker, workerCount)

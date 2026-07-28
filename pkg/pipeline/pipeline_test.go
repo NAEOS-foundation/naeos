@@ -359,6 +359,21 @@ func (c *mockCache) HashSpec(spec string) string {
 	return spec
 }
 
+func (c *mockCache) ModuleKey(specHash, moduleName, stage string) string {
+	return specHash + ":" + moduleName + ":" + stage
+}
+
+func (c *mockCache) GetModuleStage(key string) ([]byte, bool) {
+	return nil, false
+}
+
+func (c *mockCache) SetModuleStage(key string, data []byte) {
+}
+
+func (c *mockCache) UnchangedModules(specHash string, moduleHashes map[string]string) []string {
+	return nil
+}
+
 func TestPipelineCacheHit(t *testing.T) {
 	cache := newMockCache()
 	p, err := New(Config{Cache: cache})
@@ -429,9 +444,9 @@ type artifactRecorder struct {
 	artifacts []string
 }
 
-func (r *artifactRecorder) OnPipelineStart(pipelineID string) {}
+func (r *artifactRecorder) OnPipelineStart(pipelineID string)                        {}
 func (r *artifactRecorder) OnPipelineComplete(pid string, artifacts int, dur string) {}
-func (r *artifactRecorder) OnPipelineFailed(pid, errMsg string) {}
+func (r *artifactRecorder) OnPipelineFailed(pid, errMsg string)                      {}
 func (r *artifactRecorder) OnArtifactGenerated(name, path string) {
 	r.artifacts = append(r.artifacts, name)
 }
@@ -490,7 +505,7 @@ type lifecycleRecorder struct {
 	complete bool
 }
 
-func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)          { l.started = true }
+func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)              { l.started = true }
 func (l *lifecycleRecorder) OnPipelineComplete(pid string, a int, d string) { l.complete = true }
-func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)        {}
-func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)      {}
+func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)            {}
+func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)          {}

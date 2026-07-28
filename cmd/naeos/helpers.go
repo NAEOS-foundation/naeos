@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/NAEOS-foundation/naeos/internal/pipelinecache"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
@@ -116,7 +117,7 @@ func resolveConfigPath(configPath string) (string, error) {
 	return "", fmt.Errorf("missing required --config (no config file found in current directory)")
 }
 
-func loadPipelineConfig(configPath string, verbose bool, languages []string, dryRun bool) (*pipeline.Config, error) {
+func loadPipelineConfig(configPath string, verbose bool, languages []string, dryRun bool, cacheDir string) (*pipeline.Config, error) {
 	resolved, err := resolveConfigPath(configPath)
 	if err != nil {
 		return nil, err
@@ -134,6 +135,9 @@ func loadPipelineConfig(configPath string, verbose bool, languages []string, dry
 	}
 	if dryRun {
 		cfg.DryRun = true
+	}
+	if cacheDir != "" {
+		cfg.Cache = pipelinecache.New(cacheDir, 200)
 	}
 	return &cfg, nil
 }
