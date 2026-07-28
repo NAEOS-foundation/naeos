@@ -313,3 +313,173 @@ func TestRegisterOAuth2(t *testing.T) {
 		t.Errorf("expected 'google', got %s", provider.Name())
 	}
 }
+
+func TestHasPermissionDenyOverride(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "admin",
+		ResourceActions: map[string][]string{"spec": {"read", "write", "delete"}},
+		Deny:            map[string][]string{"spec": {"delete"}},
+	})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read", "write", "delete"}})
+
+	user := &User{Roles: []string{"admin"}}
+
+	if !r.HasPermission(user, "spec", "read") {
+		t.Error("expected read to be allowed")
+	}
+	if !r.HasPermission(user, "spec", "write") {
+		t.Error("expected write to be allowed")
+	}
+	if r.HasPermission(user, "spec", "delete") {
+		t.Error("expected delete to be denied")
+	}
+}
+
+func TestHasPermissionDenyWildcardAction(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "admin",
+		ResourceActions: map[string][]string{"spec": {"read"}},
+		Deny:            map[string][]string{"spec": {"*"}},
+	})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"admin"}}
+	if r.HasPermission(user, "spec", "read") {
+		t.Error("expected spec:read to be denied by wildcard deny")
+	}
+}
+
+func TestHasPermissionDenyWildcardResource(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "restricted",
+		ResourceActions: map[string][]string{"*": {"read"}},
+		Deny:            map[string][]string{"*": {"read"}},
+	})
+	r.AddPermission(&Permission{Resource: "*", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"restricted"}}
+	if r.HasPermission(user, "any", "read") {
+		t.Error("expected wildcard deny to block all reads")
+	}
+}
+
+func TestHasPermissionDenySpecificResource(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "restricted",
+		ResourceActions: map[string][]string{"spec": {"read"}, "pipeline": {"read"}},
+		Deny:            map[string][]string{"spec": {"read"}},
+	})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+	r.AddPermission(&Permission{Resource: "pipeline", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"restricted"}}
+
+	if r.HasPermission(user, "spec", "read") {
+		t.Error("expected spec:read to be denied")
+	}
+	if !r.HasPermission(user, "pipeline", "read") {
+		t.Error("expected pipeline:read to be allowed")
+	}
+}
+
+func TestHasPermissionParentRole(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "base", Permissions: []string{"spec"}})
+	r.AddRole(&Role{Name: "extended", Parents: []string{"base"}})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"extended"}}
+	if !r.HasPermission(user, "spec", "read") {
+		t.Error("expected inherited permission from parent role")
+	}
+}
+
+func TestHasPermissionCycle(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "a", Parents: []string{"b"}})
+	r.AddRole(&Role{Name: "b", Parents: []string{"a"}})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"a"}}
+	if r.HasPermission(user, "spec", "read") {
+		t.Error("expected false for cycle with no permissions")
+	}
+}
+
+func TestHasPermissionCycleWithPermission(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "a", Parents: []string{"b"}})
+	r.AddRole(&Role{Name: "b", Parents: []string{"a"}, Permissions: []string{"spec"}})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"a"}}
+	if !r.HasPermission(user, "spec", "read") {
+		t.Error("expected true for cycle with permission in parent")
+	}
+}
+
+func TestHasPermissionResourceActions(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "custom",
+		ResourceActions: map[string][]string{"spec": {"read", "write"}},
+	})
+
+	user := &User{Roles: []string{"custom"}}
+
+	if !r.HasPermission(user, "spec", "read") {
+		t.Error("expected spec:read via ResourceActions")
+	}
+	if !r.HasPermission(user, "spec", "write") {
+		t.Error("expected spec:write via ResourceActions")
+	}
+	if r.HasPermission(user, "spec", "delete") {
+		t.Error("expected spec:delete to be denied (not in ResourceActions)")
+	}
+	if r.HasPermission(user, "other", "read") {
+		t.Error("expected other:read to be denied (no ResourceActions for other)")
+	}
+}
+
+func TestHasPermissionResourceActionsWildcard(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "super",
+		ResourceActions: map[string][]string{"*": {"read"}},
+	})
+
+	user := &User{Roles: []string{"super"}}
+
+	if !r.HasPermission(user, "anything", "read") {
+		t.Error("expected read via wildcard ResourceActions")
+	}
+	if r.HasPermission(user, "anything", "write") {
+		t.Error("expected write to be denied (wildcard only grants read)")
+	}
+}
+
+func TestNewManagerWithPassphrase(t *testing.T) {
+	m := NewManager("test-passphrase")
+	if m == nil {
+		t.Fatal("expected non-nil manager")
+	}
+	if m.passphrase != "test-passphrase" {
+		t.Errorf("expected passphrase 'test-passphrase', got %q", m.passphrase)
+	}
+	if m.RBAC() == nil {
+		t.Error("expected non-nil RBAC")
+	}
+	if m.SSO() == nil {
+		t.Error("expected non-nil SSO registry")
+	}
+	if m.APIKeys() == nil {
+		t.Error("expected non-nil APIKeys")
+	}
+	if m.Sessions() == nil {
+		t.Error("expected non-nil Sessions")
+	}
+}

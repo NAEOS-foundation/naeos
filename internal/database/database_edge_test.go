@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,6 +162,52 @@ func TestWithRetryExceeded(t *testing.T) {
 	}
 	if attempts != 3 {
 		t.Errorf("expected 3 attempts (0..maxRetries), got %d", attempts)
+	}
+}
+
+func TestIsTransientErrorRemainingPatterns(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"connection timed out", fmt.Errorf("connection timed out"), true},
+		{"no connection", fmt.Errorf("no connection to server"), true},
+		{"bad connection", fmt.Errorf("bad connection"), true},
+		{"invalid connection", fmt.Errorf("invalid connection"), true},
+		{"api error 429", fmt.Errorf("api error 429: too many requests"), true},
+		{"api error 502", fmt.Errorf("api error 502: bad gateway"), true},
+		{"api error 503", fmt.Errorf("api error 503: service unavailable"), true},
+		{"eof", fmt.Errorf("unexpected eof"), true},
+		{"timeout string", fmt.Errorf("operation timeout"), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isTransientError(tt.err)
+			if got != tt.want {
+				t.Errorf("isTransientError(%v) = %v, want %v", tt.err, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStoreLoadLockedReadDirError(t *testing.T) {
+	dir := t.TempDir()
+	s := &ConnectionStore{dir: dir}
+
+	if err := os.MkdirAll(s.dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Mkdir(s.filePath(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	err := s.loadLocked()
+	if err == nil {
+		t.Error("expected error when file path is a directory")
 	}
 }
 

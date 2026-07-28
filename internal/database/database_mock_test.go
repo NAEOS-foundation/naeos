@@ -5,6 +5,7 @@ package database
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 func TestPostgreSQLMigrationVersion(t *testing.T) {
@@ -153,6 +154,65 @@ func TestSQLiteNonContextMethods(t *testing.T) {
 		t.Fatalf("Ping: %v", err)
 	}
 
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+}
+
+func TestNewRealDrivers(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		driver string
+		want   string
+	}{
+		{"mysql", "mysql"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.driver, func(t *testing.T) {
+			db := New(tt.driver)
+			if db == nil {
+				t.Fatalf("expected non-nil for driver %s", tt.driver)
+			}
+			if db.Name() != tt.want {
+				t.Errorf("expected name %q, got %q", tt.want, db.Name())
+			}
+		})
+	}
+}
+
+func TestNewFromConfigConnectError(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewFromConfig("postgresql", &Config{
+		Host:     "192.0.2.1",
+		Port:     1,
+		User:     "u",
+		Password: "p",
+		Database: "d",
+		SSLMode:  "disable",
+		Timeout:  time.Second,
+	})
+	if err == nil {
+		t.Error("expected connect error")
+	}
+}
+
+func TestNewFromConfigSQLiteSuccess(t *testing.T) {
+	t.Parallel()
+
+	db, err := NewFromConfig("sqlite", &Config{
+		Host:     "localhost",
+		Port:     1,
+		User:     "u",
+		Database: ":memory:",
+	})
+	if err != nil {
+		t.Fatalf("NewFromConfig(sqlite, :memory:) error = %v", err)
+	}
+	if db.Name() != "sqlite" {
+		t.Errorf("expected 'sqlite', got %q", db.Name())
+	}
 	if err := db.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
 	}

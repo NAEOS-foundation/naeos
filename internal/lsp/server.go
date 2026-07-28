@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -85,7 +85,7 @@ func readMessage(r *bufio.Reader) ([]byte, error) {
 func (s *Server) handleMessage(raw string) {
 	var request Request
 	if err := json.Unmarshal([]byte(raw), &request); err != nil {
-		log.Printf("Failed to parse request: %v", err)
+		slog.Error("failed to parse request", "error", err)
 		return
 	}
 
@@ -179,7 +179,7 @@ func (s *Server) SendNotification(method Method, params any) {
 func (s *Server) writeMessage(msg any) {
 	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("Failed to marshal message: %v", err)
+		slog.Error("failed to marshal message", "error", err)
 		return
 	}
 
@@ -188,16 +188,16 @@ func (s *Server) writeMessage(msg any) {
 
 	header := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(data))
 	if _, err := fmt.Fprint(s.writer, header); err != nil {
-		log.Printf("Failed to write header: %v", err)
+		slog.Error("failed to write header", "error", err)
 		return
 	}
 	if _, err := s.writer.Write(data); err != nil {
-		log.Printf("Failed to write body: %v", err)
+		slog.Error("failed to write body", "error", err)
 		return
 	}
 	if f, ok := s.writer.(*os.File); ok {
 		if err := f.Sync(); err != nil {
-			log.Printf("Failed to sync file: %v", err)
+			slog.Error("failed to sync file", "error", err)
 		}
 	}
 }
