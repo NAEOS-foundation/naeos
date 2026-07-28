@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RemoteRegistry struct {
@@ -33,12 +35,12 @@ func NewRemoteClient(reg RemoteRegistry) *RemoteClient {
 func (rc *RemoteClient) Publish(profiles []Profile) error {
 	body, err := json.Marshal(profiles)
 	if err != nil {
-		return fmt.Errorf("marshal profiles: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal profiles")
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), "POST", rc.registry.URL+"/profiles", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if rc.registry.APIKey != "" {
@@ -47,13 +49,13 @@ func (rc *RemoteClient) Publish(profiles []Profile) error {
 
 	resp, err := rc.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("publish request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "publish request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("publish failed (status %d): %s", resp.StatusCode, string(respBody))
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("publish failed (status %d): %s", resp.StatusCode, string(respBody)))
 	}
 	return nil
 }
@@ -61,7 +63,7 @@ func (rc *RemoteClient) Publish(profiles []Profile) error {
 func (rc *RemoteClient) Subscribe() ([]Profile, error) {
 	req, err := http.NewRequestWithContext(context.Background(), "GET", rc.registry.URL+"/profiles", nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	if rc.registry.APIKey != "" {
 		req.Header.Set("Authorization", "Bearer "+rc.registry.APIKey)
@@ -69,18 +71,18 @@ func (rc *RemoteClient) Subscribe() ([]Profile, error) {
 
 	resp, err := rc.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("subscribe request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "subscribe request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("subscribe failed (status %d): %s", resp.StatusCode, string(respBody))
+		return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("subscribe failed (status %d): %s", resp.StatusCode, string(respBody)))
 	}
 
 	var profiles []Profile
 	if err := json.NewDecoder(resp.Body).Decode(&profiles); err != nil {
-		return nil, fmt.Errorf("decode profiles: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode profiles")
 	}
 	return profiles, nil
 }

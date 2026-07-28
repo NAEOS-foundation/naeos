@@ -3,6 +3,8 @@ package configschema
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/internal/testutil"
 )
 
 func TestDefaultSchema(t *testing.T) {
@@ -233,10 +235,10 @@ func TestGenerateDocumentation(t *testing.T) {
 	if len(doc) == 0 {
 		t.Error("expected non-empty documentation")
 	}
-	if !contains(doc, "## Required Fields") {
+	if !testutil.Contains(doc, "## Required Fields") {
 		t.Error("expected Required Fields section")
 	}
-	if !contains(doc, "### `name`") {
+	if !testutil.Contains(doc, "### `name`") {
 		t.Error("expected name field docs")
 	}
 }
@@ -249,24 +251,11 @@ func TestDeprecatedField(t *testing.T) {
 	errs := ValidateWithSchema(config, schema)
 	found := false
 	for _, e := range errs {
-		if e.Field == "old_field" && contains(e.Message, "deprecated") {
+		if e.Field == "old_field" && testutil.Contains(e.Message, "deprecated") {
 			found = true
 		}
 	}
 	if !found {
 		t.Error("expected deprecation warning")
 	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsSubstr(s, substr))
-}
-
-func containsSubstr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

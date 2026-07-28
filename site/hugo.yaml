@@ -72,7 +72,7 @@ markup:
 params:
   author: NAEOS Foundation
   repo: https://github.com/NAEOS-foundation/naeos
-  version: 2.1.0
+  version: 2.1.1
   tagline: Specify Once. Build Anywhere.
   tagline_id: Tentukan Sekali. Bangun di Mana Saja.
   accentColor: "#00ff88"

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Renderer interface {
@@ -32,12 +34,12 @@ func (DefaultRenderer) RenderNamed(name, tmpl string, data any) ([]byte, error) 
 func RenderTemplate(name, tmpl string, data any) ([]byte, error) {
 	t, err := template.New(name).Parse(tmpl)
 	if err != nil {
-		return nil, fmt.Errorf("parse template %s: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse template %s", name)
 	}
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("execute template %s: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "execute template %s", name)
 	}
 
 	return buf.Bytes(), nil
@@ -46,12 +48,12 @@ func RenderTemplate(name, tmpl string, data any) ([]byte, error) {
 func RenderWithFuncs(name, tmpl string, data any, funcs template.FuncMap) ([]byte, error) {
 	t, err := template.New(name).Funcs(funcs).Parse(tmpl)
 	if err != nil {
-		return nil, fmt.Errorf("parse template %s: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse template %s", name)
 	}
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("execute template %s: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "execute template %s", name)
 	}
 
 	return buf.Bytes(), nil
@@ -91,7 +93,7 @@ func (g GoRenderer) RenderCode(lang string, tmpl string, data any) ([]byte, erro
 func (g GoRenderer) FormatCode(lang string, code []byte) ([]byte, error) {
 	formatted, err := format.Source(code)
 	if err != nil {
-		return code, fmt.Errorf("go fmt failed: %w", err)
+		return code, naeoserr.Wrapf(err, naeoserr.ErrInternal, "go fmt failed")
 	}
 	return formatted, nil
 }
@@ -169,10 +171,10 @@ func (fg *FileGenerator) WriteToDir(dir string) error {
 	for _, f := range fg.files {
 		fullPath := filepath.Join(dir, f.Path)
 		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			return fmt.Errorf("create directory for %s: %w", f.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create directory for %s", f.Path)
 		}
 		if err := os.WriteFile(fullPath, f.Content, f.Perm); err != nil {
-			return fmt.Errorf("write %s: %w", f.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", f.Path)
 		}
 	}
 	return nil
@@ -216,7 +218,7 @@ func (mr *MultiRenderer) Register(lang string, renderer CodeRenderer) {
 func (mr *MultiRenderer) Render(lang string, tmpl string, data any) ([]byte, error) {
 	r, ok := mr.renderers[lang]
 	if !ok {
-		return nil, fmt.Errorf("no renderer registered for language %q", lang)
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("no renderer registered for language %q", lang))
 	}
 	return r.RenderCode(lang, tmpl, data)
 }
@@ -224,7 +226,7 @@ func (mr *MultiRenderer) Render(lang string, tmpl string, data any) ([]byte, err
 func (mr *MultiRenderer) Format(lang string, code []byte) ([]byte, error) {
 	r, ok := mr.renderers[lang]
 	if !ok {
-		return nil, fmt.Errorf("no renderer registered for language %q", lang)
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("no renderer registered for language %q", lang))
 	}
 	return r.FormatCode(lang, code)
 }
@@ -259,7 +261,7 @@ func (rp *RenderPipeline) Execute(data any) ([][]byte, error) {
 	for _, step := range rp.steps {
 		out, err := step.Fn(data)
 		if err != nil {
-			return nil, fmt.Errorf("step %s failed: %w", step.Name, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "step %s failed", step.Name)
 		}
 		results = append(results, out)
 	}
@@ -292,7 +294,7 @@ func (tl *TemplateLibrary) Get(name string) (string, bool) {
 func (tl *TemplateLibrary) Render(name string, data any) ([]byte, error) {
 	tmpl, ok := tl.templates[name]
 	if !ok {
-		return nil, fmt.Errorf("template %q not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("template %q not found", name))
 	}
 	return RenderTemplate(name, tmpl, data)
 }

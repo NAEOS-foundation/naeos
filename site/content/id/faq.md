@@ -30,7 +30,7 @@ description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>NAEOS saat ini mendukung生成 kode untuk Go, TypeScript, Python, Java, dan Rust. Setiap bahasa memiliki adapter khusus yang mengikuti praktik terbaik dan pola idiomatis untuk bahasa tersebut.</p>
+<p>NAEOS saat ini mendukung pembuatan kode untuk Go, TypeScript, Python, Java, dan Rust. Setiap bahasa memiliki adapter khusus yang mengikuti praktik terbaik dan pola idiomatis untuk bahasa tersebut.</p>
 </div>
 </div>
 
@@ -56,13 +56,21 @@ description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
 
 <div class="faq-item">
 <button class="faq-question">
+<span>Bagaimana cara memulai dengan NAEOS?</span>
+<span class="faq-arrow">▾</span>
+</button>
+<div class="faq-answer">
+<p>Lihat <a href="/id/docs/getting-started/">Panduan Awal</a> untuk memulai. Pasang NAEOS via Go, Docker, atau unduh biner dari GitHub Releases. Buat spesifikasi YAML, jalankan <code>naeos run</code>, dan dalam hitungan menit Anda akan memiliki kode yang dihasilkan.</p>
+</div>
+</div>
+
+<div class="faq-item">
+<button class="faq-question">
 <span>Apakah NAEOS gratis?</span>
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
 <p>Ya. NAEOS sepenuhnya gratis dan open source di bawah Lisensi Apache 2.0. Anda dapat menggunakannya untuk proyek pribadi, aplikasi komersial, atau deployment enterprise tanpa biaya lisensi apa pun.</p>
-
-<p>Lihat <a href="/id/docs/getting-started/">Panduan Awal</a> untuk memulai. Pasang NAEOS via Go, Docker, atau unduh biner dari GitHub Releases. Buat spesifikasi YAML, jalankan <code>naeos run</code>, dan dalam hitungan menit Anda akan memiliki kode yang dihasilkan.</p>
 </div>
 </div>
 </div>

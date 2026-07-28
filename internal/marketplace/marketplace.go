@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
@@ -91,7 +92,7 @@ func (c *RegistryClient) Get(name string) (*RegistryEntry, error) {
 			return &entry, nil
 		}
 	}
-	return nil, fmt.Errorf("spec %s not found in registry", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("spec %s not found in registry", name))
 }
 
 func (c *RegistryClient) Install(name, targetDir string) error {

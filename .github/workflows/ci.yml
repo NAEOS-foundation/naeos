@@ -2,54 +2,105 @@ name: CI
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [main, develop]
+    paths-ignore:
+      - 'site/**'
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/website.yml'
   pull_request:
     branches: [main]
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    paths-ignore:
+      - 'site/**'
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/website.yml'
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.25"
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
 
-      - name: Install golangci-lint
-        run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.1.2
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Lint
-        run: golangci-lint run ./...
-
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.25"
+          cache: true
+      - name: Build
+        run: go build ./cmd/naeos/
+      - name: Test with race detector
+        run: go test -race -count=1 -timeout 300s ./...
       - name: Vet
         run: go vet ./...
 
-      - name: Test with coverage
-        run: go test -race -coverprofile=coverage.out -covermode=atomic -count=1 ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          files: coverage.out
-          flags: unittests
+          go-version: "1.25"
+          cache: true
+      - name: Generate coverage
+        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic -timeout 300s ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
           fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Build
-        run: go build ./cmd/naeos/
+  supabase-integration:
+    name: Supabase Integration
+    runs-on: ubuntu-latest
+    if: github.repository == 'NAEOS-foundation/naeos' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.25"
+          cache: true
+      - name: Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABEL_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
+        run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
+
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.25"
+          cache: true
+      - name: Fuzz parser
+        run: go test -fuzz=^FuzzParse$ -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz schema version
+        run: go test -fuzz=FuzzSchemaVersionParse -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz variable resolver
+        run: go test -fuzz=FuzzVariableResolver -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz validate modules
+        run: go test -fuzz=FuzzValidateModules -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz version parse
+        run: go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/

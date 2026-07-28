@@ -6,7 +6,7 @@ import (
 )
 
 func TestPerfCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "perf")
 	if err != nil {
 		t.Fatalf("execute perf failed: %v", err)
@@ -14,7 +14,7 @@ func TestPerfCommandShowsHelp(t *testing.T) {
 }
 
 func TestPerfPoolCreate(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "pool-create", "--name", "db", "--min", "2", "--max", "10")
 	if err != nil {
 		t.Fatalf("perf pool-create failed: %v", err)
@@ -28,7 +28,7 @@ func TestPerfPoolCreate(t *testing.T) {
 }
 
 func TestPerfPoolAcquireRelease(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "pool-acquire", "--name", "db")
 	if err != nil {
 		t.Fatalf("perf pool-acquire failed: %v", err)
@@ -42,7 +42,7 @@ func TestPerfPoolAcquireRelease(t *testing.T) {
 }
 
 func TestPerfPoolStats(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "pool-stats", "--name", "db")
 	if err != nil {
 		t.Fatalf("perf pool-stats failed: %v", err)
@@ -53,7 +53,7 @@ func TestPerfPoolStats(t *testing.T) {
 }
 
 func TestPerfCacheSet(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "cache-set", "--key", "mykey", "--value", "myvalue", "--ttl", "60s")
 	if err != nil {
 		t.Fatalf("perf cache-set failed: %v", err)
@@ -64,7 +64,7 @@ func TestPerfCacheSet(t *testing.T) {
 }
 
 func TestPerfCacheGetMiss(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "cache-get", "--key", "nonexistent")
 	if err != nil {
 		t.Fatalf("perf cache-get failed: %v", err)
@@ -75,7 +75,7 @@ func TestPerfCacheGetMiss(t *testing.T) {
 }
 
 func TestPerfCacheStats(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "perf", "cache-stats")
 	if err != nil {
 		t.Fatalf("perf cache-stats failed: %v", err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/architecture"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/deployment"
@@ -30,12 +31,12 @@ func NewBuilder() Builder {
 
 func (DefaultBuilder) Build(resolved any) (*model.NEIR, error) {
 	if resolved == nil {
-		return nil, fmt.Errorf("resolved spec is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "resolved spec is nil")
 	}
 
 	resolvedSpec, ok := resolved.(*resolver.ResolvedSpec)
 	if !ok {
-		return nil, fmt.Errorf("expected *resolver.ResolvedSpec, got %T", resolved)
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("expected *resolver.ResolvedSpec, got %T", resolved))
 	}
 
 	neir := &model.NEIR{
@@ -47,6 +48,13 @@ func (DefaultBuilder) Build(resolved any) (*model.NEIR, error) {
 
 	if rawProject, exists := resolvedSpec.Context["project"]; exists {
 		neir.Project = &project.Project{Name: fmt.Sprint(rawProject)}
+	}
+
+	if profile, ok := resolvedSpec.Context["active_profile"].(string); ok {
+		neir.ActiveProfile = profile
+	}
+	if inherits, ok := resolvedSpec.Context["inherits"].(string); ok {
+		neir.Inherits = inherits
 	}
 
 	if rawModules, exists := resolvedSpec.Context["modules"]; exists {
@@ -123,6 +131,9 @@ func extractModule(m map[string]any) module.Module {
 	if desc, ok := m["description"].(string); ok {
 		mod.Description = desc
 	}
+	if cond, ok := m["condition"].(string); ok {
+		mod.Condition = cond
+	}
 	if deps, ok := m["dependencies"].([]any); ok {
 		for _, d := range deps {
 			if s, ok := d.(string); ok {
@@ -146,6 +157,9 @@ func extractService(s map[string]any) service.Service {
 	}
 	if desc, ok := s["description"].(string); ok {
 		svc.Description = desc
+	}
+	if cond, ok := s["condition"].(string); ok {
+		svc.Condition = cond
 	}
 	if endpoints, ok := s["endpoints"].([]any); ok {
 		for _, e := range endpoints {
@@ -211,6 +225,15 @@ func extractDeployment(m map[string]any) *deployment.Deployment {
 				env := deployment.Environment{}
 				if name, ok := envMap["name"].(string); ok {
 					env.Name = name
+				}
+				if kind, ok := envMap["kind"].(string); ok {
+					env.Kind = kind
+				}
+				if vars, ok := envMap["variables"].(map[string]any); ok {
+					env.Variables = make(map[string]string, len(vars))
+					for k, v := range vars {
+						env.Variables[k] = fmt.Sprint(v)
+					}
 				}
 				deploy.Environments = append(deploy.Environments, env)
 			} else if name, ok := e.(string); ok {

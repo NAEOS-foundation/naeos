@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Search Engine Interface
@@ -200,7 +202,7 @@ func (e *InMemory) Delete(id string) error {
 		delete(e.documents, id)
 		return nil
 	}
-	return fmt.Errorf("document not found: %s", id)
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("document not found: %s", id))
 }
 
 func (e *InMemory) DeleteByQuery(query *Query) (int, error) {
@@ -222,7 +224,7 @@ func (e *InMemory) Update(id string, doc *Document) error {
 	defer e.mu.Unlock()
 
 	if _, ok := e.documents[id]; !ok {
-		return fmt.Errorf("document not found: %s", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("document not found: %s", id))
 	}
 
 	doc.ID = id
@@ -237,7 +239,7 @@ func (e *InMemory) GetByID(id string) (*Document, error) {
 
 	doc, ok := e.documents[id]
 	if !ok {
-		return nil, fmt.Errorf("document not found: %s", id)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("document not found: %s", id))
 	}
 	return doc, nil
 }
@@ -273,7 +275,7 @@ type Persistent struct {
 
 func NewPersistent(dir string) (*Persistent, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, fmt.Errorf("create search dir: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create search dir")
 	}
 	p := &Persistent{
 		InMemory: NewInMemory(),
@@ -368,7 +370,7 @@ func (m *Manager) CloseAll() error {
 
 	for name, engine := range m.engines {
 		if err := engine.Close(); err != nil {
-			return fmt.Errorf("failed to close %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to close %s", name)
 		}
 	}
 	return nil

@@ -2,6 +2,7 @@
 title: Building Microservices with NAEOS — A Step-by-Step Guide
 description: Learn how to design, generate, and deploy microservices using NAEOS declarative specifications.
 date: 2026-06-15
+author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 

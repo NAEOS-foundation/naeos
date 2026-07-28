@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Tenant represents an isolated workspace with its own data scope.
@@ -29,10 +31,10 @@ func New() *Workspace {
 
 func (w *Workspace) CreateTenant(id, name, plan string) (*Tenant, error) {
 	if id == "" {
-		return nil, fmt.Errorf("tenant ID must not be empty")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "tenant ID must not be empty")
 	}
 	if name == "" {
-		return nil, fmt.Errorf("tenant name must not be empty")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "tenant name must not be empty")
 	}
 
 	now := time.Now()
@@ -49,7 +51,7 @@ func (w *Workspace) CreateTenant(id, name, plan string) (*Tenant, error) {
 	defer w.mu.Unlock()
 
 	if _, exists := w.tenants[id]; exists {
-		return nil, fmt.Errorf("tenant %q already exists", id)
+		return nil, naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("tenant %q already exists", id))
 	}
 
 	w.tenants[id] = t
@@ -62,10 +64,10 @@ func (w *Workspace) GetTenant(id string) (*Tenant, error) {
 
 	t, ok := w.tenants[id]
 	if !ok {
-		return nil, fmt.Errorf("tenant %q not found", id)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("tenant %q not found", id))
 	}
 	if !t.Active {
-		return nil, fmt.Errorf("tenant %q is deactivated", id)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("tenant %q is deactivated", id))
 	}
 	return t, nil
 }
@@ -87,7 +89,7 @@ func (w *Workspace) DeactivateTenant(id string) error {
 
 	t, ok := w.tenants[id]
 	if !ok {
-		return fmt.Errorf("tenant %q not found", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("tenant %q not found", id))
 	}
 
 	t.Active = false
@@ -101,7 +103,7 @@ func (w *Workspace) ActivateTenant(id string) error {
 
 	t, ok := w.tenants[id]
 	if !ok {
-		return fmt.Errorf("tenant %q not found", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("tenant %q not found", id))
 	}
 
 	t.Active = true

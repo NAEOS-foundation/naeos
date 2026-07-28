@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 )
 
@@ -60,12 +61,12 @@ func New(opts ...Option) (*Library, error) {
 	}
 
 	if err := l.loadBuiltins(); err != nil {
-		return nil, fmt.Errorf("load builtins: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "load builtins")
 	}
 
 	if o.overridesDir != "" {
 		if err := l.loadOverrides(); err != nil {
-			return nil, fmt.Errorf("load overrides: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "load overrides")
 		}
 	}
 
@@ -82,7 +83,7 @@ func (l *Library) loadBuiltins() error {
 	for name, data := range builtinLLMPrompts {
 		p, err := ParseLLMPrompt([]byte(data))
 		if err != nil {
-			return fmt.Errorf("parse builtin LLM prompt %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse builtin LLM prompt %s", name)
 		}
 		l.llmPrompts[name] = p
 	}
@@ -90,7 +91,7 @@ func (l *Library) loadBuiltins() error {
 	for name, data := range builtinCompilerTemplates {
 		t, err := ParseCompilerTemplate([]byte(data))
 		if err != nil {
-			return fmt.Errorf("parse builtin compiler template %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse builtin compiler template %s", name)
 		}
 		l.compilerTpls[name] = t
 	}
@@ -115,7 +116,7 @@ func (l *Library) loadOverrides() error {
 			Name string `yaml:"name"`
 		}
 		if err := parseYAML(data, &meta); err != nil {
-			errs = append(errs, fmt.Errorf("%s: parse meta: %w", path, err))
+			errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrInternal, "%s: parse meta", path))
 			continue
 		}
 
@@ -123,19 +124,19 @@ func (l *Library) loadOverrides() error {
 		case "llm":
 			p, err := ParseLLMPrompt(data)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("%s: parse LLM prompt: %w", path, err))
+				errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrInternal, "%s: parse LLM prompt", path))
 				continue
 			}
 			l.llmPrompts[p.Name] = p
 		case "compiler":
 			t, err := ParseCompilerTemplate(data)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("%s: parse compiler template: %w", path, err))
+				errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrInternal, "%s: parse compiler template", path))
 				continue
 			}
 			l.compilerTpls[t.Name] = t
 		default:
-			errs = append(errs, fmt.Errorf("%s: unknown kind %q", path, meta.Kind))
+			errs = append(errs, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("%s: unknown kind %q", path, meta.Kind)))
 		}
 	}
 
@@ -165,7 +166,7 @@ func (l *Library) GetCompilerTemplate(name string) (*CompilerTemplate, bool) {
 func (l *Library) RenderLLM(name string, data map[string]any) (*RenderedLLM, error) {
 	p, ok := l.GetLLMPrompt(name)
 	if !ok {
-		return nil, fmt.Errorf("LLM prompt %q not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("LLM prompt %q not found", name))
 	}
 	return RenderLLM(p, data)
 }
@@ -174,7 +175,7 @@ func (l *Library) RenderLLM(name string, data map[string]any) (*RenderedLLM, err
 func (l *Library) RenderCompiler(name string, neir *model.NEIR) ([]RenderedFile, error) {
 	t, ok := l.GetCompilerTemplate(name)
 	if !ok {
-		return nil, fmt.Errorf("compiler template %q not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("compiler template %q not found", name))
 	}
 	return RenderCompiler(t, neir)
 }

@@ -287,7 +287,7 @@ func TestValidateCobraJSONOutput(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "validate", "--config", configPath, "--input", "sample specification", "--output", "json")
 	if err != nil {
 		t.Fatalf("execute validate failed: %v", err)
@@ -305,7 +305,7 @@ func TestValidateCobraYAMLOutput(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "validate", "--config", configPath, "--input", "sample specification", "--output", "yaml")
 	if err != nil {
 		t.Fatalf("execute validate failed: %v", err)
@@ -323,7 +323,7 @@ func TestValidateCobraAliasV(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	if _, err := executeCommand(root, "v", "--config", configPath, "--input", "sample specification"); err != nil {
 		t.Fatalf("execute v failed: %v", err)
 	}
@@ -398,7 +398,7 @@ func TestValidateAliasV(t *testing.T) {
 }
 
 func TestVersionCommand(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "version")
 	if err != nil {
 		t.Fatalf("execute version failed: %v", err)
@@ -415,7 +415,7 @@ func TestKernelServicesCommand(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "kernel", "services", "--config", configPath, "--output", "text")
 	if err != nil {
 		t.Fatalf("execute kernel services failed: %v", err)
@@ -432,7 +432,7 @@ func TestKernelMetricsCommand(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "kernel", "metrics", "--config", configPath, "--output", "text")
 	if err != nil {
 		t.Fatalf("execute kernel metrics failed: %v", err)
@@ -449,7 +449,7 @@ func TestKernelEventsCommand(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "kernel", "events", "--config", configPath, "--output", "text")
 	if err != nil {
 		t.Fatalf("execute kernel events failed: %v", err)
@@ -466,7 +466,7 @@ func TestKernelPublishSubscribeCommand(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	publishOutput, err := executeCommand(root, "kernel", "publish", "--config", configPath, "--topic", "test", "--payload", "hello", "--output", "text")
 	if err != nil {
 		t.Fatalf("execute kernel publish failed: %v", err)
@@ -485,7 +485,7 @@ func TestKernelPublishSubscribeCommand(t *testing.T) {
 }
 
 func TestRootVerboseFlag(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "--verbose", "validate", "--config", filepath.Join(t.TempDir(), "config.yaml"), "--input", "sample specification")
 	if err == nil {
 		t.Fatalf("expected validate to fail with missing config file, got output: %q", output)

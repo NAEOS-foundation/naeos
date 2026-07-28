@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-23
+
+### Added
+- **Supabase backend integration** — full-featured Supabase client with Auth, Storage, Edge Functions, Admin API, and Realtime WebSocket support:
+  - `internal/supabase/` package with `Client`, `Config`, Auth (GoTrue API), Storage (buckets & files CRUD), Admin (SQL query, roles), Edge Functions (list/deploy/invoke/delete).
+  - `internal/database/supabase_real.go` — RealSupabase adapter (pgx, default SSL `require`), registered as factory driver `"supabase"`.
+  - CLI command group `naeos supabase` — init, auth (signup, signin, signout, user, admin CRUD), storage (list-buckets, create-bucket, list-files, upload, download, delete), sql, status.
+  - `naeos init --template supabase` — init template with Supabase config.
+  - `internal/supabase/supabase_test.go` — 5 integration tests (skip without env vars).
+  - CI workflow `supabase-integration` — injects `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWKS_URL` from secrets.
+  - CLI docs regenerated — 21 `docs/cli/naeos_supabase*.md` files.
+- **Unit tests for `internal/supabase/`** — 44 tests covering all API methods (Auth, Storage, Admin, Functions), error cases (API errors, malformed JSON, 401/404/409), config save/load, and edge cases (coverage 84.1%).
+- **UploadFile/DownloadFile unit tests** — 3 new tests (success, error 400, file not found).
+
+### Fixed
+- **Lint failures (28 issues)** — `bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck` resolved across 7 files in `internal/supabase/`. HTTP response bodies now closed internally in `do()`; all requests use `http.NewRequestWithContext`.
+- **Lint failures in `cmd/`** — `gofmt` formatting issues in `supabase_cmd.go`, `migration_cmd.go`, `init_cmd.go`; `errcheck` for unhandled `rc.send` error in `realtime.go`.
+- **TestQueueFull race condition** — removed subscriber from `TestQueueFull` to eliminate timing-dependent failure in `internal/messagequeue`.
+- **TestRealMySQLConnectNoOptionalConfig timeout** — added explicit `Timeout: 1 * time.Second` to prevent hanging on default TCP timeout.
+- **UploadFile ContentLength mismatch** — removed incorrect `req.ContentLength = stat.Size()` (multipart body is larger than raw file size).
+- **codecov-action deprecation warning** — changed deprecated `file:` input to `files: ./coverage.out`.
+
+### Removed
+- **Dead code** — removed entire `internal/supabase/realtime.go` (151 lines, `NewRealtimeClient`/`Subscribe`/`Unsubscribe`/`Close`/`Done`/`readLoop`/`send` all unreachable).
+- **Dead code** — removed `Client.DeployFunctionFromFile` from `internal/supabase/functions.go` (never called).
+
+### Changed
+- **CI: codecov-action** — `file: ./coverage.out` → `files: ./coverage.out` (v5 syntax).
+- **Internal `do()` signature** — `(*http.Response, error)` → `([]byte, error)`, body closed inside `do()` for deterministic lifetime.
+- **`go mod tidy`** — cleaned up unused dependencies.
+
+## [2.1.1] - 2026-07-23
+
+### Fixed
+- **Broker merge artifacts** — removed duplicate `return` statements in `factory.go` and `store.go` (unreachable code).
+- **Marketplace test URL** — `TestRemoteRegistryInstall` now uses correct base URL without double path segment.
+- **`.golangci.yml` merge artifacts** — removed leftover `typecheck` linter (v1-only) and duplicate config keys.
+- **Fuzz test ambiguity** — `FuzzParse` regex narrowed to `^FuzzParse$` to avoid matching `FuzzParseYAMLNode`.
+- **Fuzz test timeout** — `FuzzVariableResolver` input length limited to 256 bytes to prevent regex-engine hangs.
+- **Priority test race** — `TestSubmitPriorityOrder` moved `Start()` after all task submissions to guarantee priority ordering.
+- **Demo lint suppression** — added `//nolint:errcheck` to `cmd/naeos-demo/main.go`.
+- **Scaffold GOSEK lint** — `internal/pluginsdk/scaffold/scaffold.go:272` file permission exclusion added.
+
+### Changed
+- **CI: golangci-lint-action** — upgraded from `@v6` (v1.64.8) to `@v7` with `version: v2.12.2` for golangci-lint v2 config compatibility.
+- **CI: lint exclusions** — expanded `.golangci.yml` exclusion rules for test files (errorlint, noctx, unparam) and tool dirs (`cmd/gentest/`, `cmd/neir-schema-gen/`, `cmd/naeos-demo/`).
+- **Code formatting** — `gofmt -w` applied to 16 files across the codebase.
+- **Website OG image generation** — extracted inline `node -e` script to `site/scripts/og.mjs` to fix shell quoting issues.
+- **Website deployment** — added `--baseURL` override for GitHub Pages compatibility.
+
+### Added
+- **Gentest tool** (`cmd/gentest/`) — test skeleton generator for rapid test scaffolding.
+- **CLI docsgen** — hidden `docsgen` command to auto-generate CLI reference documentation.
+- **Website deploy** — GitHub Pages deployment via `website.yml` workflow (build + deploy jobs).
+
 ## [2.1.0] - 2026-07-20
 
 ### Added

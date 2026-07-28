@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type HealthChecker struct {
@@ -165,12 +167,12 @@ type ReverseProxy struct {
 
 func NewReverseProxy(backend *Backend, config *ProxyConfig) (*ReverseProxy, error) {
 	if backend == nil || backend.URL == "" {
-		return nil, fmt.Errorf("backend URL is required")
+		return nil, naeoserr.New(naeoserr.ErrNetwork, "backend URL is required")
 	}
 
 	target, err := url.Parse(backend.URL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid backend URL: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "invalid backend URL")
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
@@ -196,12 +198,12 @@ func (rp *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (rp *ReverseProxy) UpdateBackend(backend *Backend) error {
 	if backend == nil || backend.URL == "" {
-		return fmt.Errorf("backend URL is required")
+		return naeoserr.New(naeoserr.ErrNetwork, "backend URL is required")
 	}
 
 	target, err := url.Parse(backend.URL)
 	if err != nil {
-		return fmt.Errorf("invalid backend URL: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "invalid backend URL")
 	}
 
 	rp.mu.Lock()

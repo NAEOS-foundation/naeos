@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Schema struct {
@@ -125,7 +127,7 @@ func DefaultSchema() *Schema {
 func ValidateFile(path string) ([]ValidationError, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrConfig, "read config")
 	}
 	ext := filepath.Ext(path)
 	switch ext {
@@ -456,18 +458,18 @@ func (s *Schema) GenerateDocumentation() string {
 func LoadSchemaFromFile(path string) (*Schema, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read schema: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrConfig, "read schema")
 	}
 	ext := filepath.Ext(path)
 	var schema Schema
 	switch ext {
 	case ".yaml", ".yml":
 		if err := yaml.Unmarshal(data, &schema); err != nil {
-			return nil, fmt.Errorf("parse YAML schema: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse YAML schema")
 		}
 	default:
 		if err := json.Unmarshal(data, &schema); err != nil {
-			return nil, fmt.Errorf("parse JSON schema: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse JSON schema")
 		}
 	}
 	return &schema, nil

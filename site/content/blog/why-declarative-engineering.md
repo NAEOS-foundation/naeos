@@ -2,6 +2,7 @@
 title: "Why Declarative Engineering? The Case for Spec-Driven Development"
 description: "Traditional code generation hits a ceiling. Declarative engineering with NAEOS takes a fundamentally different approach."
 date: 2026-07-10
+author: "NAEOS Foundation"
 categories: ["concept"]
 ---
 

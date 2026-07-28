@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Files struct {
-	Dir      string
-	Module   string
-	Name     string
-	Author   string
-	Desc     string
-	UseWASM  bool
+	Dir     string
+	Module  string
+	Name    string
+	Author  string
+	Desc    string
+	UseWASM bool
 }
 
 func (f Files) goMod() string {
@@ -252,25 +254,25 @@ func (f Files) WriteAll() error {
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {
-			return fmt.Errorf("create dir %s: %w", d, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir %s", d)
 		}
 	}
 
 	files := map[string]string{
-		"naeos.yaml":             f.naeosYAML(),
-		"plugin.go":              f.pluginGo(),
-		"plugin_test.go":         f.pluginTestGo(),
-		"main.go":                f.wasmMainGo(),
-		"Makefile":               f.makefile(),
+		"naeos.yaml":               f.naeosYAML(),
+		"plugin.go":                f.pluginGo(),
+		"plugin_test.go":           f.pluginTestGo(),
+		"main.go":                  f.wasmMainGo(),
+		"Makefile":                 f.makefile(),
 		".github/workflows/ci.yml": f.ciYML(),
-		"README.md":              f.readme(),
-		"go.mod":                 f.goMod(),
+		"README.md":                f.readme(),
+		"go.mod":                   f.goMod(),
 	}
 
 	for path, content := range files {
 		full := filepath.Join(f.Dir, path)
 		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", path)
 		}
 	}
 

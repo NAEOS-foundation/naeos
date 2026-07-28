@@ -29,6 +29,46 @@ Bangun aplikasi serverless dengan arsitektur event-driven. Tentukan fungsi Lambd
 
 ---
 
+## Pengembangan Berbantuan AI
+
+Tingkatkan asisten coding AI Anda dengan konteks proyek lengkap. NAEOS mengkompilasi arsitektur Anda menjadi set instruksi yang membuat alat AI benar-benar memahami proyek Anda.
+
+- Kompilasi untuk GitHub Copilot, Claude Code, Cursor, Gemini, Codex, dan OpenCode
+- Hasilkan paket konteks dengan arsitektur, dependensi, dan konvensi
+- Jaga keselarasan antara perubahan spesifikasi dan konteks AI
+- Kurangi rekayasa prompt manual untuk alat AI
+
+**Didukung:** Semua 6 platform AI
+
+---
+
+## Tata Kelola Enterprise
+
+Jaga konsistensi arsitektur di seluruh tim besar. NAEOS menegakkan kebijakan, standar, dan aturan keamanan.
+
+- Definisikan kebijakan arsitektur dengan 7 operator
+- Sistem izin RBAC untuk kontrol akses tim
+- Jejak audit dengan ketertelusuran penuh
+- Alur kerja peninjauan dan persetujuan artefak
+- Pelaporan kepatuhan dan evaluasi kebijakan
+
+**Fitur utama:** Policy Engine, Audit Trail, RBAC
+
+---
+
+## Aplikasi Monolitik
+
+Mulai sederhana dengan monolit dan ekstrak layanan saat Anda berkembang. NAEOS mendukung semua pola arsitektur.
+
+- Hasilkan monolit Go dengan arsitektur bersih
+- Struktur modular untuk ekstraksi masa depan yang mudah
+- Dukungan kerangka pengujian bawaan
+- Pembuatan dokumentasi
+
+**Stack tipikal:** Go, Python, Standard Library
+
+---
+
 ## Telusuri di Semua Bahasa
 
 Kelola codebase polyglot dari satu spesifikasi. NAEOS menghasilkan kode yang konsisten di semua bahasa.

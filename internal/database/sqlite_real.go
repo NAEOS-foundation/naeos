@@ -5,10 +5,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	_ "modernc.org/sqlite"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealSQLite struct {
@@ -33,55 +34,34 @@ func (s *RealSQLite) Connect(config *Config) error {
 
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "open database")
 	}
 
-	if config.Timeout > 0 {
-		db.SetConnMaxLifetime(config.Timeout)
-	}
-
-	maxOpen := 1
-	if config.MaxOpenConns > 0 {
-		maxOpen = config.MaxOpenConns
-	}
-	db.SetMaxOpenConns(maxOpen)
-
-	maxIdle := 1
-	if config.MaxIdleConns > 0 {
-		maxIdle = config.MaxIdleConns
-	}
-	db.SetMaxIdleConns(maxIdle)
-
-	if config.ConnMaxLifetime > 0 {
-		db.SetConnMaxLifetime(config.ConnMaxLifetime)
-	}
-	if config.ConnMaxIdleTime > 0 {
-		db.SetConnMaxIdleTime(config.ConnMaxIdleTime)
-	}
+	applyPoolConfig(db, config)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
-		return fmt.Errorf("ping database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "ping database")
 	}
 
 	if dsn != ":memory:" {
 		if _, err := db.ExecContext(ctx, "PRAGMA journal_mode=WAL"); err != nil {
 			db.Close()
-			return fmt.Errorf("set WAL mode: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "set WAL mode")
 		}
 	}
 
 	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=ON"); err != nil {
 		db.Close()
-		return fmt.Errorf("enable foreign keys: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "enable foreign keys")
 	}
 
 	if _, err := db.ExecContext(ctx, "PRAGMA busy_timeout=5000"); err != nil {
 		db.Close()
-		return fmt.Errorf("set busy timeout: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "set busy timeout")
 	}
 
 	s.db = db
@@ -104,7 +84,7 @@ func (s *RealSQLite) Close() error {
 
 func (s *RealSQLite) Ping() error {
 	if s.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := s.defaultContext()
 	defer cancel()
@@ -119,7 +99,7 @@ func (s *RealSQLite) Exec(query string, args ...any) (Result, error) {
 
 func (s *RealSQLite) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if s.db == nil {
-		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return Result{}, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	res, err := s.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -138,7 +118,7 @@ func (s *RealSQLite) Query(query string, args ...any) ([]Row, error) {
 
 func (s *RealSQLite) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -178,7 +158,7 @@ func (s *RealSQLite) QueryRow(query string, args ...any) (Row, error) {
 
 func (s *RealSQLite) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -222,7 +202,7 @@ func (s *RealSQLite) Begin() (Transaction, error) {
 
 func (s *RealSQLite) BeginTx(ctx context.Context) (Transaction, error) {
 	if s.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -239,7 +219,7 @@ func (s *RealSQLite) Migrate(migrations []Migration) error {
 
 func (s *RealSQLite) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if s.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	_, err := s.db.ExecContext(ctx, `
@@ -251,14 +231,14 @@ func (s *RealSQLite) MigrateContext(ctx context.Context, migrations []Migration)
 		)
 	`)
 	if err != nil {
-		return fmt.Errorf("create migrations table: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create migrations table")
 	}
 
 	for _, migration := range migrations {
 		var count int
 		err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM _migrations WHERE version = ?", migration.Version).Scan(&count)
 		if err != nil {
-			return fmt.Errorf("check migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "check migration %d", migration.Version)
 		}
 		if count > 0 {
 			continue
@@ -266,21 +246,21 @@ func (s *RealSQLite) MigrateContext(ctx context.Context, migrations []Migration)
 
 		tx, err := s.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin migration %d", migration.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, migration.Up); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("apply migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "apply migration %d", migration.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, "INSERT INTO _migrations (version, name, down_sql) VALUES (?, ?, ?)", migration.Version, migration.Name, migration.Down); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("record migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "record migration %d", migration.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit migration %d", migration.Version)
 		}
 	}
 
@@ -295,13 +275,13 @@ func (s *RealSQLite) Rollback(version int) error {
 
 func (s *RealSQLite) RollbackContext(ctx context.Context, version int) error {
 	if s.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	var migrations []Migration
 	rows, err := s.db.QueryContext(ctx, "SELECT version, name, down_sql FROM _migrations WHERE version > ? ORDER BY version DESC", version)
 	if err != nil {
-		return fmt.Errorf("query migrations: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "query migrations")
 	}
 	defer rows.Close()
 
@@ -316,23 +296,23 @@ func (s *RealSQLite) RollbackContext(ctx context.Context, version int) error {
 	for _, migration := range migrations {
 		tx, err := s.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin rollback %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin rollback %d", migration.Version)
 		}
 
 		if migration.Down != "" {
 			if _, err := tx.ExecContext(ctx, migration.Down); err != nil {
 				_ = tx.Rollback()
-				return fmt.Errorf("execute down migration %d (%s): %w", migration.Version, migration.Name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "execute down migration %d (%s)", migration.Version, migration.Name)
 			}
 		}
 
 		if _, err := tx.ExecContext(ctx, "DELETE FROM _migrations WHERE version = ?", migration.Version); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("remove migration record %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "remove migration record %d", migration.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit rollback %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit rollback %d", migration.Version)
 		}
 	}
 
@@ -341,7 +321,7 @@ func (s *RealSQLite) RollbackContext(ctx context.Context, version int) error {
 
 func (s *RealSQLite) HealthCheck() error {
 	if s.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := s.defaultContext()
 	defer cancel()

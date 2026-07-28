@@ -394,15 +394,13 @@ func (rg *ReadmeGenerator) Generate() string {
 	if rg.license != "" {
 		fmt.Fprintf(&sb, "**License:** %s\n\n", rg.license)
 	}
-	sb.WriteString("## Features\n\n")
 	if len(rg.features) > 0 {
+		sb.WriteString("## Features\n\n")
 		for _, f := range rg.features {
 			fmt.Fprintf(&sb, "- %s\n", f)
 		}
-	} else {
-		sb.WriteString("- TODO: Add features\n")
+		sb.WriteString("\n")
 	}
-	sb.WriteString("\n")
 	if rg.installCmd != "" {
 		fmt.Fprintf(&sb, "## Installation\n\n```bash\n%s\n```\n\n", rg.installCmd)
 	}

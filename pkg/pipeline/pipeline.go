@@ -573,20 +573,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			return nil, fmt.Errorf("context canceled: %w", err)
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("hooks.before_run")
-		}
-		if err := p.executeHooks(p.getHookFuncs().BeforeRun, "run"); err != nil {
-			return nil, err
-		}
-		if p.profile != nil {
-			p.profile.EndStage("hooks.before_run")
-		}
-
-		if p.profile != nil {
-			p.profile.StartStage("validate")
-		}
-		result, err := p.validateWithoutKernel(input)
+		result, err := p.runValidate(input)
 		if err != nil {
 			return nil, err
 		}
@@ -595,39 +582,17 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.profile.EndStage("validate")
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("build_graph")
-		}
-		p.logVerbose("building execution graph")
-		execGraph := p.buildExecutionGraph(result.NEIR)
+		execGraph := p.runBuildGraph(result)
 		result.Graph = execGraph
 		if p.profile != nil {
 			p.profile.EndStage("build_graph")
 		}
 
-		if len(p.policies) > 0 {
-			if p.profile != nil {
-				p.profile.StartStage("policy_eval")
-			}
-			p.logVerbose("evaluating %d policy rules", len(p.policies))
-			policyCtx := map[string]any{
-				"project":  result.NEIR.Project.Name,
-				"modules":  len(result.NEIR.Modules),
-				"services": len(result.NEIR.Services),
-			}
-			if _, err := p.evaluator.EvaluateRules(p.policies, policyCtx); err != nil {
-				return nil, fmt.Errorf("policy evaluation failed: %w", err)
-			}
-			if p.profile != nil {
-				p.profile.EndStage("policy_eval")
-			}
+		if err := p.runPolicyEval(result); err != nil {
+			return nil, err
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("schedule")
-		}
-		p.logVerbose("scheduling %d tasks", len(result.NEIR.Modules)+len(result.NEIR.Services)+2)
-		tasks, err := p.scheduler.Schedule(result.NEIR)
+		tasks, err := p.runSchedule(result)
 		if err != nil {
 			return nil, err
 		}
@@ -635,70 +600,26 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.profile.EndStage("schedule")
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("hooks.before_generate")
-		}
-		if err := p.executeHooks(p.getHookFuncs().BeforeGenerate, "generate"); err != nil {
-			return nil, err
-		}
-		if p.profile != nil {
-			p.profile.EndStage("hooks.before_generate")
-		}
-
-		if p.profile != nil {
-			p.profile.StartStage("generate")
-		}
-
 		var artifacts []engine.Artifact
 		if p.cache != nil && len(result.Artifacts) > 0 {
 			p.logVerbose("generation cache hit, reusing %d artifacts", len(result.Artifacts))
 			artifacts = result.Artifacts
 		} else {
-			p.logVerbose("generating artifacts")
-			artifacts, err = p.generator.Generate(result.NEIR)
-			if err != nil {
-				return nil, err
+			var genErr error
+			artifacts, genErr = p.runGenerate(result)
+			if genErr != nil {
+				return nil, genErr
 			}
-
-			p.logVerbose("running language adapters")
-			adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
-			if err != nil {
-				return nil, fmt.Errorf("adapter generation failed: %w", err)
-			}
-			artifacts = append(artifacts, adapterArtifacts...)
-
 			result.Artifacts = artifacts
 			if p.cache != nil {
-				specHash := p.cache.HashSpec(input)
-				p.cache.Set(specHash, result)
+				p.cache.Set(p.cache.HashSpec(input), result)
 			}
 		}
 		if p.profile != nil {
 			p.profile.EndStage("generate")
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("hooks.after_generate")
-		}
-		if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
-			return nil, err
-		}
-		if p.profile != nil {
-			p.profile.EndStage("hooks.after_generate")
-		}
-
-		if p.profile != nil {
-			p.profile.StartStage("review")
-		}
-		p.logVerbose("reviewing %d artifacts", len(artifacts))
-		var reviews []*review.ReviewResult
-		for _, artifact := range artifacts {
-			rules := reviewRulesForArtifact(artifact.Path)
-			r, err := p.reviewer.ReviewArtifact(artifact.Path, string(artifact.Content), rules)
-			if err == nil && r != nil {
-				reviews = append(reviews, r)
-			}
-		}
+		reviews := p.runReview(artifacts)
 		result.Reviews = reviews
 		if p.profile != nil {
 			p.profile.EndStage("review")
@@ -707,25 +628,8 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if p.profile != nil {
 			p.profile.StartStage("write")
 		}
-		if outputDir := p.outputDirValue; outputDir != "" && !p.dryRun {
-			p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
-			for _, artifact := range artifacts {
-				if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
-					return nil, fmt.Errorf("invalid artifact path: %w", err)
-				}
-				artifactPath := filepath.Join(outputDir, artifact.Path)
-				if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
-					return nil, fmt.Errorf("create artifact dir: %w", err)
-				}
-				if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
-					return nil, fmt.Errorf("write artifact %s: %w", artifact.Path, err)
-				}
-				if p.observer != nil {
-					p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
-				}
-			}
-		} else if p.dryRun {
-			p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
+		if err := p.runWriteArtifacts(artifacts); err != nil {
+			return nil, err
 		}
 		if p.profile != nil {
 			p.profile.EndStage("write")
@@ -757,17 +661,121 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 	if p.profile != nil {
 		p.profile.Finish()
 	}
-	if err != nil && p.observer != nil {
-		p.observer.OnPipelineFailed(pipelineID, err.Error())
-	} else if err == nil && p.observer != nil {
-		duration := time.Since(startTime).Round(time.Millisecond).String()
-		artifactCount := 0
-		if result != nil {
-			artifactCount = len(result.Artifacts)
-		}
-		p.observer.OnPipelineComplete(pipelineID, artifactCount, duration)
-	}
+	p.runNotify(pipelineID, startTime, result, err)
 	return result, err
+}
+
+func (p *Pipeline) runValidate(input string) (*Result, error) {
+	if err := p.executeHooks(p.getHookFuncs().BeforeRun, "run"); err != nil {
+		return nil, err
+	}
+	return p.validateWithoutKernel(input)
+}
+
+func (p *Pipeline) runBuildGraph(result *Result) *graph.PlannerGraph {
+	p.logVerbose("building execution graph")
+	return p.buildExecutionGraph(result.NEIR)
+}
+
+func (p *Pipeline) runPolicyEval(result *Result) error {
+	if len(p.policies) == 0 {
+		return nil
+	}
+	p.logVerbose("evaluating %d policy rules", len(p.policies))
+	ctx := map[string]any{
+		"project":  result.NEIR.Project.Name,
+		"modules":  len(result.NEIR.Modules),
+		"services": len(result.NEIR.Services),
+	}
+	if _, err := p.evaluator.EvaluateRules(p.policies, ctx); err != nil {
+		return fmt.Errorf("policy evaluation failed: %w", err)
+	}
+	return nil
+}
+
+func (p *Pipeline) runSchedule(result *Result) ([]scheduler.Task, error) {
+	p.logVerbose("scheduling %d tasks", len(result.NEIR.Modules)+len(result.NEIR.Services)+2)
+	return p.scheduler.Schedule(result.NEIR)
+}
+
+func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
+	if err := p.executeHooks(p.getHookFuncs().BeforeGenerate, "generate"); err != nil {
+		return nil, err
+	}
+
+	p.logVerbose("generating artifacts")
+	artifacts, err := p.generator.Generate(result.NEIR)
+	if err != nil {
+		return nil, err
+	}
+
+	p.logVerbose("running language adapters")
+	adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
+	if err != nil {
+		return nil, fmt.Errorf("adapter generation failed: %w", err)
+	}
+	artifacts = append(artifacts, adapterArtifacts...)
+
+	if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
+		return nil, err
+	}
+	return artifacts, nil
+}
+
+func (p *Pipeline) runReview(artifacts []engine.Artifact) []*review.ReviewResult {
+	p.logVerbose("reviewing %d artifacts", len(artifacts))
+	var reviews []*review.ReviewResult
+	for _, artifact := range artifacts {
+		rules := reviewRulesForArtifact(artifact.Path)
+		r, err := p.reviewer.ReviewArtifact(artifact.Path, string(artifact.Content), rules)
+		if err == nil && r != nil {
+			reviews = append(reviews, r)
+		}
+	}
+	return reviews
+}
+
+func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
+	outputDir := p.outputDirValue
+	if outputDir == "" || p.dryRun {
+		if p.dryRun {
+			p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
+		}
+		return nil
+	}
+	p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
+	for _, artifact := range artifacts {
+		if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
+			return fmt.Errorf("invalid artifact path: %w", err)
+		}
+		artifactPath := filepath.Join(outputDir, artifact.Path)
+		if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
+			return fmt.Errorf("create artifact dir: %w", err)
+		}
+		if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
+			return fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+		}
+		if p.observer != nil {
+			p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
+		}
+	}
+	return nil
+}
+
+func (p *Pipeline) runNotify(pipelineID string, startTime time.Time, result *Result, err error) {
+	if p.observer == nil {
+		return
+	}
+	if err != nil {
+		p.observer.OnPipelineFailed(pipelineID, err.Error())
+		return
+	}
+	duration := time.Since(startTime).Round(time.Millisecond).String()
+	artifactCount := 0
+	if result != nil {
+		artifactCount = len(result.Artifacts)
+	}
+	p.observer.OnPipelineComplete(pipelineID, artifactCount, duration)
 }
 
 func (p *Pipeline) getHookFuncs() *Hooks {

@@ -499,6 +499,8 @@ services:
 	}
 	if len(result.NEIR.Services[0].Endpoints) < 2 {
 		t.Logf("Endpoints = %d (parser may not fully populate endpoint details)", len(result.NEIR.Services[0].Endpoints))
+	} else {
+		t.Logf("Endpoints = %d", len(result.NEIR.Services[0].Endpoints))
 	}
 }
 

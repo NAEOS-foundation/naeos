@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -30,6 +31,8 @@ type PluginEntry struct {
 	Tags           []string           `json:"tags"`
 	Dependencies   []PluginDependency `json:"dependencies,omitempty"`
 	Downloads      int                `json:"downloads"`
+	Checksum       string             `json:"checksum,omitempty"`
+	DownloadURL    string             `json:"download_url,omitempty"`
 	Installed      bool               `json:"installed,omitempty"`
 	VersionHistory []VersionEntry     `json:"version_history,omitempty"`
 	Config         map[string]any     `json:"config,omitempty"`
@@ -83,7 +86,7 @@ func (m *PluginMarketplace) Get(name string) (*PluginEntry, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("plugin %s not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %s not found", name))
 }
 
 func (m *PluginMarketplace) Search(query string, tags []string) ([]PluginEntry, error) {
@@ -140,7 +143,7 @@ func (m *PluginMarketplace) List() ([]PluginEntry, error) {
 
 func (m *PluginMarketplace) Install(name string) error {
 	if err := securityext.ValidatePluginName(name); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin name %q", name)
 	}
 
 	entry, err := m.Get(name)
@@ -149,7 +152,7 @@ func (m *PluginMarketplace) Install(name string) error {
 	}
 
 	if m.IsInstalled(name) {
-		return fmt.Errorf("plugin %q is already installed", name)
+		return naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("plugin %q is already installed", name))
 	}
 
 	if len(entry.Dependencies) > 0 {
@@ -160,7 +163,7 @@ func (m *PluginMarketplace) Install(name string) error {
 		for _, dep := range resolved {
 			if !m.IsInstalled(dep.Name) {
 				if err := m.installOne(dep); err != nil {
-					return fmt.Errorf("install dependency %q: %w", dep.Name, err)
+					return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "install dependency %q", dep.Name)
 				}
 			}
 		}
@@ -223,23 +226,23 @@ func (m *PluginMarketplace) ResolveDependencies(deps []PluginDependency, visited
 	for _, dep := range deps {
 		for _, v := range visited {
 			if v == dep.Name {
-				return nil, fmt.Errorf("circular dependency detected: %s", strings.Join(append(visited, dep.Name), " → "))
+				return nil, naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("circular dependency detected: %s", strings.Join(append(visited, dep.Name), " → ")))
 			}
 		}
 
 		entry, err := m.Get(dep.Name)
 		if err != nil {
-			return nil, fmt.Errorf("dependency %q not found: %w", dep.Name, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNotFound, "dependency %q", dep.Name)
 		}
 
 		if dep.Version != "" && !versionMatch(dep.Version, entry.Version) {
-			return nil, fmt.Errorf("dependency %q requires version %s, available %s", dep.Name, dep.Version, entry.Version)
+			return nil, naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("dependency %q requires version %s, available %s", dep.Name, dep.Version, entry.Version))
 		}
 
 		if len(entry.Dependencies) > 0 {
 			sub, err := m.ResolveDependencies(entry.Dependencies, append(visited, dep.Name))
 			if err != nil {
-				return nil, fmt.Errorf("resolve %q deps: %w", dep.Name, err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "resolve %q deps", dep.Name)
 			}
 			resolved = append(resolved, sub...)
 		}
@@ -260,7 +263,7 @@ func versionMatch(required, available string) bool {
 // VersionHistory returns the install version history for a plugin.
 func (m *PluginMarketplace) VersionHistory(name string) ([]VersionEntry, error) {
 	if err := securityext.ValidatePluginName(name); err != nil {
-		return nil, fmt.Errorf("invalid plugin name %q: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin name %q", name)
 	}
 	entries, err := m.loadPlugins()
 	if err != nil {
@@ -269,19 +272,19 @@ func (m *PluginMarketplace) VersionHistory(name string) ([]VersionEntry, error) 
 	for _, e := range entries {
 		if e.Name == name {
 			if len(e.VersionHistory) == 0 {
-				return nil, fmt.Errorf("no version history for %q", name)
+				return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("no version history for %q", name))
 			}
 			return e.VersionHistory, nil
 		}
 	}
-	return nil, fmt.Errorf("plugin %q not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %q not found", name))
 }
 
 // Rollback reverts a plugin to a previous version from its version history.
 // If version is empty, it rolls back to the second-most-recent version.
 func (m *PluginMarketplace) Rollback(name, version string) error {
 	if err := securityext.ValidatePluginName(name); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin name %q", name)
 	}
 
 	history, err := m.VersionHistory(name)
@@ -292,7 +295,7 @@ func (m *PluginMarketplace) Rollback(name, version string) error {
 	var target *VersionEntry
 	if version == "" {
 		if len(history) < 2 {
-			return fmt.Errorf("no previous version to roll back to for %q", name)
+			return naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("no previous version to roll back to for %q", name))
 		}
 		target = &history[len(history)-2]
 	} else {
@@ -303,7 +306,7 @@ func (m *PluginMarketplace) Rollback(name, version string) error {
 			}
 		}
 		if target == nil {
-			return fmt.Errorf("version %q not found in history for %q", version, name)
+			return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("version %q not found in history for %q", version, name))
 		}
 	}
 
@@ -319,7 +322,7 @@ func (m *PluginMarketplace) Rollback(name, version string) error {
 
 func (m *PluginMarketplace) Uninstall(name string) error {
 	if err := securityext.ValidatePluginName(name); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %w", name, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin name %q", name)
 	}
 	pluginDir := filepath.Join(m.installDir, name)
 	if err := os.RemoveAll(pluginDir); err != nil {

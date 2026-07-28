@@ -14,7 +14,7 @@ func TestStatusCommandShowsConfig(t *testing.T) {
 		t.Fatalf("write config: %v", err)
 	}
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "status", "--config", configPath)
 	if err != nil {
 		t.Fatalf("execute status failed: %v", err)
@@ -38,7 +38,7 @@ func TestStatusAutoDetectsConfig(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(origDir)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "status")
 	if err != nil {
 		t.Fatalf("execute status failed: %v", err)
@@ -113,7 +113,7 @@ func TestDoctorAutoDetectsConfig(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(origDir)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "doctor")
 	if err != nil {
 		t.Fatalf("execute doctor auto-detect failed: %v", err)
@@ -253,7 +253,7 @@ func TestE2EProfile(t *testing.T) {
 }
 
 func TestE2EVersionJSON(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "version")
 	if err != nil {
 		t.Fatalf("execute version failed: %v", err)
@@ -274,7 +274,7 @@ func TestAutoDetectYmlExtension(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(origDir)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "status")
 	if err != nil {
 		t.Fatalf("execute status with .yml failed: %v", err)
@@ -295,7 +295,7 @@ func TestAutoDetectNaeosYaml(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(origDir)
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "status")
 	if err != nil {
 		t.Fatalf("execute status with naeos.yaml failed: %v", err)

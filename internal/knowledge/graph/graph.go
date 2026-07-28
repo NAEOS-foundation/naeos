@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type NodeType string
@@ -77,10 +79,10 @@ func (kg *KnowledgeGraph) AddNode(n Node) error {
 	defer kg.mu.Unlock()
 
 	if n.ID == "" {
-		return fmt.Errorf("node ID must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "node ID must not be empty")
 	}
 	if _, exists := kg.nodes[n.ID]; exists {
-		return fmt.Errorf("node %s already exists", n.ID)
+		return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("node %s already exists", n.ID))
 	}
 	kg.nodes[n.ID] = &n
 	return nil
@@ -98,7 +100,7 @@ func (kg *KnowledgeGraph) RemoveNode(id string) error {
 	defer kg.mu.Unlock()
 
 	if _, exists := kg.nodes[id]; !exists {
-		return fmt.Errorf("node %s not found", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("node %s not found", id))
 	}
 	delete(kg.nodes, id)
 
@@ -117,10 +119,10 @@ func (kg *KnowledgeGraph) AddEdge(e Edge) error {
 	defer kg.mu.Unlock()
 
 	if _, exists := kg.nodes[e.From]; !exists {
-		return fmt.Errorf("source node %s not found", e.From)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("source node %s not found", e.From))
 	}
 	if _, exists := kg.nodes[e.To]; !exists {
-		return fmt.Errorf("target node %s not found", e.To)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("target node %s not found", e.To))
 	}
 	kg.edges = append(kg.edges, e)
 	return nil
@@ -420,7 +422,7 @@ func (kg *KnowledgeGraph) TopologicalSort() ([]string, error) {
 	}
 
 	if len(order) != len(kg.nodes) {
-		return nil, fmt.Errorf("graph contains a cycle")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "graph contains a cycle")
 	}
 	return order, nil
 }

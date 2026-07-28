@@ -9,6 +9,8 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealPostgreSQL struct {
@@ -31,38 +33,17 @@ func (p *RealPostgreSQL) Connect(config *Config) error {
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "open database")
 	}
 
-	if config.Timeout > 0 {
-		db.SetConnMaxLifetime(config.Timeout)
-	}
-
-	maxOpen := 25
-	if config.MaxOpenConns > 0 {
-		maxOpen = config.MaxOpenConns
-	}
-	db.SetMaxOpenConns(maxOpen)
-
-	maxIdle := 5
-	if config.MaxIdleConns > 0 {
-		maxIdle = config.MaxIdleConns
-	}
-	db.SetMaxIdleConns(maxIdle)
-
-	if config.ConnMaxLifetime > 0 {
-		db.SetConnMaxLifetime(config.ConnMaxLifetime)
-	}
-	if config.ConnMaxIdleTime > 0 {
-		db.SetConnMaxIdleTime(config.ConnMaxIdleTime)
-	}
+	applyPoolConfig(db, config)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
-		return fmt.Errorf("ping database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "ping database")
 	}
 
 	p.db = db
@@ -85,7 +66,7 @@ func (p *RealPostgreSQL) Close() error {
 
 func (p *RealPostgreSQL) Ping() error {
 	if p.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := p.defaultContext()
 	defer cancel()
@@ -100,7 +81,7 @@ func (p *RealPostgreSQL) Exec(query string, args ...any) (Result, error) {
 
 func (p *RealPostgreSQL) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if p.db == nil {
-		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return Result{}, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	res, err := p.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -119,7 +100,7 @@ func (p *RealPostgreSQL) Query(query string, args ...any) ([]Row, error) {
 
 func (p *RealPostgreSQL) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -159,7 +140,7 @@ func (p *RealPostgreSQL) QueryRow(query string, args ...any) (Row, error) {
 
 func (p *RealPostgreSQL) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -203,7 +184,7 @@ func (p *RealPostgreSQL) Begin() (Transaction, error) {
 
 func (p *RealPostgreSQL) BeginTx(ctx context.Context) (Transaction, error) {
 	if p.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -220,7 +201,7 @@ func (p *RealPostgreSQL) Migrate(migrations []Migration) error {
 
 func (p *RealPostgreSQL) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if p.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	_, err := p.db.ExecContext(ctx, `
@@ -232,14 +213,14 @@ func (p *RealPostgreSQL) MigrateContext(ctx context.Context, migrations []Migrat
 		)
 	`)
 	if err != nil {
-		return fmt.Errorf("create migrations table: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create migrations table")
 	}
 
 	for _, m := range migrations {
 		var count int
 		err := p.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM _migrations WHERE version = $1", m.Version).Scan(&count)
 		if err != nil {
-			return fmt.Errorf("check migration %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "check migration %d", m.Version)
 		}
 		if count > 0 {
 			continue
@@ -247,21 +228,21 @@ func (p *RealPostgreSQL) MigrateContext(ctx context.Context, migrations []Migrat
 
 		tx, err := p.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin migration %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin migration %d", m.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, m.Up); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("apply migration %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "apply migration %d", m.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, "INSERT INTO _migrations (version, name, down_sql) VALUES ($1, $2, $3)", m.Version, m.Name, m.Down); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("record migration %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "record migration %d", m.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit migration %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit migration %d", m.Version)
 		}
 	}
 
@@ -276,13 +257,13 @@ func (p *RealPostgreSQL) Rollback(version int) error {
 
 func (p *RealPostgreSQL) RollbackContext(ctx context.Context, version int) error {
 	if p.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	var migrations []Migration
 	rows, err := p.db.QueryContext(ctx, "SELECT version, name, down_sql FROM _migrations WHERE version > $1 ORDER BY version DESC", version)
 	if err != nil {
-		return fmt.Errorf("query migrations: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "query migrations")
 	}
 	defer rows.Close()
 
@@ -297,23 +278,23 @@ func (p *RealPostgreSQL) RollbackContext(ctx context.Context, version int) error
 	for _, m := range migrations {
 		tx, err := p.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin rollback %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin rollback %d", m.Version)
 		}
 
 		if m.Down != "" {
 			if _, err := tx.ExecContext(ctx, m.Down); err != nil {
 				_ = tx.Rollback()
-				return fmt.Errorf("execute down migration %d (%s): %w", m.Version, m.Name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "execute down migration %d (%s)", m.Version, m.Name)
 			}
 		}
 
 		if _, err := tx.ExecContext(ctx, "DELETE FROM _migrations WHERE version = $1", m.Version); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("remove migration record %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "remove migration record %d", m.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit rollback %d: %w", m.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit rollback %d", m.Version)
 		}
 	}
 
@@ -322,7 +303,7 @@ func (p *RealPostgreSQL) RollbackContext(ctx context.Context, version int) error
 
 func (p *RealPostgreSQL) HealthCheck() error {
 	if p.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := p.defaultContext()
 	defer cancel()

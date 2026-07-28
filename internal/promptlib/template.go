@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"text/template"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 
 	"gopkg.in/yaml.v3"
@@ -74,13 +75,13 @@ type RenderedFile struct {
 func ParseLLMPrompt(data []byte) (*LLMPrompt, error) {
 	var p LLMPrompt
 	if err := parseYAML(data, &p); err != nil {
-		return nil, fmt.Errorf("parse LLM prompt: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse LLM prompt")
 	}
 	if p.Name == "" {
-		return nil, fmt.Errorf("LLM prompt name is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "LLM prompt name is required")
 	}
 	if p.User == "" {
-		return nil, fmt.Errorf("LLM prompt user template is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "LLM prompt user template is required")
 	}
 	if p.Constraints == nil {
 		p.Constraints = &Constraints{MaxTokens: 1024, Temperature: 0.3}
@@ -98,23 +99,23 @@ func ParseLLMPrompt(data []byte) (*LLMPrompt, error) {
 func ParseCompilerTemplate(data []byte) (*CompilerTemplate, error) {
 	var t CompilerTemplate
 	if err := parseYAML(data, &t); err != nil {
-		return nil, fmt.Errorf("parse compiler template: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse compiler template")
 	}
 	if t.Name == "" {
-		return nil, fmt.Errorf("compiler template name is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "compiler template name is required")
 	}
 	if t.Target == "" {
-		return nil, fmt.Errorf("compiler template target is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "compiler template target is required")
 	}
 	if len(t.Files) == 0 {
-		return nil, fmt.Errorf("compiler template must have at least one file")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "compiler template must have at least one file")
 	}
 	for i, f := range t.Files {
 		if f.Path == "" {
-			return nil, fmt.Errorf("file[%d] path is required", i)
+			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("file[%d] path is required", i))
 		}
 		if f.Template == "" {
-			return nil, fmt.Errorf("file[%d] template is required", i)
+			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("file[%d] template is required", i))
 		}
 	}
 	return &t, nil
@@ -123,19 +124,19 @@ func ParseCompilerTemplate(data []byte) (*CompilerTemplate, error) {
 // RenderLLM renders an LLM prompt with the given data variables.
 func RenderLLM(p *LLMPrompt, data map[string]any) (*RenderedLLM, error) {
 	if p == nil {
-		return nil, fmt.Errorf("nil LLM prompt")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "nil LLM prompt")
 	}
 
 	user, err := renderTemplate("user", p.User, data)
 	if err != nil {
-		return nil, fmt.Errorf("render user template: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "render user template")
 	}
 
 	var system string
 	if p.System != "" {
 		system, err = renderTemplate("system", p.System, data)
 		if err != nil {
-			return nil, fmt.Errorf("render system template: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "render system template")
 		}
 	}
 
@@ -150,10 +151,10 @@ func RenderLLM(p *LLMPrompt, data map[string]any) (*RenderedLLM, error) {
 // RenderCompiler renders a compiler template with NEIR data.
 func RenderCompiler(t *CompilerTemplate, neir *model.NEIR) ([]RenderedFile, error) {
 	if t == nil {
-		return nil, fmt.Errorf("nil compiler template")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "nil compiler template")
 	}
 	if neir == nil {
-		return nil, fmt.Errorf("nil NEIR")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "nil NEIR")
 	}
 
 	ctx := buildNEIRContext(neir)
@@ -162,7 +163,7 @@ func RenderCompiler(t *CompilerTemplate, neir *model.NEIR) ([]RenderedFile, erro
 	for _, fs := range t.Files {
 		content, err := renderTemplate(fs.Path, fs.Template, ctx)
 		if err != nil {
-			return nil, fmt.Errorf("render file %s: %w", fs.Path, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "render file %s", fs.Path)
 		}
 		files = append(files, RenderedFile{
 			Path:    fs.Path,
@@ -177,12 +178,12 @@ func RenderCompiler(t *CompilerTemplate, neir *model.NEIR) ([]RenderedFile, erro
 func renderTemplate(name, tmplStr string, data any) (string, error) {
 	tmpl, err := template.New(name).Funcs(FuncMap).Parse(tmplStr)
 	if err != nil {
-		return "", fmt.Errorf("parse template %s: %w", name, err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse template %s", name)
 	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("execute template %s: %w", name, err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "execute template %s", name)
 	}
 
 	return buf.String(), nil

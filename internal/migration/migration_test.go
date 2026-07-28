@@ -1,9 +1,12 @@
 package migration
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
+
+var errTest = errors.New("test error")
 
 func TestParseVersion(t *testing.T) {
 	v, err := ParseVersion("1.2.3")
@@ -326,5 +329,137 @@ func TestVersionLessPatch(t *testing.T) {
 	}
 	if v2.Less(v1) {
 		t.Error("expected 1.2.3 not < 1.2.1")
+	}
+}
+
+func TestPlannerPlanSingleStep(t *testing.T) {
+	planner := NewPlanner()
+	plan, err := planner.Plan("0.1.0", "0.2.0")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(plan) != 1 {
+		t.Errorf("expected 1 step, got %d", len(plan))
+	}
+}
+
+func TestPlannerMigrateError(t *testing.T) {
+	planner := NewPlanner()
+	planner.AddStep(MigrationStep{
+		FromVersion: "0.3.0",
+		ToVersion:   "0.4.0",
+		Description: "Failing step",
+		Migrate: func(spec []byte) ([]byte, error) {
+			return nil, errTest
+		},
+	})
+	_, err := planner.Migrate([]byte("test"), "0.3.0", "0.4.0")
+	if err == nil {
+		t.Fatal("expected error from failing migration step")
+	}
+}
+
+func TestMigrationEngineMigrateTransformError(t *testing.T) {
+	engine := NewMigrationEngine()
+	engine.Register(TransformStep{
+		FromVersion: "0.3.0",
+		ToVersion:   "0.4.0",
+		Description: "Failing transform",
+		Transform: func(data map[string]any) (map[string]any, error) {
+			return nil, errTest
+		},
+	})
+	_, err := engine.Migrate(map[string]any{}, "0.3.0", "0.4.0")
+	if err == nil {
+		t.Fatal("expected error from failing transform step")
+	}
+}
+
+func TestMigrationEnginePlanPartial(t *testing.T) {
+	engine := NewMigrationEngine()
+	plan := engine.Plan("0.2.0", "0.3.0")
+	if len(plan) != 1 {
+		t.Errorf("expected 1 step, got %d", len(plan))
+	}
+}
+
+func TestMigrationEnginePlanBeyondKnown(t *testing.T) {
+	engine := NewMigrationEngine()
+	plan := engine.Plan("0.3.0", "9.0.0")
+	if len(plan) != 0 {
+		t.Errorf("expected 0 steps for unknown path, got %d", len(plan))
+	}
+}
+
+func TestBuiltinTransform010To020ExistingVersion(t *testing.T) {
+	engine := NewMigrationEngine()
+	data := map[string]any{
+		"version": "0.1.0",
+	}
+	result, err := engine.Migrate(data, "0.1.0", "0.2.0")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result["version"] != "0.1.0" {
+		t.Errorf("expected version to remain 0.1.0, got %v", result["version"])
+	}
+}
+
+func TestBuiltinTransform020To030WithServices(t *testing.T) {
+	engine := NewMigrationEngine()
+	data := map[string]any{
+		"version": "0.2.0",
+		"services": []any{
+			map[string]any{
+				"name": "api",
+			},
+		},
+		"architecture": map[string]any{
+			"pattern": "layered",
+		},
+	}
+	result, err := engine.Migrate(data, "0.2.0", "0.3.0")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	svcs := result["services"].([]any)
+	svc := svcs[0].(map[string]any)
+	if svc["kind"] != "http" {
+		t.Errorf("expected service kind 'http', got %v", svc["kind"])
+	}
+	if result["architecture"] != nil {
+		arch := result["architecture"].(map[string]any)
+		if arch["pattern"] != "layered" {
+			t.Errorf("expected architecture pattern 'layered', got %v", arch["pattern"])
+		}
+	}
+}
+
+func TestBuiltinEngineRegisterOverride(t *testing.T) {
+	engine := NewMigrationEngine()
+	called := false
+	engine.Register(TransformStep{
+		FromVersion: "0.1.0",
+		ToVersion:   "0.2.0",
+		Description: "Override",
+		Transform: func(data map[string]any) (map[string]any, error) {
+			called = true
+			data["version"] = "0.2.0"
+			return data, nil
+		},
+	})
+	_, err := engine.Migrate(map[string]any{}, "0.1.0", "0.2.0")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !called {
+		t.Error("expected overridden step to be called")
+	}
+}
+
+func TestFormatMigrationPlanNil(t *testing.T) {
+	got := FormatMigrationPlan([]TransformStep{})
+	if got != "No migrations needed." {
+		t.Errorf("expected %q, got %q", "No migrations needed.", got)
 	}
 }

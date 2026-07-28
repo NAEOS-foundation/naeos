@@ -6,7 +6,7 @@ import (
 )
 
 func TestSecurityCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "security")
 	if err != nil {
 		t.Fatalf("execute security failed: %v", err)
@@ -14,7 +14,7 @@ func TestSecurityCommandShowsHelp(t *testing.T) {
 }
 
 func TestSecuritySetSecret(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "set-secret", "--name", "test-secret", "--value", "my-secret-value", "--key", "test-key-123")
 	if err != nil {
 		t.Fatalf("set-secret failed: %v", err)
@@ -25,7 +25,7 @@ func TestSecuritySetSecret(t *testing.T) {
 }
 
 func TestSecurityGetSecretNotFound(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "security", "get-secret", "--name", "nonexistent")
 	if err == nil {
 		t.Fatal("expected error for nonexistent secret")
@@ -33,7 +33,7 @@ func TestSecurityGetSecretNotFound(t *testing.T) {
 }
 
 func TestSecuritySanitize(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "sanitize", "--input", "<script>alert('xss')</script>")
 	if err != nil {
 		t.Fatalf("sanitize failed: %v", err)
@@ -44,7 +44,7 @@ func TestSecuritySanitize(t *testing.T) {
 }
 
 func TestSecuritySanitizeHTML(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "sanitize", "--input", "<b>bold</b>", "--mode", "html")
 	if err != nil {
 		t.Fatalf("sanitize html failed: %v", err)
@@ -55,7 +55,7 @@ func TestSecuritySanitizeHTML(t *testing.T) {
 }
 
 func TestSecurityHashPassword(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "hash-password", "--password", "mypassword123")
 	if err != nil {
 		t.Fatalf("hash-password failed: %v", err)
@@ -66,7 +66,7 @@ func TestSecurityHashPassword(t *testing.T) {
 }
 
 func TestSecurityValidateEmail(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "validate", "--name", "email", "--value", "test@example.com")
 	if err != nil {
 		t.Fatalf("validate failed: %v", err)
@@ -77,7 +77,7 @@ func TestSecurityValidateEmail(t *testing.T) {
 }
 
 func TestSecurityValidateName(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "validate", "--name", "name", "--value", "ab")
 	if err != nil {
 		t.Fatalf("validate failed: %v", err)
@@ -91,7 +91,7 @@ func TestSecurityAudit(t *testing.T) {
 	dir := t.TempDir()
 	writeTestFile(t, dir, "main.go", "package main\n\nfunc main() {}\n")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "audit", "--input", dir)
 	if err != nil {
 		t.Fatalf("security audit failed: %v", err)
@@ -105,7 +105,7 @@ func TestSecurityAuditWithSecrets(t *testing.T) {
 	dir := t.TempDir()
 	writeTestFile(t, dir, "config.go", "package main\n\nvar password = \"secret123\"\n")
 
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "security", "audit", "--input", dir)
 	if err != nil {
 		t.Fatalf("security audit failed: %v", err)

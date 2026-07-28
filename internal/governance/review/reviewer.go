@@ -3,6 +3,8 @@ package review
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var placeholdersLower = []string{"placeholder", "changeme", "replace_me"}
@@ -40,14 +42,14 @@ func NewReviewer() Reviewer {
 
 func (DefaultReviewer) Review(input any) error {
 	if input == nil {
-		return fmt.Errorf("review input is nil")
+		return naeoserr.New(naeoserr.ErrValidation, "review input is nil")
 	}
 	return nil
 }
 
 func (DefaultReviewer) ReviewArtifact(name, content string, rules []string) (*ReviewResult, error) {
 	if name == "" {
-		return nil, fmt.Errorf("artifact name must not be empty")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "artifact name must not be empty")
 	}
 
 	result := &ReviewResult{

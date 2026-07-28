@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 )
@@ -27,7 +28,7 @@ func NewValidator() Validator {
 func (DefaultValidator) Validate(neir any) error {
 	result := ValidateDetailed(neir)
 	if !result.Valid {
-		return fmt.Errorf("validation failed:\n  - %s", strings.Join(result.Errors, "\n  - "))
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("validation failed:\n  - %s", strings.Join(result.Errors, "\n  - ")))
 	}
 	return nil
 }
@@ -70,6 +71,11 @@ func ValidateDetailed(neir any) ValidationResult {
 			result.Valid = false
 			result.Errors = append(result.Errors, fmt.Sprintf("module %q (index %d) path is required — add a 'path:' field (e.g., ./internal/%s)", mod.Name, i, mod.Name))
 		}
+		if mod.Condition != "" {
+			if err := validateConditionExpr(mod.Condition); err != "" {
+				result.Warns = append(result.Warns, fmt.Sprintf("module %q condition %q: %s", mod.Name, mod.Condition, err))
+			}
+		}
 	}
 
 	seenModules := make(map[string]int)
@@ -89,6 +95,11 @@ func ValidateDetailed(neir any) ValidationResult {
 		if svc.Port < 0 || svc.Port > 65535 {
 			result.Valid = false
 			result.Errors = append(result.Errors, fmt.Sprintf("service %q port %d is out of range — must be between 0 and 65535", svc.Name, svc.Port))
+		}
+		if svc.Condition != "" {
+			if err := validateConditionExpr(svc.Condition); err != "" {
+				result.Warns = append(result.Warns, fmt.Sprintf("service %q condition %q: %s", svc.Name, svc.Condition, err))
+			}
 		}
 	}
 
@@ -242,5 +253,60 @@ func ValidateDetailed(neir any) ValidationResult {
 		}
 	}
 
+	if neirStruct.ActiveProfile != "" && neirStruct.Deployment != nil {
+		var found bool
+		for _, env := range neirStruct.Deployment.Environments {
+			if env.Name == neirStruct.ActiveProfile {
+				found = true
+				break
+			}
+		}
+		if !found && len(neirStruct.Deployment.Environments) > 0 {
+			result.Warns = append(result.Warns,
+				fmt.Sprintf("active_profile %q not found in deployment.environments", neirStruct.ActiveProfile))
+		}
+	}
+
 	return result
+}
+
+func validateConditionExpr(cond string) string {
+	if cond == "" {
+		return ""
+	}
+	parts := []string{"==", "!=", "defined:", "!"}
+	hasOp := false
+	for _, op := range parts {
+		if op == "!" {
+			if len(cond) > 1 && cond[0] == '!' {
+				hasOp = true
+				break
+			}
+		} else if op == "defined:" {
+			if len(cond) > 8 && cond[:8] == "defined:" {
+				hasOp = true
+				break
+			}
+		} else if idx := findOp(cond, op); idx > 0 {
+			key := strings.TrimSpace(cond[:idx])
+			val := strings.TrimSpace(cond[idx+len(op):])
+			if key == "" || val == "" {
+				return "invalid syntax: missing key or value"
+			}
+			return ""
+		}
+	}
+	if !hasOp {
+		return "unknown operator — supported: ==, !=, defined:, !"
+	}
+	return ""
+}
+
+func findOp(s, op string) int {
+	for i := 0; i <= len(s)-len(op); i++ {
+		if s[i:i+len(op)] == op {
+			return i
+		}
+	}
+	return -1
 }

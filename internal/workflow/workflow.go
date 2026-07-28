@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type State string
@@ -64,7 +66,7 @@ func (sm *StateMachine) Trigger(event string) error {
 	key := fmt.Sprintf("%s->%s", sm.current, event)
 	transition, ok := sm.transitions[key]
 	if !ok {
-		return fmt.Errorf("no transition from %s with event %s", sm.current, event)
+		return naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("no transition from %s with event %s", sm.current, event))
 	}
 
 	sm.history = append(sm.history, StateTransition{
@@ -217,7 +219,7 @@ func (w *Workflow) ExecuteWithContext(ctx context.Context) error {
 			w.Context.Error = err
 			w.emitEvent(EventStepFailed, step.Name, err)
 			_ = w.Machine.Trigger("error")
-			return fmt.Errorf("step %q failed: %w", step.Name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "step %q failed", step.Name)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
@@ -239,7 +241,7 @@ func (w *Workflow) executeStepWithTimeout(parentCtx context.Context, step *Workf
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("step %q timed out after %v", step.Name, step.Timeout)
+		return naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("step %q timed out after %v", step.Name, step.Timeout))
 	case err := <-done:
 		return err
 	}
@@ -262,7 +264,7 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 		var lastErr error
 		for attempt := 0; attempt <= config.MaxRetries; attempt++ {
 			if attempt > 0 {
-				w.emitEvent(EventStepRetry, step.Name, fmt.Errorf("retry %d/%d", attempt, config.MaxRetries))
+				w.emitEvent(EventStepRetry, step.Name, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("retry %d/%d", attempt, config.MaxRetries)))
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
@@ -290,7 +292,7 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 			w.Context.Error = lastErr
 			w.emitEvent(EventStepFailed, step.Name, lastErr)
 			_ = w.Machine.Trigger("error")
-			return fmt.Errorf("step %q failed after %d retries: %w", step.Name, config.MaxRetries, lastErr)
+			return naeoserr.Wrapf(lastErr, naeoserr.ErrPipeline, "step %q failed after %d retries", step.Name, config.MaxRetries)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
@@ -322,7 +324,7 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 				w.Context.Error = err
 				w.emitEvent(EventStepFailed, step.Name, err)
 				_ = w.Machine.Trigger("error")
-				return fmt.Errorf("step %q failed: %w", step.Name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "step %q failed", step.Name)
 			}
 
 			w.emitEvent(EventStepComplete, step.Name, nil)
@@ -341,7 +343,7 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 
 				if err := s.Action(w.Context); err != nil {
 					w.emitEvent(EventStepFailed, s.Name, err)
-					errCh <- fmt.Errorf("step %q failed: %w", s.Name, err)
+					errCh <- naeoserr.Wrapf(err, naeoserr.ErrPipeline, "step %q failed", s.Name)
 					return
 				}
 
@@ -361,7 +363,7 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 		if len(errs) > 0 {
 			w.Context.Error = errors.Join(errs...)
 			_ = w.Machine.Trigger("error")
-			return fmt.Errorf("parallel steps failed: %w", errors.Join(errs...))
+			return naeoserr.Wrapf(errors.Join(errs...), naeoserr.ErrPipeline, "parallel steps failed")
 		}
 
 		_ = w.Machine.Trigger("next")
@@ -394,11 +396,11 @@ func (w *Workflow) SaveSnapshot(path string) error {
 
 	data, err := json.MarshalIndent(snapshot, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal snapshot: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "marshal snapshot")
 	}
 
 	if err := os.WriteFile(path, data, 0o600); err != nil {
-		return fmt.Errorf("write snapshot: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "write snapshot")
 	}
 
 	return nil
@@ -407,12 +409,12 @@ func (w *Workflow) SaveSnapshot(path string) error {
 func LoadSnapshot(path string) (*WorkflowSnapshot, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read snapshot: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "read snapshot")
 	}
 
 	var snapshot WorkflowSnapshot
 	if err := json.Unmarshal(data, &snapshot); err != nil {
-		return nil, fmt.Errorf("unmarshal snapshot: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "unmarshal snapshot")
 	}
 
 	return &snapshot, nil
@@ -460,7 +462,7 @@ func (a *ApprovalWorkflow) Approve(id, approver, comment string) error {
 
 	req, ok := a.requests[id]
 	if !ok {
-		return fmt.Errorf("request not found: %s", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("request not found: %s", id))
 	}
 
 	req.Status = "approved"
@@ -476,7 +478,7 @@ func (a *ApprovalWorkflow) Reject(id, approver, comment string) error {
 
 	req, ok := a.requests[id]
 	if !ok {
-		return fmt.Errorf("request not found: %s", id)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("request not found: %s", id))
 	}
 
 	req.Status = "rejected"
@@ -566,7 +568,7 @@ func (m *Manager) Execute(name string) error {
 	workflow, ok := m.Get(name)
 	if !ok {
 		slog.Error("workflow not found", "name", name)
-		return fmt.Errorf("workflow not found: %s", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("workflow not found: %s", name))
 	}
 	slog.Info("workflow executing", "name", name)
 	return workflow.Execute()
@@ -576,7 +578,7 @@ func (m *Manager) ExecuteWithContext(ctx context.Context, name string) error {
 	workflow, ok := m.Get(name)
 	if !ok {
 		slog.Error("workflow not found", "name", name)
-		return fmt.Errorf("workflow not found: %s", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("workflow not found: %s", name))
 	}
 	slog.Info("workflow executing with context", "name", name)
 	return workflow.ExecuteWithContext(ctx)
@@ -592,7 +594,7 @@ func (m *Manager) save() error {
 		return nil
 	}
 	if err := os.MkdirAll(m.storePath, 0o755); err != nil {
-		return fmt.Errorf("create workflow store: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create workflow store")
 	}
 	var entries []workflowEntry
 	for name, w := range m.workflows {
@@ -604,10 +606,10 @@ func (m *Manager) save() error {
 	}
 	data, err := json.MarshalIndent(entries, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal workflows: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "marshal workflows")
 	}
 	if err := os.WriteFile(filepath.Join(m.storePath, "workflows.json"), data, 0o600); err != nil {
-		return fmt.Errorf("write workflows: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "write workflows")
 	}
 	return nil
 }
@@ -621,11 +623,11 @@ func (m *Manager) load() error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("read workflows: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "read workflows")
 	}
 	var entries []workflowEntry
 	if err := json.Unmarshal(data, &entries); err != nil {
-		return fmt.Errorf("unmarshal workflows: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "unmarshal workflows")
 	}
 	for _, e := range entries {
 		var steps []*WorkflowStep

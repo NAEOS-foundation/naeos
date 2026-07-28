@@ -3,11 +3,13 @@ package eventsourcing
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -237,10 +239,13 @@ func (s *FileStore) Append(streamID string, events []Event) error {
 	defer s.mu.Unlock()
 
 	if err := securityext.ValidatePluginName(streamID); err != nil {
-		return fmt.Errorf("invalid streamID: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "invalid streamID")
 	}
 
-	existing, _ := s.loadRaw(streamID)
+	existing, err := s.loadRaw(streamID)
+	if err != nil {
+		slog.Warn("failed to load existing events, starting fresh", "stream", streamID, "error", err)
+	}
 	startVersion := len(existing) + 1
 	for i := range events {
 		events[i].Version = startVersion + i
@@ -253,11 +258,11 @@ func (s *FileStore) Append(streamID string, events []Event) error {
 	all := append(existing, events...)
 	data, err := json.MarshalIndent(all, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal events: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal events")
 	}
 
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return fmt.Errorf("create dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir")
 	}
 	path := filepath.Join(s.dir, streamID+".json")
 	return os.WriteFile(path, data, 0o600)
@@ -295,7 +300,7 @@ func (s *FileStore) LoadFrom(streamID string, fromVersion int) ([]Event, error) 
 
 func (s *FileStore) loadRaw(streamID string) ([]Event, error) {
 	if err := securityext.ValidatePluginName(streamID); err != nil {
-		return nil, fmt.Errorf("invalid streamID: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "invalid streamID")
 	}
 	path := filepath.Join(s.dir, streamID+".json")
 	data, err := os.ReadFile(path)

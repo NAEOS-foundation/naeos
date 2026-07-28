@@ -12,6 +12,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/artifacts"
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/pluginhost"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 	"github.com/NAEOS-foundation/naeos/internal/version"
@@ -319,7 +320,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 	}
 
 	if tools[name] && spec == "" {
-		return nil, fmt.Errorf("%s: the 'spec' parameter is required; provide a valid YAML specification string", name)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("%s: the 'spec' parameter is required; provide a valid YAML specification string", name))
 	}
 
 	switch name {
@@ -366,7 +367,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
-			return nil, fmt.Errorf("parse failed: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse failed")
 		}
 		format, _ := args["format"].(string)
 		if format == "" {
@@ -388,7 +389,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		p := parser.NewParser(".")
 		doc, err := p.Parse(spec)
 		if err != nil {
-			return nil, fmt.Errorf("parse failed: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse failed")
 		}
 		gen := s.bundle
 		b := gen.GenerateFromSpec(doc)
@@ -414,7 +415,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 	case "get_pipeline_status":
 		jobID, _ := args["job_id"].(string)
 		if jobID == "" {
-			return nil, fmt.Errorf("get_pipeline_status: 'job_id' is required; use 'list_artifacts' to find active job IDs")
+			return nil, naeoserr.New(naeoserr.ErrValidation, "get_pipeline_status: 'job_id' is required; use 'list_artifacts' to find active job IDs")
 		}
 		return s.handleGetPipelineStatus(jobID)
 
@@ -425,7 +426,7 @@ func (s *Server) callTool(name string, args map[string]any) (*CallResult, error)
 		return s.handleListPlugins()
 
 	default:
-		return nil, fmt.Errorf("unknown tool %q; available tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept, list_artifacts, get_pipeline_status, export_terraform, list_plugins", name)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("unknown tool %q; available tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept, list_artifacts, get_pipeline_status, export_terraform, list_plugins", name))
 	}
 }
 
@@ -458,7 +459,7 @@ func (s *Server) handleListArtifacts() (*CallResult, error) {
 	}
 	data, err := json.MarshalIndent(summaries, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("marshal artifacts: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal artifacts")
 	}
 	return &CallResult{
 		Content: []ContentBlock{{Type: "text", Text: string(data)}},
@@ -477,7 +478,7 @@ func (s *Server) handleGetPipelineStatus(jobID string) (*CallResult, error) {
 	}
 	data, err := json.MarshalIndent(job, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("marshal job: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal job")
 	}
 	return &CallResult{
 		Content: []ContentBlock{{Type: "text", Text: string(data)}},
@@ -488,7 +489,7 @@ func (s *Server) handleExportTerraform(spec string) (*CallResult, error) {
 	p := parser.NewParser(".")
 	doc, err := p.Parse(spec)
 	if err != nil {
-		return nil, fmt.Errorf("parse failed: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse failed")
 	}
 
 	var b strings.Builder
@@ -556,7 +557,7 @@ func (s *Server) handleListPlugins() (*CallResult, error) {
 	}
 	data, err := json.MarshalIndent(summaries, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("marshal plugins: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "marshal plugins")
 	}
 	return &CallResult{
 		Content: []ContentBlock{{Type: "text", Text: string(data)}},

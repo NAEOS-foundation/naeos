@@ -7,7 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Schema struct {
@@ -172,7 +173,7 @@ func (e *Executor) Execute(ctx *Context, query string) *Response {
 
 func (e *Executor) resolveSelection(ctx *Context, sel *Selection, depth int) (any, error) {
 	if depth > e.maxDepth {
-		return nil, fmt.Errorf("query depth exceeds maximum of %d", e.maxDepth)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("query depth exceeds maximum of %d", e.maxDepth))
 	}
 
 	if e.schema.Queries != nil {
@@ -212,17 +213,17 @@ func (e *Executor) resolveSelection(ctx *Context, sel *Selection, depth int) (an
 		}
 	}
 
-	return nil, fmt.Errorf("field '%s' not found", sel.Name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("field '%s' not found", sel.Name))
 }
 
 func (e *Executor) resolveChildren(ctx *Context, parent any, children []*Selection, depth int) (any, error) {
 	if depth > e.maxDepth {
-		return nil, fmt.Errorf("query depth exceeds maximum of %d", e.maxDepth)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("query depth exceeds maximum of %d", e.maxDepth))
 	}
 
 	parentMap, ok := toMap(parent)
 	if !ok {
-		return nil, fmt.Errorf("cannot resolve sub-fields on non-object type")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "cannot resolve sub-fields on non-object type")
 	}
 
 	result := make(map[string]any)
@@ -406,12 +407,12 @@ func parseFragment(token string) (*FragmentDef, error) {
 	token = strings.TrimPrefix(token, "fragment ")
 	parts := strings.SplitN(token, "{", 2)
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid fragment syntax")
+		return nil, naeoserr.New(naeoserr.ErrParse, "invalid fragment syntax")
 	}
 	header := strings.TrimSpace(parts[0])
 	onParts := strings.Split(header, " on ")
 	if len(onParts) != 2 {
-		return nil, fmt.Errorf("fragment must specify type (fragment X on Type)")
+		return nil, naeoserr.New(naeoserr.ErrParse, "fragment must specify type (fragment X on Type)")
 	}
 	name := strings.TrimSpace(onParts[0])
 	onType := strings.TrimSpace(onParts[1])
@@ -543,7 +544,7 @@ func parseSelection(line string) (*Selection, error) {
 	line = strings.TrimSpace(line)
 
 	if line == "" {
-		return nil, fmt.Errorf("empty selection")
+		return nil, naeoserr.New(naeoserr.ErrParse, "empty selection")
 	}
 
 	bracketIdx := strings.Index(line, "{")
@@ -612,7 +613,7 @@ func parseSelection(line string) (*Selection, error) {
 	}
 
 	if sel.Name == "" {
-		return nil, fmt.Errorf("empty selection")
+		return nil, naeoserr.New(naeoserr.ErrParse, "empty selection")
 	}
 
 	return sel, nil
@@ -718,5 +719,3 @@ func ListResolver(items []any) Resolver {
 		return items, nil
 	}
 }
-
-var _ = time.Now

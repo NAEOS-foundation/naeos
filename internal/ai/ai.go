@@ -3,6 +3,8 @@ package ai
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // AIService provides analysis and suggestions for NAEOS specifications.
@@ -46,7 +48,7 @@ type Explanation struct {
 // Uses LLM when available, falls back to rule-based analysis.
 func (s *AIService) Suggest(specContent string) ([]Suggestion, error) {
 	if specContent == "" {
-		return nil, fmt.Errorf("empty specification")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "empty specification")
 	}
 
 	if s.llm != nil {
@@ -147,7 +149,7 @@ func (s *AIService) suggestRules(specContent string) ([]Suggestion, error) {
 // Uses LLM when available for architecture topics, falls back to built-in knowledge.
 func (s *AIService) Explain(topic, specContent string) (*Explanation, error) {
 	if topic == "" {
-		return nil, fmt.Errorf("topic is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "topic is required")
 	}
 
 	if s.llm != nil && specContent != "" && strings.ToLower(topic) == "architecture" {

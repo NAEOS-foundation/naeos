@@ -131,7 +131,7 @@ func TestGitHubActionsGenerator_JavaSteps(t *testing.T) {
 	if !strings.Contains(output, "actions/setup-java@v4") {
 		t.Error("missing java setup")
 	}
-	if !strings.Contains(output, "mvn clean install") {
+	if !strings.Contains(output, "mvn clean compile") {
 		t.Error("missing maven build")
 	}
 }
@@ -729,6 +729,7 @@ func TestGetGenerator(t *testing.T) {
 	}{
 		{GitHubActions, "GitHub Actions"},
 		{GitLabCI, "GitLab CI"},
+		{AzurePipelines, "Azure Pipelines"},
 		{Jenkins, "Jenkins"},
 	}
 	for _, tt := range tests {

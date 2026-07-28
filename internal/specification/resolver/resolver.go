@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/specification/normalizer"
 )
 
@@ -24,7 +25,7 @@ func NewResolver() Resolver {
 
 func (DefaultResolver) Resolve(spec any) (*ResolvedSpec, error) {
 	if spec == nil {
-		return nil, fmt.Errorf("spec is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "spec is nil")
 	}
 
 	normalized, ok := spec.(*normalizer.NormalizedSpec)
@@ -725,7 +726,7 @@ func ResolveWithTrace(spec any) (*ResolvedSpec, *ResolutionContext, error) {
 	ctx := &ResolutionContext{}
 
 	if spec == nil {
-		return nil, ctx, fmt.Errorf("spec is nil")
+		return nil, ctx, naeoserr.New(naeoserr.ErrValidation, "spec is nil")
 	}
 
 	normalized, ok := spec.(*normalizer.NormalizedSpec)

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
 
@@ -37,7 +38,7 @@ func Version() string {
 
 func (DefaultNormalizer) Normalize(doc any) (*NormalizedSpec, error) {
 	if doc == nil {
-		return nil, fmt.Errorf("document is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "document is nil")
 	}
 
 	specDoc, ok := doc.(*parser.SpecDocument)
@@ -73,7 +74,7 @@ func (DefaultNormalizer) Normalize(doc any) (*NormalizedSpec, error) {
 
 func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if data == nil {
-		return nil, fmt.Errorf("input data is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "input data is nil")
 	}
 
 	result := make(map[string]any, len(data))
@@ -88,7 +89,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if modules, ok := data["modules"]; ok {
 		normalized, err := normalizeRawModules(modules)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing modules: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing modules")
 		}
 		result["modules"] = normalized
 	}
@@ -96,7 +97,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if services, ok := data["services"]; ok {
 		normalized, err := normalizeRawServices(services)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing services: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing services")
 		}
 		result["services"] = normalized
 	}
@@ -104,7 +105,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if arch, ok := data["architecture"]; ok {
 		normalized, err := normalizeRawMap(arch)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing architecture: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing architecture")
 		}
 		result["architecture"] = normalized
 	}
@@ -112,7 +113,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if deploy, ok := data["deployment"]; ok {
 		normalized, err := normalizeRawMap(deploy)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing deployment: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing deployment")
 		}
 		result["deployment"] = normalized
 	}
@@ -120,7 +121,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if testing, ok := data["testing"]; ok {
 		normalized, err := normalizeRawMap(testing)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing testing: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing testing")
 		}
 		result["testing"] = normalized
 	}
@@ -128,7 +129,7 @@ func NormalizeRaw(data map[string]any) (*NormalizedSpec, error) {
 	if gen, ok := data["generation"]; ok {
 		normalized, err := normalizeRawMap(gen)
 		if err != nil {
-			return nil, fmt.Errorf("normalizing generation: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "normalizing generation")
 		}
 		result["generation"] = normalized
 	}
@@ -158,7 +159,7 @@ func normalizeRawModules(v any) (any, error) {
 		result = append(result, m...)
 		return result, nil
 	default:
-		return nil, fmt.Errorf("expected array of modules, got %T", v)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected array of modules, got %T", v))
 	}
 }
 
@@ -179,7 +180,7 @@ func normalizeRawServices(v any) (any, error) {
 		result = append(result, s...)
 		return result, nil
 	default:
-		return nil, fmt.Errorf("expected array of services, got %T", v)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected array of services, got %T", v))
 	}
 }
 
@@ -198,7 +199,7 @@ func normalizeRawMap(v any) (map[string]any, error) {
 		}
 		return result, nil
 	default:
-		return nil, fmt.Errorf("expected map, got %T", v)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("expected map, got %T", v))
 	}
 }
 

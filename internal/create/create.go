@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Wizard struct {
@@ -35,13 +37,25 @@ func NewWizard() *Wizard {
 	}
 }
 
+func (w *Wizard) output(format string, args ...any) {
+	fmt.Printf(format, args...)
+}
+
+func (w *Wizard) outputLine(format string, args ...any) {
+	fmt.Fprintf(os.Stdout, format+"\n", args...)
+}
+
+func (w *Wizard) errorLine(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+}
+
 func (w *Wizard) Run() (*ProjectConfig, error) {
 	cfg := &ProjectConfig{}
 
-	fmt.Println("╔══════════════════════════════════════╗")
-	fmt.Println("║     NAEOS Project Creation Wizard    ║")
-	fmt.Println("╚══════════════════════════════════════╝")
-	fmt.Println()
+	w.outputLine("╔══════════════════════════════════════╗")
+	w.outputLine("║     NAEOS Project Creation Wizard    ║")
+	w.outputLine("╚══════════════════════════════════════╝")
+	w.outputLine("")
 
 	cfg.Name = w.askRequired("Project name")
 	cfg.ModulePath = w.askDefault("Module path", "./"+strings.ToLower(strings.ReplaceAll(cfg.Name, " ", "-")))
@@ -56,25 +70,25 @@ func (w *Wizard) Run() (*ProjectConfig, error) {
 	cfg.EnableDocker = w.askYesNo("Generate Dockerfile", true)
 	cfg.EnableCI = w.askYesNo("Generate CI workflow", true)
 
-	fmt.Println()
-	fmt.Println("Configuration complete!")
+	w.outputLine("")
+	w.outputLine("Configuration complete!")
 	return cfg, nil
 }
 
 func (w *Wizard) askRequired(prompt string) string {
 	for {
-		fmt.Printf("%s: ", prompt)
+		w.output("%s: ", prompt)
 		text, _ := w.reader.ReadString('\n')
 		text = strings.TrimSpace(text)
 		if text != "" {
 			return text
 		}
-		fmt.Println("  This field is required.")
+		w.errorLine("  This field is required.")
 	}
 }
 
 func (w *Wizard) askDefault(prompt, defaultVal string) string {
-	fmt.Printf("%s [%s]: ", prompt, defaultVal)
+	w.output("%s [%s]: ", prompt, defaultVal)
 	text, _ := w.reader.ReadString('\n')
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -84,15 +98,15 @@ func (w *Wizard) askDefault(prompt, defaultVal string) string {
 }
 
 func (w *Wizard) askChoice(prompt string, options []string, defaultVal string) string {
-	fmt.Printf("%s:\n", prompt)
+	w.outputLine("%s:", prompt)
 	for i, opt := range options {
 		marker := "  "
 		if opt == defaultVal {
 			marker = "→ "
 		}
-		fmt.Printf("  %s%d) %s\n", marker, i+1, opt)
+		w.outputLine("  %s%d) %s", marker, i+1, opt)
 	}
-	fmt.Printf("  Choose [1-%d] (default: %s): ", len(options), defaultVal)
+	w.output("  Choose [1-%d] (default: %s): ", len(options), defaultVal)
 	text, _ := w.reader.ReadString('\n')
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -107,7 +121,7 @@ func (w *Wizard) askChoice(prompt string, options []string, defaultVal string) s
 
 func (w *Wizard) askInt(prompt string) int {
 	const defaultVal = 8080
-	fmt.Printf("%s [%d]: ", prompt, defaultVal)
+	w.output("%s [%d]: ", prompt, defaultVal)
 	text, _ := w.reader.ReadString('\n')
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -125,7 +139,7 @@ func (w *Wizard) askYesNo(prompt string, defaultVal bool) bool {
 	if defaultVal {
 		defaultStr = "Y/n"
 	}
-	fmt.Printf("%s [%s]: ", prompt, defaultStr)
+	w.output("%s [%s]: ", prompt, defaultStr)
 	text, _ := w.reader.ReadString('\n')
 	text = strings.TrimSpace(strings.ToLower(text))
 	if text == "" {
@@ -487,10 +501,10 @@ func (s *Scaffolder) Execute(cfg *ProjectConfig) error {
 		}
 		dir := filepath.Dir(f.Path)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("create dir %s: %w", dir, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir %s", dir)
 		}
 		if err := os.WriteFile(f.Path, []byte(f.Content), f.Mode); err != nil {
-			return fmt.Errorf("write %s: %w", f.Path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", f.Path)
 		}
 	}
 	return nil

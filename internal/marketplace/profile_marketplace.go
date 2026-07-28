@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/securityext"
 )
 
@@ -66,7 +67,7 @@ func (m *ProfileMarketplace) Get(name string) (*ProfileEntry, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("profile %s not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("profile %s not found", name))
 }
 
 func (m *ProfileMarketplace) Search(query string, tags []string) ([]ProfileEntry, error) {
@@ -139,7 +140,7 @@ func (m *ProfileMarketplace) Download(name, targetDir string) error {
 
 	profileName := entry.Name
 	if err := securityext.ValidatePluginName(profileName); err != nil {
-		return fmt.Errorf("invalid profile name %q: %w", profileName, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid profile name %q", profileName)
 	}
 	profileFile := filepath.Join(profileDir, fmt.Sprintf("%s.json", profileName))
 	return os.WriteFile(profileFile, data, 0o600)
@@ -172,7 +173,7 @@ func (m *ProfileMarketplace) Remove(name string) error {
 		}
 	}
 
-	return fmt.Errorf("profile %s not found", name)
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("profile %s not found", name))
 }
 
 func (m *ProfileMarketplace) IncrementDownloads(name string) error {
@@ -189,7 +190,7 @@ func (m *ProfileMarketplace) IncrementDownloads(name string) error {
 		}
 	}
 
-	return fmt.Errorf("profile %s not found", name)
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("profile %s not found", name))
 }
 
 func (m *ProfileMarketplace) loadProfiles() ([]ProfileEntry, error) {

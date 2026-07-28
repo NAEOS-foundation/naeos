@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type ProvenanceRecord struct {
@@ -35,10 +37,10 @@ func (ps *ProvenanceStore) Record(record ProvenanceRecord) error {
 	defer ps.mu.Unlock()
 
 	if record.ID == "" {
-		return fmt.Errorf("record ID must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "record ID must not be empty")
 	}
 	if _, exists := ps.records[record.ID]; exists {
-		return fmt.Errorf("record %s already exists", record.ID)
+		return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("record %s already exists", record.ID))
 	}
 
 	if record.Timestamp.IsZero() {
@@ -105,7 +107,7 @@ func (ps *ProvenanceStore) Lineage(id string) ([]*ProvenanceRecord, error) {
 	for currentID != "" {
 		record, exists := ps.records[currentID]
 		if !exists {
-			return nil, fmt.Errorf("record %s not found in lineage", currentID)
+			return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("record %s not found in lineage", currentID))
 		}
 		lineage = append(lineage, record)
 		currentID = record.ParentID

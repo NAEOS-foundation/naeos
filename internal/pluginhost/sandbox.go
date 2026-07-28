@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // SandboxConfig defines security constraints for plugin execution.
@@ -41,7 +43,7 @@ func NewSandbox(cfg SandboxConfig) *Sandbox {
 func (s *Sandbox) ValidatePath(path string) error {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("invalid path: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "invalid path")
 	}
 	if len(s.config.AllowedDirs) == 0 {
 		return nil
@@ -55,7 +57,7 @@ func (s *Sandbox) ValidatePath(path string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("plugin path %q is outside allowed directories; add the path to sandbox.allowed_dirs in plugins.json", path)
+	return naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("plugin path %q is outside allowed directories; add the path to sandbox.allowed_dirs in plugins.json", path))
 }
 
 // CheckRateLimit enforces per-plugin call count limits.
@@ -64,7 +66,7 @@ func (s *Sandbox) CheckRateLimit(pluginName string) error {
 	defer s.mu.Unlock()
 	s.callCnt[pluginName]++
 	if s.callCnt[pluginName] > s.config.MaxCalls {
-		return fmt.Errorf("plugin %q exceeded max call limit (%d); increase sandbox.max_calls in plugins.json or reduce call frequency", pluginName, s.config.MaxCalls)
+		return naeoserr.New(naeoserr.ErrRateLimit, fmt.Sprintf("plugin %q exceeded max call limit (%d); increase sandbox.max_calls in plugins.json or reduce call frequency", pluginName, s.config.MaxCalls))
 	}
 	return nil
 }
@@ -86,9 +88,9 @@ func (s *Sandbox) ExecuteWithTimeout(ctx context.Context, fn func() (any, error)
 
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("plugin execution canceled: %w", ctx.Err())
+		return nil, naeoserr.Wrapf(ctx.Err(), naeoserr.ErrPlugin, "plugin execution canceled")
 	case <-timer.C:
-		return nil, fmt.Errorf("plugin execution timed out after %s; increase sandbox.exec_timeout in plugins.json or optimize the plugin", s.config.ExecTimeout)
+		return nil, naeoserr.New(naeoserr.ErrTimeout, fmt.Sprintf("plugin execution timed out after %s; increase sandbox.exec_timeout in plugins.json or optimize the plugin", s.config.ExecTimeout))
 	case r := <-ch:
 		return r.value, r.err
 	}

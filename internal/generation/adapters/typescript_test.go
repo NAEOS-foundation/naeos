@@ -6,6 +6,7 @@ import (
 )
 
 func TestTypeScriptAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateProject("MyProject")
 	if len(artifacts) < 4 {
@@ -34,6 +35,7 @@ func TestTypeScriptAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "MyProject")
 	if len(artifacts) < 6 {
@@ -58,6 +60,7 @@ func TestTypeScriptAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "MyProject")
 	if len(artifacts) < 1 {
@@ -76,6 +79,7 @@ func TestTypeScriptAdapter_GenerateService(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateDockerfile("MyProject")
 	if len(artifacts) != 1 {
@@ -91,6 +95,7 @@ func TestTypeScriptAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateCI("MyProject")
 	if len(artifacts) != 1 {
@@ -106,6 +111,7 @@ func TestTypeScriptAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateDockerCompose("MyProject")
 	if len(artifacts) != 1 {
@@ -118,6 +124,7 @@ func TestTypeScriptAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestTypeScriptAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := TypeScriptAdapter{}
 	artifacts := a.GenerateArchitectureDoc("MyProject", "clean")
 	if len(artifacts) != 1 {

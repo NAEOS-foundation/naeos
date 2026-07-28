@@ -44,18 +44,18 @@ func (s *ConnectionStore) load() error {
 			s.entries = nil
 			return nil
 		}
-		return fmt.Errorf("read broker connections file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "read broker connections file")
 	}
 	return json.Unmarshal(data, &s.entries)
 }
 
 func (s *ConnectionStore) save() error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return fmt.Errorf("create broker config dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create broker config dir")
 	}
 	data, err := json.MarshalIndent(s.entries, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal broker connections: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal broker connections")
 	}
 	return os.WriteFile(s.filePath(), data, 0o600)
 }
@@ -94,7 +94,8 @@ func (s *ConnectionStore) Remove(name string) error {
 			return s.save()
 		}
 	}
-	return naeoserr.Wrap(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q not found", name), nil)
+
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("broker connection %q", name))
 }
 
 func (s *ConnectionStore) Get(name string) (*SavedBroker, error) {

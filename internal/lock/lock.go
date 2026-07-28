@@ -11,6 +11,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type HashAlgorithm string
@@ -126,7 +128,7 @@ func GenerateWithAlgorithm(artifacts []ArtifactInfo, algo HashAlgorithm) (*LockF
 
 	data, err := json.MarshalIndent(lock, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("marshal lock file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal lock file")
 	}
 
 	lock.Checksum = hashContent(data, algo)
@@ -137,7 +139,7 @@ func GenerateWithAlgorithm(artifacts []ArtifactInfo, algo HashAlgorithm) (*LockF
 func WriteToFile(lock *LockFile, path string) error {
 	data, err := json.MarshalIndent(lock, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal lock file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "marshal lock file")
 	}
 	return os.WriteFile(path, data, 0o600)
 }
@@ -145,11 +147,11 @@ func WriteToFile(lock *LockFile, path string) error {
 func ReadFromFile(path string) (*LockFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read lock file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "read lock file")
 	}
 	var lock LockFile
 	if err := json.Unmarshal(data, &lock); err != nil {
-		return nil, fmt.Errorf("parse lock file: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse lock file")
 	}
 	return &lock, nil
 }
@@ -164,7 +166,7 @@ func VerifyConcurrent(lock *LockFile, current []ArtifactInfo, workers int) *Veri
 	result := &VerifyResult{}
 
 	if lock == nil {
-		result.Errors = append(result.Errors, fmt.Errorf("lock file is nil"))
+		result.Errors = append(result.Errors, naeoserr.New(naeoserr.ErrInternal, "lock file is nil"))
 		result.Duration = time.Since(start)
 		return result
 	}
@@ -234,5 +236,5 @@ func mergeErrors(errs []error) error {
 		}
 		msg += e.Error()
 	}
-	return fmt.Errorf("%s", msg)
+	return naeoserr.New(naeoserr.ErrInternal, msg)
 }

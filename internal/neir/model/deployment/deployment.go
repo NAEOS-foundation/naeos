@@ -18,9 +18,10 @@ type Deployment struct {
 }
 
 type Environment struct {
-	Name   string            `json:"name"`
-	Kind   string            `json:"kind,omitempty"`
-	Config map[string]string `json:"config,omitempty"`
+	Name      string            `json:"name"`
+	Kind      string            `json:"kind,omitempty"`
+	Config    map[string]string `json:"config,omitempty"`
+	Variables map[string]string `json:"variables,omitempty"`
 }
 
 type Scaling struct {

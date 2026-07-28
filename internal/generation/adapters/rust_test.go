@@ -6,6 +6,7 @@ import (
 )
 
 func TestRustAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateProject("MyProject")
 	if len(artifacts) < 4 {
@@ -34,6 +35,7 @@ func TestRustAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "MyProject")
 	if len(artifacts) < 6 {
@@ -58,6 +60,7 @@ func TestRustAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "MyProject")
 	if len(artifacts) < 1 {
@@ -79,6 +82,7 @@ func TestRustAdapter_GenerateService(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateServiceNonHTTP(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateService("worker", "grpc", 9090, "MyProject")
 	if len(artifacts) != 0 {
@@ -87,6 +91,7 @@ func TestRustAdapter_GenerateServiceNonHTTP(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateDockerfile("MyProject")
 	if len(artifacts) != 1 {
@@ -102,6 +107,7 @@ func TestRustAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateCI("MyProject")
 	if len(artifacts) != 1 {
@@ -117,6 +123,7 @@ func TestRustAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateDockerCompose("MyProject")
 	if len(artifacts) != 1 {
@@ -129,6 +136,7 @@ func TestRustAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestRustAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := RustAdapter{}
 	artifacts := a.GenerateArchitectureDoc("MyProject", "hexagonal")
 	if len(artifacts) != 1 {

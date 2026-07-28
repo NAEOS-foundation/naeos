@@ -3,6 +3,8 @@ package cicd
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type NotificationType string
@@ -28,7 +30,7 @@ func (n *NotificationGenerator) Name() string {
 
 func (n *NotificationGenerator) GenerateSteps(config *NotificationConfig) ([]PipelineStep, error) {
 	if config == nil {
-		return nil, fmt.Errorf("notification config is nil")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "notification config is nil")
 	}
 
 	switch config.Type {
@@ -39,7 +41,7 @@ func (n *NotificationGenerator) GenerateSteps(config *NotificationConfig) ([]Pip
 	case NotificationWebhook:
 		return n.generateWebhookSteps(config)
 	default:
-		return nil, fmt.Errorf("unsupported notification type: %s", config.Type)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported notification type: %s", config.Type))
 	}
 }
 
@@ -49,7 +51,7 @@ func (n *NotificationGenerator) generateSlackSteps(config *NotificationConfig) (
 		channel = "general"
 	}
 	if config.Target == "" {
-		return nil, fmt.Errorf("slack webhook URL is required")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "slack webhook URL is required")
 	}
 
 	var steps []PipelineStep
@@ -77,7 +79,7 @@ func (n *NotificationGenerator) generateSlackSteps(config *NotificationConfig) (
 
 func (n *NotificationGenerator) generateEmailSteps(config *NotificationConfig) ([]PipelineStep, error) {
 	if config.Target == "" {
-		return nil, fmt.Errorf("email recipient is required")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "email recipient is required")
 	}
 
 	var steps []PipelineStep
@@ -105,7 +107,7 @@ func (n *NotificationGenerator) generateEmailSteps(config *NotificationConfig) (
 
 func (n *NotificationGenerator) generateWebhookSteps(config *NotificationConfig) ([]PipelineStep, error) {
 	if config.Target == "" {
-		return nil, fmt.Errorf("webhook URL is required")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "webhook URL is required")
 	}
 
 	var steps []PipelineStep
@@ -133,14 +135,14 @@ func (n *NotificationGenerator) generateWebhookSteps(config *NotificationConfig)
 
 func EmbedNotifications(config *PipelineConfig, notifications []*NotificationConfig) error {
 	if config == nil {
-		return fmt.Errorf("pipeline config is nil")
+		return naeoserr.New(naeoserr.ErrPipeline, "pipeline config is nil")
 	}
 
 	gen := &NotificationGenerator{}
 	for _, notif := range notifications {
 		steps, err := gen.GenerateSteps(notif)
 		if err != nil {
-			return fmt.Errorf("failed to generate notification steps: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "failed to generate notification steps")
 		}
 		config.Steps = append(config.Steps, steps...)
 	}
@@ -155,7 +157,7 @@ func GenerateNotificationBlock(config *PipelineConfig, notifications []*Notifica
 	for _, notif := range notifications {
 		steps, err := gen.GenerateSteps(notif)
 		if err != nil {
-			return "", fmt.Errorf("failed to generate notification steps: %w", err)
+			return "", naeoserr.Wrapf(err, naeoserr.ErrPipeline, "failed to generate notification steps")
 		}
 		allSteps = append(allSteps, steps...)
 	}

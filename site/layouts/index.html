@@ -1,24 +1,10 @@
 {{ define "main" }}
 {{ partial "hero.html" . }}
 
-<div class="container">
-    <div class="stats-grid stagger-fade">
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}">0</div>
-            <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}">0</div>
-            <div class="stat-label">{{ i18n "stats_languages" }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}">0</div>
-            <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}">0</div>
-            <div class="stat-label">{{ i18n "stats_specs" }}</div>
-        </div>
+<div class="announcement-bar">
+    <div class="container announcement-bar-inner">
+        <span class="announcement-badge">NEW</span>
+        <span class="announcement-text"><strong>v2.2.0</strong> — Supabase integration, 44 new unit tests, multi-tenant workspaces, schema registry API, compliance export CLI. <a href="https://github.com/NAEOS-foundation/naeos/releases" target="_blank" rel="noopener">See what's new →</a></span>
     </div>
 </div>
 
@@ -32,7 +18,7 @@
                 <a href="{{ "docs/architecture/" | relLangURL }}" class="btn btn-secondary">{{ i18n "cta_read_docs" }}</a>
             </div>
             <div class="what-is-diagram">
-                <svg class="arch-svg" viewBox="0 0 400 320" fill="none">
+                <svg class="arch-svg" viewBox="0 0 400 320" fill="none" role="img" aria-label="NAEOS pipeline architecture diagram showing Spec YAML/JSON and CLI Commands flowing into Core Runtime, then Parser, NEIR Model, and Generator, outputting Go, TypeScript, Python, Java, and Rust">
                     <rect x="10" y="10" width="380" height="300" rx="12" stroke="#2a2a2a" stroke-width="1.5" fill="#111"/>
                     <text x="200" y="40" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="2">NAEOS PIPELINE</text>
                     <rect x="30" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
@@ -64,38 +50,59 @@
     </div>
 </section>
 
+<div class="container">
+    <div class="stats-grid stagger-fade">
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_languages" }}</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_specs" }}</div>
+        </div>
+    </div>
+</div>
+
 <section class="section">
     <div class="container">
         <h2 class="section-title fade-in">{{ i18n "section_features" }}</h2>
         <p class="section-subtitle fade-in">{{ i18n "home_features_subtitle" (dict "CLI" .Site.Params.stats.cli) }}</p>
         <div class="features-grid stagger-fade">
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 <h3>{{ i18n "feature_pipeline" }}</h3>
                 <p>{{ i18n "feature_pipeline_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 2 12"/><path d="M12 2 12 12"/><path d="M12 12 12 22"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12 2 12"/><path d="M12 2 12 12"/><path d="M12 12 12 22"/></svg>
                 <h3>{{ i18n "feature_compiler" }}</h3>
                 <p>{{ i18n "feature_compiler_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 <h3>{{ i18n "feature_generator" }}</h3>
                 <p>{{ i18n "feature_generator_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
                 <h3>{{ i18n "feature_neir" }}</h3>
                 <p>{{ i18n "feature_neir_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <h3>{{ i18n "feature_governance" }}</h3>
                 <p>{{ i18n "feature_governance_desc" }}</p>
             </div>
             <div class="feature-card">
-                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
                 <h3>{{ i18n "feature_marketplace" }}</h3>
                 <p>{{ i18n "feature_marketplace_desc" }}</p>
             </div>
@@ -168,6 +175,34 @@ generation:
     </div>
 </section>
 
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "section_latest_blog" }}</h2>
+        <p class="section-subtitle">{{ i18n "section_latest_blog_desc" }}</p>
+        <div class="blog-grid" id="home-blog-preview">
+            {{ $blog := where site.RegularPages "Section" "blog" | first 3 }}
+            {{ range $blog }}
+            <article class="blog-card">
+                <div class="blog-card-categories">
+                    {{ with .Params.categories }}
+                    {{ range . }}<span class="category-badge">{{ . }}</span>{{ end }}
+                    {{ end }}
+                </div>
+                <div class="blog-date">{{ .Date.Format "Jan 2, 2006" }}</div>
+                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+                <p>{{ .Description | default .Summary | truncate 120 }}</p>
+                <div class="blog-meta" style="margin-top:auto;justify-content:flex-start;">
+                    <span>{{ i18n "blog_read" }} {{ .ReadingTime }} min</span>
+                </div>
+            </article>
+            {{ end }}
+        </div>
+        <div style="text-align:center;margin-top:2rem;">
+            <a href="{{ "blog/" | relLangURL }}" class="btn btn-secondary">{{ i18n "nav_blog" }} →</a>
+        </div>
+    </div>
+</section>
+
 <section class="section section-github-stats">
     <div class="container fade-in">
         <h2 class="section-title github-stats-title fade-in">{{ i18n "home_community_title" }}</h2>
@@ -191,6 +226,7 @@ generation:
         </div>
     </div>
 </section>
+
 
 <section class="section">
     <div class="container fade-in">
@@ -231,10 +267,29 @@ generation:
         <p class="section-subtitle">{{ i18n "home_playground_desc" }}</p>
         <div class="spec-playground">
             <div class="playground-tabs">
-                <button class="playground-tab active" onclick="switchPlayground(this, 'yaml')">{{ i18n "home_tab_microservice" }}</button>
+                <button class="playground-tab active" onclick="switchPlayground(this, 'microservices')">{{ i18n "home_tab_microservice" }}</button>
                 <button class="playground-tab" onclick="switchPlayground(this, 'serverless')">Serverless</button>
                 <button class="playground-tab" onclick="switchPlayground(this, 'monolith')">Monolith</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'hexagonal')">Hexagonal</button>
+                <button class="playground-tab" onclick="switchPlayground(this, 'event-driven')">Event Driven</button>
                 <button class="playground-tab" onclick="switchPlayground(this, 'ai-context')">{{ i18n "home_tab_ai_context" }}</button>
+            </div>
+            <div class="playground-toolbar">
+                <span class="playground-toolbar-label">spec.yaml</span>
+                <div class="playground-toolbar-actions">
+                    <div class="playground-view-toggle">
+                        <button class="btn btn-sm view-toggle-btn active" data-view="neir" onclick="switchPlaygroundView('neir')">NEIR</button>
+                        <button class="btn btn-sm view-toggle-btn" data-view="ai" onclick="switchPlaygroundView('ai')">AI Context</button>
+                    </div>
+                    <button class="btn btn-sm" onclick="copyPlaygroundSpec()" aria-label="Copy spec">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy
+                    </button>
+                    <button class="btn btn-sm" onclick="tryInTerminal()" aria-label="Try in terminal">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                        Terminal
+                    </button>
+                </div>
             </div>
             <div class="playground-body">
                 <div class="playground-editor">
@@ -288,31 +343,33 @@ generation:
     </div>
 </section>
 
-<section class="section">
+<section class="section section-supported">
     <div class="container fade-in">
         <h2 class="section-title">{{ i18n "section_languages" }}</h2>
-        <p class="section-subtitle">{{ i18n "home_languages_desc" }}</p>
-        <div class="languages-grid stagger-fade">
-            <span class="lang-badge"><span class="lang-dot" style="background:#00add8;"></span>Go</span>
-            <span class="lang-badge"><span class="lang-dot" style="background:#3178c6;"></span>TypeScript</span>
-            <span class="lang-badge"><span class="lang-dot" style="background:#3776ab;"></span>Python</span>
-            <span class="lang-badge"><span class="lang-dot" style="background:#ed8b00;"></span>Java</span>
-            <span class="lang-badge"><span class="lang-dot" style="background:#dea584;"></span>Rust</span>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <div class="container fade-in">
-        <h2 class="section-title">{{ i18n "section_ai" }}</h2>
-        <p class="section-subtitle">{{ i18n "home_ai_desc" }}</p>
-        <div class="ai-grid stagger-fade">
-            <div class="ai-card"><span class="ai-icon">⟐</span>GitHub Copilot</div>
-            <div class="ai-card"><span class="ai-icon">◉</span>Claude Code</div>
-            <div class="ai-card"><span class="ai-icon">⟡</span>Cursor</div>
-            <div class="ai-card"><span class="ai-icon">◇</span>Gemini CLI</div>
-            <div class="ai-card"><span class="ai-icon">⊡</span>Codex</div>
-            <div class="ai-card"><span class="ai-icon">◈</span>OpenCode</div>
+        <p class="section-subtitle">5 languages + 6 AI platforms — one unified engineering system.</p>
+        <div class="supported-grid stagger-fade">
+            <div class="supported-group">
+                <h3 class="supported-group-title">Languages</h3>
+                <div class="supported-items">
+                    <span class="lang-badge"><span class="lang-dot" style="background:#00add8;"></span>Go</span>
+                    <span class="lang-badge"><span class="lang-dot" style="background:#3178c6;"></span>TypeScript</span>
+                    <span class="lang-badge"><span class="lang-dot" style="background:#3776ab;"></span>Python</span>
+                    <span class="lang-badge"><span class="lang-dot" style="background:#ed8b00;"></span>Java</span>
+                    <span class="lang-badge"><span class="lang-dot" style="background:#dea584;"></span>Rust</span>
+                </div>
+            </div>
+            <div class="supported-divider"></div>
+            <div class="supported-group">
+                <h3 class="supported-group-title">AI Platforms</h3>
+                <div class="supported-items ai-items">
+                    <div class="ai-card"><span class="ai-icon">⟐</span>GitHub Copilot</div>
+                    <div class="ai-card"><span class="ai-icon">◉</span>Claude Code</div>
+                    <div class="ai-card"><span class="ai-icon">⟡</span>Cursor</div>
+                    <div class="ai-card"><span class="ai-icon">◇</span>Gemini CLI</div>
+                    <div class="ai-card"><span class="ai-icon">⊡</span>Codex</div>
+                    <div class="ai-card"><span class="ai-icon">◈</span>OpenCode</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

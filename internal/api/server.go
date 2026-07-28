@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -23,7 +24,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/compiler"
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
 	"github.com/NAEOS-foundation/naeos/internal/database"
-	"github.com/NAEOS-foundation/naeos/internal/errors"
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/mcp"
 	"github.com/NAEOS-foundation/naeos/internal/monitoring"
 	"github.com/NAEOS-foundation/naeos/internal/multitenant"
@@ -270,11 +271,18 @@ func (s *Server) savePipelines() {
 	}
 }
 
+//go:embed openapi.yaml
+var openAPISpec []byte
+
 func (s *Server) setupRoutes() {
 	// Monitoring endpoints
 	s.Router.HandleFunc("/metrics", s.handleMetrics)
 	s.Router.HandleFunc("/healthz", s.handleHealthz)
 	s.Router.HandleFunc("/readyz", s.handleReadyz)
+
+	// API documentation
+	s.Router.HandleFunc("/api/v1/openapi.yaml", s.handleOpenAPISpec)
+	s.Router.HandleFunc("/api/v1/docs", s.handleDocs)
 
 	// Health
 	s.Router.HandleFunc("/api/v1/health", s.handleHealth)
@@ -1227,13 +1235,13 @@ func (s *Server) handleCloudPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Provider == "" || req.Project == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "provider and project are required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "provider and project are required").Error())
 		return
 	}
 
 	adapter, err := cloud.GetAdapter(cloud.CloudProvider(req.Provider))
 	if err != nil {
-		s.writeError(w, http.StatusBadRequest, errors.Wrap(errors.ErrCloud, "invalid provider", err).Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.Wrap(naeoserr.ErrCloud, "invalid provider", err).Error())
 		return
 	}
 
@@ -1254,13 +1262,13 @@ func (s *Server) handleCloudPlan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := adapter.Validate(config); err != nil {
-		s.writeError(w, http.StatusBadRequest, errors.Wrap(errors.ErrCloud, "validation failed", err).Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.Wrap(naeoserr.ErrCloud, "validation failed", err).Error())
 		return
 	}
 
 	result, err := adapter.ExportTerraform(config)
 	if err != nil {
-		s.writeError(w, http.StatusInternalServerError, errors.Wrap(errors.ErrCloud, "plan generation failed", err).Error())
+		s.writeError(w, http.StatusInternalServerError, naeoserr.Wrap(naeoserr.ErrCloud, "plan generation failed", err).Error())
 		return
 	}
 
@@ -1287,13 +1295,13 @@ func (s *Server) handleCloudDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Provider == "" || req.Project == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "provider and project are required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "provider and project are required").Error())
 		return
 	}
 
 	adapter, err := cloud.GetAdapter(cloud.CloudProvider(req.Provider))
 	if err != nil {
-		s.writeError(w, http.StatusBadRequest, errors.Wrap(errors.ErrCloud, "invalid provider", err).Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.Wrap(naeoserr.ErrCloud, "invalid provider", err).Error())
 		return
 	}
 
@@ -1326,7 +1334,7 @@ func (s *Server) handleCloudDeploy(w http.ResponseWriter, r *http.Request) {
 			Error:     err.Error(),
 		})
 		s.deployMu.Unlock()
-		s.writeError(w, http.StatusInternalServerError, errors.Wrap(errors.ErrCloud, "deploy failed", err).Error())
+		s.writeError(w, http.StatusInternalServerError, naeoserr.Wrap(naeoserr.ErrCloud, "deploy failed", err).Error())
 		return
 	}
 
@@ -1366,13 +1374,13 @@ func (s *Server) handleCloudDestroy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Provider == "" || req.Project == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "provider and project are required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "provider and project are required").Error())
 		return
 	}
 
 	adapter, err := cloud.GetAdapter(cloud.CloudProvider(req.Provider))
 	if err != nil {
-		s.writeError(w, http.StatusBadRequest, errors.Wrap(errors.ErrCloud, "invalid provider", err).Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.Wrap(naeoserr.ErrCloud, "invalid provider", err).Error())
 		return
 	}
 
@@ -1393,7 +1401,7 @@ func (s *Server) handleCloudDestroy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := adapter.Destroy(config); err != nil {
-		s.writeError(w, http.StatusInternalServerError, errors.Wrap(errors.ErrCloud, "destroy failed", err).Error())
+		s.writeError(w, http.StatusInternalServerError, naeoserr.Wrap(naeoserr.ErrCloud, "destroy failed", err).Error())
 		return
 	}
 
@@ -1497,7 +1505,7 @@ func (s *Server) handlePluginExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Name == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "plugin name is required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "plugin name is required").Error())
 		return
 	}
 	if req.Action == "" {
@@ -1506,7 +1514,7 @@ func (s *Server) handlePluginExecute(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.plugins.Execute(r.Context(), req.Name, req.Action, req.Params)
 	if err != nil {
-		s.writeError(w, http.StatusInternalServerError, errors.Wrap(errors.ErrPlugin, "execution failed", err).Error())
+		s.writeError(w, http.StatusInternalServerError, naeoserr.Wrap(naeoserr.ErrPlugin, "execution failed", err).Error())
 		return
 	}
 
@@ -1520,7 +1528,7 @@ func (s *Server) handlePluginExecute(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePluginByName(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimPrefix(r.URL.Path, "/api/v1/plugins/")
 	if name == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "plugin name is required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "plugin name is required").Error())
 		return
 	}
 
@@ -1702,7 +1710,7 @@ func (s *Server) handleProfileUnsubscribe(w http.ResponseWriter, r *http.Request
 func (s *Server) handleProfileByID(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/api/v1/profiles/")
 	if id == "" {
-		s.writeError(w, http.StatusBadRequest, errors.New(errors.ErrValidation, "profile id is required").Error())
+		s.writeError(w, http.StatusBadRequest, naeoserr.New(naeoserr.ErrValidation, "profile id is required").Error())
 		return
 	}
 	switch r.Method {
@@ -2064,6 +2072,56 @@ func (s *Server) issuerFromRequest(r *http.Request) string {
 		issuer = fmt.Sprintf("http://%s", fwd)
 	}
 	return issuer
+}
+
+func (s *Server) handleOpenAPISpec(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/x-yaml")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(openAPISpec)
+}
+
+const swaggerUIHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAEOS API Reference</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #1a1a2e; }
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { color: #e0e0e0; }
+    .swagger-ui .info { margin: 20px 0; }
+    .swagger-ui .scheme-container { background: #16213e; }
+    .swagger-ui { color: #c0c0c0; }
+    .swagger-ui .opblock-tag { color: #e0e0e0; }
+    .swagger-ui .opblock .opblock-summary-operation-id,
+    .swagger-ui .opblock .opblock-summary-path,
+    .swagger-ui .opblock .opblock-summary-description { color: #c0c0c0; }
+    .swagger-ui .parameter__name { color: #e0e0e0; }
+    .swagger-ui .model-box { background: #16213e; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: '/api/v1/openapi.yaml',
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      presets: [SwaggerUIBundle.presets.apis],
+      layout: "BaseLayout"
+    });
+  </script>
+</body>
+</html>`
+
+func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(swaggerUIHTML))
 }
 
 func (s *Server) handleOIDCDiscovery(w http.ResponseWriter, r *http.Request) {

@@ -2,9 +2,9 @@
 
 ## 1. Status
 - Status: Stable
-- Version: 1.0.0
+- Version: 2.0.0
 - Owner: NAEOS Core Team
-- Last Updated: 2026-07-10
+- Last Updated: 2026-07-25
 
 ## 2. Purpose
 This specification defines NEIR as the canonical engineering intermediate representation for the NAEOS platform. NEIR is the single source of truth that all downstream engines (planner, generator, validator, adapter) consume.
@@ -62,23 +62,62 @@ type GenerationConfig struct {
 
 GenerationConfig is populated from the `generation:` section of the spec YAML or overridden via CLI `--language` flag.
 
-### 6.2 Domain Descriptions
+### 6.2 NEIR v2.0 — Conditional Modules & Inheritance
+
+NEIR v2.0 adds support for conditional modules/services and environment profile inheritance:
+
+```go
+// Module and Service now include:
+type Module struct {
+    // ...
+    Condition string `yaml:"condition,omitempty"` // e.g. "env('prod')"
+}
+
+type Service struct {
+    // ...
+    Condition string `yaml:"condition,omitempty"` // e.g. "has_prefix(env('stage'), 'staging')"
+}
+
+// NEIR model includes profile configuration:
+type NEIR struct {
+    // ...
+    ActiveProfile string   // resolved profile name
+    Inherits      []string // inherited profile chain
+    
+    // Profile-scoped variables per environment
+    // Deployment.environments[].variables
+}
+```
+
+The `$if{}/$endif` directive in spec YAML is resolved by `ConditionalResolver` during parsing.
+The `ProfileResolver` evaluates `Condition` fields against env vars and filters modules/services:
+
+```mermaid
+flowchart LR
+    Spec --> Parser["Parser\n(ConditionalResolver)"]
+    Parser --> Resolver["ProfileResolver\n(evaluate Condition)"]
+    Resolver --> Validator["Validator\n(validateConditionExpr)"]
+    Validator --> Builder["Builder\n(extract condition & profile)"]
+    Builder --> NEIR
+```
+
+### 6.3 Domain Descriptions
 
 | Domain | Description |
 |--------|-------------|
 | Project | Project identity, name, description |
 | Architecture | Architecture pattern, tech stack, principles |
 | Domain | Domain model, bounded contexts |
-| Module | Source modules with paths, dependencies |
+| Module | Source modules with paths, dependencies, optional `Condition` |
 | Component | Reusable components |
-| Service | Services with kind, port, dependencies |
+| Service | Services with kind, port, dependencies, optional `Condition` |
 | API | API contracts, endpoints |
 | Storage | Database, cache, blob storage |
 | Infrastructure | Cloud, networking, DNS, CDN |
 | Security | Security policies, auth, secrets |
 | AI | AI models, pipelines, vector stores |
 | Documentation | Docs, ADRs, guides |
-| Deployment | Strategy, environment, scaling |
+| Deployment | Strategy, environment, scaling, variables per environment |
 | Testing | Test strategy, coverage targets |
 | Metadata | Ownership, versioning, tags |
 | Generation | Target languages, output config |
@@ -190,28 +229,87 @@ NEIR
 
 All adapters are independent — no inter-adapter dependencies. They all consume the same NEIR and produce language-specific artifacts.
 
-## 11. Requirements
+## 11. Conditional Resolution (v2.0)
 
-### 11.1 Functional Requirements
+### 11.1 Condition Expressions
+
+Modules and services can declare a `condition` string evaluated at resolver time:
+
+| Expression | Description |
+|------------|-------------|
+| `env('VAR')` | Returns value of environment variable `VAR` |
+| `eq(a, b)` | String equality check |
+| `has_prefix(s, prefix)` | True if `s` starts with `prefix` |
+| `true` / `false` | Literal boolean |
+
+Conditions support logical operators through `$if{}/$endif` in spec YAML:
+
+```yaml
+modules:
+  - name: payment-gateway
+    path: ./payment
+    $if{ env('FEATURE_PAYMENT') == 'true' }:
+      condition: "env('FEATURE_PAYMENT')"
+  - name: analytics
+    path: ./analytics
+    $if{ has_prefix(env('STAGE'), 'prod') }:
+      condition: "has_prefix(env('STAGE'), 'prod')"
+```
+
+### 11.2 Profile Inheritance
+
+Profiles can inherit configuration from parent profiles:
+
+```yaml
+profiles:
+  base:
+    variables:
+      LOG_LEVEL: info
+  production:
+    inherits: [base]
+    variables:
+      LOG_LEVEL: debug
+```
+
+The `ProfileResolver`:
+1. Sets `ActiveProfile` on NEIR model
+2. Populates `Inherits` chain
+3. Filters modules/services where `Condition` evaluates to false
+4. Cleans up dependency references to filtered modules
+5. Merges variables from inherited profiles
+
+### 11.3 Validator Integration
+
+The `Validator` checks condition expressions during validation:
+
+```go
+func validateConditionExpr(expr string) error
+```
+
+Returns error for empty expressions or invalid function calls.
+
+## 12. Requirements
+
+### 12.1 Functional Requirements
 - FR-001: NEIR shall serve as the canonical input for planning and generation.
 - FR-002: NEIR shall represent all major engineering concerns of a project.
 - FR-003: NEIR shall preserve traceability to the originating specification.
 - FR-004: NEIR shall include GenerationConfig for multi-language SDK generation.
 - FR-005: NEIR shall be consumed by both DefaultEngine and Adapter Layer.
 
-### 11.2 Non-Functional Requirements
+### 12.2 Non-Functional Requirements
 - NFR-001: NEIR shall remain extensible as new domains are introduced.
 - NFR-002: NEIR shall support deterministic serialization and validation.
 - NFR-003: NEIR shall be language-agnostic — adapters must not depend on NEIR implementation language.
 
-## 12. Acceptance Criteria
+## 13. Acceptance Criteria
 - A planner can derive an execution graph from NEIR without parsing raw source syntax.
 - A generator can create implementation artifacts directly from NEIR.
 - A validator can evaluate generated output against the NEIR model.
 - An adapter can generate language-specific artifacts from NEIR without understanding the original specification format.
 - Multiple adapters can run in parallel on the same NEIR instance.
 
-## 13. Related Documents
+## 14. Related Documents
 
 | ID | Document |
 |----|----------|
@@ -230,3 +328,4 @@ All adapters are independent — no inter-adapter dependencies. They all consume
 |---------|------|--------|
 | 0.1 | 2026-07-09 | Initial NEIR specification |
 | 1.0.0 | 2026-07-10 | Added GenerationConfig, Language Resolution, Adapter Integration, expanded domain table |
+| 2.0.0 | 2026-07-25 | Added conditional modules/services (`Condition` field), `ProfileResolver` with env var evaluation, profile inheritance (`Inherits`/`ActiveProfile`), `ConditionalResolver` for `$if{}/$endif` in parser, `validateConditionExpr` in validator, deployment environment variables |

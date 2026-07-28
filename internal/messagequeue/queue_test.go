@@ -211,12 +211,10 @@ func TestBrokerSubscribeAutoCreate(t *testing.T) {
 func TestQueueFull(t *testing.T) {
 	q := NewQueue("test", 1)
 
-	q.Subscribe(func(msg *Message) error {
-		time.Sleep(100 * time.Millisecond)
-		return nil
-	})
+	if err := q.Publish(NewMessage("test", "1")); err != nil {
+		t.Fatalf("first publish: %v", err)
+	}
 
-	q.Publish(NewMessage("test", "1"))
 	err := q.Publish(NewMessage("test", "2"))
 	if !errors.Is(err, ErrQueueFull) {
 		t.Errorf("expected ErrQueueFull, got %v", err)

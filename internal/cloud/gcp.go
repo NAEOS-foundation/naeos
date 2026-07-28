@@ -3,8 +3,8 @@ package cloud
 import (
 	"fmt"
 	"strings"
-	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/version"
 )
 
@@ -23,10 +23,10 @@ func (a *GCPAdapter) Provider() CloudProvider {
 
 func (a *GCPAdapter) Validate(config *DeployConfig) error {
 	if config.Project == "" {
-		return fmt.Errorf("GCP project is required")
+		return naeoserr.New(naeoserr.ErrValidation, "GCP project is required")
 	}
 	if config.Region == "" {
-		return fmt.Errorf("GCP region is required")
+		return naeoserr.New(naeoserr.ErrValidation, "GCP region is required")
 	}
 	return nil
 }
@@ -152,131 +152,17 @@ func (a *GCPAdapter) Plan(config *DeployConfig) (*PlanResult, error) {
 }
 
 func (a *GCPAdapter) Deploy(config *DeployConfig) (*DeployResult, error) {
-	if err := a.Validate(config); err != nil {
-		return nil, err
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return nil, err
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return nil, err
-	}
-
-	pool := GetDefaultPool()
-	tr, pooled := pool.Get(config.Project, GCP)
-	if pooled {
-		if err := tr.writeHCL(tf); err != nil {
-			return nil, err
-		}
-		if err := tr.Apply(); err != nil {
-			return nil, err
-		}
-	} else {
-		workDir, err := TempWorkDir("naeos-gcp")
-		if err != nil {
-			return nil, err
-		}
-		tr = NewTerraformRunner(workDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if err := tr.Deploy(tf); err != nil {
-			return nil, err
-		}
-		pool.Put(config.Project, GCP, tr, true)
-	}
-
-	deployed := []DeployedResource{}
-	for _, res := range planResult.Resources {
-		deployed = append(deployed, DeployedResource{
-			Name: res.Name,
-			Type: res.Type,
-			ID:   fmt.Sprintf("projects/%s/%s/%s", config.Project, res.Type, res.Name),
-		})
-	}
-
-	result := &DeployResult{
-		Provider:  GCP,
-		Resources: deployed,
-		Terraform: tf,
-		Status:    "deployed",
-		Timestamp: time.Now(),
-	}
-
-	sm := NewStateManager()
-	_ = sm.Save(&DeploymentRecord{
-		Project:      config.Project,
-		Provider:     GCP,
-		Environment:  config.Environment,
-		Region:       config.Region,
-		Resources:    deployed,
-		TerraformDir: tr.WorkDir,
-		Timestamp:    result.Timestamp,
-		Status:       "deployed",
+	return deployAdapter(a, config, deployConfig{
+		Provider:      GCP,
+		TempDirPrefix: "naeos-gcp",
+		ResourceIDFunc: func(name, resType string) string {
+			return fmt.Sprintf("projects/%s/%s/%s", config.Project, resType, name)
+		},
 	})
-
-	return result, nil
 }
 
 func (a *GCPAdapter) Destroy(config *DeployConfig) error {
-	pool := GetDefaultPool()
-	if tr, pooled := pool.Get(config.Project, GCP); pooled {
-		if err := tr.ApplyDestroy(); err == nil {
-			pool.Remove(config.Project, GCP)
-			sm := NewStateManager()
-			_ = sm.Delete(config.Project, GCP)
-			return nil
-		}
-	}
-
-	sm := NewStateManager()
-	record, err := sm.Load(config.Project, GCP)
-	if err == nil && record.TerraformDir != "" {
-		tr := NewTerraformRunner(record.TerraformDir)
-		if a.Runner != nil {
-			tr.Runner = a.Runner
-		}
-		if derr := tr.DestroyAll(); derr == nil {
-			_ = sm.Delete(config.Project, GCP)
-			return nil
-		}
-	}
-
-	planResult, err := a.Plan(config)
-	if err != nil {
-		return err
-	}
-	if len(planResult.Resources) == 0 {
-		return fmt.Errorf("no resources to destroy")
-	}
-
-	tf, err := a.ExportTerraform(config)
-	if err != nil {
-		return err
-	}
-
-	workDir, werr := TempWorkDir("naeos-gcp-destroy")
-	if werr != nil {
-		return werr
-	}
-
-	tr := NewTerraformRunner(workDir)
-	if a.Runner != nil {
-		tr.Runner = a.Runner
-	}
-	if err := tr.writeHCL(tf); err != nil {
-		return err
-	}
-	if err := tr.DestroyAll(); err != nil {
-		return err
-	}
-
-	_ = sm.Delete(config.Project, GCP)
-	return nil
+	return destroyAdapter(a, config, GCP, "naeos-gcp-destroy")
 }
 
 func (a *GCPAdapter) ExportTerraform(config *DeployConfig) (string, error) {

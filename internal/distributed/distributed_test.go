@@ -249,11 +249,11 @@ func TestSubmitPriorityOrder(t *testing.T) {
 	c := NewCoordinator([]Worker{worker}, 10)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	c.Start(ctx)
 
 	c.Submit(&Task{ID: "low", Priority: 1})
 	c.SubmitPriority(&Task{ID: "high", Priority: 10})
 	c.SubmitPriority(&Task{ID: "mid", Priority: 5})
+	c.Start(ctx)
 
 	timeout := time.After(2 * time.Second)
 	var ids []string

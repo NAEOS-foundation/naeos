@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Database Adapter Interface
@@ -31,53 +33,65 @@ type Database interface {
 }
 
 type Config struct {
-	Host            string
-	Port            int
-	User            string
-	Password        string
-	Database        string
-	SSLMode         string
-	Timeout         time.Duration
-	MaxOpenConns    int
-	MaxIdleConns    int
-	ConnMaxLifetime time.Duration
-	ConnMaxIdleTime time.Duration
+	Host                   string
+	Port                   int
+	User                   string
+	Password               string
+	Database               string
+	SSLMode                string
+	Timeout                time.Duration
+	MaxOpenConns           int
+	MaxIdleConns           int
+	ConnMaxLifetime        time.Duration
+	ConnMaxIdleTime        time.Duration
+	SupabaseProjectRef     string
+	SupabaseURL            string
+	SupabaseServiceRoleKey string
+	SupabaseManagementURL  string
+	SupabaseAccessToken    string
 }
 
 func (c *Config) Validate() error {
+	if c.SupabaseProjectRef != "" {
+		if c.SupabaseServiceRoleKey == "" && c.SupabaseAccessToken == "" {
+			return naeoserr.New(naeoserr.ErrValidation, "supabase_service_role_key or supabase_access_token is required when using supabase project ref")
+		}
+		return nil
+	}
+
 	if c.Host == "" {
-		return fmt.Errorf("host is required")
+		return naeoserr.New(naeoserr.ErrValidation, "host is required")
 	}
 	if c.Port <= 0 {
-		return fmt.Errorf("port must be positive, got %d", c.Port)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("port must be positive, got %d", c.Port))
 	}
 	if c.User == "" {
-		return fmt.Errorf("user is required")
+		return naeoserr.New(naeoserr.ErrValidation, "user is required")
 	}
 	if c.Database == "" {
-		return fmt.Errorf("database is required")
+		return naeoserr.New(naeoserr.ErrValidation, "database is required")
 	}
 	if c.SSLMode != "" {
 		switch c.SSLMode {
 		case "disable", "require", "verify-ca", "verify-full":
 		default:
-			return fmt.Errorf("invalid sslmode %q: must be disable, require, verify-ca, or verify-full", c.SSLMode)
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid sslmode %q: must be disable, require, verify-ca, or verify-full", c.SSLMode))
 		}
 	}
 	if c.Timeout < 0 {
-		return fmt.Errorf("timeout must be non-negative")
+		return naeoserr.New(naeoserr.ErrValidation, "timeout must be non-negative")
 	}
 	if c.MaxOpenConns < 0 {
-		return fmt.Errorf("max_open_conns must be non-negative")
+		return naeoserr.New(naeoserr.ErrValidation, "max_open_conns must be non-negative")
 	}
 	if c.MaxIdleConns < 0 {
-		return fmt.Errorf("max_idle_conns must be non-negative")
+		return naeoserr.New(naeoserr.ErrValidation, "max_idle_conns must be non-negative")
 	}
 	if c.ConnMaxLifetime < 0 {
-		return fmt.Errorf("conn_max_lifetime must be non-negative")
+		return naeoserr.New(naeoserr.ErrValidation, "conn_max_lifetime must be non-negative")
 	}
 	if c.ConnMaxIdleTime < 0 {
-		return fmt.Errorf("conn_max_idle_time must be non-negative")
+		return naeoserr.New(naeoserr.ErrValidation, "conn_max_idle_time must be non-negative")
 	}
 	return nil
 }
@@ -127,7 +141,7 @@ func (b *BaseDatabase) close() {
 }
 
 func (b *BaseDatabase) notConnectedError() error {
-	return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+	return naeoserr.New(naeoserr.ErrDatabase, "database not connected; call Connect() with a valid config before performing operations")
 }
 
 func (b *BaseDatabase) ping() error {
@@ -429,6 +443,65 @@ func (s *SQLite) RollbackContext(_ context.Context, version int) error {
 
 func (s *SQLite) MigrationVersion() int { return s.migrationVersion() }
 
+// Supabase Adapter
+
+type Supabase struct {
+	BaseDatabase
+}
+
+func NewSupabase() *Supabase {
+	return &Supabase{
+		BaseDatabase: BaseDatabase{
+			tables: make(map[string][]Row),
+		},
+	}
+}
+
+func (s *Supabase) Name() string { return "supabase" }
+
+func (s *Supabase) Connect(config *Config) error { s.connect(config); return nil }
+func (s *Supabase) Close() error                 { s.close(); return nil }
+func (s *Supabase) Ping() error                  { return s.ping() }
+func (s *Supabase) HealthCheck() error           { return s.healthCheck() }
+
+func (s *Supabase) Exec(query string, args ...any) (Result, error) {
+	return s.exec(query, args...)
+}
+func (s *Supabase) ExecContext(_ context.Context, query string, args ...any) (Result, error) {
+	return s.exec(query, args...)
+}
+
+func (s *Supabase) Query(query string, args ...any) ([]Row, error) {
+	return s.query(query, args...)
+}
+func (s *Supabase) QueryContext(_ context.Context, query string, args ...any) ([]Row, error) {
+	return s.query(query, args...)
+}
+
+func (s *Supabase) QueryRow(query string, args ...any) (Row, error) {
+	return s.queryRow(query, args...)
+}
+func (s *Supabase) QueryRowContext(_ context.Context, query string, args ...any) (Row, error) {
+	return s.queryRow(query, args...)
+}
+
+func (s *Supabase) Begin() (Transaction, error)                    { return s.begin() }
+func (s *Supabase) BeginTx(_ context.Context) (Transaction, error) { return s.begin() }
+
+func (s *Supabase) Migrate(migrations []Migration) error {
+	return s.migrate(migrations)
+}
+func (s *Supabase) MigrateContext(_ context.Context, migrations []Migration) error {
+	return s.migrate(migrations)
+}
+
+func (s *Supabase) Rollback(version int) error { return s.rollback(version) }
+func (s *Supabase) RollbackContext(_ context.Context, version int) error {
+	return s.rollback(version)
+}
+
+func (s *Supabase) MigrationVersion() int { return s.migrationVersion() }
+
 // Database Manager
 
 type Manager struct {
@@ -479,7 +552,7 @@ func (m *Manager) ConnectAll(configs map[string]*Config) error {
 		}
 		if err := db.Connect(config); err != nil {
 			slog.Error("database connect failed", "name", name, "error", err)
-			return fmt.Errorf("failed to connect to %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "failed to connect to %s", name)
 		}
 	}
 	return nil
@@ -492,7 +565,7 @@ func (m *Manager) CloseAll() error {
 	for name, db := range m.databases {
 		if err := db.Close(); err != nil {
 			slog.Error("database close failed", "name", name, "error", err)
-			return fmt.Errorf("failed to close %s: %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "failed to close %s", name)
 		}
 	}
 	return nil

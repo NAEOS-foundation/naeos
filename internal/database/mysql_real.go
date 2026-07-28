@@ -9,6 +9,8 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type RealMySQL struct {
@@ -31,38 +33,17 @@ func (m *RealMySQL) Connect(config *Config) error {
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "open database")
 	}
 
-	if config.Timeout > 0 {
-		db.SetConnMaxLifetime(config.Timeout)
-	}
-
-	maxOpen := 25
-	if config.MaxOpenConns > 0 {
-		maxOpen = config.MaxOpenConns
-	}
-	db.SetMaxOpenConns(maxOpen)
-
-	maxIdle := 5
-	if config.MaxIdleConns > 0 {
-		maxIdle = config.MaxIdleConns
-	}
-	db.SetMaxIdleConns(maxIdle)
-
-	if config.ConnMaxLifetime > 0 {
-		db.SetConnMaxLifetime(config.ConnMaxLifetime)
-	}
-	if config.ConnMaxIdleTime > 0 {
-		db.SetConnMaxIdleTime(config.ConnMaxIdleTime)
-	}
+	applyPoolConfig(db, config)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
-		return fmt.Errorf("ping database: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "ping database")
 	}
 
 	m.db = db
@@ -85,7 +66,7 @@ func (m *RealMySQL) Close() error {
 
 func (m *RealMySQL) Ping() error {
 	if m.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := m.defaultContext()
 	defer cancel()
@@ -100,7 +81,7 @@ func (m *RealMySQL) Exec(query string, args ...any) (Result, error) {
 
 func (m *RealMySQL) ExecContext(ctx context.Context, query string, args ...any) (Result, error) {
 	if m.db == nil {
-		return Result{}, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return Result{}, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	res, err := m.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -119,7 +100,7 @@ func (m *RealMySQL) Query(query string, args ...any) ([]Row, error) {
 
 func (m *RealMySQL) QueryContext(ctx context.Context, query string, args ...any) ([]Row, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -159,7 +140,7 @@ func (m *RealMySQL) QueryRow(query string, args ...any) (Row, error) {
 
 func (m *RealMySQL) QueryRowContext(ctx context.Context, query string, args ...any) (Row, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -203,7 +184,7 @@ func (m *RealMySQL) Begin() (Transaction, error) {
 
 func (m *RealMySQL) BeginTx(ctx context.Context) (Transaction, error) {
 	if m.db == nil {
-		return nil, fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return nil, naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -220,7 +201,7 @@ func (m *RealMySQL) Migrate(migrations []Migration) error {
 
 func (m *RealMySQL) MigrateContext(ctx context.Context, migrations []Migration) error {
 	if m.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	_, err := m.db.ExecContext(ctx, `
@@ -232,14 +213,14 @@ func (m *RealMySQL) MigrateContext(ctx context.Context, migrations []Migration) 
 		)
 	`)
 	if err != nil {
-		return fmt.Errorf("create migrations table: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create migrations table")
 	}
 
 	for _, migration := range migrations {
 		var count int
 		err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM _migrations WHERE version = ?", migration.Version).Scan(&count)
 		if err != nil {
-			return fmt.Errorf("check migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "check migration %d", migration.Version)
 		}
 		if count > 0 {
 			continue
@@ -247,21 +228,21 @@ func (m *RealMySQL) MigrateContext(ctx context.Context, migrations []Migration) 
 
 		tx, err := m.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin migration %d", migration.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, migration.Up); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("apply migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "apply migration %d", migration.Version)
 		}
 
 		if _, err := tx.ExecContext(ctx, "INSERT INTO _migrations (version, name, down_sql) VALUES (?, ?, ?)", migration.Version, migration.Name, migration.Down); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("record migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "record migration %d", migration.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit migration %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit migration %d", migration.Version)
 		}
 	}
 
@@ -276,13 +257,13 @@ func (m *RealMySQL) Rollback(version int) error {
 
 func (m *RealMySQL) RollbackContext(ctx context.Context, version int) error {
 	if m.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 
 	var migrations []Migration
 	rows, err := m.db.QueryContext(ctx, "SELECT version, name, down_sql FROM _migrations WHERE version > ? ORDER BY version DESC", version)
 	if err != nil {
-		return fmt.Errorf("query migrations: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "query migrations")
 	}
 	defer rows.Close()
 
@@ -297,23 +278,23 @@ func (m *RealMySQL) RollbackContext(ctx context.Context, version int) error {
 	for _, migration := range migrations {
 		tx, err := m.db.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("begin rollback %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "begin rollback %d", migration.Version)
 		}
 
 		if migration.Down != "" {
 			if _, err := tx.ExecContext(ctx, migration.Down); err != nil {
 				_ = tx.Rollback()
-				return fmt.Errorf("execute down migration %d (%s): %w", migration.Version, migration.Name, err)
+				return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "execute down migration %d (%s)", migration.Version, migration.Name)
 			}
 		}
 
 		if _, err := tx.ExecContext(ctx, "DELETE FROM _migrations WHERE version = ?", migration.Version); err != nil {
 			_ = tx.Rollback()
-			return fmt.Errorf("remove migration record %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "remove migration record %d", migration.Version)
 		}
 
 		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit rollback %d: %w", migration.Version, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "commit rollback %d", migration.Version)
 		}
 	}
 
@@ -322,7 +303,7 @@ func (m *RealMySQL) RollbackContext(ctx context.Context, version int) error {
 
 func (m *RealMySQL) HealthCheck() error {
 	if m.db == nil {
-		return fmt.Errorf("database not connected; call Connect() with a valid config before performing operations")
+		return naeoserr.New(naeoserr.ErrDatabase, "not connected")
 	}
 	ctx, cancel := m.defaultContext()
 	defer cancel()

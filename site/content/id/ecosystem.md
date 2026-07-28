@@ -37,12 +37,40 @@ NAEOS hadir dengan 5 profil industri yang menyediakan pola, aturan, dan template
 </ul>
 </div>
 
+<div class="eco-card" style="margin-bottom:1rem;">
+<h3>Profil Kesehatan</h3>
+<p>Pola kepatuhan HIPAA, integrasi API FHIR, manajemen data pasien, dan kontrol keamanan untuk aplikasi kesehatan.</p>
+<ul class="eco-list">
+<li><span class="eco-dot" style="background:#00ff88;"></span> Scaffolding kepatuhan HIPAA</li>
+<li><span class="eco-dot" style="background:#60a5fa;"></span> Definisi sumber daya FHIR</li>
+<li><span class="eco-dot" style="background:#fbbf24;"></span> Pola penanganan data PHI</li>
+</ul>
+</div>
+
 <div class="eco-card">
 <h3>Profil Pemerintah</h3>
 <p>Pola sistem pemerintah, kepatuhan regulasi, manajemen dokumen, dan standar keamanan untuk aplikasi sektor publik.</p>
 <ul class="eco-list">
 <li><span class="eco-dot" style="background:#00ff88;"></span> Kerangka kepatuhan regulasi</li>
 <li><span class="eco-dot" style="background:#60a5fa;"></span> Otomatisasi alur kerja dokumen</li>
-<li><span class="eco-dot" style="background:#fbbf24;"></span> Penegakan standar keamanan</li>
+    <li><span class="eco-dot" style="background:#fbbf24;"></span> Penegakan standar keamanan</li>
 </ul>
 </div>
+
+## Sistem Plugin
+
+Perluas NAEOS dengan WASM dan plugin native. Plugin SDK memudahkan pembuatan:
+
+- **Generator kode** — Tambah adapter bahasa baru
+- **Validator** — Aturan validasi kustom
+- **Deployer** — Deploy ke platform apa pun
+- **Analyzers** — Analisis dan pelaporan kustom
+
+## Marketplace
+
+Publikasikan dan temukan profil, plugin, dan template melalui NAEOS Marketplace.
+
+- Cari dan instal dengan `naeos marketplace`
+- Terverifikasi SHA-256 untuk keamanan
+- Manajemen versi dan resolusi dependensi
+- Rating dan ulasan komunitas

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type Rule struct {
@@ -36,14 +38,14 @@ func NewEvaluator() Evaluator {
 
 func (DefaultEvaluator) Evaluate(ctx map[string]any) error {
 	if ctx == nil {
-		return fmt.Errorf("context is nil")
+		return naeoserr.New(naeoserr.ErrValidation, "context is nil")
 	}
 	return nil
 }
 
 func (DefaultEvaluator) EvaluateRules(rules []Rule, ctx map[string]any) ([]EvaluationResult, error) {
 	if ctx == nil {
-		return nil, fmt.Errorf("context is nil")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "context is nil")
 	}
 
 	var results []EvaluationResult

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type TemplateManager struct {
@@ -67,7 +69,7 @@ func (m *TemplateManager) Get(name string) (*template.Template, error) {
 		if _, err := os.Stat(customPath); err == nil {
 			tmpl, err := template.ParseFiles(customPath)
 			if err != nil {
-				return nil, fmt.Errorf("parse custom template %s: %w", name, err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse custom template %s", name)
 			}
 			m.templates[name] = tmpl
 			return tmpl, nil
@@ -76,12 +78,12 @@ func (m *TemplateManager) Get(name string) (*template.Template, error) {
 
 	tmplStr := m.getBuiltinTemplate(name)
 	if tmplStr == "" {
-		return nil, fmt.Errorf("template %s not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("template %s not found", name))
 	}
 
 	tmpl, err := template.New(name).Parse(tmplStr)
 	if err != nil {
-		return nil, fmt.Errorf("parse builtin template %s: %w", name, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse builtin template %s", name)
 	}
 	m.templates[name] = tmpl
 	return tmpl, nil
@@ -94,14 +96,14 @@ func (m *TemplateManager) Render(name string, data any) (string, error) {
 	}
 	var sb strings.Builder
 	if err := tmpl.Execute(&sb, data); err != nil {
-		return "", fmt.Errorf("execute template %s: %w", name, err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrInternal, "execute template %s", name)
 	}
 	return sb.String(), nil
 }
 
 func (m *TemplateManager) AddCustom(name, content string) error {
 	if m.templatesDir == "" {
-		return fmt.Errorf("no templates directory configured")
+		return naeoserr.New(naeoserr.ErrConfig, "no templates directory configured")
 	}
 	if err := os.MkdirAll(m.templatesDir, 0o755); err != nil {
 		return err
@@ -112,11 +114,11 @@ func (m *TemplateManager) AddCustom(name, content string) error {
 
 func (m *TemplateManager) RemoveCustom(name string) error {
 	if m.templatesDir == "" {
-		return fmt.Errorf("no templates directory configured")
+		return naeoserr.New(naeoserr.ErrConfig, "no templates directory configured")
 	}
 	path := filepath.Join(m.templatesDir, name+".tmpl")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("template %s not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("template %s not found", name))
 	}
 	delete(m.templates, name)
 	return os.Remove(path)

@@ -62,8 +62,13 @@ clean:
 version:
 	@echo $(VERSION)
 
+## fmt-check: Check formatting without modifying files
+fmt-check:
+	@echo "Checking code formatting..."
+	@unformatted=$$(gofmt -l .); if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
+
 ## check: Run all checks (fmt, vet, lint, test)
-check: fmt vet lint test
+check: fmt fmt-check vet lint test
 
 ## run: Build and run
 run: build

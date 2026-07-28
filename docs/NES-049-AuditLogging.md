@@ -1,12 +1,12 @@
 # NES-049 Audit Logging
 
 ## 1. Status
-- Status: Draft
-- Version: 0.1
+- Status: Stable
+- Version: 1.0.0
 - Owner: NAEOS Core Team
 
 ## 2. Purpose
-This specification defines the audit logging layer for NAEOS, providing immutable audit trail for user actions, system events, and security-relevant operations.
+This specification defines the audit logging layer for NAEOS, providing immutable audit trail for user actions, system events, and security-relevant operations with chain-of-custody verification, encryption, and cloud export.
 
 ## 3. Scope
 The audit logging layer covers:
@@ -15,6 +15,10 @@ The audit logging layer covers:
 - In-memory auditor for testing
 - Thread-safe event logging
 - Event ID and timestamp generation
+- Hashed auditor for tamper-evident chain (SHA-256 linked list)
+- Encrypted auditor for at-rest confidentiality (AES-256-GCM)
+- Cloud export to AWS S3, GCS, Azure Blob
+- Chain verification and integrity checking
 
 ## 4. Requirements
 ### 4.1 Functional Requirements
@@ -28,6 +32,9 @@ The audit logging layer covers:
 - NFR-001: Audit logging shall be thread-safe.
 - NFR-002: Audit events shall be immutable once logged.
 - NFR-003: Audit log files shall have restricted permissions (0600).
+- NFR-004: Hashed chain shall detect any tampering with prior events.
+- NFR-005: Encrypted auditor shall use authenticated encryption (AES-256-GCM).
+- NFR-006: Cloud export shall support AWS SigV4, GCS HMAC, and Azure SharedKey signing.
 
 ## 5. Architecture
 
@@ -37,12 +44,18 @@ graph TD
     B --> C[Auditor Interface]
     C --> D[File Auditor]
     C --> E[Memory Auditor]
+    C --> H[Hashed Auditor]
+    C --> I[Encrypted Auditor]
     
     D --> F[~/.naeos/audit.log]
     E --> G[Test Storage]
+    H --> D
+    I --> D
+    H --> J[VerifyChain]
+    I --> K[DecryptedReader]
     
-    H[Security] --> I[Compliance]
-    I --> J[Audit Trail]
+    L[Cloud Exporter] --> M[AWS S3 / GCS / Azure Blob]
+    D --> L
 ```
 
 ## 6. Core Types
@@ -119,7 +132,107 @@ func (m *MemoryAuditor) Clear()
 | Query | `Events()` returns copy |
 | Reset | `Clear()` removes all events |
 
-## 9. Event Fields
+## 9. Hashed Auditor
+
+```go
+type HashedAuditor struct {
+    inner Auditor
+    mu    sync.Mutex
+}
+
+func NewHashedAuditor(inner Auditor) *HashedAuditor
+func (h *HashedAuditor) Log(event AuditEvent) error
+```
+
+The `HashedAuditor` wraps any inner `Auditor` and computes a SHA-256 hash chain:
+
+| Feature | Description |
+|---------|-------------|
+| Chain | Each event stores `PreviousHash` + `Hash` (SHA-256 of previous hash + current event) |
+| First event | `PreviousHash` = SHA-256 of empty string |
+| Tamper detection | `VerifyChain(events)` returns list of `ChainViolation` with index + reason |
+| File verification | `VerifyChainFile(path)` reads JSONL file and verifies entire chain |
+| Threat model | Detects modified/deleted/reordered events |
+
+### Chain Verification
+
+```go
+type ChainViolation struct {
+    Index  int
+    Reason string
+}
+
+func VerifyChain(events []AuditEvent) []ChainViolation
+func VerifyChainFile(path string) ([]ChainViolation, error)
+```
+
+## 10. Encrypted Auditor
+
+```go
+type EncryptedAuditor struct {
+    inner Auditor
+    key   []byte // derived from passphrase via SHA-256
+}
+
+func NewEncryptedAuditor(inner Auditor, passphrase string) *EncryptedAuditor
+func NewEncryptedFileAuditor(homeDir, passphrase string) (*EncryptedAuditor, error)
+func (e *EncryptedAuditor) Log(event AuditEvent) error
+```
+
+| Feature | Description |
+|---------|-------------|
+| Encryption | AES-256-GCM (authenticated encryption) |
+| Key derivation | SHA-256 of passphrase |
+| Nonce | Random 12-byte nonce per event |
+| Output | Base64-encoded ciphertext stored by inner auditor |
+| Decryption | `DecryptedReader` wraps file for transparent decryption |
+
+### Decryption
+
+```go
+type DecryptedReader struct {
+    file      *os.File
+    passphrase string
+}
+
+func NewDecryptedReader(path, passphrase string) (*DecryptedReader, error)
+func (r *DecryptedReader) ReadEvents() ([]AuditEvent, error)
+```
+
+## 11. Cloud Export
+
+```go
+type CloudExporter interface {
+    Upload(key string, data []byte) error
+    Type() string
+}
+
+type CloudConfig struct {
+    Bucket      string
+    Region      string
+    AccessKey   string
+    SecretKey   string
+    AccountName string // Azure only
+    AccountKey  string // Azure only
+}
+
+func NewS3Exporter(cfg CloudConfig) *S3Exporter         // AWS SigV4
+func NewGCSExporter(cfg CloudConfig) *GCSExporter       // GOOG1 HMAC
+func NewAzureBlobExporter(cfg CloudConfig) *AzureBlobExporter // SharedKey
+func ExportToCloud(exporter CloudExporter, events []AuditEvent) error
+```
+
+| Provider | Auth Method | Endpoint Format |
+|----------|-------------|-----------------|
+| AWS S3 | SigV4 (HMAC-SHA256) | `https://{bucket}.s3.{region}.amazonaws.com/{key}` |
+| GCS | GOOG1 HMAC | `https://storage.googleapis.com/{bucket}/{key}` |
+| Azure Blob | SharedKey (HMAC-SHA256) | `https://{account}.blob.core.windows.net/{container}/{key}` |
+
+All implementations use **zero external dependencies** — signing is done with stdlib `crypto/hmac` + `crypto/sha256`.
+
+## 12. Event Fields
+
+_See section 6.1 for struct definition._
 
 | Field | Required | Description |
 |-------|----------|-------------|
@@ -134,7 +247,7 @@ func (m *MemoryAuditor) Clear()
 | `status` | Yes | Action result (success/failure) |
 | `details` | No | Additional details |
 
-## 10. Usage Example
+## 13. Usage Example
 
 ```go
 // File auditor
@@ -161,7 +274,7 @@ memAuditor.Log(audit.AuditEvent{
 events := memAuditor.Events()
 ```
 
-## 11. Integration Points
+## 14. Integration Points
 
 | Consumer | How It Uses AuditLogging |
 |----------|-------------------------|
@@ -169,10 +282,13 @@ events := memAuditor.Events()
 | `cmd/naeos/db_cmd.go` | Logs database operations |
 | `internal/api/server.go` | Logs API requests |
 
-## 12. Acceptance Criteria
+## 15. Acceptance Criteria
 - [ ] Audit events are logged correctly.
 - [ ] File auditor writes to correct location.
 - [ ] File auditor uses correct permissions.
 - [ ] In-memory auditor stores events correctly.
 - [ ] Thread-safe access is maintained.
 - [ ] Event IDs and timestamps are auto-generated.
+- [ ] Hashed chain detects tampered events.
+- [ ] Encrypted events are decryptable with correct passphrase.
+- [ ] Cloud export produces correct HTTP signatures (SigV4, HMAC, SharedKey).

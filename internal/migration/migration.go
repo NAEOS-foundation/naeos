@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const (
@@ -21,7 +23,10 @@ func ParseVersion(v string) (Version, error) {
 	var ver Version
 	_, err := fmt.Sscanf(v, "%d.%d.%d", &ver.Major, &ver.Minor, &ver.Patch)
 	if err != nil {
-		return Version{}, fmt.Errorf("parse version %s: %w", v, err)
+		return Version{}, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse version %s", v)
+	}
+	if ver.Major < 0 || ver.Minor < 0 || ver.Patch < 0 {
+		return Version{}, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("parse version %s: negative component", v))
 	}
 	return ver, nil
 }
@@ -72,7 +77,7 @@ func (p *MigrationPlanner) Plan(from, to string) ([]MigrationStep, error) {
 	}
 
 	if !fromVer.Less(toVer) {
-		return nil, fmt.Errorf("target version %s is not newer than source %s", to, from)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("target version %s is not newer than source %s", to, from))
 	}
 
 	sort.Slice(p.steps, func(i, j int) bool {
@@ -104,7 +109,7 @@ func (p *MigrationPlanner) Migrate(spec []byte, from, to string) ([]byte, error)
 		var err error
 		current, err = step.Migrate(current)
 		if err != nil {
-			return nil, fmt.Errorf("migration %s -> %s failed: %w", step.FromVersion, step.ToVersion, err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "migration %s -> %s failed", step.FromVersion, step.ToVersion)
 		}
 	}
 	return current, nil

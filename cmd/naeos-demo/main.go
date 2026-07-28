@@ -1,3 +1,5 @@
+// Demo server — WebSocket writes and temp-file cleanup are best-effort.
+//nolint:errcheck
 package main
 
 import (
@@ -282,7 +284,7 @@ func main() {
 	http.HandleFunc("/ws", server.handleWS)
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 
 	fmt.Printf("NAEOS Demo Server listening on %s\n", *addr)

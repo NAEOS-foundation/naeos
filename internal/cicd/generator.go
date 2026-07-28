@@ -3,14 +3,17 @@ package cicd
 import (
 	"fmt"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type CICDPlatform string
 
 const (
-	GitHubActions CICDPlatform = "github"
-	GitLabCI      CICDPlatform = "gitlab"
-	Jenkins       CICDPlatform = "jenkins"
+	GitHubActions   CICDPlatform = "github"
+	GitLabCI        CICDPlatform = "gitlab"
+	AzurePipelines  CICDPlatform = "azure"
+	Jenkins         CICDPlatform = "jenkins"
 )
 
 type PipelineConfig struct {
@@ -46,10 +49,12 @@ func GetGenerator(platform CICDPlatform) (PipelineGenerator, error) {
 		return &GitHubActionsGenerator{}, nil
 	case GitLabCI:
 		return &GitLabCIGenerator{}, nil
+	case AzurePipelines:
+		return &AzurePipelinesGenerator{}, nil
 	case Jenkins:
 		return &JenkinsGenerator{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported platform: %s", platform)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported platform: %s", platform))
 	}
 }
 
@@ -87,9 +92,10 @@ func LintConfig(config *PipelineConfig) *LintResult {
 	}
 
 	validPlatforms := map[CICDPlatform]bool{
-		GitHubActions: true,
-		GitLabCI:      true,
-		Jenkins:       true,
+		GitHubActions:  true,
+		GitLabCI:       true,
+		AzurePipelines: true,
+		Jenkins:        true,
 	}
 	if config.Platform != "" && !validPlatforms[config.Platform] {
 		result.Valid = false
@@ -101,8 +107,9 @@ func LintConfig(config *PipelineConfig) *LintResult {
 		result.Errors = append(result.Errors, LintError{Field: "languages", Message: "at least one language is required"})
 	}
 
-	validLanguages := map[string]bool{
-		"go": true, "node": true, "typescript": true, "python": true, "java": true, "rust": true,
+	validLanguages := make(map[string]bool, len(supportedLangs()))
+	for _, l := range supportedLangs() {
+		validLanguages[l] = true
 	}
 	for _, lang := range config.Languages {
 		if !validLanguages[lang] {
@@ -152,7 +159,7 @@ func NewConfigTemplate(name, description string, platform CICDPlatform, base *Pi
 
 func (t *ConfigTemplate) Render() (*PipelineConfig, error) {
 	if t.Base == nil {
-		return nil, fmt.Errorf("template %s has no base config", t.Name)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("template %s has no base config", t.Name))
 	}
 
 	config := *t.Base

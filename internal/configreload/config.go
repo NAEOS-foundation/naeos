@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Config Store
@@ -37,7 +39,7 @@ func (c *Config) Load() error {
 
 	data, err := os.ReadFile(c.filePath)
 	if err != nil {
-		return fmt.Errorf("failed to read config: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "failed to read config")
 	}
 
 	var newConfig map[string]any
@@ -46,11 +48,11 @@ func (c *Config) Load() error {
 	switch ext {
 	case ".yaml", ".yml":
 		if err := yaml.Unmarshal(data, &newConfig); err != nil {
-			return fmt.Errorf("failed to parse YAML config: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrParse, "failed to parse YAML config")
 		}
 	default:
 		if err := json.Unmarshal(data, &newConfig); err != nil {
-			return fmt.Errorf("failed to parse JSON config: %w", err)
+			return naeoserr.Wrapf(err, naeoserr.ErrParse, "failed to parse JSON config")
 		}
 	}
 
@@ -188,7 +190,7 @@ func (c *Config) Save() error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrConfig, "failed to marshal config")
 	}
 
 	return os.WriteFile(c.filePath, data, 0o600)
@@ -310,7 +312,7 @@ func (m *Manager) ReloadAll() error {
 
 	for name, config := range m.configs {
 		if err := config.Load(); err != nil {
-			return fmt.Errorf("failed to reload config '%s': %w", name, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrConfig, "failed to reload config '%s'", name)
 		}
 	}
 	return nil

@@ -10,12 +10,18 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
-const DefaultRegistryURL = "https://naeos.dev/plugins/registry.json"
+const (
+	DefaultRegistryURL  = "https://naeos.dev"
+	DefaultRegistryPath = "/api/v1/plugins"
+)
 
 type RemoteRegistry struct {
 	baseURL    string
+	apiPath    string
 	installDir string
 	httpClient *http.Client
 }
@@ -26,6 +32,7 @@ func NewRemoteRegistry(baseURL, installDir string) *RemoteRegistry {
 	}
 	return &RemoteRegistry{
 		baseURL:    baseURL,
+		apiPath:    DefaultRegistryPath,
 		installDir: installDir,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
@@ -48,33 +55,44 @@ type RemotePluginList struct {
 	Plugins []RemotePlugin `json:"plugins"`
 }
 
+type RemoteSearchFilter struct {
+	Query    string
+	Author   string
+	Platform string
+	Tags     []string
+}
+
 func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
-	url := r.baseURL
+	url := r.baseURL + r.apiPath
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetch plugin list: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "fetch plugin list")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
+		return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("registry returned status %d", resp.StatusCode))
 	}
 
 	var list RemotePluginList
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
-		return nil, fmt.Errorf("decode plugin list: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode plugin list")
 	}
 
 	return list.Plugins, nil
 }
 
 func (r *RemoteRegistry) Search(query string) ([]RemotePlugin, error) {
+	return r.SearchFilter(RemoteSearchFilter{Query: query})
+}
+
+func (r *RemoteRegistry) SearchFilter(filter RemoteSearchFilter) ([]RemotePlugin, error) {
 	plugins, err := r.List()
 	if err != nil {
 		return nil, err
@@ -82,20 +100,41 @@ func (r *RemoteRegistry) Search(query string) ([]RemotePlugin, error) {
 
 	var results []RemotePlugin
 	for _, p := range plugins {
-		if query == "" {
-			results = append(results, p)
-			continue
-		}
-		if containsStr(p.Name, query) || containsStr(p.Description, query) {
-			results = append(results, p)
-			continue
-		}
-		for _, tag := range p.Tags {
-			if containsStr(tag, query) {
-				results = append(results, p)
-				break
+		if filter.Query != "" {
+			if !containsStr(p.Name, filter.Query) && !containsStr(p.Description, filter.Query) {
+				matchedTag := false
+				for _, tag := range p.Tags {
+					if containsStr(tag, filter.Query) {
+						matchedTag = true
+						break
+					}
+				}
+				if !matchedTag {
+					continue
+				}
 			}
 		}
+		if filter.Author != "" && !containsStr(p.Author, filter.Author) {
+			continue
+		}
+		if filter.Platform != "" && p.Platform != filter.Platform {
+			continue
+		}
+		if len(filter.Tags) > 0 {
+			hasTag := false
+			for _, ft := range filter.Tags {
+				for _, pt := range p.Tags {
+					if pt == ft {
+						hasTag = true
+						break
+					}
+				}
+			}
+			if !hasTag {
+				continue
+			}
+		}
+		results = append(results, p)
 	}
 	return results, nil
 }
@@ -107,18 +146,18 @@ func (r *RemoteRegistry) Install(name, version string) (string, error) {
 	}
 
 	if err := os.MkdirAll(r.installDir, 0o755); err != nil {
-		return "", fmt.Errorf("create install dir: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create install dir")
 	}
 
 	destPath := filepath.Join(r.installDir, name+".so")
 	if err := r.downloadFile(plugin.DownloadURL, destPath); err != nil {
-		return "", fmt.Errorf("download plugin: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "download plugin")
 	}
 
 	if plugin.SHA256 != "" {
 		if err := VerifyPlugin(destPath, plugin.SHA256); err != nil {
 			os.Remove(destPath)
-			return "", fmt.Errorf("verify plugin checksum: %w", err)
+			return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "verify plugin checksum")
 		}
 	}
 
@@ -195,9 +234,9 @@ func (r *RemoteRegistry) resolvePlugin(name, version string) (*RemotePlugin, err
 	}
 
 	if version != "" {
-		return nil, fmt.Errorf("plugin %s@%s not found", name, version)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %s@%s not found", name, version))
 	}
-	return nil, fmt.Errorf("plugin %s not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("plugin %s not found", name))
 }
 
 func (r *RemoteRegistry) downloadFile(url, destPath string) error {
@@ -205,7 +244,7 @@ func (r *RemoteRegistry) downloadFile(url, destPath string) error {
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -214,7 +253,7 @@ func (r *RemoteRegistry) downloadFile(url, destPath string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download returned status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("download returned status %d", resp.StatusCode))
 	}
 
 	out, err := os.Create(destPath)

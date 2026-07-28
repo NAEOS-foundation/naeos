@@ -38,13 +38,13 @@ func main() {
 	}
 
 	root := map[string]any{
-		"$schema":            "http://json-schema.org/draft-07/schema#",
-		"$id":                "https://naeos.dev/schemaregistry/neir.json",
-		"title":              "NEIR Specification",
-		"description":        "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
-		"type":               "object",
-		"properties":         schema,
-		"definitions":        defs,
+		"$schema":     "http://json-schema.org/draft-07/schema#",
+		"$id":         "https://naeos.dev/schemaregistry/neir.json",
+		"title":       "NEIR Specification",
+		"description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
+		"type":        "object",
+		"properties":  schema,
+		"definitions": defs,
 	}
 
 	required := g.requiredRoot()
@@ -210,7 +210,7 @@ func (g *generator) arraySchema(elem reflect.Type) map[string]any {
 func (g *generator) mapSchema(t reflect.Type) map[string]any {
 	valSchema := g.fieldSchema(t.Elem(), false)
 	return map[string]any{
-		"type": "object",
+		"type":                 "object",
 		"additionalProperties": valSchema,
 	}
 }
@@ -268,16 +268,16 @@ func parseJSONTag(tag string) (string, map[string]bool) {
 
 func knownEnums() map[string][]string {
 	return map[string][]string{
-		"architecture.Pattern":  {"layered", "clean", "hexagonal", "microkernel", "event-driven", "cqrs", "monolith"},
-		"service.ServiceKind":   {"http", "grpc", "worker", "cli", "job"},
-		"api.Protocol":          {"http", "grpc", "graphql", "websocket"},
-		"storage.StorageType":   {"sql", "nosql", "file", "cache", "queue", "blob"},
-		"deployment.Strategy":   {"rolling", "blue-green", "canary", "recreate"},
+		"architecture.Pattern":    {"layered", "clean", "hexagonal", "microkernel", "event-driven", "cqrs", "monolith"},
+		"service.ServiceKind":     {"http", "grpc", "worker", "cli", "job"},
+		"api.Protocol":            {"http", "grpc", "graphql", "websocket"},
+		"storage.StorageType":     {"sql", "nosql", "file", "cache", "queue", "blob"},
+		"deployment.Strategy":     {"rolling", "blue-green", "canary", "recreate"},
 		"testing.TestingStrategy": {"unit", "integration", "e2e", "contract"},
 		"infrastructure.Provider": {"aws", "gcp", "azure", "local"},
 		"component.ComponentKind": {"handler", "service", "repository", "middleware", "model", "config", "worker", "scheduler"},
-		"docs.DocKind":          {"guide", "reference", "adr", "rfc", "changelog"},
-		"language.Language":     {"go", "typescript", "python", "java", "rust"},
+		"docs.DocKind":            {"guide", "reference", "adr", "rfc", "changelog"},
+		"language.Language":       {"go", "typescript", "python", "java", "rust"},
 	}
 }
 

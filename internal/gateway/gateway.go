@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Rate Limiter
@@ -292,13 +294,13 @@ func (g *Gateway) GetLoadBalancer(name string) (*LoadBalancer, bool) {
 func (g *Gateway) Route(request *Request) (*Response, error) {
 	// Rate limiting
 	if !g.rateLimiter.Allow(request.ClientID, 100, time.Minute) {
-		return nil, fmt.Errorf("rate limit exceeded")
+		return nil, naeoserr.New(naeoserr.ErrNetwork, "rate limit exceeded")
 	}
 
 	// Circuit breaker
 	cb, ok := g.GetCircuitBreaker(request.Service)
 	if ok && !cb.Allow() {
-		return nil, fmt.Errorf("circuit breaker open for %s", request.Service)
+		return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("circuit breaker open for %s", request.Service))
 	}
 
 	// Load balancing
@@ -306,7 +308,7 @@ func (g *Gateway) Route(request *Request) (*Response, error) {
 	if ok {
 		backend := lb.Next()
 		if backend == nil {
-			return nil, fmt.Errorf("no healthy backends for %s", request.Service)
+			return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("no healthy backends for %s", request.Service))
 		}
 
 		if cb != nil {

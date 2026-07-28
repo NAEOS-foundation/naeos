@@ -1,8 +1,9 @@
 package pluginhost
 
 import (
-	"fmt"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // PipelineEvent represents a lifecycle event in the pipeline.
@@ -76,7 +77,7 @@ func (eb *EventBus) Emit(event PipelineEvent, data *EventData) []error {
 	var errs []error
 	for name, handler := range subs {
 		if err := handler(name, data); err != nil {
-			errs = append(errs, fmt.Errorf("plugin %s: %w", name, err))
+			errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "plugin %s", name))
 		}
 	}
 	return errs

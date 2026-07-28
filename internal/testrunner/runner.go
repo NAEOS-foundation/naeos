@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type TestConfig struct {
@@ -77,7 +79,7 @@ func (r *Runner) RunLanguage(lang string) (*TestResult, error) {
 	case "rust":
 		return r.runRustTests(result)
 	default:
-		return nil, fmt.Errorf("unsupported language: %s", lang)
+		return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("unsupported language: %s", lang))
 	}
 }
 
@@ -107,7 +109,7 @@ func (r *Runner) runGoTests(result *TestResult) (*TestResult, error) {
 func (r *Runner) runNodeTests(result *TestResult) (*TestResult, error) {
 	packageJSON := filepath.Join(r.config.WorkingDir, "package.json")
 	if _, err := os.Stat(packageJSON); os.IsNotExist(err) {
-		return nil, fmt.Errorf("no package.json found")
+		return nil, naeoserr.New(naeoserr.ErrNotFound, "no package.json found")
 	}
 
 	npmCmd := "npm"
@@ -153,7 +155,7 @@ func (r *Runner) runJavaTests(result *TestResult) (*TestResult, error) {
 		return result, nil
 	}
 
-	return nil, fmt.Errorf("no pom.xml or build.gradle found")
+	return nil, naeoserr.New(naeoserr.ErrNotFound, "no pom.xml or build.gradle found")
 }
 
 func (r *Runner) runRustTests(result *TestResult) (*TestResult, error) {

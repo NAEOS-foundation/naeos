@@ -31,7 +31,6 @@ func (n *RealNATS) Name() string {
 }
 
 func (n *RealNATS) Connect(config *Config) error {
-	n.config = config
 	url := fmt.Sprintf("nats://%s:%d", config.Host, config.Port)
 	if config.Password != "" {
 		url = fmt.Sprintf("nats://:%s@%s:%d", config.Password, config.Host, config.Port)
@@ -45,11 +44,15 @@ func (n *RealNATS) Connect(config *Config) error {
 	conn, err := nats.Connect(url, opts...)
 	if err != nil {
 		slog.Error("nats connect failed", "host", config.Host, "port", config.Port, "error", err)
-		return fmt.Errorf("connect to NATS: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "connect to NATS")
 	}
 
-	slog.Info("nats connected", "host", config.Host, "port", config.Port)
+	n.mu.Lock()
 	n.conn = conn
+	n.config = config
+	n.mu.Unlock()
+
+	slog.Info("nats connected", "host", config.Host, "port", config.Port)
 	return nil
 }
 
@@ -69,17 +72,23 @@ func (n *RealNATS) Close() error {
 }
 
 func (n *RealNATS) Ping() error {
-	if n.conn == nil {
+	n.mu.RLock()
+	conn := n.conn
+	n.mu.RUnlock()
+	if conn == nil {
 		return naeoserr.ErrNotConnected
 	}
-	if n.conn.IsClosed() {
+	if conn.IsClosed() {
 		return naeoserr.Wrap(naeoserr.ErrNetwork, "connection closed", nil)
 	}
 	return nil
 }
 
 func (n *RealNATS) Publish(channel string, msg *Message) error {
-	if n.conn == nil {
+	n.mu.RLock()
+	conn := n.conn
+	n.mu.RUnlock()
+	if conn == nil {
 		return naeoserr.ErrNotConnected
 	}
 
@@ -88,15 +97,18 @@ func (n *RealNATS) Publish(channel string, msg *Message) error {
 		data = []byte{}
 	}
 
-	return n.conn.Publish(channel, data)
+	return conn.Publish(channel, data)
 }
 
 func (n *RealNATS) Subscribe(channel string, handler MessageHandler) error {
-	if n.conn == nil {
+	n.mu.RLock()
+	conn := n.conn
+	n.mu.RUnlock()
+	if conn == nil {
 		return naeoserr.ErrNotConnected
 	}
 
-	sub, err := n.conn.Subscribe(channel, func(m *nats.Msg) {
+	sub, err := conn.Subscribe(channel, func(m *nats.Msg) {
 		msg := &Message{
 			ID:        generateID(),
 			Channel:   m.Subject,
@@ -106,7 +118,7 @@ func (n *RealNATS) Subscribe(channel string, handler MessageHandler) error {
 		_ = handler(msg)
 	})
 	if err != nil {
-		return fmt.Errorf("subscribe to %s: %w", channel, err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "subscribe to %s", channel)
 	}
 
 	n.mu.Lock()

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"golang.org/x/mod/semver"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // SchemaEntry represents a versioned schema in the registry.
@@ -36,16 +38,16 @@ func New() *Registry {
 // it is overwritten with the new schema.
 func (r *Registry) Register(name, version, schema string) error {
 	if name == "" {
-		return fmt.Errorf("schema name must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "schema name must not be empty")
 	}
 	if version == "" {
-		return fmt.Errorf("schema version must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "schema version must not be empty")
 	}
 	if schema == "" {
-		return fmt.Errorf("schema body must not be empty")
+		return naeoserr.New(naeoserr.ErrValidation, "schema body must not be empty")
 	}
 	if !semver.IsValid(version) {
-		return fmt.Errorf("invalid semver version: %q", version)
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid semver version: %q", version))
 	}
 
 	now := time.Now()
@@ -81,7 +83,7 @@ func (r *Registry) Get(name, version string) (*SchemaEntry, error) {
 
 	versions, ok := r.schemas[name]
 	if !ok {
-		return nil, fmt.Errorf("schema %q not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
 	}
 
 	if version == "" {
@@ -90,7 +92,7 @@ func (r *Registry) Get(name, version string) (*SchemaEntry, error) {
 
 	entry, ok := versions[version]
 	if !ok {
-		return nil, fmt.Errorf("schema %q version %q not found", name, version)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version))
 	}
 
 	return entry, nil
@@ -116,7 +118,7 @@ func (r *Registry) Versions(name string) ([]string, error) {
 
 	versions, ok := r.schemas[name]
 	if !ok {
-		return nil, fmt.Errorf("schema %q not found", name)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
 	}
 
 	vs := make([]string, 0, len(versions))
@@ -136,11 +138,11 @@ func (r *Registry) Delete(name, version string) error {
 
 	versions, ok := r.schemas[name]
 	if !ok {
-		return fmt.Errorf("schema %q not found", name)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
 	}
 
 	if _, ok := versions[version]; !ok {
-		return fmt.Errorf("schema %q version %q not found", name, version)
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version))
 	}
 
 	delete(versions, version)
@@ -160,7 +162,7 @@ func (r *Registry) latest(versions map[string]*SchemaEntry) (*SchemaEntry, error
 		}
 	}
 	if latest == "" {
-		return nil, fmt.Errorf("no versions found")
+		return nil, naeoserr.New(naeoserr.ErrNotFound, "no versions found")
 	}
 	return versions[latest], nil
 }

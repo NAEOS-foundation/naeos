@@ -31,11 +31,11 @@ jobs:
       run:
         working-directory: site
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Sync OpenAPI spec
         run: cp ../docs/openapi.yaml static/openapi.yaml
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Generate static API docs from OpenAPI spec
@@ -61,19 +61,14 @@ jobs:
       - name: Generate OG images
         run: |
           npm ci 2>&1 | tail -3
-          node -e "
-            const s=require('sharp'),f=require('fs');
-            Promise.all([
-              s(f.readFileSync('static/images/og-dark.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default.png'),
-              s(f.readFileSync('static/images/og-light.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default-light.png')
-            ]).then(()=>console.log('OG images generated')).catch(e=>{console.error(e);process.exit(1)});
+          node scripts/og.mjs
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: '0.145.0'
           extended: false
       - name: Build
-        run: hugo --minify
+        run: hugo --minify --baseURL https://naeos-foundation.github.io/naeos/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -89,4 +84,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

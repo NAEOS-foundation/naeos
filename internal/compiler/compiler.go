@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/promptlib"
@@ -75,24 +77,34 @@ func (c *Compiler) Compile(neir *model.NEIR, target Target) (*CompiledOutput, er
 	a, ok := c.adapters[target]
 	if !ok {
 		slog.Error("unknown compile target", "target", target)
-		return nil, fmt.Errorf("unknown target: %s", target)
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("unknown target: %s", target))
 	}
 	return a.Compile(neir)
 }
 
 func (c *Compiler) CompileAll(neir *model.NEIR) map[Target]*CompiledOutput {
 	results := make(map[Target]*CompiledOutput)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
 	for target, a := range c.adapters {
-		out, err := a.Compile(neir)
-		if err != nil {
-			results[target] = &CompiledOutput{
-				Target:  target,
-				Summary: fmt.Sprintf("error: %v", err),
+		wg.Add(1)
+		go func(t Target, adp Adapter) {
+			defer wg.Done()
+			out, err := adp.Compile(neir)
+			mu.Lock()
+			if err != nil {
+				results[t] = &CompiledOutput{
+					Target:  t,
+					Summary: fmt.Sprintf("error: %v", err),
+				}
+			} else {
+				results[t] = out
 			}
-		} else {
-			results[target] = out
-		}
+			mu.Unlock()
+		}(target, a)
 	}
+	wg.Wait()
 	return results
 }
 

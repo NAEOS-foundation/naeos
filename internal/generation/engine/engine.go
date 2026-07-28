@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/cases"
 	xlanguage "golang.org/x/text/language"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 	"github.com/NAEOS-foundation/naeos/internal/shared/strutil"
@@ -41,7 +42,7 @@ func NewEngine() GeneratorEngine {
 
 func GenerateParallel(neir any, concurrency int) ([]Artifact, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("neir is nil")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "neir is nil")
 	}
 
 	var projectName string
@@ -180,10 +181,10 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 
 func (DefaultEngine) GenerateForLanguage(neir *model.NEIR, lang language.Language) ([]Artifact, error) {
 	if neir == nil {
-		return nil, fmt.Errorf("neir is nil")
+		return nil, naeoserr.New(naeoserr.ErrPipeline, "neir is nil")
 	}
 	if !language.IsValid(lang) {
-		return nil, fmt.Errorf("unsupported language: %s", lang)
+		return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("unsupported language: %s", lang))
 	}
 
 	projectName := ""

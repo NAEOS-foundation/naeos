@@ -36,4 +36,6 @@ type NEIR struct {
 	Testing        *testingmodel.Testing          `json:"testing,omitempty"`
 	Metadata       *metadata.Metadata             `json:"metadata,omitempty"`
 	Generation     *generation.GenerationConfig   `json:"generation,omitempty"`
+	ActiveProfile  string                         `json:"active_profile,omitempty"`
+	Inherits       string                         `json:"inherits,omitempty"`
 }

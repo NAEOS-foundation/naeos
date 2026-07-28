@@ -6,6 +6,7 @@ import (
 )
 
 func TestGoAdapter_GenerateProject(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateProject("MyProject")
 	if len(artifacts) < 4 {
@@ -34,6 +35,7 @@ func TestGoAdapter_GenerateProject(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateModule(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateModule("users", "./internal/users", "MyProject")
 	if len(artifacts) < 8 {
@@ -62,6 +64,7 @@ func TestGoAdapter_GenerateModule(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateService(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateService("api-gateway", "http", 8080, "MyProject")
 	if len(artifacts) < 1 {
@@ -95,6 +98,7 @@ func TestGoAdapter_GenerateService(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateServiceNonHTTP(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateService("worker", "grpc", 9090, "MyProject")
 	if len(artifacts) != 1 {
@@ -103,6 +107,7 @@ func TestGoAdapter_GenerateServiceNonHTTP(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateDockerfile(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateDockerfile("MyProject")
 	if len(artifacts) != 1 {
@@ -118,6 +123,7 @@ func TestGoAdapter_GenerateDockerfile(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateCI(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateCI("MyProject")
 	if len(artifacts) != 1 {
@@ -133,6 +139,7 @@ func TestGoAdapter_GenerateCI(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateDockerCompose(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateDockerCompose("MyProject")
 	if len(artifacts) != 1 {
@@ -148,6 +155,7 @@ func TestGoAdapter_GenerateDockerCompose(t *testing.T) {
 }
 
 func TestGoAdapter_GenerateArchitectureDoc(t *testing.T) {
+	t.Parallel()
 	a := GoAdapter{}
 	artifacts := a.GenerateArchitectureDoc("MyProject", "hexagonal")
 	if len(artifacts) != 1 {

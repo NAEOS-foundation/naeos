@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 var specProjectStartRe = regexp.MustCompile(`^[a-zA-Z0-9]`)
@@ -375,7 +377,7 @@ func Fix(content string) string {
 func readFile(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read file %s: %w", path, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "read file %s", path)
 	}
 	return data, nil
 }

@@ -19,10 +19,29 @@
 <section class="content-section">
     <div class="container">
         {{ .Content }}
+        {{ if eq .Section "blog" }}
+        <div class="blog-categories">
+            {{ $current := . }}
+            {{ $cats := slice }}
+            {{ range .Pages }}{{ range .Params.categories }}{{ $cats = $cats | append . }}{{ end }}{{ end }}
+            {{ $uniq := $cats | uniq }}
+            <button class="category-btn active" data-category="all">{{ i18n "filter_all" | default "All" }}</button>
+            {{ range $uniq }}
+            <button class="category-btn" data-category="{{ . | urlize }}">{{ . }}</button>
+            {{ end }}
+        </div>
+        {{ end }}
         <div class="blog-grid stagger-fade">
             {{ range .Pages }}
-            <article class="blog-card">
+            <article class="blog-card"{{ with .Params.categories }} data-categories="{{ range . }}{{ . | urlize }} {{ end }}"{{ end }}>
                 <div class="blog-date">{{ .Date | time.Format "January 2, 2006" }}</div>
+                {{ with .Params.categories }}
+                <div class="blog-card-categories">
+                    {{ range . }}
+                    <span class="category-badge">{{ . }}</span>
+                    {{ end }}
+                </div>
+                {{ end }}
                 <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
                 <p>{{ .Description | default .Summary | truncate 120 }}</p>
             </article>

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 type StageFunc func(ctx context.Context, input *StageInput) (*StageOutput, error)
@@ -111,10 +113,10 @@ func (a *AuthMiddleware) Wrap(stage string, next StageFunc) StageFunc {
 		if a.ValidateToken != nil && a.TokenHeader != "" {
 			token := input.Labels[a.TokenHeader]
 			if token == "" {
-				return nil, fmt.Errorf("missing auth token in label %q", a.TokenHeader)
+				return nil, naeoserr.New(naeoserr.ErrAuth, fmt.Sprintf("missing auth token in label %q", a.TokenHeader))
 			}
 			if err := a.ValidateToken(token); err != nil {
-				return nil, fmt.Errorf("auth failed: %w", err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "auth failed")
 			}
 		}
 		return next(ctx, input)
@@ -237,7 +239,7 @@ func (rl *RateLimitMiddleware) Wrap(stage string, next StageFunc) StageFunc {
 			return next(ctx, input)
 		}
 		if !rl.allow() {
-			return nil, fmt.Errorf("rate limit exceeded for stage %q", stage)
+			return nil, naeoserr.New(naeoserr.ErrRateLimit, fmt.Sprintf("rate limit exceeded for stage %q", stage))
 		}
 		return next(ctx, input)
 	}
@@ -327,12 +329,12 @@ func (cb *CircuitBreakerMiddleware) Wrap(stage string, next StageFunc) StageFunc
 				atomic.StoreInt32(&cb.successCount, 0)
 			} else {
 				cb.mu.Unlock()
-				return nil, fmt.Errorf("circuit breaker is open for stage %q", stage)
+				return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("circuit breaker is open for stage %q", stage))
 			}
 		case CircuitHalfOpen:
 			if cb.getSuccessCount() >= halfOpenMax {
 				cb.mu.Unlock()
-				return nil, fmt.Errorf("circuit breaker is half-open at capacity for stage %q", stage)
+				return nil, naeoserr.New(naeoserr.ErrPipeline, fmt.Sprintf("circuit breaker is half-open at capacity for stage %q", stage))
 			}
 		}
 		cb.mu.Unlock()
@@ -379,7 +381,7 @@ func (v *ValidationMiddleware) Wrap(stage string, next StageFunc) StageFunc {
 	return func(ctx context.Context, input *StageInput) (*StageOutput, error) {
 		if v.Validate != nil {
 			if err := v.Validate(input); err != nil {
-				return nil, fmt.Errorf("validation failed for stage %q: %w", stage, err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "validation failed for stage %q", stage)
 			}
 		}
 		return next(ctx, input)
@@ -399,7 +401,7 @@ func (t *TransformMiddleware) Wrap(stage string, next StageFunc) StageFunc {
 		if t.TransformInput != nil {
 			transformed, err := t.TransformInput(input)
 			if err != nil {
-				return nil, fmt.Errorf("input transform failed for stage %q: %w", stage, err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "input transform failed for stage %q", stage)
 			}
 			input = transformed
 		}
@@ -410,7 +412,7 @@ func (t *TransformMiddleware) Wrap(stage string, next StageFunc) StageFunc {
 		if t.TransformOutput != nil && output != nil {
 			transformed, err := t.TransformOutput(output)
 			if err != nil {
-				return nil, fmt.Errorf("output transform failed for stage %q: %w", stage, err)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrPipeline, "output transform failed for stage %q", stage)
 			}
 			output = transformed
 		}

@@ -26,7 +26,7 @@ func (sb *safeBuffer) String() string {
 }
 
 func TestObservabilityCommandShowsHelp(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	_, err := executeCommand(root, "observability")
 	if err != nil {
 		t.Fatalf("execute observability failed: %v", err)
@@ -34,7 +34,7 @@ func TestObservabilityCommandShowsHelp(t *testing.T) {
 }
 
 func TestObsTrace(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "observability", "trace", "--name", "http-request")
 	if err != nil {
 		t.Fatalf("observability trace failed: %v", err)
@@ -48,7 +48,7 @@ func TestObsTrace(t *testing.T) {
 }
 
 func TestObsLog(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "observability", "log", "--level", "info", "--message", "Server started")
 	if err != nil {
 		t.Fatalf("observability log failed: %v", err)
@@ -59,7 +59,7 @@ func TestObsLog(t *testing.T) {
 }
 
 func TestObsMetrics(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "observability", "metrics")
 	if err != nil {
 		t.Fatalf("observability metrics failed: %v", err)
@@ -70,7 +70,7 @@ func TestObsMetrics(t *testing.T) {
 }
 
 func TestObsStatus(t *testing.T) {
-	root := newRootCommand()
+	root := NewRootCommand()
 	output, err := executeCommand(root, "observability", "status")
 	if err != nil {
 		t.Fatalf("observability status failed: %v", err)
@@ -82,7 +82,7 @@ func TestObsStatus(t *testing.T) {
 
 func TestObsDashboard(t *testing.T) {
 	buf := &safeBuffer{}
-	root := newRootCommand()
+	root := NewRootCommand()
 	root.SetOut(buf)
 	root.SetErr(buf)
 	root.SetArgs([]string{"observability", "dashboard", "--port", "0"})

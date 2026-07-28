@@ -2,6 +2,7 @@
 title: "Pengembangan Berbasis AI dengan NAEOS: Mengajarkan Asisten Anda Berpikir dalam Arsitektur"
 description: "Bagaimana NAEOS mengkompilasi NEIR menjadi set instruksi AI yang memberikan konteks arsitektur nyata ke Copilot, Claude, dan Cursor."
 date: 2026-07-15
+author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const connectionsDir = ".naeos/db"
@@ -35,25 +37,25 @@ func (s *ConnectionStore) filePath() string {
 	return filepath.Join(s.dir, connectionsFile)
 }
 
-func (s *ConnectionStore) load() error {
+func (s *ConnectionStore) loadLocked() error {
 	data, err := os.ReadFile(s.filePath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			s.entries = nil
 			return nil
 		}
-		return fmt.Errorf("read connections file: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "read connections file")
 	}
 	return json.Unmarshal(data, &s.entries)
 }
 
-func (s *ConnectionStore) save() error {
+func (s *ConnectionStore) saveLocked() error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
-		return fmt.Errorf("create connections dir: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "create connections dir")
 	}
 	data, err := json.MarshalIndent(s.entries, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal connections: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrDatabase, "marshal connections")
 	}
 	return os.WriteFile(s.filePath(), data, 0o600)
 }
@@ -62,42 +64,42 @@ func (s *ConnectionStore) Add(name, driver string, config *Config) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return err
 	}
 
 	for _, e := range s.entries {
 		if e.Name == name {
-			return fmt.Errorf("connection %q already exists", name)
+			return naeoserr.New(naeoserr.ErrConflict, fmt.Sprintf("connection %q already exists", name))
 		}
 	}
 
 	s.entries = append(s.entries, SavedConnection{Name: name, Driver: driver, Config: config})
-	return s.save()
+	return s.saveLocked()
 }
 
 func (s *ConnectionStore) Remove(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return err
 	}
 
 	for i, e := range s.entries {
 		if e.Name == name {
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
-			return s.save()
+			return s.saveLocked()
 		}
 	}
-	return fmt.Errorf("connection %q not found", name)
+	return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("connection %q not found", name))
 }
 
 func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return nil, err
 	}
 
@@ -106,14 +108,14 @@ func (s *ConnectionStore) Get(name string) (*SavedConnection, error) {
 			return &s.entries[i], nil
 		}
 	}
-	return nil, fmt.Errorf("connection %q not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("connection %q not found", name))
 }
 
 func (s *ConnectionStore) List() ([]SavedConnection, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if err := s.load(); err != nil {
+	if err := s.loadLocked(); err != nil {
 		return nil, err
 	}
 	result := make([]SavedConnection, len(s.entries))

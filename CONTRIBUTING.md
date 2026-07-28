@@ -1,23 +1,16 @@
 # Contributing to NAEOS
 
-Thank you for your interest in contributing to NAEOS! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to NAEOS!
 
 ## Table of Contents
 
-- [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
+- [Development Workflow](#development-workflow)
 - [Code Style](#code-style)
-- [Testing](#testing)
+- [Testing Guide](#testing-guide)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
 - [Pull Request Process](#pull-request-process)
-- [Architecture Overview](#architecture-overview)
-
-## Getting Started
-
-1. Fork the repository
-2. Clone your fork
-3. Create a feature branch
-4. Make your changes
-5. Submit a pull request
 
 ## Development Setup
 
@@ -25,165 +18,281 @@ Thank you for your interest in contributing to NAEOS! This document provides gui
 
 - Go 1.25 or later
 - Git
-- Make (for build targets)
-- golangci-lint (required — runs in CI and will block PRs)
-- Docker (optional, for container builds)
+- golangci-lint (required — runs in CI and blocks PRs)
 
-### Setup
+### Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/NAEOS-foundation/naeos.git
 cd naeos
-
-# Install dependencies
 go mod tidy
-
-# Run tests
+go build ./cmd/naeos/
 go test ./...
+```
 
-# Run linter (optional)
+## Development Workflow
+
+### Build
+
+```bash
+go build ./cmd/naeos/
+```
+
+### Test
+
+```bash
+# All tests with race detector
+go test -race -count=1 -timeout 300s ./...
+
+# Specific package
+go test -race -count=1 -timeout 60s ./internal/broker/...
+
+# With coverage
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# Integration-tagged E2E tests
+go test -tags=integration -race -count=1 -timeout 120s ./pkg/pipeline/ -run "TestEndToEnd"
+```
+
+### Lint
+
+```bash
 golangci-lint run ./...
+go vet ./...
+```
+
+### Fuzz
+
+```bash
+go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/
+go test -fuzz=FuzzParse -fuzztime=30s ./internal/specification/parser/
+```
+
+### Benchmarks
+
+```bash
+go test -bench=. -benchmem ./internal/compiler/...
+go test -bench=. -benchmem ./internal/generation/adapters/...
+```
+
+### Generate CLI Docs
+
+```bash
+go run ./cmd/naeos/ docsgen
+# Output: docs/cli/*.md
+```
+
+### Generate Test Skeletons
+
+```bash
+go run ./cmd/gentest/ -pkg ./internal/my-package/ -o ./internal/my-package/new_test.go
+```
+
+### E2E Test Script
+
+```bash
+./scripts/e2e_test.sh
 ```
 
 ## Code Style
 
-### Go Code
+### Go Conventions
 
-- Follow standard Go conventions
-- Use `gofmt` and `goimports` for formatting
-- Add comments for exported functions and types
-- Keep functions focused and small
-- Handle errors explicitly
+- Format: `gofmt` + `goimports` with local prefix `github.com/NAEOS-foundation/naeos`
+- Import order: stdlib → third-party → internal
+- Error handling: return errors, no panics
+- Thread safety: use `sync.Mutex`/`sync.RWMutex` + `atomic.Int64`
+- Constructor pattern: `New*()` returns struct pointer (not interface)
+- Config pattern: constructor takes config struct, validates and stores copy
+- Logging: structured via middleware, not inline
+- No external logging or assertion libraries
 
-### Documentation
+### Naming
 
-- Use Markdown for all documentation
-- Follow the existing document structure
-- Include examples where appropriate
-- Keep language clear and concise
+| Convention | Example |
+|---|---|
+| File names | `snake_case.go` |
+| Test files | `*_test.go` in same package |
+| External test files | `*_ext_test.go` with `package xxx_test` |
+| Table-driven loop var | Always `tt` |
 
-## Testing
+## Testing Guide
 
-### Writing Tests
+### Test Patterns
 
-- Place test files alongside the code they test
-- Use table-driven tests where appropriate
-- Test both success and error cases
-- Aim for good coverage of critical paths
+**Basic test:**
+```go
+func TestFunction(t *testing.T) {
+    result := DoSomething()
+    if result != expected {
+        t.Errorf("got %v, want %v", result, expected)
+    }
+}
+```
 
-### Running Tests
+**Table-driven (use `tt` as loop variable):**
+```go
+func TestCompare(t *testing.T) {
+    tests := []struct {
+        name string
+        a, b string
+        want int
+    }{
+        {name: "a < b", a: "a", b: "b", want: -1},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got := Compare(tt.a, tt.b)
+            if got != tt.want {
+                t.Errorf("Compare(%q, %q) = %d, want %d", tt.a, tt.b, got, tt.want)
+            }
+        })
+    }
+}
+```
+
+**Constructor test:**
+```go
+func TestNewThing(t *testing.T) {
+    t.Parallel()
+    s := NewThing()
+    if s == nil {
+        t.Fatal("expected non-nil")
+    }
+}
+```
+
+**Error expected:**
+```go
+_, err := Parse("invalid")
+if err == nil {
+    t.Fatal("expected error")
+}
+```
+
+**Temp directories:**
+```go
+dir := t.TempDir()
+path := filepath.Join(dir, "file.txt")
+os.WriteFile(path, []byte("data"), 0644)
+```
+
+**Concurrent test:**
+```go
+func TestConcurrentAccess(t *testing.T) {
+    var wg sync.WaitGroup
+    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            // concurrent operations
+        }()
+    }
+    wg.Wait()
+}
+```
+
+### Test Files Added
+
+| Package | File | Tests |
+|---|---|---|
+| `internal/pluginsdk/scaffold` | `scaffold_test.go` | GoMod, NaeosYAML, PluginGo, WasmMainGo, PluginTestGo, Makefile, CIYML, Readme, WriteAll, WriteAllError, FilesDifferentName, FilesWithoutWASM |
+| `internal/migration` | `migration_test.go` | ParseVersion, VersionLess, PlannerPlan, PlannerMigrate, MigrationEngine, FormatMigrationPlan, builtin transforms + fuzz |
+| `internal/broker` | `concurrency_test.go` | InMemoryBrokerConcurrentPublishSubscribe, ConnectionPoolConcurrent, MetricsConcurrent, DeadLetterChannelConcurrent |
+| `cmd/naeos` | `cmd_test.go` | Version, Status, Health, MigratePlan, MigrateRun, MigrateVersions |
+| `cmd/naeos` | `marketplace_cmd_test.go` | Search, Install, ProfileList, PluginList, Help, JSONOutput |
+| `pkg/pipeline` | `pipeline_e2e_test.go` | MinimalSpec, WithLanguages, ValidateOnly, FullSpec, ModuleDependencies, Services, EmptySpec |
+
+### Fuzz Targets
+
+| Package | Target |
+|---|---|
+| `internal/migration` | `FuzzParseVersion` |
+| `internal/specification/parser` | `FuzzParse`, `FuzzParseYAMLNode`, `FuzzVariableResolver`, `FuzzSchemaVersionParse`, `FuzzValidateModules` |
+
+### Coverage Configuration
+
+See `.codecov.yml`:
+- Project target: 60% (2% threshold)
+- Patch target: 80% (5% threshold)
+
+## Project Structure
+
+```
+naeos/
+├── .github/workflows/   # CI pipeline
+├── cmd/
+│   ├── naeos/           # Main CLI (package main)
+│   └── gentest/         # Test skeleton generator
+├── pkg/
+│   ├── kernel/          # Core kernel
+│   ├── pipeline/        # Pipeline orchestrator
+│   └── config/          # Configuration
+├── internal/
+│   ├── broker/          # Message broker (Redis, RabbitMQ, Kafka)
+│   ├── cache/           # In-memory cache
+│   ├── compiler/        # NEIR compiler
+│   ├── database/        # Database layer (PostgreSQL, MySQL, SQLite)
+│   ├── generation/      # Code generation engine + adapters
+│   ├── migration/       # Schema migration planner + engine
+│   ├── neir/            # NEIR model types + builder + validator
+│   ├── pluginsdk/       # Plugin SDK (scaffold, sandbox, wasm)
+│   ├── scheduler/       # Task scheduler
+│   └── specification/   # Parser, normalizer, resolver
+├── docs/
+│   ├── cli/             # Auto-generated CLI docs
+│   └── adr/             # Architecture Decision Records
+├── scripts/             # Utility scripts
+└── AGENTS.md            # AI agent instructions
+```
+
+## Documentation
+
+### Documentation Map
+
+| Doc | Description |
+|---|---|
+| `docs/cli/*.md` | Auto-generated CLI reference (`naeos docsgen`) |
+| `docs/adr/*.md` | Architecture Decision Records |
+| `docs/NES-*.md` | NAEOS Engineering Specifications |
+| `CONTRIBUTING.md` | This file |
+
+### Generating CLI Docs
+
+Docs are auto-generated from cobra command definitions:
 
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests with verbose output
-go test -v ./...
-
-# Run specific test
-go test -v ./internal/neir/model/...
-
-# Run tests with coverage
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
+go run ./cmd/naeos/ docsgen
+git add docs/cli/
+git commit -m "docs: update CLI reference"
 ```
 
 ## Pull Request Process
 
-1. **Create a feature branch** from `main`
-2. **Make your changes** with clear, focused commits
-3. **Add tests** for new functionality
-4. **Update documentation** if needed
-5. **Run the test suite** to ensure nothing is broken
-6. **Submit your pull request** with a clear description
+1. **Branch** from `main` with a descriptive name
+2. **Commit** with clear messages (imperative mood, <72 chars)
+3. **Test** — run full suite: `go test -race -count=1 -timeout 300s ./...`
+4. **Lint** — run: `golangci-lint run ./... && go vet ./...`
+5. **PR** — describe the change, why it's needed, and how it was tested
 
-### Commit Messages
-
-- Use clear, descriptive commit messages
-- Start with a verb in imperative mood
-- Keep the first line under 72 characters
-- Reference issues when applicable
-
-Example:
-```
-Add multi-language SDK generation support
-
-- Implement OutputAdapter interface pattern
-- Add Go, TypeScript, Python, Java, Rust adapters
-- Update pipeline to dispatch to adapters based on generation config
-- Add CLI --language flag for language override
-
-Closes #42
-```
-
-### PR Description
-
-Please include:
-- What the PR does
-- Why the change is needed
-- How it was tested
-- Any breaking changes
-
-## Architecture Overview
-
-### Project Structure
+### Commit Message Format
 
 ```
-naeos/
-├── cmd/naeos/          # CLI entry point
-├── pkg/                # Public packages
-│   ├── kernel/         # Core kernel
-│   ├── pipeline/       # Pipeline orchestrator
-│   └── config/         # Configuration
-├── internal/           # Private packages
-│   ├── generation/     # Code generation
-│   │   ├── engine/     # Default engine
-│   │   └── adapters/   # Language adapters
-│   ├── neir/           # NEIR model
-│   ├── specification/  # Parser, normalizer, resolver
-│   └── governance/     # Policy, review
-├── specification/      # NAEOS specifications
-├── docs/               # Documentation
-└── governance/         # Governance documents
+<type>: <short description>
+
+<optional body>
+
+Closes #<issue>
 ```
 
-### Key Concepts
+Types: `feat`, `fix`, `test`, `docs`, `refactor`, `chore`, `ci`
 
-- **NEIR** (Nusantara Enterprise Intermediate Representation): The canonical model that all engines consume
-- **OutputAdapter**: Interface for language-specific code generation
-- **Pipeline**: Orchestrates the entire transformation from specification to artifacts
+### PR Checklist
 
-### Adding a New Language Adapter
-
-1. Create a new file in `internal/generation/adapters/`
-2. Implement the `OutputAdapter` interface
-3. Register via `init()` function
-4. Add tests
-5. Update documentation
-
-```go
-type MyAdapter struct{}
-
-func init() {
-    Register(MyAdapter{})
-}
-
-func (MyAdapter) Language() language.Language {
-    return "mylang"
-}
-
-func (MyAdapter) GenerateProject(projectName string) []engine.Artifact {
-    // Return project-level artifacts
-}
-// ... implement other methods
-```
-
-## Questions?
-
-If you have questions about contributing, feel free to:
-- Open an issue
-- Start a discussion
-- Reach out to maintainers
-
-Thank you for contributing to NAEOS!
+- [ ] Code compiles: `go build ./cmd/naeos/`
+- [ ] All tests pass: `go test -race -count=1 ./...`
+- [ ] Linter passes: `golangci-lint run ./...`
+- [ ] New code has tests
+- [ ] Documentation updated if needed
+- [ ] No breaking changes without discussion

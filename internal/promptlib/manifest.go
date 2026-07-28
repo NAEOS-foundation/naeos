@@ -2,13 +2,14 @@ package promptlib
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Manifest represents the registry of all prompt templates in the library.
@@ -31,7 +32,7 @@ func LoadManifest(data []byte) (*Manifest, error) {
 	var m Manifest
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	if err := decoder.Decode(&m); err != nil {
-		return nil, fmt.Errorf("parse manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse manifest")
 	}
 	return &m, nil
 }
@@ -63,7 +64,7 @@ func LoadPromptsFromDir(dir string) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 	root, err := os.OpenRoot(dir)
 	if err != nil {
-		return nil, fmt.Errorf("open root %s: %w", dir, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "open root %s", dir)
 	}
 	defer root.Close()
 
@@ -80,22 +81,22 @@ func LoadPromptsFromDir(dir string) (map[string][]byte, error) {
 		}
 		rel, err := filepath.Rel(dir, path)
 		if err != nil {
-			return fmt.Errorf("rel %s: %w", path, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "rel %s", path)
 		}
 		f, err := root.Open(rel)
 		if err != nil {
-			return fmt.Errorf("open %s: %w", rel, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "open %s", rel)
 		}
 		defer f.Close()
 		data, err := io.ReadAll(f)
 		if err != nil {
-			return fmt.Errorf("read %s: %w", rel, err)
+			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "read %s", rel)
 		}
 		result[path] = data
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("walk %s: %w", dir, err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "walk %s", dir)
 	}
 	return result, nil
 }

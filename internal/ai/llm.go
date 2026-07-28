@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/promptlib"
 )
 
@@ -142,7 +143,7 @@ func (s *LLMService) EnrichSpec(specContent string) (string, error) {
 // EnrichSpecContext enriches a specification with context support.
 func (s *LLMService) EnrichSpecContext(ctx context.Context, specContent string) (string, error) {
 	if specContent == "" {
-		return "", fmt.Errorf("empty specification")
+		return "", naeoserr.New(naeoserr.ErrValidation, "empty specification")
 	}
 	prompt := s.buildEnrichPrompt(specContent)
 	return s.callLLM(ctx, prompt)
@@ -176,7 +177,7 @@ func (s *LLMService) GenerateSuggestions(specContent string) ([]Suggestion, erro
 // GenerateSuggestionsContext asks the LLM for improvement suggestions with context support.
 func (s *LLMService) GenerateSuggestionsContext(ctx context.Context, specContent string) ([]Suggestion, error) {
 	if specContent == "" {
-		return nil, fmt.Errorf("empty specification")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "empty specification")
 	}
 	prompt := s.buildSuggestionsPrompt(specContent)
 
@@ -187,7 +188,7 @@ func (s *LLMService) GenerateSuggestionsContext(ctx context.Context, specContent
 
 	var suggestions []Suggestion
 	if err := json.Unmarshal([]byte(CleanJSON(response)), &suggestions); err != nil {
-		return nil, fmt.Errorf("parse LLM response: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "parse LLM response")
 	}
 
 	return suggestions, nil
@@ -221,7 +222,7 @@ func (s *LLMService) ExplainArchitecture(specContent, architecture string) (stri
 // ExplainArchitectureContext explains an architecture pattern with context support.
 func (s *LLMService) ExplainArchitectureContext(ctx context.Context, specContent, architecture string) (string, error) {
 	if specContent == "" {
-		return "", fmt.Errorf("empty specification")
+		return "", naeoserr.New(naeoserr.ErrValidation, "empty specification")
 	}
 	prompt := s.buildExplainPrompt(specContent, architecture)
 	return s.callLLM(ctx, prompt)
@@ -313,7 +314,7 @@ func (s *LLMService) callLLM(ctx context.Context, prompt string) (string, error)
 		return s.callAnthropic(ctx, prompt)
 	default:
 		slog.Error("unsupported LLM provider", "provider", s.config.Provider)
-		return "", fmt.Errorf("unsupported LLM provider: %s", s.config.Provider)
+		return "", naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("unsupported LLM provider: %s", s.config.Provider))
 	}
 }
 
@@ -356,7 +357,7 @@ func (s *LLMService) callOpenAI(ctx context.Context, prompt string) (string, err
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		slog.Error("openai request failed", "error", err)
-		return "", fmt.Errorf("openai request: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "openai request")
 	}
 	defer resp.Body.Close()
 
@@ -374,12 +375,12 @@ func (s *LLMService) callOpenAI(ctx context.Context, prompt string) (string, err
 
 	if result.Error != nil {
 		slog.Error("openai api error", "message", result.Error.Message)
-		return "", fmt.Errorf("openai error: %s", result.Error.Message)
+		return "", naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("openai error: %s", result.Error.Message))
 	}
 
 	if len(result.Choices) == 0 {
 		slog.Error("openai no choices returned")
-		return "", fmt.Errorf("openai: no choices returned")
+		return "", naeoserr.New(naeoserr.ErrInternal, "openai: no choices returned")
 	}
 
 	slog.Info("openai call succeeded", "model", s.config.Model)
@@ -441,7 +442,7 @@ func (s *LLMService) streamOpenAI(ctx context.Context, prompt string, w io.Write
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		_ = writeEvent("error", fmt.Sprintf(`{"message":"API error (status %d): %s"}`, resp.StatusCode, string(respBody)))
-		return fmt.Errorf("openai streaming: status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("openai streaming: status %d", resp.StatusCode))
 	}
 
 	decoder := NewSSEDecoder(resp.Body)
@@ -470,7 +471,7 @@ func (s *LLMService) streamOpenAI(ctx context.Context, prompt string, w io.Write
 
 		if chunk.Error != nil {
 			_ = writeEvent("error", fmt.Sprintf(`{"message":"%s"}`, chunk.Error.Message))
-			return fmt.Errorf("openai streaming error: %s", chunk.Error.Message)
+			return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("openai streaming error: %s", chunk.Error.Message))
 		}
 
 		if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
@@ -540,7 +541,7 @@ func (s *LLMService) streamAnthropic(ctx context.Context, prompt string, w io.Wr
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		_ = writeEvent("error", fmt.Sprintf(`{"message":"Anthropic error (status %d): %s"}`, resp.StatusCode, string(respBody)))
-		return fmt.Errorf("anthropic streaming: status %d", resp.StatusCode)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("anthropic streaming: status %d", resp.StatusCode))
 	}
 
 	decoder := NewSSEDecoder(resp.Body)
@@ -578,7 +579,7 @@ func (s *LLMService) streamAnthropic(ctx context.Context, prompt string, w io.Wr
 			}
 			if err := json.Unmarshal(data, &errResp); err == nil && errResp.Error.Message != "" {
 				_ = writeEvent("error", fmt.Sprintf(`{"message":"%s"}`, errResp.Error.Message))
-				return fmt.Errorf("anthropic streaming error: %s", errResp.Error.Message)
+				return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("anthropic streaming error: %s", errResp.Error.Message))
 			}
 		case "message_stop":
 			slog.Info("anthropic stream completed")
@@ -626,7 +627,7 @@ func (s *LLMService) callAnthropic(ctx context.Context, prompt string) (string, 
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("anthropic request: %w", err)
+		return "", naeoserr.Wrapf(err, naeoserr.ErrNetwork, "anthropic request")
 	}
 	defer resp.Body.Close()
 
@@ -641,11 +642,11 @@ func (s *LLMService) callAnthropic(ctx context.Context, prompt string) (string, 
 	}
 
 	if result.Error != nil {
-		return "", fmt.Errorf("anthropic error: %s", result.Error.Message)
+		return "", naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("anthropic error: %s", result.Error.Message))
 	}
 
 	if len(result.Content) == 0 {
-		return "", fmt.Errorf("anthropic: no content returned")
+		return "", naeoserr.New(naeoserr.ErrInternal, "anthropic: no content returned")
 	}
 
 	return result.Content[0].Text, nil
@@ -697,7 +698,7 @@ func (s *LLMService) streamLLM(ctx context.Context, prompt string, w io.Writer) 
 	case ProviderAnthropic:
 		return s.streamAnthropic(ctx, prompt, w)
 	default:
-		return fmt.Errorf("unsupported LLM provider for streaming: %s", s.config.Provider)
+		return naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("unsupported LLM provider for streaming: %s", s.config.Provider))
 	}
 }
 

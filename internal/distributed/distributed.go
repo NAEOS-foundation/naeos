@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 // Agent represents a registered remote worker with metadata and heartbeat tracking.
@@ -162,7 +164,7 @@ func (c *Coordinator) RegisterAgent(agent *Agent) error {
 	defer c.mu.Unlock()
 
 	if agent.ID == "" {
-		return fmt.Errorf("agent ID must not be empty")
+		return naeoserr.New(naeoserr.ErrNetwork, "agent ID must not be empty")
 	}
 	agent.Status = AgentStatusOnline
 	agent.LastHeartbeat = time.Now()
@@ -178,7 +180,7 @@ func (c *Coordinator) UnregisterAgent(id string) error {
 	defer c.mu.Unlock()
 
 	if _, ok := c.agents[id]; !ok {
-		return fmt.Errorf("agent not found: %s", id)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("agent not found: %s", id))
 	}
 	c.agents[id].Status = AgentStatusOffline
 	delete(c.agents, id)
@@ -191,7 +193,7 @@ func (c *Coordinator) RecordHeartbeat(id string) error {
 
 	agent, ok := c.agents[id]
 	if !ok {
-		return fmt.Errorf("agent not found: %s", id)
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("agent not found: %s", id))
 	}
 	agent.mu.Lock()
 	agent.LastHeartbeat = time.Now()
@@ -241,8 +243,8 @@ func (c *Coordinator) workerLoop(ctx context.Context, w Worker) {
 			c.mu.Unlock()
 			return
 		}
-		c.mu.Unlock()
 		c.drainWg.Add(1)
+		c.mu.Unlock()
 		result := c.executeWithRetry(ctx, w, task)
 		c.drainWg.Done()
 		if result != nil {
@@ -632,7 +634,7 @@ func (w *CircuitBreakerWorker) ID() string {
 
 func (w *CircuitBreakerWorker) Execute(ctx context.Context, task *Task) (*TaskResult, error) {
 	if !w.cb.Allow() {
-		return nil, fmt.Errorf("circuit breaker open for worker %s", w.worker.ID())
+		return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("circuit breaker open for worker %s", w.worker.ID()))
 	}
 	result, err := w.worker.Execute(ctx, task)
 	if err != nil {

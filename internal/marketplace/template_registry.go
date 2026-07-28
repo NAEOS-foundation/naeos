@@ -12,22 +12,24 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const DefaultTemplateRegistryURL = "https://naeos.dev/templates/registry.json"
 
 type TemplateEntry struct {
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Description  string   `json:"description"`
-	Author       string   `json:"author"`
-	Tags         []string `json:"tags"`
-	RepoURL      string   `json:"repo_url"`
-	DownloadURL  string   `json:"download_url"`
-	Languages    []string `json:"languages"`
-	Frameworks   []string `json:"frameworks"`
-	Downloads    int      `json:"downloads"`
-	UpdatedAt    string   `json:"updated_at"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Description string   `json:"description"`
+	Author      string   `json:"author"`
+	Tags        []string `json:"tags"`
+	RepoURL     string   `json:"repo_url"`
+	DownloadURL string   `json:"download_url"`
+	Languages   []string `json:"languages"`
+	Frameworks  []string `json:"frameworks"`
+	Downloads   int      `json:"downloads"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 type TemplateList struct {
@@ -55,7 +57,7 @@ func NewRemoteTemplateRegistry(baseURL string) *RemoteTemplateRegistry {
 		baseURL = DefaultTemplateRegistryURL
 	}
 	return &RemoteTemplateRegistry{
-		baseURL: baseURL,
+		baseURL:    baseURL,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -68,34 +70,34 @@ func (r *RemoteTemplateRegistry) List() ([]TemplateEntry, error) {
 		var err error
 		data, err = os.ReadFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("read local registry: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read local registry")
 		}
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		req, err := http.NewRequestWithContext(ctx, "GET", r.baseURL, nil)
 		if err != nil {
-			return nil, fmt.Errorf("create request: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 		}
 		resp, err := r.httpClient.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("fetch template list: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "fetch template list")
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("registry returned status %d", resp.StatusCode)
+			return nil, naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("registry returned status %d", resp.StatusCode))
 		}
 
 		data, err = io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("read response: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read response")
 		}
 	}
 
 	var list TemplateList
 	if err := json.Unmarshal(data, &list); err != nil {
-		return nil, fmt.Errorf("decode template list: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "decode template list")
 	}
 
 	return list.Templates, nil
@@ -140,28 +142,28 @@ func (r *RemoteTemplateRegistry) Get(name string) (*TemplateEntry, error) {
 			return &t, nil
 		}
 	}
-	return nil, fmt.Errorf("template %q not found", name)
+	return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("template %q not found", name))
 }
 
 func ValidateTemplateManifest(path string) (*TemplateManifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read template manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read template manifest")
 	}
 
 	var m TemplateManifest
 	if err := yaml.Unmarshal(data, &m); err != nil {
-		return nil, fmt.Errorf("parse template manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrParse, "parse template manifest")
 	}
 
 	if m.Name == "" {
-		return nil, fmt.Errorf("template name is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "template name is required")
 	}
 	if m.Version == "" {
-		return nil, fmt.Errorf("template version is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "template version is required")
 	}
 	if m.Description == "" {
-		return nil, fmt.Errorf("template description is required")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "template description is required")
 	}
 
 	return &m, nil
@@ -185,18 +187,26 @@ func PublishTemplate(templateDir string, registryURL string) (*TemplateEntry, er
 	} else if _, err := os.Stat(altPath); err == nil {
 		manifestFile = altPath
 	} else {
-		return nil, fmt.Errorf("no template.yaml or naeos.yaml found in %s", templateDir)
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("no template.yaml or naeos.yaml found in %s", templateDir))
 	}
 
 	m, err := ValidateTemplateManifest(manifestFile)
 	if err != nil {
-		return nil, fmt.Errorf("invalid manifest: %w", err)
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid manifest")
 	}
 
 	if _, err := os.Stat(filepath.Join(templateDir, "README.md")); os.IsNotExist(err) {
-		return nil, fmt.Errorf("template must have a README.md")
+		return nil, naeoserr.New(naeoserr.ErrValidation, "template must have a README.md")
 	}
-
+	if _, err := os.Stat(filepath.Join(templateDir, ".naeos")); os.IsNotExist(err) {
+		entries, err := os.ReadDir(templateDir)
+		if err != nil {
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "read template dir")
+		}
+		if len(entries) == 0 {
+			return nil, naeoserr.New(naeoserr.ErrValidation, "template directory is empty")
+		}
+	}
 	entry := &TemplateEntry{
 		Name:        m.Name,
 		Version:     m.Version,
@@ -210,7 +220,7 @@ func PublishTemplate(templateDir string, registryURL string) (*TemplateEntry, er
 
 	if registryURL != "" && registryURL != DefaultTemplateRegistryURL && !strings.HasPrefix(registryURL, "file://") {
 		if err := submitToRegistry(*entry, registryURL); err != nil {
-			return nil, fmt.Errorf("submit to registry: %w", err)
+			return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "submit to registry")
 		}
 	}
 
@@ -235,13 +245,13 @@ func submitToRegistry(entry TemplateEntry, registryURL string) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("publish to registry: %w", err)
+		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "publish to registry")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("registry returned HTTP %d: %s", resp.StatusCode, string(body))
+		return naeoserr.New(naeoserr.ErrNetwork, fmt.Sprintf("registry returned HTTP %d: %s", resp.StatusCode, string(body)))
 	}
 
 	return nil
@@ -252,7 +262,7 @@ func GenerateRegistryEntry(templateDir string) (*TemplateEntry, error) {
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
 		manifestPath = filepath.Join(templateDir, "naeos.yaml")
 		if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("no template.yaml found in %s", templateDir)
+			return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("no template.yaml found in %s", templateDir))
 		}
 	}
 
