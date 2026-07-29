@@ -142,17 +142,18 @@ func (p *PipelineProfile) FastestStage() *StageMetrics {
 }
 
 type BenchmarkResult struct {
-	Name        string
-	Iterations  int
-	AvgTime     time.Duration
-	MinTime     time.Duration
-	MaxTime     time.Duration
-	TotalTime   time.Duration
-	P50         time.Duration
-	P95         time.Duration
-	P99         time.Duration
-	StdDev      time.Duration
-	Percentiles map[float64]time.Duration
+	Name         string
+	Iterations   int
+	AvgTime      time.Duration
+	MinTime      time.Duration
+	MaxTime      time.Duration
+	TotalTime    time.Duration
+	P50          time.Duration
+	P95          time.Duration
+	P99          time.Duration
+	StdDev       time.Duration
+	Percentiles  map[float64]time.Duration
+	allDurations []time.Duration
 }
 
 func Benchmark(name string, iterations int, fn func()) *BenchmarkResult {
@@ -176,6 +177,7 @@ func Benchmark(name string, iterations int, fn func()) *BenchmarkResult {
 			result.MaxTime = duration
 		}
 	}
+	result.allDurations = durations
 	result.AvgTime = result.TotalTime / time.Duration(iterations)
 	sorted := make([]time.Duration, len(durations))
 	copy(sorted, durations)
@@ -231,8 +233,12 @@ func (r *BenchmarkResult) Histogram() string {
 	return sb.String()
 }
 
+func (r *BenchmarkResult) Durations() []time.Duration {
+	return r.allDurations
+}
+
 func (r *BenchmarkResult) durations() []time.Duration {
-	return nil
+	return r.allDurations
 }
 
 type ProfileSnapshot struct {

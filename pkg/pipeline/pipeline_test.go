@@ -1,14 +1,55 @@
 package pipeline
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
+	"github.com/NAEOS-foundation/naeos/internal/profiling"
+	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
+
+func schemaForTesting() map[string]any {
+	return map[string]any{
+		"title":       "NEIR Spec",
+		"description": "Test schema for NEIR spec validation",
+		"type":        "object",
+		"required":    []any{"project", "modules"},
+		"properties": map[string]any{
+			"project": map[string]any{
+				"type": "string",
+			},
+			"modules": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type":     "object",
+					"required": []any{"name", "path"},
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"path": map[string]any{"type": "string"},
+					},
+				},
+			},
+			"services": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"kind": map[string]any{
+							"type": "string",
+							"enum": []any{"http", "grpc"},
+						},
+					},
+				},
+			},
+		},
+	}
+}
 
 type stubParser struct{}
 
@@ -476,3 +517,377 @@ func (l *lifecycleRecorder) OnPipelineStart(pipelineID string)              { l.
 func (l *lifecycleRecorder) OnPipelineComplete(pid string, a int, d string) { l.complete = true }
 func (l *lifecycleRecorder) OnPipelineFailed(pid, errMsg string)            {}
 func (l *lifecycleRecorder) OnArtifactGenerated(name, path string)          {}
+
+func TestPipelineStageCache(t *testing.T) {
+	sc := NewStageCache(t.TempDir())
+	p, err := New(Config{StageCache: sc})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	result, err := p.Run("project: stage-cache-test\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("first Run returned error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result on first run")
+	}
+	stats := sc.Stats()
+	if stats["schedule"] == 0 && stats["generate"] == 0 {
+		t.Log("stage cache may not have been populated (no cache hits expected on first run)")
+	}
+
+	result2, err := p.Run("project: stage-cache-test\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("second Run returned error: %v", err)
+	}
+	if result2 == nil {
+		t.Fatal("expected non-nil result on second run")
+	}
+	if len(result2.Artifacts) != len(result.Artifacts) {
+		t.Errorf("expected same number of artifacts, got %d vs %d", len(result2.Artifacts), len(result.Artifacts))
+	}
+}
+
+func TestPipelineWithProfileRecordsStages(t *testing.T) {
+	prof := profiling.NewProfile()
+	p, err := New(Config{Profile: prof})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Run("project: profile-test\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+
+	got := p.ProfileResult()
+	if got == nil {
+		t.Fatal("expected ProfileResult to return non-nil")
+	}
+
+	if got.TotalTime == 0 {
+		t.Fatal("expected TotalTime to be set")
+	}
+
+	if len(got.Stages) == 0 {
+		t.Fatal("expected at least one stage to be recorded")
+	}
+
+	stageNames := make(map[string]bool)
+	for _, s := range got.Stages {
+		stageNames[s.Name] = true
+		if s.Duration == 0 {
+			t.Fatalf("stage %q has zero duration", s.Name)
+		}
+	}
+
+	expectedStages := []string{"validate", "build_graph", "policy_eval", "schedule", "generate", "review", "write_artifacts"}
+	for _, name := range expectedStages {
+		if !stageNames[name] {
+			t.Fatalf("expected stage %q to be recorded", name)
+		}
+	}
+
+	summary := got.Summary()
+	if !strings.Contains(summary, "Pipeline Performance Profile") {
+		t.Fatal("summary should contain header")
+	}
+}
+
+func TestPipelineWithProfileAndSaveLoad(t *testing.T) {
+	prof := profiling.NewProfile()
+	p, err := New(Config{Profile: prof})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: save-profile-test\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	profilePath := filepath.Join(t.TempDir(), "profile.json")
+	if err := profiling.SaveProfile(profilePath, p.ProfileResult()); err != nil {
+		t.Fatalf("SaveProfile failed: %v", err)
+	}
+
+	snap, err := profiling.LoadProfile(profilePath)
+	if err != nil {
+		t.Fatalf("LoadProfile failed: %v", err)
+	}
+	if snap.TotalTime == 0 {
+		t.Fatal("expected non-zero total time in loaded profile")
+	}
+	if snap.StageCount == 0 {
+		t.Fatal("expected non-zero stage count in loaded profile")
+	}
+}
+
+func TestPipelineWithoutProfileReturnsNil(t *testing.T) {
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	got := p.ProfileResult()
+	if got != nil {
+		t.Fatal("expected ProfileResult to return nil when no profile configured")
+	}
+}
+
+func TestWithProfileOption(t *testing.T) {
+	prof := profiling.NewProfile()
+	cfg := Config{}
+	WithProfile(prof)(&cfg)
+	if cfg.Profile != prof {
+		t.Fatal("WithProfile should set Profile on config")
+	}
+}
+
+func TestPipelineProfileRecordsCorrectStageCount(t *testing.T) {
+	prof := profiling.NewProfile()
+	p, err := New(Config{Profile: prof})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: stage-count\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if len(prof.Stages) != 7 {
+		t.Fatalf("expected 7 recorded stages, got %d", len(prof.Stages))
+	}
+}
+
+func TestValidateSpecWithSchemaValid(t *testing.T) {
+	schema := schemaForTesting()
+	spec := map[string]any{
+		"project": "my-app",
+		"modules": []any{
+			map[string]any{"name": "core", "path": "./core"},
+		},
+	}
+
+	result := schemaregistry.ValidateSpec(spec, schema)
+	if !result.Valid {
+		t.Fatalf("expected valid spec, got errors: %v", result.Errors)
+	}
+}
+
+func TestValidateSpecWithSchemaMissingRequiredField(t *testing.T) {
+	schema := schemaForTesting()
+	spec := map[string]any{
+		"project": "my-app",
+	}
+
+	result := schemaregistry.ValidateSpec(spec, schema)
+	if result.Valid {
+		t.Fatal("expected invalid spec due to missing 'modules'")
+	}
+	found := false
+	for _, e := range result.Errors {
+		if e.Field == "modules" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected error about missing 'modules', got: %v", result.Errors)
+	}
+}
+
+func TestValidateSpecWithSchemaInvalidEnum(t *testing.T) {
+	schema := schemaForTesting()
+	spec := map[string]any{
+		"project": "my-app",
+		"modules": []any{
+			map[string]any{"name": "core", "path": "./core"},
+		},
+		"services": []any{
+			map[string]any{"name": "api", "kind": "invalid-kind"},
+		},
+	}
+
+	result := schemaregistry.ValidateSpec(spec, schema)
+	if result.Valid {
+		t.Fatal("expected invalid spec due to invalid enum value")
+	}
+}
+
+func TestPipelineSchemaSourceValid(t *testing.T) {
+	schemaFile := filepath.Join(t.TempDir(), "schema.json")
+	schema := schemaForTesting()
+	schemaData, err := json.Marshal(schema)
+	if err != nil {
+		t.Fatalf("marshal schema: %v", err)
+	}
+	if err := os.WriteFile(schemaFile, schemaData, 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	p, err := New(Config{SchemaSource: "file://" + schemaFile})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	result, err := p.Run("project: my-app\nmodules:\n  - name: core\n    path: ./core\n")
+	if err != nil {
+		t.Fatalf("Run with valid schema source failed: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+}
+
+func TestPipelineSchemaSourceInvalidSpec(t *testing.T) {
+	schemaFile := filepath.Join(t.TempDir(), "schema.json")
+	schema := schemaForTesting()
+	schemaData, err := json.Marshal(schema)
+	if err != nil {
+		t.Fatalf("marshal schema: %v", err)
+	}
+	if err := os.WriteFile(schemaFile, schemaData, 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	p, err := New(Config{SchemaSource: "file://" + schemaFile})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	_, err = p.Run("project: my-app\n")
+	if err == nil {
+		t.Fatal("expected error for spec missing required 'modules' field")
+	}
+	if !strings.Contains(err.Error(), "schema validation failed") {
+		t.Fatalf("expected schema validation error, got: %v", err)
+	}
+}
+
+func TestPipelineWithMemProfileRecordsSnapshots(t *testing.T) {
+	mp := profiling.NewMemProfiler()
+	p, err := New(Config{MemProfile: mp})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: memprofile-test\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	got := p.MemProfileResult()
+	if got == nil {
+		t.Fatal("expected MemProfileResult to return non-nil")
+	}
+
+	snaps := got.Snapshots()
+	if len(snaps) < 2 {
+		t.Fatalf("expected at least 2 heap snapshots, got %d", len(snaps))
+	}
+
+	expectedLabels := []string{"pipeline_start", "validate", "build_graph", "policy_eval", "schedule", "generate", "review", "write_artifacts"}
+	found := make(map[string]bool)
+	for _, s := range snaps {
+		found[s.Label] = true
+	}
+	for _, label := range expectedLabels {
+		if !found[label] {
+			t.Fatalf("expected snapshot with label %q", label)
+		}
+	}
+}
+
+func TestPipelineWithoutMemProfileReturnsNil(t *testing.T) {
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	got := p.MemProfileResult()
+	if got != nil {
+		t.Fatal("expected MemProfileResult to return nil when no memprofile configured")
+	}
+}
+
+func TestWithMemProfileOption(t *testing.T) {
+	mp := profiling.NewMemProfiler()
+	cfg := Config{}
+	WithMemProfile(mp)(&cfg)
+	if cfg.MemProfile != mp {
+		t.Fatal("WithMemProfile should set MemProfile on config")
+	}
+}
+
+func TestPipelineMemProfileSnapshotsCount(t *testing.T) {
+	mp := profiling.NewMemProfiler()
+	p, err := New(Config{MemProfile: mp})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: memprofile-count\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if len(mp.Snapshots()) != 8 {
+		t.Fatalf("expected 8 heap snapshots, got %d", len(mp.Snapshots()))
+	}
+}
+
+func TestPipelineMemProfileDiffs(t *testing.T) {
+	mp := profiling.NewMemProfiler()
+	p, err := New(Config{MemProfile: mp})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: memprofile-diffs\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	diffs := mp.Diffs()
+	if len(diffs) == 0 {
+		t.Fatal("expected at least one heap diff")
+	}
+}
+
+func TestPipelineMemProfileAnalyze(t *testing.T) {
+	mp := profiling.NewMemProfiler()
+	p, err := New(Config{MemProfile: mp})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: memprofile-analyze\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	report := mp.Analyze()
+	if report.Diffs == nil {
+		t.Fatal("expected non-nil diffs in analyze report")
+	}
+}
+
+func TestPipelineSchemaSourceNotSet(t *testing.T) {
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	result, err := p.Run("project: my-app\nmodules:\n  - name: core\n    path: ./core\n")
+	if err != nil {
+		t.Fatalf("Run without schema source should work: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+}

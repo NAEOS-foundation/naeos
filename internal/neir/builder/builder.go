@@ -22,13 +22,37 @@ type Builder interface {
 	Build(resolved any) (*model.NEIR, error)
 }
 
+type LazyBuilder interface {
+	Builder
+	BuildLazy(resolved any) (*LazyNEIR, error)
+}
+
 type DefaultBuilder struct{}
 
 func NewBuilder() Builder {
 	return DefaultBuilder{}
 }
 
-func (DefaultBuilder) Build(resolved any) (*model.NEIR, error) {
+func NewLazyBuilder() LazyBuilder {
+	return DefaultBuilder{}
+}
+
+func (b DefaultBuilder) Build(resolved any) (*model.NEIR, error) {
+	return b.build(resolved)
+}
+
+func (b DefaultBuilder) BuildLazy(resolved any) (*LazyNEIR, error) {
+	if resolved == nil {
+		return nil, naeoserr.New(naeoserr.ErrValidation, "resolved spec is nil")
+	}
+	resolvedSpec, ok := resolved.(*resolver.ResolvedSpec)
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("expected *resolver.ResolvedSpec, got %T", resolved))
+	}
+	return newLazyNEIR(resolvedSpec), nil
+}
+
+func (b DefaultBuilder) build(resolved any) (*model.NEIR, error) {
 	if resolved == nil {
 		return nil, naeoserr.New(naeoserr.ErrValidation, "resolved spec is nil")
 	}
