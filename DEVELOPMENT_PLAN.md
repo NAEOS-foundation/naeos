@@ -73,7 +73,7 @@
 |--------|----------|----------------|----------------|
 | Test coverage (overall) | ~77% | ≥80% | ≥85% |
 | Test coverage (target packages) | ✅ 80–88% (6 packages) | — | — |
-| CLI commands test coverage | ~51% | 100% | 100% |
+| CLI commands test coverage | ~46% | 100% | 100% |
 | Website pages (EN) | ~59 | 35+ (wiki migrated) | 40+ |
 | Blog posts | 8 | 6+ | 12+ |
 | Plugin ecosystem | 0 | 5+ community plugins | 20+ |
@@ -114,6 +114,11 @@
 - **VS Code extension generator** — `naeos dx vscode-gen` dengan output directory, TextMate grammar, LSP client, commands, keybindings, menus, config
 - **NEIR-aware LSP** — 30 test, 7 file server stdio JSON-RPC 2.0, code actions, fix duplicate module detection bug
 - **CLI tests added** — 9 test baru untuk diff, build, lsp, dx, vscode-gen commands
+- **CLI coverage expanded** — 31 test baru untuk version, config, init, status, health, template, plugin, schema, compliance, search, ai, security, docgen, auth, dashboard, observability, events, mcp, validate, workflow, supabase, marketplace, watch, rollback, lock, migrate, deploy, run, create, lint, cicd, gateway, sso, profile, artifacts
+- **Plugin search fix** — `naeos plugin search` terhubung ke `RemoteRegistry` (dari hardcoded stub)
+- **WASM coverage boost** — 27% → 98% (getter tests, marshal error path)
+- **LSP coverage boost** — 74% → 86% (CodeAction, Hover, Definition, handleMessage)
+- **Audit coverage boost** — 78% → 81% (ExportCSV, escapeCSV, edge cases)
 - **v3.0.0 changelog** — Unreleased section dengan 20+ item fitur baru untuk rilis v3.0.0
 
 ## Notes
