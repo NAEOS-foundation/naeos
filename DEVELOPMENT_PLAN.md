@@ -40,9 +40,9 @@
 | Item | Area | Detail |
 |------|------|--------|
 | Pipeline caching v2 ✅ | Backend | Stage-level cache keyed by NEIR hash (JSON+SHA256) untuk schedule & generate. StageCache via `Config.StageCache` / `WithStageCache()` option. `--profile` CLI flag menampilkan hit rate |
-| Parallel generation | Backend | ❌ Saat ini sequential `for range` di `CompileAll()`. Target: concurrent multi-adapter via `errgroup` |
+| Parallel generation ✅ | Backend | Concurrent multi-adapter via `sync.WaitGroup` + goroutine di `CompileAll()`. Benchmark: 3 adapters @ ~1.4ms (1ms sleep per adapter) vs ~3ms sequential |
 | Lazy NEIR loading ✅ | Backend | `LazyNEIR` struct dengan per-section lazy accessors (`Modules()`, `Services()`, `Architecture()`, dll). `LazyBuilder` interface + `BuildLazy()` pada `DefaultBuilder`. 16 test |
-| Benchmark suite | Backend | ❌ Belum ada benchmark terstandarisasi untuk 3 skala (small/medium/large). `BenchmarkResult` (percentile/histogram/stddev) sudah ada di `internal/profiling` |
+| Benchmark suite ✅ | Backend | Benchmark terstandarisasi untuk 3 skala (small/medium/large) + single-adapter + 1ms-sleep tiap adapter di `internal/compiler/bench_test.go`. `BenchmarkResult` dengan percentile/histogram/stddev di `internal/profiling` |
 | Pipeline profiling ✅ | Backend | `PipelineProfile` mencatat timing & memory per stage (validate, build_graph, policy_eval, schedule, generate, review, write_artifacts). `--profile` flag di `naeos build`. `naeos profile run` subcommand standalone |
 | Memory profiling ✅ | QA | `MemProfiler` — heap snapshot tiap stage boundary, heap diffing, GC pressure analysis, leak detection (`DetectLeaks()`, `Analyze()`). `--memprofile` flag di `naeos build` & `naeos profile run` |
 | Distributed build real ✅ | Backend | `naeos build --distributed --workers N` — workers jalankan pipeline real, spec di-split per module, hasil di-aggregate (bukan stub fake duration) |
@@ -54,7 +54,7 @@
 | AI recommendation engine ✅ | Backend | `naeos ai suggest` — analisa spec via LLM, rekomendasi arsitektur & best practices. Juga `ai explain`, `ai enrich`, `ai compile` |
 | NEIR-aware LSP ✅ | Backend | Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition, document symbols, code actions. Server stdio JSON-RPC 2.0, context-aware completions, real parser integration. |
 | VS Code extension | Plugin | ❌ Extension dengan syntax highlighting, LSP integration, inline validation, playground |
-| NEIR diff visualization | CLI/TUI | ❌ `naeos diff --format unified` (text). Target: `--visual` side-by-side tree view |
+| NEIR diff visualization ✅ | CLI/TUI | `naeos diff --format unified` (unified diff), `--visual` side-by-side tree view, `FormatSpecDiff` untuk perbandingan spec-level. Semua format terintegrasi di CLI |
 
 ## Fase 6: Rilis v3.0.0
 

@@ -1,7 +1,10 @@
 package devexperience
 
 import (
+	_ "embed"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -27,67 +30,299 @@ func NewVSCodeExtension(name, version, description, author string, languages []s
 	}
 }
 
+func (e *VSCodeExtension) GenerateExtension(outputDir string) error {
+	files := map[string]string{
+		"package.json":             e.GeneratePackageJSON(),
+		"syntaxes/naeos.tmLanguage.json": e.GenerateSyntaxJSON(),
+		"extension.js":             e.GenerateExtensionJS(),
+		".vscode/launch.json":      e.GenerateLaunchJSON(),
+		"README.md":                e.GenerateReadme(),
+	}
+
+	for relPath, content := range files {
+		fullPath := filepath.Join(outputDir, relPath)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+			return fmt.Errorf("create dir %s: %w", filepath.Dir(fullPath), err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
+			return fmt.Errorf("write %s: %w", relPath, err)
+		}
+	}
+
+	return nil
+}
+
 func (e *VSCodeExtension) GeneratePackageJSON() string {
+	languagesJSON := e.generateLanguagesJSON()
 	return fmt.Sprintf(`{
-  "name": "%s",
-  "displayName": "%s",
-  "description": "%s",
-  "version": "%s",
-  "publisher": "%s",
-  "engines": {
-    "vscode": "^1.80.0"
-  },
-  "categories": ["Programming Languages", "Linters"],
+  "name": "%[1]s",
+  "displayName": "%[2]s",
+  "description": "%[3]s",
+  "version": "%[4]s",
+  "publisher": "%[5]s",
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Linters", "Language Packs"],
+  "keywords": ["naeos", "neir", "specification", "yaml"],
+  "activationEvents": [
+    "onLanguage:naeos-yaml",
+    "onCommand:naeos.compile",
+    "onCommand:naeos.validate",
+    "onCommand:naeos.dashboard"
+  ],
+  "main": "./extension.js",
   "contributes": {
-    "languages": [%s],
+    "languages": [%[6]s],
+    "grammars": [{
+      "language": "naeos-yaml",
+      "scopeName": "source.naeos",
+      "path": "./syntaxes/naeos.tmLanguage.json"
+    }],
     "commands": [
-      {
-        "command": "naeos.compile",
-        "title": "NAEOS: Compile Project"
-      },
-      {
-        "command": "naeos.validate",
-        "title": "NAEOS: Validate Spec"
+      { "command": "naeos.compile",   "title": "NAEOS: Compile Project" },
+      { "command": "naeos.validate",  "title": "NAEOS: Validate Spec" },
+      { "command": "naeos.dashboard", "title": "NAEOS: Open Dashboard" },
+      { "command": "naeos.lspStart",  "title": "NAEOS: Start Language Server" }
+    ],
+    "keybindings": [
+      { "command": "naeos.compile",  "key": "ctrl+shift+b", "when": "editorLangId == naeos-yaml" },
+      { "command": "naeos.validate", "key": "ctrl+shift+v", "when": "editorLangId == naeos-yaml" }
+    ],
+    "menus": {
+      "editor/context": [
+        { "command": "naeos.compile",  "group": "naeos" },
+        { "command": "naeos.validate", "group": "naeos" }
+      ]
+    },
+    "configuration": {
+      "title": "NAEOS",
+      "properties": {
+        "naeos.lsp.path": {
+          "type": "string",
+          "default": "naeos",
+          "description": "Path to the naeos CLI binary for the LSP server"
+        },
+        "naeos.compileOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Compile the NAEOS project on file save"
+        }
       }
-    ]
+    }
   }
-}`,
-		e.Name,
-		e.Name,
-		e.Description,
-		e.Version,
-		e.Author,
-		e.generateLanguagesJSON(),
-	)
+}`, e.Name, e.displayName(), e.Description, e.Version, e.Author, languagesJSON)
+}
+
+func (e *VSCodeExtension) displayName() string {
+	return strings.Title(e.Name) + " Support"
 }
 
 func (e *VSCodeExtension) generateLanguagesJSON() string {
-	var langs []string
-	for _, lang := range e.Languages {
-		langs = append(langs, fmt.Sprintf(`"%s"`, lang))
-	}
-	return strings.Join(langs, ",")
+	return `{
+  "id": "naeos-yaml",
+  "aliases": ["NAEOS", "naeos-yaml"],
+  "filenamePatterns": ["*.naeos.yaml", "*.naeos.yml"],
+  "configuration": "./language-configuration.json"
+}`
 }
 
 func (e *VSCodeExtension) GenerateSyntaxJSON() string {
 	return `{
   "scopeName": "source.naeos",
-  "fileTypes": ["naeos.yaml", "naeos.yml", "naeos.json"],
+  "fileTypes": ["naeos.yaml", "naeos.yml"],
+  "name": "NAEOS Spec",
   "patterns": [
-    {
-      "match": "^\\s*(name|version|description):",
-      "name": "keyword.other.naeos"
+    { "include": "#comments" },
+    { "include": "#top-level" },
+    { "include": "#conditionals" },
+    { "include": "#templates" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [{
+        "match": "#.*$",
+        "name": "comment.line.number-sign.naeos"
+      }]
     },
-    {
-      "match": "^\\s*(language|framework|type):",
-      "name": "keyword.control.naeos"
+    "conditionals": {
+      "patterns": [
+        { "match": "\\$if\\{[^}]*\\}", "name": "keyword.control.conditional.naeos" },
+        { "match": "\\$endif",          "name": "keyword.control.conditional.naeos" }
+      ]
     },
+    "templates": {
+      "patterns": [
+        { "match": "\\$\\{[^}]+\\}",     "name": "variable.other.naeos" },
+        { "match": "\\$env\\{[^}]+\\}",  "name": "support.function.env.naeos" },
+        { "match": "\\$ref\\{[^}]+\\}",  "name": "support.function.ref.naeos" },
+        { "match": "\\$fn\\{[^}]+\\}",   "name": "support.function.fn.naeos" },
+        { "match": "\\$import\\{[^}]+\\}","name": "support.function.import.naeos" },
+        { "match": "\\$include\\{[^}]+\\}","name": "support.function.include.naeos" }
+      ]
+    },
+    "top-level": {
+      "patterns": [
+        { "match": "^\\s*(project)(\\s*:)", "captures": { "1": { "name": "entity.name.tag.naeos" } } },
+        { "match": "^\\s*(version|description|license)(\\s*:)", "captures": { "1": { "name": "support.type.property-name.naeos" } } },
+        { "match": "^\\s*(modules|services|components|storage|api|endpoints)(\\s*:)", "captures": { "1": { "name": "entity.name.type.naeos" } } },
+        { "match": "^\\s*(architecture|deployment|testing|generation|security|infrastructure|domain)(\\s*:)", "captures": { "1": { "name": "entity.name.namespace.naeos" } } },
+        { "match": "^\\s*(name|path|kind|port|method|action|summary|pattern|strategy|provider|region|protocol)(\\s*:)", "captures": { "1": { "name": "variable.other.property.naeos" } } },
+        { "match": "^\\s*(language|frameworks|principles|dependencies|tags|environments)(\\s*:)", "captures": { "1": { "name": "keyword.other.naeos" } } },
+        { "match": "(http|grpc|worker|cli|job)\\b", "name": "constant.language.naeos" },
+        { "match": "(layered|clean|hexagonal|microkernel|event-driven|cqrs|monolith)\\b", "name": "constant.language.naeos" },
+        { "match": "(rolling|blue-green|canary|recreate)\\b", "name": "constant.language.naeos" },
+        { "match": "(go|typescript|python|java|rust)\\b", "name": "constant.language.naeos" },
+        { "match": "(GET|POST|PUT|DELETE|PATCH)\\b", "name": "support.constant.http-method.naeos" },
+        { "match": "(unit|integration|e2e|contract)\\b", "name": "constant.language.naeos" }
+      ]
+    }
+  }
+}`
+}
+
+func (e *VSCodeExtension) GenerateExtensionJS() string {
+	// Use double-quoted Go string to avoid conflict with JS template literals (`)
+	return "const vscode = require('vscode');\n" +
+		"const { spawn } = require('child_process');\n" +
+		"const path = require('path');\n" +
+		"\n" +
+		"function activate(context) {\n" +
+		"    console.log('NAEOS extension activating...');\n" +
+		"\n" +
+		"    const compileCmd = vscode.commands.registerCommand('naeos.compile', async () => {\n" +
+		"        const editor = vscode.window.activeTextEditor;\n" +
+		"        if (!editor) return;\n" +
+		"        const doc = editor.document;\n" +
+		"        if (doc.languageId !== 'naeos-yaml') return;\n" +
+		"        const terminal = vscode.window.createTerminal('NAEOS Compile');\n" +
+		"        terminal.show();\n" +
+		`        terminal.sendText('naeos build --input-file "' + doc.uri.fsPath + '"');\n` +
+		"    });\n" +
+		"\n" +
+		"    const validateCmd = vscode.commands.registerCommand('naeos.validate', async () => {\n" +
+		"        const editor = vscode.window.activeTextEditor;\n" +
+		"        if (!editor) return;\n" +
+		"        const doc = editor.document;\n" +
+		"        if (doc.languageId !== 'naeos-yaml') return;\n" +
+		"        const terminal = vscode.window.createTerminal('NAEOS Validate');\n" +
+		"        terminal.show();\n" +
+		`        terminal.sendText('naeos validate --input-file "' + doc.uri.fsPath + '"');\n` +
+		"    });\n" +
+		"\n" +
+		"    const dashboardCmd = vscode.commands.registerCommand('naeos.dashboard', async () => {\n" +
+		"        const terminal = vscode.window.createTerminal('NAEOS Dashboard');\n" +
+		"        terminal.show();\n" +
+		"        terminal.sendText('naeos dashboard');\n" +
+		"    });\n" +
+		"\n" +
+		"    const lspStartCmd = vscode.commands.registerCommand('naeos.lspStart', () => {\n" +
+		"        startLSPServer();\n" +
+		"    });\n" +
+		"\n" +
+		"    const configListener = vscode.workspace.onDidChangeConfiguration(e => {\n" +
+		"        if (e.affectsConfiguration('naeos')) {\n" +
+		"            restartLSPServer();\n" +
+		"        }\n" +
+		"    });\n" +
+		"\n" +
+		"    startLSPServer();\n" +
+		"\n" +
+		"    context.subscriptions.push(compileCmd, validateCmd, dashboardCmd, lspStartCmd, configListener);\n" +
+		"}\n" +
+		"\n" +
+		"let lspClient = null;\n" +
+		"\n" +
+		"function startLSPServer() {\n" +
+		"    if (lspClient) return;\n" +
+		"    const config = vscode.workspace.getConfiguration('naeos');\n" +
+		"    const lspPath = config.get('lsp.path', 'naeos');\n" +
+		"\n" +
+		"    try {\n" +
+		"        const workspaceFolders = vscode.workspace.workspaceFolders;\n" +
+		"        const cwd = workspaceFolders ? workspaceFolders[0].uri.fsPath : undefined;\n" +
+		"\n" +
+		"        lspClient = spawn(lspPath, ['lsp'], { cwd, stdio: ['pipe', 'pipe', 'pipe'] });\n" +
+		"\n" +
+		"        lspClient.stdout.on('data', data => {\n" +
+		"            console.log('[NAEOS LSP]', data.toString());\n" +
+		"        });\n" +
+		"\n" +
+		"        lspClient.stderr.on('data', data => {\n" +
+		"            console.log('[NAEOS LSP stderr]', data.toString());\n" +
+		"        });\n" +
+		"\n" +
+		"        lspClient.on('error', err => {\n" +
+		"            console.error('[NAEOS LSP] Failed to start:', err.message);\n" +
+		`            vscode.window.showErrorMessage('NAEOS LSP: ' + err.message);\n` +
+		"            lspClient = null;\n" +
+		"        });\n" +
+		"\n" +
+		"        lspClient.on('exit', code => {\n" +
+		"            console.log('[NAEOS LSP] exited with code', code);\n" +
+		"            lspClient = null;\n" +
+		"        });\n" +
+		"\n" +
+		"        vscode.window.showInformationMessage('NAEOS Language Server started');\n" +
+		"    } catch (err) {\n" +
+		"        console.error('[NAEOS LSP] Error:', err);\n" +
+		`        vscode.window.showErrorMessage('NAEOS LSP error: ' + err.message);\n` +
+		"    }\n" +
+		"}\n" +
+		"\n" +
+		"function restartLSPServer() {\n" +
+		"    if (lspClient) {\n" +
+		"        lspClient.kill();\n" +
+		"        lspClient = null;\n" +
+		"    }\n" +
+		"    startLSPServer();\n" +
+		"}\n" +
+		"\n" +
+		"function deactivate() {\n" +
+		"    if (lspClient) {\n" +
+		"        lspClient.kill();\n" +
+		"        lspClient = null;\n" +
+		"    }\n" +
+		"}\n" +
+		"\n" +
+		"module.exports = { activate, deactivate };\n"
+}
+
+func (e *VSCodeExtension) GenerateLaunchJSON() string {
+	return `{
+  "version": "0.2.0",
+  "configurations": [
     {
-      "match": "^\\s*(dependencies|adapters|plugins):",
-      "name": "keyword.declaration.naeos"
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=\${workspaceFolder}"],
+      "outFiles": ["\${workspaceFolder}/extension.js"]
     }
   ]
 }`
+}
+
+func (e *VSCodeExtension) GenerateReadme() string {
+	name := e.Name
+	return "# " + e.displayName() + " Support for VS Code\n\n" +
+		name + " extension for VS Code providing syntax highlighting, LSP integration,\n" +
+		"and commands for the NAEOS declarative engineering platform.\n\n" +
+		"## Features\n\n" +
+		"- **Syntax highlighting** for `.naeos.yaml` and `.naeos.yml` files\n" +
+		"- **LSP integration** \u2014 real-time diagnostics, autocomplete, hover, go-to-definition\n" +
+		"- **Commands**: Compile, Validate, Open Dashboard\n" +
+		"- **Keybindings**: `Ctrl+Shift+B` to compile, `Ctrl+Shift+V` to validate\n\n" +
+		"## Requirements\n\n" +
+		"- `naeos` CLI in $PATH (for LSP server and commands)\n\n" +
+		"## Extension Settings\n\n" +
+		"- `naeos.lsp.path`: Path to the `naeos` binary (default: `naeos`)\n" +
+		"- `naeos.compileOnSave`: Auto-compile on file save (default: false)\n\n" +
+		"## Developing\n\n" +
+		"```bash\n" +
+		"npm install -g vsce\n" +
+		"vsce package\n" +
+		"code --install-extension naeos-*.vsix\n" +
+		"```\n"
 }
 
 // CLI Completion
@@ -203,53 +438,46 @@ func NewSnippetManager() *SnippetManager {
 		snippets: make(map[string]string),
 	}
 
-	sm.snippets["project"] = `name: my-project
+	sm.snippets["neir-spec"] = `project: my-project
 version: 0.1.0
 description: A new NAEOS project
 
-language: go
-framework: gin
+modules:
+  - name: core
+    path: ./core
 
-dependencies:
-  - github.com/gin-gonic/gin
+services:
+  - name: api
+    kind: http
+    port: 8080
 
-adapters:
-  - name: auth
-    type: oauth2
-  - name: db
-    type: postgresql
+architecture:
+  pattern: clean
+  principles:
+    - DI
+    - SRP
 
-plugins:
-  - name: logger
-    version: 1.0.0
+deployment:
+  strategy: rolling
+
+generation:
+  languages:
+    - go
 `
-	sm.snippets["api-endpoint"] = `func HandleRequest(c *gin.Context) {
-    var req Request
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(400, gin.H{"error": err.Error()})
-        return
-    }
-    
-    result, err := Service.DoSomething(req)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-    
-    c.JSON(200, result)
-}
+	sm.snippets["service"] = `  - name: service-name
+    kind: http
+    port: 8080
+    description: Service description
+    endpoints:
+      - method: GET
+        path: /resource
+        action: listResources
 `
-	sm.snippets["test"] = `func TestSomething(t *testing.T) {
-    t.Run("valid input", func(t *testing.T) {
-        result, err := DoSomething("input")
-        if err != nil {
-            t.Fatalf("unexpected error: %v", err)
-        }
-        if result != expected {
-            t.Errorf("expected %v, got %v", expected, result)
-        }
-    })
-}
+	sm.snippets["module"] = `  - name: module-name
+    path: ./internal/module-name
+    description: Module description
+    dependencies:
+      - core
 `
 
 	return sm
