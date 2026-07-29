@@ -14,6 +14,7 @@ const (
 	MethodDefinition     Method = "textDocument/definition"
 	MethodDocumentSymbol Method = "textDocument/documentSymbol"
 	MethodPublishDiag    Method = "textDocument/publishDiagnostics"
+	MethodCodeAction     Method = "textDocument/codeAction"
 )
 
 type Request struct {
@@ -75,10 +76,36 @@ type ServerCapabilities struct {
 	HoverProvider          bool               `json:"hoverProvider,omitempty"`
 	DefinitionProvider     bool               `json:"definitionProvider,omitempty"`
 	DocumentSymbolProvider bool               `json:"documentSymbolProvider,omitempty"`
+	CodeActionProvider     bool               `json:"codeActionProvider,omitempty"`
 }
 
 type CompletionOptions struct {
 	TriggerCharacters []string `json:"triggerCharacters"`
+}
+
+type CodeActionParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Range        Range                  `json:"range"`
+	Context      CodeActionContext      `json:"context"`
+}
+
+type CodeActionContext struct {
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}
+
+type CodeAction struct {
+	Title   string         `json:"title"`
+	Kind    *string        `json:"kind,omitempty"`
+	Edit    *WorkspaceEdit `json:"edit,omitempty"`
+}
+
+type WorkspaceEdit struct {
+	Changes map[string][]TextEdit `json:"changes"`
+}
+
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
 }
 
 type DidOpenTextDocumentParams struct {
@@ -249,6 +276,8 @@ type Diagnostic struct {
 	Range    Range              `json:"range"`
 	Severity DiagnosticSeverity `json:"severity,omitempty"`
 	Message  string             `json:"message"`
+	Code     string             `json:"code,omitempty"`
+	Source   string             `json:"source,omitempty"`
 }
 
 type DiagnosticSeverity int

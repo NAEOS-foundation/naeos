@@ -45,6 +45,7 @@ func (dp *DiagnosticProvider) checkSpecParse(text string) []Diagnostic {
 		return []Diagnostic{{
 			Range:    Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 0, Character: 1}},
 			Severity: DiagError,
+			Source:   "neir",
 			Message:  fmt.Sprintf("Parse error: %s", err.Error()),
 		}}
 	}
@@ -56,12 +57,14 @@ func (dp *DiagnosticProvider) checkSpecParse(text string) []Diagnostic {
 			diags = append(diags, Diagnostic{
 				Range:    lineRange(text, "project:"),
 				Severity: DiagWarning,
+				Code:     "empty_project",
 				Message:  "'project' value is empty",
 			})
 		} else {
 			diags = append(diags, Diagnostic{
 				Range:    Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 0, Character: 1}},
 				Severity: DiagError,
+				Code:     "missing_project",
 				Message:  "Required field 'project' is missing",
 			})
 		}
@@ -76,9 +79,19 @@ func (dp *DiagnosticProvider) checkSpecDoc(doc *parser.SpecDocument, text string
 	var diags []Diagnostic
 	lines := strings.Split(text, "\n")
 
+	seenModules := make(map[string]int)
 	for _, m := range doc.Modules {
 		if m.Name == "" {
 			continue
+		}
+		if otherLine, dup := seenModules[m.Name]; dup {
+			diags = append(diags, Diagnostic{
+				Range:    lineRange(text, m.Name+":"),
+				Severity: DiagError,
+				Message:  fmt.Sprintf("Duplicate module name: %q (also at line %d)", m.Name, otherLine+1),
+			})
+		} else {
+			seenModules[m.Name] = 0
 		}
 		for _, s := range doc.Services {
 			if s.Name == m.Name {
@@ -86,15 +99,6 @@ func (dp *DiagnosticProvider) checkSpecDoc(doc *parser.SpecDocument, text string
 					Range:    lineRange(text, m.Name+":"),
 					Severity: DiagWarning,
 					Message:  fmt.Sprintf("Module %q has the same name as service %q", m.Name, s.Name),
-				})
-			}
-		}
-		for _, m2 := range doc.Modules {
-			if m2.Name != "" && m.Name != m2.Name && m.Name == m2.Name {
-				diags = append(diags, Diagnostic{
-					Range:    lineRange(text, "  - name: "+m.Name),
-					Severity: DiagError,
-					Message:  fmt.Sprintf("Duplicate module name: %q", m.Name),
 				})
 			}
 		}
@@ -146,6 +150,7 @@ func (dp *DiagnosticProvider) checkYAMLStructure(text string) []Diagnostic {
 			diags = append(diags, Diagnostic{
 				Range:    Range{Start: Position{Line: i, Character: 0}, End: Position{Line: i, Character: len(line)}},
 				Severity: DiagWarning,
+				Code:     "tab_indent",
 				Message:  "Tabs are not allowed in YAML; use spaces",
 			})
 		}
@@ -162,6 +167,7 @@ func (dp *DiagnosticProvider) checkYAMLStructure(text string) []Diagnostic {
 			diags = append(diags, Diagnostic{
 				Range:    Range{Start: Position{Line: i, Character: len(line) - 1}, End: Position{Line: i, Character: len(line)}},
 				Severity: DiagHint,
+				Code:     "trailing_whitespace",
 				Message:  "Trailing whitespace",
 			})
 		}

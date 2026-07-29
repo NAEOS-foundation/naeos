@@ -52,7 +52,7 @@
 | Item | Area | Detail |
 |------|------|--------|
 | AI recommendation engine ✅ | Backend | `naeos ai suggest` — analisa spec via LLM, rekomendasi arsitektur & best practices. Juga `ai explain`, `ai enrich`, `ai compile` |
-| NEIR-aware LSP | Backend | ❌ Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition |
+| NEIR-aware LSP ✅ | Backend | Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition, document symbols, code actions. Server stdio JSON-RPC 2.0, context-aware completions, real parser integration. |
 | VS Code extension | Plugin | ❌ Extension dengan syntax highlighting, LSP integration, inline validation, playground |
 | NEIR diff visualization | CLI/TUI | ❌ `naeos diff --format unified` (text). Target: `--visual` side-by-side tree view |
 

@@ -21,6 +21,7 @@ func (h *Handler) Initialize(params InitializeParams) InitializeResult {
 			HoverProvider:          true,
 			DefinitionProvider:     true,
 			DocumentSymbolProvider: true,
+			CodeActionProvider:     true,
 		},
 	}
 }
@@ -106,6 +107,65 @@ func (h *Handler) Definition(params DefinitionParams) *Location {
 	return nil
 }
 
+func (h *Handler) CodeAction(params CodeActionParams) []CodeAction {
+	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
+	if !ok {
+		return nil
+	}
+
+	var actions []CodeAction
+	lines := strings.Split(doc.Text, "\n")
+
+	for _, diag := range params.Context.Diagnostics {
+		switch diag.Code {
+		case "missing_project":
+			actions = append(actions, CodeAction{
+				Title: "Add missing 'project' field",
+				Edit: &WorkspaceEdit{
+					Changes: map[string][]TextEdit{
+						params.TextDocument.URI: {
+							{Range: Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 0, Character: 0}}, NewText: "project: my-project\n"},
+						},
+					},
+				},
+			})
+		case "tab_indent":
+			line := diag.Range.Start.Line
+			if line >= 0 && line < len(lines) {
+				replacement := strings.Replace(lines[line], "\t", "  ", -1)
+				if replacement != lines[line] {
+					actions = append(actions, CodeAction{
+						Title: "Replace tabs with spaces",
+						Edit: &WorkspaceEdit{
+							Changes: map[string][]TextEdit{
+								params.TextDocument.URI: {
+									{Range: diag.Range, NewText: replacement},
+								},
+							},
+						},
+					})
+				}
+			}
+		case "trailing_whitespace":
+			line := diag.Range.Start.Line
+			if line >= 0 && line < len(lines) {
+				actions = append(actions, CodeAction{
+					Title: "Remove trailing whitespace",
+					Edit: &WorkspaceEdit{
+						Changes: map[string][]TextEdit{
+							params.TextDocument.URI: {
+								{Range: diag.Range, NewText: strings.TrimRight(lines[line], " \t") + "\n"},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	return actions
+}
+
 func (h *Handler) DocumentSymbol(params DocumentSymbolParams) []DocumentSymbol {
 	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
 	if !ok {
@@ -144,27 +204,42 @@ func (h *Handler) wordAtPosition(text string, line, character int) string {
 
 func (h *Handler) lookupDocumentation(word string) string {
 	docs := map[string]string{
-		"project":      "**project** (required)\nThe name of your project. Must be lowercase alphanumeric with hyphens.\n\nExample: `project: e-commerce-platform`",
-		"version":      "**version**\nProject version in semver format.\n\nExample: `version: 1.0.0`",
-		"description":  "**description**\nA short description of the project.",
-		"modules":      "**modules**\nList of code modules in the project.\n\nEach module has: `name`, `path`, `description`, `dependencies`",
-		"services":     "**services**\nList of runnable services.\n\nEach service has: `name`, `kind`, `port`, `description`, `endpoints`",
-		"architecture": "**architecture**\nArchitecture pattern and principles.\n\nPatterns: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
-		"deployment":   "**deployment**\nDeployment configuration.\n\nStrategies: `rolling`, `blue-green`, `canary`, `recreate`",
-		"testing":      "**testing**\nTesting strategy and coverage targets.\n\nStrategies: `unit`, `integration`, `e2e`, `contract`",
-		"generation":   "**generation**\nCode generation configuration.\n\nLanguages: `go`, `typescript`, `python`, `java`, `rust`",
-		"kind":         "**kind**\nService kind.\n\nValues: `http`, `grpc`, `worker`, `cli`, `job`",
-		"port":         "**port**\nService port number (1-65535).",
-		"endpoints":    "**endpoints**\nList of API endpoints.\n\nEach endpoint has: `method`, `path`, `action`",
-		"method":       "**method**\nHTTP method.\n\nValues: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`",
-		"path":         "**path**\nURL path for the endpoint.\n\nExample: `path: /auth/login`",
-		"action":       "**action**\nHandler function name.\n\nExample: `action: login`",
-		"name":         "**name**\nIdentifier name.",
-		"pattern":      "**pattern**\nArchitecture pattern.\n\nValues: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
-		"strategy":     "**strategy**\nDeployment or testing strategy.",
-		"languages":    "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
-		"coverage":     "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
-		"dependencies": "**dependencies**\nList of module dependencies.",
+		"project":        "**project** (required)\nThe name of your project. Must be lowercase alphanumeric with hyphens.\n\nExample: `project: e-commerce-platform`",
+		"version":        "**version**\nProject version in semver format.\n\nExample: `version: 1.0.0`",
+		"description":    "**description**\nA short description of the project.",
+		"license":        "**license**\nProject license identifier (e.g. MIT, Apache-2.0).",
+		"repository":     "**repository**\nURL to the project source repository.",
+		"tags":           "**tags**\nList of keyword tags for the project.",
+		"modules":        "**modules**\nList of code modules in the project.\n\nEach module has: `name`, `path`, `description`, `dependencies`",
+		"services":       "**services**\nList of runnable services.\n\nEach service has: `name`, `kind`, `port`, `description`, `endpoints`",
+		"architecture":   "**architecture**\nArchitecture pattern and principles.\n\nPatterns: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
+		"deployment":     "**deployment**\nDeployment configuration.\n\nStrategies: `rolling`, `blue-green`, `canary`, `recreate`",
+		"testing":        "**testing**\nTesting strategy and coverage targets.\n\nStrategies: `unit`, `integration`, `e2e`, `contract`",
+		"generation":     "**generation**\nCode generation configuration.\n\nLanguages: `go`, `typescript`, `python`, `java`, `rust`",
+		"domain":         "**domain**\nDomain-driven design configuration.\n\nContains bounded contexts, aggregates, entities, value objects.",
+		"security":       "**security**\nSecurity configuration.\n\nAuthentication method, authorization model, encryption settings.",
+		"infrastructure": "**infrastructure**\nCloud infrastructure configuration.\n\nProvider (aws/gcp/azure/local), region, resources.",
+		"storage":        "**storage**\nData store definitions.\n\nTypes: `sql`, `nosql`, `file`, `cache`, `queue`, `blob`",
+		"components":     "**components**\nInternal application components.\n\nKinds: `handler`, `service`, `repository`, `middleware`, `model`, `config`",
+		"api":            "**api**\nAPI definitions.\n\nProtocols: `http`, `grpc`, `graphql`, `websocket`",
+		"kind":           "**kind**\nService kind.\n\nValues: `http`, `grpc`, `worker`, `cli`, `job`",
+		"port":           "**port**\nService port number (1-65535).",
+		"endpoints":      "**endpoints**\nList of API endpoints.\n\nEach endpoint has: `method`, `path`, `action`",
+		"method":         "**method**\nHTTP method.\n\nValues: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`",
+		"path":           "**path**\nURL path for the endpoint.\n\nExample: `path: /auth/login`",
+		"action":         "**action**\nHandler function name.\n\nExample: `action: login`",
+		"name":           "**name**\nIdentifier name.",
+		"pattern":        "**pattern**\nArchitecture pattern.\n\nValues: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
+		"principles":     "**principles**\nList of architecture principles (e.g. DI, SRP, OCP).",
+		"strategy":       "**strategy**\nDeployment or testing strategy.",
+		"languages":      "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
+		"coverage":       "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
+		"dependencies":   "**dependencies**\nList of module dependencies.",
+		"environments":   "**environments**\nList of deployment environments (e.g. dev, staging, production).",
+		"output_dir":     "**output_dir**\nOutput directory for generated code.",
+		"provider":       "**provider**\nCloud provider.\n\nValues: `aws`, `gcp`, `azure`, `local`",
+		"region":         "**region**\nCloud region identifier.",
+		"protocol":       "**protocol**\nAPI protocol.\n\nValues: `http`, `grpc`, `graphql`, `websocket`",
 	}
 
 	if info, ok := docs[word]; ok {

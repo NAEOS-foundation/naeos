@@ -151,6 +151,13 @@ func (s *Server) handleMessage(raw string) {
 		result := s.handler.DocumentSymbol(params)
 		s.sendResponse(request.ID, result)
 
+	case MethodCodeAction:
+		var params CodeActionParams
+		data, _ := json.Marshal(request.Params)
+		_ = json.Unmarshal(data, &params)
+		result := s.handler.CodeAction(params)
+		s.sendResponse(request.ID, result)
+
 	default:
 		if request.ID != nil {
 			s.sendResponse(request.ID, nil)
@@ -195,7 +202,7 @@ func (s *Server) writeMessage(msg any) {
 		log.Printf("Failed to write body: %v", err)
 		return
 	}
-	if f, ok := s.writer.(*os.File); ok {
+	if f, ok := s.writer.(*os.File); ok && f != os.Stdout {
 		if err := f.Sync(); err != nil {
 			log.Printf("Failed to sync file: %v", err)
 		}
