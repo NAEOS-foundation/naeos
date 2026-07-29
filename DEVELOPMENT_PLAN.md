@@ -53,7 +53,7 @@
 |------|------|--------|
 | AI recommendation engine ✅ | Backend | `naeos ai suggest` — analisa spec via LLM, rekomendasi arsitektur & best practices. Juga `ai explain`, `ai enrich`, `ai compile` |
 | NEIR-aware LSP ✅ | Backend | Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition, document symbols, code actions. Server stdio JSON-RPC 2.0, context-aware completions, real parser integration. |
-| VS Code extension | Plugin | ❌ Extension dengan syntax highlighting, LSP integration, inline validation, playground |
+| VS Code extension ✅ | Plugin | Extension generator via `naeos dx vscode-gen` — TextMate grammar, LSP client integration, commands (compile/validate/dashboard), keybindings, menus, config. Output: package.json, extension.js, syntaxes/, README. |
 | NEIR diff visualization ✅ | CLI/TUI | `naeos diff --format unified` (unified diff), `--visual` side-by-side tree view, `FormatSpecDiff` untuk perbandingan spec-level. Semua format terintegrasi di CLI |
 
 ## Fase 6: Rilis v3.0.0
@@ -65,17 +65,17 @@
 | RBAC ✅ | Backend | `internal/auth/rbac.go` — admin/developer/viewer roles, **hierarchy (`Parents`) + deny rules (`Deny`) override**, `SetupRoleTemplate()` untuk 4 compliance templates |
 | OAuth2/OIDC ✅ | Backend | Google OAuth2 provider + `/.well-known/openid-configuration` + `/.well-known/jwks.json`. **OIDC Provider** (discovery, JWKS RSA sig verify, auth code flow) |
 | Enterprise features ✅ | Backend | **SSO**: OIDC, SAML 2.0 (XML parsing, NameID/attribute extraction), LDAP (TCP/TLS bind, ASN.1 BER search). **Audit**: hashed chain (`HashedAuditor`), encrypted (`EncryptedAuditor` AES-256-GCM), cloud export (AWS SigV4, GCS HMAC, Azure SharedKey). **Compliance**: SOC2 (8 controls), HIPAA (11), GDPR (8), `GenerateReport()`, CLI `naeos compliance report/list-frameworks/verify/cloud-export` |
-| v3.0.0 release | All | Changelog, migration guide v2→v3, release party blog post, deprecation notices |
+| v3.0.0 release ✅ | All | Changelog, migration guide v2→v3, release party blog post, deprecation notices. **Unreleased section di CHANGELOG.md sudah berisi semua 20+ item fitur v3.0.0.** |
 
 ## Metrik Progress
 
 | Metrik | Saat Ini | Target Q1 2027 | Target Q3 2027 |
 |--------|----------|----------------|----------------|
 | Test coverage (overall) | ~77% | ≥80% | ≥85% |
-| Test coverage (target packages) | ✅ 84–98% (6 packages) | — | — |
-| CLI commands test coverage | ~55% | 100% | 100% |
-| Website pages (EN) | 24 | 35+ (wiki migrated) | 40+ |
-| Blog posts | 2 | 6+ | 12+ |
+| Test coverage (target packages) | ✅ 80–88% (6 packages) | — | — |
+| CLI commands test coverage | ~51% | 100% | 100% |
+| Website pages (EN) | ~59 | 35+ (wiki migrated) | 40+ |
+| Blog posts | 8 | 6+ | 12+ |
 | Plugin ecosystem | 0 | 5+ community plugins | 20+ |
 | Build time (pipeline) | ~2s (small) | <1s (small) | <5s (medium) |
 | CI lint pass rate | 100% ✅ | 100% | 100% |
@@ -110,6 +110,11 @@
 - **Database factory refactor** — `NewFromConfig` shared antara `factory.go` dan `factory_nosql.go`, `"mariadb"` alias untuk MySQL
 - **Workflow error logging** — 14 `_ = w.Machine.Trigger(...)` → `slog.Warn(...)`, semua `warn()` helper konsisten
 - **BenchmarkResult bugfix** — method `durations()` selalu return nil → fixed dengan field `allDurations` + public `Durations()`
+- **NEIR diff visualization** — `naeos diff --visual` side-by-side tree, `--format unified` unified diff, `FormatSpecDiff` spec-level comparison
+- **VS Code extension generator** — `naeos dx vscode-gen` dengan output directory, TextMate grammar, LSP client, commands, keybindings, menus, config
+- **NEIR-aware LSP** — 30 test, 7 file server stdio JSON-RPC 2.0, code actions, fix duplicate module detection bug
+- **CLI tests added** — 9 test baru untuk diff, build, lsp, dx, vscode-gen commands
+- **v3.0.0 changelog** — Unreleased section dengan 20+ item fitur baru untuk rilis v3.0.0
 
 ## Notes
 

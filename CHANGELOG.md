@@ -5,7 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2026-07-23
+## [Unreleased] — v3.0.0
+
+### Added
+- **Pipeline profiling** — `PipelineProfile` records timing & memory per stage (validate, build_graph, policy_eval, schedule, generate, review, write_artifacts). `--profile` flag on `naeos build`. `naeos profile run` subcommand.
+- **Memory profiling** — `MemProfiler` with heap snapshot per stage boundary, heap diffing, GC pressure analysis, leak detection (`DetectLeaks()`, `Analyze()`). `--memprofile` flag on `naeos build` & `naeos profile run`.
+- **Stage caching** — file-backed `StageCache` for `schedule` and `generate` stages, keyed by NEIR hash (SHA256). Configurable via `Config.StageCache` / `WithStageCache()` option.
+- **Schema-based spec validation** — `ValidateSpec()` in `schemaregistry` validates in-memory specs against JSON Schema. Integrates into pipeline via `--schema-source` flag (`file://` or `https://`).
+- **Lazy NEIR loading** — `LazyNEIR` struct with per-section lazy accessors (`Modules()`, `Services()`, `Architecture()`, etc.). `LazyBuilder` interface + `BuildLazy()` on `DefaultBuilder`. 16 tests.
+- **Distributed build (real)** — `naeos build --distributed --workers N` now runs the real pipeline per module (not stub durations), splits spec per module, aggregates results.
+- **VS Code extension generation** — `naeos dx vscode-gen` generates a complete extension with TextMate syntax highlighting for `.naeos.yaml`, LSP client, commands (compile, validate, dashboard), keybindings, menus, and configuration.
+- **NEIR-aware LSP server** — Full Language Server Protocol implementation over stdio with:
+  - Context-aware autocomplete for NEIR YAML fields and enum values
+  - Real-time diagnostics using the spec parser and YAML structure checks
+  - Hover documentation for all NEIR fields
+  - Go-to-definition for references within the spec
+  - Document symbols (outline view)
+  - Code actions: add missing `project` field, replace tabs with spaces, remove trailing whitespace
+- **NEIR diff visualization** — `naeos diff --visual` for side-by-side tree view, `--format unified` for unified diff format.
+
+### Changed
+- **OAuth2 refactored** — `GoogleOAuth2`/`GitHubOAuth2` now embed `GenericOAuth2` instead of using type aliases. `ScopeStr` derived dynamically from `Config.Scopes`.
+- **Database factory** — `NewFromConfig() ` extracted to `factory_shared.go` for both SQL and NoSQL factories. Added `"mariadb"` alias for MySQL.
+- **Workflow error handling** — All 14 silent `_ = w.Machine.Trigger(...)` calls now log errors via `slog.Warn(...)`.
+- **Compiler parallelized** — `CompileAll()` uses concurrent goroutines with `sync.WaitGroup`, achieving 3× speedup with 3 adapters.
+
+### Fixed
+- **BenchmarkResult `durations()`** — method always returned nil; fixed with `allDurations` field + public `Durations()` accessor.
+- **LSP duplicate module detection** — Fixed always-false condition where `m.Name != m2.Name && m.Name == m2.Name` could never be true.
+- **LSP stderr noise** — Suppressed `sync /dev/stdout: invalid argument` during test execution.
 
 ### Added
 - **Supabase backend integration** — full-featured Supabase client with Auth, Storage, Edge Functions, Admin API, and Realtime WebSocket support:
