@@ -41,7 +41,7 @@ for match in pattern.finditer(text):
     mmd_path = f"{workdir}/diagrams/{index}.mmd"
     with open(mmd_path, "w", encoding="utf-8") as fh:
         fh.write(match.group(1))
-    output.append(f"![mermaid diagram {index}]({mmd_path})\n")
+    output.append(f"![mermaid diagram {index}]({workdir}/diagrams/{index}.png)\n")
     last = match.end()
 
 output.append(text[last:])
@@ -55,7 +55,7 @@ PYEOF
 for mmd in "$WORKDIR"/diagrams/*.mmd; do
     name="$(basename "$mmd" .mmd)"
     echo "rendering diagram $name"
-    mmdc --input "$mmd" --output "$WORKDIR/diagrams/$name.svg" \
+    mmdc --input "$mmd" --output "$WORKDIR/diagrams/$name.png" \
         --puppeteerConfigFile "$REPO_ROOT/scripts/puppeteer-config.json"
 done
 
