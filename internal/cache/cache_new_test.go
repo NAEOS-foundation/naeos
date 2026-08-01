@@ -79,7 +79,11 @@ func TestStartStopEviction(t *testing.T) {
 	c.StartEviction(30 * time.Millisecond)
 
 	c.Set("a", "1")
-	time.Sleep(100 * time.Millisecond)
+
+	deadline := time.Now().Add(2 * time.Second)
+	for c.Size() != 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	if c.Size() != 0 {
 		t.Errorf("expected 0 size after eviction, got %d", c.Size())

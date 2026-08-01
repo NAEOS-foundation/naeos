@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/deployment"
 )
 
 func TestParseJSONTag(t *testing.T) {
@@ -211,5 +214,319 @@ func TestEnumForField(t *testing.T) {
 	vals, ok := enumForField(ft, f, enums)
 	if ok {
 		t.Errorf("enumForField should not match for string field, got %v", vals)
+	}
+}
+
+func TestFieldSchema_Slice(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	schema := g.fieldSchema(reflect.TypeOf([]string{}), false)
+	if schema["type"] != "array" {
+		t.Errorf("slice schema type = %v, want 'array'", schema["type"])
+	}
+}
+
+func TestGenerate_Unexported(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		Exported   string `json:"exported"`
+		unexported string
+		Hidden     string `json:"-"`
+		NoTag      string
+	}
+
+	props := g.generate(reflect.TypeOf(Inner{}), false)
+	if _, ok := props["exported"]; !ok {
+		t.Error("expected 'exported' property")
+	}
+	if _, ok := props["unexported"]; ok {
+		t.Error("unexpected 'unexported' property")
+	}
+	if _, ok := props["hidden"]; ok {
+		t.Error("unexpected 'hidden' property")
+	}
+	if _, ok := props["NoTag"]; ok {
+		t.Error("unexpected 'NoTag' property")
+	}
+}
+
+func TestStructSchema_ExtraDefinitions(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		X string `json:"x"`
+	}
+	g.definitions["Inner"] = map[string]any{"extra": "field"}
+
+	props := g.generate(reflect.TypeOf(Inner{}), false)
+	if _, ok := props["extra"]; !ok {
+		t.Error("expected 'extra' property from definitions")
+	}
+}
+
+func TestPrimitiveSchema_WithEnum(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	schema := g.primitiveSchema(reflect.TypeOf(""), false)
+	if schema["type"] != "string" {
+		t.Errorf("string schema type = %v, want 'string'", schema["type"])
+	}
+}
+
+func TestStructSchema_EnumField(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		Kind string `json:"kind"`
+	}
+
+	schema := g.structSchema(reflect.TypeOf(Inner{}), false)
+	props, ok := schema["$ref"].(string)
+	if !ok {
+		t.Fatal("expected $ref")
+	}
+	if !strings.Contains(props, "Inner") {
+		t.Errorf("$ref = %q, want 'Inner'", props)
+	}
+}
+
+func TestGenerate_EmptyTagField(t *testing.T) {
+	t.Parallel()
+
+	type Inner struct {
+		X string `json:""`
+	}
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	props := g.generate(reflect.TypeOf(Inner{}), false)
+	if _, ok := props["X"]; ok {
+		t.Error("expected no property for empty json tag field")
+	}
+}
+
+func TestJSONType_TimeFromPkg(t *testing.T) {
+	t.Parallel()
+
+	got := jsonType(reflect.TypeOf(time.Time{}))
+	if got != "string" {
+		t.Errorf("jsonType(time.Time) = %q, want 'string'", got)
+	}
+}
+
+func TestStructSchema_Time(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	schema := g.structSchema(reflect.TypeOf(time.Time{}), false)
+	if schema["type"] != "string" {
+		t.Errorf("time.Time schema type = %v, want 'string'", schema["type"])
+	}
+	if schema["format"] != "date-time" {
+		t.Errorf("time.Time format = %v, want 'date-time'", schema["format"])
+	}
+}
+
+func TestStructSchema_Reused(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		X string `json:"x"`
+	}
+	innerType := reflect.TypeOf(Inner{})
+
+	s1 := g.structSchema(innerType, false)
+	if _, ok := s1["$ref"]; !ok {
+		t.Error("expected $ref for struct schema")
+	}
+
+	s2 := g.structSchema(innerType, false)
+	ref, ok := s2["$ref"]
+	if !ok {
+		t.Error("expected $ref for reused struct")
+	}
+	if !strings.HasSuffix(ref.(string), ".Inner") {
+		t.Errorf("$ref = %q, want suffix .Inner", ref)
+	}
+}
+
+func TestStructSchema_Optional(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		X string `json:"x"`
+	}
+	innerType := reflect.TypeOf(Inner{})
+
+	schema := g.structSchema(innerType, true)
+	if _, ok := schema["$ref"]; !ok {
+		t.Error("expected $ref for optional struct schema")
+	}
+}
+
+func TestGenerate(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type MyStruct struct {
+		Name string `json:"name"`
+		Age  int    `json:"age,omitempty"`
+	}
+
+	props := g.generate(reflect.TypeOf(MyStruct{}), false)
+	if props["name"] == nil {
+		t.Error("expected 'name' property")
+	}
+	if props["age"] == nil {
+		t.Error("expected 'age' property")
+	}
+}
+
+func TestFieldSchema_Map(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	schema := g.fieldSchema(reflect.TypeOf(map[string]string{}), false)
+	if schema["type"] != "object" {
+		t.Errorf("map schema type = %v, want 'object'", schema["type"])
+	}
+}
+
+func TestFieldSchema_Struct(t *testing.T) {
+	t.Parallel()
+
+	g := &generator{
+		definitions: make(map[string]map[string]any),
+		visited:     make(map[string]bool),
+		enums:       knownEnums(),
+	}
+
+	type Inner struct {
+		V string `json:"v"`
+	}
+	schema := g.fieldSchema(reflect.TypeOf(Inner{}), false)
+	if _, ok := schema["$ref"]; !ok {
+		t.Error("expected $ref for struct field schema")
+	}
+}
+
+func TestJSONType_Uint(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		typ  reflect.Type
+		want string
+	}{
+		{reflect.TypeOf(uint(0)), "number"},
+		{reflect.TypeOf(uint8(0)), "number"},
+		{reflect.TypeOf(uint16(0)), "number"},
+		{reflect.TypeOf(uint32(0)), "number"},
+		{reflect.TypeOf(uint64(0)), "number"},
+		{reflect.TypeOf(float32(0)), "number"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.typ.String(), func(t *testing.T) {
+			got := jsonType(tt.typ)
+			if got != tt.want {
+				t.Errorf("jsonType(%v) = %q, want %q", tt.typ, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnumForField_Pointer(t *testing.T) {
+	t.Parallel()
+
+	enums := knownEnums()
+	type MyStruct struct {
+		P *deployment.Strategy `json:"strategy"`
+	}
+
+	ft := reflect.TypeOf(MyStruct{})
+	f, _ := ft.FieldByName("P")
+	vals, ok := enumForField(ft, f, enums)
+	if !ok {
+		t.Error("expected enum for *deployment.Strategy")
+	}
+	if len(vals) == 0 {
+		t.Error("expected non-empty enum values")
+	}
+}
+
+func TestEnumForField_Slice(t *testing.T) {
+	t.Parallel()
+
+	enums := knownEnums()
+	type MyStruct struct {
+		Items []string `json:"items"`
+	}
+
+	ft := reflect.TypeOf(MyStruct{})
+	f, _ := ft.FieldByName("Items")
+	_, ok := enumForField(ft, f, enums)
+	if ok {
+		t.Error("expected no enum for slice field")
 	}
 }

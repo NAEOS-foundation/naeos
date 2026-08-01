@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"strings"
 	"testing"
 )
@@ -165,5 +166,99 @@ func TestAnalyzePackage_Invalid(t *testing.T) {
 	_, err := analyzePackage("/nonexistent/path")
 	if err == nil {
 		t.Fatal("expected error for nonexistent path")
+	}
+}
+
+func TestAnalyzePackage_Valid(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	src := `package test
+type Foo struct { X int }
+func Bar(s string) error { return nil }
+`
+	if err := os.WriteFile(dir+"/foo.go", []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := analyzePackage(dir)
+	if err != nil {
+		t.Fatalf("analyzePackage: %v", err)
+	}
+	if info.Name != "test" {
+		t.Errorf("package name = %q, want %q", info.Name, "test")
+	}
+	if len(info.Funcs) != 1 {
+		t.Errorf("expected 1 func, got %d", len(info.Funcs))
+	}
+	if len(info.Types) != 1 {
+		t.Errorf("expected 1 type, got %d", len(info.Types))
+	}
+}
+
+func TestExprString_ArrayWithLen(t *testing.T) {
+	t.Parallel()
+
+	expr, err := parser.ParseExpr("[3]int")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := exprString(expr)
+	if got != "[3]int" {
+		t.Errorf("exprString([3]int) = %q, want %q", got, "[3]int")
+	}
+}
+
+func TestExprString_BasicLit(t *testing.T) {
+	t.Parallel()
+
+	expr, err := parser.ParseExpr("42")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := exprString(expr)
+	if got != "42" {
+		t.Errorf("exprString(42) = %q, want %q", got, "42")
+	}
+}
+
+func TestParseFunc_ValueReceiver(t *testing.T) {
+	t.Parallel()
+
+	src := `package test
+func (s Service) Method() {}
+func (s *Service) PtrMethod() {}
+`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "", src, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var decls []*ast.FuncDecl
+	for _, d := range f.Decls {
+		if fn, ok := d.(*ast.FuncDecl); ok {
+			decls = append(decls, fn)
+		}
+	}
+
+	if len(decls) != 2 {
+		t.Fatalf("expected 2 funcs, got %d", len(decls))
+	}
+
+	fi := parseFunc(decls[0])
+	if !fi.IsMethod {
+		t.Error("expected value receiver to be detected as method")
+	}
+	if fi.RecvType != "Service" {
+		t.Errorf("recv type = %q, want %q", fi.RecvType, "Service")
+	}
+
+	fi2 := parseFunc(decls[1])
+	if !fi2.IsMethod {
+		t.Error("expected pointer receiver to be detected as method")
+	}
+	if fi2.RecvType != "Service" {
+		t.Errorf("recv type = %q, want %q", fi2.RecvType, "Service")
 	}
 }

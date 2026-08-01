@@ -394,3 +394,148 @@ func TestJWKToPublicKey(t *testing.T) {
 		t.Error("expected non-nil public key")
 	}
 }
+
+func TestEncLen(t *testing.T) {
+	tests := []struct {
+		input int
+		want  byte
+	}{
+		{0, 0},
+		{1, 1},
+		{255, 255},
+		{256, 255},
+		{-1, 255},
+	}
+	for _, tt := range tests {
+		got := encLen(tt.input)
+		if got != tt.want {
+			t.Errorf("encLen(%d) = %d, want %d", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestEncodeOctetString(t *testing.T) {
+	tests := []struct {
+		input []byte
+		want  []byte
+	}{
+		{nil, []byte{0x04, 0}},
+		{[]byte{}, []byte{0x04, 0}},
+		{[]byte("hello"), []byte{0x04, 5, 'h', 'e', 'l', 'l', 'o'}},
+		{[]byte{0x01, 0x02}, []byte{0x04, 2, 0x01, 0x02}},
+	}
+	for _, tt := range tests {
+		got := encodeOctetString(tt.input)
+		if len(got) != len(tt.want) {
+			t.Errorf("encodeOctetString(%v) = %v, want %v", tt.input, got, tt.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tt.want[i] {
+				t.Errorf("encodeOctetString(%v)[%d] = %d, want %d", tt.input, i, got[i], tt.want[i])
+			}
+		}
+	}
+}
+
+func TestParseLDAPSet(t *testing.T) {
+	data := []byte{
+		0x31, 0x05, // SET of length 5
+		0x04, 0x03, 'a', 'b', 'c', // OCTET STRING "abc"
+		0x31, 0x06, // SET of length 6
+		0x04, 0x04, 'd', 'e', 'f', 'g', // OCTET STRING "defg"
+	}
+	_, items := parseLDAPSet(data)
+	if len(items) != 2 {
+		t.Errorf("expected 2 items, got %d", len(items))
+	}
+}
+
+func TestParseLDAPSequence(t *testing.T) {
+	data := []byte{
+		0x30, 0x05, // SEQUENCE of length 5
+		0x04, 0x03, 'a', 'b', 'c', // OCTET STRING "abc"
+	}
+	pos, items := parseLDAPSequence(data)
+	if pos != len(data) {
+		t.Errorf("expected pos=%d, got %d", len(data), pos)
+	}
+	if len(items) != 1 {
+		t.Errorf("expected 1 item, got %d", len(items))
+	}
+}
+
+func TestParseLDAPString(t *testing.T) {
+	tests := []struct {
+		name string
+		data []byte
+		want []byte
+	}{
+		{"valid", []byte{0x04, 0x03, 'a', 'b', 'c'}, []byte("abc")},
+		{"too short", []byte{0x04}, nil},
+		{"truncated", []byte{0x04, 0x05, 'a', 'b'}, nil},
+		{"empty", []byte{0x04, 0x00}, []byte{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseLDAPString(tt.data)
+			if len(got) != len(tt.want) {
+				t.Errorf("parseLDAPString(%v) = %v, want %v", tt.data, got, tt.want)
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("parseLDAPString(%v)[%d] = %d, want %d", tt.data, i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestSAMLProviderConfig(t *testing.T) {
+	cfg := SSOConfig{Name: "saml-test", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com", Enabled: true}
+	p := NewSAMLProvider(cfg)
+	got := p.Config()
+	if got.Name != "saml-test" {
+		t.Errorf("expected name 'saml-test', got %q", got.Name)
+	}
+	if got.EntityID != "https://ex.com" {
+		t.Errorf("expected entity id preserved")
+	}
+}
+
+func TestLDAPProviderTypeName(t *testing.T) {
+	p := NewLDAPProvider(SSOConfig{Name: "my-ldap", Host: "ldap.example.com", BaseDN: "dc=example,dc=com"})
+	if p.Type() != ProviderLDAP {
+		t.Errorf("expected LDAP type, got %s", p.Type())
+	}
+	if p.Name() != "my-ldap" {
+		t.Errorf("expected name 'my-ldap', got %q", p.Name())
+	}
+}
+
+func TestOIDCProviderExchangeCodeNoDiscovery(t *testing.T) {
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       "https://ex.com",
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+	_, err := p.ExchangeCode("code")
+	if err == nil {
+		t.Error("expected error because discovery not performed")
+	}
+}
+
+func TestOIDCProviderGetUserNoDiscovery(t *testing.T) {
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       "https://ex.com",
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+	_, err := p.GetUser(&OAuth2Token{AccessToken: "tok"})
+	if err == nil {
+		t.Error("expected error because discovery not performed")
+	}
+}

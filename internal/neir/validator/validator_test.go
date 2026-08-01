@@ -437,3 +437,126 @@ func TestValidatorRejectsWrongTypeInput(t *testing.T) {
 		t.Fatal("expected validation to fail for int input")
 	}
 }
+
+func TestValidatorWarnsModuleConditionInvalid(t *testing.T) {
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "test"},
+		Modules: []module.Module{
+			{Name: "core", Path: "./internal/core", Condition: "invalid op"},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected condition warning not error, got: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for invalid module condition")
+	}
+}
+
+func TestValidatorWarnsServiceConditionInvalid(t *testing.T) {
+	neir := &model.NEIR{
+		Project:  &project.Project{Name: "test"},
+		Modules:  []module.Module{{Name: "core", Path: "./internal/core"}},
+		Services: []service.Service{{Name: "api", Port: 8080, Condition: "bad cond"}},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected condition warning not error, got: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for invalid service condition")
+	}
+}
+
+func TestValidatorWarnsActiveProfileNotFound(t *testing.T) {
+	neir := &model.NEIR{
+		Project:       &project.Project{Name: "test"},
+		Modules:       []module.Module{{Name: "core", Path: "./internal/core"}},
+		ActiveProfile: "staging",
+		Deployment: &deployment.Deployment{
+			Strategy:     "rolling",
+			Environments: []deployment.Environment{{Name: "prod"}, {Name: "dev"}},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected valid with warning, got errors: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for active_profile not found")
+	}
+}
+
+func TestValidatorNoDuplicatePortWarningForZero(t *testing.T) {
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "test"},
+		Modules: []module.Module{{Name: "core", Path: "./internal/core"}},
+		Services: []service.Service{
+			{Name: "api", Port: 0},
+			{Name: "admin", Port: 0},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected valid, got errors: %v", result.Errors)
+	}
+	for _, w := range result.Warns {
+		if w != "" {
+			t.Fatalf("expected no warning for port=0 duplicates, got: %v", result.Warns)
+		}
+	}
+}
+
+func TestValidateConditionExpr(t *testing.T) {
+	tests := []struct {
+		name    string
+		cond    string
+		wantErr bool
+	}{
+		{"empty string", "", false},
+		{"equals operator valid", "env == prod", false},
+		{"not equals operator valid", "env != dev", false},
+		{"defined prefix valid", "defined:FEATURE_X", false},
+		{"not operator valid", "!disabled", false},
+		{"missing key", "== prod", true},
+		{"missing value", "env ==", true},
+		{"unknown operator", "env ~= prod", true},
+		{"just bang", "!", true},
+		{"equals with spaces", "region == us-east-1", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateConditionExpr(tt.cond)
+			if tt.wantErr && err == "" {
+				t.Errorf("validateConditionExpr(%q) expected error, got none", tt.cond)
+			}
+			if !tt.wantErr && err != "" {
+				t.Errorf("validateConditionExpr(%q) unexpected error: %s", tt.cond, err)
+			}
+		})
+	}
+}
+
+func TestFindOp(t *testing.T) {
+	tests := []struct {
+		s, op string
+		want  int
+	}{
+		{"env == prod", "==", 4},
+		{"env != dev", "!=", 4},
+		{"defined:FEATURE_X", "defined:", 0},
+		{"no operator here", "==", -1},
+		{"a == b == c", "==", 2},
+		{"hello!", "!", 5},
+		{"short", "==", -1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.s+"_"+tt.op, func(t *testing.T) {
+			got := findOp(tt.s, tt.op)
+			if got != tt.want {
+				t.Errorf("findOp(%q, %q) = %d, want %d", tt.s, tt.op, got, tt.want)
+			}
+		})
+	}
+}

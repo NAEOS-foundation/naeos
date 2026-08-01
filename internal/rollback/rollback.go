@@ -218,6 +218,37 @@ func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
 		}
 	}
 
+	if targetDir == "." || targetDir == string(filepath.Separator) {
+		// Merge restore: write snapshot files into the existing target instead of
+		// replacing it, since RemoveAll/Rename cannot operate on "." or the root.
+		err := filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			rel, err := filepath.Rel(tmpDir, path)
+			if err != nil {
+				return err
+			}
+			dst := filepath.Join(targetDir, rel)
+			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+				return err
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(dst, data, 0o644)
+		})
+		os.RemoveAll(tmpDir)
+		if err != nil {
+			return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "merge restore into %s", targetDir)
+		}
+		return nil
+	}
+
 	if err := os.RemoveAll(targetDir); err != nil && !os.IsNotExist(err) {
 		os.RemoveAll(tmpDir)
 		return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "remove old target")

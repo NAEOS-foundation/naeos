@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/pem"
 	"os"
 	"path/filepath"
 	"testing"
@@ -486,5 +487,180 @@ func TestAPIKeyManagerZeroExpiration(t *testing.T) {
 	_, ok := m.Validate(key)
 	if !ok {
 		t.Error("expected zero expiration to mean no expiry check")
+	}
+}
+
+func TestCheckDenyExplicitResource(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "restricted",
+		ResourceActions: map[string][]string{"secret": {"read"}},
+		Deny:            map[string][]string{"secret": {"delete"}},
+	})
+	r.AddPermission(&Permission{Resource: "secret", Actions: []string{"read", "delete"}})
+
+	user := &User{Roles: []string{"restricted"}}
+	if !r.HasPermission(user, "secret", "read") {
+		t.Error("expected read to be allowed")
+	}
+	if r.HasPermission(user, "secret", "delete") {
+		t.Error("expected delete to be denied")
+	}
+}
+
+func TestCheckDenyWildcardResource(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "restricted",
+		ResourceActions: map[string][]string{"*": {"read", "write"}},
+		Deny:            map[string][]string{"*": {"delete"}},
+	})
+	r.AddPermission(&Permission{Resource: "*", Actions: []string{"read", "write", "delete"}})
+
+	user := &User{Roles: []string{"restricted"}}
+	if !r.HasPermission(user, "anything", "read") {
+		t.Error("expected read to be allowed")
+	}
+	if !r.HasPermission(user, "anything", "write") {
+		t.Error("expected write to be allowed (deny only covers delete)")
+	}
+	if r.HasPermission(user, "anything", "delete") {
+		t.Error("expected delete to be denied (wildcard deny)")
+	}
+}
+
+func TestCheckDenySpecificAction(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{
+		Name:            "admin",
+		ResourceActions: map[string][]string{"spec": {"read", "write", "delete"}},
+	})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read", "write", "delete"}})
+
+	user := &User{Roles: []string{"admin"}}
+	if !r.HasPermission(user, "spec", "read") {
+		t.Error("expected read to be allowed")
+	}
+}
+
+func TestHasPermissionParentChain(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "base", ResourceActions: map[string][]string{"report": {"read"}}})
+	r.AddRole(&Role{Name: "extended", Parents: []string{"base"}, ResourceActions: map[string][]string{"report": {"write"}}})
+	r.AddPermission(&Permission{Resource: "report", Actions: []string{"read", "write"}})
+
+	user := &User{Roles: []string{"extended"}}
+	if !r.HasPermission(user, "report", "read") {
+		t.Error("expected read from parent role")
+	}
+	if !r.HasPermission(user, "report", "write") {
+		t.Error("expected write from own role")
+	}
+}
+
+func TestHasPermissionCircularParent(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "a", Parents: []string{"b"}})
+	r.AddRole(&Role{Name: "b", Parents: []string{"a"}, ResourceActions: map[string][]string{"x": {"read"}}})
+	r.AddPermission(&Permission{Resource: "x", Actions: []string{"read"}})
+
+	user := &User{Roles: []string{"a"}}
+	// Role "a" inherits from "b" which has x:read
+	if !r.HasPermission(user, "x", "read") {
+		t.Error("expected permission to resolve through circular parent chain")
+	}
+}
+
+func TestSetupRoleTemplateValid(t *testing.T) {
+	r := NewRBAC()
+	SetupRoleTemplate(r, "auditor", "my-auditor", nil)
+
+	role, ok := r.GetRole("my-auditor")
+	if !ok {
+		t.Fatal("expected role to be created")
+	}
+	if role.ResourceActions == nil {
+		t.Error("expected resource actions")
+	}
+	if role.Deny == nil {
+		t.Error("expected deny rules for auditor template")
+	}
+	// Auditor should not have admin access
+	user := &User{Roles: []string{"my-auditor"}}
+	if r.HasPermission(user, "admin", "admin") {
+		t.Error("auditor should NOT have admin:admin (denied)")
+	}
+}
+
+func TestSetupRoleTemplateInvalidTemplate(t *testing.T) {
+	r := NewRBAC()
+	SetupRoleTemplate(r, "nonexistent", "my-role", nil)
+
+	_, ok := r.GetRole("my-role")
+	if ok {
+		t.Error("expected no role for invalid template")
+	}
+}
+
+func TestSetupRoleTemplateWithParents(t *testing.T) {
+	r := NewRBAC()
+	r.AddRole(&Role{Name: "base-viewer", ResourceActions: map[string][]string{"spec": {"read"}}})
+	r.AddPermission(&Permission{Resource: "spec", Actions: []string{"read"}})
+	SetupRoleTemplate(r, "auditor", "ext-auditor", []string{"base-viewer"})
+
+	role, ok := r.GetRole("ext-auditor")
+	if !ok {
+		t.Fatal("expected role to be created")
+	}
+	if len(role.Parents) != 1 || role.Parents[0] != "base-viewer" {
+		t.Errorf("expected parents [base-viewer], got %v", role.Parents)
+	}
+}
+
+func TestParseCertificatePEMValid(t *testing.T) {
+	pemData := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: []byte("not a real cert but valid pem format"),
+	})
+	_, err := ParseCertificatePEM(pemData)
+	if err == nil {
+		t.Error("expected error for invalid certificate data after PEM decode")
+	}
+}
+
+func TestParseCertificatePEMInvalid(t *testing.T) {
+	_, err := ParseCertificatePEM([]byte("not pem"))
+	if err == nil {
+		t.Error("expected error for invalid PEM")
+	}
+}
+
+func TestParseCertificatePEMEmpty(t *testing.T) {
+	_, err := ParseCertificatePEM(nil)
+	if err == nil {
+		t.Error("expected error for nil/empty PEM")
+	}
+}
+
+func TestGenerateToken(t *testing.T) {
+	tok := generateToken()
+	if tok == "" {
+		t.Error("expected non-empty token")
+	}
+	if len(tok) != 64 {
+		t.Errorf("expected 64 hex chars, got %d", len(tok))
+	}
+}
+
+func TestGenerateSecureKey(t *testing.T) {
+	key, err := generateSecureKey()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if key == "" {
+		t.Error("expected non-empty key")
+	}
+	if len(key) != 64 {
+		t.Errorf("expected 64 hex chars, got %d", len(key))
 	}
 }
