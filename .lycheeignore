@@ -14,3 +14,4 @@ localhost
 accounts\.google\.com
 registry\.naeos\.dev
 github\.com/naeos-templates
+^/naeos/
