@@ -18,11 +18,6 @@ const testSchemaJSON = `{
   "definitions": {}
 }`
 
-func schemaRegistryFlag(t *testing.T) string {
-	t.Helper()
-	return "file://" + filepath.Join(t.TempDir(), "neir.json")
-}
-
 func TestSchemaValidateValid(t *testing.T) {
 	dir := t.TempDir()
 	schemaPath := filepath.Join(dir, "neir.json")

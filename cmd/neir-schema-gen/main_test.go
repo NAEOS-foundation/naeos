@@ -248,7 +248,7 @@ func TestGenerate_Unexported(t *testing.T) {
 		NoTag      string
 	}
 
-	props := g.generate(reflect.TypeOf(Inner{}), false)
+	props := g.generate(reflect.TypeOf(Inner{unexported: ""}), false)
 	if _, ok := props["exported"]; !ok {
 		t.Error("expected 'exported' property")
 	}

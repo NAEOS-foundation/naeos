@@ -3,7 +3,6 @@ package builder
 import (
 	"testing"
 
-	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
@@ -319,7 +318,7 @@ func TestLazyNEIRBackwardCompat(t *testing.T) {
 	}
 	lazy := newLazyNEIR(raw)
 	full := lazy.ToNEIR()
-	var _ *model.NEIR = full
+	var _ = full
 	_ = full.Project
 	_ = full.Modules
 	_ = full.Services

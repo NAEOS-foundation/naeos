@@ -1,4 +1,5 @@
 // Demo server — WebSocket writes and temp-file cleanup are best-effort.
+//
 //nolint:errcheck
 package main
 

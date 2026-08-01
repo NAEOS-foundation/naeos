@@ -184,7 +184,7 @@ func TestSSOListWithSeededConfig(t *testing.T) {
 		t.Fatalf("expected enabled flags in list, got %q", output)
 	}
 
-	output, err = executeCommand(root, "auth", "sso", "remove", "prod-idp")
+	_, err = executeCommand(root, "auth", "sso", "remove", "prod-idp")
 	if err != nil {
 		t.Fatalf("sso remove failed: %v", err)
 	}

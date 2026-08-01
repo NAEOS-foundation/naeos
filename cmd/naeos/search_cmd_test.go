@@ -64,12 +64,12 @@ func TestSearchQueryNoMatches(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	root := NewRootCommand()
-	output, err := executeCommand(root, "search", "index", "--name", "idx1", "--id", "doc1", "--title", "Hello", "--content", "world")
+	_, err := executeCommand(root, "search", "index", "--name", "idx1", "--id", "doc1", "--title", "Hello", "--content", "world")
 	if err != nil {
 		t.Fatalf("search index failed: %v", err)
 	}
 
-	output, err = executeCommand(root, "search", "query", "--name", "idx1", "--term", "missingterm")
+	output, err := executeCommand(root, "search", "query", "--name", "idx1", "--term", "missingterm")
 	if err != nil {
 		t.Fatalf("search query failed: %v", err)
 	}

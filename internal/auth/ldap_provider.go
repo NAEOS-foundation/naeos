@@ -284,7 +284,7 @@ func parseLDAPSequence(data []byte) (int, [][]byte) {
 			break
 		}
 		tag := data[pos]
-		length := int(data[pos+1])
+		length := int(data[pos+1]) //nolint:gosec // G602: pos+1 is guarded by pos+2 > len above
 		pos += 2
 		if pos+length > len(data) {
 			break

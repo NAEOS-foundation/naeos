@@ -94,9 +94,9 @@ type CodeActionContext struct {
 }
 
 type CodeAction struct {
-	Title   string         `json:"title"`
-	Kind    *string        `json:"kind,omitempty"`
-	Edit    *WorkspaceEdit `json:"edit,omitempty"`
+	Title string         `json:"title"`
+	Kind  *string        `json:"kind,omitempty"`
+	Edit  *WorkspaceEdit `json:"edit,omitempty"`
 }
 
 type WorkspaceEdit struct {

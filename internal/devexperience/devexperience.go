@@ -32,11 +32,11 @@ func NewVSCodeExtension(name, version, description, author string, languages []s
 
 func (e *VSCodeExtension) GenerateExtension(outputDir string) error {
 	files := map[string]string{
-		"package.json":             e.GeneratePackageJSON(),
+		"package.json":                   e.GeneratePackageJSON(),
 		"syntaxes/naeos.tmLanguage.json": e.GenerateSyntaxJSON(),
-		"extension.js":             e.GenerateExtensionJS(),
-		".vscode/launch.json":      e.GenerateLaunchJSON(),
-		"README.md":                e.GenerateReadme(),
+		"extension.js":                   e.GenerateExtensionJS(),
+		".vscode/launch.json":            e.GenerateLaunchJSON(),
+		"README.md":                      e.GenerateReadme(),
 	}
 
 	for relPath, content := range files {
@@ -44,7 +44,7 @@ func (e *VSCodeExtension) GenerateExtension(outputDir string) error {
 		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 			return fmt.Errorf("create dir %s: %w", filepath.Dir(fullPath), err)
 		}
-		if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(fullPath, []byte(content), 0o600); err != nil {
 			return fmt.Errorf("write %s: %w", relPath, err)
 		}
 	}
@@ -114,7 +114,10 @@ func (e *VSCodeExtension) GeneratePackageJSON() string {
 }
 
 func (e *VSCodeExtension) displayName() string {
-	return strings.Title(e.Name) + " Support"
+	if e.Name == "" {
+		return "Support"
+	}
+	return strings.ToUpper(e.Name[:1]) + e.Name[1:] + " Support"
 }
 
 func (e *VSCodeExtension) generateLanguagesJSON() string {

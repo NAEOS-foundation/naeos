@@ -86,7 +86,7 @@ var needsRedis = map[string]bool{
 	"go": true, "node": true, "typescript": true, "java": true,
 }
 
-func runImage(lang string) string  { return runImageMap[lang] }
+func runImage(lang string) string   { return runImageMap[lang] }
 func runCommand(lang string) string { return runCommandMap[lang] }
 
 func supportedLangs() []string {

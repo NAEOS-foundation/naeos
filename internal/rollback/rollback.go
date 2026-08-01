@@ -236,11 +236,11 @@ func (s *SnapshotStore) Restore(snapshotID, targetDir string) error {
 			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 				return err
 			}
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(path) //nolint:gosec // G122: path is under known tmpDir walk root
 			if err != nil {
 				return err
 			}
-			return os.WriteFile(dst, data, 0o644)
+			return os.WriteFile(dst, data, 0o600) //nolint:gosec // G703: rel derived from filepath.Rel within tmpDir walk root
 		})
 		os.RemoveAll(tmpDir)
 		if err != nil {

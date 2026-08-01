@@ -26,11 +26,6 @@ func New() *Plugin {
 	}
 }
 
-type artifactInput struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
-}
-
 // Execute dispatches an action with the given parameters.
 func (p *Plugin) Execute(action string, params map[string]any) (any, error) {
 	switch action {

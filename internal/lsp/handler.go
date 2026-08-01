@@ -132,7 +132,7 @@ func (h *Handler) CodeAction(params CodeActionParams) []CodeAction {
 		case "tab_indent":
 			line := diag.Range.Start.Line
 			if line >= 0 && line < len(lines) {
-				replacement := strings.Replace(lines[line], "\t", "  ", -1)
+				replacement := strings.ReplaceAll(lines[line], "\t", "  ")
 				if replacement != lines[line] {
 					actions = append(actions, CodeAction{
 						Title: "Replace tabs with spaces",

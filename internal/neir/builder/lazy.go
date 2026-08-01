@@ -16,8 +16,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/storage"
-	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
+	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
 type LazyNEIR struct {

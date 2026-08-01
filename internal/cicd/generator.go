@@ -10,10 +10,10 @@ import (
 type CICDPlatform string
 
 const (
-	GitHubActions   CICDPlatform = "github"
-	GitLabCI        CICDPlatform = "gitlab"
-	AzurePipelines  CICDPlatform = "azure"
-	Jenkins         CICDPlatform = "jenkins"
+	GitHubActions  CICDPlatform = "github"
+	GitLabCI       CICDPlatform = "gitlab"
+	AzurePipelines CICDPlatform = "azure"
+	Jenkins        CICDPlatform = "jenkins"
 )
 
 type PipelineConfig struct {

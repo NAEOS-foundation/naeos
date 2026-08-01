@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
@@ -43,8 +43,6 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("#FFA500")).
 			Padding(0, 1)
-
-	separator = "────────────────────────────────────────────"
 )
 
 type dashModel struct {
@@ -147,15 +145,17 @@ func (m dashModel) View() string {
 	}
 	for _, ci := range m.health {
 		statusStyle := infoStyle
-		if ci.Status == dash.Degraded {
+		switch ci.Status {
+		case dash.Degraded:
 			statusStyle = warnStyle
-		} else if ci.Status == dash.Unhealthy {
+		case dash.Unhealthy:
 			statusStyle = errStyle
 		}
 		statusText := "healthy"
-		if ci.Status == dash.Degraded {
+		switch ci.Status {
+		case dash.Degraded:
 			statusText = "degraded"
-		} else if ci.Status == dash.Unhealthy {
+		case dash.Unhealthy:
 			statusText = "unhealthy"
 		}
 		s += fmt.Sprintf("  %s: %s (%s)", labelStyle.Render(ci.Name), statusStyle.Render(statusText), valueStyle.Render(ci.Message))
@@ -174,9 +174,10 @@ func (m dashModel) View() string {
 	} else {
 		for _, e := range entries {
 			levelStyle := infoStyle
-			if e.Level == dash.LevelWarn {
+			switch e.Level {
+			case dash.LevelWarn:
 				levelStyle = warnStyle
-			} else if e.Level == dash.LevelError {
+			case dash.LevelError:
 				levelStyle = errStyle
 			}
 			ts := e.Timestamp.Format("15:04:05")
