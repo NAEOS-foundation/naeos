@@ -49,13 +49,17 @@ jobs:
           extended: false
       - name: Build
         run: hugo --minify --baseURL https://naeos-foundation.github.io/naeos/
+      - name: Build (link-check variant)
+        run: hugo --minify --baseURL / --destination public-check
       - name: Check links
-        uses: lycheeverse/lychee-action@v2
-        with:
-          args: >-
-            --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3
-            site/public
-          fail: true
+        run: |
+          curl -sfL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz -o /tmp/lychee.tar.gz
+          tar -xzf /tmp/lychee.tar.gz -C /tmp
+          /tmp/lychee --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3 \
+            --root-dir "$GITHUB_WORKSPACE/site/public-check" \
+            --github-token "$GITHUB_TOKEN" \
+            public-check
+          rm -rf public-check
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
