@@ -54,8 +54,6 @@ jobs:
         with:
           args: >-
             --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3
-            --exclude
-            'fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|wss://|api\.github\.com|twitter\.com|linkedin\.com|discord\.gg|example\.com|myapp\.com|localhost|accounts\.google\.com|registry\.naeos\.dev|github\.com/naeos-templates'
             public
           fail: true
       - name: Upload artifact

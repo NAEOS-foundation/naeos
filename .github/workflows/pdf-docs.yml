@@ -36,7 +36,7 @@ jobs:
         run: cd site && hugo --minify
 
       - name: Setup Pandoc
-        run: sudo apt-get update && sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+        run: sudo apt-get update && sudo apt-get install -y pandoc texlive-xetex texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
 
       - name: Generate CLI Reference PDF
         run: |
