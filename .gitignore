@@ -66,3 +66,4 @@ documentation.o
 cmd/naeos/nonexistent/
 internal/api/.naeos/
 naeos-demo
+bench/current.txt

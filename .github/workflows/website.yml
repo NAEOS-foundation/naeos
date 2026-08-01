@@ -49,6 +49,15 @@ jobs:
           extended: false
       - name: Build
         run: hugo --minify --baseURL https://naeos-foundation.github.io/naeos/
+      - name: Check links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3
+            --exclude
+            'fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|wss://|api\.github\.com|twitter\.com|linkedin\.com|discord\.gg|example\.com|myapp\.com|localhost|accounts\.google\.com|registry\.naeos\.dev|github\.com/naeos-templates'
+            public
+          fail: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
