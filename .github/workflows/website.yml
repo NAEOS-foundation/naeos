@@ -7,14 +7,12 @@ on:
       - 'site/**'
       - 'docs/openapi.yaml'
       - '.github/workflows/website.yml'
-      - '.lycheeignore'
   pull_request:
     branches: [main]
     paths:
       - 'site/**'
       - 'docs/openapi.yaml'
       - '.github/workflows/website.yml'
-      - '.lycheeignore'
   workflow_dispatch:
 
 permissions:
