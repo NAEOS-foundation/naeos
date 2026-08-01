@@ -1,0 +1,7 @@
+pipeline:
+  name: microservices-go
+  mode: full
+  verbose: false
+  output_dir: ./generated
+  language:
+    - go

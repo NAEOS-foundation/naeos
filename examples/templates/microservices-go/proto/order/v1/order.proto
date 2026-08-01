@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/naeos-templates/microservices-go/gen/order/v1;orderv1";
+
+message Order {
+  string id = 1;
+  double total = 2;
+  string status = 3;
+}
+
+message CreateOrderRequest {
+  string id = 1;
+  double total = 2;
+}
+
+message GetOrderRequest {
+  string id = 1;
+}
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+  rpc GetOrder(GetOrderRequest) returns (Order);
+}

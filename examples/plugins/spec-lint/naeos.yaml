@@ -1,0 +1,19 @@
+name: spec-lint
+version: 0.1.0
+description: Lint NAEOS specifications for naming and structural conventions.
+author: NAEOS Foundation
+license: Apache-2.0
+type: wasm
+tags: [example, lint, quality]
+actions:
+  - name: lint
+    description: Lint specification content for naming and structural conventions.
+    params:
+      spec: string
+    returns: object
+  - name: ping
+    description: Return a health status.
+    returns: object
+  - name: describe
+    description: Return plugin metadata.
+    returns: object

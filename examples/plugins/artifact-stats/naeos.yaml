@@ -1,0 +1,19 @@
+name: artifact-stats
+version: 0.1.0
+description: Compute line/byte statistics over generated artifacts.
+author: NAEOS Foundation
+license: Apache-2.0
+type: wasm
+tags: [example, metrics, artifacts]
+actions:
+  - name: stats
+    description: Aggregate line and byte counts per file extension.
+    params:
+      files: array
+    returns: object
+  - name: ping
+    description: Return a health status.
+    returns: object
+  - name: describe
+    description: Return plugin metadata.
+    returns: object

@@ -1,0 +1,38 @@
+# Spec: Order Processing System
+# Event-driven microservice reference for the microservices-go template.
+
+project: order-processing-system
+
+modules:
+  - name: order
+    path: ./internal/order
+    description: Domain logic for orders, emits OrderCreated events.
+    dependencies: [core]
+  - name: inventory
+    path: ./internal/inventory
+    description: Updates inventory when OrderCreated event is received.
+    dependencies: [core]
+  - name: payment
+    path: ./internal/payment
+    description: Processes payments for orders.
+    dependencies: [core]
+  - name: core
+    path: ./internal/core
+    description: Shared kernels, contracts, and utility code.
+
+services:
+  - name: api-gateway
+    kind: http
+    port: 8080
+    description: Exposes REST API for creating orders.
+    endpoints:
+      - method: POST
+        path: /orders
+        action: createOrder
+      - method: GET
+        path: /orders/{id}
+        action: getOrder
+  - name: order-worker
+    kind: worker
+    port: 8081
+    description: Consumes OrderCreated events and drives payment and inventory.
