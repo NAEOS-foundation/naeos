@@ -54,7 +54,7 @@ jobs:
         with:
           args: >-
             --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3
-            public
+            site/public
           fail: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
