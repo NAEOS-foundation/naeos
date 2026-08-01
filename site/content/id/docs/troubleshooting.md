@@ -1,5 +1,6 @@
 ---
 title: Pemecahan Masalah
+slug: troubleshooting
 description: Masalah umum dan solusi saat bekerja dengan NAEOS.
 weight: 16
 ---

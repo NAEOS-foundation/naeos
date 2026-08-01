@@ -1,5 +1,6 @@
 ---
 title: Panduan Awal
+slug: getting-started
 description: Pasang NAEOS dan jalankan pipeline pertama Anda dalam hitungan menit.
 ---
 

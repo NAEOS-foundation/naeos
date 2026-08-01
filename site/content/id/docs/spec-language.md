@@ -1,5 +1,6 @@
 ---
 title: Bahasa Spesifikasi
+slug: spec-language
 description: Bahasa Spesifikasi NAEOS v2 — sintaks, fitur, dan kemampuan.
 ---
 

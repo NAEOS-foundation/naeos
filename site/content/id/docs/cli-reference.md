@@ -1,5 +1,6 @@
 ---
 title: Referensi CLI
+slug: cli-reference
 description: Referensi perintah lengkap untuk 35+ perintah CLI NAEOS.
 ---
 

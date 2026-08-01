@@ -1,5 +1,6 @@
 ---
 title: Kompiler AI
+slug: ai-compiler
 description: Ubah NEIR menjadi set instruksi AI untuk 6 asisten coding.
 ---
 

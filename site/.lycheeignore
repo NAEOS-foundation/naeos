@@ -14,3 +14,6 @@ localhost
 accounts\.google\.com
 registry\.naeos\.dev
 github\.com/naeos-templates
+github\.com/NAEOS-foundation/naeos-(cloud|docs|graph|lint|security|test)
+github\.com/NAEOS-foundation/naeos/releases/latest/download/
+/downloads/.*\.pdf

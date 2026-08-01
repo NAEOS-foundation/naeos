@@ -1,5 +1,6 @@
 ---
 title: Profil Industri
+slug: profiles
 description: Profil yang sudah dikonfigurasi sebelumnya untuk proyek SaaS, AI Agent, FinTech, Healthcare, dan Government.
 weight: 14
 ---

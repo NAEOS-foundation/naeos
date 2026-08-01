@@ -1,5 +1,6 @@
 ---
 title: Arsitektur
+slug: architecture
 description: Penjelasan mendalam tentang arsitektur NAEOS dan prinsip desain.
 ---
 

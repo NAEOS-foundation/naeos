@@ -1,5 +1,6 @@
 ---
 title: Build Terdistribusi
+slug: distributed-builds
 description: Paralelkan eksekusi pipeline di banyak worker untuk build yang lebih cepat.
 weight: 13
 ---

@@ -1,5 +1,6 @@
 ---
 title: Referensi Cepat
+slug: quick-reference
 description: Perintah, pola, dan konfigurasi umum secara sekilas.
 weight: 2
 ---
