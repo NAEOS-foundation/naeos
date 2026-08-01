@@ -6,6 +6,8 @@ This document serves as the master index for navigating the NAEOS repository.
 - [README.md](README.md) — project summary and main entry point.
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines.
+- [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English).
+- [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia).
 
 ## 2. Concepts and architecture
 - [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) — core specification overview.
@@ -120,11 +122,12 @@ This document serves as the master index for navigating the NAEOS repository.
 
 ### 9.1 For beginners (understanding the project)
 Suggested reading order:
-1. [README.md](README.md)
-2. [GETTING-STARTED.md](GETTING-STARTED.md)
-3. [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md)
-4. [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md)
-5. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md)
+1. [WHITEPAPER-EN.md](WHITEPAPER-EN.md)
+2. [README.md](README.md)
+3. [GETTING-STARTED.md](GETTING-STARTED.md)
+4. [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md)
+5. [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md)
+6. [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md)
 
 ### 9.2 For the policy system
 To understand and use the policy system, read in this order:
@@ -143,6 +146,12 @@ To use NAEOS directly, read in this order:
 3. [docs/NES-030-Specification-Language.md](docs/NES-030-Specification-Language.md) — writing specifications
 4. [examples/spec-minimal.yaml](examples/spec-minimal.yaml) — minimal specification example
 5. [examples/spec-full.yaml](examples/spec-full.yaml) — full specification example
+
+### 9.3.1 Advanced workflows
+1. [site/content/docs/distributed-builds.md](site/content/docs/distributed-builds.md) — distributed pipeline execution
+2. [site/content/docs/dashboard.md](site/content/docs/dashboard.md) — web dashboard and monitoring
+3. [examples/plugins/README.md](examples/plugins/README.md) — official example plugins
+4. [examples/templates/microservices-go/README.md](examples/templates/microservices-go/README.md) — starter template reference
 
 ### 9.4 For developers & testing
 1. [docs/NES-033-Testing-Guide.md](docs/NES-033-Testing-Guide.md) — testing guide

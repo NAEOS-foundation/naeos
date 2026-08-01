@@ -59,6 +59,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dead code** — removed entire `internal/supabase/realtime.go` (151 lines, `NewRealtimeClient`/`Subscribe`/`Unsubscribe`/`Close`/`Done`/`readLoop`/`send` all unreachable).
 - **Dead code** — removed `Client.DeployFunctionFromFile` from `internal/supabase/functions.go` (never called).
 
+### Added
+- **CLI test coverage** — 266 new test functions across 39 command test files (`cmd/naeos/*_cmd_test.go`), raising CLI coverage from 45.5% to 66.2%.
+- **Rollback merge-restore** — `internal/rollback` can now restore snapshots into the current directory (`.`) and repo root instead of failing on `RemoveAll`/`Rename` of `.`; `rollback` subcommand reads `--output-dir` via persistent flags.
+- **Official example plugins** — `examples/plugins/` with `hello`, `spec-lint`, and `artifact-stats` (each with `plugin.go`, `main.go` WASM entry, tests, manifest, README).
+- **Official starter template** — `examples/templates/microservices-go/` (REST + event-driven Go starter) wired into the template registry at `site/static/templates/registry.json`.
+- **Distributed builds & dashboard docs** — new site docs pages `docs/distributed-builds.md` and `docs/dashboard.md` (EN + ID).
+- **Schema registry canonical `$id`** — NEIR JSON Schema `$id` now resolves to the versioned URL `/schemaregistry/v1/neir.json`.
+
+### Changed
+- **CI coverage gate** — `fail_ci_if_error: true` in `codecov-action`; overall coverage 81.5%.
+- **GraphQL server** — switched from `http.Handle` on the default mux to a dedicated `http.NewServeMux` (fixes panic on repeated registration in tests).
+- **Site multilingual fix** — per-language content mounts (`content`/`content/id`) so Indonesian pages get the correct language context: sections, layouts (`plugins`, `templates`), i18n strings, and `lang` attributes now work for `/id/*` pages.
+
+### Fixed
+- **Rollback into `.`** — `Restore` with target directory `.` or `/` previously no-op'd and failed; now uses merge-restore path.
+- **Dashboard port conflict** — added test coverage for the port-conflict error path.
+
 ### Changed
 - **CI: codecov-action** — `file: ./coverage.out` → `files: ./coverage.out` (v5 syntax).
 - **Internal `do()` signature** — `(*http.Response, error)` → `([]byte, error)`, body closed inside `do()` for deterministic lifetime.

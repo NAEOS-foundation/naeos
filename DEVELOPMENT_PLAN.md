@@ -22,7 +22,7 @@
 | Interactive playground ✅ | Site | xterm.js + WebSocket ke server demo di homepage. Hero terminal interaktif, fallback ke animasi statis. Demo server di `cmd/naeos-demo/` |
 | PDF generation ✅ | Site | CLI reference + getting-started sebagai PDF download via GitHub Action (`pdf-docs.yml`). Tersedia di `/downloads/` |
 | Dark mode OG image ✅ | Site | SVG OG image dengan `prefers-color-scheme` CSS + PNG fallback (dark & light) via sharp. Tersedia di `/images/og-default.svg` |
-| Swagger UI page | Site | Generate halaman `/docs/api/` dari `docs/openapi.yaml` (saat ini masih raw YAML, belum ada UI renderer) |
+| Swagger UI page ✅ | Site | Generate halaman `/docs/api/` dari `docs/openapi.yaml` dengan Swagger UI interaktif (CDN v5) |
 
 ## Fase 3: Platform & Ekosistem
 
@@ -71,9 +71,9 @@
 
 | Metrik | Saat Ini | Target Q1 2027 | Target Q3 2027 |
 |--------|----------|----------------|----------------|
-| Test coverage (overall) | ~77% | ≥80% | ≥85% |
-| Test coverage (target packages) | ✅ 80–88% (6 packages) | — | — |
-| CLI commands test coverage | ~46% | 100% | 100% |
+| Test coverage (overall) | ✅ 81.5% | ≥80% | ≥85% |
+| Test coverage (target packages) | ✅ ≥80% (7 packages: watch, rollback, cicd, distributed, gateway, websocket, eventsourcing) | — | — |
+| CLI commands test coverage | ✅ 66.2% (266 test baru, 39 command) | 100% | 100% |
 | Website pages (EN) | ~59 | 35+ (wiki migrated) | 40+ |
 | Blog posts | 8 | 6+ | 12+ |
 | Plugin ecosystem | 0 | 5+ community plugins | 20+ |
