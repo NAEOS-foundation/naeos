@@ -75,16 +75,18 @@ jobs:
         run: npm install -g @mermaid-js/mermaid-cli
 
       - name: Generate Whitepaper PDF (EN)
-        run: bash scripts/whitepaper-pdf.sh \
-          WHITEPAPER-EN.md \
-          site/static/downloads/naeos-whitepaper.pdf \
-          "NAEOS Whitepaper"
+        run: |
+          bash scripts/whitepaper-pdf.sh \
+            WHITEPAPER-EN.md \
+            site/static/downloads/naeos-whitepaper.pdf \
+            "NAEOS Whitepaper"
 
       - name: Generate Whitepaper PDF (ID)
-        run: bash scripts/whitepaper-pdf.sh \
-          WHITEPAPER.md \
-          site/static/downloads/naeos-whitepaper-id.pdf \
-          "Whitepaper NAEOS"
+        run: |
+          bash scripts/whitepaper-pdf.sh \
+            WHITEPAPER.md \
+            site/static/downloads/naeos-whitepaper-id.pdf \
+            "Whitepaper NAEOS"
 
       - name: Rebuild site with PDFs
         run: cd site && hugo --minify
