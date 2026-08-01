@@ -28,6 +28,27 @@ other = "Plugins"
 [plugins_install]
 other = "Install"
 
+[plugins_publish_title]
+other = "Publish your plugin"
+
+[plugins_publish_intro]
+other = "Build a plugin with the NAEOS Plugin SDK, then publish it to the registry."
+
+[plugins_publish_step1]
+other = "Scaffold your plugin project"
+
+[plugins_publish_step2]
+other = "Test and build locally"
+
+[plugins_publish_step3]
+other = "Publish to the registry"
+
+[plugins_publish_cmd]
+other = "naeos marketplace plugin publish ./my-plugin --registry https://registry.naeos.dev"
+
+[plugins_publish_official]
+other = "Official plugins are maintained by the NAEOS Foundation and marked with the badge above. Reference implementations live in examples/plugins/. Want your plugin listed as official? Open a PR against the registry data."
+
 [cta_get_started]
 other = "Get Started"
 

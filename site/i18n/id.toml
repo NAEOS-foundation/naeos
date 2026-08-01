@@ -28,6 +28,27 @@ other = "Plugin"
 [plugins_install]
 other = "Pasang"
 
+[plugins_publish_title]
+other = "Publikasikan plugin Anda"
+
+[plugins_publish_intro]
+other = "Bangun plugin dengan NAEOS Plugin SDK, lalu publikasikan ke registry."
+
+[plugins_publish_step1]
+other = "Scaffold proyek plugin Anda"
+
+[plugins_publish_step2]
+other = "Uji dan bangun secara lokal"
+
+[plugins_publish_step3]
+other = "Publikasikan ke registry"
+
+[plugins_publish_cmd]
+other = "naeos marketplace plugin publish ./plugin-saya --registry https://registry.naeos.dev"
+
+[plugins_publish_official]
+other = "Plugin resmi dikelola oleh NAEOS Foundation dan ditandai badge di atas. Implementasi referensi ada di examples/plugins/. Ingin plugin Anda menjadi resmi? Ajukan PR terhadap data registry."
+
 [cta_get_started]
 other = "Mulai"
 

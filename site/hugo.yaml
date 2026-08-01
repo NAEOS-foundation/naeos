@@ -26,6 +26,15 @@ module:
   hugoVersion:
     extended: true
     min: 0.131.0
+  mounts:
+    - source: content
+      target: content
+      lang: en
+      excludeFiles:
+        - "id/**"
+    - source: content/id
+      target: content
+      lang: id
 
 outputs:
   home:
