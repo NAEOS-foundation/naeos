@@ -42,7 +42,7 @@
 | Pipeline caching v2 | Backend | ❌ Saat ini hanya full-spec hash cache. Target: incremental/partial — skip stage jika input tidak berubah |
 | Parallel generation | Backend | ❌ Saat ini sequential `for range` di `CompileAll()`. Target: concurrent multi-adapter via `errgroup` |
 | Lazy NEIR loading | Backend | ❌ Load NEIR model on-demand untuk proyek besar (1000+ module) |
-| Benchmark suite | Backend | ❌ Belum ada benchmark terstandarisasi untuk 3 skala (small/medium/large) |
+| Benchmark suite | Backend | ✅ Pipeline benchmarks w/ ReportAllocs(), Memory benchmark, Baseline tool, CI script |
 | Memory profiling | QA | ❌ Belum ada profiling untuk leak detection |
 
 ## Fase 5: AI & Developer Experience
@@ -50,7 +50,7 @@
 | Item | Area | Detail |
 |------|------|--------|
 | AI recommendation engine ✅ | Backend | `naeos ai suggest` — analisa spec via LLM, rekomendasi arsitektur & best practices. Juga `ai explain`, `ai enrich`, `ai compile` |
-| NEIR-aware LSP | Backend | ❌ Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition |
+| NEIR-aware LSP | Backend | ✅ Language Server Protocol untuk spec YAML: autocomplete, diagnostics, hover info, go-to-definition, code actions, signature help, formatting |
 | VS Code extension | Plugin | ❌ Extension dengan syntax highlighting, LSP integration, inline validation, playground |
 | NEIR diff visualization | CLI/TUI | ❌ `naeos diff --format unified` (text). Target: `--visual` side-by-side tree view |
 

@@ -638,3 +638,355 @@ func TestHandleUnknownMethod(t *testing.T) {
 	s := NewServer()
 	s.handleMessage(`{"jsonrpc":"2.0","id":3,"method":"unknown/method"}`)
 }
+
+func TestCodeActionProvider(t *testing.T) {
+	cap := NewCodeActionProvider()
+
+	diags := []Diagnostic{
+		{Range: Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 0, Character: 1}}, Severity: DiagError, Message: "Required field 'project' is missing"},
+	}
+	actions := cap.Provide("test.yaml", diags)
+	if len(actions) == 0 {
+		t.Fatal("expected at least one code action")
+	}
+
+	var found bool
+	for _, a := range actions {
+		if a.Title == "Add missing 'project' field" {
+			found = true
+			if a.Kind != CodeActionQuickFix {
+				t.Errorf("expected quickfix kind, got %s", a.Kind)
+			}
+			if a.Edit == nil {
+				t.Fatal("expected edit")
+			}
+			edits, ok := a.Edit.Changes["test.yaml"]
+			if !ok || len(edits) == 0 {
+				t.Fatal("expected text edits for test.yaml")
+			}
+			if edits[0].NewText != "project: my-project\n" {
+				t.Errorf("expected 'project: my-project\\n', got %q", edits[0].NewText)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Error("expected 'Add missing project field' code action")
+	}
+}
+
+func TestCodeActionTrailingWhitespace(t *testing.T) {
+	cap := NewCodeActionProvider()
+
+	diags := []Diagnostic{
+		{Range: Range{}, Severity: DiagHint, Message: "Trailing whitespace"},
+	}
+	actions := cap.Provide("test.yaml", diags)
+	var found bool
+	for _, a := range actions {
+		if a.Title == "Fix trailing whitespace" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected 'Fix trailing whitespace' code action")
+	}
+
+	fixed := cap.FixTrailingWhitespace("project: myapp  \nservices:\n  - name: api  \n")
+	expected := "project: myapp\nservices:\n  - name: api"
+	if fixed != expected {
+		t.Errorf("expected %q, got %q", expected, fixed)
+	}
+
+	tabFixed := cap.FixTabs("project: myapp\n\tservices:")
+	if tabFixed != "project: myapp\n  services:" {
+		t.Errorf("expected tabs converted to spaces, got %q", tabFixed)
+	}
+}
+
+func TestSignatureProvider(t *testing.T) {
+	sp := NewSignatureProvider()
+	text := "$"
+	help := sp.Provide(text, 0, 1)
+	if help == nil {
+		t.Fatal("expected non-nil signature help")
+	}
+	if len(help.Signatures) == 0 {
+		t.Fatal("expected at least one signature")
+	}
+}
+
+func TestSignatureProviderIf(t *testing.T) {
+	sp := NewSignatureProvider()
+	text := "$if{"
+	help := sp.Provide(text, 0, len(text))
+	if help == nil {
+		t.Fatal("expected non-nil signature help for $if{")
+	}
+	var found bool
+	for _, s := range help.Signatures {
+		if s.Label == "$if{condition: block}" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected '$if{condition: block}' signature")
+	}
+}
+
+func TestSignatureProviderFn(t *testing.T) {
+	sp := NewSignatureProvider()
+	text := "$fn{upper("
+	help := sp.Provide(text, 0, len(text))
+	if help == nil {
+		t.Fatal("expected non-nil signature help for $fn{upper(")
+	}
+	var found bool
+	for _, s := range help.Signatures {
+		if s.Label == "$fn{upper(value: string)}" {
+			found = true
+			if len(s.Parameters) != 1 {
+				t.Errorf("expected 1 parameter, got %d", len(s.Parameters))
+			}
+			break
+		}
+	}
+	if !found {
+		t.Error("expected '$fn{upper(value: string)}' signature")
+	}
+}
+
+func TestSignatureProviderDefault(t *testing.T) {
+	sp := NewSignatureProvider()
+	text := "$fn{default("
+	help := sp.Provide(text, 0, len(text))
+	if help == nil {
+		t.Fatal("expected non-nil signature help for $fn{default(")
+	}
+	var found bool
+	for _, s := range help.Signatures {
+		if s.Label == "$fn{default(value: any, fallback: any)}" {
+			found = true
+			if len(s.Parameters) != 2 {
+				t.Errorf("expected 2 parameters, got %d", len(s.Parameters))
+			}
+			break
+		}
+	}
+	if !found {
+		t.Error("expected '$fn{default(value: any, fallback: any)}' signature")
+	}
+}
+
+func TestSignatureProviderEmptyLine(t *testing.T) {
+	sp := NewSignatureProvider()
+	help := sp.Provide("", 0, 0)
+	if help == nil {
+		t.Fatal("expected non-nil signature help for empty text")
+	}
+}
+
+func TestFormatProvider(t *testing.T) {
+	fp := NewFormatProvider()
+	text := "services:\n  - name: api\nproject: myapp\n"
+	edits, err := fp.Format(text)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	if len(edits) == 0 {
+		t.Fatal("expected at least one text edit")
+	}
+	formatted := edits[0].NewText
+	lines := strings.Split(formatted, "\n")
+	if len(lines) >= 2 {
+		if !strings.HasPrefix(lines[0], "project") {
+			t.Errorf("expected 'project' block first after sorting, got %q", lines[0])
+		}
+	}
+}
+
+func TestFormatProviderTrailingWhitespace(t *testing.T) {
+	fp := NewFormatProvider()
+	text := "project: myapp  \nversion: \"1.0\"  \n"
+	edits, err := fp.Format(text)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	formatted := edits[0].NewText
+	if strings.Contains(formatted, "  \n") {
+		t.Error("expected no trailing whitespace")
+	}
+}
+
+func TestFormatProviderTabs(t *testing.T) {
+	fp := NewFormatProvider()
+	text := "project: myapp\n\tservices:\n"
+	edits, err := fp.Format(text)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	formatted := edits[0].NewText
+	if strings.Contains(formatted, "\t") {
+		t.Error("expected no tabs after formatting")
+	}
+}
+
+func TestFormatProviderSortOrder(t *testing.T) {
+	fp := NewFormatProvider()
+	text := "services:\n  - name: api\nversion: \"1.0\"\nproject: myapp\n"
+	edits, err := fp.Format(text)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	formatted := edits[0].NewText
+	if !strings.HasPrefix(formatted, "project") {
+		t.Errorf("expected 'project' first, got %q", formatted)
+	}
+}
+
+func TestFormatRange(t *testing.T) {
+	fp := NewFormatProvider()
+	text := "project: myapp  \nservices:\n  - name: api\n"
+	r := Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 1, Character: 0}}
+	edits, err := fp.FormatRange(text, r)
+	if err != nil {
+		t.Fatalf("FormatRange: %v", err)
+	}
+	if len(edits) == 0 {
+		t.Fatal("expected edits from FormatRange")
+	}
+}
+
+func TestServerCodeActionAccessor(t *testing.T) {
+	s := NewServer()
+	if s.CodeAction() == nil {
+		t.Error("expected non-nil CodeAction provider")
+	}
+	if s.Signature() == nil {
+		t.Error("expected non-nil Signature provider")
+	}
+	if s.Format() == nil {
+		t.Error("expected non-nil Format provider")
+	}
+}
+
+func TestHandlerCodeAction(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{
+			URI:  "test.yaml",
+			Text: "services:\n  - name: api\n",
+		},
+	})
+
+	actions := h.CodeAction(CodeActionParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+	})
+	if len(actions) == 0 {
+		t.Fatal("expected code actions for missing project")
+	}
+}
+
+func TestHandlerSignatureHelp(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{
+			URI:  "test.yaml",
+			Text: "$",
+		},
+	})
+
+	help := h.SignatureHelp(SignatureHelpParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+		Position:     Position{Line: 0, Character: 1},
+	})
+	if help == nil {
+		t.Fatal("expected signature help")
+	}
+	if len(help.Signatures) == 0 {
+		t.Error("expected at least one signature")
+	}
+}
+
+func TestHandlerFormatting(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{
+			URI:  "test.yaml",
+			Text: "services:\n  - name: api\nproject: myapp\n",
+		},
+	})
+
+	edits, err := h.Formatting(DocumentFormattingParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+	})
+	if err != nil {
+		t.Fatalf("Formatting: %v", err)
+	}
+	if len(edits) == 0 {
+		t.Fatal("expected formatting edits")
+	}
+}
+
+func TestHandlerRangeFormatting(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{
+			URI:  "test.yaml",
+			Text: "project: myapp  \nservices:\n  - name: api\n",
+		},
+	})
+
+	edits, err := h.RangeFormatting(DocumentRangeFormattingParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+		Range:        Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 1, Character: 0}},
+	})
+	if err != nil {
+		t.Fatalf("RangeFormatting: %v", err)
+	}
+	if len(edits) == 0 {
+		t.Fatal("expected range formatting edits")
+	}
+}
+
+func TestHandleCodeAction(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "services:\n  - name: api\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":1,"method":"textDocument/codeAction","params":{"textDocument":{"uri":"test.yaml"},"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}},"context":{"diagnostics":[]}}}`)
+}
+
+func TestHandleSignatureHelp(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "$"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":1,"method":"textDocument/signatureHelp","params":{"textDocument":{"uri":"test.yaml"},"position":{"line":0,"character":1}}}`)
+}
+
+func TestHandleFormatting(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "services:\n  - name: api\nproject: myapp\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"test.yaml"},"options":{"tabSize":2,"insertSpaces":true}}}`)
+}
+
+func TestHandleRangeFormatting(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp\nservices:\n  - name: api\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":1,"method":"textDocument/rangeFormatting","params":{"textDocument":{"uri":"test.yaml"},"range":{"start":{"line":0,"character":0},"end":{"line":1,"character":0}},"options":{"tabSize":2,"insertSpaces":true}}}`)
+}

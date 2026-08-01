@@ -1,7 +1,13 @@
 package pipeline
 
+// Benchmark target times:
+// - small (BenchmarkPipelineRun): <1s
+// - medium (BenchmarkPipelineRun_Medium): <5s
+// - large (BenchmarkPipelineRun_Large): <30s
+
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -43,6 +49,7 @@ func genLargeSpec() string {
 }
 
 func BenchmarkPipelineRun(b *testing.B) {
+	b.ReportAllocs()
 	cfg := Config{
 		Name:      "benchapp",
 		OutputDir: b.TempDir(),
@@ -56,6 +63,7 @@ func BenchmarkPipelineRun(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_Medium(b *testing.B) {
+	b.ReportAllocs()
 	spec := genMediumSpec()
 	cfg := Config{
 		Name:      "mediumapp",
@@ -69,6 +77,7 @@ func BenchmarkPipelineRun_Medium(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_Large(b *testing.B) {
+	b.ReportAllocs()
 	spec := genLargeSpec()
 	cfg := Config{
 		Name:      "largeapp",
@@ -82,6 +91,7 @@ func BenchmarkPipelineRun_Large(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_ParallelSmall(b *testing.B) {
+	b.ReportAllocs()
 	parallel := true
 	cfg := Config{
 		Name:      "benchapp",
@@ -96,6 +106,7 @@ func BenchmarkPipelineRun_ParallelSmall(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_ParallelMedium(b *testing.B) {
+	b.ReportAllocs()
 	parallel := true
 	spec := genMediumSpec()
 	cfg := Config{
@@ -111,6 +122,7 @@ func BenchmarkPipelineRun_ParallelMedium(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_ParallelLarge(b *testing.B) {
+	b.ReportAllocs()
 	parallel := true
 	spec := genLargeSpec()
 	cfg := Config{
@@ -126,6 +138,7 @@ func BenchmarkPipelineRun_ParallelLarge(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_Profiled(b *testing.B) {
+	b.ReportAllocs()
 	cfg := Config{
 		Name:      "benchapp",
 		OutputDir: b.TempDir(),
@@ -139,6 +152,7 @@ func BenchmarkPipelineRun_Profiled(b *testing.B) {
 }
 
 func BenchmarkPipelineRun_ProfiledParallel(b *testing.B) {
+	b.ReportAllocs()
 	parallel := true
 	cfg := Config{
 		Name:      "benchapp",
@@ -154,6 +168,7 @@ func BenchmarkPipelineRun_ProfiledParallel(b *testing.B) {
 }
 
 func BenchmarkPipelineValidate(b *testing.B) {
+	b.ReportAllocs()
 	cfg := Config{
 		Name:      "benchapp",
 		OutputDir: b.TempDir(),
@@ -167,6 +182,7 @@ func BenchmarkPipelineValidate(b *testing.B) {
 }
 
 func BenchmarkPipelineNew(b *testing.B) {
+	b.ReportAllocs()
 	cfg := Config{
 		Name:      "benchapp",
 		OutputDir: b.TempDir(),
@@ -176,4 +192,24 @@ func BenchmarkPipelineNew(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		New(cfg)
 	}
+}
+
+func BenchmarkPipelineRun_Memory(b *testing.B) {
+	b.ReportAllocs()
+	cfg := Config{
+		Name:      "benchapp",
+		OutputDir: b.TempDir(),
+	}
+
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p, _ := New(cfg)
+		p.Run(strings.TrimSpace(benchSpec))
+	}
+	b.StopTimer()
+	runtime.ReadMemStats(&after)
+	b.ReportMetric(float64(after.TotalAlloc-before.TotalAlloc)/float64(b.N), "alloced/op")
+	b.ReportMetric(float64(after.Mallocs-before.Mallocs)/float64(b.N), "mallocs/op")
 }

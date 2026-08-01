@@ -20,6 +20,9 @@ type Server struct {
 	documents  *DocumentManager
 	completion *CompletionProvider
 	diagnostic *DiagnosticProvider
+	codeAction *CodeActionProvider
+	signature  *SignatureProvider
+	format     *FormatProvider
 	handler    *Handler
 	closed     bool
 }
@@ -31,6 +34,9 @@ func NewServer() *Server {
 		documents:  NewDocumentManager(),
 		completion: NewCompletionProvider(),
 		diagnostic: NewDiagnosticProvider(),
+		codeAction: NewCodeActionProvider(),
+		signature:  NewSignatureProvider(),
+		format:     NewFormatProvider(),
 	}
 	s.handler = NewHandler(s)
 	return s
@@ -39,6 +45,9 @@ func NewServer() *Server {
 func (s *Server) Documents() *DocumentManager     { return s.documents }
 func (s *Server) Completion() *CompletionProvider { return s.completion }
 func (s *Server) Diagnostic() *DiagnosticProvider { return s.diagnostic }
+func (s *Server) CodeAction() *CodeActionProvider { return s.codeAction }
+func (s *Server) Signature() *SignatureProvider   { return s.signature }
+func (s *Server) Format() *FormatProvider         { return s.format }
 
 func (s *Server) Run() error {
 	br := bufio.NewReader(s.reader)
@@ -149,6 +158,40 @@ func (s *Server) handleMessage(raw string) {
 		data, _ := json.Marshal(request.Params)
 		_ = json.Unmarshal(data, &params)
 		result := s.handler.DocumentSymbol(params)
+		s.sendResponse(request.ID, result)
+
+	case MethodCodeAction:
+		var params CodeActionParams
+		data, _ := json.Marshal(request.Params)
+		_ = json.Unmarshal(data, &params)
+		result := s.handler.CodeAction(params)
+		s.sendResponse(request.ID, result)
+
+	case MethodSignatureHelp:
+		var params SignatureHelpParams
+		data, _ := json.Marshal(request.Params)
+		_ = json.Unmarshal(data, &params)
+		result := s.handler.SignatureHelp(params)
+		s.sendResponse(request.ID, result)
+
+	case MethodFormatting:
+		var params DocumentFormattingParams
+		data, _ := json.Marshal(request.Params)
+		_ = json.Unmarshal(data, &params)
+		result, err := s.handler.Formatting(params)
+		if err != nil {
+			slog.Error("formatting error", "error", err)
+		}
+		s.sendResponse(request.ID, result)
+
+	case MethodRangeFormatting:
+		var params DocumentRangeFormattingParams
+		data, _ := json.Marshal(request.Params)
+		_ = json.Unmarshal(data, &params)
+		result, err := s.handler.RangeFormatting(params)
+		if err != nil {
+			slog.Error("range formatting error", "error", err)
+		}
 		s.sendResponse(request.ID, result)
 
 	default:

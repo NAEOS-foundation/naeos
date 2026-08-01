@@ -87,6 +87,52 @@ func (p *CompletionProvider) init() {
 		{Label: "output_dir", Kind: CompletionField, Detail: "string", Documentation: "Output directory"},
 	}
 
+	p.keywords["domain"] = []NEIRSuggestion{
+		{Label: "events", Kind: CompletionProperty, Detail: "[]DomainEvent", Documentation: "Domain events"},
+		{Label: "bounded_contexts", Kind: CompletionProperty, Detail: "[]BoundedContext", Documentation: "Bounded contexts"},
+		{Label: "ubiquitous_language", Kind: CompletionField, Detail: "string", Documentation: "Ubiquitous language glossary"},
+		{Label: "aggregates", Kind: CompletionProperty, Detail: "[]Aggregate", Documentation: "Domain aggregates"},
+		{Label: "value_objects", Kind: CompletionProperty, Detail: "[]ValueObject", Documentation: "Value objects"},
+	}
+
+	p.keywords["security"] = []NEIRSuggestion{
+		{Label: "authentication", Kind: CompletionProperty, Detail: "AuthConfig", Documentation: "Authentication configuration"},
+		{Label: "authorization", Kind: CompletionProperty, Detail: "AuthzConfig", Documentation: "Authorization configuration"},
+		{Label: "encryption", Kind: CompletionProperty, Detail: "EncryptionConfig", Documentation: "Encryption settings"},
+		{Label: "cors", Kind: CompletionProperty, Detail: "CORSConfig", Documentation: "CORS configuration"},
+		{Label: "rate_limiting", Kind: CompletionProperty, Detail: "RateLimitConfig", Documentation: "Rate limiting settings"},
+	}
+
+	p.keywords["infrastructure"] = []NEIRSuggestion{
+		{Label: "provider", Kind: CompletionEnum, Detail: "string", Documentation: "Cloud provider: aws, gcp, azure, local"},
+		{Label: "region", Kind: CompletionField, Detail: "string", Documentation: "Cloud region"},
+		{Label: "resources", Kind: CompletionProperty, Detail: "[]Resource", Documentation: "Infrastructure resources"},
+		{Label: "kubernetes", Kind: CompletionProperty, Detail: "K8sConfig", Documentation: "Kubernetes configuration"},
+		{Label: "networking", Kind: CompletionProperty, Detail: "NetworkConfig", Documentation: "Network configuration"},
+	}
+
+	p.keywords["storage"] = []NEIRSuggestion{
+		{Label: "type", Kind: CompletionEnum, Detail: "string", Documentation: "Storage type: postgres, mysql, redis, s3, mongodb"},
+		{Label: "connection", Kind: CompletionField, Detail: "string", Documentation: "Connection string"},
+		{Label: "migrations", Kind: CompletionProperty, Detail: "[]Migration", Documentation: "Database migrations"},
+		{Label: "backup", Kind: CompletionProperty, Detail: "BackupConfig", Documentation: "Backup configuration"},
+		{Label: "pooling", Kind: CompletionProperty, Detail: "PoolConfig", Documentation: "Connection pooling"},
+	}
+
+	p.keywords["components"] = []NEIRSuggestion{
+		{Label: "type", Kind: CompletionEnum, Detail: "string", Documentation: "Component type: service, worker, cron, event-handler"},
+		{Label: "name", Kind: CompletionField, Detail: "string", Documentation: "Component name"},
+		{Label: "path", Kind: CompletionField, Detail: "string", Documentation: "Component path"},
+		{Label: "dependencies", Kind: CompletionProperty, Detail: "[]string", Documentation: "Component dependencies"},
+	}
+
+	p.keywords["api"] = []NEIRSuggestion{
+		{Label: "version", Kind: CompletionField, Detail: "string", Documentation: "API version"},
+		{Label: "endpoints", Kind: CompletionProperty, Detail: "[]Endpoint", Documentation: "API endpoints"},
+		{Label: "format", Kind: CompletionEnum, Detail: "string", Documentation: "API format: rest, graphql, grpc"},
+		{Label: "documentation", Kind: CompletionField, Detail: "string", Documentation: "API documentation path"},
+	}
+
 	p.keywords["kind_values"] = []NEIRSuggestion{
 		{Label: "http", Kind: CompletionEnumMember, Detail: "Service kind", Documentation: "HTTP service"},
 		{Label: "grpc", Kind: CompletionEnumMember, Detail: "Service kind", Documentation: "gRPC service"},
@@ -274,6 +320,57 @@ func (p *CompletionProvider) detectContext(text string, line int, lineText, pref
 			return "testing"
 		case "generation":
 			return "generation"
+		case "domain":
+			return "domain"
+		case "security":
+			return "security"
+		case "infrastructure":
+			return "infrastructure"
+		case "storage":
+			return "storage"
+		case "components":
+			return "components"
+		case "api":
+			return "api"
+		}
+	}
+
+	if strings.HasPrefix(lineText, "  - ") || strings.HasPrefix(lineText, "    ") {
+		for i := line - 1; i >= 0; i-- {
+			l := p.lineAt(text, i)
+			trim := strings.TrimSpace(l)
+			if strings.HasPrefix(trim, "- name:") {
+				keyOnly := strings.SplitN(trim, ":", 2)[0]
+				keyOnly = strings.TrimPrefix(keyOnly, "- ")
+				if keyOnly == "name" {
+					for j := i - 1; j >= 0; j-- {
+						l2 := p.lineAt(text, j)
+						trim2 := strings.TrimSpace(l2)
+						parentKey := strings.SplitN(trim2, ":", 2)[0]
+						parentKey = strings.TrimPrefix(parentKey, "- ")
+						switch parentKey {
+						case "services":
+							return "service"
+						case "endpoints":
+							return "endpoint"
+						case "modules":
+							return "module"
+						case "domain":
+							return "domain"
+						case "security":
+							return "security"
+						case "infrastructure":
+							return "infrastructure"
+						case "storage":
+							return "storage"
+						case "components":
+							return "components"
+						case "api":
+							return "api"
+						}
+					}
+				}
+			}
 		}
 	}
 
