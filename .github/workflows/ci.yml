@@ -116,3 +116,9 @@ jobs:
         run: go test -fuzz=FuzzValidateModules -fuzztime=30s ./internal/specification/parser/
       - name: Fuzz version parse
         run: go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/
+      - name: Fuzz normalizer
+        run: go test -fuzz='^FuzzNormalize$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz normalizer raw
+        run: go test -fuzz='^FuzzNormalizeRaw$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz flatten
+        run: go test -fuzz='^FuzzFlatten$' -fuzztime=30s ./internal/specification/normalizer/
