@@ -4,7 +4,7 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Test coverage minimum 80% | Backend | ✅ `supabase` 84.1%, `messagequeue` 93.5%, `marketplace` 88.7%, `mcp` 85.1%, `migration` 97.9%. Target: `watch`, `rollback`, `cicd`, `distributed`, `gateway`, `websocket`, `eventsourcing` |
+| Test coverage minimum 80% | Backend | ✅ `supabase` 84.1%, `messagequeue` 93.5%, `marketplace` 88.7%, `mcp` 85.1%, `migration` 97.9%. ✅ Target tercapai: `watch` 84.8%, `rollback` 85.7%, `cicd` 88.3%, `distributed` 84.4%, `gateway` 83.9%, `websocket` 80.1%, `eventsourcing` 83.7% |
 | CI lint zero-failure ✅ | Backend | Semua pelanggaran `bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck` diperbaiki. Lint lulus 100% |
 | Integration test suite | Backend | ✅ Supabase integration tests (Auth, Storage, SQL, Admin) di CI tiap commit dengan secrets |
 | Fuzz testing | Backend | ✅ 5 fuzz targets jalan di CI tiap commit |
@@ -114,6 +114,7 @@
 - **VS Code extension generator** — `naeos dx vscode-gen` dengan output directory, TextMate grammar, LSP client, commands, keybindings, menus, config
 - **NEIR-aware LSP** — 30 test, 7 file server stdio JSON-RPC 2.0, code actions, fix duplicate module detection bug
 - **CLI tests added** — 9 test baru untuk diff, build, lsp, dx, vscode-gen commands
+- **Rollback coverage boost** — 73.9% → 85.7% (merge-restore, walk errors, import traversal/symlink, export failures, List/Latest edge cases)
 - **CLI coverage expanded** — 31 test baru untuk version, config, init, status, health, template, plugin, schema, compliance, search, ai, security, docgen, auth, dashboard, observability, events, mcp, validate, workflow, supabase, marketplace, watch, rollback, lock, migrate, deploy, run, create, lint, cicd, gateway, sso, profile, artifacts
 - **Plugin search fix** — `naeos plugin search` terhubung ke `RemoteRegistry` (dari hardcoded stub)
 - **WASM coverage boost** — 27% → 98% (getter tests, marshal error path)
