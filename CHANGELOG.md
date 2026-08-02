@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BenchmarkResult `durations()`** — method always returned nil; fixed with `allDurations` field + public `Durations()` accessor.
 - **LSP duplicate module detection** — Fixed always-false condition where `m.Name != m2.Name && m.Name == m2.Name` could never be true.
 - **LSP stderr noise** — Suppressed `sync /dev/stdout: invalid argument` during test execution.
+- **`runBuildDistributed` deadlock** — `naeos build --distributed` hung forever: the `range` over `coord.Results()` waited for the channel to close, but `Stop()` (which closes it) was called only after the loop. `Stop()` now runs concurrently with result collection.
+- **LSP logging** — replaced remaining 5 `log.Printf` calls in `internal/lsp/server.go` with `slog.Error` (completes zero `log.Print` goal).
 
 ### Added
 - **Supabase backend integration** — full-featured Supabase client with Auth, Storage, Edge Functions, Admin API, and Realtime WebSocket support:
@@ -46,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CLI docs regenerated — 21 `docs/cli/naeos_supabase*.md` files.
 - **Unit tests for `internal/supabase/`** — 44 tests covering all API methods (Auth, Storage, Admin, Functions), error cases (API errors, malformed JSON, 401/404/409), config save/load, and edge cases (coverage 84.1%).
 - **UploadFile/DownloadFile unit tests** — 3 new tests (success, error 400, file not found).
+- **Rollback coverage 85.7%** — 15 new edge-case tests: merge-restore into `.`, walk errors, import traversal/symlink rejection, export failures, List/Latest edge cases.
+- **Normalizer fuzz targets** — `FuzzNormalize`, `FuzzNormalizeRaw`, `FuzzFlatten` added and wired into the CI fuzz job.
+- **CLI coverage 67.7%** — doctor JSON report (healthy/degraded/unhealthy) and supabase command error paths (signout, user, admin CRUD, storage, sql without config).
 
 ### Fixed
 - **Lint failures (28 issues)** — `bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck` resolved across 7 files in `internal/supabase/`. HTTP response bodies now closed internally in `do()`; all requests use `http.NewRequestWithContext`.
