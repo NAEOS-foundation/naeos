@@ -250,13 +250,12 @@ func runBuildDistributed(cmd *cobra.Command, configPath, input, inputFile string
 	}
 
 	var results []map[string]any
+	go coord.Stop()
 	for res := range coord.Results() {
 		if res.Succeeded && res.Output != nil {
 			results = append(results, res.Output)
 		}
 	}
-
-	coord.Stop()
 
 	totalArtifacts := 0
 	totalTasks := 0
