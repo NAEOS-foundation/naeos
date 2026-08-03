@@ -5,7 +5,12 @@
       "version": "1.0.0",
       "description": "Advanced linting rules for NAEOS specs — validates naming conventions, structure, and best practices",
       "author": "NAEOS Foundation",
-      "tags": ["lint", "validation", "quality", "official"],
+      "tags": [
+        "lint",
+        "validation",
+        "quality",
+        "official"
+      ],
       "type": "lint",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-lint",
       "license": "Apache-2.0",
@@ -19,7 +24,12 @@
       "version": "1.0.0",
       "description": "Security audit plugin — scans for misconfigurations, secrets exposure, and compliance violations",
       "author": "NAEOS Foundation",
-      "tags": ["security", "audit", "compliance", "official"],
+      "tags": [
+        "security",
+        "audit",
+        "compliance",
+        "official"
+      ],
       "type": "security",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-security",
       "license": "Apache-2.0",
@@ -33,7 +43,12 @@
       "version": "1.1.0",
       "description": "Auto-generate documentation from NAEOS specs — Markdown, OpenAPI, and ADR outputs",
       "author": "NAEOS Foundation",
-      "tags": ["docs", "documentation", "generation", "official"],
+      "tags": [
+        "docs",
+        "documentation",
+        "generation",
+        "official"
+      ],
       "type": "documentation",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-docs",
       "license": "Apache-2.0",
@@ -47,7 +62,12 @@
       "version": "1.0.0",
       "description": "Test generation and execution plugin",
       "author": "NAEOS Foundation",
-      "tags": ["test", "testing", "coverage", "official"],
+      "tags": [
+        "test",
+        "testing",
+        "coverage",
+        "official"
+      ],
       "type": "testing",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-test",
       "license": "Apache-2.0",
@@ -61,7 +81,15 @@
       "version": "0.5.0",
       "description": "Deploy NAEOS specs to AWS, GCP, and Azure with IaC generation",
       "author": "NAEOS Foundation",
-      "tags": ["cloud", "deployment", "aws", "gcp", "azure", "iac", "official"],
+      "tags": [
+        "cloud",
+        "deployment",
+        "aws",
+        "gcp",
+        "azure",
+        "iac",
+        "official"
+      ],
       "type": "deployment",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-cloud",
       "license": "Apache-2.0",
@@ -75,7 +103,12 @@
       "version": "0.3.0",
       "description": "Visualize NAEOS specs as interactive dependency graphs and architecture diagrams",
       "author": "NAEOS Foundation",
-      "tags": ["graph", "visualization", "diagram", "official"],
+      "tags": [
+        "graph",
+        "visualization",
+        "diagram",
+        "official"
+      ],
       "type": "visualization",
       "repo_url": "https://github.com/NAEOS-foundation/naeos-graph",
       "license": "Apache-2.0",
