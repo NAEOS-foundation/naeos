@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LSP stderr noise** — Suppressed `sync /dev/stdout: invalid argument` during test execution.
 - **`runBuildDistributed` deadlock** — `naeos build --distributed` hung forever: the `range` over `coord.Results()` waited for the channel to close, but `Stop()` (which closes it) was called only after the loop. `Stop()` now runs concurrently with result collection.
 - **LSP logging** — replaced remaining 5 `log.Printf` calls in `internal/lsp/server.go` with `slog.Error` (completes zero `log.Print` goal).
+- **CLI coverage 71.0% → 80.8%** — 100+ new edge tests: `template` (list/show/add/publish/search/init), `workspace` (init/add/list/info/lock/remove), `watch`/`resolveInputFile`, `dx` (completions/snippets), `ws` (error paths via mock server), `artifacts` (list/info/dedup/summary/corrupt manifest), `supabase` (auth/storage/SQL/status against mock GoTrue/Storage/Mgmt API), `marketplace` (search/install/plugin remote + local cache), `security` (sanitize modes/audit severities/JSON+YAML output), `migration status`, `doctor` (java/rust/spec/config/broker/database checks).
 
 ### Added
 - **Supabase backend integration** — full-featured Supabase client with Auth, Storage, Edge Functions, Admin API, and Realtime WebSocket support:

@@ -73,7 +73,7 @@
 |--------|----------|----------------|----------------|
 | Test coverage (overall) | ✅ 81.5% | ≥80% | ≥85% |
 | Test coverage (target packages) | ✅ ≥80% (7 packages: watch, rollback, cicd, distributed, gateway, websocket, eventsourcing) | — | — |
-| CLI commands test coverage | ✅ 66.2% (266 test baru, 39 command) | 100% | 100% |
+| CLI commands test coverage | ✅ 80.8% (693 test, 39 command) | 100% | 100% |
 | Website pages (EN) | ~59 | 35+ (wiki migrated) | 40+ |
 | Blog posts | 8 | 6+ | 12+ |
 | Plugin ecosystem | 0 | 5+ community plugins | 20+ |
