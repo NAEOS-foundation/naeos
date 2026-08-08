@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v3.0.0
+## [3.0.0] - 2026-08-08
 
 ### Added
 - **Pipeline profiling** — `PipelineProfile` records timing & memory per stage (validate, build_graph, policy_eval, schedule, generate, review, write_artifacts). `--profile` flag on `naeos build`. `naeos profile run` subcommand.
@@ -23,16 +23,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Document symbols (outline view)
   - Code actions: add missing `project` field, replace tabs with spaces, remove trailing whitespace
 - **NEIR diff visualization** — `naeos diff --visual` for side-by-side tree view, `--format unified` for unified diff format.
+- **Rollback coverage 85.7%** — 15 new edge-case tests: merge-restore into `.`, walk errors, import traversal/symlink rejection, export failures, List/Latest edge cases.
+- **Normalizer fuzz targets** — `FuzzNormalize`, `FuzzNormalizeRaw`, `FuzzFlatten` added and wired into the CI fuzz job.
+- **CLI test coverage 66.2% → 80.8%** — 266+ new test functions across 39 command test files (`cmd/naeos/*_cmd_test.go`), plus 100+ edge tests: template, workspace, watch, dx, ws, artifacts, supabase, marketplace, security, migration status, doctor.
+- **Rollback merge-restore** — `internal/rollback` can now restore snapshots into the current directory (`.`) and repo root instead of failing on `RemoveAll`/`Rename` of `.`; `rollback` subcommand reads `--output-dir` via persistent flags.
+- **Official example plugins** — `examples/plugins/` with `hello`, `spec-lint`, and `artifact-stats` (each with `plugin.go`, `main.go` WASM entry, tests, manifest, README).
+- **Official starter template** — `examples/templates/microservices-go/` (REST + event-driven Go starter) wired into the template registry at `site/static/templates/registry.json`.
+- **Distributed builds & dashboard docs** — new site docs pages `docs/distributed-builds.md` and `docs/dashboard.md` (EN + ID).
+- **Schema registry canonical `$id`** — NEIR JSON Schema `$id` now resolves to the versioned URL `/schemaregistry/v1/neir.json`.
 
 ### Changed
 - **OAuth2 refactored** — `GoogleOAuth2`/`GitHubOAuth2` now embed `GenericOAuth2` instead of using type aliases. `ScopeStr` derived dynamically from `Config.Scopes`.
-- **Database factory** — `NewFromConfig() ` extracted to `factory_shared.go` for both SQL and NoSQL factories. Added `"mariadb"` alias for MySQL.
+- **Database factory** — `NewFromConfig()` extracted to `factory_shared.go` for both SQL and NoSQL factories. Added `"mariadb"` alias for MySQL.
 - **Workflow error handling** — All 14 silent `_ = w.Machine.Trigger(...)` calls now log errors via `slog.Warn(...)`.
 - **Compiler parallelized** — `CompileAll()` uses concurrent goroutines with `sync.WaitGroup`, achieving 3× speedup with 3 adapters.
 - **DB adapter `Begin()` fixed** — all four real adapters (`sqlite`, `mysql`, `postgresql`, `supabase`) called `defer cancel()` on the context handed to `BeginTx`, which immediately invalidated every transaction (`sql: transaction has already been committed or rolled back`). `Begin()` now passes `context.Background()`.
 - **LDAP bind result parsing fixed** — `bind()` checked `resp[n-2] == 0x0a` and treated `resp[n-1]` as the result code, which never matched a real LDAP `BindResponse` (the ENUMERATED tag lives at `n-3`), so `Authenticate` could never succeed against an actual LDAP server. It now scans for the `0x0a 0x01` ENUMERATED result code.
 - **LDAP search result parsing rewritten** — `parseLDAPResult` replaced the ad-hoc sequence walker with a proper minimal BER TLV decoder (`parseBER`); attribute values are now extracted from standard `SearchResultEntry` responses.
 - **Plugin registry pointed at public source of truth** — `RemoteRegistry` default moved from the non-existent `naeos.dev/api/v1/plugins` to the GitHub Pages static registry (`naeos-foundation.github.io/naeos/plugins/registry.json`), `RemoteTemplateRegistry` to `/templates/registry.json`, and the `naeos plugin search`/`marketplace plugin publish`/`template publish` CLI defaults updated accordingly (previously `registry.naeos.dev`). Registry URLs ending in `.json` are now fetched verbatim (no path appended), and `RemotePlugin` decodes the `platforms` array emitted by the plugin-registry discovery workflow. Plugin discovery against the public registry now works end-to-end.
+- **CI coverage gate** — `fail_ci_if_error: true` in `codecov-action`; overall coverage 81.5% → 86.9%.
+- **GraphQL server** — switched from `http.Handle` on the default mux to a dedicated `http.NewServeMux` (fixes panic on repeated registration in tests).
+- **Site multilingual fix** — per-language content mounts (`content`/`content/id`) so Indonesian pages get the correct language context: sections, layouts (`plugins`, `templates`), i18n strings, and `lang` attributes now work for `/id/*` pages.
 
 ### Fixed
 - **BenchmarkResult `durations()`** — method always returned nil; fixed with `allDurations` field + public `Durations()` accessor.
@@ -48,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configschema coverage 80.2% → 94.7%** — `AddValidator`/`AddCustomType` registration, `ValidateFile` (YAML/JSON/unknown extension/missing file), `ValidateData` (yaml/yml/json formats + invalid input), `LoadSchemaFromFile` (success + missing/bad parse errors).
 - **Monitoring coverage 81.7% → 93.4%** — `GaugeSet` edge cases (unknown family, overwrite, new metric, cardinality limit), `statusResponseWriter` (`WriteHeader` once-only capture, `Write`, `Unwrap`), `RecordRuntime`/`StartRuntimeCollector`, `ObservePipelineDuration`, `IncSpecValidations` (success/failure), `IncArtifacts`, `SetWebSocketConnections`, full `MetricsObserver` lifecycle (valid + invalid duration), middleware status capture.
 - **Configreload coverage 81.9% → 91.9%** — `GetString`/`GetInt`/`GetBool` type-mismatch fallbacks, `LastModified`, `HotReloader` error paths (double `Start`, invalid watch dir, `Stop` when idle), loop edge cases (error channel, non-matching file events, closed watcher channels terminate the loop), `matchesConfigFile`.
+- **Rollback into `.`** — `Restore` with target directory `.` or `/` previously no-op'd and failed; now uses merge-restore path.
+- **Dashboard port conflict** — added test coverage for the port-conflict error path.
+
+## [2.2.0] - 2026-07-23
 
 ### Added
 - **Supabase backend integration** — full-featured Supabase client with Auth, Storage, Edge Functions, Admin API, and Realtime WebSocket support:
@@ -60,9 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CLI docs regenerated — 21 `docs/cli/naeos_supabase*.md` files.
 - **Unit tests for `internal/supabase/`** — 44 tests covering all API methods (Auth, Storage, Admin, Functions), error cases (API errors, malformed JSON, 401/404/409), config save/load, and edge cases (coverage 84.1%).
 - **UploadFile/DownloadFile unit tests** — 3 new tests (success, error 400, file not found).
-- **Rollback coverage 85.7%** — 15 new edge-case tests: merge-restore into `.`, walk errors, import traversal/symlink rejection, export failures, List/Latest edge cases.
-- **Normalizer fuzz targets** — `FuzzNormalize`, `FuzzNormalizeRaw`, `FuzzFlatten` added and wired into the CI fuzz job.
-- **CLI coverage 67.7%** — doctor JSON report (healthy/degraded/unhealthy) and supabase command error paths (signout, user, admin CRUD, storage, sql without config).
 
 ### Fixed
 - **Lint failures (28 issues)** — `bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck` resolved across 7 files in `internal/supabase/`. HTTP response bodies now closed internally in `do()`; all requests use `http.NewRequestWithContext`.
@@ -75,23 +87,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **Dead code** — removed entire `internal/supabase/realtime.go` (151 lines, `NewRealtimeClient`/`Subscribe`/`Unsubscribe`/`Close`/`Done`/`readLoop`/`send` all unreachable).
 - **Dead code** — removed `Client.DeployFunctionFromFile` from `internal/supabase/functions.go` (never called).
-
-### Added
-- **CLI test coverage** — 266 new test functions across 39 command test files (`cmd/naeos/*_cmd_test.go`), raising CLI coverage from 45.5% to 66.2%.
-- **Rollback merge-restore** — `internal/rollback` can now restore snapshots into the current directory (`.`) and repo root instead of failing on `RemoveAll`/`Rename` of `.`; `rollback` subcommand reads `--output-dir` via persistent flags.
-- **Official example plugins** — `examples/plugins/` with `hello`, `spec-lint`, and `artifact-stats` (each with `plugin.go`, `main.go` WASM entry, tests, manifest, README).
-- **Official starter template** — `examples/templates/microservices-go/` (REST + event-driven Go starter) wired into the template registry at `site/static/templates/registry.json`.
-- **Distributed builds & dashboard docs** — new site docs pages `docs/distributed-builds.md` and `docs/dashboard.md` (EN + ID).
-- **Schema registry canonical `$id`** — NEIR JSON Schema `$id` now resolves to the versioned URL `/schemaregistry/v1/neir.json`.
-
-### Changed
-- **CI coverage gate** — `fail_ci_if_error: true` in `codecov-action`; overall coverage 81.5%.
-- **GraphQL server** — switched from `http.Handle` on the default mux to a dedicated `http.NewServeMux` (fixes panic on repeated registration in tests).
-- **Site multilingual fix** — per-language content mounts (`content`/`content/id`) so Indonesian pages get the correct language context: sections, layouts (`plugins`, `templates`), i18n strings, and `lang` attributes now work for `/id/*` pages.
-
-### Fixed
-- **Rollback into `.`** — `Restore` with target directory `.` or `/` previously no-op'd and failed; now uses merge-restore path.
-- **Dashboard port conflict** — added test coverage for the port-conflict error path.
 
 ### Changed
 - **CI: codecov-action** — `file: ./coverage.out` → `files: ./coverage.out` (v5 syntax).
