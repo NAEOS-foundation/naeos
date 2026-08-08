@@ -181,7 +181,7 @@ func TestValidateSpecResolveRef(t *testing.T) {
 		},
 		"definitions": map[string]any{
 			"Service": map[string]any{
-				"type": "object",
+				"type":     "object",
 				"required": []any{"name"},
 			},
 		},

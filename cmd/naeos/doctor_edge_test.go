@@ -24,12 +24,7 @@ func fakeBinDir(t *testing.T, scripts map[string]string) string {
 
 func withPATH(t *testing.T, binDir string) {
 	t.Helper()
-	old := os.Getenv("PATH")
-	if old == "" {
-		t.Setenv("PATH", binDir)
-		return
-	}
-	t.Setenv("PATH", binDir+string(os.PathListSeparator)+old)
+	t.Setenv("PATH", binDir)
 }
 
 func TestCheckJavaNotFound(t *testing.T) {

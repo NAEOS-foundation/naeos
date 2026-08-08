@@ -22,7 +22,7 @@ func TestNewReverseProxyEmptyURL(t *testing.T) {
 }
 
 func TestNewReverseProxyInvalidURL(t *testing.T) {
-	if _, err := NewReverseProxy(&Backend{Name: "a", URL: "://bad" }, nil); err == nil {
+	if _, err := NewReverseProxy(&Backend{Name: "a", URL: "://bad"}, nil); err == nil {
 		t.Fatal("expected error for invalid backend URL")
 	}
 }

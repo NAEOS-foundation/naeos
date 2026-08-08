@@ -58,7 +58,7 @@ testing:
 		}
 
 		if result == nil {
-			t.Error("result should not be nil on success")
+			t.Fatalf("result should not be nil on success")
 		}
 		if result.Values == nil {
 			t.Error("result values should not be nil")
@@ -95,7 +95,7 @@ architecture:
 		}
 
 		if result == nil {
-			t.Error("result should not be nil on success")
+			t.Fatalf("result should not be nil on success")
 		}
 		if result.Values == nil {
 			t.Error("result values should not be nil")
