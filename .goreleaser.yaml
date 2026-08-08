@@ -33,7 +33,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-docker:
+dockers:
   - image_templates:
       - "ghcr.io/naeos-foundation/naeos:{{ .Version }}-amd64"
       - "ghcr.io/naeos-foundation/naeos:latest"
