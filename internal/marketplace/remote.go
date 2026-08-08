@@ -9,14 +9,15 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
 const (
-	DefaultRegistryURL  = "https://naeos.dev"
-	DefaultRegistryPath = "/api/v1/plugins"
+	DefaultRegistryURL  = "https://naeos-foundation.github.io/naeos"
+	DefaultRegistryPath = "/plugins/registry.json"
 )
 
 type RemoteRegistry struct {
@@ -45,6 +46,7 @@ type RemotePlugin struct {
 	Author      string   `json:"author"`
 	Tags        []string `json:"tags"`
 	Platform    string   `json:"platform"`
+	Platforms   []string `json:"platforms"`
 	DownloadURL string   `json:"download_url"`
 	SHA256      string   `json:"sha256"`
 	Size        int64    `json:"size"`
@@ -63,7 +65,12 @@ type RemoteSearchFilter struct {
 }
 
 func (r *RemoteRegistry) List() ([]RemotePlugin, error) {
-	url := r.baseURL + r.apiPath
+	var url string
+	if strings.HasSuffix(r.baseURL, ".json") {
+		url = r.baseURL
+	} else {
+		url = r.baseURL + r.apiPath
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -219,14 +226,14 @@ func (r *RemoteRegistry) resolvePlugin(name, version string) (*RemotePlugin, err
 		return nil, err
 	}
 
-	platform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	platform := strings.ToLower(fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
 
 	for _, p := range plugins {
 		if p.Name == name {
 			if version != "" && p.Version != version {
 				continue
 			}
-			if p.Platform != "" && p.Platform != platform {
+			if !supportsPlatform(p, platform) {
 				continue
 			}
 			return &p, nil
@@ -264,4 +271,23 @@ func (r *RemoteRegistry) downloadFile(url, destPath string) error {
 
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+// supportsPlatform reports whether the plugin targets the given GOOS/GOARCH
+// combination. Plugins without a declared platform match any host.
+func supportsPlatform(p RemotePlugin, platform string) bool {
+	if p.Platform == "" && len(p.Platforms) == 0 {
+		return true
+	}
+	if p.Platform != "" {
+		if strings.EqualFold(p.Platform, platform) || strings.EqualFold(p.Platform, "any") {
+			return true
+		}
+	}
+	for _, pf := range p.Platforms {
+		if strings.EqualFold(pf, platform) || strings.EqualFold(pf, "any") {
+			return true
+		}
+	}
+	return false
 }

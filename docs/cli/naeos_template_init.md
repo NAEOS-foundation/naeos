@@ -25,7 +25,7 @@ naeos template init [name] [flags]
 ```
   -h, --help              help for init
   -o, --output string     output directory (defaults to template name)
-      --registry string   template registry URL (default "https://naeos.dev/templates/registry.json")
+      --registry string   template registry URL (default "https://naeos-foundation.github.io/naeos/templates/registry.json")
 ```
 
 ### Options inherited from parent commands

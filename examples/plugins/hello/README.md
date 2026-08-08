@@ -30,5 +30,5 @@ naeos plugin execute hello greet '{"name":"NAEOS"}'
 ## Publish
 
 ```bash
-naeos marketplace plugin publish . --registry https://registry.naeos.dev
+naeos marketplace plugin publish . --registry https://naeos-foundation.github.io/naeos
 ```

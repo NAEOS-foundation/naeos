@@ -16,7 +16,7 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
-const DefaultTemplateRegistryURL = "https://naeos.dev/templates/registry.json"
+const DefaultTemplateRegistryURL = "https://naeos-foundation.github.io/naeos/templates/registry.json"
 
 type TemplateEntry struct {
 	Name        string   `json:"name"`

@@ -171,7 +171,7 @@ func TestMarketplacePluginInstallUninstall(t *testing.T) {
 
 func TestMarketplacePluginRemoteList(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/plugins" {
+		if r.URL.Path != "/plugins/registry.json" {
 			http.Error(w, "unexpected path", http.StatusNotFound)
 			return
 		}
@@ -192,7 +192,7 @@ func TestMarketplacePluginRemoteList(t *testing.T) {
 
 func TestMarketplacePluginRemoteSearch(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/plugins" {
+		if r.URL.Path != "/plugins/registry.json" {
 			http.Error(w, "unexpected path", http.StatusNotFound)
 			return
 		}

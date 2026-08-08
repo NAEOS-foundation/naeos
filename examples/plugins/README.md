@@ -39,7 +39,7 @@ naeos plugin execute hello ping
 
 ```bash
 naeos marketplace plugin publish examples/plugins/hello \
-  --registry https://registry.naeos.dev
+  --registry https://naeos-foundation.github.io/naeos
 ```
 
 The plugin registry verifies publisher signatures and plugin hashes

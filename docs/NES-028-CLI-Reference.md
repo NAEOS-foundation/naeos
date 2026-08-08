@@ -675,7 +675,7 @@ Test a plugin in isolation before installing.
 ```bash
 naeos plugin test --source ./my-plugin
 naeos plugin test --source ./my-plugin --args '{"key":"value"}'
-naeos plugin test --source https://registry.naeos.dev/plugins/example --output json
+naeos plugin test --source https://naeos-foundation.github.io/naeos/plugins/registry.json --output json
 ```
 
 | Flag | Type | Default | Required | Description |
@@ -694,7 +694,7 @@ naeos plugin test --source ./my-plugin
 naeos plugin test --source ./my-plugin --args '{"input":"test-spec.yaml"}' --output json
 
 # Test remote plugin
-naeos plugin test --source https://registry.naeos.dev/plugins/example
+naeos plugin test --source https://naeos-foundation.github.io/naeos/plugins/registry.json
 ```
 
 ---

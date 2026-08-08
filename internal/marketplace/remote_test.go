@@ -133,7 +133,7 @@ func TestRemoteRegistryInstall(t *testing.T) {
 	var serverURL string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/api/v1/plugins":
+		case "/plugins/registry.json":
 			list := RemotePluginList{
 				Plugins: []RemotePlugin{
 					{Name: "test-plugin", Version: "1.0.0", Description: "test", Platform: "linux/amd64", DownloadURL: serverURL + "/download"},
@@ -150,7 +150,7 @@ func TestRemoteRegistryInstall(t *testing.T) {
 	serverURL = server.URL
 
 	installDir := t.TempDir()
-	rr := NewRemoteRegistry(server.URL, installDir)
+	rr := NewRemoteRegistry(server.URL+"/plugins/registry.json", installDir)
 
 	path, err := rr.Install("test-plugin", "1.0.0")
 	if err != nil {
@@ -204,5 +204,57 @@ func TestRemoteRegistryNotFound(t *testing.T) {
 	_, err := rr.Install("nonexistent", "")
 	if err == nil {
 		t.Error("expected error for nonexistent plugin")
+	}
+}
+
+func TestRemoteRegistryListStaticJSONURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/plugins/registry.json" {
+			t.Errorf("expected /plugins/registry.json, got %s", r.URL.Path)
+		}
+		list := RemotePluginList{
+			Plugins: []RemotePlugin{
+				{Name: "static", Version: "2.0.0", Description: "static registry plugin", Platforms: []string{"linux/amd64"}},
+			},
+		}
+		json.NewEncoder(w).Encode(list)
+	}))
+	defer server.Close()
+
+	rr := NewRemoteRegistry(server.URL+"/plugins/registry.json", t.TempDir())
+	plugins, err := rr.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plugins) != 1 || plugins[0].Name != "static" {
+		t.Errorf("expected static registry entry, got %v", plugins)
+	}
+	if len(plugins[0].Platforms) != 1 || plugins[0].Platforms[0] != "linux/amd64" {
+		t.Errorf("expected platforms array to be decoded, got %v", plugins[0].Platforms)
+	}
+}
+
+func TestSupportsPlatform(t *testing.T) {
+	tests := []struct {
+		name     string
+		plugin   RemotePlugin
+		platform string
+		want     bool
+	}{
+		{"no platform declared matches any", RemotePlugin{}, "linux/amd64", true},
+		{"exact single platform", RemotePlugin{Platform: "linux/amd64"}, "linux/amd64", true},
+		{"mismatched single platform", RemotePlugin{Platform: "darwin/arm64"}, "linux/amd64", false},
+		{"any wildcard matches", RemotePlugin{Platform: "any"}, "windows/amd64", true},
+		{"platforms array match", RemotePlugin{Platforms: []string{"linux/amd64", "linux/arm64"}}, "linux/arm64", true},
+		{"platforms array no match", RemotePlugin{Platforms: []string{"linux/amd64"}}, "linux/arm64", false},
+		{"platforms case insensitive", RemotePlugin{Platforms: []string{"Linux/amd64"}}, "linux/amd64", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := supportsPlatform(tt.plugin, tt.platform); got != tt.want {
+				t.Errorf("supportsPlatform(%v, %q) = %v, want %v", tt.plugin, tt.platform, got, tt.want)
+			}
+		})
 	}
 }

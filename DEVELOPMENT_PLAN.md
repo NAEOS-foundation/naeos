@@ -71,8 +71,8 @@
 
 | Metrik | Saat Ini | Target Q1 2027 | Target Q3 2027 |
 |--------|----------|----------------|----------------|
-| Test coverage (overall) | ✅ 81.5% | ≥80% | ≥85% |
-| Test coverage (target packages) | ✅ ≥80% (7 packages: watch, rollback, cicd, distributed, gateway, websocket, eventsourcing) | — | — |
+| Test coverage (overall) | ✅ 81.5%+ | ≥80% | ≥85% |
+| Test coverage (target packages) | ✅ ≥80% (13 packages: watch 84.8%, rollback 85.7%, cicd 88.3%, distributed 84.4%, gateway 83.9%, eventsourcing 83.7%, **websocket 95.8%**, **configschema 94.7%**, **monitoring 93.4%**, **configreload 91.9%**, **database 87.1%**, **auth 92.5%**, supabase 84.1%) | — | — |
 | CLI commands test coverage | ✅ 80.8% (693 test, 39 command) | 100% | 100% |
 | Website pages (EN) | ~59 | 35+ (wiki migrated) | 40+ |
 | Blog posts | 8 | 6+ | 12+ |
@@ -116,7 +116,16 @@
 - **CLI tests added** — 9 test baru untuk diff, build, lsp, dx, vscode-gen commands
 - **Rollback coverage boost** — 73.9% → 85.7% (merge-restore, walk errors, import traversal/symlink, export failures, List/Latest edge cases)
 - **CLI coverage expanded** — 31 test baru untuk version, config, init, status, health, template, plugin, schema, compliance, search, ai, security, docgen, auth, dashboard, observability, events, mcp, validate, workflow, supabase, marketplace, watch, rollback, lock, migrate, deploy, run, create, lint, cicd, gateway, sso, profile, artifacts
-- **Plugin search fix** — `naeos plugin search` terhubung ke `RemoteRegistry` (dari hardcoded stub)
+- **Plugin search fix** — `naeos plugin search` terhubung ke `RemoteRegistry` (dari hardcoded stub); default URL kini menunjuk GitHub Pages static registry (`naeos-foundation.github.io/naeos/plugins/registry.json`), URL `.json` dieksekusi langsung, `platforms` array dari workflow discovery di-decode, dokuments & contoh diperbarui dari `registry.naeos.dev` fiktif
+- **Database coverage boost** — `internal/database` 59.7% → 87.1%: 25 test baru untuk connected paths MySQL/PostgreSQL/Supabase via SQLite in-memory + `go-sqlmock` (Exec/Query/QueryRow, transaksi, Migrate/Rollback success+error, Supabase REST *Context, query cache, RealSupabaseTx)
+- **Auth coverage boost** — `internal/auth` 66.8% → 92.5%: 16 test baru (LDAP Authenticate via mock BER TCP server, bind success/failure/user-bind/TLS, OIDC Discover/ExchangeCode/GetUser dengan RSA-signed JWT + JWKS, verifyIDToken, SAML loadCertFile)
+- **DB adapter `Begin()` bugfix** — 4 adapter real memanggil `defer cancel()` pada ctx `BeginTx` sehingga semua transaksi langsung invalid; sekarang `context.Background()`
+- **LDAP bind parsing bugfix** — pemeriksaan `resp[n-2] == 0x0a` tidak pernah cocok dengan BindResponse nyata (tag ENUMERATED di `n-3`); sekarang memindai `0x0a 0x01` result code
+- **LDAP search parsing rewrite** — `parseLDAPResult` pakai BER decoder minimal (`parseBER`), attribute values diekstrak dari `SearchResultEntry` standar; fuzz targets di-konsolidasi ke `FuzzParseBER`
+- **Websocket coverage boost** — 80.1% → 95.8%: HTTP upgrade success/failure, readPump (ping→pong, invalid JSON, unknown type, interceptor block), writePump broadcast + close frame, Stop dengan connected client, disconnect unregister (13 test HTTP end-to-end via gorilla dialer, sebelumnya hanya di build-tag integration)
+- **Configschema coverage boost** — 80.2% → 94.7%: AddValidator/AddCustomType, ValidateFile (YAML/JSON/unknown-ext/missing), ValidateData (yaml/yml/json + invalid), LoadSchemaFromFile (yaml/json/missing/bad parse)
+- **Monitoring coverage boost** — 81.7% → 93.4%: GaugeSet edge cases (unknown family/existing/new/cardinality), statusResponseWriter (WriteHeader/Write/Unwrap), RecordRuntime, StartRuntimeCollector, ObservePipelineDuration, IncSpecValidations, IncArtifacts, SetWebSocketConnections, MetricsObserver lifecycle, middleware status capture
+- **Configreload coverage boost** — 81.9% → 91.9%: GetString/GetInt/GetBool type-mismatch, LastModified, HotReloader Start twice/invalid dir/Stop not-running, loop error channel, non-matching event, matchesConfigFile, closed watcher channels terminate loop
 - **WASM coverage boost** — 27% → 98% (getter tests, marshal error path)
 - **LSP coverage boost** — 74% → 86% (CodeAction, Hover, Definition, handleMessage)
 - **Audit coverage boost** — 78% → 81% (ExportCSV, escapeCSV, edge cases)

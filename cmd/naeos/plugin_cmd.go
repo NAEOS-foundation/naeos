@@ -325,7 +325,7 @@ func newPluginSearchCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&registryURL, "registry", "https://registry.naeos.dev", "registry base URL")
+	cmd.Flags().StringVar(&registryURL, "registry", marketplace.DefaultRegistryURL, "registry base URL")
 	return cmd
 }
 
