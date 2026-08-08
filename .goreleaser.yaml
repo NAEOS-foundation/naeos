@@ -37,6 +37,6 @@ dockers:
   - image_templates:
       - "ghcr.io/naeos-foundation/naeos:{{ .Version }}-amd64"
       - "ghcr.io/naeos-foundation/naeos:latest"
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.release
     build_flag_templates:
       - "--platform=linux/amd64"
