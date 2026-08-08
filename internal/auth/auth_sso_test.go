@@ -438,57 +438,48 @@ func TestEncodeOctetString(t *testing.T) {
 	}
 }
 
-func TestParseLDAPSet(t *testing.T) {
-	data := []byte{
-		0x31, 0x05, // SET of length 5
-		0x04, 0x03, 'a', 'b', 'c', // OCTET STRING "abc"
-		0x31, 0x06, // SET of length 6
-		0x04, 0x04, 'd', 'e', 'f', 'g', // OCTET STRING "defg"
-	}
-	_, items := parseLDAPSet(data)
-	if len(items) != 2 {
-		t.Errorf("expected 2 items, got %d", len(items))
-	}
-}
-
-func TestParseLDAPSequence(t *testing.T) {
+func TestParseBER(t *testing.T) {
 	data := []byte{
 		0x30, 0x05, // SEQUENCE of length 5
 		0x04, 0x03, 'a', 'b', 'c', // OCTET STRING "abc"
+		0x31, 0x06, // SET of length 6
+		0x04, 0x04, 'd', 'e', 'f', 'g', // OCTET STRING "defg"
+		0x30, 0x08, // SEQUENCE of length 8
+		0x04, 0x01, 'x', 0x31, 0x03, 0x04, 0x01, 'y', // nested
 	}
-	pos, items := parseLDAPSequence(data)
-	if pos != len(data) {
-		t.Errorf("expected pos=%d, got %d", len(data), pos)
+	items := parseBER(data)
+	if len(items) != 3 {
+		t.Fatalf("expected 3 items, got %d", len(items))
 	}
-	if len(items) != 1 {
-		t.Errorf("expected 1 item, got %d", len(items))
+	first := parseBER(items[0].content)
+	if items[0].tag != 0x30 || len(first) != 1 || string(first[0].content) != "abc" {
+		t.Errorf("unexpected first item: %+v", items[0])
+	}
+	second := parseBER(items[1].content)
+	if items[1].tag != 0x31 || len(second) != 1 || string(second[0].content) != "defg" {
+		t.Errorf("unexpected second item: %+v", items[1])
+	}
+	if items[2].tag != 0x30 {
+		t.Errorf("unexpected third tag: %d", items[2].tag)
+	}
+	nested := parseBER(items[2].content)
+	if len(nested) != 2 || nested[0].tag != 0x04 || string(nested[0].content) != "x" || nested[1].tag != 0x31 {
+		t.Errorf("unexpected nested parse: %+v", nested)
+	}
+	inner := parseBER(nested[1].content)
+	if len(inner) != 1 || inner[0].tag != 0x04 || string(inner[0].content) != "y" {
+		t.Errorf("unexpected inner parse: %+v", inner)
 	}
 }
 
-func TestParseLDAPString(t *testing.T) {
-	tests := []struct {
-		name string
-		data []byte
-		want []byte
-	}{
-		{"valid", []byte{0x04, 0x03, 'a', 'b', 'c'}, []byte("abc")},
-		{"too short", []byte{0x04}, nil},
-		{"truncated", []byte{0x04, 0x05, 'a', 'b'}, nil},
-		{"empty", []byte{0x04, 0x00}, []byte{}},
+func TestParseBERTruncated(t *testing.T) {
+	items := parseBER([]byte{0x04, 0x05, 'a', 'b'})
+	if len(items) != 0 {
+		t.Errorf("expected no items for truncated data, got %d", len(items))
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := parseLDAPString(tt.data)
-			if len(got) != len(tt.want) {
-				t.Errorf("parseLDAPString(%v) = %v, want %v", tt.data, got, tt.want)
-				return
-			}
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("parseLDAPString(%v)[%d] = %d, want %d", tt.data, i, got[i], tt.want[i])
-				}
-			}
-		})
+	items = parseBER([]byte{0x04})
+	if len(items) != 0 {
+		t.Errorf("expected no items for lone tag, got %d", len(items))
 	}
 }
 

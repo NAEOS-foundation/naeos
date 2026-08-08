@@ -385,9 +385,7 @@ func (s *RealSupabase) Begin() (Transaction, error) {
 	if s.restMode {
 		return nil, naeoserr.New(naeoserr.ErrDatabase, "transactions not supported in Supabase REST API mode; use direct PostgreSQL connection instead")
 	}
-	ctx, cancel := s.defaultContext()
-	defer cancel()
-	return s.BeginTx(ctx)
+	return s.BeginTx(context.Background())
 }
 
 func (s *RealSupabase) BeginTx(ctx context.Context) (Transaction, error) {

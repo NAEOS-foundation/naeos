@@ -195,9 +195,7 @@ func (s *RealSQLite) QueryRowContext(ctx context.Context, query string, args ...
 }
 
 func (s *RealSQLite) Begin() (Transaction, error) {
-	ctx, cancel := s.defaultContext()
-	defer cancel()
-	return s.BeginTx(ctx)
+	return s.BeginTx(context.Background())
 }
 
 func (s *RealSQLite) BeginTx(ctx context.Context) (Transaction, error) {
