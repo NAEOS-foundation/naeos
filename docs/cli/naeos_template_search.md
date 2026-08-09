@@ -20,7 +20,7 @@ naeos template search [query] [flags]
 ```
   -h, --help              help for search
   -o, --output string     output format: text, json (default "text")
-      --registry string   template registry URL (default "https://naeos.dev/templates/registry.json")
+      --registry string   template registry URL (default "https://registry.naeos.dev/templates/registry.json")
 ```
 
 ### Options inherited from parent commands

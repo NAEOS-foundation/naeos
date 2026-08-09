@@ -39,7 +39,7 @@ func main() {
 
 	root := map[string]any{
 		"$schema":     "http://json-schema.org/draft-07/schema#",
-		"$id":         "https://naeos.dev/schemaregistry/neir.json",
+		"$id":         "https://registry.naeos.dev/schemaregistry/neir.json",
 		"title":       "NEIR Specification",
 		"description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
 		"type":        "object",

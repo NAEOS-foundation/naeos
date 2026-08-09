@@ -10,7 +10,7 @@ naeos schema info [flags]
 
 ```
   -h, --help              help for info
-      --registry string   schema registry URL (default "https://naeos.dev/schemaregistry/latest.json")
+      --registry string   schema registry URL (default "https://registry.naeos.dev/schemaregistry/latest.json")
 ```
 
 ### Options inherited from parent commands

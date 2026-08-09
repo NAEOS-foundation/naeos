@@ -1,4 +1,4 @@
-baseURL: https://naeos.dev/
+baseURL: https://docs.naeos.dev/
 title: NAEOS — Declarative Platform Engineering System
 copyright: Copyright © 2026 NAEOS Foundation. All rights reserved.
 enableRobotsTXT: true
@@ -93,7 +93,7 @@ params:
     backgroundColor: "#0a0a0a"
     themeColor: "#00ff88"
   interactiveTerminal:
-    websocketUrl: wss://naeos-demo.fly.dev/ws
+    websocketUrl: wss://ws.naeos.dev/ws
 
 permalinks:
   blog: /blog/:slug/

@@ -15,3 +15,8 @@
 
 [context.branch-deploy]
   environment = { HUGO_ENV = "production" }
+
+[[redirects]]
+  from = "https://naeos.dev/*"
+  to = "https://docs.naeos.dev/:splat"
+  status = 301

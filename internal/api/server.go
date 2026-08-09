@@ -179,11 +179,15 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 		Auth:       authCfg,
 		routePerms: routePerms,
 		CORS: &CORSConfig{
-			AllowedOrigins: []string{
-				"http://localhost:3000",
-				"http://localhost:5173",
-				"http://localhost:8080",
-			},
+		AllowedOrigins: []string{
+			"https://naeos.dev",
+			"https://api.naeos.dev",
+			"https://ws.naeos.dev",
+			"https://docs.naeos.dev",
+			"http://localhost:3000",
+			"http://localhost:5173",
+			"http://localhost:8080",
+		},
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders: []string{"Content-Type", "Authorization"},
 		},

@@ -17,8 +17,32 @@ description: Current status of NAEOS services and infrastructure.
   <div class="status-card">
     <span class="status-dot operational"></span>
     <div>
-      <h4>Website (naeos.dev)</h4>
+      <h4>Docs (docs.naeos.dev)</h4>
       <p>Documentation, blog, and community hub</p>
+    </div>
+    <span class="badge badge-success">Operational</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>API (api.naeos.dev)</h4>
+      <p>REST API endpoints and external integrations</p>
+    </div>
+    <span class="badge badge-success">Operational</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>Registry (registry.naeos.dev)</h4>
+      <p>Plugin, template, and schema registries</p>
+    </div>
+    <span class="badge badge-success">Operational</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>Realtime (ws.naeos.dev)</h4>
+      <p>WebSocket streaming for live dashboards</p>
     </div>
     <span class="badge badge-success">Operational</span>
   </div>

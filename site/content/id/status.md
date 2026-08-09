@@ -17,8 +17,32 @@ description: Status layanan dan infrastruktur NAEOS saat ini.
   <div class="status-card">
     <span class="status-dot operational"></span>
     <div>
-      <h4>Situs Web (naeos.dev)</h4>
+      <h4>Docs (docs.naeos.dev)</h4>
       <p>Dokumentasi, blog, dan pusat komunitas</p>
+    </div>
+    <span class="badge badge-success">Beroperasi</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>API (api.naeos.dev)</h4>
+      <p>Endpoint REST API dan integrasi eksternal</p>
+    </div>
+    <span class="badge badge-success">Beroperasi</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>Registry (registry.naeos.dev)</h4>
+      <p>Registry plugin, template, dan skema</p>
+    </div>
+    <span class="badge badge-success">Beroperasi</span>
+  </div>
+  <div class="status-card">
+    <span class="status-dot operational"></span>
+    <div>
+      <h4>Realtime (ws.naeos.dev)</h4>
+      <p>Streaming WebSocket untuk dashboard langsung</p>
     </div>
     <span class="badge badge-success">Beroperasi</span>
   </div>

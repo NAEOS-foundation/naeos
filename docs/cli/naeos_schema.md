@@ -12,7 +12,7 @@ the canonical schema, or query schema version information.
 
 Examples:
   naeos schema validate spec.yaml
-  naeos schema validate spec.yaml --registry https://naeos.dev/schemaregistry/latest.json
+  naeos schema validate spec.yaml --registry https://registry.naeos.dev/schemaregistry/latest.json
   naeos schema validate spec.json --output json
   naeos schema info
 

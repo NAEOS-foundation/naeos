@@ -23,7 +23,7 @@ the canonical schema, or query schema version information.
 
 Examples:
   naeos schema validate spec.yaml
-  naeos schema validate spec.yaml --registry https://naeos.dev/schemaregistry/latest.json
+  naeos schema validate spec.yaml --registry https://registry.naeos.dev/schemaregistry/latest.json
   naeos schema validate spec.json --output json
   naeos schema list
   naeos schema info`,
@@ -52,7 +52,7 @@ that the spec conforms to it, including required fields and enum values.
 Examples:
   naeos schema validate spec.yaml
   naeos schema validate spec.json --output json
-  naeos schema validate spec.naeos.yaml --registry https://naeos.dev/schemaregistry/v1/neir.json`,
+  naeos schema validate spec.naeos.yaml --registry https://registry.naeos.dev/schemaregistry/v1/neir.json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			specPath := args[0]

@@ -24,7 +24,7 @@ Add a `$schema` field to your NEIR specification file:
 
 ```yaml
 # naeos.yaml
-$schema: https://naeos.dev/schemaregistry/latest.json
+$schema: https://registry.naeos.dev/schemaregistry/latest.json
 project: my-project
 modules:
   - name: core
@@ -47,7 +47,7 @@ naeos schema validate spec.json --output json
 Fetch the schema programmatically:
 
 ```bash
-curl -s https://naeos.dev/schemaregistry/latest.json
+curl -s https://registry.naeos.dev/schemaregistry/latest.json
 ```
 
 ## Versioning
