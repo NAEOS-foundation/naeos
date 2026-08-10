@@ -3,6 +3,7 @@ package audit
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -258,5 +259,47 @@ func TestAuditEventMetadata(t *testing.T) {
 	events := auditor.Events()
 	if events[0].Metadata["key"] != "value" {
 		t.Errorf("expected metadata key=value, got %v", events[0].Metadata)
+	}
+}
+
+func TestMemoryAuditorExportCSV(t *testing.T) {
+	auditor := NewMemoryAuditor()
+	auditor.Log(AuditEvent{UserID: "u1", Action: "create", Resource: "project", Status: "success"})
+	auditor.Log(AuditEvent{UserID: "u2", Action: "delete", Resource: "project", Status: "failed"})
+
+	path := filepath.Join(t.TempDir(), "audit.csv")
+	err := auditor.ExportCSV(path)
+	if err != nil {
+		t.Fatalf("ExportCSV: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read csv: %v", err)
+	}
+	content := string(data)
+	if !strings.Contains(content, "u1") || !strings.Contains(content, "create") {
+		t.Errorf("unexpected csv content: %s", content)
+	}
+	if !strings.HasPrefix(content, "id,timestamp,") {
+		t.Errorf("expected csv header, got: %s", content[:20])
+	}
+}
+
+func TestEscapeCSV(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"simple", "simple"},
+		{"has,comma", `"has,comma"`},
+		{"has\"quote", `"has""quote"`},
+		{"has\nnewline", "\"has\nnewline\""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := escapeCSV(tt.input)
+		if got != tt.want {
+			t.Errorf("escapeCSV(%q) = %q, want %q", tt.input, got, tt.want)
+		}
 	}
 }

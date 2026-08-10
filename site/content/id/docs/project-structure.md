@@ -1,5 +1,6 @@
 ---
 title: Struktur Proyek
+slug: project-structure
 description: Layout repositori dan organisasi direktori untuk kode sumber NAEOS.
 weight: 24
 ---

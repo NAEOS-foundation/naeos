@@ -1,5 +1,6 @@
 ---
 title: Model NEIR
+slug: neir-model
 description: NAEOS Engineering Intermediate Representation — model sistem kanonikal.
 ---
 

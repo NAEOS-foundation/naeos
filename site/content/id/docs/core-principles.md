@@ -1,5 +1,6 @@
 ---
 title: Prinsip Inti
+slug: core-principles
 description: 8 prinsip engineering yang memandu semua keputusan desain NAEOS.
 weight: 2
 ---

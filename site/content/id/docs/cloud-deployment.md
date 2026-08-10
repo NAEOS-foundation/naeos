@@ -1,5 +1,6 @@
 ---
 title: Deployment Cloud
+slug: cloud-deployment
 description: Deploy proyek yang di-generate NAEOS ke AWS, GCP, atau Azure dengan perencanaan dan provisioning cloud terintegrasi.
 weight: 12
 ---

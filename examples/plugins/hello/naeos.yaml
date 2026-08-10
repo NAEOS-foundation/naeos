@@ -1,0 +1,19 @@
+name: hello
+version: 0.1.0
+description: Canonical hello-world plugin: ping, describe, and greet.
+author: NAEOS Foundation
+license: Apache-2.0
+type: wasm
+tags: [example, hello]
+actions:
+  - name: ping
+    description: Return a health status.
+    returns: object
+  - name: describe
+    description: Return plugin metadata.
+    returns: object
+  - name: greet
+    description: Greet a person by name.
+    params:
+      name: string
+    returns: object

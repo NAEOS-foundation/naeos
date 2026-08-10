@@ -186,6 +186,9 @@ func (h *Handler) lookupDocumentation(word string) string {
 		"project":        "**project** (required)\nThe name of your project. Must be lowercase alphanumeric with hyphens.\n\nExample: `project: e-commerce-platform`",
 		"version":        "**version**\nProject version in semver format.\n\nExample: `version: 1.0.0`",
 		"description":    "**description**\nA short description of the project.",
+		"license":        "**license**\nProject license identifier (e.g. MIT, Apache-2.0).",
+		"repository":     "**repository**\nURL to the project source repository.",
+		"tags":           "**tags**\nList of keyword tags for the project.",
 		"modules":        "**modules**\nList of code modules in the project.\n\nEach module has: `name`, `path`, `description`, `dependencies`",
 		"services":       "**services**\nList of runnable services.\n\nEach service has: `name`, `kind`, `port`, `description`, `endpoints`",
 		"architecture":   "**architecture**\nArchitecture pattern and principles.\n\nPatterns: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
@@ -200,6 +203,7 @@ func (h *Handler) lookupDocumentation(word string) string {
 		"action":         "**action**\nHandler function name.\n\nExample: `action: login`",
 		"name":           "**name**\nIdentifier name.",
 		"pattern":        "**pattern**\nArchitecture pattern.\n\nValues: `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`",
+		"principles":     "**principles**\nList of architecture principles (e.g. DI, SRP, OCP).",
 		"strategy":       "**strategy**\nDeployment or testing strategy.",
 		"languages":      "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
 		"coverage":       "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
@@ -213,6 +217,11 @@ func (h *Handler) lookupDocumentation(word string) string {
 		"database":       "**database**\nDatabase configuration.\n\nSee `storage` for data store definitions.\n\nExample:\n```yaml\ndatabase:\n  type: postgres\n  migrations:\n    - name: init\n      path: ./migrations/001_init.sql\n```",
 		"monitoring":     "**monitoring**\nMonitoring and observability configuration.\n\nSections:\n- `metrics` — Metrics collection (prometheus, datadog)\n- `logging` — Logging configuration\n- `tracing` — Distributed tracing\n\nExample:\n```yaml\nmonitoring:\n  metrics:\n    provider: prometheus\n  logging:\n    level: info\n```",
 		"logging":        "**logging**\nLogging configuration.\n\nSections:\n- `level` — Log level (debug, info, warn, error)\n- `format` — Log format (json, text)\n- `output` — Log output destination\n\nExample:\n```yaml\nlogging:\n  level: info\n  format: json\n```",
+		"environments":   "**environments**\nList of deployment environments (e.g. dev, staging, production).",
+		"output_dir":     "**output_dir**\nOutput directory for generated code.",
+		"provider":       "**provider**\nCloud provider.\n\nValues: `aws`, `gcp`, `azure`, `local`",
+		"region":         "**region**\nCloud region identifier.",
+		"protocol":       "**protocol**\nAPI protocol.\n\nValues: `http`, `grpc`, `graphql`, `websocket`",
 	}
 
 	if info, ok := docs[word]; ok {

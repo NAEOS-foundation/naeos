@@ -238,7 +238,7 @@ func (s *Server) writeMessage(msg any) {
 		slog.Error("failed to write body", "error", err)
 		return
 	}
-	if f, ok := s.writer.(*os.File); ok {
+	if f, ok := s.writer.(*os.File); ok && f != os.Stdout {
 		if err := f.Sync(); err != nil {
 			slog.Error("failed to sync file", "error", err)
 		}

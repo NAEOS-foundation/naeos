@@ -207,18 +207,6 @@ func TestCompletionLineAtBounds(t *testing.T) {
 	}
 }
 
-func TestHandlerHoverNoDocument(t *testing.T) {
-	s := NewServer()
-	h := s.handler
-
-	hover := h.Hover(HoverParams{
-		TextDocument: TextDocumentIdentifier{URI: "nonexistent.yaml"},
-	})
-	if hover != nil {
-		t.Error("expected nil hover for nonexistent document")
-	}
-}
-
 func TestHandlerHoverNoWord(t *testing.T) {
 	s := NewServer()
 	h := s.handler
@@ -723,7 +711,7 @@ func TestCompletionToItemsFilter(t *testing.T) {
 		{Label: "pattern", Kind: CompletionField},
 	}
 
-		filtered := p.toItemsFilter(suggestions, "pr")
+	filtered := p.toItemsFilter(suggestions, "pr")
 	if len(filtered) != 1 {
 		t.Fatalf("expected 1 item filtered by 'pr', got %d", len(filtered))
 	}

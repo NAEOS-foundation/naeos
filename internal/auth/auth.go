@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -230,89 +231,62 @@ type OAuth2ProviderInterface interface {
 	GetUser(token *OAuth2Token) (*OAuth2User, error)
 }
 
-// Google OAuth2
+// GenericOAuth2 is a configurable OAuth2 provider.
+type GenericOAuth2 struct {
+	Config          *OAuth2Provider
+	AuthURLTemplate string
+}
 
+// GoogleOAuth2 is a Google OAuth2 provider.
 type GoogleOAuth2 struct {
-	Config *OAuth2Provider
+	*GenericOAuth2
+}
+
+// GitHubOAuth2 is a GitHub OAuth2 provider.
+type GitHubOAuth2 struct {
+	*GenericOAuth2
 }
 
 func NewGoogleOAuth2(clientID, clientSecret, redirectURL string) *GoogleOAuth2 {
 	return &GoogleOAuth2{
-		Config: &OAuth2Provider{
-			Name:         "google",
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  redirectURL,
-			Scopes:       []string{"openid", "email", "profile"},
+		GenericOAuth2: &GenericOAuth2{
+			Config: &OAuth2Provider{
+				Name:         "google",
+				ClientID:     clientID,
+				ClientSecret: clientSecret,
+				RedirectURL:  redirectURL,
+				Scopes:       []string{"openid", "email", "profile"},
+			},
+			AuthURLTemplate: "https://accounts.google.com/o/oauth2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s",
 		},
 	}
-}
-
-func (g *GoogleOAuth2) Name() string {
-	return "google"
-}
-
-func (g *GoogleOAuth2) GetAuthorizationURL(state string) string {
-	return fmt.Sprintf(
-		"https://accounts.google.com/o/oauth2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s",
-		g.Config.ClientID,
-		g.Config.RedirectURL,
-		"openid email profile",
-		state,
-	)
-}
-
-func (g *GoogleOAuth2) ExchangeCode(code string) (*OAuth2Token, error) {
-	// Simulated exchange
-	return &OAuth2Token{
-		AccessToken:  generateToken(),
-		TokenType:    "Bearer",
-		RefreshToken: generateToken(),
-		ExpiresAt:    time.Now().Add(time.Hour),
-	}, nil
-}
-
-func (g *GoogleOAuth2) GetUser(token *OAuth2Token) (*OAuth2User, error) {
-	return &OAuth2User{
-		ID:    "google-user-1",
-		Email: "user@gmail.com",
-		Name:  "Google User",
-	}, nil
-}
-
-// GitHub OAuth2
-
-type GitHubOAuth2 struct {
-	Config *OAuth2Provider
 }
 
 func NewGitHubOAuth2(clientID, clientSecret, redirectURL string) *GitHubOAuth2 {
 	return &GitHubOAuth2{
-		Config: &OAuth2Provider{
-			Name:         "github",
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  redirectURL,
-			Scopes:       []string{"user:email"},
+		GenericOAuth2: &GenericOAuth2{
+			Config: &OAuth2Provider{
+				Name:         "github",
+				ClientID:     clientID,
+				ClientSecret: clientSecret,
+				RedirectURL:  redirectURL,
+				Scopes:       []string{"user:email"},
+			},
+			AuthURLTemplate: "https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 		},
 	}
 }
 
-func (g *GitHubOAuth2) Name() string {
-	return "github"
+func (g *GenericOAuth2) Name() string {
+	return g.Config.Name
 }
 
-func (g *GitHubOAuth2) GetAuthorizationURL(state string) string {
-	return fmt.Sprintf(
-		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s&scope=%s&state=%s",
-		g.Config.ClientID,
-		g.Config.RedirectURL,
-		"user:email",
-		state,
-	)
+func (g *GenericOAuth2) GetAuthorizationURL(state string) string {
+	scopeStr := strings.Join(g.Config.Scopes, " ")
+	return fmt.Sprintf(g.AuthURLTemplate, g.Config.ClientID, g.Config.RedirectURL, scopeStr, state)
 }
 
-func (g *GitHubOAuth2) ExchangeCode(code string) (*OAuth2Token, error) {
+func (g *GenericOAuth2) ExchangeCode(code string) (*OAuth2Token, error) {
 	return &OAuth2Token{
 		AccessToken:  generateToken(),
 		TokenType:    "Bearer",
@@ -321,11 +295,11 @@ func (g *GitHubOAuth2) ExchangeCode(code string) (*OAuth2Token, error) {
 	}, nil
 }
 
-func (g *GitHubOAuth2) GetUser(token *OAuth2Token) (*OAuth2User, error) {
+func (g *GenericOAuth2) GetUser(token *OAuth2Token) (*OAuth2User, error) {
 	return &OAuth2User{
-		ID:    "github-user-1",
-		Email: "user@github.com",
-		Name:  "GitHub User",
+		ID:    g.Config.Name + "-user-1",
+		Email: "user@" + g.Config.Name + ".com",
+		Name:  g.Config.Name + " User",
 	}, nil
 }
 

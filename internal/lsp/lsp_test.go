@@ -990,3 +990,132 @@ func TestHandleRangeFormatting(t *testing.T) {
 	})
 	s.handleMessage(`{"jsonrpc":"2.0","id":1,"method":"textDocument/rangeFormatting","params":{"textDocument":{"uri":"test.yaml"},"range":{"start":{"line":0,"character":0},"end":{"line":1,"character":0}},"options":{"tabSize":2,"insertSpaces":true}}}`)
 }
+
+func TestHandlerCodeActionNoDocument(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+	actions := h.CodeAction(CodeActionParams{
+		TextDocument: TextDocumentIdentifier{URI: "nonexistent.yaml"},
+	})
+	if actions != nil {
+		t.Error("expected nil for nonexistent document")
+	}
+}
+
+func TestHandlerHoverNoDocument(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+	hover := h.Hover(HoverParams{
+		TextDocument: TextDocumentIdentifier{URI: "nonexistent.yaml"},
+		Position:     Position{Line: 0, Character: 0},
+	})
+	if hover != nil {
+		t.Error("expected nil hover for nonexistent document")
+	}
+}
+
+func TestHandlerHoverUnknownWord(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+	spec := "project: myapp\n"
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: spec},
+	})
+
+	hover := h.Hover(HoverParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+		Position:     Position{Line: 0, Character: 50},
+	})
+	if hover != nil {
+		t.Error("expected nil hover for position beyond line length")
+	}
+}
+
+func TestHandlerHoverExistingWord(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+	spec := "project: myapp\nservices:\n  - name: api\n    kind: http\n"
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: spec},
+	})
+
+	hover := h.Hover(HoverParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+		Position:     Position{Line: 1, Character: 2},
+	})
+	if hover == nil {
+		t.Fatal("expected hover result for 'services'")
+	}
+	if hover.Contents.Value == "" {
+		t.Error("expected non-empty hover content")
+	}
+}
+
+func TestHandlerDefinitionNotFound(t *testing.T) {
+	s := NewServer()
+	h := s.handler
+	spec := "project: myapp\n"
+	h.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: spec},
+	})
+
+	loc := h.Definition(DefinitionParams{
+		TextDocument: TextDocumentIdentifier{URI: "test.yaml"},
+		Position:     Position{Line: 99, Character: 0},
+	})
+	if loc != nil {
+		t.Error("expected nil for out-of-range position")
+	}
+}
+
+func TestHandleHoverMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp\nservices:\n  - name: api\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":4,"method":"textDocument/hover","params":{"textDocument":{"uri":"test.yaml"},"position":{"line":1,"character":2}}}`)
+}
+
+func TestHandleDefinitionMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp\nservices:\n  - name: api\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":5,"method":"textDocument/definition","params":{"textDocument":{"uri":"test.yaml"},"position":{"line":1,"character":2}}}`)
+}
+
+func TestHandleCodeActionMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":6,"method":"textDocument/codeAction","params":{"textDocument":{"uri":"test.yaml"},"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":7}},"context":{"diagnostics":[{"code":"missing_project","range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}}}]}}}`)
+}
+
+func TestHandleDidChangeMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"test.yaml","version":2},"contentChanges":[{"text":"project: myapp\nservices:\n  - name: api\n"}]}}`)
+}
+
+func TestHandleDidCloseMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"test.yaml"}}}`)
+	_, ok := s.documents.Get("test.yaml")
+	if ok {
+		t.Error("expected document to be removed after close")
+	}
+}
+
+func TestHandleDocumentSymbolMessage(t *testing.T) {
+	s := NewServer()
+	s.handler.DidOpen(DidOpenTextDocumentParams{
+		TextDocument: TextDocumentItem{URI: "test.yaml", Text: "project: myapp\nservices:\n  - name: api\n"},
+	})
+	s.handleMessage(`{"jsonrpc":"2.0","id":7,"method":"textDocument/documentSymbol","params":{"textDocument":{"uri":"test.yaml"}}}`)
+}

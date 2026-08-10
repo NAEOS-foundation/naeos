@@ -83,6 +83,30 @@ See how teams are using NAEOS to build, validate, and evolve their systems. Want
   </div>
 </div>
 
+## Try It Yourself — Demo Project
+
+The official demo project lives in the repository: [`cmd/naeos/demo-app/`](https://github.com/NAEOS-foundation/naeos/tree/main/cmd/naeos/demo-app). It is a hexagonal-architecture Go app described entirely by a spec.
+
+```bash
+# 1. Build artifacts from the demo spec
+naeos build --config cmd/naeos/demo-app/config.yaml --input cmd/naeos/demo-app/spec.yaml
+
+# 2. Run the full pipeline with traceable output
+naeos run --config cmd/naeos/demo-app/config.yaml --input cmd/naeos/demo-app/spec.yaml
+
+# 3. Distribute the build across workers
+naeos distributed --config cmd/naeos/demo-app/config.yaml --workers 4
+```
+
+Prefer to start from a template? Scaffold a full microservices starter:
+
+```bash
+naeos template init microservices-go -o .
+naeos build --config naeos.yaml --input spec.yaml
+```
+
+Both projects are open source and small enough to read in minutes — a great way to see NAEOS in action.
+
 ## Why Teams Choose NAEOS
 
 <span class="showcase-quote">"NAEOS replaced three separate code generators and a wiki. One YAML file now drives our project scaffolding."</span>

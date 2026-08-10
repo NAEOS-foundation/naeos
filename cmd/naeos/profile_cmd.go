@@ -23,6 +23,7 @@ func newProfileCommand() *cobra.Command {
 	cmd.AddCommand(newProfileApplyCommand())
 	cmd.AddCommand(newProfileCompareCommand())
 	cmd.AddCommand(newProfileCategoriesCommand())
+	cmd.AddCommand(newProfileRunCommand())
 	return cmd
 }
 

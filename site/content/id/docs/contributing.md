@@ -1,5 +1,6 @@
 ---
 title: Berkontribusi
+slug: contributing
 description: Panduan untuk berkontribusi ke proyek NAEOS.
 weight: 20
 ---

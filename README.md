@@ -225,6 +225,8 @@ docs/               # Documentation (56 NES specs)
 
 ## Documentation
 
+- [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English)
+- [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia)
 - [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — document index
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines

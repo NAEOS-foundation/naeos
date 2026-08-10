@@ -1,5 +1,6 @@
 ---
 title: Glosarium
+slug: glossary
 description: Istilah-istilah penting dan definisinya yang digunakan di seluruh platform NAEOS.
 weight: 22
 ---

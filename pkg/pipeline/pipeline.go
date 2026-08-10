@@ -2,11 +2,12 @@ package pipeline
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/generation/adapters"
@@ -31,6 +32,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 	cfgpkg "github.com/NAEOS-foundation/naeos/pkg/config"
 	"github.com/NAEOS-foundation/naeos/pkg/kernel"
+
+	"gopkg.in/yaml.v3"
 )
 
 type ParseCache interface {
@@ -44,31 +47,36 @@ type ParseCache interface {
 }
 
 type Config struct {
-	Name       string
-	Mode       string
-	Verbose    bool
-	DryRun     bool
-	OutputDir  string
-	Languages  []string
-	Parallel   *bool
-	Profiling  bool
-	Parser     parser.Parser
-	Normalizer normalizer.Normalizer
-	Resolver   resolver.Resolver
-	Builder    builder.Builder
-	Validator  validator.Validator
-	Scheduler  scheduler.Scheduler
-	Generator  engine.GeneratorEngine
-	Renderer   renderers.Renderer
-	Graph      *graph.PlannerGraph
-	Registry   *registry.Registry
-	Evaluator  policy.Evaluator
-	Reviewer   review.Reviewer
-	Kernel     *kernel.Kernel
-	Policies   []policy.Rule
-	Hooks      *Hooks
-	Observer   PipelineObserver
-	Cache      ParseCache
+	Name         string
+	Mode         string
+	Verbose      bool
+	DryRun       bool
+	OutputDir    string
+	Languages    []string
+	Parallel     *bool
+	Profiling    bool
+	Parser       parser.Parser
+	Normalizer   normalizer.Normalizer
+	Resolver     resolver.Resolver
+	Builder      builder.Builder
+	Validator    validator.Validator
+	Scheduler    scheduler.Scheduler
+	Generator    engine.GeneratorEngine
+	Renderer     renderers.Renderer
+	Graph        *graph.PlannerGraph
+	Registry     *registry.Registry
+	Evaluator    policy.Evaluator
+	Reviewer     review.Reviewer
+	Kernel       *kernel.Kernel
+	Policies     []policy.Rule
+	Hooks        *Hooks
+	Observer     PipelineObserver
+	Cache        ParseCache
+	StageCache   *StageCache
+	LazyBuild    bool
+	Profile      *profiling.PipelineProfile
+	MemProfile   *profiling.MemProfiler
+	SchemaSource string
 }
 
 type HookFunc func(ctx *HookContext) error
@@ -113,9 +121,12 @@ type Pipeline struct {
 	profile        *profiling.PipelineProfile
 	hooks          *Hooks
 	cache          ParseCache
+	stageCache     *StageCache
+	lazyBuild      bool
 	observer       PipelineObserver
-	neirOnce       sync.Once
 	neirResolved   any
+	memProfile     *profiling.MemProfiler
+	schemaSource   string
 }
 
 type PipelineObserver interface {
@@ -137,6 +148,24 @@ type Result struct {
 func WithCache(cache ParseCache) func(*Config) {
 	return func(cfg *Config) {
 		cfg.Cache = cache
+	}
+}
+
+func WithStageCache(sc *StageCache) func(*Config) {
+	return func(cfg *Config) {
+		cfg.StageCache = sc
+	}
+}
+
+func WithProfile(p *profiling.PipelineProfile) func(*Config) {
+	return func(cfg *Config) {
+		cfg.Profile = p
+	}
+}
+
+func WithMemProfile(m *profiling.MemProfiler) func(*Config) {
+	return func(cfg *Config) {
+		cfg.MemProfile = m
 	}
 }
 
@@ -230,7 +259,12 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		p.kernel = kernel.NewKernel()
 	}
 	p.cache = cfg.Cache
+	p.stageCache = cfg.StageCache
+	p.lazyBuild = cfg.LazyBuild
 	p.observer = cfg.Observer
+	p.profile = cfg.Profile
+	p.memProfile = cfg.MemProfile
+	p.schemaSource = cfg.SchemaSource
 	if err := p.registerKernelServices(); err != nil {
 		return nil, err
 	}
@@ -250,6 +284,14 @@ func (p *Pipeline) Name() string {
 		return p.name
 	}
 	return "unnamed"
+}
+
+func (p *Pipeline) ProfileResult() *profiling.PipelineProfile {
+	return p.profile
+}
+
+func (p *Pipeline) MemProfileResult() *profiling.MemProfiler {
+	return p.memProfile
 }
 
 func (p *Pipeline) registerKernelServices() error {
@@ -290,9 +332,11 @@ func (p *Pipeline) executeWithKernel(fn func() (*Result, error)) (*Result, error
 			Timestamp: time.Now().UnixMilli(),
 			Payload:   map[string]any{"services": p.kernel.RegisteredServices()},
 		}); err != nil {
-			_ = err
+			p.warn("failed to emit kernel.stop telemetry", "error", err)
 		}
-		_ = p.kernel.Stop()
+		if err := p.kernel.Stop(); err != nil {
+			p.warn("failed to stop kernel", "error", err)
+		}
 	}()
 
 	return fn()
@@ -328,6 +372,10 @@ func (p *Pipeline) ProfileSave(path string) error {
 		return fmt.Errorf("profiling not enabled")
 	}
 	return profiling.SaveProfile(path, p.profile)
+}
+
+func (p *Pipeline) warn(msg string, args ...any) {
+	naeoslog.Warn(msg, args...)
 }
 
 func (p *Pipeline) executeHooks(hookFuncs []HookFunc, stage string) error {
@@ -439,6 +487,12 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		}
 	}
 
+	if p.schemaSource != "" && parsed != nil {
+		if err := p.runSchemaValidate(input); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := p.executeHooks(p.getHookFuncs().AfterParse, "parse"); err != nil {
 		return nil, err
 	}
@@ -511,7 +565,9 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		Source: parsed.Raw,
 		NEIR:   neir,
 	}
-	_ = p.emitKernelEvent("pipeline.validate", map[string]any{"source_len": len(result.Source)})
+	if err := p.emitKernelEvent("pipeline.validate", map[string]any{"source_len": len(result.Source)}); err != nil {
+		p.warn("failed to emit pipeline.validate event", "error", err)
+	}
 
 	if p.cache != nil {
 		specHash := p.cache.HashSpec(input)
@@ -522,18 +578,16 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 }
 
 func (p *Pipeline) materializeNEIR(neir *model.NEIR) {
-	p.neirOnce.Do(func() {
-		if p.neirResolved == nil || len(neir.Modules) > 0 {
-			return
-		}
-		loader := builder.NewModuleLoader()
-		if modules, err := loader.LoadModules(p.neirResolved); err == nil && len(modules) > 0 {
-			neir.Modules = modules
-		}
-		if services, err := loader.LoadServices(p.neirResolved); err == nil && len(services) > 0 {
-			neir.Services = services
-		}
-	})
+	if p.neirResolved == nil || len(neir.Modules) > 0 {
+		return
+	}
+	loader := builder.NewModuleLoader()
+	if modules, err := loader.LoadModules(p.neirResolved); err == nil && len(modules) > 0 {
+		neir.Modules = modules
+	}
+	if services, err := loader.LoadServices(p.neirResolved); err == nil && len(services) > 0 {
+		neir.Services = services
+	}
 }
 
 func (p *Pipeline) normalizeParallel(parsed *parser.SpecDocument) (*normalizer.NormalizedSpec, error) {
@@ -567,13 +621,18 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profile.Start()
 	}
 
+	p.memSnapshot("pipeline_start")
+
 	startTime := time.Now()
 	result, err := p.executeWithKernel(func() (*Result, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf("context canceled: %w", err)
 		}
 
+		p.profileStageStart("validate")
 		result, err := p.runValidate(input)
+		p.profileStageEnd("validate", err)
+		p.memSnapshot("validate")
 		if err != nil {
 			return nil, err
 		}
@@ -582,17 +641,27 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.profile.EndStage("validate")
 		}
 
+		p.profileStageStart("build_graph")
 		execGraph := p.runBuildGraph(result)
+		p.profileStageEnd("build_graph", nil)
+		p.memSnapshot("build_graph")
 		result.Graph = execGraph
 		if p.profile != nil {
 			p.profile.EndStage("build_graph")
 		}
 
-		if err := p.runPolicyEval(result); err != nil {
-			return nil, err
+		p.profileStageStart("policy_eval")
+		policyErr := p.runPolicyEval(result)
+		p.profileStageEnd("policy_eval", policyErr)
+		p.memSnapshot("policy_eval")
+		if policyErr != nil {
+			return nil, policyErr
 		}
 
+		p.profileStageStart("schedule")
 		tasks, err := p.runSchedule(result)
+		p.profileStageEnd("schedule", err)
+		p.memSnapshot("schedule")
 		if err != nil {
 			return nil, err
 		}
@@ -600,6 +669,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.profile.EndStage("schedule")
 		}
 
+		p.profileStageStart("generate")
 		var artifacts []engine.Artifact
 		if p.cache != nil && len(result.Artifacts) > 0 {
 			p.logVerbose("generation cache hit, reusing %d artifacts", len(result.Artifacts))
@@ -615,54 +685,70 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 				p.cache.Set(p.cache.HashSpec(input), result)
 			}
 		}
-		if p.profile != nil {
-			p.profile.EndStage("generate")
-		}
+		p.profileStageEnd("generate", nil)
+		p.memSnapshot("generate")
 
+		p.profileStageStart("review")
 		reviews := p.runReview(artifacts)
+		p.profileStageEnd("review", nil)
+		p.memSnapshot("review")
 		result.Reviews = reviews
 		if p.profile != nil {
 			p.profile.EndStage("review")
 		}
 
-		if p.profile != nil {
-			p.profile.StartStage("write")
-		}
-		if err := p.runWriteArtifacts(artifacts); err != nil {
-			return nil, err
-		}
-		if p.profile != nil {
-			p.profile.EndStage("write")
+		p.profileStageStart("write_artifacts")
+		writeErr := p.runWriteArtifacts(artifacts)
+		p.profileStageEnd("write_artifacts", writeErr)
+		p.memSnapshot("write_artifacts")
+		if writeErr != nil {
+			return nil, writeErr
 		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
-		_ = p.emitKernelEvent("pipeline.run", map[string]any{
+		if err := p.emitKernelEvent("pipeline.run", map[string]any{
 			"artifacts":   len(artifacts),
 			"tasks":       len(tasks),
 			"reviews":     len(reviews),
 			"graph_nodes": execGraph.NodeCount(),
 			"graph_edges": execGraph.EdgeCount(),
-		})
-
-		if p.profile != nil {
-			p.profile.StartStage("hooks.after_run")
+		}); err != nil {
+			p.warn("failed to emit pipeline.run event", "error", err)
 		}
+
 		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
 			return nil, err
-		}
-		if p.profile != nil {
-			p.profile.EndStage("hooks.after_run")
 		}
 
 		return result, nil
 	})
+
 	if p.profile != nil {
 		p.profile.Finish()
 	}
+
 	p.runNotify(pipelineID, startTime, result, err)
 	return result, err
+}
+
+func (p *Pipeline) profileStageStart(name string) {
+	if p.profile != nil {
+		p.profile.StartStage(name)
+	}
+}
+
+func (p *Pipeline) profileStageEnd(name string, _ error) {
+	if p.profile != nil {
+		p.profile.EndStage(name)
+	}
+}
+
+func (p *Pipeline) memSnapshot(label string) {
+	if p.memProfile != nil {
+		p.memProfile.Snapshot(label)
+	}
 }
 
 func (p *Pipeline) runValidate(input string) (*Result, error) {
@@ -675,6 +761,36 @@ func (p *Pipeline) runValidate(input string) (*Result, error) {
 func (p *Pipeline) runBuildGraph(result *Result) *graph.PlannerGraph {
 	p.logVerbose("building execution graph")
 	return p.buildExecutionGraph(result.NEIR)
+}
+
+func (p *Pipeline) runSchemaValidate(input string) error {
+	schema, err := p.fetchSchema()
+	if err != nil {
+		return fmt.Errorf("schema fetch: %w", err)
+	}
+
+	var spec map[string]any
+	if err := json.Unmarshal([]byte(input), &spec); err != nil {
+		if err := yaml.Unmarshal([]byte(input), &spec); err != nil {
+			return fmt.Errorf("schema validate: parse input: %w", err)
+		}
+	}
+
+	result := schemaregistry.ValidateSpec(spec, schema)
+	if !result.Valid {
+		errs := make([]string, len(result.Errors))
+		for i, e := range result.Errors {
+			errs[i] = fmt.Sprintf("%s: %s", e.Field, e.Message)
+		}
+		return fmt.Errorf("schema validation failed:\n  - %s", strings.Join(errs, "\n  - "))
+	}
+	p.logVerbose("spec conforms to schema %s", result.Version)
+	return nil
+}
+
+func (p *Pipeline) fetchSchema() (map[string]any, error) {
+	client := schemaregistry.NewNEIRClient(p.schemaSource)
+	return client.FetchSchema()
 }
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
@@ -693,9 +809,43 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 	return nil
 }
 
+type taskList struct {
+	Tasks []scheduler.Task `json:"tasks"`
+}
+
+type artifactList struct {
+	Artifacts []engine.Artifact `json:"artifacts"`
+}
+
+func neirHash(neir *model.NEIR) string {
+	data, _ := json.Marshal(neir)
+	h := sha256.Sum256(data)
+	return fmt.Sprintf("%x", h[:8])
+}
+
 func (p *Pipeline) runSchedule(result *Result) ([]scheduler.Task, error) {
 	p.logVerbose("scheduling %d tasks", len(result.NEIR.Modules)+len(result.NEIR.Services)+2)
-	return p.scheduler.Schedule(result.NEIR)
+	if p.stageCache == nil || result.NEIR == nil {
+		return p.scheduler.Schedule(result.NEIR)
+	}
+	key := neirHash(result.NEIR)
+	if cached, ok := p.stageCache.Get("schedule", []byte(key)); ok {
+		p.logVerbose("stage cache hit for schedule")
+		var tasks taskList
+		if err := json.Unmarshal(cached, &tasks); err == nil {
+			return tasks.Tasks, nil
+		}
+	}
+	tasks, err := p.scheduler.Schedule(result.NEIR)
+	if err != nil {
+		return nil, err
+	}
+	data, err := json.Marshal(taskList{Tasks: tasks})
+	if err != nil {
+		return tasks, nil
+	}
+	p.stageCache.Set("schedule", []byte(key), data)
+	return tasks, nil
 }
 
 func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
@@ -704,6 +854,21 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 	}
 
 	p.logVerbose("generating artifacts")
+
+	if p.stageCache != nil && result.NEIR != nil {
+		key := neirHash(result.NEIR)
+		if cached, ok := p.stageCache.Get("generate", []byte(key)); ok {
+			p.logVerbose("stage cache hit for generate")
+			var arts artifactList
+			if err := json.Unmarshal(cached, &arts); err == nil {
+				if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
+					return nil, err
+				}
+				return arts.Artifacts, nil
+			}
+		}
+	}
+
 	artifacts, err := p.generator.Generate(result.NEIR)
 	if err != nil {
 		return nil, err
@@ -719,6 +884,15 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 	if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
 		return nil, err
 	}
+
+	if p.stageCache != nil && result.NEIR != nil {
+		key := neirHash(result.NEIR)
+		data, err := json.Marshal(artifactList{Artifacts: artifacts})
+		if err == nil {
+			p.stageCache.Set("generate", []byte(key), data)
+		}
+	}
+
 	return artifacts, nil
 }
 

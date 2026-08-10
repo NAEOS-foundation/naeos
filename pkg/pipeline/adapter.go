@@ -7,6 +7,7 @@ import (
 
 	"github.com/NAEOS-foundation/naeos/internal/eventsourcing"
 	pm "github.com/NAEOS-foundation/naeos/internal/pipelinemiddleware"
+	naeoslog "github.com/NAEOS-foundation/naeos/internal/shared/log"
 )
 
 type PipelineAdapter struct {
@@ -90,18 +91,22 @@ func (a *PipelineAdapter) RunWithMiddleware(ctx context.Context, input string) (
 
 	if err != nil {
 		snap.Failed(err)
-		_ = a.recordEvent("pipeline.failed", map[string]any{"error": err.Error()})
+		if rerr := a.recordEvent("pipeline.failed", map[string]any{"error": err.Error()}); rerr != nil {
+			a.warn("failed to record pipeline.failed event", "error", rerr)
+		}
 		return nil, err
 	}
 
 	artifactCount := len(result.Artifacts)
 	snap.Completed(artifactCount)
-	_ = a.recordEvent("pipeline.completed", map[string]any{
+	if rerr := a.recordEvent("pipeline.completed", map[string]any{
 		"artifacts": artifactCount,
 		"tasks":     len(result.Tasks),
 		"reviews":   len(result.Reviews),
 		"duration":  time.Since(start).String(),
-	})
+	}); rerr != nil {
+		a.warn("failed to record pipeline.completed event", "error", rerr)
+	}
 
 	return result, nil
 }
@@ -128,6 +133,10 @@ func (a *PipelineAdapter) pipelineName() string {
 		return a.pipeline.Name()
 	}
 	return "unknown"
+}
+
+func (a *PipelineAdapter) warn(msg string, args ...any) {
+	naeoslog.Warn(msg, args...)
 }
 
 func (a *PipelineAdapter) recordEvent(eventType string, data map[string]any) error {

@@ -183,6 +183,32 @@ func TestIsWASMPath(t *testing.T) {
 	}
 }
 
+func TestWASMPluginVersionDescription(t *testing.T) {
+	p := &WASMPlugin{version: "1.0.0", description: "test plugin"}
+	if p.Version() != "1.0.0" {
+		t.Errorf("expected version 1.0.0, got %q", p.Version())
+	}
+	if p.Description() != "test plugin" {
+		t.Errorf("expected description 'test plugin', got %q", p.Description())
+	}
+}
+
+func TestWASMPluginExecuteMarshalError(t *testing.T) {
+	rt := NewWASMRuntime(5*time.Second, 0)
+	defer rt.Close()
+
+	path := writeTempWASM(t, helloWASM)
+	plugin, err := rt.Load(path)
+	if err != nil {
+		t.Fatalf("load wasm: %v", err)
+	}
+
+	_, err = plugin.Execute("test", map[string]any{"ch": make(chan int)})
+	if err == nil {
+		t.Fatal("expected marshal error for unserializable params")
+	}
+}
+
 func TestWASMPluginInitializeShutdown(t *testing.T) {
 	rt := NewWASMRuntime(5*time.Second, 0)
 	defer rt.Close()

@@ -177,9 +177,7 @@ func (p *RealPostgreSQL) QueryRowContext(ctx context.Context, query string, args
 }
 
 func (p *RealPostgreSQL) Begin() (Transaction, error) {
-	ctx, cancel := p.defaultContext()
-	defer cancel()
-	return p.BeginTx(ctx)
+	return p.BeginTx(context.Background())
 }
 
 func (p *RealPostgreSQL) BeginTx(ctx context.Context) (Transaction, error) {

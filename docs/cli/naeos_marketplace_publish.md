@@ -10,7 +10,7 @@ The package directory must contain a naeos.yaml manifest with name, version, and
 
 Example:
   naeos marketplace publish ./my-template
-  naeos marketplace publish ./my-plugin --registry https://registry.naeos.dev
+  naeos marketplace publish ./my-plugin --registry https://naeos-foundation.github.io/naeos
 
 ```
 naeos marketplace publish [path] [flags]

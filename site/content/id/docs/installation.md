@@ -1,5 +1,6 @@
 ---
 title: Instalasi
+slug: installation
 description: Petunjuk instalasi terperinci untuk NAEOS di semua platform.
 ---
 

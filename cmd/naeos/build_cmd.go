@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
 	"github.com/NAEOS-foundation/naeos/internal/distributed"
+	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
 func newBuildCommand() *cobra.Command {
-	var configPath, input, inputFile, outputFormat, outputFile string
+	var configPath, input, inputFile, outputFormat, outputFile, profileFile, memProfileFile, schemaSource string
 	var languages []string
 	var dryRun bool
 	var distributedMode bool
@@ -32,9 +36,9 @@ Example:
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if distributedMode {
-				return runBuildDistributed(cmd, configPath, workerCount)
+				return runBuildDistributed(cmd, configPath, input, inputFile, workerCount)
 			}
-			return runBuildLocal(cmd, configPath, input, inputFile, outputFormat, outputFile, languages, dryRun)
+			return runBuildLocal(cmd, configPath, input, inputFile, outputFormat, outputFile, languages, dryRun, profileFile != "", profileFile, memProfileFile, schemaSource)
 		},
 	}
 
@@ -47,11 +51,14 @@ Example:
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview artifacts without writing to disk")
 	cmd.Flags().BoolVar(&distributedMode, "distributed", false, "enable distributed building across workers")
 	cmd.Flags().IntVarP(&workerCount, "workers", "w", 4, "number of parallel workers (used with --distributed)")
+	cmd.Flags().StringVar(&profileFile, "profile", "", "write pipeline performance profile to file")
+	cmd.Flags().StringVar(&memProfileFile, "memprofile", "", "write memory profile (heap snapshots) to file")
+	cmd.Flags().StringVar(&schemaSource, "schema-source", "", "URL or file path to JSON Schema for spec validation")
 
 	return cmd
 }
 
-func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputFormat, outputFile string, languages []string, dryRun bool) error {
+func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputFormat, outputFile string, languages []string, dryRun, enableProfile bool, profileFile, memProfileFile, schemaSource string) error {
 	inputValue, err := loadInput(input, inputFile)
 	if err != nil {
 		return err
@@ -62,6 +69,16 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 		return err
 	}
 
+	if enableProfile {
+		cfg.Profile = profiling.NewProfile()
+	}
+	if memProfileFile != "" {
+		cfg.MemProfile = profiling.NewMemProfiler()
+	}
+	if schemaSource != "" {
+		cfg.SchemaSource = schemaSource
+	}
+
 	p, err := pipeline.New(*cfg)
 	if err != nil {
 		return fmt.Errorf("failed to construct pipeline: %w", err)
@@ -70,6 +87,38 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 	result, err := p.Run(inputValue)
 	if err != nil {
 		return fmt.Errorf("build failed: %w", err)
+	}
+
+	if enableProfile {
+		prof := p.ProfileResult()
+		if prof != nil {
+			summary := prof.Summary()
+			fmt.Fprint(cmd.OutOrStdout(), summary)
+			if profileFile != "" {
+				if err := profiling.SaveProfile(profileFile, prof); err != nil {
+					return fmt.Errorf("failed to save profile: %w", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Profile saved to %s\n", profileFile)
+			}
+		}
+	}
+
+	if memProfileFile != "" {
+		mp := p.MemProfileResult()
+		if mp != nil {
+			summary := mp.Summary()
+			fmt.Fprint(cmd.OutOrStdout(), summary)
+			report := mp.Analyze()
+			if report.Suspected {
+				fmt.Fprintf(cmd.OutOrStdout(), "⚠ Memory leak suspected: %s\n", report.Details)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "✓ No memory leak detected")
+			}
+			if err := saveMemProfile(memProfileFile, mp); err != nil {
+				return fmt.Errorf("failed to save memprofile: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Memory profile saved to %s\n", memProfileFile)
+		}
 	}
 
 	payload := map[string]any{
@@ -99,44 +148,69 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 	return writeOrPrint(cmd, rendered, outputFile)
 }
 
-func runBuildDistributed(cmd *cobra.Command, configPath string, workerCount int) error {
-	_, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun, "")
+func saveMemProfile(path string, mp *profiling.MemProfiler) error {
+	snaps := mp.Snapshots()
+	data, err := json.MarshalIndent(map[string]any{
+		"snapshots": snaps,
+		"summary":   mp.Summary(),
+	}, "", "  ")
 	if err != nil {
-		return fmt.Errorf("config: %w", err)
+		return err
+	}
+	return os.WriteFile(path, data, 0o600)
+}
+
+func runBuildDistributed(cmd *cobra.Command, configPath, input, inputFile string, workerCount int) error {
+	inputValue, err := loadInput(input, inputFile)
+	if err != nil {
+		return err
 	}
 
 	workers := make([]distributed.Worker, workerCount)
 	for i := 0; i < workerCount; i++ {
 		id := fmt.Sprintf("builder-%d", i)
 		workers[i] = distributed.NewSimpleWorker(id, func(ctx context.Context, task *distributed.Task) (map[string]any, error) {
-			stage, _ := task.Payload["stage"].(string)
-			var duration time.Duration
-			switch stage {
-			case "parse":
-				duration = 800 * time.Millisecond
-			case "normalize":
-				duration = 600 * time.Millisecond
-			case "resolve":
-				duration = 1000 * time.Millisecond
-			case "generate":
-				duration = 1200 * time.Millisecond
-			default:
-				duration = 500 * time.Millisecond
+			taskCfgPath, _ := task.Payload["config"].(string)
+			taskInput, _ := task.Payload["input"].(string)
+			taskModule, _ := task.Payload["module"].(string)
+
+			pCfg, err := loadPipelineConfig(taskCfgPath, cliVerbose, nil, cliDryRun, "")
+			if err != nil {
+				return nil, fmt.Errorf("worker %s: load config: %w", id, err)
 			}
 
-			select {
-			case <-time.After(duration):
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			var specInput string
+			if taskModule != "" {
+				specInput = fmt.Sprintf("project: distributed-%s\nmodules:\n  - name: %s\n    path: ./%s\n", taskModule, taskModule, taskModule)
+			} else {
+				specInput = taskInput
+			}
+
+			p, err := pipeline.New(*pCfg)
+			if err != nil {
+				return nil, fmt.Errorf("worker %s: create pipeline: %w", id, err)
+			}
+
+			start := time.Now()
+			result, err := p.RunContext(ctx, specInput)
+			elapsed := time.Since(start)
+			if err != nil {
+				return nil, fmt.Errorf("worker %s: run: %w", id, err)
 			}
 
 			return map[string]any{
-				"stage":    stage,
-				"status":   "completed",
-				"duration": duration.String(),
+				"worker":    id,
+				"status":    "completed",
+				"module":    taskModule,
+				"artifacts": len(result.Artifacts),
+				"tasks":     len(result.Tasks),
+				"duration":  elapsed.String(),
+				"project":   result.NEIR.Project.Name,
 			}, nil
 		})
 	}
+
+	start := time.Now()
 
 	coord := distributed.NewCoordinator(workers, 100)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -144,41 +218,92 @@ func runBuildDistributed(cmd *cobra.Command, configPath string, workerCount int)
 
 	coord.Start(ctx)
 
-	stages := []string{"parse", "normalize", "resolve", "generate"}
-	for _, s := range stages {
+	parsedSpec, err := parseSpecInput(inputValue)
+	if err != nil {
+		return fmt.Errorf("parse spec for distribution: %w", err)
+	}
+
+	var modules []string
+	if specMap, ok := parsedSpec["modules"].([]any); ok && len(specMap) > 0 {
+		for _, m := range specMap {
+			if mod, ok := m.(map[string]any); ok {
+				if name, ok := mod["name"].(string); ok {
+					modules = append(modules, name)
+				}
+			}
+		}
+	}
+	if len(modules) == 0 {
+		modules = []string{""}
+	}
+
+	for _, mod := range modules {
 		coord.Submit(&distributed.Task{
-			ID:      fmt.Sprintf("build-%s", s),
-			Type:    "build",
-			Payload: map[string]any{"stage": s},
+			ID:   fmt.Sprintf("build-%s", orDefault(mod, "default")),
+			Type: "build",
+			Payload: map[string]any{
+				"config": configPath,
+				"input":  inputValue,
+				"module": mod,
+			},
 		})
 	}
 
-	var completed int
-	for range coord.Results() {
-		completed++
-		if completed >= len(stages) {
-			break
+	var results []map[string]any
+	go coord.Stop()
+	for res := range coord.Results() {
+		if res.Succeeded && res.Output != nil {
+			results = append(results, res.Output)
 		}
 	}
 
-	coord.Stop()
-
-	if completed < len(stages) {
-		return fmt.Errorf("build distributed: expected %d results, got %d", len(stages), completed)
+	totalArtifacts := 0
+	totalTasks := 0
+	for _, r := range results {
+		if arts, ok := r["artifacts"].(int); ok {
+			totalArtifacts += arts
+		}
+		if tasks, ok := r["tasks"].(int); ok {
+			totalTasks += tasks
+		}
 	}
 
+	elapsed := time.Since(start)
+
 	payload := map[string]any{
-		"build":   "distributed",
-		"workers": workerCount,
-		"stages":  len(stages),
+		"build":     "distributed",
+		"workers":   workerCount,
+		"modules":   len(modules),
+		"artifacts": totalArtifacts,
+		"tasks":     totalTasks,
+		"duration":  elapsed.Round(time.Millisecond).String(),
 	}
 
 	rendered, err := renderOutput(payload, "text", func() []byte {
-		return []byte(fmt.Sprintf("build=distributed workers=%d stages=%d completed\n", workerCount, len(stages)))
+		return []byte(fmt.Sprintf("build=distributed workers=%d modules=%d completed artifacts=%d tasks=%d duration=%s\n",
+			workerCount, len(modules), totalArtifacts, totalTasks, elapsed.Round(time.Millisecond)))
 	})
 	if err != nil {
 		return err
 	}
 
 	return writeOrPrint(cmd, rendered, "")
+}
+
+func parseSpecInput(input string) (map[string]any, error) {
+	var spec map[string]any
+	if err := json.Unmarshal([]byte(input), &spec); err == nil {
+		return spec, nil
+	}
+	if err := yaml.Unmarshal([]byte(input), &spec); err != nil {
+		return nil, fmt.Errorf("parse spec: %w", err)
+	}
+	return spec, nil
+}
+
+func orDefault(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
 }

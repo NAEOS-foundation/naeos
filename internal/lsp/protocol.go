@@ -260,6 +260,8 @@ type Diagnostic struct {
 	Range    Range              `json:"range"`
 	Severity DiagnosticSeverity `json:"severity,omitempty"`
 	Message  string             `json:"message"`
+	Code     string             `json:"code,omitempty"`
+	Source   string             `json:"source,omitempty"`
 }
 
 type DiagnosticSeverity int

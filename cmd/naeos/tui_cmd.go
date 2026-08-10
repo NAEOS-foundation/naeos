@@ -13,8 +13,19 @@ var tuiLanguages = []string{"Go", "TypeScript", "Python", "Java", "Rust"}
 var tuiCloudProviders = []string{"AWS", "GCP", "Azure", "None"}
 
 func newTUICommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "tui",
+		Short: "Terminal user interface tools",
+		Long:  "Terminal user interface tools including the project wizard and live dashboard.",
+	}
+	cmd.AddCommand(newTUIWizardCommand())
+	cmd.AddCommand(newTUIDashboardCommand())
+	return cmd
+}
+
+func newTUIWizardCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "wizard",
 		Short: "Interactive project wizard",
 		Long:  "Walk through project configuration step by step and generate a spec.",
 		Args:  cobra.NoArgs,

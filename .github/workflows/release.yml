@@ -102,14 +102,20 @@ jobs:
             | macOS | arm64 | `naeos-darwin-arm64` |
             | Windows | amd64 | `naeos-windows-amd64.exe` |
 
-            ### What's New
+            ### What's New in v3.0.0
 
-            - Mermaid architecture diagrams across all documentation
-            - Unit tests for all model and shared packages
-            - Multi-language output adapters (Go, TypeScript, Python, Java, Rust)
-            - CLI `--language` flag for multi-target generation
-            - CLI `--dry-run` flag for export preview
-            - Improved validator error messages with actionable suggestions
+            - **NEIR v2.0 specification** — conditional modules (`Condition` + `ConditionalResolver`), environment profiles (`ActiveProfile`/`Inherits` + `ProfileResolver`), `$if{}/$endif` directives
+            - **Enterprise auth** — OAuth2/OIDC provider, SSO (OIDC, SAML 2.0, LDAP with BER parsing), RBAC with hierarchy + deny rules, 4 compliance role templates
+            - **Compliance suite** — SOC2/HIPAA/GDPR frameworks, audit hashed-chain + AES-256-GCM encrypted auditors, cloud export (AWS SigV4, GCS HMAC, Azure SharedKey), `naeos compliance report/verify/cloud-export`
+            - **Supabase backend integration** — DB adapter, Auth (GoTrue), Storage, Edge Functions, Admin API, CLI `naeos supabase` group
+            - **NEIR-aware LSP server** — autocomplete, diagnostics, hover, go-to-definition, code actions
+            - **VS Code extension generator** — `naeos dx vscode-gen` with TextMate grammar + LSP client
+            - **Pipeline performance** — parallel `CompileAll` (3× speedup), stage caching, lazy NEIR loading, `--profile`/`--memprofile` profiling
+            - **Distributed builds** — `naeos build --distributed --workers N` runs real pipelines per module
+            - **NEIR diff visualization** — `naeos diff --visual` side-by-side tree view
+            - **Plugin ecosystem** — official plugin registry on GitHub Pages, example plugins (hello/spec-lint/artifact-stats), WASM sandbox support
+            - **TUI live dashboard** — `naeos dashboard` with WebSocket live updates
+            - **Test coverage 86.9% overall** — 13 target packages ≥80% (websocket 95.8%, configschema 94.7%, auth 92.5%)
           files: |
             naeos-linux-amd64
             naeos-linux-arm64

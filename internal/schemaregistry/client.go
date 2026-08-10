@@ -119,6 +119,14 @@ func ValidateNEIRSpec(specPath string, schema map[string]any) (NEIRValidationRes
 
 	delete(spec, "$schema")
 
+	return validateSpec(spec, schema), nil
+}
+
+func ValidateSpec(spec map[string]any, schema map[string]any) NEIRValidationResult {
+	return validateSpec(spec, schema)
+}
+
+func validateSpec(spec map[string]any, schema map[string]any) NEIRValidationResult {
 	result := NEIRValidationResult{
 		Valid:   true,
 		Version: NEIRSchemaVersion,
@@ -156,7 +164,7 @@ func ValidateNEIRSpec(specPath string, schema map[string]any) (NEIRValidationRes
 		result.Valid = false
 	}
 
-	return result, nil
+	return result
 }
 
 func validateNEIRValue(field string, value any, propSchema map[string]any, rootSchema map[string]any) []NEIRValidationError {

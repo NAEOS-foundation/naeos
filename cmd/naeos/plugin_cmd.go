@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/marketplace"
 	"github.com/NAEOS-foundation/naeos/internal/pluginhost"
 	"github.com/NAEOS-foundation/naeos/internal/pluginsdk/scaffold"
 )
@@ -291,21 +293,40 @@ Example:
 }
 
 func newPluginSearchCommand() *cobra.Command {
-	return &cobra.Command{
+	var registryURL string
+	cmd := &cobra.Command{
 		Use:   "search [query]",
 		Short: "Search for plugins in the registry",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := args[0]
-			fmt.Fprintf(cmd.OutOrStdout(), "Searching for plugins: %s\n", query)
-			_, _ = cmd.OutOrStdout().Write([]byte("───────────────────────────────────────────\n"))
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %-10s %s\n", "Name", "Version", "Description")
-			_, _ = cmd.OutOrStdout().Write([]byte("───────────────────────────────────────────\n"))
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %-10s %s\n", query+"-lint", "1.0.0", "Lint plugin for "+query)
-			fmt.Fprintf(cmd.OutOrStdout(), "  %-25s %-10s %s\n", query+"-test", "1.0.0", "Test runner for "+query)
+			installDir := filepath.Join(".naeos", "plugins")
+
+			rr := marketplace.NewRemoteRegistry(registryURL, installDir)
+			results, err := rr.Search(query)
+			if err != nil {
+				return fmt.Errorf("search plugins: %w", err)
+			}
+
+			if len(results) == 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "No plugins found matching %q\n", query)
+				return nil
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "%-25s %-10s %-12s %s\n", "Name", "Version", "Platform", "Description")
+			_, _ = cmd.OutOrStdout().Write([]byte(strings.Repeat("─", 80) + "\n"))
+			for _, p := range results {
+				platform := p.Platform
+				if platform == "" {
+					platform = "any"
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "%-25s %-10s %-12s %s\n", p.Name, p.Version, platform, p.Description)
+			}
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&registryURL, "registry", marketplace.DefaultRegistryURL, "registry base URL")
+	return cmd
 }
 
 func newPluginInitCommand() *cobra.Command {

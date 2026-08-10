@@ -1,5 +1,6 @@
 ---
 title: Validasi
+slug: validation
 description: Sistem validasi multi-level untuk spesifikasi, modul, layanan, dan kebijakan.
 weight: 16
 ---

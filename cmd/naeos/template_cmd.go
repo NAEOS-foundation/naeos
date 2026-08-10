@@ -285,7 +285,7 @@ The template directory must contain:
 
 Example:
   naeos template publish ./my-template
-  naeos template publish ./my-template --registry https://registry.naeos.dev
+  naeos template publish ./my-template --registry https://naeos-foundation.github.io/naeos
 
 To generate a local registry entry without publishing:
   naeos template publish ./my-template --registry file://./local-registry.json`,

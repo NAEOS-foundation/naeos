@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - 'site/content/docs/*.md'
+      - 'WHITEPAPER*.md'
+      - 'site/content/whitepaper.md'
+      - 'site/content/id/whitepaper.md'
+      - 'scripts/whitepaper-pdf.sh'
+      - 'scripts/puppeteer-config.json'
       - '.github/workflows/pdf-docs.yml'
   workflow_dispatch:
 
@@ -31,7 +36,7 @@ jobs:
         run: cd site && hugo --minify
 
       - name: Setup Pandoc
-        run: sudo apt-get update && sudo apt-get install -y pandoc texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+        run: sudo apt-get update && sudo apt-get install -y pandoc texlive-xetex texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
 
       - name: Generate CLI Reference PDF
         run: |
@@ -55,11 +60,39 @@ jobs:
             -V date="$(date +%Y-%m-%d)" \
             -o site/static/downloads/naeos-getting-started.pdf
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate mermaid diagrams
+        run: |
+          mkdir -p /tmp/mmcheck && cd /tmp/mmcheck && npm init -y >/dev/null
+          npm install --prefix /tmp/mmcheck mermaid@11 jsdom
+          node "$GITHUB_WORKSPACE/scripts/check-mermaid.mjs" "$GITHUB_WORKSPACE/WHITEPAPER.md" "$GITHUB_WORKSPACE/WHITEPAPER-EN.md"
+
+      - name: Install mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Generate Whitepaper PDF (EN)
+        run: |
+          bash scripts/whitepaper-pdf.sh \
+            WHITEPAPER-EN.md \
+            site/static/downloads/naeos-whitepaper.pdf \
+            "NAEOS Whitepaper"
+
+      - name: Generate Whitepaper PDF (ID)
+        run: |
+          bash scripts/whitepaper-pdf.sh \
+            WHITEPAPER.md \
+            site/static/downloads/naeos-whitepaper-id.pdf \
+            "Whitepaper NAEOS"
+
       - name: Rebuild site with PDFs
         run: cd site && hugo --minify
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site/public
 

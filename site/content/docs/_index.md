@@ -32,8 +32,10 @@ Welcome to the NAEOS documentation. Here you'll find everything you need to get 
 ## Reference
 
 - **[CLI Reference](/docs/cli-reference/)** — Complete command reference for all 35+ CLI commands
-- **[API Reference](/docs/api-reference/)** — Interactive API documentation with Swagger UI
+- **[API Reference](/docs/api/)** — Interactive API documentation with Swagger UI
 - **[Cloud Deployment](/docs/cloud-deployment/)** — Deploy to AWS, GCP, or Azure
+- **[Distributed Builds](/docs/distributed-builds/)** — Parallelize pipeline execution across workers
+- **[Dashboard](/docs/dashboard/)** — Monitor pipeline activity and health in real time
 - **[Troubleshooting](/docs/troubleshooting/)** — Common issues and solutions
 - **[Glossary](/docs/glossary/)** — Key terms and definitions
 - **[Contributing](/docs/contributing/)** — Guide for contributing to NAEOS
@@ -41,5 +43,5 @@ Welcome to the NAEOS documentation. Here you'll find everything you need to get 
 ## External Resources
 
 - [GitHub Repository](https://github.com/NAEOS-foundation/naeos) — Source code and issues
-- [API Reference](/docs/api-reference/) — Interactive API documentation
+- [API Reference](/docs/api/) — Interactive API documentation with Swagger UI
 - [OpenAPI Spec](https://github.com/NAEOS-foundation/naeos/blob/main/docs/openapi.yaml) — OpenAPI 3.0 specification

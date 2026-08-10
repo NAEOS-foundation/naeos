@@ -82,3 +82,27 @@ Lihat bagaimana tim menggunakan NAEOS untuk membangun, memvalidasi, dan mengemba
     <a href="https://github.com/NAEOS-foundation/naeos/discussions/new?category=show-and-tell" class="btn btn-primary btn-sm">Kirim Proyek</a>
   </div>
 </div>
+
+## Coba Sendiri — Proyek Demo
+
+Proyek demo resmi tersedia di repositori: [`cmd/naeos/demo-app/`](https://github.com/NAEOS-foundation/naeos/tree/main/cmd/naeos/demo-app). Ini adalah aplikasi Go berarsitektur heksagonal yang sepenuhnya dijelaskan oleh spesifikasi.
+
+```bash
+# 1. Build artifact dari spesifikasi demo
+naeos build --config cmd/naeos/demo-app/config.yaml --input cmd/naeos/demo-app/spec.yaml
+
+# 2. Jalankan pipeline lengkap dengan output yang dapat dilacak
+naeos run --config cmd/naeos/demo-app/config.yaml --input cmd/naeos/demo-app/spec.yaml
+
+# 3. Distribusikan build ke banyak worker
+naeos distributed --config cmd/naeos/demo-app/config.yaml --workers 4
+```
+
+Lebih suka mulai dari template? Scaffold starter microservices lengkap:
+
+```bash
+naeos template init microservices-go -o .
+naeos build --config naeos.yaml --input spec.yaml
+```
+
+Kedua proyek bersifat open source dan cukup kecil untuk dibaca dalam hitungan menit — cara terbaik untuk melihat NAEOS beraksi.

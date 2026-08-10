@@ -31,11 +31,13 @@ Selamat datang di dokumentasi NAEOS. Di sini Anda akan menemukan semua yang dipe
 ## Referensi
 
 - **[Referensi CLI](/id/docs/cli-reference/)** — Referensi perintah lengkap untuk 35+ perintah CLI
+- **[Build Terdistribusi](/id/docs/distributed-builds/)** — Paralelkan eksekusi pipeline di banyak worker
+- **[Dashboard](/id/docs/dashboard/)** — Pantau aktivitas pipeline dan kesehatan secara real time
 - **[Glosarium](/id/docs/glossary/)** — Istilah-istilah penting dan definisinya
 - **[Berkontribusi](/id/docs/contributing/)** — Panduan untuk berkontribusi ke NAEOS
 
 ## Sumber Daya Eksternal
 
 - [Repositori GitHub](https://github.com/NAEOS-foundation/naeos) — Kode sumber dan isu
-- **[Referensi API](/id/docs/api-reference/)** — Dokumentasi API interaktif
+- **[Referensi API](/id/docs/api/)** — Dokumentasi API interaktif
 - [OpenAPI Spec](https://github.com/NAEOS-foundation/naeos/blob/main/docs/openapi.yaml) — Spesifikasi OpenAPI 3.0

@@ -71,10 +71,15 @@ Example:
 			}
 
 			for _, d := range diffs {
-				if visual {
-					fmt.Fprint(cmd.OutOrStdout(), diff.FormatSideBySide(d, 0))
-				} else {
-					fmt.Fprint(cmd.OutOrStdout(), diff.FormatDiff(d))
+				switch format {
+				case "unified":
+					fmt.Fprint(cmd.OutOrStdout(), diff.FormatUnified(d, 3))
+				default:
+					if visual {
+						fmt.Fprint(cmd.OutOrStdout(), diff.FormatSideBySide(d, 0))
+					} else {
+						fmt.Fprint(cmd.OutOrStdout(), diff.FormatDiff(d))
+					}
 				}
 			}
 

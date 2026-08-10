@@ -55,11 +55,13 @@ func newGraphQLCommand() *cobra.Command {
 			}
 
 			handler := graphql.Handler(schema)
-			http.Handle("/graphql", handler)
+			mux := http.NewServeMux()
+			mux.Handle("/graphql", handler)
 
 			fmt.Printf("GraphQL server starting on http://localhost%s/graphql\n", graphqlPort)
 			srv := &http.Server{
 				Addr:              graphqlPort,
+				Handler:           mux,
 				ReadHeaderTimeout: 10 * time.Second,
 				ReadTimeout:       15 * time.Second,
 				WriteTimeout:      15 * time.Second,

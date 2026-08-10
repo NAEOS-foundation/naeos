@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-08-08
+
+### Added
+- **Pipeline profiling** — `PipelineProfile` records timing & memory per stage (validate, build_graph, policy_eval, schedule, generate, review, write_artifacts). `--profile` flag on `naeos build`. `naeos profile run` subcommand.
+- **Memory profiling** — `MemProfiler` with heap snapshot per stage boundary, heap diffing, GC pressure analysis, leak detection (`DetectLeaks()`, `Analyze()`). `--memprofile` flag on `naeos build` & `naeos profile run`.
+- **Stage caching** — file-backed `StageCache` for `schedule` and `generate` stages, keyed by NEIR hash (SHA256). Configurable via `Config.StageCache` / `WithStageCache()` option.
+- **Schema-based spec validation** — `ValidateSpec()` in `schemaregistry` validates in-memory specs against JSON Schema. Integrates into pipeline via `--schema-source` flag (`file://` or `https://`).
+- **Lazy NEIR loading** — `LazyNEIR` struct with per-section lazy accessors (`Modules()`, `Services()`, `Architecture()`, etc.). `LazyBuilder` interface + `BuildLazy()` on `DefaultBuilder`. 16 tests.
+- **Distributed build (real)** — `naeos build --distributed --workers N` now runs the real pipeline per module (not stub durations), splits spec per module, aggregates results.
+- **VS Code extension generation** — `naeos dx vscode-gen` generates a complete extension with TextMate syntax highlighting for `.naeos.yaml`, LSP client, commands (compile, validate, dashboard), keybindings, menus, and configuration.
+- **NEIR-aware LSP server** — Full Language Server Protocol implementation over stdio with:
+  - Context-aware autocomplete for NEIR YAML fields and enum values
+  - Real-time diagnostics using the spec parser and YAML structure checks
+  - Hover documentation for all NEIR fields
+  - Go-to-definition for references within the spec
+  - Document symbols (outline view)
+  - Code actions: add missing `project` field, replace tabs with spaces, remove trailing whitespace
+- **NEIR diff visualization** — `naeos diff --visual` for side-by-side tree view, `--format unified` for unified diff format.
+- **Rollback coverage 85.7%** — 15 new edge-case tests: merge-restore into `.`, walk errors, import traversal/symlink rejection, export failures, List/Latest edge cases.
+- **Normalizer fuzz targets** — `FuzzNormalize`, `FuzzNormalizeRaw`, `FuzzFlatten` added and wired into the CI fuzz job.
+- **CLI test coverage 66.2% → 80.8%** — 266+ new test functions across 39 command test files (`cmd/naeos/*_cmd_test.go`), plus 100+ edge tests: template, workspace, watch, dx, ws, artifacts, supabase, marketplace, security, migration status, doctor.
+- **Rollback merge-restore** — `internal/rollback` can now restore snapshots into the current directory (`.`) and repo root instead of failing on `RemoveAll`/`Rename` of `.`; `rollback` subcommand reads `--output-dir` via persistent flags.
+- **Official example plugins** — `examples/plugins/` with `hello`, `spec-lint`, and `artifact-stats` (each with `plugin.go`, `main.go` WASM entry, tests, manifest, README).
+- **Official starter template** — `examples/templates/microservices-go/` (REST + event-driven Go starter) wired into the template registry at `site/static/templates/registry.json`.
+- **Distributed builds & dashboard docs** — new site docs pages `docs/distributed-builds.md` and `docs/dashboard.md` (EN + ID).
+- **Schema registry canonical `$id`** — NEIR JSON Schema `$id` now resolves to the versioned URL `/schemaregistry/v1/neir.json`.
+
+### Changed
+- **OAuth2 refactored** — `GoogleOAuth2`/`GitHubOAuth2` now embed `GenericOAuth2` instead of using type aliases. `ScopeStr` derived dynamically from `Config.Scopes`.
+- **Database factory** — `NewFromConfig()` extracted to `factory_shared.go` for both SQL and NoSQL factories. Added `"mariadb"` alias for MySQL.
+- **Workflow error handling** — All 14 silent `_ = w.Machine.Trigger(...)` calls now log errors via `slog.Warn(...)`.
+- **Compiler parallelized** — `CompileAll()` uses concurrent goroutines with `sync.WaitGroup`, achieving 3× speedup with 3 adapters.
+- **DB adapter `Begin()` fixed** — all four real adapters (`sqlite`, `mysql`, `postgresql`, `supabase`) called `defer cancel()` on the context handed to `BeginTx`, which immediately invalidated every transaction (`sql: transaction has already been committed or rolled back`). `Begin()` now passes `context.Background()`.
+- **LDAP bind result parsing fixed** — `bind()` checked `resp[n-2] == 0x0a` and treated `resp[n-1]` as the result code, which never matched a real LDAP `BindResponse` (the ENUMERATED tag lives at `n-3`), so `Authenticate` could never succeed against an actual LDAP server. It now scans for the `0x0a 0x01` ENUMERATED result code.
+- **LDAP search result parsing rewritten** — `parseLDAPResult` replaced the ad-hoc sequence walker with a proper minimal BER TLV decoder (`parseBER`); attribute values are now extracted from standard `SearchResultEntry` responses.
+- **Plugin registry pointed at public source of truth** — `RemoteRegistry` default moved from the non-existent `naeos.dev/api/v1/plugins` to the GitHub Pages static registry (`naeos-foundation.github.io/naeos/plugins/registry.json`), `RemoteTemplateRegistry` to `/templates/registry.json`, and the `naeos plugin search`/`marketplace plugin publish`/`template publish` CLI defaults updated accordingly (previously `registry.naeos.dev`). Registry URLs ending in `.json` are now fetched verbatim (no path appended), and `RemotePlugin` decodes the `platforms` array emitted by the plugin-registry discovery workflow. Plugin discovery against the public registry now works end-to-end.
+- **CI coverage gate** — `fail_ci_if_error: true` in `codecov-action`; overall coverage 81.5% → 86.9%.
+- **GraphQL server** — switched from `http.Handle` on the default mux to a dedicated `http.NewServeMux` (fixes panic on repeated registration in tests).
+- **Site multilingual fix** — per-language content mounts (`content`/`content/id`) so Indonesian pages get the correct language context: sections, layouts (`plugins`, `templates`), i18n strings, and `lang` attributes now work for `/id/*` pages.
+
+### Fixed
+- **BenchmarkResult `durations()`** — method always returned nil; fixed with `allDurations` field + public `Durations()` accessor.
+- **LSP duplicate module detection** — Fixed always-false condition where `m.Name != m2.Name && m.Name == m2.Name` could never be true.
+- **LSP stderr noise** — Suppressed `sync /dev/stdout: invalid argument` during test execution.
+- **`runBuildDistributed` deadlock** — `naeos build --distributed` hung forever: the `range` over `coord.Results()` waited for the channel to close, but `Stop()` (which closes it) was called only after the loop. `Stop()` now runs concurrently with result collection.
+- **LSP logging** — replaced remaining 5 `log.Printf` calls in `internal/lsp/server.go` with `slog.Error` (completes zero `log.Print` goal).
+- **CLI coverage 71.0% → 80.8%** — 100+ new edge tests: `template` (list/show/add/publish/search/init), `workspace` (init/add/list/info/lock/remove), `watch`/`resolveInputFile`, `dx` (completions/snippets), `ws` (error paths via mock server), `artifacts` (list/info/dedup/summary/corrupt manifest), `supabase` (auth/storage/SQL/status against mock GoTrue/Storage/Mgmt API), `marketplace` (search/install/plugin remote + local cache), `security` (sanitize modes/audit severities/JSON+YAML output), `migration status`, `doctor` (java/rust/spec/config/broker/database checks).
+- **Database coverage 59.7% → 87.1%** — 25 new tests for the real adapters' connected paths, using an in-memory SQLite-backed `*sql.DB` injected into the MySQL/PostgreSQL/Supabase adapters plus `go-sqlmock` for PostgreSQL `Migrate`/`Rollback` success and failure flows: `Exec`/`Query`/`QueryRow` success + error, transactions (`Begin`/`BeginTx`, tx `Exec`/`Query`/`Commit`/`Rollback`), MySQL + PostgreSQL `MigrateContext` (apply, idempotent skip, rollback-on-failure) and `RollbackContext` (down SQL, delete, commit), Supabase REST `*Context` methods, query cache hit/expiry/clear, `rows_affected` handling, `RealSupabaseTx`, and non-connected error paths.
+- **Auth coverage 66.8% → 92.5%** — 16 new tests: LDAP `Authenticate` full flow against a mock BER TCP server (bind + search result entries with `uid`/`cn`/`mail`), bind failure (invalid credentials), admin + user bind path, TLS dial failure, `ldapConn` bind/search/close/write-failure; OIDC `Discover`/`ExchangeCode`/`GetUser` against `httptest` with a real RSA-signed ID token (`verifyIDToken`, JWKS), invalid-signature fallback, userinfo endpoint, ID-token extraction fallback, malformed JWKS/discovery; SAML `loadCertFile` success/missing/invalid PEM.
+- **Fuzz target consolidation** — `FuzzParseLDAPSequence`/`FuzzParseLDAPString` replaced by `FuzzParseBER` (seed corpus retained) to match the new BER decoder.
+- **WebSocket coverage 80.1% → 95.8%** — new `server_http_test.go` exercises the HTTP upgrade and pump paths that previously ran only under the `integration` build tag: upgrade success/failure, `readPump` (ping→pong, invalid JSON, unknown type, interceptor-blocked messages, disconnect unregister), `writePump` (broadcast delivery, close frame on stop), and `Stop` with connected clients.
+- **Configschema coverage 80.2% → 94.7%** — `AddValidator`/`AddCustomType` registration, `ValidateFile` (YAML/JSON/unknown extension/missing file), `ValidateData` (yaml/yml/json formats + invalid input), `LoadSchemaFromFile` (success + missing/bad parse errors).
+- **Monitoring coverage 81.7% → 93.4%** — `GaugeSet` edge cases (unknown family, overwrite, new metric, cardinality limit), `statusResponseWriter` (`WriteHeader` once-only capture, `Write`, `Unwrap`), `RecordRuntime`/`StartRuntimeCollector`, `ObservePipelineDuration`, `IncSpecValidations` (success/failure), `IncArtifacts`, `SetWebSocketConnections`, full `MetricsObserver` lifecycle (valid + invalid duration), middleware status capture.
+- **Configreload coverage 81.9% → 91.9%** — `GetString`/`GetInt`/`GetBool` type-mismatch fallbacks, `LastModified`, `HotReloader` error paths (double `Start`, invalid watch dir, `Stop` when idle), loop edge cases (error channel, non-matching file events, closed watcher channels terminate the loop), `matchesConfigFile`.
+- **Rollback into `.`** — `Restore` with target directory `.` or `/` previously no-op'd and failed; now uses merge-restore path.
+- **Dashboard port conflict** — added test coverage for the port-conflict error path.
+
 ## [2.2.0] - 2026-07-23
 
 ### Added

@@ -61,6 +61,6 @@ Example:
 
 	cmd.AddCommand(rollbackList)
 	cmd.AddCommand(rollbackRestore)
-	cmd.Flags().StringVarP(&outputDir, "output-dir", "o", ".", "directory to restore artifacts to")
+	cmd.PersistentFlags().StringVarP(&outputDir, "output-dir", "o", ".", "directory to restore artifacts to")
 	return cmd
 }

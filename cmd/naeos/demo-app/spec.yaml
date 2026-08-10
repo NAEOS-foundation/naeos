@@ -1,0 +1,21 @@
+project: demo-app
+description: A NAEOS project
+
+modules:
+  - name: core
+    path: ./demo-app
+
+services:
+  - name: api
+    kind: http
+    port: 8080
+
+architecture:
+  pattern: hexagonal
+
+deployment:
+  strategy: rolling
+
+testing:
+  strategy: unit
+  coverage: standard

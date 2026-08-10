@@ -9,12 +9,12 @@ The NEIR Schema Registry hosts versioned [JSON Schema](https://json-schema.org/)
 
 ## Latest Schema
 
-The current stable schema is **[v1](v1/neir.json)**.
+The current stable schema is **[v1](/schemaregistry/v1/neir.json)**.
 
 | Version | Schema URL | Status |
 |---------|-----------|--------|
-| v1 | [`/schemaregistry/v1/neir.json`](v1/neir.json) | Stable |
-| latest | [`/schemaregistry/latest.json`](../latest.json) | Latest stable |
+| v1 | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | Stable |
+| latest | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) | Latest stable |
 
 ## Usage
 

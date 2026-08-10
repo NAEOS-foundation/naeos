@@ -178,13 +178,20 @@ func (c *ldapConn) bind(dn, password string) error {
 		return fmt.Errorf("read bind response: %w", err)
 	}
 
-	if n < 2 || resp[n-2] != 0x0a {
+	// BindResponse := SEQUENCE { msgID, [APPLICATION 1] SEQUENCE { ENUMERATED resultCode, ... } }
+	// Locate the ENUMERATED (0x0a) tag with length 0x01 that holds the result code.
+	resultCode := -1
+	for i := 0; i+2 < n; i++ {
+		if resp[i] == 0x0a && resp[i+1] == 0x01 {
+			resultCode = int(resp[i+2])
+			break
+		}
+	}
+	if resultCode == -1 {
 		return fmt.Errorf("ldap bind failed: invalid response")
 	}
-
-	resultCode := resp[n-1]
 	if resultCode != 0 {
-		codes := map[byte]string{
+		codes := map[int]string{
 			0:  "success",
 			1:  "operationsError",
 			2:  "protocolError",
@@ -253,21 +260,57 @@ func encodeOctetString(data []byte) []byte {
 	return append([]byte{0x04, encLen(len(data))}, data...)
 }
 
+type berElement struct {
+	tag     byte
+	content []byte
+}
+
+// parseBER decodes a run of BER TLV elements (short-form lengths only).
+func parseBER(data []byte) []berElement {
+	var out []berElement
+	for pos := 0; pos+2 <= len(data); {
+		tag := data[pos]
+		length := int(data[pos+1]) //nolint:gosec // G602: pos+1 is guarded by pos+2 <= len(data)
+		if pos+2+length > len(data) {
+			break
+		}
+		out = append(out, berElement{tag: tag, content: data[pos+2 : pos+2+length]})
+		pos += 2 + length
+	}
+	return out
+}
+
 func parseLDAPResult(data []byte) map[string]string {
 	result := make(map[string]string)
 
-	_, entries := parseLDAPSequence(data)
-	for _, entry := range entries {
-		if len(entry) > 0 && entry[0] == 0x64 {
-			_, parts := parseLDAPSequence(entry)
-			for i := 1; i < len(parts); i++ {
-				_, fields := parseLDAPSequence(parts[i])
-				if len(fields) >= 2 {
-					attrName := string(parseLDAPString(fields[0]))
-					_, vals := parseLDAPSet(fields[1])
-					if len(vals) > 0 {
-						result[strings.ToLower(attrName)] = string(vals[0][2:])
-					}
+	// LDAPMessage := SEQUENCE { msgID, SearchResultEntry [APPLICATION 4] SEQUENCE {
+	//   objectName OCTET STRING,
+	//   attributes SEQUENCE OF SEQUENCE { type OCTET STRING, vals SET OF OCTET STRING }
+	// } }
+	for _, msg := range parseBER(data) {
+		if msg.tag != 0x30 {
+			continue
+		}
+		for _, op := range parseBER(msg.content) {
+			if op.tag != 0x64 {
+				continue
+			}
+			fields := parseBER(op.content)
+			if len(fields) < 2 {
+				continue
+			}
+			for _, attr := range parseBER(fields[1].content) {
+				if attr.tag != 0x30 {
+					continue
+				}
+				parts := parseBER(attr.content)
+				if len(parts) < 2 {
+					continue
+				}
+				name := string(parts[0].content)
+				values := parseBER(parts[1].content)
+				if len(values) > 0 {
+					result[strings.ToLower(name)] = string(values[0].content)
 				}
 			}
 		}
@@ -276,7 +319,8 @@ func parseLDAPResult(data []byte) map[string]string {
 	return result
 }
 
-func parseLDAPSequence(data []byte) (int, [][]byte) {
+// parseLDAPSet decodes a BER SET OF run, returning bytes consumed and complete elements.
+func parseLDAPSet(data []byte) (int, [][]byte) {
 	var items [][]byte
 	pos := 0
 	for pos < len(data) {
@@ -284,7 +328,7 @@ func parseLDAPSequence(data []byte) (int, [][]byte) {
 			break
 		}
 		tag := data[pos]
-		length := int(data[pos+1])
+		length := int(data[pos+1]) //nolint:gosec // guarded by pos+2 <= len(data)
 		pos += 2
 		if pos+length > len(data) {
 			break
@@ -295,19 +339,4 @@ func parseLDAPSequence(data []byte) (int, [][]byte) {
 		pos += length
 	}
 	return pos, items
-}
-
-func parseLDAPString(data []byte) []byte {
-	if len(data) < 2 {
-		return nil
-	}
-	length := int(data[1])
-	if len(data) < 2+length {
-		return nil
-	}
-	return data[2 : 2+length]
-}
-
-func parseLDAPSet(data []byte) (int, [][]byte) {
-	return parseLDAPSequence(data)
 }

@@ -37,6 +37,7 @@ func TestNewFromConfigNoSQL(t *testing.T) {
 		db, err := NewFromConfig("mock-sqlite", &Config{
 			Host: "localhost",
 			Port: 5432,
+			User: "test",
 		})
 		if err != nil {
 			t.Fatalf("NewFromConfig() error = %v", err)
@@ -50,6 +51,7 @@ func TestNewFromConfigNoSQL(t *testing.T) {
 		_, err := NewFromConfig("unknown", &Config{
 			Host: "localhost",
 			Port: 5432,
+			User: "test",
 		})
 		if err == nil {
 			t.Fatal("expected error for unsupported driver")
@@ -57,9 +59,9 @@ func TestNewFromConfigNoSQL(t *testing.T) {
 	})
 
 	t.Run("invalid config", func(t *testing.T) {
-		_, err := NewFromConfig("mock-sqlite", nil)
+		_, err := NewFromConfig("mock-sqlite", &Config{})
 		if err == nil {
-			t.Fatal("expected error for nil config")
+			t.Fatal("expected error for empty config")
 		}
 	})
 }

@@ -419,9 +419,9 @@ func TestExtractModule(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want module.Module
+		want  module.Module
 	}{
 		{
 			name: "all fields",
@@ -477,9 +477,9 @@ func TestExtractService(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want service.Service
+		want  service.Service
 	}{
 		{
 			name: "all fields with endpoints",
@@ -546,9 +546,9 @@ func TestExtractArchitecture(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want *architecture.Architecture
+		want  *architecture.Architecture
 	}{
 		{
 			name:  "full architecture",
@@ -586,9 +586,9 @@ func TestExtractGeneration(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want *generation.GenerationConfig
+		want  *generation.GenerationConfig
 	}{
 		{
 			name: "full with []any languages",
@@ -600,9 +600,9 @@ func TestExtractGeneration(t *testing.T) {
 			},
 		},
 		{
-			name: "empty map",
+			name:  "empty map",
 			input: map[string]any{},
-			want: &generation.GenerationConfig{},
+			want:  &generation.GenerationConfig{},
 		},
 		{
 			name: "wrong types ignored",
@@ -650,9 +650,9 @@ func TestExtractDeployment(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want *deployment.Deployment
+		want  *deployment.Deployment
 	}{
 		{
 			name: "full with environments and variables",
@@ -718,34 +718,34 @@ func TestExtractTesting(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		input    map[string]any
+		name      string
+		input     map[string]any
 		wantStrat testingmodel.TestingStrategy
-		wantCov  *testingmodel.Coverage
+		wantCov   *testingmodel.Coverage
 	}{
 		{
-			name:     "full",
-			input:    map[string]any{"strategy": "unit", "coverage": "high"},
+			name:      "full",
+			input:     map[string]any{"strategy": "unit", "coverage": "high"},
 			wantStrat: "unit",
-			wantCov:  &testingmodel.Coverage{MinPercent: 80.0},
+			wantCov:   &testingmodel.Coverage{MinPercent: 80.0},
 		},
 		{
-			name:     "empty map",
-			input:    map[string]any{},
+			name:      "empty map",
+			input:     map[string]any{},
 			wantStrat: "",
-			wantCov:  nil,
+			wantCov:   nil,
 		},
 		{
-			name:     "strategy only",
-			input:    map[string]any{"strategy": "integration"},
+			name:      "strategy only",
+			input:     map[string]any{"strategy": "integration"},
 			wantStrat: "integration",
-			wantCov:  nil,
+			wantCov:   nil,
 		},
 		{
-			name:     "unknown coverage level",
-			input:    map[string]any{"coverage": "critical"},
+			name:      "unknown coverage level",
+			input:     map[string]any{"coverage": "critical"},
 			wantStrat: "",
-			wantCov:  &testingmodel.Coverage{MinPercent: 0.0},
+			wantCov:   &testingmodel.Coverage{MinPercent: 0.0},
 		},
 	}
 
@@ -775,9 +775,9 @@ func TestExtractCloud(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name  string
 		input map[string]any
-		want *infrastructure.Infrastructure
+		want  *infrastructure.Infrastructure
 	}{
 		{
 			name: "full cloud",

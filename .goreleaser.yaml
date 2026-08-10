@@ -27,16 +27,18 @@ archives:
         format: zip
 checksum:
   name_template: "checksums.txt"
+release:
+  disable: true
 changelog:
   sort: asc
   filters:
     exclude:
       - "^docs:"
       - "^test:"
-docker:
+dockers:
   - image_templates:
       - "ghcr.io/naeos-foundation/naeos:{{ .Version }}-amd64"
       - "ghcr.io/naeos-foundation/naeos:latest"
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.release
     build_flag_templates:
       - "--platform=linux/amd64"

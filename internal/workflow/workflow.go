@@ -199,7 +199,9 @@ func (w *Workflow) ExecuteWithContext(ctx context.Context) error {
 
 	for _, step := range w.Steps {
 		if ctx.Err() != nil {
-			_ = w.Machine.Trigger("cancel")
+			if err := w.Machine.Trigger("cancel"); err != nil {
+				slog.Warn("workflow cancel trigger failed", "workflow", w.Name, "error", err)
+			}
 			return ctx.Err()
 		}
 
@@ -218,15 +220,21 @@ func (w *Workflow) ExecuteWithContext(ctx context.Context) error {
 		if err != nil {
 			w.Context.Error = err
 			w.emitEvent(EventStepFailed, step.Name, err)
-			_ = w.Machine.Trigger("error")
+			if err := w.Machine.Trigger("error"); err != nil {
+				slog.Warn("workflow error trigger failed", "workflow", w.Name, "error", err)
+			}
 			return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "step %q failed", step.Name)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
-		_ = w.Machine.Trigger("next")
+		if err := w.Machine.Trigger("next"); err != nil {
+			slog.Warn("workflow next trigger failed", "workflow", w.Name, "error", err)
+		}
 	}
 
-	_ = w.Machine.Trigger("complete")
+	if err := w.Machine.Trigger("complete"); err != nil {
+		slog.Warn("workflow complete trigger failed", "workflow", w.Name, "error", err)
+	}
 	return nil
 }
 
@@ -254,7 +262,9 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 
 	for _, step := range w.Steps {
 		if ctx.Err() != nil {
-			_ = w.Machine.Trigger("cancel")
+			if err := w.Machine.Trigger("cancel"); err != nil {
+				slog.Warn("workflow cancel trigger failed", "workflow", w.Name, "error", err)
+			}
 			return ctx.Err()
 		}
 
@@ -291,15 +301,21 @@ func (w *Workflow) ExecuteWithRetry(ctx context.Context, config RetryConfig) err
 		if lastErr != nil {
 			w.Context.Error = lastErr
 			w.emitEvent(EventStepFailed, step.Name, lastErr)
-			_ = w.Machine.Trigger("error")
+			if err := w.Machine.Trigger("error"); err != nil {
+				slog.Warn("workflow error trigger failed", "workflow", w.Name, "error", err)
+			}
 			return naeoserr.Wrapf(lastErr, naeoserr.ErrPipeline, "step %q failed after %d retries", step.Name, config.MaxRetries)
 		}
 
 		w.emitEvent(EventStepComplete, step.Name, nil)
-		_ = w.Machine.Trigger("next")
+		if err := w.Machine.Trigger("next"); err != nil {
+			slog.Warn("workflow next trigger failed", "workflow", w.Name, "error", err)
+		}
 	}
 
-	_ = w.Machine.Trigger("complete")
+	if err := w.Machine.Trigger("complete"); err != nil {
+		slog.Warn("workflow complete trigger failed", "workflow", w.Name, "error", err)
+	}
 	return nil
 }
 
@@ -310,7 +326,9 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 
 	for _, group := range groups {
 		if ctx.Err() != nil {
-			_ = w.Machine.Trigger("cancel")
+			if err := w.Machine.Trigger("cancel"); err != nil {
+				slog.Warn("workflow cancel trigger failed", "workflow", w.Name, "error", err)
+			}
 			return ctx.Err()
 		}
 
@@ -323,12 +341,16 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 			if err := step.Action(w.Context); err != nil {
 				w.Context.Error = err
 				w.emitEvent(EventStepFailed, step.Name, err)
-				_ = w.Machine.Trigger("error")
+				if err := w.Machine.Trigger("error"); err != nil {
+					slog.Warn("workflow error trigger failed", "workflow", w.Name, "error", err)
+				}
 				return naeoserr.Wrapf(err, naeoserr.ErrPipeline, "step %q failed", step.Name)
 			}
 
 			w.emitEvent(EventStepComplete, step.Name, nil)
-			_ = w.Machine.Trigger("next")
+			if err := w.Machine.Trigger("next"); err != nil {
+				slog.Warn("workflow next trigger failed", "workflow", w.Name, "error", err)
+			}
 			continue
 		}
 
@@ -362,14 +384,20 @@ func (w *Workflow) ExecuteParallelGroup(ctx context.Context, groups []*ParallelS
 		}
 		if len(errs) > 0 {
 			w.Context.Error = errors.Join(errs...)
-			_ = w.Machine.Trigger("error")
+			if err := w.Machine.Trigger("error"); err != nil {
+				slog.Warn("workflow error trigger failed", "workflow", w.Name, "error", err)
+			}
 			return naeoserr.Wrapf(errors.Join(errs...), naeoserr.ErrPipeline, "parallel steps failed")
 		}
 
-		_ = w.Machine.Trigger("next")
+		if err := w.Machine.Trigger("next"); err != nil {
+			slog.Warn("workflow next trigger failed", "workflow", w.Name, "error", err)
+		}
 	}
 
-	_ = w.Machine.Trigger("complete")
+	if err := w.Machine.Trigger("complete"); err != nil {
+		slog.Warn("workflow complete trigger failed", "workflow", w.Name, "error", err)
+	}
 	return nil
 }
 

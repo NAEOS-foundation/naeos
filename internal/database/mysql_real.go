@@ -177,9 +177,7 @@ func (m *RealMySQL) QueryRowContext(ctx context.Context, query string, args ...a
 }
 
 func (m *RealMySQL) Begin() (Transaction, error) {
-	ctx, cancel := m.defaultContext()
-	defer cancel()
-	return m.BeginTx(ctx)
+	return m.BeginTx(context.Background())
 }
 
 func (m *RealMySQL) BeginTx(ctx context.Context) (Transaction, error) {

@@ -9,12 +9,12 @@ NEIR Schema Registry menghosting definisi [JSON Schema](https://json-schema.org/
 
 ## Skema Terbaru
 
-Skema stabil saat ini adalah **[v1](v1/neir.json)**.
+Skema stabil saat ini adalah **[v1](/schemaregistry/v1/neir.json)**.
 
 | Versi | URL Skema | Status |
 |-------|-----------|--------|
-| v1 | [`/schemaregistry/v1/neir.json`](v1/neir.json) | Stabil |
-| latest | [`/schemaregistry/latest.json`](../latest.json) | Stabil terbaru |
+| v1 | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | Stabil |
+| latest | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) | Stabil terbaru |
 
 ## Penggunaan
 

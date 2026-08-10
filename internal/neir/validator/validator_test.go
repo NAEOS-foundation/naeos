@@ -437,3 +437,73 @@ func TestValidatorRejectsWrongTypeInput(t *testing.T) {
 		t.Fatal("expected validation to fail for int input")
 	}
 }
+
+func TestValidatorWarnsModuleConditionInvalid(t *testing.T) {
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "test"},
+		Modules: []module.Module{
+			{Name: "core", Path: "./internal/core", Condition: "invalid op"},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected condition warning not error, got: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for invalid module condition")
+	}
+}
+
+func TestValidatorWarnsServiceConditionInvalid(t *testing.T) {
+	neir := &model.NEIR{
+		Project:  &project.Project{Name: "test"},
+		Modules:  []module.Module{{Name: "core", Path: "./internal/core"}},
+		Services: []service.Service{{Name: "api", Port: 8080, Condition: "bad cond"}},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected condition warning not error, got: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for invalid service condition")
+	}
+}
+
+func TestValidatorWarnsActiveProfileNotFound(t *testing.T) {
+	neir := &model.NEIR{
+		Project:       &project.Project{Name: "test"},
+		Modules:       []module.Module{{Name: "core", Path: "./internal/core"}},
+		ActiveProfile: "staging",
+		Deployment: &deployment.Deployment{
+			Strategy:     "rolling",
+			Environments: []deployment.Environment{{Name: "prod"}, {Name: "dev"}},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected valid with warning, got errors: %v", result.Errors)
+	}
+	if len(result.Warns) == 0 {
+		t.Fatal("expected warning for active_profile not found")
+	}
+}
+
+func TestValidatorNoDuplicatePortWarningForZero(t *testing.T) {
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "test"},
+		Modules: []module.Module{{Name: "core", Path: "./internal/core"}},
+		Services: []service.Service{
+			{Name: "api", Port: 0},
+			{Name: "admin", Port: 0},
+		},
+	}
+	result := ValidateDetailed(neir)
+	if !result.Valid {
+		t.Fatalf("expected valid, got errors: %v", result.Errors)
+	}
+	for _, w := range result.Warns {
+		if w != "" {
+			t.Fatalf("expected no warning for port=0 duplicates, got: %v", result.Warns)
+		}
+	}
+}

@@ -1,0 +1,4 @@
+pipeline:
+  name: demo-app
+  mode: development
+  output_dir: demo-app

@@ -454,11 +454,11 @@ func TestCacheUnchangedModules(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name           string
-		specHash       string
-		setup          func(*Cache) map[string]string
-		wantUnchanged  int
-		wantSize       int
+		name          string
+		specHash      string
+		setup         func(*Cache) map[string]string
+		wantUnchanged int
+		wantSize      int
 	}{
 		{
 			name:     "all unchanged",

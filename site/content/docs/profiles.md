@@ -1,5 +1,6 @@
 ---
 title: Industry Profiles
+slug: profiles
 description: Pre-configured profiles for SaaS, AI Agent, FinTech, Healthcare, and Government projects.
 weight: 14
 ---

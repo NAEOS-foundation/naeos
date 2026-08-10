@@ -432,6 +432,61 @@ func TestLDAPProviderAccessors(t *testing.T) {
 	}
 }
 
+func TestParseBER(t *testing.T) {
+	data := []byte{
+		0x30, 0x05, // SEQUENCE of length 5
+		0x04, 0x03, 'a', 'b', 'c', // OCTET STRING "abc"
+		0x31, 0x06, // SET of length 6
+		0x04, 0x04, 'd', 'e', 'f', 'g', // OCTET STRING "defg"
+		0x30, 0x08, // SEQUENCE of length 8
+		0x04, 0x01, 'x', 0x31, 0x03, 0x04, 0x01, 'y', // nested
+	}
+	items := parseBER(data)
+	if len(items) != 3 {
+		t.Fatalf("expected 3 items, got %d", len(items))
+	}
+	first := parseBER(items[0].content)
+	if items[0].tag != 0x30 || len(first) != 1 || string(first[0].content) != "abc" {
+		t.Errorf("unexpected first item: %+v", items[0])
+	}
+	second := parseBER(items[1].content)
+	if items[1].tag != 0x31 || len(second) != 1 || string(second[0].content) != "defg" {
+		t.Errorf("unexpected second item: %+v", items[1])
+	}
+	if items[2].tag != 0x30 {
+		t.Errorf("unexpected third tag: %d", items[2].tag)
+	}
+	nested := parseBER(items[2].content)
+	if len(nested) != 2 || nested[0].tag != 0x04 || string(nested[0].content) != "x" || nested[1].tag != 0x31 {
+		t.Errorf("unexpected nested parse: %+v", nested)
+	}
+	inner := parseBER(nested[1].content)
+	if len(inner) != 1 || inner[0].tag != 0x04 || string(inner[0].content) != "y" {
+		t.Errorf("unexpected inner parse: %+v", inner)
+	}
+}
+
+func TestParseBERTruncated(t *testing.T) {
+	items := parseBER([]byte{0x04, 0x05, 'a', 'b'})
+	if len(items) != 0 {
+		t.Errorf("expected no items for truncated data, got %d", len(items))
+	}
+	items = parseBER([]byte{0x04})
+	if len(items) != 0 {
+		t.Errorf("expected no items for lone tag, got %d", len(items))
+	}
+}
+
+func TestLDAPProviderTypeName(t *testing.T) {
+	p := NewLDAPProvider(SSOConfig{Name: "my-ldap", Host: "ldap.example.com", BaseDN: "dc=example,dc=com"})
+	if p.Type() != ProviderLDAP {
+		t.Errorf("expected LDAP type, got %s", p.Type())
+	}
+	if p.Name() != "my-ldap" {
+		t.Errorf("expected name 'my-ldap', got %q", p.Name())
+	}
+}
+
 func TestSAMLProviderConfig(t *testing.T) {
 	t.Parallel()
 
@@ -890,5 +945,31 @@ func TestOIDCProviderExchangeCodeAutoDiscover(t *testing.T) {
 	}
 	if token.AccessToken != "auto-discovered-token" {
 		t.Errorf("expected 'auto-discovered-token', got %q", token.AccessToken)
+	}
+}
+
+func TestOIDCProviderExchangeCodeNoDiscovery(t *testing.T) {
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       "https://ex.com",
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+	_, err := p.ExchangeCode("code")
+	if err == nil {
+		t.Error("expected error because discovery not performed")
+	}
+}
+
+func TestOIDCProviderGetUserNoDiscovery(t *testing.T) {
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       "https://ex.com",
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+	_, err := p.GetUser(&OAuth2Token{AccessToken: "tok"})
+	if err == nil {
+		t.Error("expected error because discovery not performed")
 	}
 }

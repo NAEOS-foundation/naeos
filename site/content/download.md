@@ -92,6 +92,15 @@ go build ./cmd/naeos/</code></pre>
 | macOS | ✅ | ✅ |
 | Windows | ✅ | — |
 
+## Documentation PDFs
+
+| Document | Download |
+|----------|----------|
+| **NAEOS Whitepaper** (English) | [naeos-whitepaper.pdf](/downloads/naeos-whitepaper.pdf) |
+| **Whitepaper NAEOS** (Bahasa Indonesia) | [naeos-whitepaper-id.pdf](/downloads/naeos-whitepaper-id.pdf) |
+| CLI Reference | [naeos-cli-reference.pdf](/downloads/naeos-cli-reference.pdf) |
+| Getting Started | [naeos-getting-started.pdf](/downloads/naeos-getting-started.pdf) |
+
 ## Verify Installation
 
 ```bash

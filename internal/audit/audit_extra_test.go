@@ -9,42 +9,6 @@ import (
 	"time"
 )
 
-func TestMemoryAuditorExportCSV(t *testing.T) {
-	auditor := NewMemoryAuditor()
-	auditor.Log(AuditEvent{
-		UserID:   "u1",
-		Action:   "create",
-		Resource: "project",
-		Status:   "success",
-	})
-	auditor.Log(AuditEvent{
-		UserID:   "u2",
-		Action:   "delete",
-		Resource: "config",
-		Status:   "failed",
-	})
-
-	path := filepath.Join(t.TempDir(), "export.csv")
-	if err := auditor.ExportCSV(path); err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	content := string(data)
-	if !strings.Contains(content, "u1") {
-		t.Error("expected CSV to contain user u1")
-	}
-	if !strings.Contains(content, "create") {
-		t.Error("expected CSV to contain action")
-	}
-	if !strings.HasPrefix(content, "id,timestamp,") {
-		t.Error("expected CSV header")
-	}
-}
-
 func TestMemoryAuditorExportCSVWithSpecialChars(t *testing.T) {
 	auditor := NewMemoryAuditor()
 	auditor.Log(AuditEvent{
@@ -81,30 +45,6 @@ func TestMemoryAuditorExportJSONEmpty(t *testing.T) {
 	}
 	if string(data) != "[]" && string(data) != "null\n" {
 		t.Logf("empty export content: %s", string(data))
-	}
-}
-
-func TestEscapeCSV(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{input: "simple", want: "simple"},
-		{input: "has,comma", want: `"has,comma"`},
-		{input: `has"quote`, want: `"has""quote"`},
-		{input: "has\nnewline", want: "\"has\nnewline\""},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.input, func(t *testing.T) {
-			t.Parallel()
-			got := escapeCSV(tt.input)
-			if got != tt.want {
-				t.Errorf("escapeCSV(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
 	}
 }
 

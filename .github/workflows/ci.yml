@@ -50,6 +50,18 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+  bench-gate:
+    name: Benchmark Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.25"
+          cache: true
+      - name: Check for benchmark regression
+        run: bash scripts/bench-gate.sh
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -62,7 +74,7 @@ jobs:
       - name: Generate coverage
         run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic -timeout 300s ./...
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage.out
           fail_ci_if_error: false
@@ -104,3 +116,9 @@ jobs:
         run: go test -fuzz=FuzzValidateModules -fuzztime=30s ./internal/specification/parser/
       - name: Fuzz version parse
         run: go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/
+      - name: Fuzz normalizer
+        run: go test -fuzz='^FuzzNormalize$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz normalizer raw
+        run: go test -fuzz='^FuzzNormalizeRaw$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz flatten
+        run: go test -fuzz='^FuzzFlatten$' -fuzztime=30s ./internal/specification/normalizer/
