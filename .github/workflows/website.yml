@@ -76,8 +76,11 @@ jobs:
           tar -xzf /tmp/lychee.tar.gz -C /tmp/lychee --strip-components=1
           /tmp/lychee/lychee --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3 \
             --root-dir "$GITHUB_WORKSPACE/site/public-check" \
-            public-check
+            public-check > /tmp/lychee-debug.log 2>&1
+          rc=$?
+          grep -E '^\[|^Error' /tmp/lychee-debug.log | head -40 | sed 's/^/::error::LYCHEE:/' || true
           rm -rf public-check
+          exit $rc
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
