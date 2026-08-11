@@ -27,7 +27,7 @@ Example:
   naeos benchmark --output json --iterations 100`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun)
+			cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun, "")
 			if err != nil {
 				return err
 			}

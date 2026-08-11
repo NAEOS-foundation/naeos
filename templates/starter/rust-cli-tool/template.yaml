@@ -1,0 +1,7 @@
+name: rust-cli-tool
+version: "0.9.0"
+description: Rust CLI application starter with clap, tracing, and cross-platform builds
+author: NAEOS Foundation
+tags: [rust, cli, official]
+languages: [rust]
+frameworks: [clap]

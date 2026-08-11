@@ -16,12 +16,14 @@ func NewHandler(s *Server) *Handler {
 func (h *Handler) Initialize(params InitializeParams) InitializeResult {
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:       1,
-			CompletionProvider:     &CompletionOptions{TriggerCharacters: []string{":", " ", "-"}},
-			HoverProvider:          true,
-			DefinitionProvider:     true,
-			DocumentSymbolProvider: true,
-			CodeActionProvider:     true,
+			TextDocumentSync:           1,
+			CompletionProvider:         &CompletionOptions{TriggerCharacters: []string{":", " ", "-"}},
+			HoverProvider:              true,
+			DefinitionProvider:         true,
+			DocumentSymbolProvider:     true,
+			SignatureHelpProvider:      &SignatureHelpOptions{TriggerCharacters: []string{"$", "{", "("}},
+			CodeActionProvider:         &CodeActionOptions{CodeActionKinds: []CodeActionKind{CodeActionQuickFix, CodeActionSourceOrganize}},
+			DocumentFormattingProvider: &DocumentFormattingOptions{},
 		},
 	}
 }
@@ -107,65 +109,6 @@ func (h *Handler) Definition(params DefinitionParams) *Location {
 	return nil
 }
 
-func (h *Handler) CodeAction(params CodeActionParams) []CodeAction {
-	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
-	if !ok {
-		return nil
-	}
-
-	var actions []CodeAction
-	lines := strings.Split(doc.Text, "\n")
-
-	for _, diag := range params.Context.Diagnostics {
-		switch diag.Code {
-		case "missing_project":
-			actions = append(actions, CodeAction{
-				Title: "Add missing 'project' field",
-				Edit: &WorkspaceEdit{
-					Changes: map[string][]TextEdit{
-						params.TextDocument.URI: {
-							{Range: Range{Start: Position{Line: 0, Character: 0}, End: Position{Line: 0, Character: 0}}, NewText: "project: my-project\n"},
-						},
-					},
-				},
-			})
-		case "tab_indent":
-			line := diag.Range.Start.Line
-			if line >= 0 && line < len(lines) {
-				replacement := strings.ReplaceAll(lines[line], "\t", "  ")
-				if replacement != lines[line] {
-					actions = append(actions, CodeAction{
-						Title: "Replace tabs with spaces",
-						Edit: &WorkspaceEdit{
-							Changes: map[string][]TextEdit{
-								params.TextDocument.URI: {
-									{Range: diag.Range, NewText: replacement},
-								},
-							},
-						},
-					})
-				}
-			}
-		case "trailing_whitespace":
-			line := diag.Range.Start.Line
-			if line >= 0 && line < len(lines) {
-				actions = append(actions, CodeAction{
-					Title: "Remove trailing whitespace",
-					Edit: &WorkspaceEdit{
-						Changes: map[string][]TextEdit{
-							params.TextDocument.URI: {
-								{Range: diag.Range, NewText: strings.TrimRight(lines[line], " \t") + "\n"},
-							},
-						},
-					},
-				})
-			}
-		}
-	}
-
-	return actions
-}
-
 func (h *Handler) DocumentSymbol(params DocumentSymbolParams) []DocumentSymbol {
 	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
 	if !ok {
@@ -173,6 +116,42 @@ func (h *Handler) DocumentSymbol(params DocumentSymbolParams) []DocumentSymbol {
 	}
 
 	return h.buildSymbols(doc.Text)
+}
+
+func (h *Handler) CodeAction(params CodeActionParams) []CodeAction {
+	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
+	if !ok {
+		return nil
+	}
+
+	diagResult := h.server.Diagnostic().Provide(params.TextDocument.URI, doc.Text)
+	actions := h.server.CodeAction().Provide(params.TextDocument.URI, diagResult.Diagnostics)
+
+	return actions
+}
+
+func (h *Handler) SignatureHelp(params SignatureHelpParams) *SignatureHelp {
+	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
+	if !ok {
+		return nil
+	}
+	return h.server.Signature().Provide(doc.Text, params.Position.Line, params.Position.Character)
+}
+
+func (h *Handler) Formatting(params DocumentFormattingParams) ([]TextEdit, error) {
+	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
+	if !ok {
+		return nil, nil
+	}
+	return h.server.Format().Format(doc.Text)
+}
+
+func (h *Handler) RangeFormatting(params DocumentRangeFormattingParams) ([]TextEdit, error) {
+	doc, ok := h.server.Documents().Get(params.TextDocument.URI)
+	if !ok {
+		return nil, nil
+	}
+	return h.server.Format().FormatRange(doc.Text, params.Range)
 }
 
 func (h *Handler) publishDiagnostics(uri, text string) {
@@ -216,12 +195,6 @@ func (h *Handler) lookupDocumentation(word string) string {
 		"deployment":     "**deployment**\nDeployment configuration.\n\nStrategies: `rolling`, `blue-green`, `canary`, `recreate`",
 		"testing":        "**testing**\nTesting strategy and coverage targets.\n\nStrategies: `unit`, `integration`, `e2e`, `contract`",
 		"generation":     "**generation**\nCode generation configuration.\n\nLanguages: `go`, `typescript`, `python`, `java`, `rust`",
-		"domain":         "**domain**\nDomain-driven design configuration.\n\nContains bounded contexts, aggregates, entities, value objects.",
-		"security":       "**security**\nSecurity configuration.\n\nAuthentication method, authorization model, encryption settings.",
-		"infrastructure": "**infrastructure**\nCloud infrastructure configuration.\n\nProvider (aws/gcp/azure/local), region, resources.",
-		"storage":        "**storage**\nData store definitions.\n\nTypes: `sql`, `nosql`, `file`, `cache`, `queue`, `blob`",
-		"components":     "**components**\nInternal application components.\n\nKinds: `handler`, `service`, `repository`, `middleware`, `model`, `config`",
-		"api":            "**api**\nAPI definitions.\n\nProtocols: `http`, `grpc`, `graphql`, `websocket`",
 		"kind":           "**kind**\nService kind.\n\nValues: `http`, `grpc`, `worker`, `cli`, `job`",
 		"port":           "**port**\nService port number (1-65535).",
 		"endpoints":      "**endpoints**\nList of API endpoints.\n\nEach endpoint has: `method`, `path`, `action`",
@@ -235,6 +208,15 @@ func (h *Handler) lookupDocumentation(word string) string {
 		"languages":      "**languages**\nTarget programming languages.\n\nValues: `go`, `typescript`, `python`, `java`, `rust`",
 		"coverage":       "**coverage**\nCode coverage target.\n\nExample: `coverage: 85%`",
 		"dependencies":   "**dependencies**\nList of module dependencies.",
+		"domain":         "**domain**\nDomain-driven design configuration.\n\nSections:\n- `events` — Domain events\n- `bounded_contexts` — Bounded contexts\n- `ubiquitous_language` — Glossary of domain terms\n- `aggregates` — Domain aggregates\n- `value_objects` — Value objects\n\nExample:\n```yaml\ndomain:\n  bounded_contexts:\n    - name: billing\n      aggregates:\n        - Invoice\n```",
+		"security":       "**security**\nSecurity configuration.\n\nSections:\n- `authentication` — Auth config (OAuth2, OIDC, SAML, LDAP)\n- `authorization` — RBAC/ABAC policies\n- `encryption` — Encryption at rest and in transit\n- `cors` — CORS settings\n- `rate_limiting` — Rate limiting\n\nExample:\n```yaml\nsecurity:\n  authentication:\n    provider: oidc\n  cors:\n    origins:\n      - https://app.example.com\n```",
+		"infrastructure": "**infrastructure**\nCloud infrastructure configuration.\n\nSections:\n- `provider` — Cloud provider (aws, gcp, azure, local)\n- `region` — Deployment region\n- `resources` — Infrastructure resources\n- `kubernetes` — K8s cluster settings\n- `networking` — Network config (VPC, subnets)\n\nExample:\n```yaml\ninfrastructure:\n  provider: aws\n  region: us-east-1\n  kubernetes:\n    version: \"1.28\"\n```",
+		"storage":        "**storage**\nData store configuration.\n\nSections:\n- `type` — Storage type (postgres, mysql, redis, s3, mongodb)\n- `connection` — Connection string\n- `migrations` — Database migrations\n- `backup` — Backup configuration\n- `pooling` — Connection pooling\n\nExample:\n```yaml\nstorage:\n  - name: primary\n    type: postgres\n    connection: postgresql://localhost:5432/db\n```",
+		"components":     "**components**\nInternal component definitions.\n\nSections:\n- `type` — Component type (service, worker, cron, event-handler)\n- `name` — Component name\n- `path` — Component path\n- `dependencies` — Component dependencies\n\nExample:\n```yaml\ncomponents:\n  - name: auth-service\n    type: service\n    path: ./internal/auth\n```",
+		"api":            "**api**\nAPI definition.\n\nSections:\n- `version` — API version\n- `endpoints` — API endpoints\n- `format` — API format (rest, graphql, grpc)\n- `documentation` — API documentation path\n\nExample:\n```yaml\napi:\n  version: v1\n  format: rest\n  endpoints:\n    - path: /users\n      method: GET\n```",
+		"database":       "**database**\nDatabase configuration.\n\nSee `storage` for data store definitions.\n\nExample:\n```yaml\ndatabase:\n  type: postgres\n  migrations:\n    - name: init\n      path: ./migrations/001_init.sql\n```",
+		"monitoring":     "**monitoring**\nMonitoring and observability configuration.\n\nSections:\n- `metrics` — Metrics collection (prometheus, datadog)\n- `logging` — Logging configuration\n- `tracing` — Distributed tracing\n\nExample:\n```yaml\nmonitoring:\n  metrics:\n    provider: prometheus\n  logging:\n    level: info\n```",
+		"logging":        "**logging**\nLogging configuration.\n\nSections:\n- `level` — Log level (debug, info, warn, error)\n- `format` — Log format (json, text)\n- `output` — Log output destination\n\nExample:\n```yaml\nlogging:\n  level: info\n  format: json\n```",
 		"environments":   "**environments**\nList of deployment environments (e.g. dev, staging, production).",
 		"output_dir":     "**output_dir**\nOutput directory for generated code.",
 		"provider":       "**provider**\nCloud provider.\n\nValues: `aws`, `gcp`, `azure`, `local`",

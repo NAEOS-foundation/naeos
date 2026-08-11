@@ -1,6 +1,17 @@
 package auth
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"math/big"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -395,46 +406,29 @@ func TestJWKToPublicKey(t *testing.T) {
 	}
 }
 
-func TestEncLen(t *testing.T) {
-	tests := []struct {
-		input int
-		want  byte
-	}{
-		{0, 0},
-		{1, 1},
-		{255, 255},
-		{256, 255},
-		{-1, 255},
+func TestJWKToPublicKeyInvalid(t *testing.T) {
+	t.Parallel()
+
+	_, err := jwkToPublicKey(JWK{Kty: "RSA", N: "!!!invalid-base64!!!", E: "AQAB"})
+	if err == nil {
+		t.Error("expected error for invalid base64 n")
 	}
-	for _, tt := range tests {
-		got := encLen(tt.input)
-		if got != tt.want {
-			t.Errorf("encLen(%d) = %d, want %d", tt.input, got, tt.want)
-		}
+
+	_, err = jwkToPublicKey(JWK{Kty: "RSA", N: "dGVzdA==", E: "!!!invalid-base64!!!"})
+	if err == nil {
+		t.Error("expected error for invalid base64 e")
 	}
 }
 
-func TestEncodeOctetString(t *testing.T) {
-	tests := []struct {
-		input []byte
-		want  []byte
-	}{
-		{nil, []byte{0x04, 0}},
-		{[]byte{}, []byte{0x04, 0}},
-		{[]byte("hello"), []byte{0x04, 5, 'h', 'e', 'l', 'l', 'o'}},
-		{[]byte{0x01, 0x02}, []byte{0x04, 2, 0x01, 0x02}},
+func TestLDAPProviderAccessors(t *testing.T) {
+	t.Parallel()
+
+	p := NewLDAPProvider(SSOConfig{Name: "my-ldap", Host: "ldap.example.com", BaseDN: "dc=example,dc=com"})
+	if p.Type() != ProviderLDAP {
+		t.Errorf("expected ProviderLDAP, got %s", p.Type())
 	}
-	for _, tt := range tests {
-		got := encodeOctetString(tt.input)
-		if len(got) != len(tt.want) {
-			t.Errorf("encodeOctetString(%v) = %v, want %v", tt.input, got, tt.want)
-			continue
-		}
-		for i := range got {
-			if got[i] != tt.want[i] {
-				t.Errorf("encodeOctetString(%v)[%d] = %d, want %d", tt.input, i, got[i], tt.want[i])
-			}
-		}
+	if p.Name() != "my-ldap" {
+		t.Errorf("expected name 'my-ldap', got %q", p.Name())
 	}
 }
 
@@ -483,18 +477,6 @@ func TestParseBERTruncated(t *testing.T) {
 	}
 }
 
-func TestSAMLProviderConfig(t *testing.T) {
-	cfg := SSOConfig{Name: "saml-test", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com", Enabled: true}
-	p := NewSAMLProvider(cfg)
-	got := p.Config()
-	if got.Name != "saml-test" {
-		t.Errorf("expected name 'saml-test', got %q", got.Name)
-	}
-	if got.EntityID != "https://ex.com" {
-		t.Errorf("expected entity id preserved")
-	}
-}
-
 func TestLDAPProviderTypeName(t *testing.T) {
 	p := NewLDAPProvider(SSOConfig{Name: "my-ldap", Host: "ldap.example.com", BaseDN: "dc=example,dc=com"})
 	if p.Type() != ProviderLDAP {
@@ -502,6 +484,467 @@ func TestLDAPProviderTypeName(t *testing.T) {
 	}
 	if p.Name() != "my-ldap" {
 		t.Errorf("expected name 'my-ldap', got %q", p.Name())
+	}
+}
+
+func TestSAMLProviderConfig(t *testing.T) {
+	t.Parallel()
+
+	cfg := SSOConfig{Name: "test-saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com", Enabled: true}
+	p := NewSAMLProvider(cfg)
+	got := p.Config()
+	if got.Name != "test-saml" {
+		t.Errorf("expected name 'test-saml', got %q", got.Name)
+	}
+	if !got.Enabled {
+		t.Error("expected Enabled to be preserved")
+	}
+}
+
+func TestSAMLProviderValidateWithCertFile(t *testing.T) {
+	dir := t.TempDir()
+	certPath := filepath.Join(dir, "cert.pem")
+	os.WriteFile(certPath, []byte("not a real cert"), 0o600)
+
+	p := NewSAMLProvider(SSOConfig{
+		Name:     "saml-with-cert",
+		SSOURL:   "https://ex.com/saml",
+		EntityID: "https://ex.com",
+		CertFile: certPath,
+	})
+	err := p.Validate()
+	if err == nil {
+		t.Error("expected error loading invalid cert")
+	}
+}
+
+func TestOIDCProviderExtractUserFromIDToken(t *testing.T) {
+	t.Parallel()
+
+	claims := `{"sub":"user1","name":"Test User","email":"test@example.com"}`
+	payload := base64.RawURLEncoding.EncodeToString([]byte(claims))
+	idToken := "header." + payload + ".signature"
+
+	p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
+	user, err := p.extractUserFromIDToken(&OAuth2Token{IDToken: idToken})
+	if err != nil {
+		t.Fatalf("extractUserFromIDToken: %v", err)
+	}
+	if user.ID != "user1" {
+		t.Errorf("expected ID 'user1', got %q", user.ID)
+	}
+	if user.Name != "Test User" {
+		t.Errorf("expected Name 'Test User', got %q", user.Name)
+	}
+	if user.Email != "test@example.com" {
+		t.Errorf("expected Email 'test@example.com', got %q", user.Email)
+	}
+}
+
+func TestOIDCProviderExtractUserFromIDTokenErrors(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		token *OAuth2Token
+	}{
+		{"empty id_token", &OAuth2Token{IDToken: ""}},
+		{"invalid format", &OAuth2Token{IDToken: "only.two"}},
+		{"bad base64 payload", &OAuth2Token{IDToken: "header.!!!.sig"}},
+		{"invalid JSON payload", &OAuth2Token{IDToken: "header." + base64.RawURLEncoding.EncodeToString([]byte("not-json")) + ".sig"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
+			_, err := p.extractUserFromIDToken(tt.token)
+			if err == nil {
+				t.Error("expected error")
+			}
+		})
+	}
+}
+
+func TestOIDCProviderVerifyIDToken(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n := base64.RawURLEncoding.EncodeToString(privateKey.N.Bytes())
+	e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(privateKey.E)).Bytes())
+
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       "https://ex.com",
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+	p.jwks = &JWKSResponse{
+		Keys: []JWK{{Kty: "RSA", N: n, E: e}},
+	}
+
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"RS256","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"user1","name":"Test User","email":"test@ex.com"}`))
+	message := header + "." + payload
+	h := sha256.Sum256([]byte(message))
+	sig, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, h[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	signature := base64.RawURLEncoding.EncodeToString(sig)
+	idToken := message + "." + signature
+
+	userInfo, err := p.verifyIDToken(idToken)
+	if err != nil {
+		t.Fatalf("verifyIDToken: %v", err)
+	}
+	if userInfo.Sub != "user1" {
+		t.Errorf("expected sub 'user1', got %q", userInfo.Sub)
+	}
+	if userInfo.Email != "test@ex.com" {
+		t.Errorf("expected email 'test@ex.com', got %q", userInfo.Email)
+	}
+}
+
+func TestOIDCProviderVerifyIDTokenErrors(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		idToken string
+	}{
+		{"invalid format", "header.payload"},
+		{"bad signature base64", "header.payload.!!!bad-sig"},
+		{"no jwks and no discovery", "header.payload.c2ln"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
+			_, err := p.verifyIDToken(tt.idToken)
+			if err == nil {
+				t.Error("expected error")
+			}
+		})
+	}
+}
+
+func TestOIDCProviderDiscoverWithServer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/openid-configuration":
+			json.NewEncoder(w).Encode(OIDCDiscoveryDocument{
+				Issuer:                "http://" + r.Host,
+				JWKSUri:               "http://" + r.Host + "/jwks",
+				AuthorizationEndpoint: "http://" + r.Host + "/auth",
+				TokenEndpoint:         "http://" + r.Host + "/token",
+				UserinfoEndpoint:      "http://" + r.Host + "/userinfo",
+			})
+		case "/jwks":
+			json.NewEncoder(w).Encode(JWKSResponse{Keys: []JWK{}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       srv.URL,
+		ClientID:     "id",
+		ClientSecret: "secret",
+	})
+
+	err := p.Discover()
+	if err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	if p.discovery == nil {
+		t.Fatal("expected discovery document")
+	}
+	if p.discovery.TokenEndpoint != srv.URL+"/token" {
+		t.Errorf("unexpected token endpoint: %s", p.discovery.TokenEndpoint)
+	}
+}
+
+func TestOIDCProviderExchangeCode(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/token":
+			json.NewEncoder(w).Encode(OIDCTokenResponse{
+				AccessToken: "access-token-123",
+				TokenType:   "Bearer",
+				ExpiresIn:   3600,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       srv.URL,
+		ClientID:     "client-id",
+		ClientSecret: "client-secret",
+		RedirectURL:  srv.URL + "/cb",
+	})
+	p.discovery = &OIDCDiscoveryDocument{
+		TokenEndpoint: srv.URL + "/token",
+	}
+
+	token, err := p.ExchangeCode("auth-code-456")
+	if err != nil {
+		t.Fatalf("ExchangeCode: %v", err)
+	}
+	if token.AccessToken != "access-token-123" {
+		t.Errorf("expected 'access-token-123', got %q", token.AccessToken)
+	}
+	if token.TokenType != "Bearer" {
+		t.Errorf("expected 'Bearer', got %q", token.TokenType)
+	}
+}
+
+func TestOIDCProviderGetUser(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(OIDCUserInfo{
+			Sub:   "oidc-user-1",
+			Email: "oidc@example.com",
+			Name:  "OIDC User",
+		})
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: srv.URL, ClientID: "id", ClientSecret: "secret"})
+	p.discovery = &OIDCDiscoveryDocument{
+		UserinfoEndpoint: srv.URL + "/userinfo",
+	}
+
+	user, err := p.GetUser(&OAuth2Token{AccessToken: "tok"})
+	if err != nil {
+		t.Fatalf("GetUser: %v", err)
+	}
+	if user.Email != "oidc@example.com" {
+		t.Errorf("expected 'oidc@example.com', got %q", user.Email)
+	}
+	if user.ID != "oidc-user-1" {
+		t.Errorf("expected 'oidc-user-1', got %q", user.ID)
+	}
+	if user.Name != "OIDC User" {
+		t.Errorf("expected 'OIDC User', got %q", user.Name)
+	}
+}
+
+func TestOIDCProviderGetUserFromIDToken(t *testing.T) {
+	claims := `{"sub":"sub-from-idtoken","name":"From Token","email":"from@token.com"}`
+	payload := base64.RawURLEncoding.EncodeToString([]byte(claims))
+	idToken := "header." + payload + ".sig"
+
+	p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
+
+	user, err := p.GetUser(&OAuth2Token{IDToken: idToken})
+	if err != nil {
+		t.Fatalf("GetUser (fallback): %v", err)
+	}
+	if user.ID != "sub-from-idtoken" {
+		t.Errorf("expected 'sub-from-idtoken', got %q", user.ID)
+	}
+}
+
+func TestOIDCProviderGetUserNoIDToken(t *testing.T) {
+	p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
+	_, err := p.GetUser(&OAuth2Token{})
+	if err == nil {
+		t.Error("expected error when no id_token and no userinfo endpoint")
+	}
+}
+
+func TestFetchOIDCDiscovery(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(OIDCDiscoveryDocument{
+			Issuer:                "http://" + r.Host,
+			JWKSUri:               "http://" + r.Host + "/jwks",
+			AuthorizationEndpoint: "http://" + r.Host + "/auth",
+			TokenEndpoint:         "http://" + r.Host + "/token",
+			UserinfoEndpoint:      "http://" + r.Host + "/userinfo",
+		})
+	}))
+	defer srv.Close()
+
+	doc, err := fetchOIDCDiscovery(srv.URL, srv.Client())
+	if err != nil {
+		t.Fatalf("fetchOIDCDiscovery: %v", err)
+	}
+	if doc.Issuer != srv.URL {
+		t.Errorf("expected issuer %q, got %q", srv.URL, doc.Issuer)
+	}
+	if doc.TokenEndpoint != srv.URL+"/token" {
+		t.Errorf("expected token endpoint %q, got %q", srv.URL+"/token", doc.TokenEndpoint)
+	}
+}
+
+func TestFetchJWKS(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(JWKSResponse{
+			Keys: []JWK{{Kty: "RSA", N: "dGVzdA==", E: "AQAB"}},
+		})
+	}))
+	defer srv.Close()
+
+	jwks, err := fetchJWKS(srv.URL, srv.Client())
+	if err != nil {
+		t.Fatalf("fetchJWKS: %v", err)
+	}
+	if len(jwks.Keys) != 1 {
+		t.Errorf("expected 1 key, got %d", len(jwks.Keys))
+	}
+	if jwks.Keys[0].Kty != "RSA" {
+		t.Errorf("expected 'RSA', got %q", jwks.Keys[0].Kty)
+	}
+}
+
+func TestFetchJWKSError(t *testing.T) {
+	client := &http.Client{}
+	_, err := fetchJWKS("http://127.0.0.1:1/jwks", client)
+	if err == nil {
+		t.Error("expected error for unreachable server")
+	}
+}
+
+func TestFetchOIDCDiscoveryError(t *testing.T) {
+	client := &http.Client{}
+	_, err := fetchOIDCDiscovery("http://127.0.0.1:1", client)
+	if err == nil {
+		t.Error("expected error for unreachable server")
+	}
+}
+
+func TestOIDCProviderExchangeCodeWithIDToken(t *testing.T) {
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n := base64.RawURLEncoding.EncodeToString(privKey.N.Bytes())
+	e := base64.RawURLEncoding.EncodeToString(big.NewInt(int64(privKey.E)).Bytes())
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/openid-configuration":
+			json.NewEncoder(w).Encode(OIDCDiscoveryDocument{
+				Issuer:                "http://" + r.Host,
+				JWKSUri:               "http://" + r.Host + "/jwks",
+				TokenEndpoint:         "http://" + r.Host + "/token",
+				AuthorizationEndpoint: "http://" + r.Host + "/auth",
+			})
+		case "/jwks":
+			json.NewEncoder(w).Encode(JWKSResponse{
+				Keys: []JWK{{Kty: "RSA", N: n, E: e}},
+			})
+		case "/token":
+			header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"RS256","typ":"JWT"}`))
+			payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"user1","name":"Test","email":"test@ex.com"}`))
+			msg := header + "." + payload
+			h := sha256.Sum256([]byte(msg))
+			sig, _ := rsa.SignPKCS1v15(rand.Reader, privKey, crypto.SHA256, h[:])
+			sigEnc := base64.RawURLEncoding.EncodeToString(sig)
+			idToken := msg + "." + sigEnc
+
+			json.NewEncoder(w).Encode(OIDCTokenResponse{
+				AccessToken: "tok",
+				TokenType:   "Bearer",
+				ExpiresIn:   3600,
+				IDToken:     idToken,
+			})
+		}
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       srv.URL,
+		ClientID:     "id",
+		ClientSecret: "secret",
+		RedirectURL:  srv.URL + "/cb",
+	})
+
+	token, err := p.ExchangeCode("code")
+	if err != nil {
+		t.Fatalf("ExchangeCode with ID token: %v", err)
+	}
+	if token.IDToken == "" {
+		t.Error("expected ID token to be set")
+	}
+	if token.UserID != "user1" {
+		t.Errorf("expected UserID 'user1', got %q", token.UserID)
+	}
+}
+
+func TestOIDCProviderGetUserWithUserinfo(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/userinfo" {
+			if r.Header.Get("Authorization") != "Bearer tok" {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			json.NewEncoder(w).Encode(OIDCUserInfo{
+				Sub:   "ui-user",
+				Email: "ui@example.com",
+				Name:  "UI User",
+			})
+		}
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{Name: "test", Issuer: srv.URL, ClientID: "id", ClientSecret: "secret"})
+	p.discovery = &OIDCDiscoveryDocument{
+		UserinfoEndpoint: srv.URL + "/userinfo",
+	}
+
+	user, err := p.GetUser(&OAuth2Token{AccessToken: "tok"})
+	if err != nil {
+		t.Fatalf("GetUser with userinfo: %v", err)
+	}
+	if user.Email != "ui@example.com" {
+		t.Errorf("expected 'ui@example.com', got %q", user.Email)
+	}
+}
+
+func TestOIDCProviderExchangeCodeAutoDiscover(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/openid-configuration":
+			json.NewEncoder(w).Encode(OIDCDiscoveryDocument{
+				Issuer:                "http://" + r.Host,
+				JWKSUri:               "http://" + r.Host + "/jwks",
+				TokenEndpoint:         "http://" + r.Host + "/token",
+				AuthorizationEndpoint: "http://" + r.Host + "/auth",
+			})
+		case "/token":
+			json.NewEncoder(w).Encode(OIDCTokenResponse{
+				AccessToken: "auto-discovered-token",
+				TokenType:   "Bearer",
+				ExpiresIn:   3600,
+			})
+		case "/jwks":
+			json.NewEncoder(w).Encode(JWKSResponse{Keys: []JWK{}})
+		}
+	}))
+	defer srv.Close()
+
+	p := NewOIDCProvider(SSOConfig{
+		Name:         "test",
+		Issuer:       srv.URL,
+		ClientID:     "id",
+		ClientSecret: "secret",
+		RedirectURL:  srv.URL + "/cb",
+	})
+
+	token, err := p.ExchangeCode("code789")
+	if err != nil {
+		t.Fatalf("ExchangeCode with auto-discover: %v", err)
+	}
+	if token.AccessToken != "auto-discovered-token" {
+		t.Errorf("expected 'auto-discovered-token', got %q", token.AccessToken)
 	}
 }
 

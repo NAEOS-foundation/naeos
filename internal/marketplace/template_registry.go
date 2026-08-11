@@ -16,7 +16,7 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
-const DefaultTemplateRegistryURL = "https://naeos-foundation.github.io/naeos/templates/registry.json"
+const DefaultTemplateRegistryURL = "https://registry.naeos.dev/templates/registry.json"
 
 type TemplateEntry struct {
 	Name        string   `json:"name"`
@@ -170,6 +170,14 @@ func ValidateTemplateManifest(path string) (*TemplateManifest, error) {
 }
 
 func PublishTemplate(templateDir string, registryURL string) (*TemplateEntry, error) {
+	entries, err := os.ReadDir(templateDir)
+	if err != nil {
+		return nil, fmt.Errorf("read template dir: %w", err)
+	}
+	if len(entries) == 0 {
+		return nil, fmt.Errorf("template directory is empty")
+	}
+
 	manifestPath := filepath.Join(templateDir, "template.yaml")
 	altPath := filepath.Join(templateDir, "naeos.yaml")
 
@@ -190,7 +198,6 @@ func PublishTemplate(templateDir string, registryURL string) (*TemplateEntry, er
 	if _, err := os.Stat(filepath.Join(templateDir, "README.md")); os.IsNotExist(err) {
 		return nil, naeoserr.New(naeoserr.ErrValidation, "template must have a README.md")
 	}
-
 	if _, err := os.Stat(filepath.Join(templateDir, ".naeos")); os.IsNotExist(err) {
 		entries, err := os.ReadDir(templateDir)
 		if err != nil {
@@ -200,7 +207,6 @@ func PublishTemplate(templateDir string, registryURL string) (*TemplateEntry, er
 			return nil, naeoserr.New(naeoserr.ErrValidation, "template directory is empty")
 		}
 	}
-
 	entry := &TemplateEntry{
 		Name:        m.Name,
 		Version:     m.Version,

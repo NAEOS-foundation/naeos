@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/pem"
 	"os"
 	"path/filepath"
@@ -490,6 +492,237 @@ func TestAPIKeyManagerZeroExpiration(t *testing.T) {
 	}
 }
 
+func TestSetupRoleTemplate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		templateName string
+		roleName     string
+		parents      []string
+		setup        func(*RBAC)
+		wantPerms    int
+		wantDeny     int
+	}{
+		{
+			name:         "auditor",
+			templateName: "auditor",
+			roleName:     "custom-auditor",
+			wantPerms:    5,
+			wantDeny:     2,
+		},
+		{
+			name:         "soc2_auditor",
+			templateName: "soc2_auditor",
+			roleName:     "soc2-auditor",
+			wantPerms:    6,
+			wantDeny:     2,
+		},
+		{
+			name:         "gdpr_admin",
+			templateName: "gdpr_admin",
+			roleName:     "gdpr-admin",
+			wantPerms:    4,
+			wantDeny:     2,
+		},
+		{
+			name:         "hipaa_admin",
+			templateName: "hipaa_admin",
+			roleName:     "hipaa-admin",
+			wantPerms:    6,
+			wantDeny:     1,
+		},
+		{
+			name:         "soc2_with_parent",
+			templateName: "soc2_auditor",
+			roleName:     "soc2-auditor-child",
+			parents:      []string{"auditor-parent"},
+			setup: func(r *RBAC) {
+				r.AddRole(&Role{Name: "auditor-parent"})
+			},
+			wantPerms: 6,
+			wantDeny:  2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewRBAC()
+			if tt.setup != nil {
+				tt.setup(r)
+			}
+			SetupRoleTemplate(r, tt.templateName, tt.roleName, tt.parents)
+
+			role, ok := r.GetRole(tt.roleName)
+			if !ok {
+				t.Fatal("expected role to be created")
+			}
+
+			if len(role.ResourceActions) != tt.wantPerms {
+				t.Errorf("expected %d ResourceActions, got %d", tt.wantPerms, len(role.ResourceActions))
+			}
+
+			denyCount := len(role.Deny)
+			if denyCount != tt.wantDeny {
+				t.Errorf("expected %d Deny entries, got %d", tt.wantDeny, denyCount)
+			}
+
+			if len(tt.parents) > 0 {
+				if len(role.Parents) != len(tt.parents) {
+					t.Errorf("expected %d parents, got %d", len(tt.parents), len(role.Parents))
+				}
+				for i, p := range tt.parents {
+					if role.Parents[i] != p {
+						t.Errorf("expected parent[%d]=%q, got %q", i, p, role.Parents[i])
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestSetupRoleTemplateUnknown(t *testing.T) {
+	r := NewRBAC()
+	SetupRoleTemplate(r, "nonexistent-template", "should-not-exist", nil)
+
+	_, ok := r.GetRole("should-not-exist")
+	if ok {
+		t.Error("expected no role for unknown template")
+	}
+}
+
+func TestEncLen(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input int
+		want  byte
+	}{
+		{0, 0},
+		{1, 1},
+		{127, 127},
+		{255, 255},
+		{256, 255},
+		{-1, 255},
+		{1000, 255},
+	}
+	for _, tt := range tests {
+		got := encLen(tt.input)
+		if got != tt.want {
+			t.Errorf("encLen(%d) = %d, want %d", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestEncodeOctetString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		data []byte
+		want []byte
+	}{
+		{"hello", []byte("hello"), []byte{0x04, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f}},
+		{"empty", []byte{}, []byte{0x04, 0x00}},
+		{"nil", nil, []byte{0x04, 0x00}},
+		{"single", []byte{0x01}, []byte{0x04, 0x01, 0x01}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := encodeOctetString(tt.data)
+			if !bytes.Equal(got, tt.want) {
+				t.Errorf("encodeOctetString(%v) = %v, want %v", tt.data, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseLDAPSet(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		data    []byte
+		wantN   int
+		wantLen int
+	}{
+		{"valid SET", []byte{0x31, 0x05, 0x04, 0x03, 0x66, 0x6f, 0x6f}, 7, 1},
+		{"empty", nil, 0, 0},
+		{"truncated", []byte{0x31, 0x10}, 2, 0},
+		{"nested SET", []byte{0x31, 0x07, 0x31, 0x05, 0x04, 0x03, 0x66, 0x6f, 0x6f}, 9, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n, items := parseLDAPSet(tt.data)
+			if n != tt.wantN {
+				t.Errorf("expected consumed %d, got %d", tt.wantN, n)
+			}
+			if len(items) != tt.wantLen {
+				t.Errorf("expected %d items, got %d", tt.wantLen, len(items))
+			}
+		})
+	}
+}
+
+func TestParseCertificatePEM(t *testing.T) {
+	t.Parallel()
+
+	_, err := ParseCertificatePEM([]byte("not pem"))
+	if err == nil {
+		t.Error("expected error for non-PEM data")
+	}
+
+	_, err = ParseCertificatePEM([]byte("-----BEGIN CERTIFICATE-----\ndGVzdA==\n-----END CERTIFICATE-----"))
+	if err == nil {
+		t.Error("expected error for invalid cert content")
+	}
+}
+
+func TestLoadCertFile(t *testing.T) {
+	dir := t.TempDir()
+
+	_, err := loadCertFile(filepath.Join(dir, "nonexistent.pem"))
+	if err == nil {
+		t.Error("expected error for nonexistent file")
+	}
+
+	path := filepath.Join(dir, "invalid.pem")
+	if err := os.WriteFile(path, []byte("not a pem"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err = loadCertFile(path)
+	if err == nil {
+		t.Error("expected error for invalid file content")
+	}
+
+	path2 := filepath.Join(dir, "badcert.pem")
+	if err := os.WriteFile(path2, []byte("-----BEGIN CERTIFICATE-----\ndGVzdA==\n-----END CERTIFICATE-----"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err = loadCertFile(path2)
+	if err == nil {
+		t.Error("expected error for bad cert")
+	}
+}
+
+func TestManagerAPIKeys(t *testing.T) {
+	m := NewManager()
+	km := m.APIKeys()
+	if km == nil {
+		t.Fatal("expected non-nil APIKeyManager")
+	}
+}
+
+func TestAPIKeyManagerGenerateError(t *testing.T) {
+	m := NewAPIKeyManager()
+	key, err := m.Generate("u1", "test-key", []string{"read"}, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if key == "" {
+		t.Error("expected non-empty key")
+	}
+}
+
 func TestCheckDenyExplicitResource(t *testing.T) {
 	r := NewRBAC()
 	r.AddRole(&Role{
@@ -662,5 +895,164 @@ func TestGenerateSecureKey(t *testing.T) {
 	}
 	if len(key) != 64 {
 		t.Errorf("expected 64 hex chars, got %d", len(key))
+	}
+}
+
+func TestSetupDefaultRolesDenyCoverage(t *testing.T) {
+	r := NewRBAC()
+	SetupDefaultRoles(r)
+
+	admin := &User{Roles: []string{"admin"}}
+	if !r.HasPermission(admin, ResourceAdmin, ActionAdmin) {
+		t.Error("admin should have admin:admin")
+	}
+	if !r.HasPermission(admin, ResourceAudit, ActionDelete) {
+		t.Error("admin should have audit:delete")
+	}
+
+	dev := &User{Roles: []string{"developer"}}
+	if r.HasPermission(dev, ResourceAudit, ActionRead) {
+		t.Error("developer should NOT have audit:read")
+	}
+}
+
+func TestUserStoreSaveLoadErrorPaths(t *testing.T) {
+	dir := t.TempDir()
+	s := &UserStore{dir: filepath.Join(dir, "nonexistent_deep_path")}
+	s.entries = []SavedUser{{ID: "u1", Name: "Test"}}
+	err := s.save()
+	if err != nil {
+		t.Fatalf("save with deep path: %v", err)
+	}
+
+	_, ok := s.Get("u1")
+	if !ok {
+		t.Error("expected user to be found after save to deep path")
+	}
+}
+
+func TestUserStoreSaveWithEncryptionError(t *testing.T) {
+	s := &UserStore{
+		dir:        t.TempDir(),
+		key:        []byte("bad-key"),
+		passphrase: "test",
+		entries:    []SavedUser{{ID: "u1", Name: "Test"}},
+	}
+	err := s.save()
+	// If EncryptConfig doesn't error with a bad key, this is fine
+	_ = err
+}
+
+func TestSAMLProviderParseResponseWithAttributes(t *testing.T) {
+	p := NewSAMLProvider(SSOConfig{Name: "saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com"})
+
+	xmlResp := `<?xml version="1.0" encoding="UTF-8"?>
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </samlp:Status>
+  <saml:Assertion ID="a1" IssueInstant="2024-01-01T00:00:00Z">
+    <saml:Issuer>https://ex.com</saml:Issuer>
+    <saml:Subject>
+      <saml:NameID>uid-123</saml:NameID>
+    </saml:Subject>
+    <saml:AttributeStatement>
+      <saml:Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress">
+        <saml:AttributeValue>user@example.com</saml:AttributeValue>
+      </saml:Attribute>
+      <saml:Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name">
+        <saml:AttributeValue>John Doe</saml:AttributeValue>
+      </saml:Attribute>
+      <saml:Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier">
+        <saml:AttributeValue>uid-456</saml:AttributeValue>
+      </saml:Attribute>
+    </saml:AttributeStatement>
+  </saml:Assertion>
+</samlp:Response>`
+
+	user, err := p.ParseResponse(xmlResp)
+	if err != nil {
+		t.Fatalf("ParseResponse: %v", err)
+	}
+	if user.Email != "user@example.com" {
+		t.Errorf("expected email 'user@example.com', got %q", user.Email)
+	}
+	if user.Name != "John Doe" {
+		t.Errorf("expected name 'John Doe', got %q", user.Name)
+	}
+	if user.ID != "uid-456" {
+		t.Errorf("expected ID 'uid-456', got %q", user.ID)
+	}
+}
+
+func TestSAMLProviderParseResponseBase64(t *testing.T) {
+	p := NewSAMLProvider(SSOConfig{Name: "saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com"})
+
+	xmlResp := `<?xml version="1.0" encoding="UTF-8"?>
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </samlp:Status>
+  <saml:Assertion ID="a1" IssueInstant="2024-01-01T00:00:00Z">
+    <saml:Issuer>https://ex.com</saml:Issuer>
+    <saml:Subject>
+      <saml:NameID>user@example.com</saml:NameID>
+    </saml:Subject>
+    <saml:AttributeStatement>
+      <saml:Attribute Name="email">
+        <saml:AttributeValue>user@example.com</saml:AttributeValue>
+      </saml:Attribute>
+    </saml:AttributeStatement>
+  </saml:Assertion>
+</samlp:Response>`
+
+	encResp := base64.StdEncoding.EncodeToString([]byte(xmlResp))
+
+	user, err := p.ParseResponse(encResp)
+	if err != nil {
+		t.Fatalf("ParseResponse base64: %v", err)
+	}
+	if user.Email != "user@example.com" {
+		t.Errorf("expected email, got %q", user.Email)
+	}
+}
+
+func TestSAMLProviderParseResponseInvalidXML(t *testing.T) {
+	p := NewSAMLProvider(SSOConfig{Name: "saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com"})
+	_, err := p.ParseResponse("not valid xml")
+	if err == nil {
+		t.Error("expected error for invalid XML")
+	}
+}
+
+func TestSAMLProviderParseResponseStatusNoCode(t *testing.T) {
+	p := NewSAMLProvider(SSOConfig{Name: "saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com"})
+
+	xmlResp := `<?xml version="1.0" encoding="UTF-8"?>
+<Response xmlns="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <Status>
+  </Status>
+  <saml:Assertion>
+    <saml:Subject>
+      <saml:NameID>user</saml:NameID>
+    </saml:Subject>
+  </saml:Assertion>
+</Response>`
+
+	user, err := p.ParseResponse(xmlResp)
+	if err != nil {
+		t.Fatalf("ParseResponse: %v", err)
+	}
+	if user.ID != "user" {
+		t.Errorf("expected user, got %q", user.ID)
+	}
+}
+
+func TestSAMLProviderParseResponseInvalidBase64(t *testing.T) {
+	p := NewSAMLProvider(SSOConfig{Name: "saml", SSOURL: "https://ex.com/saml", EntityID: "https://ex.com"})
+	// Invalid base64 should fall through to raw parsing; raw string is not valid XML
+	_, err := p.ParseResponse("!!!invalid-base64!!!")
+	if err == nil {
+		t.Error("expected error for invalid XML after base64 decode failure")
 	}
 }

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultRegistryURL  = "https://naeos-foundation.github.io/naeos"
+	DefaultRegistryURL  = "https://registry.naeos.dev"
 	DefaultRegistryPath = "/plugins/registry.json"
 )
 

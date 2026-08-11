@@ -3,18 +3,21 @@ package lsp
 type Method string
 
 const (
-	MethodInitialize     Method = "initialize"
-	MethodShutdown       Method = "shutdown"
-	MethodExit           Method = "exit"
-	MethodDidOpen        Method = "textDocument/didOpen"
-	MethodDidChange      Method = "textDocument/didChange"
-	MethodDidClose       Method = "textDocument/didClose"
-	MethodCompletion     Method = "textDocument/completion"
-	MethodHover          Method = "textDocument/hover"
-	MethodDefinition     Method = "textDocument/definition"
-	MethodDocumentSymbol Method = "textDocument/documentSymbol"
-	MethodPublishDiag    Method = "textDocument/publishDiagnostics"
-	MethodCodeAction     Method = "textDocument/codeAction"
+	MethodInitialize      Method = "initialize"
+	MethodShutdown        Method = "shutdown"
+	MethodExit            Method = "exit"
+	MethodDidOpen         Method = "textDocument/didOpen"
+	MethodDidChange       Method = "textDocument/didChange"
+	MethodDidClose        Method = "textDocument/didClose"
+	MethodCompletion      Method = "textDocument/completion"
+	MethodHover           Method = "textDocument/hover"
+	MethodDefinition      Method = "textDocument/definition"
+	MethodDocumentSymbol  Method = "textDocument/documentSymbol"
+	MethodPublishDiag     Method = "textDocument/publishDiagnostics"
+	MethodCodeAction      Method = "textDocument/codeAction"
+	MethodSignatureHelp   Method = "textDocument/signatureHelp"
+	MethodFormatting      Method = "textDocument/formatting"
+	MethodRangeFormatting Method = "textDocument/rangeFormatting"
 )
 
 type Request struct {
@@ -71,41 +74,22 @@ type InitializeResult struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync       int                `json:"textDocumentSync"`
-	CompletionProvider     *CompletionOptions `json:"completionProvider,omitempty"`
-	HoverProvider          bool               `json:"hoverProvider,omitempty"`
-	DefinitionProvider     bool               `json:"definitionProvider,omitempty"`
-	DocumentSymbolProvider bool               `json:"documentSymbolProvider,omitempty"`
-	CodeActionProvider     bool               `json:"codeActionProvider,omitempty"`
+	TextDocumentSync           int                        `json:"textDocumentSync"`
+	CompletionProvider         *CompletionOptions         `json:"completionProvider,omitempty"`
+	HoverProvider              bool                       `json:"hoverProvider,omitempty"`
+	DefinitionProvider         bool                       `json:"definitionProvider,omitempty"`
+	DocumentSymbolProvider     bool                       `json:"documentSymbolProvider,omitempty"`
+	SignatureHelpProvider      *SignatureHelpOptions      `json:"signatureHelpProvider,omitempty"`
+	CodeActionProvider         *CodeActionOptions         `json:"codeActionProvider,omitempty"`
+	DocumentFormattingProvider *DocumentFormattingOptions `json:"documentFormattingProvider,omitempty"`
+}
+
+type SignatureHelpOptions struct {
+	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
 }
 
 type CompletionOptions struct {
 	TriggerCharacters []string `json:"triggerCharacters"`
-}
-
-type CodeActionParams struct {
-	TextDocument TextDocumentIdentifier `json:"textDocument"`
-	Range        Range                  `json:"range"`
-	Context      CodeActionContext      `json:"context"`
-}
-
-type CodeActionContext struct {
-	Diagnostics []Diagnostic `json:"diagnostics"`
-}
-
-type CodeAction struct {
-	Title string         `json:"title"`
-	Kind  *string        `json:"kind,omitempty"`
-	Edit  *WorkspaceEdit `json:"edit,omitempty"`
-}
-
-type WorkspaceEdit struct {
-	Changes map[string][]TextEdit `json:"changes"`
-}
-
-type TextEdit struct {
-	Range   Range  `json:"range"`
-	NewText string `json:"newText"`
 }
 
 type DidOpenTextDocumentParams struct {
@@ -288,3 +272,82 @@ const (
 	DiagInformation DiagnosticSeverity = 3
 	DiagHint        DiagnosticSeverity = 4
 )
+
+type CodeActionKind string
+
+const (
+	CodeActionQuickFix       CodeActionKind = "quickfix"
+	CodeActionRefactor       CodeActionKind = "refactor"
+	CodeActionSource         CodeActionKind = "source"
+	CodeActionSourceOrganize CodeActionKind = "source.organizeImports"
+)
+
+type CodeAction struct {
+	Title       string         `json:"title"`
+	Kind        CodeActionKind `json:"kind,omitempty"`
+	Diagnostics []Diagnostic   `json:"diagnostics,omitempty"`
+	Edit        *WorkspaceEdit `json:"edit,omitempty"`
+}
+
+type WorkspaceEdit struct {
+	Changes map[string][]TextEdit `json:"changes,omitempty"`
+}
+
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
+}
+
+type CodeActionParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Range        Range                  `json:"range"`
+	Context      CodeActionContext      `json:"context"`
+}
+
+type CodeActionContext struct {
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}
+
+type CodeActionOptions struct {
+	CodeActionKinds []CodeActionKind `json:"codeActionKinds,omitempty"`
+}
+
+type SignatureHelp struct {
+	Signatures      []SignatureInformation `json:"signatures"`
+	ActiveSignature int                    `json:"activeSignature"`
+	ActiveParameter int                    `json:"activeParameter"`
+}
+
+type SignatureInformation struct {
+	Label         string                 `json:"label"`
+	Documentation string                 `json:"documentation,omitempty"`
+	Parameters    []ParameterInformation `json:"parameters,omitempty"`
+}
+
+type ParameterInformation struct {
+	Label         string `json:"label"`
+	Documentation string `json:"documentation,omitempty"`
+}
+
+type SignatureHelpParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+}
+
+type DocumentFormattingParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Options      FormattingOptions      `json:"options"`
+}
+
+type DocumentRangeFormattingParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Range        Range                  `json:"range"`
+	Options      FormattingOptions      `json:"options"`
+}
+
+type FormattingOptions struct {
+	TabSize      int  `json:"tabSize"`
+	InsertSpaces bool `json:"insertSpaces"`
+}
+
+type DocumentFormattingOptions struct{}

@@ -1,0 +1,7 @@
+name: fullstack-js
+version: "2.0.0"
+description: Full-stack JavaScript/TypeScript with Next.js, Prisma, and PostgreSQL
+author: NAEOS Foundation
+tags: [typescript, javascript, nextjs, fullstack, postgres, official]
+languages: [typescript, javascript]
+frameworks: [nextjs, prisma, postgresql]

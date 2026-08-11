@@ -264,17 +264,17 @@ func (m *Manager) LoadAll(ctx *PluginContext) error {
 			continue
 		}
 		if err := m.sandbox.ValidatePath(pInfo.Path); err != nil {
-			errs = append(errs, fmt.Sprintf("plugin %s: sandbox validation failed: %v", pInfo.Name, err))
+			errs = append(errs, fmt.Sprintf("plugin %q: sandbox validation failed: %v", pInfo.Name, err))
 			continue
 		}
 		p, err := m.loadGoPlugin(pInfo.Path)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("plugin %s: load failed: %v", pInfo.Name, err))
+			errs = append(errs, fmt.Sprintf("plugin %q: load failed: %v", pInfo.Name, err))
 			continue
 		}
 		if err := p.Initialize(ctx); err != nil {
 			m.updateState(pInfo.Name, StateError, err)
-			errs = append(errs, fmt.Sprintf("plugin %s: init failed: %v", pInfo.Name, err))
+			errs = append(errs, fmt.Sprintf("plugin %q: init failed: %v", pInfo.Name, err))
 			continue
 		}
 		m.mu.Lock()
@@ -325,7 +325,7 @@ func (m *Manager) InitializeAll(ctx *PluginContext) error {
 	for name, p := range m.plugins {
 		if err := p.Initialize(ctx); err != nil {
 			m.updateStateLocked(name, StateError, err)
-			return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("failed to initialize plugin '%s'", name), err)
+			return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("failed to initialize plugin %q", name), err)
 		}
 		m.updateStateLocked(name, StateInitialized, nil)
 	}
@@ -341,7 +341,7 @@ func (m *Manager) ShutdownAll() error {
 	for name, p := range m.plugins {
 		if err := p.Shutdown(); err != nil {
 			m.updateStateLocked(name, StateError, err)
-			lastErr = naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("failed to shutdown plugin '%s'", name), err)
+			lastErr = naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("failed to shutdown plugin %q", name), err)
 		} else {
 			m.updateStateLocked(name, StateStopped, nil)
 		}
@@ -358,7 +358,7 @@ func (m *Manager) Execute(ctx context.Context, name, action string, params map[s
 		if m.config.Lazy {
 			pluginCtx := &PluginContext{}
 			if err := m.lazyLoad(name, pluginCtx); err != nil {
-				return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "lazy load plugin %s", name)
+				return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "lazy load plugin %q", name)
 			}
 			p, ok = m.Get(name)
 			if !ok {
@@ -404,7 +404,7 @@ func (m *Manager) lazyLoad(name string, ctx *PluginContext) error {
 			}
 			pInfo := &m.config.Plugins[i]
 			if !pInfo.Enabled || pInfo.Path == "" {
-				return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("plugin %s is disabled or has no path", name), nil)
+				return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("plugin %q is disabled or has no path", name), nil)
 			}
 			if err := m.sandbox.ValidatePath(pInfo.Path); err != nil {
 				return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "sandbox validation failed for plugin %q", name)
@@ -415,7 +415,7 @@ func (m *Manager) lazyLoad(name string, ctx *PluginContext) error {
 			}
 			if err := p.Initialize(ctx); err != nil {
 				m.updateStateLocked(name, StateError, err)
-				return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("init plugin %s", name), err)
+				return naeoserr.Wrap(naeoserr.ErrPlugin, fmt.Sprintf("init plugin %q", name), err)
 			}
 			m.plugins[name] = p
 			pInfo.Loaded = true
@@ -431,7 +431,7 @@ func (m *Manager) Cleanup() error {
 	var errs []string
 	for name, p := range m.plugins {
 		if err := p.Shutdown(); err != nil {
-			errs = append(errs, fmt.Sprintf("%s: %v", name, err))
+			errs = append(errs, fmt.Sprintf("%q: %v", name, err))
 		}
 	}
 	if len(errs) > 0 {

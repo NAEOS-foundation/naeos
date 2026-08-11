@@ -1,0 +1,9 @@
+{
+  "commit": "0000000",
+  "date": "2026-07-28",
+  "results": [
+    {"name": "BenchmarkPipelineRun", "nsPerOp": 2000000000, "allocsPerOp": 50000, "bytesPerOp": 5000000},
+    {"name": "BenchmarkPipelineRun_Medium", "nsPerOp": 3000000000, "allocsPerOp": 150000, "bytesPerOp": 15000000},
+    {"name": "BenchmarkPipelineRun_Large", "nsPerOp": 10000000000, "allocsPerOp": 1500000, "bytesPerOp": 150000000}
+  ]
+}

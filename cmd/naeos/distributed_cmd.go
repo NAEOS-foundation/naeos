@@ -37,7 +37,7 @@ Example:
 }
 
 func runDistributed(cmd *cobra.Command, configPath string, workerCount int) error {
-	cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun)
+	cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun, "")
 	if err != nil {
 		return err
 	}

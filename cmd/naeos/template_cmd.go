@@ -264,6 +264,7 @@ variables:
 	cmd.AddCommand(newTemplatePublishCommand())
 	cmd.AddCommand(newTemplateSearchCommand())
 	cmd.AddCommand(newTemplateInitCommand())
+	cmd.AddCommand(newTemplateCreateCommand())
 	cmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", filepath.Join(".", ".naeos", "templates"), "templates directory")
 	return cmd
 }
@@ -455,6 +456,109 @@ Examples:
 
 	cmd.Flags().StringVar(&registryURL, "registry", marketplace.DefaultTemplateRegistryURL, "template registry URL")
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "", "output directory (defaults to template name)")
+
+	return cmd
+}
+
+func newTemplateCreateCommand() *cobra.Command {
+	var author, desc, dir, lang string
+	var tags []string
+
+	cmd := &cobra.Command{
+		Use:   "create [name]",
+		Short: "Scaffold a new starter template directory for publishing",
+		Long: `Create a new starter project template structure in the specified directory.
+The scaffold includes a template.yaml manifest, README.md, and source boilerplate.
+
+After creation, use 'naeos template publish <dir>' to publish it to the marketplace.
+
+Examples:
+  naeos template create my-starter --author "My Name" --desc "My starter template"
+  naeos template create go-api --lang go --tags "api, rest"`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			targetDir := dir
+			if targetDir == "" {
+				targetDir = name
+			}
+
+			if err := os.MkdirAll(targetDir, 0o755); err != nil {
+				return fmt.Errorf("create template dir: %w", err)
+			}
+
+			manifest := fmt.Sprintf(`name: %s
+version: "0.1.0"
+description: "%s"
+author: "%s"
+tags: [%s]
+languages: [%s]
+frameworks: []
+`, name, desc, author, strings.Join(tags, ", "), lang)
+
+			if err := os.WriteFile(filepath.Join(targetDir, "template.yaml"), []byte(manifest), 0o600); err != nil {
+				return fmt.Errorf("write template.yaml: %w", err)
+			}
+
+			readme := fmt.Sprintf(`# %s
+
+%s
+
+## Getting Started
+
+...
+
+## Structure
+
+...
+
+## License
+
+`,
+				name, desc)
+			if err := os.WriteFile(filepath.Join(targetDir, "README.md"), []byte(readme), 0o600); err != nil {
+				return fmt.Errorf("write README.md: %w", err)
+			}
+
+			naeosSpec := fmt.Sprintf(`project:
+  name: %s
+  version: "0.1.0"
+
+modules:
+  - name: main
+    path: ./src
+
+services:
+  - name: api
+    port: 8080
+    kind: http
+`, name)
+			if err := os.WriteFile(filepath.Join(targetDir, "naeos.yaml"), []byte(naeosSpec), 0o600); err != nil {
+				return fmt.Errorf("write naeos.yaml: %w", err)
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "✓ Template %q created in %s/\n", name, targetDir)
+			fmt.Fprintln(cmd.OutOrStdout(), "")
+			fmt.Fprintln(cmd.OutOrStdout(), "Files created:")
+			fmt.Fprintf(cmd.OutOrStdout(), "  %s/template.yaml    — Template manifest\n", targetDir)
+			fmt.Fprintf(cmd.OutOrStdout(), "  %s/README.md        — Documentation\n", targetDir)
+			fmt.Fprintf(cmd.OutOrStdout(), "  %s/naeos.yaml       — NAEOS specification\n", targetDir)
+			fmt.Fprintln(cmd.OutOrStdout(), "")
+			fmt.Fprintln(cmd.OutOrStdout(), "Next step: add source files, then publish:")
+			fmt.Fprintf(cmd.OutOrStdout(), "  naeos template publish %s\n", targetDir)
+			fmt.Fprintln(cmd.OutOrStdout(), "")
+			fmt.Fprintf(cmd.OutOrStdout(), "Or submit to the official registry via PR:\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "  https://github.com/NAEOS-foundation/naeos\n")
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&dir, "dir", "d", "", "output directory (defaults to template name)")
+	cmd.Flags().StringVar(&author, "author", "", "template author name")
+	cmd.Flags().StringVarP(&desc, "desc", "D", "NAEOS starter template", "template description")
+	cmd.Flags().StringVarP(&lang, "lang", "l", "go", "primary programming language")
+	cmd.Flags().StringSliceVar(&tags, "tags", nil, "comma-separated tags")
 
 	return cmd
 }

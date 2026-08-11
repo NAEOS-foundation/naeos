@@ -24,6 +24,21 @@ func (c *stubCache) HashSpec(spec string) string {
 	return "hash-" + spec
 }
 
+func (c *stubCache) ModuleKey(specHash, moduleName, stage string) string {
+	return specHash + ":" + moduleName + ":" + stage
+}
+
+func (c *stubCache) GetModuleStage(key string) ([]byte, bool) {
+	return nil, false
+}
+
+func (c *stubCache) SetModuleStage(key string, data []byte) {
+}
+
+func (c *stubCache) UnchangedModules(specHash string, moduleHashes map[string]string) []string {
+	return nil
+}
+
 func TestPipelineCacheHitWithRun(t *testing.T) {
 	t.Parallel()
 	cache := &stubCache{store: make(map[string]*Result)}

@@ -42,7 +42,7 @@ func newWebSocketCommand() *cobra.Command {
 					return err
 				}
 
-				cfg, err := loadPipelineConfig(wsConfigPath, cliVerbose, nil, cliDryRun)
+				cfg, err := loadPipelineConfig(wsConfigPath, cliVerbose, nil, cliDryRun, "")
 				if err != nil {
 					return err
 				}

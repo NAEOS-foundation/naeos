@@ -81,7 +81,7 @@ func TestValidateNEIRSpecJSON(t *testing.T) {
 func TestValidateNEIRSpecWithSchemaRef(t *testing.T) {
 	dir := t.TempDir()
 	spec := filepath.Join(dir, "spec.yaml")
-	if err := os.WriteFile(spec, []byte("$schema: https://naeos.dev/schemaregistry/latest.json\nproject: test\nmodules:\n  - name: core\n    path: ./internal/core\n"), 0o644); err != nil {
+	if err := os.WriteFile(spec, []byte("$schema: https://registry.naeos.dev/schemaregistry/latest.json\nproject: test\nmodules:\n  - name: core\n    path: ./internal/core\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

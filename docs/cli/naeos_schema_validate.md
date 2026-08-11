@@ -13,7 +13,7 @@ that the spec conforms to it, including required fields and enum values.
 Examples:
   naeos schema validate spec.yaml
   naeos schema validate spec.json --output json
-  naeos schema validate spec.naeos.yaml --registry https://naeos.dev/schemaregistry/v1/neir.json
+  naeos schema validate spec.naeos.yaml --registry https://registry.naeos.dev/schemaregistry/v1/neir.json
 
 ```
 naeos schema validate [file] [flags]
@@ -24,7 +24,7 @@ naeos schema validate [file] [flags]
 ```
   -h, --help              help for validate
   -o, --output string     output format: text, json, yaml (default "text")
-      --registry string   schema registry URL (default "https://naeos.dev/schemaregistry/latest.json")
+      --registry string   schema registry URL (default "https://registry.naeos.dev/schemaregistry/latest.json")
 ```
 
 ### Options inherited from parent commands

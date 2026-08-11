@@ -428,45 +428,6 @@ func TestOIDCProviderGetUserInfo(t *testing.T) {
 	}
 }
 
-func TestOIDCProviderGetUserFromIDToken(t *testing.T) {
-	payload := map[string]any{"sub": "local-1", "name": "Local", "email": "local@example.com"}
-	pb, _ := json.Marshal(payload)
-	idToken := "header." + base64.RawURLEncoding.EncodeToString(pb) + ".sig"
-
-	p := NewOIDCProvider(SSOConfig{Name: "oidc", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
-	user, err := p.GetUser(&OAuth2Token{IDToken: idToken})
-	if err != nil {
-		t.Fatalf("GetUser: %v", err)
-	}
-	if user.ID != "local-1" {
-		t.Errorf("expected local-1, got %q", user.ID)
-	}
-
-	_, err = p.GetUser(&OAuth2Token{})
-	if err == nil {
-		t.Error("expected error for missing id_token")
-	}
-	_, err = p.GetUser(&OAuth2Token{IDToken: "not-a-jwt"})
-	if err == nil {
-		t.Error("expected error for invalid id_token format")
-	}
-}
-
-func TestOIDCProviderVerifyIDTokenErrors(t *testing.T) {
-	p := NewOIDCProvider(SSOConfig{Name: "oidc", Issuer: "https://ex.com", ClientID: "id", ClientSecret: "secret"})
-
-	_, err := p.verifyIDToken("a.b")
-	if err == nil {
-		t.Error("expected error for invalid format")
-	}
-
-	p.jwks = &JWKSResponse{Keys: []JWK{{Kty: "RSA", N: "!!!not-base64", E: "AQAB"}}}
-	_, err = p.verifyIDToken("a.b.c")
-	if err == nil {
-		t.Error("expected signature verification failure")
-	}
-}
-
 func TestOIDCProviderDiscoverErrors(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

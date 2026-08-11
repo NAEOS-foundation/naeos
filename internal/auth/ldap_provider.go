@@ -318,3 +318,25 @@ func parseLDAPResult(data []byte) map[string]string {
 
 	return result
 }
+
+// parseLDAPSet decodes a BER SET OF run, returning bytes consumed and complete elements.
+func parseLDAPSet(data []byte) (int, [][]byte) {
+	var items [][]byte
+	pos := 0
+	for pos < len(data) {
+		if pos+2 > len(data) {
+			break
+		}
+		tag := data[pos]
+		length := int(data[pos+1]) //nolint:gosec // guarded by pos+2 <= len(data)
+		pos += 2
+		if pos+length > len(data) {
+			break
+		}
+		if tag == 0x30 || tag == 0x64 || tag == 0x31 {
+			items = append(items, data[pos:pos+length])
+		}
+		pos += length
+	}
+	return pos, items
+}

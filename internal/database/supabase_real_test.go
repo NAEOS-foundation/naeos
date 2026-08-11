@@ -3,10 +3,12 @@
 package database
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestRealSupabaseRESTConnect(t *testing.T) {
@@ -166,11 +168,328 @@ func TestRealSupabaseRESTMigrate(t *testing.T) {
 	}
 }
 
-func TestRealSupabaseRESTHealthCheckError(t *testing.T) {
+func TestRealSupabaseCacheSetGet(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	rows := []Row{{"id": int64(1), "name": "test"}}
+	s.cacheSet("SELECT 1", rows)
+
+	got, ok := s.cacheGet("SELECT 1")
+	if !ok {
+		t.Fatal("expected cache hit")
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(got))
+	}
+	if got[0]["id"] != int64(1) {
+		t.Errorf("expected id 1, got %v", got[0]["id"])
+	}
+}
+
+func TestRealSupabaseCacheGetMiss(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	_, ok := s.cacheGet("SELECT nonexistent")
+	if ok {
+		t.Error("expected cache miss")
+	}
+}
+
+func TestRealSupabaseCacheGetExpired(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	s.queryCache["test"] = cachedResult{rows: []Row{{"a": 1}}, expiresAt: time.Now().Add(-time.Hour)}
+	_, ok := s.cacheGet("test")
+	if ok {
+		t.Error("expected cache miss for expired entry")
+	}
+	_, ok = s.queryCache["test"]
+	if ok {
+		t.Error("expired entry should be deleted from map")
+	}
+}
+
+func TestRealSupabaseCacheClear(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	s.cacheSet("SELECT 1", []Row{{"id": int64(1)}})
+	s.cacheClear()
+	_, ok := s.cacheGet("SELECT 1")
+	if ok {
+		t.Error("expected cache miss after clear")
+	}
+}
+
+func TestRealSupabaseCacheKey(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	key := s.cacheKey("  SELECT 1  ")
+	if key != "SELECT 1" {
+		t.Errorf("expected 'SELECT 1', got %q", key)
+	}
+}
+
+func TestRealSupabaseIsWriteQuery(t *testing.T) {
+	t.Parallel()
+
+	s := NewRealSupabase()
+	tests := []struct {
+		query string
+		want  bool
+	}{
+		{"SELECT * FROM users", false},
+		{"INSERT INTO users VALUES (1)", true},
+		{"UPDATE users SET name = 'x'", true},
+		{"DELETE FROM users", true},
+		{"CREATE TABLE t (id INT)", true},
+		{"DROP TABLE t", true},
+		{"ALTER TABLE t ADD COLUMN x INT", true},
+		{"TRUNCATE TABLE t", true},
+		{"REPLACE INTO t VALUES (1)", true},
+		{"  select * from users", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			got := s.isWriteQuery(tt.query)
+			if got != tt.want {
+				t.Errorf("isWriteQuery(%q) = %v, want %v", tt.query, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRealSupabaseDefaultContextWithTimeout(t *testing.T) {
+	s := NewRealSupabase()
+	s.config = &Config{Timeout: 5 * time.Second}
+	ctx, cancel := s.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealSupabaseDefaultContextWithoutTimeout(t *testing.T) {
+	s := NewRealSupabase()
+	s.config = &Config{}
+	ctx, cancel := s.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealSupabaseDefaultContextNilConfig(t *testing.T) {
+	s := NewRealSupabase()
+	ctx, cancel := s.defaultContext()
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Error("context should not be done yet")
+	default:
+	}
+}
+
+func TestRealSupabaseNotConnected(t *testing.T) {
+	s := NewRealSupabase()
+
+	err := s.Ping()
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.Exec("SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.ExecContext(context.Background(), "SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.Query("SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.QueryContext(context.Background(), "SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.QueryRow("SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.QueryRowContext(context.Background(), "SELECT 1")
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.Begin()
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	_, err = s.BeginTx(context.Background())
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	err = s.Migrate(nil)
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	err = s.MigrateContext(context.Background(), nil)
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	err = s.Rollback(0)
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	err = s.RollbackContext(context.Background(), 0)
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	err = s.HealthCheck()
+	if err == nil {
+		t.Error("expected error when not connected")
+	}
+
+	if err := s.Close(); err != nil {
+		t.Fatalf("Close(): %v", err)
+	}
+}
+
+func TestRealSupabaseHealthCheckError(t *testing.T) {
 	s := NewRealSupabase()
 	err := s.HealthCheck()
 	if err == nil {
 		t.Fatal("expected error for HealthCheck without Connect")
+	}
+}
+
+func TestRealSupabaseConnectFailure(t *testing.T) {
+	s := NewRealSupabase()
+	err := s.Connect(&Config{
+		Host:     "192.0.2.1",
+		Port:     1,
+		User:     "u",
+		Password: "p",
+		Database: "d",
+		Timeout:  time.Second,
+	})
+	if err == nil {
+		t.Error("expected error connecting to unreachable host")
+	}
+}
+
+func TestRealSupabaseConnectFailureWithSSL(t *testing.T) {
+	s := NewRealSupabase()
+	err := s.Connect(&Config{
+		Host:     "192.0.2.1",
+		Port:     1,
+		User:     "u",
+		Password: "p",
+		Database: "d",
+		SSLMode:  "disable",
+		Timeout:  time.Second,
+	})
+	if err == nil {
+		t.Error("expected error connecting to unreachable host")
+	}
+}
+
+func TestRealSupabaseRestClientDefaultURL(t *testing.T) {
+	s := NewRealSupabase()
+	s.config = &Config{
+		SupabaseProjectRef:     "my-project",
+		SupabaseServiceRoleKey: "svc-key",
+	}
+	client := s.restClient()
+	if client == nil {
+		t.Fatal("expected non-nil client")
+	}
+}
+
+func TestRealSupabaseBeginTxRESTMode(t *testing.T) {
+	s := NewRealSupabase()
+	s.config = &Config{SupabaseProjectRef: "test"}
+	s.restMode = true
+
+	_, err := s.Begin()
+	if err == nil {
+		t.Error("expected error for Begin in REST mode")
+	}
+
+	_, err = s.BeginTx(context.Background())
+	if err == nil {
+		t.Error("expected error for BeginTx in REST mode")
+	}
+}
+
+func TestRealSupabasePingRestModeNoConfig(t *testing.T) {
+	s := NewRealSupabase()
+	s.restMode = true
+	err := s.Ping()
+	if err == nil {
+		t.Error("expected error for Ping in restMode without config")
+	}
+}
+
+func TestRealSupabaseHealthCheckRestModeNoConfig(t *testing.T) {
+	s := NewRealSupabase()
+	s.restMode = true
+	err := s.HealthCheck()
+	if err == nil {
+		t.Error("expected error for HealthCheck in restMode without config")
+	}
+}
+
+func TestRealSupabaseRESTExecError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error": "internal error"}`))
+	}))
+	defer ts.Close()
+
+	s := NewRealSupabase()
+	cfg := &Config{
+		SupabaseProjectRef:     "test-proj",
+		SupabaseServiceRoleKey: "test-svc-key",
+		SupabaseURL:            ts.URL,
+		SupabaseManagementURL:  ts.URL,
+	}
+	if err := s.Connect(cfg); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	_, err := s.Query("SELECT 1")
+	if err == nil {
+		t.Error("expected error from Query with server error")
+	}
+
+	_, err = s.Exec("INSERT INTO t VALUES (1)")
+	if err == nil {
+		t.Error("expected error from Exec with server error")
 	}
 }
 

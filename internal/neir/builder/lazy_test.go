@@ -327,7 +327,9 @@ func TestLazyNEIRBackwardCompat(t *testing.T) {
 
 func TestDefaultBuilderLazyBuilderInterface(t *testing.T) {
 	b := DefaultBuilder{}
-	lazyB, ok := any(b).(LazyBuilder)
+	lazyB, ok := any(b).(interface {
+		BuildLazy(resolved any) (*LazyNEIR, error)
+	})
 	if !ok {
 		t.Fatal("DefaultBuilder should implement LazyBuilder")
 	}

@@ -34,7 +34,7 @@ Examples:
 				return err
 			}
 
-			cfg, err := loadPipelineConfig(configPath, false, nil, false)
+			cfg, err := loadPipelineConfig(configPath, false, nil, false, "")
 			if err != nil {
 				return err
 			}

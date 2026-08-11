@@ -1,6 +1,11 @@
 package adapters
 
 import (
+	"context"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
+
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
@@ -61,12 +66,19 @@ func All() map[language.Language][]OutputAdapter {
 
 func GenerateForNEIR(neir *model.NEIR) ([]engine.Artifact, error) {
 	if neir == nil {
-		return nil, nil // Nil input — nothing to generate, return empty result
+		return nil, nil
 	}
 
 	languages := resolveLanguages(neir)
-	var allArtifacts []engine.Artifact
+	if len(languages) <= 1 {
+		return generateSequential(neir, languages)
+	}
 
+	return generateParallel(neir, languages)
+}
+
+func generateSequential(neir *model.NEIR, languages []language.Language) ([]engine.Artifact, error) {
+	var allArtifacts []engine.Artifact
 	for _, lang := range languages {
 		adapter, ok := Get(lang)
 		if !ok {
@@ -75,7 +87,32 @@ func GenerateForNEIR(neir *model.NEIR) ([]engine.Artifact, error) {
 		artifacts := generateWithAdapter(adapter, neir)
 		allArtifacts = append(allArtifacts, artifacts...)
 	}
+	return allArtifacts, nil
+}
 
+func generateParallel(neir *model.NEIR, languages []language.Language) ([]engine.Artifact, error) {
+	var mu sync.Mutex
+	var allArtifacts []engine.Artifact
+
+	g, _ := errgroup.WithContext(context.Background())
+	for _, lang := range languages {
+		lang := lang
+		g.Go(func() error {
+			adapter, ok := Get(lang)
+			if !ok {
+				return nil
+			}
+			artifacts := generateWithAdapter(adapter, neir)
+			mu.Lock()
+			allArtifacts = append(allArtifacts, artifacts...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
 	return allArtifacts, nil
 }
 
@@ -88,6 +125,7 @@ func resolveLanguages(neir *model.NEIR) []language.Language {
 
 func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artifact {
 	var artifacts []engine.Artifact
+	var mu sync.Mutex
 
 	projectName := ""
 	if neir.Project != nil {
@@ -98,14 +136,6 @@ func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artif
 	artifacts = append(artifacts, adapter.GenerateDockerfile(projectName)...)
 	artifacts = append(artifacts, adapter.GenerateCI(projectName)...)
 
-	for _, m := range neir.Modules {
-		artifacts = append(artifacts, adapter.GenerateModule(m.Name, m.Path, projectName)...)
-	}
-
-	for _, s := range neir.Services {
-		artifacts = append(artifacts, adapter.GenerateService(s.Name, string(s.Kind), s.Port, projectName)...)
-	}
-
 	if neir.Deployment != nil && string(neir.Deployment.Strategy) != "" {
 		artifacts = append(artifacts, adapter.GenerateDockerCompose(projectName)...)
 	}
@@ -114,5 +144,29 @@ func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artif
 		artifacts = append(artifacts, adapter.GenerateArchitectureDoc(projectName, string(neir.Architecture.Pattern))...)
 	}
 
+	g, _ := errgroup.WithContext(context.Background())
+	for _, m := range neir.Modules {
+		m := m
+		g.Go(func() error {
+			moduleArtifacts := adapter.GenerateModule(m.Name, m.Path, projectName)
+			mu.Lock()
+			artifacts = append(artifacts, moduleArtifacts...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	for _, s := range neir.Services {
+		s := s
+		g.Go(func() error {
+			serviceArtifacts := adapter.GenerateService(s.Name, string(s.Kind), s.Port, projectName)
+			mu.Lock()
+			artifacts = append(artifacts, serviceArtifacts...)
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	_ = g.Wait()
 	return artifacts
 }

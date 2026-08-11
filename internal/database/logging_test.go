@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"testing"
+	"time"
 )
 
 func TestLoggingDatabase(t *testing.T) {
@@ -126,4 +127,35 @@ func TestSlowQueryLogging(t *testing.T) {
 	db := NewLoggingDatabase(inner, logger)
 
 	_, _ = db.ExecContext(context.Background(), "SELECT 1")
+}
+
+func TestLogQuerySlowPath(t *testing.T) {
+	inner := NewPostgreSQL()
+	ldb := &loggingDatabase{inner: inner, logger: slog.Default()}
+
+	ldb.logQuery("exec", "SELECT 1", nil, time.Now().Add(-2*time.Second), nil)
+}
+
+func TestLoggingDatabasePing(t *testing.T) {
+	t.Parallel()
+
+	inner := NewPostgreSQL()
+	inner.Connect(&Config{})
+	logged := NewLoggingDatabase(inner, nil)
+
+	if err := logged.Ping(); err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+}
+
+func TestLoggingDatabaseHealthCheck(t *testing.T) {
+	t.Parallel()
+
+	inner := NewPostgreSQL()
+	inner.Connect(&Config{})
+	logged := NewLoggingDatabase(inner, nil)
+
+	if err := logged.HealthCheck(); err != nil {
+		t.Fatalf("HealthCheck: %v", err)
+	}
 }

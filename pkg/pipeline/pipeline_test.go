@@ -400,6 +400,21 @@ func (c *mockCache) HashSpec(spec string) string {
 	return spec
 }
 
+func (c *mockCache) ModuleKey(specHash, moduleName, stage string) string {
+	return specHash + ":" + moduleName + ":" + stage
+}
+
+func (c *mockCache) GetModuleStage(key string) ([]byte, bool) {
+	return nil, false
+}
+
+func (c *mockCache) SetModuleStage(key string, data []byte) {
+}
+
+func (c *mockCache) UnchangedModules(specHash string, moduleHashes map[string]string) []string {
+	return nil
+}
+
 func TestPipelineCacheHit(t *testing.T) {
 	cache := newMockCache()
 	p, err := New(Config{Cache: cache})
@@ -505,6 +520,24 @@ func TestPipelineObserverRunLifecycle(t *testing.T) {
 	}
 	if !obs.complete {
 		t.Fatal("expected OnPipelineComplete")
+	}
+}
+
+func TestPipelineObserverArtifactGeneratedDuringRun(t *testing.T) {
+	rec := &artifactRecorder{}
+	p, err := New(Config{
+		Observer:  rec,
+		OutputDir: t.TempDir(),
+	})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	_, err = p.Run("project: artifacts\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if len(rec.artifacts) == 0 {
+		t.Fatal("expected OnArtifactGenerated to be called during Run")
 	}
 }
 

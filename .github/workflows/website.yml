@@ -17,8 +17,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -38,6 +36,26 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Generate static API docs from OpenAPI spec
+        run: |
+          npm install -g redoc-cli 2>&1 | tail -3
+          mkdir -p static/docs/api
+          redoc-cli bundle ../docs/openapi.yaml \
+            -o static/docs/api/index.html \
+            --title "NAEOS API Reference" \
+            --options.sortPropsAlphabetically \
+            --options.hideDownloadButton=false \
+            --options.theme.colors.primary.main="#08d6ff" 2>&1 | tail -5
+          # Create Hugo content page that includes the generated HTML
+          cat > content/docs/api/_index.md << 'EOF'
+          ---
+          title: API Reference
+          description: Statically generated API documentation from the OpenAPI specification
+          weight: 17
+          ---
+
+          {{< api-docs >}}
+          EOF
       - name: Generate OG images
         run: |
           npm ci 2>&1 | tail -3
@@ -48,7 +66,7 @@ jobs:
           hugo-version: '0.145.0'
           extended: false
       - name: Build
-        run: hugo --minify --baseURL https://naeos-foundation.github.io/naeos/
+        run: hugo --minify --baseURL https://docs.naeos.dev/
       - name: Build (link-check variant)
         run: hugo --minify --baseURL / --destination public-check
       - name: Check links
@@ -62,18 +80,25 @@ jobs:
             public-check
           rm -rf public-check
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
+          name: site-public
           path: site/public
+          retention-days: 7
 
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-public
+          path: site/public
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/public --project-name=naeos-docs --commit-dirty=true

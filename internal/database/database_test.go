@@ -341,6 +341,11 @@ func TestConfigValidation(t *testing.T) {
 		{"negative timeout", Config{Host: "localhost", Port: 5432, User: "user", Database: "db", Timeout: -1}, true},
 		{"negative max open", Config{Host: "localhost", Port: 5432, User: "user", Database: "db", MaxOpenConns: -1}, true},
 		{"negative max idle", Config{Host: "localhost", Port: 5432, User: "user", Database: "db", MaxIdleConns: -1}, true},
+		{"supabase valid", Config{SupabaseProjectRef: "proj", SupabaseServiceRoleKey: "key"}, false},
+		{"supabase no key", Config{SupabaseProjectRef: "proj"}, true},
+		{"supabase with access token", Config{SupabaseProjectRef: "proj", SupabaseAccessToken: "tok"}, false},
+		{"conn max lifetime negative", Config{Host: "localhost", Port: 5432, User: "u", Database: "d", ConnMaxLifetime: -1}, true},
+		{"conn max idle time negative", Config{Host: "localhost", Port: 5432, User: "u", Database: "d", ConnMaxIdleTime: -1}, true},
 	}
 
 	for _, tt := range tests {

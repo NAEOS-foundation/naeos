@@ -58,7 +58,7 @@ Example:
 func runDeploy(cmd *cobra.Command, configPath, target, environment string, dryRun bool) error {
 	out := cmd.OutOrStdout()
 
-	cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun)
+	cfg, err := loadPipelineConfig(configPath, cliVerbose, nil, cliDryRun, "")
 	if err != nil {
 		return err
 	}

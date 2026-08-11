@@ -1,0 +1,14 @@
+project:
+  name: web-api-py
+  version: "1.0.0"
+  modules:
+    - name: app
+      path: ./src/app
+    - name: db
+      path: ./src/db
+  services:
+    - name: api
+      port: 8000
+      kind: http
+  architecture:
+    pattern: layered

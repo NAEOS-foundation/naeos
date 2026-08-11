@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DefaultNEIRSchemaURL = "https://naeos.dev/schemaregistry/latest.json"
+	DefaultNEIRSchemaURL = "https://registry.naeos.dev/schemaregistry/latest.json"
 	NEIRSchemaVersion    = "v1"
 )
 

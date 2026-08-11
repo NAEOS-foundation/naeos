@@ -40,6 +40,10 @@ type ParseCache interface {
 	Get(specHash string) (*Result, bool)
 	Set(specHash string, result *Result)
 	HashSpec(spec string) string
+	ModuleKey(specHash, moduleName, stage string) string
+	GetModuleStage(key string) ([]byte, bool)
+	SetModuleStage(key string, data []byte)
+	UnchangedModules(specHash string, moduleHashes map[string]string) []string
 }
 
 type Config struct {
@@ -50,6 +54,7 @@ type Config struct {
 	OutputDir    string
 	Languages    []string
 	Parallel     *bool
+	Profiling    bool
 	Parser       parser.Parser
 	Normalizer   normalizer.Normalizer
 	Resolver     resolver.Resolver
@@ -112,12 +117,14 @@ type Pipeline struct {
 	verbose        bool
 	dryRun         bool
 	parallel       bool
+	profiling      bool
+	profile        *profiling.PipelineProfile
 	hooks          *Hooks
 	cache          ParseCache
 	stageCache     *StageCache
 	lazyBuild      bool
 	observer       PipelineObserver
-	profile        *profiling.PipelineProfile
+	neirResolved   any
 	memProfile     *profiling.MemProfiler
 	schemaSource   string
 }
@@ -181,6 +188,11 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 	if cfg.Parallel != nil {
 		parallel = *cfg.Parallel
 	}
+	profilingEnabled := cfg.Profiling
+	var profile *profiling.PipelineProfile
+	if profilingEnabled {
+		profile = profiling.NewProfile()
+	}
 	p := &Pipeline{
 		name:           cfg.Name,
 		parser:         cfg.Parser,
@@ -202,6 +214,8 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		verbose:        cfg.Verbose,
 		dryRun:         cfg.DryRun,
 		parallel:       parallel,
+		profiling:      profilingEnabled,
+		profile:        profile,
 		hooks:          cfg.Hooks,
 	}
 
@@ -343,6 +357,21 @@ func (p *Pipeline) logVerbose(format string, args ...any) {
 	if p.verbose {
 		naeoslog.Info(fmt.Sprintf(format, args...))
 	}
+}
+
+func (p *Pipeline) Profile() *profiling.PipelineProfile {
+	return p.profile
+}
+
+func (p *Pipeline) ProfileEnabled() bool {
+	return p.profiling
+}
+
+func (p *Pipeline) ProfileSave(path string) error {
+	if p.profile == nil {
+		return fmt.Errorf("profiling not enabled")
+	}
+	return profiling.SaveProfile(path, p.profile)
 }
 
 func (p *Pipeline) warn(msg string, args ...any) {
@@ -505,6 +534,33 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 		return nil, err
 	}
 
+	if p.verbose {
+		client := schemaregistry.NewNEIRClient(schemaregistry.DefaultNEIRSchemaURL)
+		schema, fetchErr := client.FetchSchema()
+		if fetchErr == nil && schema != nil {
+			specPath := ""
+			if parsed != nil && parsed.Raw != "" {
+				tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("naeos-spec-%d.yaml", time.Now().UnixNano()))
+				if writeErr := os.WriteFile(tmpFile, []byte(parsed.Raw), 0o600); writeErr == nil { //nolint:gosec // fixed TempDir+random suffix path
+					specPath = tmpFile
+					defer os.Remove(tmpFile)
+				}
+			}
+			if specPath != "" {
+				if vr, ve := schemaregistry.ValidateNEIRSpec(specPath, schema); ve == nil && !vr.Valid {
+					naeoslog.Warn("schema validation: spec does not conform to NEIR JSON Schema")
+					for _, e := range vr.Errors {
+						naeoslog.Warn("  schema: %s: %s", e.Field, e.Message)
+					}
+				}
+			}
+		}
+	}
+
+	p.neirResolved = resolved
+	neir.Modules = nil
+	neir.Services = nil
+
 	result := &Result{
 		Source: parsed.Raw,
 		NEIR:   neir,
@@ -519,6 +575,19 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 	}
 
 	return result, nil
+}
+
+func (p *Pipeline) materializeNEIR(neir *model.NEIR) {
+	if p.neirResolved == nil || len(neir.Modules) > 0 {
+		return
+	}
+	loader := builder.NewModuleLoader()
+	if modules, err := loader.LoadModules(p.neirResolved); err == nil && len(modules) > 0 {
+		neir.Modules = modules
+	}
+	if services, err := loader.LoadServices(p.neirResolved); err == nil && len(services) > 0 {
+		neir.Services = services
+	}
 }
 
 func (p *Pipeline) normalizeParallel(parsed *parser.SpecDocument) (*normalizer.NormalizedSpec, error) {
@@ -567,12 +636,19 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err != nil {
 			return nil, err
 		}
+		p.materializeNEIR(result.NEIR)
+		if p.profile != nil {
+			p.profile.EndStage("validate")
+		}
 
 		p.profileStageStart("build_graph")
 		execGraph := p.runBuildGraph(result)
 		p.profileStageEnd("build_graph", nil)
 		p.memSnapshot("build_graph")
 		result.Graph = execGraph
+		if p.profile != nil {
+			p.profile.EndStage("build_graph")
+		}
 
 		p.profileStageStart("policy_eval")
 		policyErr := p.runPolicyEval(result)
@@ -589,20 +665,37 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err != nil {
 			return nil, err
 		}
+		if p.profile != nil {
+			p.profile.EndStage("schedule")
+		}
 
 		p.profileStageStart("generate")
-		artifacts, err := p.runGenerate(result)
-		p.profileStageEnd("generate", err)
-		p.memSnapshot("generate")
-		if err != nil {
-			return nil, err
+		var artifacts []engine.Artifact
+		if p.cache != nil && len(result.Artifacts) > 0 {
+			p.logVerbose("generation cache hit, reusing %d artifacts", len(result.Artifacts))
+			artifacts = result.Artifacts
+		} else {
+			var genErr error
+			artifacts, genErr = p.runGenerate(result)
+			if genErr != nil {
+				return nil, genErr
+			}
+			result.Artifacts = artifacts
+			if p.cache != nil {
+				p.cache.Set(p.cache.HashSpec(input), result)
+			}
 		}
+		p.profileStageEnd("generate", nil)
+		p.memSnapshot("generate")
 
 		p.profileStageStart("review")
 		reviews := p.runReview(artifacts)
 		p.profileStageEnd("review", nil)
 		p.memSnapshot("review")
 		result.Reviews = reviews
+		if p.profile != nil {
+			p.profile.EndStage("review")
+		}
 
 		p.profileStageStart("write_artifacts")
 		writeErr := p.runWriteArtifacts(artifacts)
@@ -835,6 +928,9 @@ func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
 		}
 		if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
 			return fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+		}
+		if p.observer != nil {
+			p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
 		}
 	}
 	return nil

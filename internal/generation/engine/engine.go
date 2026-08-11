@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/text/cases"
 	xlanguage "golang.org/x/text/language"
 
@@ -37,7 +40,7 @@ func NewEngine() GeneratorEngine {
 	return DefaultEngine{}
 }
 
-func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
+func GenerateParallel(neir any, concurrency int) ([]Artifact, error) {
 	if neir == nil {
 		return nil, naeoserr.New(naeoserr.ErrPipeline, "neir is nil")
 	}
@@ -77,6 +80,7 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 	}
 
 	var artifacts []Artifact
+	var mu sync.Mutex
 
 	if deployStrategy != "" {
 		artifacts = append(artifacts, Artifact{
@@ -92,65 +96,87 @@ func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
 		})
 	}
 
+	if concurrency <= 0 {
+		concurrency = 4
+	}
+
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(concurrency)
+
 	for _, module := range modules {
-		var name string
-		var path string
+		module := module
+		g.Go(func() error {
+			var name string
+			var path string
 
-		if moduleMap, ok := module.(map[string]any); ok {
-			name = fmt.Sprint(moduleMap["name"])
-			path = fmt.Sprint(moduleMap["path"])
-		} else if moduleStruct, ok := module.(map[string]string); ok {
-			name = moduleStruct["name"]
-			path = moduleStruct["path"]
-		}
+			if moduleMap, ok := module.(map[string]any); ok {
+				name = fmt.Sprint(moduleMap["name"])
+				path = fmt.Sprint(moduleMap["path"])
+			} else if moduleStruct, ok := module.(map[string]string); ok {
+				name = moduleStruct["name"]
+				path = moduleStruct["path"]
+			}
 
-		if name == "" {
-			continue
-		}
-		if path == "" {
-			path = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
-		}
-		moduleDir := strings.TrimPrefix(path, "./")
-		if moduleDir == "" {
-			moduleDir = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
-		}
-		pkg := strutil.Slugify(name)
-		artifacts = append(artifacts, Artifact{
-			Path:    fmt.Sprintf("%s/README.md", moduleDir),
-			Content: []byte(fmt.Sprintf("# %s\n\nModule for %s project.\n", name, projectName)),
-		})
-		artifacts = append(artifacts, Artifact{
-			Path:    fmt.Sprintf("%s/package.go", moduleDir),
-			Content: []byte(fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name)),
-		})
-		artifacts = append(artifacts, Artifact{
-			Path:    fmt.Sprintf("%s/config.yaml", moduleDir),
-			Content: []byte(fmt.Sprintf("name: %s\nmodule: %s\n", name, name)),
+			if name == "" {
+				return nil
+			}
+			if path == "" {
+				path = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+			}
+			moduleDir := strings.TrimPrefix(path, "./")
+			if moduleDir == "" {
+				moduleDir = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+			}
+			pkg := strutil.Slugify(name)
+
+			mu.Lock()
+			artifacts = append(artifacts,
+				Artifact{Path: fmt.Sprintf("%s/README.md", moduleDir), Content: []byte(fmt.Sprintf("# %s\n\nModule for %s project.\n", name, projectName))},
+				Artifact{Path: fmt.Sprintf("%s/package.go", moduleDir), Content: []byte(fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name))},
+				Artifact{Path: fmt.Sprintf("%s/config.yaml", moduleDir), Content: []byte(fmt.Sprintf("name: %s\nmodule: %s\n", name, name))},
+			)
+			mu.Unlock()
+			return nil
 		})
 	}
 
 	for _, svc := range services {
-		var name string
-		var port int
-		var kind string
-		if serviceMap, ok := svc.(map[string]any); ok {
-			name = fmt.Sprint(serviceMap["name"])
-			if rawPort, ok := serviceMap["port"].(int); ok {
-				port = rawPort
+		svc := svc
+		g.Go(func() error {
+			var name string
+			var port int
+			var kind string
+			if serviceMap, ok := svc.(map[string]any); ok {
+				name = fmt.Sprint(serviceMap["name"])
+				if rawPort, ok := serviceMap["port"].(int); ok {
+					port = rawPort
+				}
+				kind = fmt.Sprint(serviceMap["kind"])
 			}
-			kind = fmt.Sprint(serviceMap["kind"])
-		}
-		if name == "" {
-			continue
-		}
-		serviceDir := fmt.Sprintf("internal/%s", strutil.Slugify(name))
-		artifacts = append(artifacts, Artifact{
-			Path:    fmt.Sprintf("%s/config.yaml", serviceDir),
-			Content: []byte(fmt.Sprintf("name: %s\nport: %d\nkind: %s\n", name, port, kind)),
+			if name == "" {
+				return nil
+			}
+			serviceDir := fmt.Sprintf("internal/%s", strutil.Slugify(name))
+
+			mu.Lock()
+			artifacts = append(artifacts, Artifact{
+				Path:    fmt.Sprintf("%s/config.yaml", serviceDir),
+				Content: []byte(fmt.Sprintf("name: %s\nport: %d\nkind: %s\n", name, port, kind)),
+			})
+			mu.Unlock()
+			return nil
 		})
 	}
 
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
 	return artifacts, nil
+}
+
+func (DefaultEngine) Generate(neir any) ([]Artifact, error) {
+	return GenerateParallel(neir, 0)
 }
 
 func (DefaultEngine) GenerateForLanguage(neir *model.NEIR, lang language.Language) ([]Artifact, error) {

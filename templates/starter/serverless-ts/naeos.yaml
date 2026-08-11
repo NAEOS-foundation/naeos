@@ -1,0 +1,16 @@
+project:
+  name: serverless-ts
+  version: "1.1.0"
+  modules:
+    - name: api
+      path: ./src/api
+    - name: auth
+      path: ./src/auth
+  services:
+    - name: api
+      port: 443
+      kind: http
+  deployment:
+    strategy: rolling
+  architecture:
+    pattern: microservices

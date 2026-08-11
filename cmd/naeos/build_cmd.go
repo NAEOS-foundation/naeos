@@ -64,7 +64,7 @@ func runBuildLocal(cmd *cobra.Command, configPath, input, inputFile, outputForma
 		return err
 	}
 
-	cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun)
+	cfg, err := loadPipelineConfig(configPath, cliVerbose, languages, cliDryRun || dryRun, "")
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func runBuildDistributed(cmd *cobra.Command, configPath, input, inputFile string
 			taskInput, _ := task.Payload["input"].(string)
 			taskModule, _ := task.Payload["module"].(string)
 
-			pCfg, err := loadPipelineConfig(taskCfgPath, cliVerbose, nil, cliDryRun)
+			pCfg, err := loadPipelineConfig(taskCfgPath, cliVerbose, nil, cliDryRun, "")
 			if err != nil {
 				return nil, fmt.Errorf("worker %s: load config: %w", id, err)
 			}

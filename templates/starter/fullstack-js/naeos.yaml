@@ -1,0 +1,17 @@
+project:
+  name: fullstack-js
+  version: "2.0.0"
+  modules:
+    - name: web
+      path: ./src/web
+    - name: api
+      path: ./src/api
+  services:
+    - name: web
+      port: 3000
+      kind: http
+    - name: api
+      port: 4000
+      kind: http
+  architecture:
+    pattern: microservices
