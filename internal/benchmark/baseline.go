@@ -43,7 +43,7 @@ func (b *Baseline) SaveBaseline(path string) error {
 	if err != nil {
 		return fmt.Errorf("marshal baseline: %w", err)
 	}
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600)
 }
 
 func (b *Baseline) Compare(current Baseline) ([]Regression, error) {

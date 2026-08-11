@@ -26,11 +26,11 @@ func genMediumSpec() string {
 	var sb strings.Builder
 	sb.WriteString("project:\n  name: mediumapp\n  version: \"1.0.0\"\n\nmodules:\n")
 	for i := range 50 {
-		sb.WriteString(fmt.Sprintf("  - name: module-%d\n    path: ./modules/module-%d\n", i, i))
+		fmt.Fprintf(&sb, "  - name: module-%d\n    path: ./modules/module-%d\n", i, i)
 	}
 	sb.WriteString("\nservices:\n")
 	for i := range 5 {
-		sb.WriteString(fmt.Sprintf("  - name: svc-%d\n    port: %d\n    kind: http\n", i, 8000+i))
+		fmt.Fprintf(&sb, "  - name: svc-%d\n    port: %d\n    kind: http\n", i, 8000+i)
 	}
 	return sb.String()
 }
@@ -39,11 +39,11 @@ func genLargeSpec() string {
 	var sb strings.Builder
 	sb.WriteString("project:\n  name: largeapp\n  version: \"1.0.0\"\n\nmodules:\n")
 	for i := range 500 {
-		sb.WriteString(fmt.Sprintf("  - name: module-%d\n    path: ./modules/module-%d\n", i, i))
+		fmt.Fprintf(&sb, "  - name: module-%d\n    path: ./modules/module-%d\n", i, i)
 	}
 	sb.WriteString("\nservices:\n")
 	for i := range 10 {
-		sb.WriteString(fmt.Sprintf("  - name: svc-%d\n    port: %d\n    kind: http\n", i, 8000+i))
+		fmt.Fprintf(&sb, "  - name: svc-%d\n    port: %d\n    kind: http\n", i, 8000+i)
 	}
 	return sb.String()
 }

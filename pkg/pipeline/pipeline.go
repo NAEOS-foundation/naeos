@@ -541,7 +541,7 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 			specPath := ""
 			if parsed != nil && parsed.Raw != "" {
 				tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("naeos-spec-%d.yaml", time.Now().UnixNano()))
-				if writeErr := os.WriteFile(tmpFile, []byte(parsed.Raw), 0o600); writeErr == nil {
+				if writeErr := os.WriteFile(tmpFile, []byte(parsed.Raw), 0o600); writeErr == nil { //nolint:gosec // fixed TempDir+random suffix path
 					specPath = tmpFile
 					defer os.Remove(tmpFile)
 				}

@@ -94,7 +94,6 @@ func (fp *FormatProvider) Format(text string) ([]TextEdit, error) {
 
 type block struct {
 	lines []string
-	key   string
 }
 
 func (fp *FormatProvider) sortBlocks(blocks []block) []block {

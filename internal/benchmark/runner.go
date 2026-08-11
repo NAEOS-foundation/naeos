@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,7 @@ type benchMetrics struct {
 
 func RunBenchmarks(packagePath string, output io.Writer) (*Baseline, error) {
 	args := []string{"test", "-bench=.", "-benchmem", "-count=5", "-run=^$", "-json", packagePath}
-	cmd := exec.Command("go", args...)
+	cmd := exec.CommandContext(context.Background(), "go", args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -45,7 +46,7 @@ func RunBenchmarks(packagePath string, output io.Writer) (*Baseline, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		io.Copy(output, stderr)
+		_, _ = io.Copy(output, stderr)
 	}()
 
 	results := &Baseline{}

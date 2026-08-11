@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -38,7 +39,15 @@ Example:
 				mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 				go func() {
 					fmt.Printf("pprof HTTP server listening on %s\n", pprofAddr)
-					_ = http.ListenAndServe(pprofAddr, mux)
+					srv := &http.Server{
+						Addr:              pprofAddr,
+						Handler:           mux,
+						ReadHeaderTimeout: 5 * time.Second,
+						ReadTimeout:       30 * time.Second,
+						WriteTimeout:      30 * time.Second,
+						IdleTimeout:       60 * time.Second,
+					}
+					_ = srv.ListenAndServe()
 				}()
 			}
 

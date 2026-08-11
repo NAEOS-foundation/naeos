@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -12,5 +13,12 @@ func main() {
 		fmt.Fprintf(w, "microservices-go running")
 	})
 	log.Printf("Starting server on %s", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	srv := &http.Server{
+		Addr:              port,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
