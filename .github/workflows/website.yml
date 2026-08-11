@@ -50,8 +50,10 @@ jobs:
           cat > content/docs/api/_index.md << 'EOF'
           ---
           title: API Reference
-          description: Statically generated API documentation from the OpenAPI specification
+          description: Interactive OpenAPI documentation for the NAEOS HTTP API.
+          layout: api
           weight: 17
+          aliases: ["/docs/api-reference"]
           ---
 
           {{< api-docs >}}
@@ -71,22 +73,13 @@ jobs:
         run: hugo --minify --baseURL / --destination public-check
       - name: Check links
         run: |
-          set +e
           curl -sfL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz -o /tmp/lychee.tar.gz
-          echo "::error::DEBUG curl rc=$? size=$(stat -c%s /tmp/lychee.tar.gz 2>/dev/null) type=$(file -b /tmp/lychee.tar.gz 2>/dev/null)"
           mkdir -p /tmp/lychee
           tar -xzf /tmp/lychee.tar.gz -C /tmp/lychee --strip-components=1
-          echo "::error::DEBUG tar rc=$?"
-          /tmp/lychee/lychee --version
-          echo "::error::DEBUG version rc=$?"
           /tmp/lychee/lychee --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3 \
             --root-dir "$GITHUB_WORKSPACE/site/public-check" \
-            public-check > /tmp/lychee-debug.log 2>&1
-          rc=$?
-          echo "::error::DEBUG lychee rc=$rc"
-          grep -E '^\[|^Error' /tmp/lychee-debug.log | head -40 | sed 's/^/::error::LYCHEE:/' || true
+            public-check
           rm -rf public-check
-          exit $rc
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
