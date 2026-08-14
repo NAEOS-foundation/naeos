@@ -128,7 +128,7 @@ other = "Specifications"
 other = "Pipeline Engine"
 
 [feature_pipeline_desc]
-other = "9-stage DAG pipeline from spec to shipped code. Each stage is observable, cacheable, and extensible via plugins. Inspect every transformation from YAML to artifact."
+other = "11-stage DAG pipeline from spec to shipped code. Each stage is observable, cacheable, and extensible via plugins. Inspect every transformation from YAML to artifact."
 
 [feature_compiler]
 other = "AI Compiler"
@@ -443,3 +443,135 @@ other = "Latest from the Blog"
 other = "News, tutorials, and deep dives from the NAEOS team."
 
 
+
+# ── Marketing landing page ──────────────────────────────────────────────
+[mk_social_proof_title]
+other = "One spec. Your entire stack."
+
+[mk_social_proof_desc]
+other = "Declarative spec → validated projects in every language and every AI assistant your team already uses."
+
+[mk_problem_title]
+other = "Scaffolding is a tax on every project"
+
+[mk_problem_desc]
+other = "Hand-writing boilerplate across five languages, keeping READMEs in sync with APIs, re-prompting AI assistants with architecture context — it compounds on every service you ship. Most teams spend weeks wiring projects before writing a single line of business logic."
+
+[mk_problem_item1]
+other = "Boilerplate drift between languages and repos"
+
+[mk_problem_item2]
+other = "AI assistants without architecture context"
+
+[mk_problem_item3]
+other = "Docs, CI, and deployment configs maintained by hand"
+
+[mk_solution_title]
+other = "Specify once. Build anywhere."
+
+[mk_solution_desc]
+other = "NAEOS reads a single YAML/JSON specification, builds a canonical internal model (NEIR), and orchestrates the full engineering lifecycle — code, tests, CI/CD, deployment manifests, docs, and AI context — all traceable from intent to implementation."
+
+[mk_solution_item1]
+other = "Single source of truth: the spec is the system"
+
+[mk_solution_item2]
+other = "11-stage pipeline with governance gates"
+
+[mk_solution_item3]
+other = "AI context bundles for every assistant"
+
+[mk_how_title]
+other = "How it works"
+
+[mk_how_desc]
+other = "Three steps between an idea and a production-ready project."
+
+[mk_how_step1_title]
+other = "Describe"
+
+[mk_how_step1_desc]
+other = "Declare modules, services, architecture, and infrastructure in one YAML file. The spec is the single source of truth — no code yet, just intent."
+
+[mk_how_step2_title]
+other = "Model"
+
+[mk_how_step2_desc]
+other = "NAEOS builds the NEIR intermediate representation: dependency graphs, validation, and policy evaluation catch problems before generation."
+
+[mk_how_step3_title]
+other = "Generate"
+
+[mk_how_step3_desc]
+other = "Production-ready projects in Go, TypeScript, Python, Java, or Rust — plus CI/CD, Docker/K8s manifests, docs, and AI context for 6 assistants."
+
+[mk_pipeline_title]
+other = "One pipeline. Eleven stages."
+
+[mk_pipeline_desc]
+other = "Every stage is observable, cacheable, and extensible via plugins — from parsing to artifact output."
+
+[mk_stage_parse]
+other = "Parse"
+
+[mk_stage_normalize]
+other = "Normalize"
+
+[mk_stage_resolve]
+other = "Resolve"
+
+[mk_stage_build]
+other = "Build NEIR"
+
+[mk_stage_validate]
+other = "Validate"
+
+[mk_stage_graph]
+other = "Build Graph"
+
+[mk_stage_policy]
+other = "Policy"
+
+[mk_stage_schedule]
+other = "Schedule"
+
+[mk_stage_generate]
+other = "Generate"
+
+[mk_stage_review]
+other = "Review"
+
+[mk_stage_write]
+other = "Artifacts"
+
+[mk_cta_band_title]
+other = "Ship your next project in minutes, not weeks"
+
+[mk_cta_band_desc]
+other = "Install NAEOS with one command and generate your first project in under a minute."
+
+[mk_install_cmd]
+other = "go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest"
+
+[mk_hero_chip1]
+other = "5 languages"
+
+[mk_hero_chip2]
+other = "6 AI platforms"
+
+[mk_hero_chip3]
+other = "11-stage pipeline"
+
+[mk_hero_float_neir]
+other = "NEIR Model"
+
+[mk_hero_float_validated]
+other = "Validated"
+
+[mk_hero_float_generated]
+other = "Generated"
+[mk_problem_label]
+other = "Without NAEOS"
+
+[mk_solution_label]
+other = "With NAEOS"

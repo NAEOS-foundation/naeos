@@ -128,7 +128,7 @@ other = "Spesifikasi"
 other = "Pipeline Engine"
 
 [feature_pipeline_desc]
-other = "Pipeline DAG 9-tahap dari spesifikasi ke kode siap kirim. Setiap tahap dapat diamati, di-cache, dan diperluas dengan plugin. Inspeksi setiap transformasi dari YAML ke artifak."
+other = "Pipeline DAG 11-tahap dari spesifikasi ke kode siap kirim. Setiap tahap dapat diamati, di-cache, dan diperluas dengan plugin. Inspeksi setiap transformasi dari YAML ke artifak."
 
 [feature_compiler]
 other = "Kompiler AI"
@@ -443,3 +443,135 @@ other = "Terbaru dari Blog"
 other = "Berita, tutorial, dan bahasan mendalam dari tim NAEOS."
 
 
+
+# ── Marketing landing page ──────────────────────────────────────────────
+[mk_social_proof_title]
+other = "Satu spesifikasi. Seluruh stack Anda."
+
+[mk_social_proof_desc]
+other = "Spesifikasi deklaratif → proyek tervalidasi dalam setiap bahasa dan setiap asisten AI yang sudah dipakai tim Anda."
+
+[mk_problem_title]
+other = "Scaffolding adalah pajak di setiap proyek"
+
+[mk_problem_desc]
+other = "Menulis boilerplate secara manual di lima bahasa, menjaga README tetap sinkron dengan API, meminta ulang konteks arsitektur ke asisten AI — semuanya menumpuk di setiap layanan yang Anda rilis. Kebanyakan tim menghabiskan berminggu-minggu merangkai proyek sebelum menulis satu baris logika bisnis."
+
+[mk_problem_item1]
+other = "Boilerplate melenceng antar bahasa dan repo"
+
+[mk_problem_item2]
+other = "Asisten AI tanpa konteks arsitektur"
+
+[mk_problem_item3]
+other = "Dokumen, CI, dan konfigurasi deployment dikelola manual"
+
+[mk_solution_title]
+other = "Tentukan sekali. Bangun di mana saja."
+
+[mk_solution_desc]
+other = "NAEOS membaca satu spesifikasi YAML/JSON, membangun model internal kanonik (NEIR), dan mengorkestrasi seluruh siklus rekayasa — kode, pengujian, CI/CD, manifes deployment, dokumen, dan konteks AI — semua terlacak dari niat hingga implementasi."
+
+[mk_solution_item1]
+other = "Satu sumber kebenaran: spesifikasi adalah sistemnya"
+
+[mk_solution_item2]
+other = "Pipeline 11 tahap dengan gerbang governance"
+
+[mk_solution_item3]
+other = "Bundle konteks AI untuk setiap asisten"
+
+[mk_how_title]
+other = "Cara kerjanya"
+
+[mk_how_desc]
+other = "Tiga langkah antara sebuah ide dan proyek siap produksi."
+
+[mk_how_step1_title]
+other = "Deskripsikan"
+
+[mk_how_step1_desc]
+other = "Deklarasikan modul, layanan, arsitektur, dan infrastruktur dalam satu file YAML. Spesifikasi adalah satu sumber kebenaran — belum ada kode, hanya niat."
+
+[mk_how_step2_title]
+other = "Modelkan"
+
+[mk_how_step2_desc]
+other = "NAEOS membangun representasi antara NEIR: graf dependensi, validasi, dan evaluasi kebijakan menangkap masalah sebelum generasi."
+
+[mk_how_step3_title]
+other = "Hasilkan"
+
+[mk_how_step3_desc]
+other = "Proyek siap produksi dalam Go, TypeScript, Python, Java, atau Rust — plus CI/CD, manifes Docker/K8s, dokumen, dan konteks AI untuk 6 asisten."
+
+[mk_pipeline_title]
+other = "Satu pipeline. Sebelas tahap."
+
+[mk_pipeline_desc]
+other = "Setiap tahap dapat diamati, di-cache, dan diperluas via plugin — dari parsing hingga output artefak."
+
+[mk_stage_parse]
+other = "Parse"
+
+[mk_stage_normalize]
+other = "Normalisasi"
+
+[mk_stage_resolve]
+other = "Resolusi"
+
+[mk_stage_build]
+other = "Build NEIR"
+
+[mk_stage_validate]
+other = "Validasi"
+
+[mk_stage_graph]
+other = "Build Graph"
+
+[mk_stage_policy]
+other = "Policy"
+
+[mk_stage_schedule]
+other = "Jadwal"
+
+[mk_stage_generate]
+other = "Generate"
+
+[mk_stage_review]
+other = "Review"
+
+[mk_stage_write]
+other = "Artefak"
+
+[mk_cta_band_title]
+other = "Rilis proyek berikutnya dalam hitungan menit, bukan minggu"
+
+[mk_cta_band_desc]
+other = "Pasang NAEOS dengan satu perintah dan hasilkan proyek pertama Anda dalam waktu kurang dari satu menit."
+
+[mk_install_cmd]
+other = "go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest"
+
+[mk_hero_chip1]
+other = "5 bahasa"
+
+[mk_hero_chip2]
+other = "6 platform AI"
+
+[mk_hero_chip3]
+other = "Pipeline 11 tahap"
+
+[mk_hero_float_neir]
+other = "Model NEIR"
+
+[mk_hero_float_validated]
+other = "Tervalidasi"
+
+[mk_hero_float_generated]
+other = "Tergenerate"
+[mk_problem_label]
+other = "Tanpa NAEOS"
+
+[mk_solution_label]
+other = "Dengan NAEOS"

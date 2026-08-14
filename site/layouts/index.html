@@ -4,72 +4,146 @@
 <div class="announcement-bar">
     <div class="container announcement-bar-inner">
         <span class="announcement-badge">NEW</span>
-        <span class="announcement-text"><strong>v2.2.0</strong> — Supabase integration, 44 new unit tests, multi-tenant workspaces, schema registry API, compliance export CLI. <a href="https://github.com/NAEOS-foundation/naeos/releases" target="_blank" rel="noopener">See what's new →</a></span>
+        <span class="announcement-text"><strong>v3.0.0</strong> — Pipeline profiling, stage caching, NEIR-aware LSP server, and official plugin examples. <a href="https://github.com/NAEOS-foundation/naeos/releases" target="_blank" rel="noopener">See what's new →</a></span>
     </div>
 </div>
 
-<section class="section">
-    <div class="container">
-        <div class="what-is fade-in">
-            <div class="what-is-text">
-                <h2 class="section-title" style="text-align:left;">{{ i18n "section_what_is" }}</h2>
-                <p>{{ i18n "section_what_is_desc" }}</p>
-                <p>{{ i18n "home_what_is_extended" }}</p>
-                <a href="{{ "docs/architecture/" | relLangURL }}" class="btn btn-secondary">{{ i18n "cta_read_docs" }}</a>
+<section class="section social-proof">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "mk_social_proof_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "mk_social_proof_desc" }}</p>
+        <div class="logo-strip stagger-fade">
+            <div class="logo-strip-group">
+                <h3 class="logo-strip-label">Languages</h3>
+                <div class="logo-strip-items">
+                    <span class="stack-logo"><span class="lang-dot" style="background:#00add8;"></span>Go</span>
+                    <span class="stack-logo"><span class="lang-dot" style="background:#3178c6;"></span>TypeScript</span>
+                    <span class="stack-logo"><span class="lang-dot" style="background:#3776ab;"></span>Python</span>
+                    <span class="stack-logo"><span class="lang-dot" style="background:#ed8b00;"></span>Java</span>
+                    <span class="stack-logo"><span class="lang-dot" style="background:#dea584;"></span>Rust</span>
+                </div>
             </div>
-            <div class="what-is-diagram">
-                <svg class="arch-svg" viewBox="0 0 400 320" fill="none" role="img" aria-label="NAEOS pipeline architecture diagram showing Spec YAML/JSON and CLI Commands flowing into Core Runtime, then Parser, NEIR Model, and Generator, outputting Go, TypeScript, Python, Java, and Rust">
-                    <rect x="10" y="10" width="380" height="300" rx="12" stroke="#2a2a2a" stroke-width="1.5" fill="#111"/>
-                    <text x="200" y="40" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="2">NAEOS PIPELINE</text>
-                    <rect x="30" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
-                    <text x="105" y="90" text-anchor="middle" fill="#e8e8e8" font-family="Inter,sans-serif" font-size="13">Spec YAML/JSON</text>
-                    <rect x="220" y="60" width="150" height="50" rx="8" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
-                    <text x="295" y="90" text-anchor="middle" fill="#e8e8e8" font-family="Inter,sans-serif" font-size="13">CLI Commands</text>
-                    <line x1="180" y1="85" x2="220" y2="85" stroke="#00ff88" stroke-width="1.5" stroke-dasharray="4" opacity="0.5"/>
-                    <rect x="110" y="140" width="180" height="50" rx="8" stroke="#00ff88" stroke-width="1" fill="rgba(0,255,136,0.05)"/>
-                    <text x="200" y="170" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="13" font-weight="600">Core Runtime</text>
-                    <line x1="180" y1="110" x2="180" y2="140" stroke="#444" stroke-width="1"/>
-                    <line x1="220" y1="110" x2="220" y2="140" stroke="#444" stroke-width="1"/>
-                    <rect x="30" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
-                    <text x="80" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">Parser</text>
-                    <rect x="150" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
-                    <text x="200" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">NEIR Model</text>
-                    <rect x="270" y="220" width="100" height="40" rx="6" stroke="#2a2a2a" stroke-width="1" fill="#1a1a1a"/>
-                    <text x="320" y="245" text-anchor="middle" fill="#999" font-family="Inter,sans-serif" font-size="11">Generator</text>
-                    <line x1="130" y1="190" x2="80" y2="220" stroke="#444" stroke-width="1"/>
-                    <line x1="200" y1="190" x2="200" y2="220" stroke="#444" stroke-width="1"/>
-                    <line x1="270" y1="190" x2="320" y2="220" stroke="#444" stroke-width="1"/>
-                    <rect x="110" y="280" width="180" height="28" rx="14" stroke="#00ff88" stroke-width="0.5" fill="rgba(0,255,136,0.08)"/>
-                    <text x="200" y="298" text-anchor="middle" fill="#00ff88" font-family="Inter,sans-serif" font-size="10">Go · TypeScript · Python · Java · Rust</text>
-                    <line x1="80" y1="260" x2="150" y2="280" stroke="#444" stroke-width="1"/>
-                    <line x1="200" y1="260" x2="200" y2="280" stroke="#444" stroke-width="1"/>
-                    <line x1="320" y1="260" x2="250" y2="280" stroke="#444" stroke-width="1"/>
-                </svg>
+            <div class="logo-strip-divider"></div>
+            <div class="logo-strip-group">
+                <h3 class="logo-strip-label">AI Platforms</h3>
+                <div class="logo-strip-items">
+                    <span class="stack-logo">GitHub Copilot</span>
+                    <span class="stack-logo">Claude Code</span>
+                    <span class="stack-logo">Cursor</span>
+                    <span class="stack-logo">Gemini CLI</span>
+                    <span class="stack-logo">Codex</span>
+                    <span class="stack-logo">OpenCode</span>
+                </div>
+            </div>
+            <div class="logo-strip-divider"></div>
+            <div class="logo-strip-group">
+                <h3 class="logo-strip-label">Infrastructure</h3>
+                <div class="logo-strip-items">
+                    <span class="stack-logo">Docker</span>
+                    <span class="stack-logo">Kubernetes</span>
+                    <span class="stack-logo">GitHub Actions</span>
+                    <span class="stack-logo">Terraform</span>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<div class="container">
-    <div class="stats-grid stagger-fade">
-        <div class="stat-card" role="figure">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}" aria-hidden="true">0</div>
-            <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
-        </div>
-        <div class="stat-card" role="figure">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}" aria-hidden="true">0</div>
-            <div class="stat-label">{{ i18n "stats_languages" }}</div>
-        </div>
-        <div class="stat-card" role="figure">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}" aria-hidden="true">0</div>
-            <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
-        </div>
-        <div class="stat-card" role="figure">
-            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}" aria-hidden="true">0</div>
-            <div class="stat-label">{{ i18n "stats_specs" }}</div>
+<section class="section section-problem">
+    <div class="container">
+        <div class="problem-grid fade-in">
+            <div class="problem-card problem-card-before">
+                <span class="problem-tag problem-tag-red">{{ i18n "mk_problem_label" }}</span>
+                <h3>{{ i18n "mk_problem_title" }}</h3>
+                <p>{{ i18n "mk_problem_desc" }}</p>
+                <ul class="problem-list">
+                    <li>{{ i18n "mk_problem_item1" }}</li>
+                    <li>{{ i18n "mk_problem_item2" }}</li>
+                    <li>{{ i18n "mk_problem_item3" }}</li>
+                </ul>
+            </div>
+            <div class="problem-arrow" aria-hidden="true">→</div>
+            <div class="problem-card problem-card-after">
+                <span class="problem-tag problem-tag-green">{{ i18n "mk_solution_label" }}</span>
+                <h3>{{ i18n "mk_solution_title" }}</h3>
+                <p>{{ i18n "mk_solution_desc" }}</p>
+                <ul class="problem-list">
+                    <li>{{ i18n "mk_solution_item1" }}</li>
+                    <li>{{ i18n "mk_solution_item2" }}</li>
+                    <li>{{ i18n "mk_solution_item3" }}</li>
+                </ul>
+                <a href="{{ "docs/getting-started/" | relLangURL }}" class="btn btn-primary btn-sm">{{ i18n "cta_get_started" }}</a>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title fade-in">{{ i18n "mk_how_title" }}</h2>
+        <p class="section-subtitle fade-in">{{ i18n "mk_how_desc" }}</p>
+        <div class="how-grid stagger-fade">
+            <div class="how-card">
+                <div class="how-step">1</div>
+                <h3>{{ i18n "mk_how_step1_title" }}</h3>
+                <p>{{ i18n "mk_how_step1_desc" }}</p>
+                <div class="how-code">
+                    <div class="code-block-header"><span>spec.yaml</span></div>
+                    <pre><code>project: my-app
+architecture:
+  pattern: microservices
+services:
+  - name: gateway
+    kind: http
+    port: 8080</code></pre>
+                </div>
+            </div>
+            <div class="how-card">
+                <div class="how-step">2</div>
+                <h3>{{ i18n "mk_how_step2_title" }}</h3>
+                <p>{{ i18n "mk_how_step2_desc" }}</p>
+                <div class="how-code">
+                    <div class="code-block-header"><span>NEIR</span></div>
+                    <pre><code>✓ modules: 4
+✓ services: 8
+✓ dependencies: 12
+✓ architecture: microservices
+✓ policies: passed</code></pre>
+                </div>
+            </div>
+            <div class="how-card">
+                <div class="how-step">3</div>
+                <h3>{{ i18n "mk_how_step3_title" }}</h3>
+                <p>{{ i18n "mk_how_step3_desc" }}</p>
+                <div class="how-code">
+                    <div class="code-block-header"><span>output/</span></div>
+                    <pre><code>├── go/            # Go services
+├── typescript/    # TS services
+├── infra/         # K8s + Terraform
+├── ci/            # GitHub Actions
+└── ai/            # Context bundles</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-pipeline">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "mk_pipeline_title" }}</h2>
+        <p class="section-subtitle">{{ i18n "mk_pipeline_desc" }}</p>
+        <div class="pipeline-strip stagger-fade">
+            {{ $stages := slice "parse" "normalize" "resolve" "build" "validate" "graph" "policy" "schedule" "generate" "review" "write" }}
+            {{ range $i, $s := $stages }}
+            <div class="pipeline-stage">
+                <div class="pipeline-stage-index">{{ add $i 1 }}</div>
+                <div class="pipeline-stage-name">{{ i18n (printf "mk_stage_%s" $s) }}</div>
+            </div>
+            {{ if lt $i (sub (len $stages) 1) }}<div class="pipeline-arrow" aria-hidden="true">→</div>{{ end }}
+            {{ end }}
+        </div>
+    </div>
+</section>
 
 <section class="section">
     <div class="container">
@@ -110,123 +184,26 @@
     </div>
 </section>
 
-<section class="section">
-    <div class="container">
-        <h2 class="section-title fade-in">{{ i18n "section_quick_start" }}</h2>
-        <p class="section-subtitle fade-in">{{ i18n "home_quick_start_subtitle" }}</p>
-        <div class="quick-start-steps stagger-fade">
-            <div class="quick-start-step">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h4>{{ i18n "home_step_install_title" }}</h4>
-                    <p>{{ i18n "home_step_install_desc" }}</p>
-                    <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
-                        <pre><code>go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest</code></pre>
-                    </div>
-                </div>
-            </div>
-            <div class="quick-start-step">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h4>{{ i18n "home_step_spec_title" }}</h4>
-                    <p>{{ i18n "home_step_spec_desc" }}</p>
-                    <div class="code-block">
-                        <div class="code-block-header"><span>yaml</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
-                        <pre><code>project: my-app
-modules:
-  - name: auth
-    path: ./auth
-  - name: api
-    path: ./api
-    dependencies: [auth]
-services:
-  - name: gateway
-    kind: http
-    port: 8080
-generation:
-  languages: [go, typescript]</code></pre>
-                    </div>
-                </div>
-            </div>
-            <div class="quick-start-step">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h4>{{ i18n "home_step_run_title" }}</h4>
-                    <p>{{ i18n "home_step_run_desc" }}</p>
-                    <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
-                        <pre><code>naeos run --input spec.yaml --output-dir ./out</code></pre>
-                    </div>
-                </div>
-            </div>
-            <div class="quick-start-step">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                    <h4>{{ i18n "home_step_ai_title" }}</h4>
-                    <p>{{ i18n "home_step_ai_desc" }}</p>
-                    <div class="code-block">
-                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
-                        <pre><code>naeos compile --all --input spec.yaml</code></pre>
-                    </div>
-                </div>
-            </div>
+<div class="container">
+    <div class="stats-grid stagger-fade">
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.cli }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_cli_commands" }}+</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.languages }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_languages" }}</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.ai_platforms }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_ai_platforms" }}</div>
+        </div>
+        <div class="stat-card" role="figure">
+            <div class="stat-number" data-count="{{ .Site.Params.stats.specs }}" aria-hidden="true">0</div>
+            <div class="stat-label">{{ i18n "stats_specs" }}</div>
         </div>
     </div>
-</section>
-
-<section class="section">
-    <div class="container fade-in">
-        <h2 class="section-title">{{ i18n "section_latest_blog" }}</h2>
-        <p class="section-subtitle">{{ i18n "section_latest_blog_desc" }}</p>
-        <div class="blog-grid" id="home-blog-preview">
-            {{ $blog := where site.RegularPages "Section" "blog" | first 3 }}
-            {{ range $blog }}
-            <article class="blog-card">
-                <div class="blog-card-categories">
-                    {{ with .Params.categories }}
-                    {{ range . }}<span class="category-badge">{{ . }}</span>{{ end }}
-                    {{ end }}
-                </div>
-                <div class="blog-date">{{ .Date.Format "Jan 2, 2006" }}</div>
-                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
-                <p>{{ .Description | default .Summary | truncate 120 }}</p>
-                <div class="blog-meta" style="margin-top:auto;justify-content:flex-start;">
-                    <span>{{ i18n "blog_read" }} {{ .ReadingTime }} min</span>
-                </div>
-            </article>
-            {{ end }}
-        </div>
-        <div style="text-align:center;margin-top:2rem;">
-            <a href="{{ "blog/" | relLangURL }}" class="btn btn-secondary">{{ i18n "nav_blog" }} →</a>
-        </div>
-    </div>
-</section>
-
-<section class="section section-github-stats">
-    <div class="container fade-in">
-        <h2 class="section-title github-stats-title fade-in">{{ i18n "home_community_title" }}</h2>
-        <div class="github-stats stagger-fade">
-            <div class="github-stat">
-                <div class="github-stat-number" id="gh-stars">—</div>
-                <div class="github-stat-label">{{ i18n "home_github_stars" }}</div>
-            </div>
-            <div class="github-stat">
-                <div class="github-stat-number" id="gh-forks">—</div>
-                <div class="github-stat-label">{{ i18n "home_github_forks" }}</div>
-            </div>
-            <div class="github-stat">
-                <div class="github-stat-number" id="gh-issues">—</div>
-                <div class="github-stat-label">{{ i18n "home_github_issues" }}</div>
-            </div>
-            <div class="github-stat">
-                <div class="github-stat-number" id="gh-contributors">—</div>
-                <div class="github-stat-label">{{ i18n "home_github_contributors" }}</div>
-            </div>
-        </div>
-    </div>
-</section>
-
+</div>
 
 <section class="section">
     <div class="container fade-in">
@@ -305,6 +282,71 @@ generation:
 </section>
 
 <section class="section">
+    <div class="container">
+        <h2 class="section-title fade-in">{{ i18n "section_quick_start" }}</h2>
+        <p class="section-subtitle fade-in">{{ i18n "home_quick_start_subtitle" }}</p>
+        <div class="quick-start-steps stagger-fade">
+            <div class="quick-start-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_install_title" }}</h4>
+                    <p>{{ i18n "home_step_install_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>{{ i18n "mk_install_cmd" }}</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_spec_title" }}</h4>
+                    <p>{{ i18n "home_step_spec_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>yaml</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>project: my-app
+modules:
+  - name: auth
+    path: ./auth
+  - name: api
+    path: ./api
+    dependencies: [auth]
+services:
+  - name: gateway
+    kind: http
+    port: 8080
+generation:
+  languages: [go, typescript]</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_run_title" }}</h4>
+                    <p>{{ i18n "home_step_run_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>naeos run --input spec.yaml --output-dir ./out</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-start-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>{{ i18n "home_step_ai_title" }}</h4>
+                    <p>{{ i18n "home_step_ai_desc" }}</p>
+                    <div class="code-block">
+                        <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                        <pre><code>naeos ai compile --input-file spec.yaml --target opencode</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
     <div class="container fade-in">
         <h2 class="section-title">{{ i18n "home_testimonials_title" }}</h2>
         <p class="section-subtitle">{{ i18n "home_testimonials_desc" }}</p>
@@ -343,6 +385,58 @@ generation:
     </div>
 </section>
 
+<section class="section">
+    <div class="container fade-in">
+        <h2 class="section-title">{{ i18n "section_latest_blog" }}</h2>
+        <p class="section-subtitle">{{ i18n "section_latest_blog_desc" }}</p>
+        <div class="blog-grid" id="home-blog-preview">
+            {{ $blog := where site.RegularPages "Section" "blog" | first 3 }}
+            {{ range $blog }}
+            <article class="blog-card">
+                <div class="blog-card-categories">
+                    {{ with .Params.categories }}
+                    {{ range . }}<span class="category-badge">{{ . }}</span>{{ end }}
+                    {{ end }}
+                </div>
+                <div class="blog-date">{{ .Date.Format "Jan 2, 2006" }}</div>
+                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+                <p>{{ .Description | default .Summary | truncate 120 }}</p>
+                <div class="blog-meta" style="margin-top:auto;justify-content:flex-start;">
+                    <span>{{ i18n "blog_read" }} {{ .ReadingTime }} min</span>
+                </div>
+            </article>
+            {{ end }}
+        </div>
+        <div style="text-align:center;margin-top:2rem;">
+            <a href="{{ "blog/" | relLangURL }}" class="btn btn-secondary">{{ i18n "nav_blog" }} →</a>
+        </div>
+    </div>
+</section>
+
+<section class="section section-github-stats">
+    <div class="container fade-in">
+        <h2 class="section-title github-stats-title fade-in">{{ i18n "home_community_title" }}</h2>
+        <div class="github-stats stagger-fade">
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-stars">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_stars" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-forks">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_forks" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-issues">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_issues" }}</div>
+            </div>
+            <div class="github-stat">
+                <div class="github-stat-number" id="gh-contributors">—</div>
+                <div class="github-stat-label">{{ i18n "home_github_contributors" }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="section section-supported">
     <div class="container fade-in">
         <h2 class="section-title">{{ i18n "section_languages" }}</h2>
@@ -374,12 +468,21 @@ generation:
     </div>
 </section>
 
-<section class="section">
+<section class="section section-cta-band">
     <div class="container">
-        <div class="cta-section fade-in">
-            <h2>{{ i18n "section_cta" }}</h2>
-            <p>{{ i18n "section_cta_desc" }}</p>
-            <a href="{{ "download/" | relLangURL }}" class="btn btn-primary">{{ i18n "cta_install_now" }}</a>
+        <div class="cta-band fade-in">
+            <h2>{{ i18n "mk_cta_band_title" }}</h2>
+            <p>{{ i18n "mk_cta_band_desc" }}</p>
+            <div class="cta-band-install">
+                <div class="code-block">
+                    <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="{{ i18n "copy_code" }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>{{ i18n "copy" }}</button></div>
+                    <pre><code>{{ i18n "mk_install_cmd" }}</code></pre>
+                </div>
+            </div>
+            <div class="cta-band-actions">
+                <a href="{{ "docs/getting-started/" | relLangURL }}" class="btn btn-primary btn-lg">{{ i18n "cta_get_started" }}</a>
+                <a href="{{ "download/" | relLangURL }}" class="btn btn-secondary btn-lg">{{ i18n "cta_install_now" }}</a>
+            </div>
         </div>
     </div>
 </section>
