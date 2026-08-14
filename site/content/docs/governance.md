@@ -114,12 +114,14 @@ if !result.Passed {
 Every significant action is logged for traceability:
 
 ```bash
-# Run audit on a specification
-naeos audit --input-file spec.yaml
+# Run a security audit on generated or source files
+naeos audit spec.yaml
 
-# Export audit log
-naeos audit --input-file spec.yaml --output audit-report.json
+# Audit a set of files
+naeos audit ./generated/**/*.go
 ```
+
+Audit findings are printed to stdout.
 
 The audit trail includes:
 - Specification changes (create, update, migrate)
@@ -140,7 +142,7 @@ Enforce governance in your CI pipeline:
   run: naeos lint --input-file spec.yaml
 
 - name: Audit
-  run: naeos audit --input-file spec.yaml
+  run: naeos audit spec.yaml
 ```
 
 ## Pipeline Integration

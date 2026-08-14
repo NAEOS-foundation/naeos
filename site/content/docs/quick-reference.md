@@ -22,10 +22,10 @@ naeos run --input-file spec.yaml
 naeos validate --input-file spec.yaml
 
 # Compile for AI
-naeos compile --all --input-file spec.yaml
+naeos ai compile --input-file spec.yaml --target opencode
 
-# Start API server
-naeos serve --port 8080
+# Start the REST API server
+naeos api --port 8080
 
 # Start dashboard
 naeos dashboard
@@ -43,7 +43,7 @@ modules:
     path: ./db
 services:
   - name: rest-api
-    kind: rest
+    kind: http
     port: 8080
 architecture:
   pattern: microservices
@@ -65,13 +65,11 @@ generation:
 
 | Kind | Protocol | Use Case |
 |------|----------|----------|
-| `rest` | HTTP/JSON | REST APIs |
+| `http` | HTTP/JSON | REST APIs, gateways, WebSocket endpoints |
 | `grpc` | gRPC/Protobuf | Internal service communication |
-| `graphql` | HTTP/GraphQL | Flexible query APIs |
-| `websocket` | WebSocket | Real-time communication |
-| `worker` | — | Background job processing |
-| `lambda` | — | Serverless functions |
-| `reverse-proxy` | HTTP | API gateway / load balancer |
+| `worker` | — | Background job processing / serverless tasks |
+| `cli` | — | Command-line tools |
+| `job` | — | One-off scheduled jobs |
 
 ## Architecture Patterns
 
@@ -99,17 +97,17 @@ generation:
 | `naeos init` | Create a new project |
 | `naeos run` | Execute the full pipeline |
 | `naeos validate` | Validate a specification |
-| `naeos compile` | Compile spec for AI assistants |
-| `naeos gen` | Generate code for a specific language |
-| `naeos serve` | Start the API server |
+| `naeos ai compile` | Compile spec for an AI agent |
+| `naeos build` | Build artifacts from a specification |
+| `naeos api` | Start the REST API server |
 | `naeos dashboard` | Start the web dashboard |
 | `naeos cloud plan` | Generate cloud deployment plan |
 | `naeos cloud deploy` | Deploy to cloud provider |
-| `naeos cloud destroy` | Tear down cloud resources |
+| `naeos cloud status` | Show deployed resource status |
 | `naeos plugin install` | Install a plugin |
 | `naeos plugin list` | List installed plugins |
 | `naeos db migrate` | Run database migrations |
-| `naeos db reset` | Reset the database |
+| `naeos db connect` | Connect to a database |
 | `naeos version` | Show version info |
 
 ## API Endpoints
@@ -133,11 +131,10 @@ generation:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NAEOS_LLM_API_KEY` | API key for LLM providers | — |
-| `NAEOS_DB_DRIVER` | Database driver (postgres, mysql, sqlite) | sqlite |
-| `NAEOS_DB_DSN` | Database connection string | — |
-| `NAEOS_PORT` | API server port | 8080 |
-| `NAEOS_LOG_LEVEL` | Log level (debug, info, warn, error) | info |
+| `NAEOS_LLM_API_KEY` | API key for LLM providers (`naeos ai compile`) | — |
+| `NAEOS_LLM_PROVIDER` | LLM provider (openai, anthropic, gemini, ...) | — |
+| `NAEOS_ENCRYPTION_KEY` | Passphrase for the API server's auth user store (`naeos api`) | — |
+| `NAEOS_PIPELINES_FILE` | Path to the pipelines file (default: `~/.naeos/pipelines.json`) | — |
 
 ## Output Directory Structure
 
@@ -155,7 +152,7 @@ output/
 │   ├── copilot-instructions.md
 │   ├── CLAUDE.md
 │   ├── .cursorrules
-│   └── GEMINI.md
+│   └── .gemini/CONFIG.md
 ├── context/               # Context bundles
 │   └── summary.md
 └── terraform/             # Cloud deployment (if configured)

@@ -2,6 +2,21 @@
 
 Generate VS Code extension package
 
+### Synopsis
+
+Generate a complete VS Code extension with syntax highlighting and LSP integration.
+
+The extension is written to the specified output directory (default: ./naeos-vscode).
+It includes:
+  - package.json with commands, keybindings, menus, and LSP configuration
+  - TextMate grammar for .naeos.yaml syntax highlighting
+  - extension.js with LSP client, compile/validate/dashboard commands
+  - README.md and launch.json
+
+Example:
+  naeos dx vscode-gen
+  naeos dx vscode-gen --output ./extensions/naeos-vscode
+
 ```
 naeos dx vscode-gen [flags]
 ```
@@ -9,7 +24,8 @@ naeos dx vscode-gen [flags]
 ### Options
 
 ```
-  -h, --help   help for vscode-gen
+  -h, --help            help for vscode-gen
+      --output string   output directory for the extension (default: ./naeos-vscode)
 ```
 
 ### Options inherited from parent commands

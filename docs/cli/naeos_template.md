@@ -32,6 +32,7 @@ Examples:
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos template add](naeos_template_add.md)	 - Add a custom template
+* [naeos template create](naeos_template_create.md)	 - Scaffold a new starter template directory for publishing
 * [naeos template init](naeos_template_init.md)	 - Initialize a project from a template in the marketplace
 * [naeos template list](naeos_template_list.md)	 - List available templates
 * [naeos template prompt-create](naeos_template_prompt-create.md)	 - Create a custom LLM prompt template

@@ -27,8 +27,11 @@ naeos build [flags]
       --input string           specification input to process
       --input-file string      path to a specification file
       --language stringArray   target language for code generation
+      --memprofile string      write memory profile (heap snapshots) to file
       --output string          output format: text, json, or yaml (default "text")
       --output-file string     optional file path to write formatted output
+      --profile string         write pipeline performance profile to file
+      --schema-source string   URL or file path to JSON Schema for spec validation
   -w, --workers int            number of parallel workers (used with --distributed) (default 4)
 ```
 

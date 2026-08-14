@@ -49,12 +49,12 @@ This usually means your spec YAML has structural issues:
 # WRONG — services should be a list
 services:
   api:
-    kind: rest
+    kind: http
 
 # CORRECT
 services:
   - name: api
-    kind: rest
+    kind: http
 ```
 
 ### `module not found in dependency graph`
@@ -109,8 +109,8 @@ The output directory may have restrictive permissions:
 # Fix permissions
 chmod -R u+w ./output
 
-# Or use a different output directory
-naeos run --input-file spec.yaml --output-dir /tmp/output
+# Or point to a different output directory in naeos.yaml
+output_dir: /tmp/output
 ```
 
 ### Generated code doesn't compile
@@ -127,22 +127,18 @@ find ./generated -name "*.go" -o -name "*.ts" | head -20
 
 ### Missing language adapter
 
-If you specify a language that isn't installed:
+If you specify a language that isn't supported:
 
 ```
-Error: language adapter "rust" not found
+Error: unsupported language: "rust"
 ```
 
-Check available adapters:
+Supported languages: `go`, `typescript`, `python`, `java`, `rust`. Framework
+variants (`fastapi` for python, `actix-web` for rust) are selected automatically
+for their base language. Verify your target:
 
 ```bash
-naeos gen --list
-```
-
-Install missing adapters via the plugin system:
-
-```bash
-naeos plugin install rust-adapter
+naeos run --input-file spec.yaml --language go --dry-run
 ```
 
 ## AI Compiler
@@ -154,9 +150,10 @@ The AI compiler needs an API key for your chosen provider:
 ```bash
 # Set the environment variable
 export NAEOS_LLM_API_KEY="your-api-key"
+export NAEOS_LLM_PROVIDER="anthropic"   # optional; default: openai
 
-# Or pass it directly
-naeos compile --target copilot --api-key "your-api-key"
+# Then compile
+naeos ai compile --input-file spec.yaml --target claude
 ```
 
 ### Context bundle is empty
@@ -179,11 +176,13 @@ modules:
 
 ### Compilation takes too long
 
-Large specs with many modules can take time. Use incremental compilation:
+Large specs with many modules can take time. Reduce the work per run:
 
 ```bash
-# Only compile changed modules
-naeos compile --incremental --input-file spec.yaml
+# Compile for a single agent instead of several
+naeos ai compile --input-file spec.yaml --target claude
+
+# Keep the spec focused — smaller specs compile faster
 ```
 
 ## API Server
@@ -197,16 +196,12 @@ Another process is using port 8080:
 lsof -i :8080
 
 # Use a different port
-naeos serve --port 9090
+naeos api --port 9090
 ```
 
 ### CORS errors in browser
 
-The API server allows localhost by default. For other origins, configure CORS:
-
-```bash
-naeos serve --cors-origins "https://myapp.com,https://staging.myapp.com"
-```
+The API server allows `localhost` and `naeos.dev` origins by default. If your frontend runs on a different origin, it needs to be added to the allowed list before requests will pass.
 
 ### WebSocket connection fails
 
@@ -234,11 +229,11 @@ ls -la ./naeos.db
 If database migrations fail:
 
 ```bash
-# Reset the database (WARNING: destroys data)
-naeos db reset --confirm
+# Run migrations manually with verbose output
+naeos db migrate --name <connection> --verbose
 
-# Or run migrations manually
-naeos db migrate --verbose
+# Inspect the migration directory
+ls migrations/
 ```
 
 ## Performance
@@ -248,14 +243,11 @@ naeos db migrate --verbose
 For large specs, try these optimizations:
 
 ```bash
-# Use caching (skips unchanged stages)
-naeos run --input-file spec.yaml --cache
+# Use caching between runs (a --cache-dir enables it)
+naeos run --input-file spec.yaml --cache-dir .naeos-cache
 
 # Generate only specific languages
-naeos run --input-file spec.yaml --languages go,typescript
-
-# Parallel generation (if supported)
-naeos run --input-file spec.yaml --parallel
+naeos run --input-file spec.yaml --language go --language typescript
 ```
 
 ### High memory usage
@@ -263,12 +255,11 @@ naeos run --input-file spec.yaml --parallel
 Large specs with 100+ modules may use significant memory:
 
 ```bash
-# Monitor memory usage
-naeos run --input-file spec.yaml --profile memory
-
-# Process modules in batches
-naeos run --input-file spec.yaml --batch-size 20
+# Profile memory usage
+naeos run --input-file spec.yaml --profile --profile-out profile.json
 ```
+
+If your spec needs chunking, split it into multiple files and compose them with `$include` in a master spec.
 
 ## Getting Help
 

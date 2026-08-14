@@ -37,9 +37,9 @@ Point the contributor to the relevant files:
 
 ## Resources
 
-- [Contributing guide](/docs/contributing/)
-- [Project conventions (AGENTS.md)](AGENTS.md)
-- [Development plan](DEVELOPMENT_PLAN.md)
+- [Contributing guide](../../CONTRIBUTING.md)
+- [Project conventions (AGENTS.md)](../../AGENTS.md)
+- [Development plan](../../DEVELOPMENT_PLAN.md)
 
 ## Additional Context
 

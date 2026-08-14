@@ -4,7 +4,7 @@ description: Parallelize pipeline execution across multiple workers for faster b
 weight: 13
 ---
 
-NAEOS supports distributed pipeline execution: the 9 pipeline stages are
+NAEOS supports distributed pipeline execution: the pipeline stages are
 scheduled as independent tasks and processed in parallel across configurable
 worker pools.
 
@@ -24,7 +24,7 @@ only pays off once there is enough work to parallelize.
 
 ```bash
 # Run the pipeline with 4 workers (default)
-naeos distributed --input spec.yaml
+naeos distributed --config naeos.yaml
 
 # Use more workers for larger specs
 naeos distributed --config naeos.yaml --workers 8
@@ -59,5 +59,5 @@ Pipeline: my-project
 
 ## Related
 
-- [Pipeline Engine](/docs/pipeline-engine/) — the 9-stage DAG pipeline
+- [Pipeline Engine](/docs/pipeline-engine/) — the 11-stage DAG pipeline
 - [Dashboard](/docs/dashboard/) — monitor pipeline activity in real time

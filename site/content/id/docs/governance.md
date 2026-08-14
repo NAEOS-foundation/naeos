@@ -114,12 +114,14 @@ if !result.Passed {
 Setiap aksi signifikan di-log untuk ketelusuran:
 
 ```bash
-# Jalankan audit pada spesifikasi
-naeos audit --input-file spec.yaml
+# Jalankan audit keamanan pada file yang di-generate atau sumber
+naeos audit spec.yaml
 
-# Ekspor log audit
-naeos audit --input-file spec.yaml --output audit-report.json
+# Audit sekumpulan file
+naeos audit ./generated/**/*.go
 ```
+
+Temuan audit dicetak ke stdout.
 
 Audit trail mencakup:
 - Perubahan spesifikasi (create, update, migrate)
@@ -140,7 +142,7 @@ Terapkan governance di pipeline CI Anda:
   run: naeos lint --input-file spec.yaml
 
 - name: Audit
-  run: naeos audit --input-file spec.yaml
+  run: naeos audit spec.yaml
 ```
 
 ## Integrasi Pipeline

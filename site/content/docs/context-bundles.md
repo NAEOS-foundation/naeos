@@ -21,8 +21,8 @@ naeos context --input-file spec.yaml --output json
 # Save to file
 naeos context --input-file spec.yaml --output-file context.md
 
-# Generate from existing NEIR model
-naeos context --neir-file neir.json --output-file context.md
+# Generate from an inspected NEIR model (JSON from `naeos inspect`)
+naeos context --input neir.json --output-file context.md
 ```
 
 ## Output Formats
@@ -206,4 +206,4 @@ os.WriteFile(".github/copilot-context.md", []byte(copilotInstructions), 0644)
 - **Regenerate after spec changes** — Context bundles are snapshots; regenerate when your spec evolves.
 - **Keep bundles concise** — Use plain text format for token-limited contexts.
 - **Include in version control** — Commit generated bundles so AI assistants always have current context.
-- **Use with `naeos compile`** — Context bundles complement AI compiler output for full AI integration.
+- **Use with `naeos ai compile`** — Context bundles complement AI compiler output for full AI integration.

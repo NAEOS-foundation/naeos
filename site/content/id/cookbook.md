@@ -24,10 +24,10 @@ modules:
     path: ./infra/db
 services:
   - name: gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: user-api
-    kind: rest
+    kind: http
     port: 9001
 architecture:
   pattern: microservices
@@ -48,9 +48,9 @@ modules:
     dependencies: [event-ingestor]
 services:
   - name: ingest-api
-    kind: lambda
+    kind: worker
   - name: process-worker
-    kind: lambda
+    kind: worker
 architecture:
   pattern: serverless
 generation:
@@ -94,10 +94,10 @@ modules:
     dependencies: [vector-db]
 services:
   - name: api-gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: chat-api
-    kind: rest
+    kind: http
     port: 9001
 architecture:
   pattern: microservices
@@ -122,7 +122,7 @@ modules:
     dependencies: [stream-processor]
 services:
   - name: ingestion-api
-    kind: rest
+    kind: http
     port: 8080
   - name: stream-worker
     kind: worker

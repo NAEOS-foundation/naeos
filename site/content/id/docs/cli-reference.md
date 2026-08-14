@@ -12,7 +12,7 @@ NAEOS menyediakan 35+ perintah CLI untuk setiap tahap pipeline rekayasa.
 |----------|-----------|
 | `naeos run` | Jalankan pipeline lengkap |
 | `naeos validate` | Validasi spesifikasi |
-| `naeos compile` | Kompilasi ke set instruksi AI |
+| `naeos ai compile` | Kompilasi spesifikasi ke set instruksi AI |
 | `naeos context` | Generate bundel konteks AI |
 | `naeos test` | Jalankan tes untuk kode yang dihasilkan |
 | `naeos docgen` | Generate dokumentasi |

@@ -7,17 +7,19 @@ NAEOS provides a complete engineering platform with the following capabilities:
 
 ## Pipeline Engine
 
-The 9-stage DAG pipeline is the heart of NAEOS:
+The 11-stage DAG pipeline is the heart of NAEOS:
 
 1. **Parse** — Read and parse YAML/JSON specifications with variable interpolation
 2. **Normalize** — Normalize data structures for consistent processing
 3. **Resolve** — Resolve cross-references, dependencies, and external includes
-4. **Build** — Build the NEIR (NAEOS Engineering Intermediate Representation)
-5. **Validate** — Comprehensive validation including circular dependency detection
-6. **Schedule** — DAG-based task scheduling with parallel execution groups
-7. **Generate** — Multi-language code generation (Go, TypeScript, Python, Java, Rust)
-8. **Compile** — Compile NEIR to AI instruction sets for 6 platforms
-9. **Export** — Export artifacts, documentation, and deployment manifests
+4. **Build NEIR** — Build the NEIR (NAEOS Engineering Intermediate Representation)
+5. **Validate** — Comprehensive semantic validation with optional schema checking
+6. **Build Graph** — Construct the execution DAG from the NEIR model
+7. **Policy Evaluation** — Enforce governance policy rules on the model
+8. **Schedule** — DAG-based task scheduling with parallel execution groups
+9. **Generate** — Multi-language code generation (Go, TypeScript, Python, Java, Rust, FastAPI, Actix Web)
+10. **Review** — Review and lint generated artifacts
+11. **Write Artifacts** — Export artifacts, documentation, and deployment manifests
 
 ## Spec Language v2
 

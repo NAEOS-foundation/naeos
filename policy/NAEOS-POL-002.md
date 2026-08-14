@@ -795,4 +795,4 @@ naeos policy publish policy.yaml --registry https://registry.naeos.io
 - [NAEOS-POL-003.md](NAEOS-POL-003.md) - Policy Examples & Templates
 - [NAEOS-POL-004.md](NAEOS-POL-004.md) - Policy Best Practices
 - [NAEOS-POL-005.md](NAEOS-POL-005.md) - Policy Compiler & Engine
-- [docs/NES-012-Policy.md](docs/NES-012-Policy.md) - Policy Model Specification
+- [docs/NES-012-Policy.md](../docs/NES-012-Policy.md) - Policy Model Specification

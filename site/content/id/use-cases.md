@@ -38,7 +38,7 @@ Tingkatkan asisten coding AI Anda dengan konteks proyek lengkap. NAEOS mengkompi
 - Jaga keselarasan antara perubahan spesifikasi dan konteks AI
 - Kurangi rekayasa prompt manual untuk alat AI
 
-**Didukung:** Semua 6 platform AI
+**Didukung:** Semua 7 platform AI
 
 ---
 

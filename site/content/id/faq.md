@@ -40,7 +40,7 @@ description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>NAEOS mengkompilasi spesifikasi menjadi set instruksi AI untuk 6 platform: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, dan OpenCode. Setiap adapter menghasilkan file konteks khusus platform yang membantu asisten AI Anda memahami arsitektur proyek Anda.</p>
+<p>NAEOS mengkompilasi spesifikasi menjadi set instruksi AI untuk 7 platform: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf. Setiap adapter menghasilkan file konteks khusus platform yang membantu asisten AI Anda memahami arsitektur proyek Anda.</p>
 </div>
 </div>
 

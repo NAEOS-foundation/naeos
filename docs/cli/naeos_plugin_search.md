@@ -9,7 +9,8 @@ naeos plugin search [query] [flags]
 ### Options
 
 ```
-  -h, --help   help for search
+  -h, --help              help for search
+      --registry string   registry base URL (default "https://registry.naeos.dev")
 ```
 
 ### Options inherited from parent commands

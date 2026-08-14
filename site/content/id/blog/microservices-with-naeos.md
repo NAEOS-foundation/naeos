@@ -45,16 +45,16 @@ modules:
     description: Shared database layer
 services:
   - name: gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: user-api
-    kind: rest
+    kind: http
     port: 9001
   - name: order-api
-    kind: rest
+    kind: http
     port: 9002
   - name: product-api
-    kind: rest
+    kind: http
     port: 9003
 architecture:
   pattern: microservices

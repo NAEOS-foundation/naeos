@@ -21,8 +21,8 @@ naeos context --input-file spec.yaml --output json
 # Simpan ke file
 naeos context --input-file spec.yaml --output-file context.md
 
-# Hasilkan dari model NEIR yang sudah ada
-naeos context --neir-file neir.json --output-file context.md
+# Hasilkan dari spesifikasi
+naeos context --input-file spec.yaml --output-file context.md
 ```
 
 ## Format Output
@@ -206,4 +206,4 @@ os.WriteFile(".github/copilot-context.md", []byte(copilotInstructions), 0644)
 - **Regenerasi setelah perubahan spec** — Context bundle adalah snapshot; regenerasi saat spesifikasi berubah.
 - **Pertahankan bundle ringkas** — Gunakan format plain text untuk konteks dengan batas token.
 - **Masukkan ke version control** — Commit bundle yang dihasilkan agar asisten AI selalu memiliki konteks terkini.
-- **Gunakan dengan `naeos compile`** — Context bundle melengkapi output AI compiler untuk integrasi AI yang lengkap.
+- **Gunakan dengan `naeos ai compile`** — Context bundle melengkapi output AI compiler untuk integrasi AI yang lengkap.

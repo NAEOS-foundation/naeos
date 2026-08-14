@@ -23,10 +23,10 @@ naeos run --input-file spec.yaml
 naeos validate --input-file spec.yaml
 
 # Kompilasi untuk AI
-naeos compile --all --input-file spec.yaml
+naeos ai compile --input-file spec.yaml --target opencode
 
-# Jalankan server API
-naeos serve --port 8080
+# Jalankan server API REST
+naeos api --port 8080
 
 # Jalankan dashboard
 naeos dashboard
@@ -44,7 +44,7 @@ modules:
     path: ./db
 services:
   - name: rest-api
-    kind: rest
+    kind: http
     port: 8080
 architecture:
   pattern: microservices
@@ -66,13 +66,11 @@ generation:
 
 | Jenis | Protokol | Kasus Penggunaan |
 |-------|----------|------------------|
-| `rest` | HTTP/JSON | API REST |
+| `http` | HTTP/JSON | API REST, gateway, endpoint WebSocket |
 | `grpc` | gRPC/Protobuf | Komunikasi layanan internal |
-| `graphql` | HTTP/GraphQL | API query fleksibel |
-| `websocket` | WebSocket | Komunikasi real-time |
-| `worker` | — | Pekerjaan latar belakang |
-| `lambda` | — | Fungsi serverless |
-| `reverse-proxy` | HTTP | API gateway / load balancer |
+| `worker` | — | Pekerjaan latar belakang / tugas serverless |
+| `cli` | — | Alat baris perintah |
+| `job` | — | Pekerjaan terjadwal sekali jalan |
 
 ## Pola Arsitektur
 
@@ -100,17 +98,17 @@ generation:
 | `naeos init` | Buat proyek baru |
 | `naeos run` | Jalankan pipeline lengkap |
 | `naeos validate` | Validasi spesifikasi |
-| `naeos compile` | Kompilasi spesifikasi untuk asisten AI |
-| `naeos gen` | Generate kode untuk bahasa spesifik |
-| `naeos serve` | Jalankan server API |
+| `naeos ai compile` | Kompilasi spesifikasi untuk agen AI |
+| `naeos build` | Build artifact dari spesifikasi |
+| `naeos api` | Jalankan server API REST |
 | `naeos dashboard` | Jalankan dashboard web |
 | `naeos cloud plan` | Generate rencana deployment cloud |
 | `naeos cloud deploy` | Deploy ke provider cloud |
-| `naeos cloud destroy` | Hancurkan resource cloud |
+| `naeos cloud status` | Tampilkan status resource ter-deploy |
 | `naeos plugin install` | Instal plugin |
 | `naeos plugin list` | Daftar plugin terinstal |
 | `naeos db migrate` | Jalankan migrasi database |
-| `naeos db reset` | Reset database |
+| `naeos db connect` | Hubungkan ke database |
 | `naeos version` | Tampilkan info versi |
 
 ## Endpoint API
@@ -134,11 +132,10 @@ generation:
 
 | Variabel | Deskripsi | Default |
 |----------|-----------|---------|
-| `NAEOS_LLM_API_KEY` | Kunci API untuk provider LLM | — |
-| `NAEOS_DB_DRIVER` | Driver database (postgres, mysql, sqlite) | sqlite |
-| `NAEOS_DB_DSN` | String koneksi database | — |
-| `NAEOS_PORT` | Port server API | 8080 |
-| `NAEOS_LOG_LEVEL` | Level log (debug, info, warn, error) | info |
+| `NAEOS_LLM_API_KEY` | Kunci API untuk provider LLM (`naeos ai compile`) | — |
+| `NAEOS_LLM_PROVIDER` | Provider LLM (openai, anthropic, gemini, ...) | — |
+| `NAEOS_ENCRYPTION_KEY` | Passphrase untuk user store auth server API (`naeos api`) | — |
+| `NAEOS_PIPELINES_FILE` | Path ke file pipelines (default: `~/.naeos/pipelines.json`) | — |
 
 ## Struktur Direktori Output
 
@@ -156,7 +153,7 @@ output/
 │   ├── copilot-instructions.md
 │   ├── CLAUDE.md
 │   ├── .cursorrules
-│   └── GEMINI.md
+│   └── .gemini/CONFIG.md
 ├── context/               # Context bundle
 │   └── summary.md
 └── terraform/             # Deployment cloud (jika dikonfigurasi)

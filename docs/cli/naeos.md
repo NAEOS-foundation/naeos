@@ -55,6 +55,7 @@ Specify Once. Build Anywhere.
 * [naeos kernel](naeos_kernel.md)	 - Inspect the NAEOS kernel and service registry
 * [naeos lint](naeos_lint.md)	 - Lint a specification file
 * [naeos lock](naeos_lock.md)	 - Manage lock files for reproducible builds
+* [naeos lsp](naeos_lsp.md)	 - Start NEIR Language Server Protocol server
 * [naeos marketplace](naeos_marketplace.md)	 - Browse and install templates, profiles, and plugins
 * [naeos mcp](naeos_mcp.md)	 - Start MCP (Model Context Protocol) server
 * [naeos migrate](naeos_migrate.md)	 - Manage spec schema migrations
@@ -76,7 +77,7 @@ Specify Once. Build Anywhere.
 * [naeos supabase](naeos_supabase.md)	 - Supabase backend management
 * [naeos template](naeos_template.md)	 - Manage generation templates, prompt library, and template marketplace
 * [naeos test](naeos_test.md)	 - Run tests for generated code
-* [naeos tui](naeos_tui.md)	 - Interactive project wizard
+* [naeos tui](naeos_tui.md)	 - Terminal user interface tools
 * [naeos validate](naeos_validate.md)	 - Validate a specification using the NAEOS pipeline
 * [naeos version](naeos_version.md)	 - Show NAEOS version
 * [naeos watch](naeos_watch.md)	 - Watch for specification changes and re-run the pipeline

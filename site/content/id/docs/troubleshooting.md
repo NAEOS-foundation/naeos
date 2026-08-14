@@ -50,12 +50,12 @@ Ini biasanya berarti spesifikasi YAML Anda memiliki masalah struktural:
 # SALAH — services harus berupa list
 services:
   api:
-    kind: rest
+    kind: http
 
 # BENAR
 services:
   - name: api
-    kind: rest
+    kind: http
 ```
 
 ### `module not found in dependency graph`
@@ -110,8 +110,8 @@ Direktori output mungkin memiliki izin yang ketat:
 # Perbaiki izin
 chmod -R u+w ./output
 
-# Atau gunakan direktori output berbeda
-naeos run --input-file spec.yaml --output-dir /tmp/output
+# Atau arahkan ke direktori output berbeda di naeos.yaml
+output_dir: /tmp/output
 ```
 
 ### Kode yang di-generate tidak bisa dikompilasi
@@ -134,16 +134,18 @@ Jika Anda menentukan bahasa yang tidak terinstal:
 Error: adapter bahasa "rust" tidak ditemukan
 ```
 
-Periksa adapter yang tersedia:
+Jika Anda menentukan bahasa yang tidak didukung:
 
-```bash
-naeos gen --list
+```
+Error: unsupported language: "rust"
 ```
 
-Instal adapter yang hilang melalui sistem plugin:
+Bahasa yang didukung: `go`, `typescript`, `python`, `java`, `rust`. Varian
+framework (`fastapi` untuk python, `actix-web` untuk rust) dipilih otomatis
+untuk bahasa dasarnya. Verifikasi target Anda:
 
 ```bash
-naeos plugin install rust-adapter
+naeos run --input-file spec.yaml --language go --dry-run
 ```
 
 ## AI Compiler
@@ -155,9 +157,10 @@ AI compiler memerlukan kunci API untuk provider pilihan Anda:
 ```bash
 # Atur variabel lingkungan
 export NAEOS_LLM_API_KEY="kunci-api-anda"
+export NAEOS_LLM_PROVIDER="anthropic"   # opsional; default: openai
 
-# Atau passing langsung
-naeos compile --target copilot --api-key "kunci-api-anda"
+# Lalu kompilasi
+naeos ai compile --input-file spec.yaml --target claude
 ```
 
 ### Context bundle kosong
@@ -180,11 +183,13 @@ modules:
 
 ### Kompilasi terlalu lama
 
-Spesifikasi besar dengan banyak modul bisa memakan waktu. Gunakan kompilasi inkremental:
+Spesifikasi besar dengan banyak modul bisa memakan waktu. Kurangi beban per eksekusi:
 
 ```bash
-# Hanya kompilasi modul yang berubah
-naeos compile --incremental --input-file spec.yaml
+# Kompilasi untuk satu agen, bukan beberapa
+naeos ai compile --input-file spec.yaml --target claude
+
+# Jaga spesifikasi tetap fokus — spesifikasi yang lebih kecil kompilasi lebih cepat
 ```
 
 ## Server API
@@ -198,16 +203,12 @@ Proses lain menggunakan port 8080:
 lsof -i :8080
 
 # Gunakan port berbeda
-naeos serve --port 9090
+naeos api --port 9090
 ```
 
 ### Error CORS di browser
 
-Server API mengizinkan localhost secara default. Untuk origin lain, konfigurasikan CORS:
-
-```bash
-naeos serve --cors-origins "https://myapp.com,https://staging.myapp.com"
-```
+Server API mengizinkan origin `localhost` dan `naeos.dev` secara default. Jika frontend Anda berjalan di origin berbeda, origin tersebut harus ditambahkan ke daftar yang diizinkan sebelum permintaan dapat lewat.
 
 ### Koneksi WebSocket gagal
 
@@ -235,28 +236,25 @@ ls -la ./naeos.db
 Jika migrasi database gagal:
 
 ```bash
-# Reset database (PERINGATAN: menghancurkan data)
-naeos db reset --confirm
+# Jalankan migrasi secara manual dengan output verbose
+naeos db migrate --name <koneksi> --verbose
 
-# Atau jalankan migrasi secara manual
-naeos db migrate --verbose
+# Periksa direktori migrasi
+ls migrations/
 ```
 
 ## Performa
 
 ### Pipeline lambat
 
-Untuk spesifikasi besar, coba optimasi ini:
+Untuk spesifikasi besar, coba optimasi berikut:
 
 ```bash
-# Gunakan caching (melewati stage yang tidak berubah)
-naeos run --input-file spec.yaml --cache
+# Gunakan caching antar eksekusi (aktif via --cache-dir)
+naeos run --input-file spec.yaml --cache-dir .naeos-cache
 
 # Generate hanya bahasa tertentu
-naeos run --input-file spec.yaml --languages go,typescript
-
-# Generasi paralel (jika didukung)
-naeos run --input-file spec.yaml --parallel
+naeos run --input-file spec.yaml --language go --language typescript
 ```
 
 ### Penggunaan memori tinggi
@@ -264,12 +262,11 @@ naeos run --input-file spec.yaml --parallel
 Spesifikasi besar dengan 100+ modul mungkin menggunakan memori signifikan:
 
 ```bash
-# Pantau penggunaan memori
-naeos run --input-file spec.yaml --profile memory
-
-# Proses modul dalam batch
-naeos run --input-file spec.yaml --batch-size 20
+# Profiling penggunaan memori
+naeos run --input-file spec.yaml --profile --profile-out profile.json
 ```
+
+Jika spesifikasi perlu dipecah, bagi menjadi beberapa file dan komposisikan dengan `$include` pada spesifikasi utama.
 
 ## Mendapatkan Bantuan
 

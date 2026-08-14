@@ -35,7 +35,7 @@ modules:
     path: ./worker
 services:
   - name: api-server
-    kind: rest
+    kind: http
     port: 8080
   - name: queue-worker
     kind: worker
@@ -95,10 +95,11 @@ naeos cloud status
 
 ### Destroy
 
-Tear down all deployed resources:
+To tear down deployed resources, apply a destroy plan in the generated `terraform/` directory:
 
 ```bash
-naeos cloud destroy --provider aws --region us-east-1
+cd terraform/
+terraform destroy
 ```
 
 ## Resource Types
@@ -132,10 +133,10 @@ The cloud commands use these environment variables for authentication:
 
 ## Cost Estimation
 
-The `plan` command includes an estimated monthly cost breakdown:
+The `plan` command includes an estimated monthly cost breakdown automatically:
 
 ```bash
-naeos cloud plan --provider aws --input-file spec.yaml --estimate-cost
+naeos cloud plan --provider aws --region us-east-1 --input-file spec.yaml
 ```
 
 Output:

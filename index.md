@@ -41,7 +41,7 @@ naeos export --config config.yaml --input spec.yaml --output-dir ./out
 
 ### Pipeline
 - [Pipeline](docs/NES-026-Pipeline.md) — Orchestration layer
-- [Compiler](docs/NES-013-Compiler.md) — 9-stage compilation pipeline
+- [Compiler](docs/NES-013-Compiler.md) — 11-stage compilation pipeline
 - [Generator](docs/NES-007-Generator.md) — Code generation engine
 - [Validator](docs/NES-014-Validator.md) — Validation pipeline
 - [Graph](docs/NES-011-Graph.md) — Dependency graph model

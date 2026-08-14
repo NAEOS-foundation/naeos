@@ -76,7 +76,7 @@ Anda akan melihat `✓ Specification is valid`.
 Jalankan pipeline penuh untuk menghasilkan kode Go dan TypeScript:
 
 ```bash
-naeos run --input naeos.yaml --output-dir ./out
+naeos run --input naeos.yaml
 ```
 
 Dalam hitungan detik, NAEOS menghasilkan:
@@ -110,7 +110,7 @@ out/
 Lihat representasi antara yang dibangun NAEOS dari spesifikasi Anda:
 
 ```bash
-naeos run --input naeos.yaml --output-dir ./out --verbose
+naeos run --input naeos.yaml --verbose
 ```
 
 Model NEIR mencakup dependensi yang telah di-resolve, endpoint layanan, dan metadata arsitektur yang digunakan generator untuk menghasilkan kode yang benar dan konsisten di semua bahasa target.

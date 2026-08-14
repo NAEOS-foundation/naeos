@@ -76,7 +76,7 @@ You should see `✓ Specification is valid`.
 Run the full pipeline to generate Go and TypeScript code:
 
 ```bash
-naeos run --input naeos.yaml --output-dir ./out
+naeos run --input naeos.yaml
 ```
 
 In seconds, NAEOS produces:
@@ -110,7 +110,7 @@ out/
 See the intermediate representation NAEOS builds from your spec:
 
 ```bash
-naeos run --input naeos.yaml --output-dir ./out --verbose
+naeos run --input naeos.yaml --verbose
 ```
 
 The NEIR model includes resolved dependencies, service endpoints, and architecture metadata that the generators use to produce correct, consistent code across all target languages.

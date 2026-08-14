@@ -56,10 +56,10 @@ Menghasilkan model NEIR, kode yang dihasilkan, dokumentasi, bundel konteks AI, d
 NAEOS Engineering Intermediate Representation mendeskripsikan seluruh sistem: proyek, arsitektur, modul, layanan, API, penyimpanan, infrastruktur, keamanan, AI, dokumentasi, deployment, pengujian, dan metadata.
 
 ### Pipeline Engine
-Pipeline berbasis DAG 9-tahap: Parse → Normalisasi → Resolusi → Bangun → Validasi → Jadwalkan → Hasilkan → Kompilasi → Ekspor.
+Pipeline berbasis DAG 11-tahap: Parse → Normalisasi → Resolusi → Build NEIR → Validasi → Build Graph → Policy Evaluation → Jadwalkan → Hasilkan → Review → Write Artifacts.
 
 ### Kompiler AI
-Mengubah NEIR menjadi set instruksi AI untuk 6 platform target: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, dan OpenCode.
+Mengubah NEIR menjadi set instruksi AI untuk 7 platform target: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf.
 
 ### Tata Kelola
 Evaluasi kebijakan, RBAC, jejak audit, dan alur kerja tinjauan artefak.

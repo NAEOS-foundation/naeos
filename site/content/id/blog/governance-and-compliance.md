@@ -38,8 +38,8 @@ Setiap eksekusi pipeline, evaluasi kebijakan, dan pembuatan artefak dicatat. Tig
 NAEOS menyediakan evaluasi kepatuhan bawaan untuk SOC 2 (8 kontrol), HIPAA (11 kontrol), dan GDPR (8 pasal):
 
 ```bash
-naeos compliance report --framework soc2 --output report.pdf
-naeos compliance report --framework hipaa --format json
+naeos compliance report --framework soc2 --output report.json
+naeos compliance report --framework hipaa --output-format json
 ```
 
 ## Integrasi SSO
@@ -48,8 +48,8 @@ Tiga protokol SSO enterprise didukung: OIDC, SAML 2.0, dan LDAP. Konfigurasi mel
 
 ```bash
 naeos auth sso configure \
-  --provider oidc \
-  --issuer-url https://accounts.google.com \
+  --provider-type oidc \
+  --issuer https://accounts.google.com \
   --client-id your-client-id
 ```
 

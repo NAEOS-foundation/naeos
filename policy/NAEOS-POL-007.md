@@ -561,4 +561,4 @@ naeos policy diagnose sec-tls-13 \
 - [NAEOS-POL-004.md](NAEOS-POL-004.md) - Policy Best Practices
 - [NAEOS-POL-005.md](NAEOS-POL-005.md) - Policy Compiler & Engine
 - [NAEOS-POL-006.md](NAEOS-POL-006.md) - Policy Evaluation & Enforcement
-- [docs/NES-012-Policy.md](docs/NES-012-Policy.md) - Policy Model Specification
+- [docs/NES-012-Policy.md](../docs/NES-012-Policy.md) - Policy Model Specification

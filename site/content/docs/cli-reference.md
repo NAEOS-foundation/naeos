@@ -11,7 +11,7 @@ NAEOS provides 35+ CLI commands for every stage of the engineering pipeline.
 |---------|-------------|
 | `naeos run` | Execute full pipeline |
 | `naeos validate` | Validate specification |
-| `naeos compile` | Compile to AI instruction sets |
+| `naeos ai compile` | Compile a spec into AI instruction sets |
 | `naeos context` | Generate AI context bundle |
 | `naeos test` | Run tests for generated code |
 | `naeos docgen` | Generate documentation |

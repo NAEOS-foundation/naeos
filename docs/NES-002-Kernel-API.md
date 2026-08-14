@@ -489,6 +489,6 @@ output := comp.Compile(spec)
 
 ## 10. References
 
-- [NAEOS-KER-001.md](../../kernel/NAEOS-KER-001.md) - Kernel Architecture
-- [NAEOS-KER-002.md](../../kernel/NAEOS-KER-002.md) - Kernel Implementation & Setup
+- [NAEOS-KER-001.md](../kernel/NAEOS-KER-001.md) - Kernel Architecture
+- [NAEOS-KER-002.md](../kernel/NAEOS-KER-002.md) - Kernel Implementation & Setup
 - [NES-002-Kernel.md](NES-002-Kernel.md) - Kernel Specification

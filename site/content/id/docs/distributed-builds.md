@@ -5,7 +5,7 @@ description: Paralelkan eksekusi pipeline di banyak worker untuk build yang lebi
 weight: 13
 ---
 
-NAEOS mendukung eksekusi pipeline terdistribusi: 9 tahap pipeline dijadwalkan
+NAEOS mendukung eksekusi pipeline terdistribusi: tahap-tahap pipeline dijadwalkan
 sebagai task independen dan diproses secara paralel di seluruh kumpulan
 worker yang dapat dikonfigurasi.
 
@@ -25,7 +25,7 @@ hanya terbayar setelah ada cukup pekerjaan untuk diparalelkan.
 
 ```bash
 # Jalankan pipeline dengan 4 worker (default)
-naeos distributed --input spec.yaml
+naeos distributed --config naeos.yaml
 
 # Gunakan lebih banyak worker untuk spesifikasi besar
 naeos distributed --config naeos.yaml --workers 8
@@ -60,5 +60,5 @@ Pipeline: my-project
 
 ## Terkait
 
-- [Pipeline Engine](/id/docs/pipeline-engine/) — pipeline DAG 9-tahap
+- [Pipeline Engine](/id/docs/pipeline-engine/) — pipeline DAG 11-tahap
 - [Dashboard](/id/docs/dashboard/) — pantau aktivitas pipeline secara real time

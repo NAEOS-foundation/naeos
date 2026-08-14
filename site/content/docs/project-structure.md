@@ -10,19 +10,20 @@ This document describes the NAEOS repository structure and how the codebase is o
 
 ```text
 naeos/
-├── cmd/naeos/           # CLI commands (35+ files)
-├── internal/            # Internal packages (60+ files)
-├── pkg/                 # Public packages (4 packages)
-├── docs/                # NES specifications (56 files)
+├── cmd/naeos/           # CLI commands (72 files)
+├── internal/            # Internal packages (74 packages)
+├── pkg/                 # Public packages (3 packages)
+├── docs/                # NES specifications (57 files)
 ├── site/                # Hugo website
 ├── governance/          # Governance documents (8 files)
-├── constitution/        # Engineering constitution
+├── constitution/        # Engineering constitution (8 files)
 ├── specification/       # Specification documents (10 files)
 ├── kernel/              # Kernel specifications (4 files)
 ├── policy/              # Policy documents (7 files)
+├── profile/             # Profile documents (7 files)
 ├── prompts/             # AI prompt templates
-├── templates/           # ADR/RFC templates
-├── examples/            # Example documents
+├── templates/           # ADR/RFC templates and starter projects
+├── examples/            # Example documents and plugins
 ├── Reference Architecture/ # Reference architecture docs
 ├── go.mod               # Go module definition
 ├── go.sum               # Go module checksum
@@ -51,7 +52,8 @@ cmd/naeos/
 ├── create_cmd.go        # Project creation
 ├── scaffold_cmd.go      # Code scaffolding
 ├── export_cmd.go        # Artifact export
-├── compile_cmd.go       # AI compilation
+├── build_cmd.go         # Build artifacts from a specification
+├── deploy_cmd.go        # Deploy pipeline output to a target environment
 ├── context_cmd.go       # Context bundles
 ├── profile_cmd.go       # Industry profiles
 ├── artifacts_cmd.go     # Artifact management
@@ -66,21 +68,28 @@ cmd/naeos/
 ├── lock_cmd.go          # Dependency locking
 ├── rollback_cmd.go      # Rollback changes
 ├── audit_cmd.go         # Spec auditing
-├── marketplace_cmd.go   # Profile marketplace
+├── marketplace_cmd.go   # Plugin/template marketplace
 ├── status_cmd.go        # Pipeline status
-├── docs_cmd.go          # Documentation generation
+├── docsgen_cmd.go       # CLI documentation generation
+├── docgen_cmd.go        # Documentation generation from specs
 ├── ai_cmd.go            # AI assistance
 ├── init_cmd.go          # Config initialization
 ├── version_cmd.go       # Version info
 ├── completion_cmd.go    # Shell completion
-├── repair_cmd.go        # Spec repair
-├── preview_cmd.go       # Preview mode
-├── test_cmd.go          # Test runner
+├── auth_cmd.go          # Authentication and RBAC
+├── security_cmd.go      # Security and secrets management
+├── supabase_cmd.go      # Supabase backend management
+├── workflow_cmd.go      # Workflow and approval management
+├── config_cmd.go        # Configuration management
+├── db_cmd.go            # Database connections and migrations
+├── gateway_cmd.go       # API gateway management
+├── observability_cmd.go # Observability and telemetry
 ├── mcp_cmd.go           # MCP server
-├── helpers.go           # Shared helpers
-├── e2e_test.go          # End-to-end tests
-└── main_test.go         # Unit tests
+├── lsp_cmd.go           # Language Server Protocol server
+└── helpers.go           # Shared output helpers
 ```
+
+> The full per-command reference is auto-generated in [`docs/cli/`](/docs/cli-reference/).
 
 ## internal/
 
@@ -95,18 +104,18 @@ internal/
 │   ├── builder/         # NEIR builder from parsed specs
 │   └── validator/       # NEIR model validator
 ├── compiler/            # AI instruction compiler
-│   └── adapters/        # 6 output adapters (Copilot, Claude, Cursor, etc.)
+│   └── adapters/        # 7 output adapters (Claude, Codex, Copilot, Cursor, dll)
 ├── context/             # Context bundles
-│   └── bundle/          # Bundle generator (markdown, plain text, JSON)
+│   └── bundle/          # Bundle generators (markdown, plain text, JSON)
 ├── generation/          # Code generation
 │   ├── engine/          # Generation engine
-│   ├── adapters/        # Language adapters (Go, TS, Python, Java, Rust)
+│   ├── adapters/        # Language adapters (Go, TypeScript, Python, Java, Rust, FastAPI, Actix Web)
 │   └── renderers/       # Template renderers
 ├── governance/          # Governance
 │   ├── policy/          # Policy evaluator
 │   └── review/          # Artifact review
 ├── artifacts/           # Artifact store with content-hash dedup
-├── profiles/            # Industry profiles (5 built-in)
+├── profiles/            # Industry profiles (6 built-in)
 ├── migration/           # Schema migration engine
 ├── security/            # Security rules and scanning
 ├── marketplace/         # Profile & plugin marketplace
@@ -132,12 +141,28 @@ internal/
 ├── rollback/            # Rollback management
 ├── workspace/           # Workspace management
 ├── templates/           # Template engine
+├── scheduler/           # Task scheduler
 ├── planner/             # DAG-based task scheduling
 ├── runtime/             # Runtime engine
 ├── profiling/           # Performance profiling
 ├── registry/            # Service registry
 ├── lint/                # Lint rules
 ├── create/              # Project creation
+├── auth/                # Authentication, RBAC, and SSO
+├── broker/              # Message broker (Redis, RabbitMQ, Kafka)
+├── gateway/             # API gateway (load balancing, circuit breaker, rate limiting)
+├── graphql/             # GraphQL API server
+├── lsp/                 # Language Server Protocol server
+├── events/              # Internal event bus (pub/sub)
+├── messagequeue/        # Message queue
+├── monitor/             # Monitoring
+├── telemetry/           # Telemetry and metrics
+├── workflow/            # Workflow and approval engine
+├── schemaregistry/      # Schema registry
+├── search/              # Full-text search engine
+├── supabase/            # Supabase client
+├── promptlib/           # Prompt library
+├── pluginhost/          # Plugin host runtime
 └── shared/              # Shared utilities
     ├── log/             # Structured logging (slog)
     ├── strutil/         # String utilities
@@ -152,21 +177,20 @@ Public packages that external consumers can import:
 pkg/
 ├── pipeline/            # Main pipeline orchestration
 ├── kernel/              # System kernel (registry, event bus, telemetry)
-├── config/              # Configuration management
-└── plugin/              # Plugin system interface
+└── config/              # Configuration management
 ```
 
 ## File Count
 
 | Directory | Files | Description |
 |-----------|-------|-------------|
-| `cmd/naeos/` | 35 | CLI commands and entry point |
-| `internal/` | 60+ | Internal packages |
-| `pkg/` | 4 | Public API packages |
-| `docs/` | 56 | NES specifications |
+| `cmd/naeos/` | 72 | CLI commands (non-test `.go` files) |
+| `internal/` | 74 | Internal packages |
+| `pkg/` | 3 | Public API packages |
+| `docs/` | 57 | NES specification documents |
 | `site/` | 100+ | Hugo website content and layouts |
 | `governance/` | 8 | Governance documents |
 | `specification/` | 10 | Specification documents |
-| **Total** | **270+** | |
+| **Total** | **320+** | |
 
 See also: [Architecture](/docs/architecture/), [Pipeline Engine](/docs/pipeline-engine/)

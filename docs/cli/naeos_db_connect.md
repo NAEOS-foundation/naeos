@@ -16,7 +16,8 @@ naeos db connect [flags]
       --pass string       database password
       --port int          database port (default 5432)
       --sslmode string    SSL mode (default "disable")
-      --type string       database type (sqlite, postgresql, mysql) (default "sqlite")
+      --supabase          use supabase init config (reads ~/.naeos/supabase/config.json)
+      --type string       database type (sqlite, postgresql, mysql, supabase) (default "sqlite")
       --user string       database username
 ```
 

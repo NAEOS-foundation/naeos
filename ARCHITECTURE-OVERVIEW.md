@@ -235,14 +235,18 @@ The final output is implementation artifacts, documentation, and consistent exec
 naeos/
 ├── cmd/naeos/          # CLI entry point
 ├── pkg/pipeline/       # Pipeline orchestration
+├── pkg/kernel/         # Kernel services, event bus, lifecycle
+├── pkg/config/         # Configuration loading and validation
 ├── internal/
 │   ├── neir/           # NEIR model and sub-packages
 │   │   ├── model/      # Domain models (ai, api, architecture, ...)
 │   │   └── validator/  # Validation engine
+│   ├── specification/  # Parser, normalizer, resolver
+│   ├── compiler/       # NEIR compiler
 │   ├── generation/     # Generation engine and adapters
-│   ├── engine/         # Source parsing and compilation
-│   ├── kernel/         # Kernel services and event bus
-│   └── shared/         # Shared contracts and types
+│   ├── scheduler/      # Task scheduler
+│   ├── pluginsdk/      # Plugin SDK (scaffold, sandbox, wasm)
+│   └── shared/         # Shared contracts and utilities
 ├── specification/      # NES/SPEC documents
 ├── docs/               # Documentation
 └── examples/           # Example specifications

@@ -77,7 +77,7 @@ naeos context --input-file spec.yaml
 ### 5. Kompilasi untuk asisten AI
 
 ```bash
-naeos compile --all --input-file spec.yaml
+naeos ai compile --input-file spec.yaml --target opencode
 ```
 
 ## Langkah Selanjutnya

@@ -26,10 +26,10 @@ modules:
     path: ./infra/db
 services:
   - name: gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: user-api
-    kind: rest
+    kind: http
     port: 9001
   - name: product-api
     kind: grpc
@@ -62,11 +62,11 @@ modules:
     dependencies: [stream-processor]
 services:
   - name: ingest-api
-    kind: lambda
+    kind: worker
   - name: process-worker
-    kind: lambda
+    kind: worker
   - name: analyze-worker
-    kind: lambda
+    kind: worker
 architecture:
   pattern: serverless
 deployment:
@@ -103,7 +103,7 @@ modules:
     dependencies: [adapters-outbound]
 services:
   - name: rest-api
-    kind: rest
+    kind: http
     port: 8080
   - name: grpc-api
     kind: grpc
@@ -170,13 +170,13 @@ modules:
     path: ./infra/vector
 services:
   - name: api-gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: chat-api
-    kind: rest
+    kind: http
     port: 9001
   - name: streaming-ws
-    kind: websocket
+    kind: http
     port: 9002
 architecture:
   pattern: microservices
@@ -214,13 +214,13 @@ modules:
     dependencies: [stream-processor]
 services:
   - name: ingestion-api
-    kind: rest
+    kind: http
     port: 8080
   - name: stream-worker
     kind: worker
     port: 9001
   - name: notification-ws
-    kind: websocket
+    kind: http
     port: 9002
 architecture:
   pattern: event-driven

@@ -36,7 +36,7 @@ modules:
     path: ./worker
 services:
   - name: api-server
-    kind: rest
+    kind: http
     port: 8080
   - name: queue-worker
     kind: worker
@@ -96,10 +96,11 @@ naeos cloud status
 
 ### Destroy
 
-Hancurkan semua resource yang di-deploy:
+Untuk menghancurkan resource yang di-deploy, jalankan rencana destroy di direktori `terraform/` yang dihasilkan:
 
 ```bash
-naeos cloud destroy --provider aws --region us-east-1
+cd terraform/
+terraform destroy
 ```
 
 ## Tipe Resource
@@ -117,10 +118,10 @@ naeos cloud destroy --provider aws --region us-east-1
 
 ## Estimasi Biaya
 
-Perintah `plan` menyertakan estimasi biaya bulanan:
+Perintah `plan` menyertakan estimasi biaya bulanan secara otomatis:
 
 ```bash
-naeos cloud plan --provider aws --input-file spec.yaml --estimate-cost
+naeos cloud plan --provider aws --region us-east-1 --input-file spec.yaml
 ```
 
 Output:

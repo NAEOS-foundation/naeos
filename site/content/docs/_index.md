@@ -18,11 +18,11 @@ Welcome to the NAEOS documentation. Here you'll find everything you need to get 
 - **[Project Structure](/docs/project-structure/)** — Repository layout and directory organization
 - **[Spec Language](/docs/spec-language/)** — NAEOS Specification Language v2 syntax and features
 - **[NEIR Model](/docs/neir-model/)** — The canonical NAEOS Engineering Intermediate Representation
-- **[Pipeline Engine](/docs/pipeline-engine/)** — The 9-stage DAG pipeline from parsing to export
+- **[Pipeline Engine](/docs/pipeline-engine/)** — The 11-stage DAG pipeline from parsing to artifact output
 
 ## Features
 
-- **[AI Compiler](/docs/ai-compiler/)** — Compile NEIR to AI instruction sets for 6 platforms
+- **[AI Compiler](/docs/ai-compiler/)** — Compile NEIR to AI instruction sets for 7 platforms
 - **[Context Bundles](/docs/context-bundles/)** — Generate LLM-optimized project summaries
 - **[Industry Profiles](/docs/profiles/)** — Pre-configured profiles for SaaS, AI, FinTech, Healthcare, Government
 - **[Plugin SDK](/docs/plugin-sdk/)** — Extend NAEOS with custom plugins and generators

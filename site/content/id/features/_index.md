@@ -7,17 +7,19 @@ NAEOS menyediakan platform rekayasa lengkap dengan kemampuan berikut:
 
 ## Pipeline Engine
 
-Pipeline DAG 9-tahap adalah jantung dari NAEOS:
+Pipeline DAG 11-tahap adalah jantung dari NAEOS:
 
 1. **Parse** — Baca dan parse spesifikasi YAML/JSON dengan interpolasi variabel
 2. **Normalisasi** — Normalisasi struktur data untuk pemrosesan yang konsisten
 3. **Resolusi** — Selesaikan referensi silang, dependensi, dan include eksternal
-4. **Bangun** — Bangun NEIR (NAEOS Engineering Intermediate Representation)
-5. **Validasi** — Validasi komprehensif termasuk deteksi dependensi sirkuler
-6. **Jadwalkan** — Penjadwalan tugas berbasis DAG dengan grup eksekusi paralel
-7. **Hasilkan** —生成 kode multi-bahasa (Go, TypeScript, Python, Java, Rust)
-8. **Kompilasi** — Kompilasi NEIR ke set instruksi AI untuk 6 platform
-9. **Ekspor** — Ekspor artefak, dokumentasi, dan manifes deployment
+4. **Build NEIR** — Bangun NEIR (NAEOS Engineering Intermediate Representation)
+5. **Validasi** — Validasi semantik komprehensif dengan pemeriksaan skema opsional
+6. **Build Graph** — Konstruksi DAG eksekusi dari model NEIR
+7. **Policy Evaluation** — Tegakkan aturan kebijakan governance pada model
+8. **Jadwalkan** — Penjadwalan tugas berbasis DAG dengan grup eksekusi paralel
+9. **Hasilkan** — Generasi kode multi-bahasa (Go, TypeScript, Python, Java, Rust, FastAPI, Actix Web)
+10. **Review** — Tinjau dan lint artifact yang dihasilkan
+11. **Write Artifacts** — Ekspor artefak, dokumentasi, dan manifes deployment
 
 ## Spec Language v2
 

@@ -10,6 +10,7 @@ Example:
   naeos diff --config config.yaml --input spec.yaml
   naeos diff --config config.yaml --input spec.yaml --output-dir ./out
   naeos diff --config config.yaml --input spec.yaml --format unified
+  naeos diff --config config.yaml --input spec.yaml --visual
 
 ```
 naeos diff [flags]
@@ -24,6 +25,7 @@ naeos diff [flags]
       --input string        specification input to process
       --input-file string   path to a specification file
       --output-dir string   existing output directory to compare against
+      --visual              show side-by-side tree view
 ```
 
 ### Options inherited from parent commands

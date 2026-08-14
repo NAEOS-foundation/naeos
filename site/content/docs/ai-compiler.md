@@ -1,73 +1,65 @@
 ---
 title: AI Compiler
-description: Transform NEIR into AI instruction sets for 6 coding assistants.
+description: Transform NEIR into AI instruction sets for 7 coding assistants.
 ---
 
 ## Overview
 
-The NAEOS AI Compiler transforms the NEIR model into platform-specific instruction files for AI coding assistants. This ensures your AI tools understand your project architecture, conventions, and dependencies — reducing manual prompt engineering and improving code quality.
+The NAEOS AI Compiler transforms a NAEOS specification into platform-specific instruction files for AI coding assistants. This ensures your AI tools understand your project architecture, conventions, and dependencies — reducing manual prompt engineering and improving code quality.
 
 ## Supported Platforms
 
-| Platform | File | Status |
-|----------|------|--------|
-| GitHub Copilot | `.github/copilot-instructions.md` | ✅ |
-| Claude Code | `CLAUDE.md` | ✅ |
-| Cursor | `.cursorrules` | ✅ |
-| Gemini CLI | `.gemini/CONFIG.md` | ✅ |
-| Codex | `AGENTS.md` | ✅ |
-| OpenCode | `AGENTS.md` | ✅ |
+| Platform | Target ID | File |
+|----------|-----------|------|
+| GitHub Copilot | `copilot` | `.github/copilot-instructions.md` |
+| Claude Code | `claude` | `CLAUDE.md` |
+| Cursor | `cursor` | `.cursorrules` |
+| Gemini CLI | `gemini` | `.gemini/CONFIG.md` |
+| Codex | `codex` | `AGENTS.md` |
+| OpenCode | `opencode` | `AGENTS.md` |
+| Windsurf | `windsurf` | `.windsurfrules` |
 
 ## How It Works
 
+The compiler sends your specification to an LLM (OpenAI, Anthropic, or Ollama) together with a target-specific prompt, then streams the generated instruction file back:
+
 ```text
 ┌──────────┐     ┌────────────┐     ┌──────────────────┐
-│ NEIR     │────→│   AI       │────→│  copilot-         │
-│ Model    │     │  Compiler  │     │  instructions.md  │
-│          │     │            │     │  CLAUDE.md        │
-│ Project  │     │  ┌──────┐  │     │  .cursorrules     │
-│ Modules  │     │  │Adapter│  │     │  CONFIG.md        │
-│ Services │     │  │Pipeline│ │     │  AGENTS.md        │
-│ APIs     │     │  └──────┘  │     └──────────────────┘
-│ Security │     └────────────┘
+│ Spec     │────→│   AI       │────→│  CLAUDE.md       │
+│ (YAML/   │     │  Compiler  │     │  .cursorrules    │
+│  JSON)   │     │ (LLM-based)│     │  AGENTS.md       │
+│          │     └────────────┘     └──────────────────┘
 └──────────┘
 ```
-
-### Compilation Pipeline
-
-1. **Extract** — Pull relevant sections from NEIR (architecture, modules, dependencies, conventions)
-2. **Translate** — Convert to platform-specific format and syntax
-3. **Optimize** — Prioritize information by relevance and token budget
-4. **Format** — Apply platform-specific formatting rules
-5. **Emit** — Write to the target file location
-
-## What Gets Included
-
-Each instruction file typically includes:
-
-- **Project overview** — Name, purpose, architecture pattern
-- **Module structure** — Component tree with dependencies
-- **Service definitions** — API endpoints, ports, protocols
-- **Language stack** — Languages, frameworks, toolchains
-- **Code conventions** — Naming, formatting, testing patterns
-- **Key dependencies** — Critical libraries and their usage
-- **Architecture rules** — Constraints and patterns to follow
-- **Security policies** — Authentication, authorization, data handling
 
 ## Usage
 
 ```bash
-# Compile for all platforms
-naeos compile --all --input-file spec.yaml
+# Compile for a specific AI agent
+naeos ai compile --input-file spec.yaml --target claude
 
-# Compile for specific platform
-naeos compile --platform copilot --input-file spec.yaml
+# Use a specific LLM provider (default: openai)
+naeos ai compile --input-file spec.yaml --target opencode --provider anthropic
+```
 
-# Compile with custom output directory
-naeos compile --all --input-file spec.yaml --output-dir .github
+Remember to set `NAEOS_LLM_API_KEY` (and optionally `NAEOS_LLM_PROVIDER`) before running:
 
-# Generate AI context bundle
-naeos context --input-file spec.yaml --format bundle
+```bash
+export NAEOS_LLM_API_KEY="your-api-key"
+export NAEOS_LLM_PROVIDER="anthropic"
+```
+
+The compiled instruction file is printed to stdout — pipe it to your target file:
+
+```bash
+naeos ai compile --input-file spec.yaml --target claude > CLAUDE.md
+```
+
+For offline, deterministic context generation without an LLM, use:
+
+```bash
+# Generate an AI context bundle in the current directory
+naeos context --input-file spec.yaml
 ```
 
 ## Example Output
@@ -92,8 +84,8 @@ When you compile a microservices project, the generated `CLAUDE.md` might contai
 
 ## Best Practices
 
-- Run `naeos compile` as part of your project setup script
+- Run `naeos ai compile` as part of your project setup script
 - Commit generated instruction files to your repository
 - Recompile whenever your architecture changes
-- Use `naeos context` for a bundled approach
-- Combine with `naeos watch` for automatic recompilation
+- Use `naeos context` for a bundled, offline approach
+- Pipe output to platform-specific files (e.g. `CLAUDE.md`, `AGENTS.md`)

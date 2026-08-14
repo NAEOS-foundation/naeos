@@ -10,7 +10,7 @@ weight: 22
 | **NAEOS** | Nusantara Engineering & Architecture Operating System — platform engineering deklaratif open-source |
 | **NEIR** | NAEOS Engineering Intermediate Representation — model perantara terpadu yang merepresentasikan seluruh proyek |
 | **Spec** | Spesifikasi — dokumen YAML atau JSON yang mendefinisikan proyek, modul, layanan, dan arsitektur |
-| **Pipeline** | Rantai pemrosesan: parse → normalize → resolve → build → validate → schedule → generate → compile → export |
+| **Pipeline** | Rantai pemrosesan: parse → normalize → resolve → build NEIR → validate → build graph → policy evaluation → schedule → generate → review → write artifacts |
 | **Kernel** | Komponen inti runtime yang mengelola service registry, event bus, telemetry, dan lifecycle |
 | **Artifact** | Output apa pun yang dihasilkan oleh pipeline: kode, konfigurasi, dokumentasi, atau konteks AI |
 | **Profile** | Konfigurasi preset spesifik industri (SaaS, AI Agent, FinTech, Healthcare, Government) |

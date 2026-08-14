@@ -152,6 +152,14 @@ pdf:
 		-V author="NAEOS Foundation" \
 		-V date="$(shell date +%Y-%m-%d)" \
 		-o site/static/downloads/naeos-getting-started.pdf
+	bash scripts/whitepaper-pdf.sh \
+		WHITEPAPER-EN.md \
+		site/static/downloads/naeos-whitepaper.pdf \
+		"NAEOS Whitepaper"
+	bash scripts/whitepaper-pdf.sh \
+		WHITEPAPER.md \
+		site/static/downloads/naeos-whitepaper-id.pdf \
+		"Whitepaper NAEOS"
 
 ## schema: Generate NEIR JSON Schema from Go types
 schema:

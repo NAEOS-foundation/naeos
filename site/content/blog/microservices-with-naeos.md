@@ -46,16 +46,16 @@ modules:
     description: Shared database layer
 services:
   - name: gateway
-    kind: reverse-proxy
+    kind: http
     port: 8080
   - name: user-api
-    kind: rest
+    kind: http
     port: 9001
   - name: order-api
-    kind: rest
+    kind: http
     port: 9002
   - name: product-api
-    kind: rest
+    kind: http
     port: 9003
 architecture:
   pattern: microservices
@@ -68,15 +68,15 @@ generation:
 ## Step 2: Run the Pipeline
 
 ```bash
-naeos run --input-file spec.yaml --output-dir ./out
+naeos run --input-file spec.yaml
 ```
 
-NAEOS will parse, validate, and generate your project structure with all the defined modules and services.
+NAEOS will parse, validate, and generate your project structure with all the defined modules and services (the `output_dir` from `naeos.yaml` controls where artifacts land).
 
 ## Step 3: Compile for AI Assistance
 
 ```bash
-naeos compile --all --input-file spec.yaml
+naeos ai compile --input-file spec.yaml --target opencode
 ```
 
 This generates AI instruction sets so your coding assistants understand the architecture.
@@ -84,7 +84,7 @@ This generates AI instruction sets so your coding assistants understand the arch
 ## Step 4: Generate Documentation
 
 ```bash
-naeos docgen --input-file spec.yaml --output-dir ./docs
+naeos docgen --input-file spec.yaml --output full
 ```
 
 ## Conclusion

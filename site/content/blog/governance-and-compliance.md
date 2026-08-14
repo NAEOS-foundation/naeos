@@ -55,9 +55,9 @@ RBAC supports **parent chains** (role inheritance) and **deny rules** (explicit 
 
 ```bash
 naeos auth create-role devops \
-  --parents developer,viewer \
-  --allow pipeline.run,spec.read \
-  --deny spec.delete
+  --parent developer --parent viewer \
+  --permission pipeline:run --permission spec:read \
+  --deny spec:delete
 ```
 
 Four compliance templates are available: `auditor`, `soc2_auditor`, `gdpr_admin`, and `hipaa_admin`.
@@ -86,7 +86,7 @@ auditor.Log(audit.Entry{
 
 Verify the chain at any time:
 ```bash
-naeos audit verify --file audit.log
+naeos compliance verify --audit-file audit.log
 ```
 
 ### Encrypted Auditor
@@ -103,9 +103,9 @@ Export audit logs to AWS S3, Google Cloud Storage, or Azure Blob Storage:
 
 ```bash
 naeos compliance cloud-export \
-  --provider aws \
+  --provider s3 \
   --bucket naeos-audit-logs \
-  --region us-east-1
+  --prefix audit/
 ```
 
 ## Compliance Frameworks
@@ -121,8 +121,8 @@ NAEOS provides built-in compliance evaluation for three major frameworks:
 Generate a compliance report:
 
 ```bash
-naeos compliance report --framework soc2 --output report.pdf
-naeos compliance report --framework hipaa --format json
+naeos compliance report --framework soc2 --output report.json
+naeos compliance report --framework hipaa --output-format json
 ```
 
 ## SSO Integration
@@ -139,8 +139,8 @@ Configure SSO via CLI:
 
 ```bash
 naeos auth sso configure \
-  --provider oidc \
-  --issuer-url https://accounts.google.com \
+  --provider-type oidc \
+  --issuer https://accounts.google.com \
   --client-id your-client-id \
   --client-secret your-client-secret
 ```
@@ -160,10 +160,10 @@ Integrate governance checks into your CI pipeline:
   run: naeos lint --input-file spec.yaml
 
 - name: Audit
-  run: naeos audit --input-file spec.yaml --output audit-report.json
+  run: naeos audit spec.yaml
 
 - name: Compliance Check
-  run: naeos compliance verify --framework soc2
+  run: naeos compliance verify --audit-file ~/.naeos/audit.log
 ```
 
 ## What's Next

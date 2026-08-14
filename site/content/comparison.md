@@ -3,7 +3,7 @@ title: Feature Comparison
 description: How NAEOS compares to other project generation and scaffolding tools.
 ---
 
-NAEOS is not just another code generator. It's a declarative engineering platform with a 9-stage DAG pipeline, AI compiler, built-in governance, and multi-language support. Here's how it stacks up against similar tools.
+NAEOS is not just another code generator. It's a declarative engineering platform with an 11-stage DAG pipeline, AI compiler, built-in governance, and multi-language support. Here's how it stacks up against similar tools.
 
 ## Comparison Table
 
@@ -41,7 +41,7 @@ NAEOS is not just another code generator. It's a declarative engineering platfor
     </tr>
     <tr>
       <td>AI context generation</td>
-      <td class="highlight-col"><span class="check-yes">6 platforms</span></td>
+      <td class="highlight-col"><span class="check-yes">7 platforms</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
@@ -50,7 +50,7 @@ NAEOS is not just another code generator. It's a declarative engineering platfor
     </tr>
     <tr>
       <td>Pipeline engine (DAG)</td>
-      <td class="highlight-col"><span class="check-yes">9-stage</span></td>
+      <td class="highlight-col"><span class="check-yes">11-stage</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>

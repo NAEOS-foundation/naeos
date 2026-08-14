@@ -248,3 +248,33 @@ Prioritas utama adalah menjaga kualitas, konsistensi, dan keterpahaman dokumen b
 - [x] Distributed workers: stage-aware processing with context cancellation
 - [x] Bug fixes: version test mismatch, rollback Import '.' entry rejection
 - [x] 19 new promptlib tests, 5 new AI-LLM integration tests
+
+### v1.5.0 — Production Hardening
+- [x] HTTP timeouts, context propagation, error logging
+- [x] SSE fixes, test fixes, WebSocket stability
+
+### v2.1.0 — RBAC & Platform Services
+- [x] RBAC bootstrapping (`SetupDefaultRoles()`: admin/developer/viewer) with route permission mapping
+- [x] Multi-tenant workspaces (`/api/v1/tenants`), tenant isolation for pipeline runs & schema registry
+- [x] Schema registry API (5 endpoints on `/api/v1/schemas`)
+- [x] 5 industry profiles (edtech, ecommerce, iot, media-streaming, blockchain)
+- [x] Pipeline run file persistence, `$import{}` resolver, ResultAggregator streaming
+- [x] Rate limit headers, audit trail file persistence, AES-256-GCM encryption at rest
+- [x] Compliance export CLI (`naeos compliance export`)
+
+### v2.2.0 — Supabase & Quality Gates
+- [x] Full Supabase backend: Auth, Storage, Edge Functions, Admin API, Realtime WebSocket
+- [x] 44 unit tests for `internal/supabase/` (coverage 84.1%)
+- [x] Lint zero-failure (28 issues resolved), fuzz targets, codecov fix
+- [x] 100+ new CLI integration tests
+
+### v3.0.0 — Profiling, Caching & LSP
+- [x] Pipeline profiling (`PipelineProfile`, `--profile`/`--memprofile` on build & profile run)
+- [x] File-backed stage caching for schedule/generate (SHA256 NEIR hash key)
+- [x] Schema-based spec validation (`--schema-source`, JSON Schema registry)
+- [x] Lazy NEIR loading, real distributed builds (`naeos build --distributed --workers N`)
+- [x] NEIR-aware LSP server (autocomplete, diagnostics, hover, definition, code actions)
+- [x] NEIR diff visualization (`naeos diff --visual`), rollback merge-restore
+- [x] VS Code extension generation (`naeos dx vscode-gen`)
+- [x] Official example plugins (`examples/plugins/`: hello, spec-lint, artifact-stats)
+- [x] CLI test coverage 66.2% → 80.8% (266+ new tests), rollback coverage 85.7%

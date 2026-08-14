@@ -16,6 +16,7 @@ naeos rollback list [flags]
 
 ```
       --dry-run                global dry-run mode: preview without writing to disk
+  -o, --output-dir string      directory to restore artifacts to (default ".")
       --output-format string   output format: json, yaml, table (default "table")
       --verbose                enable verbose logging
 ```

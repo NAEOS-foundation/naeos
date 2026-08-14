@@ -28,8 +28,8 @@ curl -X POST localhost:8080/orders -d '{"id":"1","total":100}'
 ## NAEOS pipeline
 
 `naeos.yaml` wires the spec through the full NAEOS pipeline
-(parse → normalize → resolve → build → validate → schedule → generate →
-render). Run it with:
+(parse → normalize → resolve → build → validate → build graph → policy
+evaluation → schedule → generate → review → write artifacts). Run it with:
 
 ```bash
 naeos run spec.yaml

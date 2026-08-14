@@ -3,7 +3,7 @@ title: Perbandingan Fitur
 description: Bagaimana NAEOS dibandingkan dengan alat pembangkit proyek dan scaffolding lainnya.
 ---
 
-NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklaratif dengan pipeline DAG 9-tahap, kompiler AI, tata kelola bawaan, dan dukungan multi-bahasa. Berikut perbandingannya dengan alat serupa.
+NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklaratif dengan pipeline DAG 11-tahap, kompiler AI, tata kelola bawaan, dan dukungan multi-bahasa. Berikut perbandingannya dengan alat serupa.
 
 ## Tabel Perbandingan
 
@@ -41,7 +41,7 @@ NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklara
     </tr>
     <tr>
       <td>Generasi konteks AI</td>
-      <td class="highlight-col"><span class="check-yes">6 platform</span></td>
+      <td class="highlight-col"><span class="check-yes">7 platform</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
@@ -50,7 +50,7 @@ NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklara
     </tr>
     <tr>
       <td>Pipeline engine (DAG)</td>
-      <td class="highlight-col"><span class="check-yes">9-tahap</span></td>
+      <td class="highlight-col"><span class="check-yes">11-tahap</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>

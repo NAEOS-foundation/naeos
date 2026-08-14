@@ -1,14 +1,10 @@
 ## naeos tui
 
-Interactive project wizard
+Terminal user interface tools
 
 ### Synopsis
 
-Walk through project configuration step by step and generate a spec.
-
-```
-naeos tui [flags]
-```
+Terminal user interface tools including the project wizard and live dashboard.
 
 ### Options
 
@@ -27,4 +23,6 @@ naeos tui [flags]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
+* [naeos tui dashboard](naeos_tui_dashboard.md)	 - Live terminal dashboard
+* [naeos tui wizard](naeos_tui_wizard.md)	 - Interactive project wizard
 

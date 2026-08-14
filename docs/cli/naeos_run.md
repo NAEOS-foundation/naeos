@@ -10,6 +10,7 @@ Example:
   naeos run --config config.yaml --input spec.yaml
   naeos run --config config.yaml --input-file spec.yaml --output json
   naeos run --config config.yaml --input spec.yaml --language go --language typescript
+  naeos run --config config.yaml --input spec.yaml --cache-dir .naeos/cache
 
 ```
 naeos run [flags]
@@ -18,6 +19,7 @@ naeos run [flags]
 ### Options
 
 ```
+      --cache-dir string       enable pipeline caching using the given directory
       --config string          path to JSON or YAML config file (auto-detected if omitted)
       --dry-run                preview artifacts without writing to disk
   -h, --help                   help for run
@@ -26,6 +28,9 @@ naeos run [flags]
       --language stringArray   target language for code generation (go, typescript, python, java, rust)
       --output string          output format: text, json, or yaml (default "text")
       --output-file string     optional file path to write the formatted output
+      --pprof string           pprof HTTP server address (e.g. :6060)
+      --profile                enable pipeline profiling
+      --profile-out string     path to write profile JSON (default "profile.json")
 ```
 
 ### Options inherited from parent commands

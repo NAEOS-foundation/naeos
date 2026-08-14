@@ -216,14 +216,21 @@ naeos run --input spec.yaml
 naeos validate --input-file spec.yaml
 ```
 
-### Lewati Validasi Tertentu
+### Flag Validasi
+
+Perintah `validate` mendukung flag global standar:
 
 ```bash
-# Lewati validasi module
-naeos run --input spec.yaml --skip-validation
+# Validasi dengan output verbose
+naeos validate --input-file spec.yaml --verbose
 
-# Lewati pemeriksaan tertentu
-naeos validate --input-file spec.yaml --skip circular-deps
+# Output yang dapat dibaca mesin
+naeos validate --input-file spec.yaml --output json
+
+# Pratinjau hasil pipeline tanpa menulis file
+naeos run --input spec.yaml --dry-run
 ```
+
+Validasi selalu berjalan sebagai bagian dari pipeline lengkap — tidak ada flag untuk melewati pemeriksaan individual.
 
 Lihat juga: [Governance](/id/docs/governance/), [Pipeline Engine](/id/docs/pipeline-engine/), [Bahasa Spesifikasi](/id/docs/spec-language/)

@@ -11,6 +11,8 @@ Dokumentasi referensi untuk package `internal/shared` — tipe data dan kontrak 
 ## 3. Scope
 Dokumen ini mencakup shared types (`internal/shared/types`) dan shared contracts (`internal/shared/contracts`).
 
+> **Catatan status implementasi:** package `internal/shared/types` belum ada di kode saat ini — shared types di dokumen ini adalah spesifikasi desain (rencana). Package `internal/shared/contracts` sudah diimplementasikan di `internal/shared/contracts/contracts.go`.
+
 ## 4. Normative References
 - NES-000 Foundation — prinsip fondasi
 - NES-023 NEIR — model engineering sentral
@@ -134,7 +136,7 @@ classDiagram
     Parser ..> SpecDocument : creates
 ```
 
-Lokasi: `internal/shared/types/types.go`
+Lokasi (direncanakan): `internal/shared/types/types.go` — belum diimplementasikan; lihat catatan Status Implementasi di Scope.
 
 ### 5.1 ID
 

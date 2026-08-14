@@ -1,0 +1,30 @@
+## naeos tui wizard
+
+Interactive project wizard
+
+### Synopsis
+
+Walk through project configuration step by step and generate a spec.
+
+```
+naeos tui wizard [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for wizard
+```
+
+### Options inherited from parent commands
+
+```
+      --dry-run                global dry-run mode: preview without writing to disk
+      --output-format string   output format: json, yaml, table (default "table")
+      --verbose                enable verbose logging
+```
+
+### SEE ALSO
+
+* [naeos tui](naeos_tui.md)	 - Terminal user interface tools
+

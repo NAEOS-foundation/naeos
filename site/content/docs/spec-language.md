@@ -119,13 +119,13 @@ modules:
 
 services:
   - name: gateway
-    kind: reverse-proxy
+    kind: http
     port: $fn{default($env{GATEWAY_PORT}, 8080)}
   - name: user-api
-    kind: rest
+    kind: http
     port: 9001
   - name: product-api
-    kind: rest
+    kind: http
     port: 9002
 
 architecture:

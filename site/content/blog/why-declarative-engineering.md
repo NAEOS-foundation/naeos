@@ -75,7 +75,7 @@ modules:
     path: ./api
 services:
   - name: rest-api
-    kind: rest
+    kind: http
     port: 8080
 architecture:
   pattern: microservices

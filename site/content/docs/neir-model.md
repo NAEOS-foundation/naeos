@@ -128,14 +128,14 @@ Deployment configuration:
 ## Accessing the NEIR Model
 
 ```bash
-# Export the NEIR model as JSON
-naeos export --format json --output neir.json
+# Export generated artifacts from the NEIR model
+naeos export --input spec.yaml --output-dir ./out
 
-# Inspect the model
-naeos kernel --model
+# Inspect the model as JSON
+naeos inspect --input-file spec.yaml --output json --output-file neir.json
 
 # Validate the model
-naeos validate --model
+naeos validate --input-file spec.yaml
 ```
 
 ## NEIR in AI Context
@@ -143,7 +143,7 @@ naeos validate --model
 The NEIR model is also used to generate AI context bundles. When compiled, it produces architecture-aware instruction sets that help AI coding assistants understand the full system context:
 
 ```bash
-naeos context --input-file spec.yaml --format neir
+naeos context --input-file spec.yaml --output json
 ```
 
 ## Benefits

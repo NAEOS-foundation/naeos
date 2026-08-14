@@ -55,10 +55,10 @@ Produces the NEIR model, generated code, documentation, AI context bundles, and 
 The NAEOS Engineering Intermediate Representation describes the entire system: project, architecture, modules, services, APIs, storage, infrastructure, security, AI, documentation, deployment, testing, and metadata.
 
 ### Pipeline Engine
-A 9-stage DAG-based pipeline: Parse → Normalize → Resolve → Build → Validate → Schedule → Generate → Compile → Export.
+An 11-stage DAG-based pipeline: Parse → Normalize → Resolve → Build NEIR → Validate → Build Graph → Policy Evaluation → Schedule → Generate → Review → Write Artifacts.
 
 ### AI Compiler
-Transforms NEIR into AI instruction sets for 6 target platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode.
+Transforms NEIR into AI instruction sets for 7 target platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and Windsurf.
 
 ### Governance
 Policy evaluation, RBAC, audit trails, and artifact review workflows.

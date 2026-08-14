@@ -331,7 +331,7 @@ Each adapter produces consistent artifacts: code, configuration, Dockerfiles (5 
 
 ### 5.5 AI Integration & Compiler
 
-The NAEOS compiler transforms NEIR into **AI instruction sets** for 6 target tools:
+The NAEOS compiler transforms NEIR into **AI instruction sets** for 7 target tools:
 
 ```mermaid
 graph LR
@@ -342,6 +342,7 @@ graph LR
     C --> GEM[Gemini CLI<br/>.gemini/CONFIG.md]
     C --> CODEX[Codex<br/>AGENTS.md]
     C --> OPEN[OpenCode<br/>AGENTS.md]
+    C --> WIND[Windsurf<br/>.windsurfrules]
     style C fill:#08d6ff,color:#05050a,font-weight:bold
 ```
 

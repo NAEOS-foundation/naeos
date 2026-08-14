@@ -209,7 +209,7 @@ p, err := pipeline.New(pipeline.Config{
 func (p *Pipeline) Run(input string) (*Result, error)
 ```
 
-Executes the full pipeline: parse → normalize → resolve → build → validate → schedule → generate → review.
+Executes the full pipeline: parse → normalize → resolve → build → validate → build graph → policy evaluation → schedule → generate → review → write artifacts.
 
 **Parameters:**
 - `input` (string): YAML or JSON specification.

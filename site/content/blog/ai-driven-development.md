@@ -30,26 +30,27 @@ With NAEOS context, the AI knows:
 
 ## How the AI Compiler Works
 
-The AI Compiler takes your NEIR model and generates **context bundles** — structured instruction sets tailored for each AI platform:
+The AI Compiler takes your NAEOS specification and generates **AI instruction files** — structured instructions tailored for each AI agent:
 
 ```bash
-# Generate context for all supported AI platforms
-naeos compile --all --input-file spec.yaml
+# Generate instructions for a specific AI agent
+naeos ai compile --input-file spec.yaml --target copilot
 
-# Generate for a specific platform
-naeos compile --target copilot --input-file spec.yaml
+# Use a different LLM provider
+naeos ai compile --input-file spec.yaml --target claude --provider anthropic
 ```
 
-The compiler supports six platforms:
+The compiler supports seven platforms:
 
 | Platform | Output Format | How It's Used |
 |----------|--------------|---------------|
 | GitHub Copilot | `copilot-instructions.md` | Loaded automatically by Copilot |
 | Claude Code | `CLAUDE.md` | Read by Claude on session start |
 | Cursor | `.cursorrules` | Applied to all Cursor sessions |
-| Gemini CLI | `GEMINI.md` | Context for Gemini CLI |
+| Gemini CLI | `.gemini/CONFIG.md` | Context for Gemini CLI |
 | Codex | `AGENTS.md` | Instructions for OpenAI Codex |
 | OpenCode | `AGENTS.md` | Instructions for OpenCode |
+| Windsurf | `.windsurfrules` | Instructions for Windsurf |
 
 ## What's Inside a Context Bundle
 
@@ -126,13 +127,13 @@ modules:
     dependencies: [postgres-db]
 services:
   - name: ws-gateway
-    kind: websocket
+    kind: http
     port: 8080
   - name: message-api
-    kind: rest
+    kind: http
     port: 9001
   - name: user-api
-    kind: rest
+    kind: http
     port: 9002
 architecture:
   pattern: microservices
@@ -140,7 +141,7 @@ generation:
   languages: [go, typescript]
 ```
 
-Running `naeos compile --all` produces six different instruction files, each optimized for its target platform. When you open your project in Cursor, the `.cursorrules` file tells Claude about the WebSocket gateway, the message service's Redis caching strategy, and the user service's JWT validation flow — before you type a single prompt.
+Running `naeos ai compile` produces an instruction file optimized for the target agent. When you open your project in Cursor, the `.cursorrules` file tells Claude about the WebSocket gateway, the message service's Redis caching strategy, and the user service's JWT validation flow — before you type a single prompt.
 
 ## The Workflow
 
@@ -152,12 +153,12 @@ The full workflow looks like this:
 4. **Code with context** — AI suggestions respect your architecture
 
 ```bash
-# One command generates everything
-naeos run --input-file spec.yaml --compile-all
+# Generate instructions for your agent of choice
+naeos ai compile --input-file spec.yaml --target claude
 
 # Your project now has:
 # - Generated Go and TypeScript code
-# - AI instruction sets for all 6 platforms
+# - AI instruction files for your chosen agent
 # - Validated dependency graph
 # - Governance-compliant structure
 ```

@@ -1,26 +1,29 @@
 ---
 title: "Pipeline Engine Deep Dive: How NAEOS Transforms Specs Into Systems"
-description: "A technical walkthrough of the 9-stage DAG pipeline — from YAML parsing to multi-language code generation."
+description: "A technical walkthrough of the 11-stage DAG pipeline — from YAML parsing to multi-language code generation."
 date: 2026-07-20
 author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 
-Every time you run `naeos run --input-file spec.yaml`, a 9-stage directed acyclic graph (DAG) pipeline fires up. Each stage is independently observable, extensible via plugins, and designed to handle specs of any scale.
+Every time you run `naeos run --input-file spec.yaml`, an 11-stage directed acyclic graph (DAG) pipeline fires up. Each stage is independently observable, extensible via plugins, and designed to handle specs of any scale.
 
 In this post, we'll walk through every stage with real code and outputs.
 
 ## The Pipeline at a Glance
 
 ```text
-┌────────┐ ┌──────────┐ ┌────────┐ ┌───────┐ ┌─────────┐
-│ Parse  │→│Normalize │→│Resolve │→│ Build │→│Validate │
-└────────┘ └──────────┘ └────────┘ └───────┘ └─────┬───┘
-                                                    │
-┌────────┐ ┌──────────┐ ┌─────────┐ ┌────────┐    │
-│ Export │←│ Compile  │←│Generate │←│Schedule│←───┘
-└────────┘ └──────────┘ └─────────┘ └────────┘
+┌────────┐ ┌──────────┐ ┌────────┐ ┌──────────┐ ┌─────────┐
+│ Parse  │→│Normalize │→│Resolve │→│Build NEIR│→│Validate │
+└────────┘ └──────────┘ └────────┘ └──────────┘ └────┬────┘
+                                                     │
+┌──────────┐ ┌────────┐ ┌───────┐ ┌──────────┐      │
+│ Write    │←│ Review │←│Generate│←│Schedule  │←─────┘
+│ Artifacts│ └────────┘ └───────┘ └──────────┘
+└──────────┘
 ```
+
+Two coordination stages run between validation and scheduling: **Build Graph** (constructs the execution DAG) and **Policy Evaluation** (enforces governance rules).
 
 ## Stage 1: Parse
 
@@ -102,40 +105,46 @@ type NEIRModel struct {
 
 ## Stage 5: Validate
 
-Seven validation layers run in sequence:
+The validator checks the NEIR model for structural correctness:
 
-| Layer | What it Checks |
-|-------|----------------|
-| Schema conformance | Spec matches the NEIR JSON Schema |
-| Circular deps | No module depends on itself transitively |
-| Cross-module refs | All `$ref` targets exist |
-| Policy rules | Custom policy conditions evaluated |
-| Business rules | Plugin-supplied validators |
-| Naming conventions | Module/service names follow pattern |
-| Port conflicts | No two services bind the same port |
+| Check | What it Enforces |
+|-------|------------------|
+| Project | `project:` section present with a non-empty name |
+| Modules | At least one module, each with `name` and `path`; unique names |
+| Services | Valid `name`; port in range 0–65535; duplicate ports flagged as warnings |
+| Architecture | Pattern is one of `layered`, `clean`, `hexagonal`, `microkernel`, `event-driven`, `cqrs`, `monolith`, `monolithic`, `microservices`, `serverless` |
+| Schema conformance | Optional — spec checked against the NEIR JSON Schema when a schema source is configured |
 
-Validation errors include the exact path and context so you can fix them without guessing.
+Optionally, policy rules are evaluated against the generated model; violations fail the pipeline with the exact rule that was broken.
 
-## Stage 6: Schedule
+## Stage 6: Build Graph
+
+The pipeline constructs the execution DAG from the NEIR model — every module and service becomes a node, and dependencies become edges. This graph drives what runs next.
+
+## Stage 7: Policy Evaluation
+
+Governance policies (from `pipeline.Config.Policies`) are evaluated against the model. A violation aborts the run before any code is generated — governance is enforced at build time, not after the fact.
+
+## Stage 8: Schedule
 
 The DAG scheduler identifies parallel execution groups, performs topological sort of dependent tasks, and supports incremental builds.
 
 ```text
 Level 0: [parse, normalize, resolve]
-Level 1: [build, validate]
+Level 1: [build NEIR, validate]
 Level 2: [schedule]  # itself
-Level 3: [generate]  
-Level 4: [compile, export]
+Level 3: [generate]
+Level 4: [review, write artifacts]
 ```
 
-Modules with no interdependencies generate in parallel. In a 50-module project, this cuts generation time by 70% compared to sequential execution.
+Modules with no interdependencies generate in parallel.
 
-## Stage 7: Generate
+## Stage 9: Generate
 
 This is where code hits the disk. Template-driven generators for each target language create project files, module scaffolds, service stubs, tests, Dockerfiles, and CI configs.
 
 ```bash
-naeos run --input-file spec.yaml --language go,typescript
+naeos run --input-file spec.yaml --language go --language typescript
 ```
 
 Each language adapter implements a common interface:
@@ -148,17 +157,11 @@ type Generator interface {
 }
 ```
 
-## Stage 8: Compile
+## Stage 10: Review
 
-The AI compiler transforms NEIR into instruction sets for six AI platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, OpenAI Codex, and OpenCode.
+Generated artifacts are passed through the review engine, which produces review results attached to the pipeline output — a lightweight linting pass before anything is written.
 
-Each platform gets its own format — `copilot-instructions.md`, `CLAUDE.md`, `.cursorrules`, and so on. They all carry the same architectural knowledge but in the dialect each assistant understands.
-
-```bash
-naeos compile --all --input-file spec.yaml
-```
-
-## Stage 9: Export
+## Stage 11: Write Artifacts
 
 Everything lands in the output directory:
 
@@ -171,7 +174,7 @@ Everything lands in the output directory:
 └── report.json       # Build report with artifacts manifest
 ```
 
-The export stage also writes a machine-readable manifest so CI systems can inspect what was produced.
+The write stage also emits a machine-readable manifest so CI systems can inspect what was produced.
 
 ## Running the Pipeline
 
@@ -179,8 +182,8 @@ The export stage also writes a machine-readable manifest so CI systems can inspe
 # Full pipeline
 naeos run --input-file spec.yaml
 
-# Skip AI compilation
-naeos run --input-file spec.yaml --skip compile
+# AI instruction compilation (separate command)
+naeos ai compile --input-file spec.yaml --target claude
 
 # Watch mode with hot-reload
 naeos watch --input-file spec.yaml
@@ -188,10 +191,9 @@ naeos watch --input-file spec.yaml
 
 ## What's Next
 
-The 9-stage pipeline is the engine room of NAEOS. We're working on:
+The 11-stage pipeline is the engine room of NAEOS. We're working on:
 
-- **Incremental stage caching** — Skip stages whose inputs haven't changed
-- **Parallel generation** — Concurrent multi-adapter execution via `errgroup`
-- **Custom stage hooks** — Inject your own logic between any two stages
+- **Richer stage hooks** — Today hooks attach at `BeforeParse`/`AfterParse`, `BeforeRun`/`AfterRun`, and `BeforeGenerate`/`AfterGenerate`; we're working toward finer-grained injection points between any two stages
+- **Wider incremental caching** — `--cache-dir` already skips stages whose inputs haven't changed; we're expanding it to more stages
 
 For a complete reference of every stage configuration option, see the [Pipeline Engine documentation](/docs/pipeline-engine/).

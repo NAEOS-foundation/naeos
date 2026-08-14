@@ -79,7 +79,7 @@ func DefaultRules() []Rule {
     return []Rule{
         {RuleID: "project-required", Condition: "exists:project", Priority: 1, Action: "block"},
         {RuleID: "modules-required", Condition: "exists:modules", Priority: 1, Action: "block"},
-        {RuleID: "architecture-pattern-valid", Condition: "in:architecture_pattern,hexagonal,layered,clean,event-driven,cqrs,microkernel,monolith", Priority: 2, Action: "warn"},
+        {RuleID: "architecture-pattern-valid", Condition: "in:architecture_pattern,hexagonal,layered,clean,event-driven,cqrs,microkernel,monolith,monolithic,microservices,serverless", Priority: 2, Action: "warn"},
         {RuleID: "deployment-strategy-valid", Condition: "in:deployment_strategy,rolling,blue-green,canary,recreate", Priority: 2, Action: "warn"},
         {RuleID: "service-port-positive", Condition: "gt:service_port,0", Priority: 3, Action: "warn"},
     }

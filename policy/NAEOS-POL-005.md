@@ -681,4 +681,4 @@ go test -bench=BenchmarkPolicyEvaluation -benchmem
 - [NAEOS-POL-001.md](NAEOS-POL-001.md) - Policy Compiler Overview
 - [NAEOS-POL-002.md](NAEOS-POL-002.md) - Policy Definition
 - [NAEOS-POL-003.md](NAEOS-POL-003.md) - Policy Examples
-- [docs/NES-012-Policy.md](docs/NES-012-Policy.md) - Policy Model
+- [docs/NES-012-Policy.md](../docs/NES-012-Policy.md) - Policy Model

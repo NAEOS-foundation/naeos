@@ -30,26 +30,27 @@ Dengan konteks NAEOS, AI tahu:
 
 ## Cara Kerja AI Compiler
 
-AI Compiler mengambil model NEIR Anda dan menghasilkan **context bundle** — set instruksi terstruktur yang disesuaikan untuk setiap platform AI:
+AI Compiler mengambil spesifikasi NAEOS Anda dan menghasilkan **file instruksi AI** — instruksi terstruktur yang disesuaikan untuk setiap agen AI:
 
 ```bash
-# Generate konteks untuk semua platform AI yang didukung
-naeos compile --all --input-file spec.yaml
+# Generate instruksi untuk agen AI spesifik
+naeos ai compile --input-file spec.yaml --target copilot
 
-# Generate untuk platform spesifik
-naeos compile --target copilot --input-file spec.yaml
+# Gunakan provider LLM yang berbeda
+naeos ai compile --input-file spec.yaml --target claude --provider anthropic
 ```
 
-Compiler mendukung enam platform:
+Compiler mendukung tujuh platform:
 
 | Platform | Format Output | Cara Penggunaan |
 |----------|--------------|-----------------|
 | GitHub Copilot | `copilot-instructions.md` | Dimuat otomatis oleh Copilot |
 | Claude Code | `CLAUDE.md` | Dibaca Claude saat sesi dimulai |
 | Cursor | `.cursorrules` | Diterapkan ke semua sesi Cursor |
-| Gemini CLI | `GEMINI.md` | Konteks untuk Gemini CLI |
+| Gemini CLI | `.gemini/CONFIG.md` | Konteks untuk Gemini CLI |
 | Codex | `AGENTS.md` | Instruksi untuk OpenAI Codex |
 | OpenCode | `AGENTS.md` | Instruksi untuk OpenCode |
+| Windsurf | `.windsurfrules` | Instruksi untuk Windsurf |
 
 ## Apa yang Ada di Context Bundle
 
@@ -126,13 +127,13 @@ modules:
     dependencies: [postgres-db]
 services:
   - name: ws-gateway
-    kind: websocket
+    kind: http
     port: 8080
   - name: message-api
-    kind: rest
+    kind: http
     port: 9001
   - name: user-api
-    kind: rest
+    kind: http
     port: 9002
 architecture:
   pattern: microservices
@@ -140,7 +141,7 @@ generation:
   languages: [go, typescript]
 ```
 
-Menjalankan `naeos compile --all` menghasilkan enam file instruksi berbeda, masing-masing dioptimasi untuk platform targetnya. Saat Anda membuka proyek di Cursor, file `.cursorrules` memberitahu Claude tentang WebSocket gateway, strategi caching Redis layanan pesan, dan alur validasi JWT layanan user — sebelum Anda mengetik satu prompt pun.
+Menjalankan `naeos ai compile` menghasilkan file instruksi yang dioptimasi untuk agen target. Saat Anda membuka proyek di Cursor, file `.cursorrules` memberitahu Claude tentang WebSocket gateway, strategi caching Redis layanan pesan, dan alur validasi JWT layanan user — sebelum Anda mengetik satu prompt pun.
 
 ## Alur Kerja
 
@@ -152,12 +153,12 @@ Alur kerja lengkapnya seperti ini:
 4. **Coding dengan konteks** — Saran AI menghormati arsitektur Anda
 
 ```bash
-# Satu perintah menghasilkan semua
-naeos run --input-file spec.yaml --compile-all
+# Generate instruksi untuk agen pilihan Anda
+naeos ai compile --input-file spec.yaml --target claude
 
 # Proyek Anda sekarang memiliki:
 # - Kode Go dan TypeScript yang di-generate
-# - Set instruksi AI untuk 6 platform
+# - File instruksi AI untuk agen pilihan Anda
 # - Grafik dependensi tervalidasi
 # - Struktur yang patuh governance
 ```

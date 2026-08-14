@@ -17,11 +17,11 @@ Selamat datang di dokumentasi NAEOS. Di sini Anda akan menemukan semua yang dipe
 - **[Struktur Proyek](/id/docs/project-structure/)** — Layout repositori dan organisasi direktori
 - **[Bahasa Spesifikasi](/id/docs/spec-language/)** — Sintaks dan fitur Bahasa Spesifikasi NAEOS v2
 - **[Model NEIR](/id/docs/neir-model/)** — Representasi Antara Rekayasa NAEOS yang kanonikal
-- **[Pipeline Engine](/id/docs/pipeline-engine/)** — Pipeline DAG 9-tahap dari parsing hingga ekspor
+- **[Pipeline Engine](/id/docs/pipeline-engine/)** — Pipeline DAG 11-tahap dari parsing hingga output artifact
 
 ## Fitur
 
-- **[Kompiler AI](/id/docs/ai-compiler/)** — Kompilasi NEIR ke set instruksi AI untuk 6 platform
+- **[Kompiler AI](/id/docs/ai-compiler/)** — Kompilasi NEIR ke set instruksi AI untuk 7 platform
 - **[Context Bundles](/id/docs/context-bundles/)** — Hasilkan ringkasan proyek optimal untuk LLM
 - **[Profil Industri](/id/docs/profiles/)** — Profil yang sudah dikonfigurasi untuk SaaS, AI, FinTech, Healthcare, Government
 - **[Plugin SDK](/id/docs/plugin-sdk/)** — Perluas NAEOS dengan plugin dan generator kustom

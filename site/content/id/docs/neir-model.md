@@ -49,14 +49,14 @@ Konfigurasi deployment: definisi lingkungan (dev, staging, production), template
 ## Mengakses Model NEIR
 
 ```bash
-# Ekspor model NEIR sebagai JSON
-naeos export --format json --output neir.json
+# Ekspor artifact yang dihasilkan dari model NEIR
+naeos export --input spec.yaml --output-dir ./out
 
-# Periksa model
-naeos kernel --model
+# Periksa model sebagai JSON
+naeos inspect --input-file spec.yaml --output json --output-file neir.json
 
 # Validasi model
-naeos validate --model
+naeos validate --input-file spec.yaml
 ```
 
 ## NEIR dalam Konteks AI

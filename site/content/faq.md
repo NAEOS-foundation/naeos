@@ -40,7 +40,7 @@ description: Common questions about NAEOS and declarative engineering.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>NAEOS compiles specifications into AI instruction sets for 6 platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode. Each adapter generates platform-specific context files that help your AI assistant understand your project architecture.</p>
+<p>NAEOS compiles specifications into AI instruction sets for 7 platforms: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and Windsurf. Each adapter generates platform-specific context files that help your AI assistant understand your project architecture.</p>
 </div>
 </div>
 

@@ -215,14 +215,21 @@ naeos run --input spec.yaml
 naeos validate --input-file spec.yaml
 ```
 
-### Skip Specific Validation
+### Validation Flags
+
+The `validate` command supports the standard global flags:
 
 ```bash
-# Skip module validation
-naeos run --input spec.yaml --skip-validation
+# Validate with verbose output
+naeos validate --input-file spec.yaml --verbose
 
-# Skip specific checks
-naeos validate --input-file spec.yaml --skip circular-deps
+# Machine-readable output
+naeos validate --input-file spec.yaml --output json
+
+# Preview pipeline results without writing files
+naeos run --input spec.yaml --dry-run
 ```
+
+Validation always runs as part of the full pipeline — there is no flag to skip individual checks.
 
 See also: [Governance](/docs/governance/), [Pipeline Engine](/docs/pipeline-engine/), [Spec Language](/docs/spec-language/)
