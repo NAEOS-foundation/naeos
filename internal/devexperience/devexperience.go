@@ -172,7 +172,7 @@ func (e *VSCodeExtension) GenerateSyntaxJSON() string {
         { "match": "^\\s*(name|path|kind|port|method|action|summary|pattern|strategy|provider|region|protocol)(\\s*:)", "captures": { "1": { "name": "variable.other.property.naeos" } } },
         { "match": "^\\s*(language|frameworks|principles|dependencies|tags|environments)(\\s*:)", "captures": { "1": { "name": "keyword.other.naeos" } } },
         { "match": "(http|grpc|worker|cli|job)\\b", "name": "constant.language.naeos" },
-        { "match": "(layered|clean|hexagonal|microkernel|event-driven|cqrs|monolith)\\b", "name": "constant.language.naeos" },
+        { "match": "(layered|clean|hexagonal|microkernel|event-driven|cqrs|monolith|monolithic|microservices|serverless)\\b", "name": "constant.language.naeos" },
         { "match": "(rolling|blue-green|canary|recreate)\\b", "name": "constant.language.naeos" },
         { "match": "(go|typescript|python|java|rust)\\b", "name": "constant.language.naeos" },
         { "match": "(GET|POST|PUT|DELETE|PATCH)\\b", "name": "support.constant.http-method.naeos" },

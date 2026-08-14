@@ -67,7 +67,7 @@ func (p *CompletionProvider) init() {
 	}
 
 	p.keywords["architecture"] = []NEIRSuggestion{
-		{Label: "pattern", Kind: CompletionEnum, Detail: "string", Documentation: "Pattern: layered, clean, hexagonal, microkernel, event-driven, cqrs, monolith"},
+		{Label: "pattern", Kind: CompletionEnum, Detail: "string", Documentation: "Pattern: layered, clean, hexagonal, microkernel, event-driven, cqrs, monolith, monolithic, microservices, serverless"},
 		{Label: "description", Kind: CompletionField, Detail: "string", Documentation: "Architecture description"},
 		{Label: "principles", Kind: CompletionProperty, Detail: "[]string", Documentation: "Architecture principles"},
 	}
@@ -154,9 +154,12 @@ func (p *CompletionProvider) init() {
 		{Label: "clean", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
 		{Label: "hexagonal", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
 		{Label: "microkernel", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
+		{Label: "monolith", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
+		{Label: "monolithic", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
+		{Label: "microservices", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
+		{Label: "serverless", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
 		{Label: "event-driven", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
 		{Label: "cqrs", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
-		{Label: "monolith", Kind: CompletionEnumMember, Detail: "Architecture pattern"},
 	}
 
 	p.keywords["strategy_values"] = []NEIRSuggestion{

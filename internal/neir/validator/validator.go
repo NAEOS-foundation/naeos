@@ -121,17 +121,20 @@ func ValidateDetailed(neir any) ValidationResult {
 			result.Errors = append(result.Errors, "architecture.pattern is required when architecture section is present")
 		} else {
 			validPatterns := map[string]bool{
-				"layered":      true,
-				"clean":        true,
-				"hexagonal":    true,
-				"microkernel":  true,
-				"event-driven": true,
-				"cqrs":         true,
-				"monolith":     true,
+				"layered":       true,
+				"clean":         true,
+				"hexagonal":     true,
+				"microkernel":   true,
+				"event-driven":  true,
+				"cqrs":          true,
+				"monolith":      true,
+				"monolithic":    true,
+				"microservices": true,
+				"serverless":    true,
 			}
 			if !validPatterns[pattern] {
 				result.Valid = false
-				result.Errors = append(result.Errors, fmt.Sprintf("unsupported architecture pattern %q — supported: layered, clean, hexagonal, microkernel, event-driven, cqrs, monolith", pattern))
+				result.Errors = append(result.Errors, fmt.Sprintf("unsupported architecture pattern %q — supported: layered, clean, hexagonal, microkernel, event-driven, cqrs, monolith, monolithic, microservices, serverless", pattern))
 			}
 		}
 	}

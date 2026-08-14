@@ -216,7 +216,10 @@
             "microkernel",
             "event-driven",
             "cqrs",
-            "monolith"
+            "monolith",
+            "monolithic",
+            "microservices",
+            "serverless"
           ],
           "type": "string"
         },
@@ -343,6 +346,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "variables": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
         }
       },
       "required": [
@@ -723,6 +732,9 @@
           },
           "type": "object"
         },
+        "condition": {
+          "type": "string"
+        },
         "dependencies": {
           "items": {
             "type": "string"
@@ -900,6 +912,9 @@
           },
           "type": "object"
         },
+        "condition": {
+          "type": "string"
+        },
         "description": {
           "type": "string"
         },
@@ -1063,6 +1078,9 @@
   },
   "description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
   "properties": {
+    "active_profile": {
+      "type": "string"
+    },
     "ai": {
       "$ref": "#/definitions/ai.AI"
     },
@@ -1095,6 +1113,9 @@
     },
     "infrastructure": {
       "$ref": "#/definitions/infrastructure.Infrastructure"
+    },
+    "inherits": {
+      "type": "string"
     },
     "metadata": {
       "$ref": "#/definitions/metadata.Metadata"

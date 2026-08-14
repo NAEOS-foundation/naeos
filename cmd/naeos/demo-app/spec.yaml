@@ -11,7 +11,7 @@ services:
     port: 8080
 
 architecture:
-  pattern: hexagonal
+  pattern: microservices
 
 deployment:
   strategy: rolling

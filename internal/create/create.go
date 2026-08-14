@@ -61,7 +61,7 @@ func (w *Wizard) Run() (*ProjectConfig, error) {
 	cfg.ModulePath = w.askDefault("Module path", "./"+strings.ToLower(strings.ReplaceAll(cfg.Name, " ", "-")))
 	cfg.Description = w.askDefault("Description", "A NAEOS project")
 	cfg.Language = w.askChoice("Language", []string{"go", "typescript", "python", "java", "rust"}, "go")
-	cfg.Architecture = w.askChoice("Architecture pattern", []string{"hexagonal", "layered", "clean", "event-driven", "cqrs", "monolith"}, "hexagonal")
+	cfg.Architecture = w.askChoice("Architecture pattern", []string{"hexagonal", "microservices", "layered", "clean", "event-driven", "cqrs", "monolith", "serverless"}, "microservices")
 	cfg.Deployment = w.askChoice("Deployment strategy", []string{"rolling", "blue-green", "canary", "recreate"}, "rolling")
 	cfg.Port = w.askInt("Default port")
 	cfg.OutputDir = w.askDefault("Output directory", cfg.Name)
@@ -522,7 +522,7 @@ func ValidateConfig(cfg *ProjectConfig) []string {
 	if !validLangs[cfg.Language] {
 		errs = append(errs, "unsupported language: "+cfg.Language)
 	}
-	validArch := map[string]bool{"hexagonal": true, "layered": true, "clean": true, "event-driven": true, "cqrs": true, "monolith": true}
+	validArch := map[string]bool{"hexagonal": true, "layered": true, "clean": true, "event-driven": true, "cqrs": true, "monolith": true, "monolithic": true, "microservices": true, "serverless": true}
 	if !validArch[cfg.Architecture] {
 		errs = append(errs, "unsupported architecture: "+cfg.Architecture)
 	}

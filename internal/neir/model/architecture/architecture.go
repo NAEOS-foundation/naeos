@@ -3,13 +3,16 @@ package architecture
 type Pattern string
 
 const (
-	PatternLayered     Pattern = "layered"
-	PatternClean       Pattern = "clean"
-	PatternHexagonal   Pattern = "hexagonal"
-	PatternMicrokernel Pattern = "microkernel"
-	PatternEventDriven Pattern = "event-driven"
-	PatternCQRS        Pattern = "cqrs"
-	PatternMonolith    Pattern = "monolith"
+	PatternLayered       Pattern = "layered"
+	PatternClean         Pattern = "clean"
+	PatternHexagonal     Pattern = "hexagonal"
+	PatternMicrokernel   Pattern = "microkernel"
+	PatternEventDriven   Pattern = "event-driven"
+	PatternCQRS          Pattern = "cqrs"
+	PatternMonolith      Pattern = "monolith"
+	PatternMonolithic    Pattern = "monolithic"
+	PatternMicroservices Pattern = "microservices"
+	PatternServerless    Pattern = "serverless"
 )
 
 type Architecture struct {

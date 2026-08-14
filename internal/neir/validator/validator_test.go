@@ -181,7 +181,7 @@ func TestValidatorRejectsArchitectureUnsupportedPattern(t *testing.T) {
 	neir := &model.NEIR{
 		Project:      &project.Project{Name: "test"},
 		Modules:      []module.Module{{Name: "core", Path: "./internal/core"}},
-		Architecture: &architecture.Architecture{Pattern: "microservices"},
+		Architecture: &architecture.Architecture{Pattern: "fromage"},
 	}
 	result := ValidateDetailed(neir)
 	if result.Valid {
@@ -192,6 +192,7 @@ func TestValidatorRejectsArchitectureUnsupportedPattern(t *testing.T) {
 func TestValidatorAcceptsAllArchitecturePatterns(t *testing.T) {
 	patterns := []architecture.Pattern{
 		"layered", "clean", "hexagonal", "microkernel", "event-driven", "cqrs", "monolith",
+		"monolithic", "microservices", "serverless",
 	}
 	for _, p := range patterns {
 		neir := &model.NEIR{

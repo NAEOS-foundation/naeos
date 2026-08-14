@@ -268,7 +268,7 @@ func parseJSONTag(tag string) (string, map[string]bool) {
 
 func knownEnums() map[string][]string {
 	return map[string][]string{
-		"architecture.Pattern":    {"layered", "clean", "hexagonal", "microkernel", "event-driven", "cqrs", "monolith"},
+		"architecture.Pattern":    {"layered", "clean", "hexagonal", "microkernel", "event-driven", "cqrs", "monolith", "monolithic", "microservices", "serverless"},
 		"service.ServiceKind":     {"http", "grpc", "worker", "cli", "job"},
 		"api.Protocol":            {"http", "grpc", "graphql", "websocket"},
 		"storage.StorageType":     {"sql", "nosql", "file", "cache", "queue", "blob"},
