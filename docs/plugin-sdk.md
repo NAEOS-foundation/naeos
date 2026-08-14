@@ -2,7 +2,15 @@
 
 ## Overview
 
-NAEOS plugins extend the platform by providing custom actions that can be executed during the generation pipeline or via the CLI. Plugins are Go packages that implement the `pluginhost.Plugin` interface.
+NAEOS plugins extend the platform by providing custom actions that can be executed during the generation pipeline or via the CLI. Plugins are Go packages that implement the `pluginhost.Plugin` interface and are compiled to WebAssembly (`GOOS=wasip1 GOARCH=wasm`) for sandboxed execution. In-process execution of native `.so` plugins is also supported via `pluginhost`.
+
+The quickest way to start is the scaffold generator:
+
+```bash
+naeos plugin init my-plugin
+```
+
+This produces a complete WASM plugin project (`plugin.go`, `main.go` WASM entry, `naeos.yaml` manifest, tests, Makefile). See the official examples in `examples/plugins/` (`hello`, `spec-lint`, `artifact-stats`).
 
 ## Creating a Plugin
 
@@ -57,10 +65,10 @@ NAEOS plugins extend the platform by providing custom actions that can be execut
 3. **Build the plugin**
 
    ```bash
-   go build -o my-plugin.so -buildmode=plugin ./path/to/plugin
+   GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm .
    ```
 
-   The resulting `.so` file can be placed in the plugin directory configured via NAEOS (see `naeos plugin install`).
+   The resulting `.wasm` file can be placed in the plugin directory configured via NAEOS (see `naeos plugin install`). Native in-process builds (`go build -buildmode=plugin -o plugin.so`) remain supported for development.
 
 ## PluginContext
 
@@ -150,14 +158,18 @@ func TestMyPlugin(t *testing.T) {
 
 ## Publishing
 
-1. Zip the compiled `.so` file together with a `manifest.json` (optional) that contains metadata.
-2. Upload to the NAEOS Plugin Registry via `naeos marketplace publish` or share privately.
+1. Build the WASM module (`GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm .`) and include a `naeos.yaml` manifest with metadata.
+2. Publish to a plugin registry via `naeos marketplace publish` or share privately.
 3. Consumers install with `naeos plugin install <name>`.
 
 ## Further Reading
 
 - `internal/pluginhost/pluginhost.go` – full interface definition.
 - `internal/pluginhost/manager.go` – how plugins are loaded and managed.
-- `internal/pluginsdk/sdk.go` – deprecated compatibility shim.
+- `internal/pluginsdk/wasm/wasm.go` – WASM execution bridge.
+- `internal/pluginsdk/scaffold/scaffold.go` – plugin project scaffold (`naeos plugin init`).
+- `internal/pluginsdk/sandbox/sandbox.go` – plugin sandboxing.
+- `examples/plugins/README.md` – official example plugins.
+- `docs/NES-053-WASMPlugin.md` – WASM plugin sandbox specification.
 
 Happy hacking!

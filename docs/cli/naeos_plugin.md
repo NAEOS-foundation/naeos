@@ -9,6 +9,7 @@ Manage NAEOS plugins (install, uninstall, list, enable, disable, execute, info).
 Example:
   naeos plugin list
   naeos plugin install ./my-plugin.so
+  naeos plugin install ./my-plugin.wasm
   naeos plugin uninstall my-plugin
   naeos plugin enable my-plugin
   naeos plugin disable my-plugin
@@ -39,7 +40,7 @@ Example:
 * [naeos plugin execute](naeos_plugin_execute.md)	 - Execute a plugin action
 * [naeos plugin info](naeos_plugin_info.md)	 - Show plugin information
 * [naeos plugin init](naeos_plugin_init.md)	 - Scaffold a new plugin project
-* [naeos plugin install](naeos_plugin_install.md)	 - Install a plugin from a .so file
+* [naeos plugin install](naeos_plugin_install.md)	 - Install a plugin from a .so or .wasm file
 * [naeos plugin list](naeos_plugin_list.md)	 - List installed plugins
 * [naeos plugin search](naeos_plugin_search.md)	 - Search for plugins in the registry
 * [naeos plugin test](naeos_plugin_test.md)	 - Test a plugin by loading, initializing, and checking health

@@ -21,6 +21,13 @@ func (f Files) goMod() string {
 	return fmt.Sprintf(`module %s
 
 go 1.25.0
+
+require github.com/NAEOS-foundation/naeos v0.0.0
+
+// NAEOS plugins import internal packages (Go internal rule), so the module
+// must stay under the github.com/NAEOS-foundation/naeos prefix and resolve
+// naeos to the source checkout matching your CLI:
+replace github.com/NAEOS-foundation/naeos => /path/to/naeos
 `, f.Module)
 }
 
@@ -50,12 +57,28 @@ type Plugin struct {
 func New() *Plugin {
 	return &Plugin{
 		BasePlugin: pluginhost.BasePlugin{
-			Name:        %q,
-			Version:     "0.1.0",
-			Description: %q,
+			NameVal:        %[1]q,
+			VersionVal:     "0.1.0",
+			DescriptionVal: %[2]q,
 		},
 	}
 }
+
+var (
+	pluginName        = %[1]q
+	pluginVersion     = "0.1.0"
+	pluginDescription = %[2]q
+	pluginAuthor      = %[3]q
+
+	PluginName        = &pluginName
+	PluginVersion     = &pluginVersion
+	PluginDescription = &pluginDescription
+	PluginAuthor      = &pluginAuthor
+)
+
+var _ pluginhost.Plugin = (*Plugin)(nil)
+
+var NaeosPlugin pluginhost.Plugin = New()
 
 func (p *Plugin) Initialize(ctx *pluginhost.PluginContext) error {
 	return nil
@@ -65,6 +88,8 @@ func (p *Plugin) Execute(action string, params map[string]any) (any, error) {
 	switch action {
 	case "ping":
 		return map[string]string{"status": "ok"}, nil
+	case "health":
+		return map[string]string{"status": "healthy"}, nil
 	case "describe":
 		return map[string]any{
 			"name":        p.Name(),
@@ -79,7 +104,7 @@ func (p *Plugin) Execute(action string, params map[string]any) (any, error) {
 func (p *Plugin) Shutdown() error {
 	return nil
 }
-`, f.Name, f.Desc)
+`, f.Name, f.Desc, f.Author)
 }
 
 func (f Files) wasmMainGo() string {
@@ -92,25 +117,27 @@ import (
 	"os"
 )
 
+type request struct {
+	Method string         %[1]sjson:"method"%[1]s
+	Params map[string]any %[1]sjson:"params"%[1]s
+}
+
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println(%[1]s{"error":"missing action","ok":false}%[1]s)
+	var req request
+	if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
+		fmt.Fprintf(os.Stdout, %[1]s{"ok":false,"error":%%q}%[1]s+"\n", "invalid request: "+err.Error())
 		os.Exit(1)
 	}
 
-	action := os.Args[1]
-	var params map[string]any
-	if len(os.Args) > 2 {
-		json.Unmarshal([]byte(os.Args[2]), &params)
-	}
-
-	switch action {
+	switch req.Method {
 	case "ping":
 		fmt.Println(%[1]s{"ok":true,"result":{"status":"ok"}}%[1]s)
+	case "health":
+		fmt.Println(%[1]s{"ok":true,"result":{"status":"healthy"}}%[1]s)
 	case "describe":
-		fmt.Printf(%[1]s{"ok":true,"result":{"name":"%[2]s","version":"0.1.0"}}%[1]s)
+		fmt.Fprintf(os.Stdout, %[1]s{"ok":true,"result":{"name":%%q,"version":"0.1.0"}}%[1]s+"\n", %[2]q)
 	default:
-		fmt.Printf(%[1]s{"error":"unknown action: %%s","ok":false}%[1]s, action)
+		fmt.Fprintf(os.Stdout, %[1]s{"ok":false,"error":%%q}%[1]s+"\n", fmt.Sprintf("unknown action: %%s", req.Method))
 		os.Exit(1)
 	}
 }
@@ -172,7 +199,7 @@ func (f Files) makefile() string {
 .PHONY: build test clean
 
 build:
-	go build -o plugin.wasm -buildmode=c-shared .
+	GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm .
 
 build-plugin:
 	go build -buildmode=plugin -o plugin.so .
@@ -219,9 +246,19 @@ func (f Files) readme() string {
 
 %[2]s
 
+## Prerequisites
+
+Native (.so) plugins import NAEOS internal packages, which Go only allows
+for modules under the `+"`github.com/NAEOS-foundation/naeos`"+` prefix. Point
+`+"`replace`"+` in `+"`go.mod`"+` to the NAEOS source checkout matching your CLI
+before building.
+
 ## Usage
 
 %[3]sbash
+# Build the native plugin
+make build-plugin
+
 # Install the plugin
 naeos plugin install ./plugin.so
 
@@ -236,9 +273,8 @@ naeos plugin execute %[4]s describe
 # Run tests
 make test
 
-# Build
+# Build (WASM)
 make build
-make build-plugin
 %[3]s
 
 ## License

@@ -25,6 +25,7 @@ func newPluginCommand() *cobra.Command {
 Example:
   naeos plugin list
   naeos plugin install ./my-plugin.so
+  naeos plugin install ./my-plugin.wasm
   naeos plugin uninstall my-plugin
   naeos plugin enable my-plugin
   naeos plugin disable my-plugin
@@ -86,7 +87,7 @@ Example:
 
 	pluginInstall := &cobra.Command{
 		Use:   "install [path]",
-		Short: "Install a plugin from a .so file",
+		Short: "Install a plugin from a .so or .wasm file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr := pluginhost.NewManager(pluginDir)
@@ -342,7 +343,7 @@ func newPluginInitCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			if module == "" {
-				module = "github.com/user/" + name
+				module = "github.com/NAEOS-foundation/naeos/plugins/" + name
 			}
 			if desc == "" {
 				desc = "NAEOS plugin: " + name

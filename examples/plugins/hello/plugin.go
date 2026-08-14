@@ -23,6 +23,22 @@ func New() *Plugin {
 	}
 }
 
+var (
+	pluginName        = "hello"
+	pluginVersion     = "0.1.0"
+	pluginDescription = "Canonical hello-world plugin: ping, describe, and greet."
+	pluginAuthor      = "NAEOS Foundation"
+
+	PluginName        = &pluginName
+	PluginVersion     = &pluginVersion
+	PluginDescription = &pluginDescription
+	PluginAuthor      = &pluginAuthor
+)
+
+var _ pluginhost.Plugin = (*Plugin)(nil)
+
+var NaeosPlugin pluginhost.Plugin = New()
+
 // Execute dispatches an action with the given parameters.
 func (p *Plugin) Execute(action string, params map[string]any) (any, error) {
 	switch action {

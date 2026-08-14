@@ -20,6 +20,67 @@ func TestManagerInstallOpenFailure(t *testing.T) {
 	}
 }
 
+func TestManagerInstallWASMRegistersMetadata(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+	wasmPath := filepath.Join(dir, "my-plugin.wasm")
+	if err := os.WriteFile(wasmPath, []byte("not a real wasm"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := m.Install(wasmPath)
+	if err != nil {
+		t.Fatalf("install wasm: %v", err)
+	}
+	if info.Name != "my-plugin" {
+		t.Errorf("expected name from filename, got %q", info.Name)
+	}
+	if !info.Enabled {
+		t.Error("expected installed plugin to be enabled")
+	}
+
+	got, ok := m.GetInfo("my-plugin")
+	if !ok {
+		t.Fatal("expected plugin info to be retrievable")
+	}
+	if got.Path != wasmPath {
+		t.Errorf("expected path %q, got %q", wasmPath, got.Path)
+	}
+}
+
+func TestManagerInstallWASMReplacesExisting(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+	wasmPath := filepath.Join(dir, "my-plugin.wasm")
+	if err := os.WriteFile(wasmPath, []byte("not a real wasm"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := m.Install(wasmPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Install(wasmPath); err != nil {
+		t.Fatal(err)
+	}
+	if got := m.List(); len(got) != 1 {
+		t.Errorf("expected single registration after reinstall, got %d", len(got))
+	}
+}
+
+func TestManagerLoadWASMPluginInvalidModule(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+	wasmPath := filepath.Join(dir, "broken.wasm")
+	if err := os.WriteFile(wasmPath, []byte("not a wasm module"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := m.loadWASMPlugin(wasmPath)
+	if err == nil {
+		t.Fatal("expected error compiling invalid wasm module")
+	}
+}
+
 func TestManagerLoadAllGoPluginLoadError(t *testing.T) {
 	dir := t.TempDir()
 	m := NewManager(dir)

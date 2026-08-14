@@ -1,6 +1,6 @@
 ## naeos plugin install
 
-Install a plugin from a .so file
+Install a plugin from a .so or .wasm file
 
 ```
 naeos plugin install [path] [flags]

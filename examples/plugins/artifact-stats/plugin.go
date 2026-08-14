@@ -26,6 +26,22 @@ func New() *Plugin {
 	}
 }
 
+var (
+	pluginName        = "artifact-stats"
+	pluginVersion     = "0.1.0"
+	pluginDescription = "Compute line/byte statistics over generated artifacts."
+	pluginAuthor      = "NAEOS Foundation"
+
+	PluginName        = &pluginName
+	PluginVersion     = &pluginVersion
+	PluginDescription = &pluginDescription
+	PluginAuthor      = &pluginAuthor
+)
+
+var _ pluginhost.Plugin = (*Plugin)(nil)
+
+var NaeosPlugin pluginhost.Plugin = New()
+
 // Execute dispatches an action with the given parameters.
 func (p *Plugin) Execute(action string, params map[string]any) (any, error) {
 	switch action {

@@ -8,32 +8,32 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/pluginhost"
 )
 
-// main is the WASM/CLI entry point. It reads the action from argv[1] and an
-// optional JSON-encoded params object from argv[2], executes the plugin, and
-// prints the result as JSON on stdout (JSON-over-stdio protocol).
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println(`{"error":"missing action","ok":false}`)
-		os.Exit(1)
-	}
+type request struct {
+	Method string         `json:"method"`
+	Params map[string]any `json:"params"`
+}
 
-	action := os.Args[1]
-	var params map[string]any
-	if len(os.Args) > 2 {
-		_ = json.Unmarshal([]byte(os.Args[2]), &params)
+// main is the WASM/CLI entry point. It reads a JSON request
+// ({"method": "<action>", "params": {...}}) from stdin, executes the plugin,
+// and writes the result as JSON on stdout (JSON-over-stdio protocol).
+func main() {
+	var req request
+	if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
+		fmt.Fprintf(os.Stdout, `{"ok":false,"error":%q}`+"\n", "invalid request: "+err.Error())
+		os.Exit(1)
 	}
 
 	ctx := &pluginhost.PluginContext{}
 	p := New()
 	if err := p.Initialize(ctx); err != nil {
-		fmt.Printf(`{"error":"initialize: %s","ok":false}`+"\n", err)
+		fmt.Fprintf(os.Stdout, `{"ok":false,"error":%q}`+"\n", "initialize: "+err.Error())
 		os.Exit(1)
 	}
 	defer func() { _ = p.Shutdown() }()
 
-	result, err := p.Execute(action, params)
+	result, err := p.Execute(req.Method, req.Params)
 	if err != nil {
-		fmt.Printf(`{"error":"%s","ok":false}`+"\n", err)
+		fmt.Fprintf(os.Stdout, `{"ok":false,"error":%q}`+"\n", err.Error())
 		os.Exit(1)
 	}
 

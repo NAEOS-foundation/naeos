@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	goplugin "plugin"
+	"strings"
 	"sync"
 	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
+	"github.com/NAEOS-foundation/naeos/internal/pluginsdk/wasm"
 )
 
 // Manager is the unified plugin manager that handles loading, lifecycle,
@@ -109,10 +111,14 @@ func (m *Manager) GetInfo(name string) (*PluginInfo, bool) {
 	return nil, false
 }
 
-// Install registers a Go plugin from a .so file path.
-// It reads the exported symbols (PluginName, PluginVersion, PluginDescription)
-// to build metadata, then saves to config.
+// Install registers a plugin from a .so or .wasm file path.
+// Native plugins export the PluginName, PluginVersion, PluginDescription,
+// and PluginAuthor symbols; WASM plugins are named after their file.
 func (m *Manager) Install(path string) (*PluginInfo, error) {
+	if wasm.IsWASMPath(path) {
+		return m.installWASM(path)
+	}
+
 	goPlugin, err := goplugin.Open(path)
 	if err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "open plugin %s", path)
@@ -122,40 +128,67 @@ func (m *Manager) Install(path string) (*PluginInfo, error) {
 	if err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "plugin %s does not export PluginName", path)
 	}
-	namePtr, ok := symName.(*string)
+	namePtr, ok := symName.(**string)
 	if !ok {
 		return nil, naeoserr.New(naeoserr.ErrPlugin, fmt.Sprintf("plugin %q: exported PluginName must be a *string; rebuild the plugin with the correct type", path))
 	}
+	name := **namePtr
 
 	version := "0.0.0"
 	if symVersion, err := goPlugin.Lookup("PluginVersion"); err == nil {
-		if vPtr, ok := symVersion.(*string); ok {
-			version = *vPtr
+		if vPtr, ok := symVersion.(**string); ok {
+			version = **vPtr
 		}
 	}
 
 	description := ""
 	if symDesc, err := goPlugin.Lookup("PluginDescription"); err == nil {
-		if dPtr, ok := symDesc.(*string); ok {
-			description = *dPtr
+		if dPtr, ok := symDesc.(**string); ok {
+			description = **dPtr
 		}
 	}
 
 	author := ""
 	if symAuthor, err := goPlugin.Lookup("PluginAuthor"); err == nil {
-		if aPtr, ok := symAuthor.(*string); ok {
-			author = *aPtr
+		if aPtr, ok := symAuthor.(**string); ok {
+			author = **aPtr
 		}
 	}
 
 	pInfo := PluginInfo{
-		Name:        *namePtr,
+		Name:        name,
 		Version:     version,
 		Description: description,
 		Author:      author,
 		Path:        path,
 		Enabled:     true,
 		State:       StateCreated,
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for i, p := range m.config.Plugins {
+		if p.Name == pInfo.Name {
+			m.config.Plugins[i] = pInfo
+			return &pInfo, m.SaveConfig()
+		}
+	}
+
+	m.config.Plugins = append(m.config.Plugins, pInfo)
+	return &pInfo, m.SaveConfig()
+}
+
+// installWASM registers a WASM plugin using its filename as metadata.
+func (m *Manager) installWASM(path string) (*PluginInfo, error) {
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+
+	pInfo := PluginInfo{
+		Name:    name,
+		Version: "0.0.0",
+		Path:    path,
+		Enabled: true,
+		State:   StateCreated,
 	}
 
 	m.mu.Lock()
@@ -267,7 +300,7 @@ func (m *Manager) LoadAll(ctx *PluginContext) error {
 			errs = append(errs, fmt.Sprintf("plugin %q: sandbox validation failed: %v", pInfo.Name, err))
 			continue
 		}
-		p, err := m.loadGoPlugin(pInfo.Path)
+		p, err := m.loadPlugin(pInfo.Path)
 		if err != nil {
 			errs = append(errs, fmt.Sprintf("plugin %q: load failed: %v", pInfo.Name, err))
 			continue
@@ -298,7 +331,11 @@ func (m *Manager) LoadAll(ctx *PluginContext) error {
 	return nil
 }
 
-func (m *Manager) loadGoPlugin(path string) (Plugin, error) {
+func (m *Manager) loadPlugin(path string) (Plugin, error) {
+	if wasm.IsWASMPath(path) {
+		return m.loadWASMPlugin(path)
+	}
+
 	goPlugin, err := goplugin.Open(path)
 	if err != nil {
 		return nil, err
@@ -309,13 +346,55 @@ func (m *Manager) loadGoPlugin(path string) (Plugin, error) {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "plugin does not export NaeosPlugin")
 	}
 
-	p, ok := sym.(Plugin)
+	pp, ok := sym.(*Plugin)
 	if !ok {
 		return nil, naeoserr.New(naeoserr.ErrPlugin, "NaeosPlugin does not implement pluginhost.Plugin interface")
+	}
+	p := *pp
+	if p == nil {
+		return nil, naeoserr.New(naeoserr.ErrPlugin, "NaeosPlugin is nil; initialize it in the plugin package")
 	}
 
 	return p, nil
 }
+
+// loadWASMPlugin compiles and wraps a WASM module as a Plugin.
+func (m *Manager) loadWASMPlugin(path string) (Plugin, error) {
+	rt := wasm.NewWASMRuntime(30*time.Second, 128*1024*1024)
+	p, err := rt.Load(path)
+	if err != nil {
+		_ = rt.Close()
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "load wasm plugin %s", path)
+	}
+	return &wasmPluginAdapter{plugin: p}, nil
+}
+
+// wasmPluginAdapter adapts a WASM module to the pluginhost.Plugin interface.
+type wasmPluginAdapter struct {
+	plugin *wasm.WASMPlugin
+}
+
+func (w *wasmPluginAdapter) Name() string        { return w.plugin.Name() }
+func (w *wasmPluginAdapter) Version() string     { return w.plugin.Version() }
+func (w *wasmPluginAdapter) Description() string { return w.plugin.Description() }
+func (w *wasmPluginAdapter) Initialize(_ *PluginContext) error {
+	return nil
+}
+func (w *wasmPluginAdapter) Execute(action string, params map[string]any) (any, error) {
+	resp, err := w.plugin.Execute(action, params)
+	if err != nil {
+		return nil, err
+	}
+	wasmResp, ok := resp.(*wasm.Response)
+	if !ok {
+		return resp, nil
+	}
+	if !wasmResp.OK {
+		return nil, naeoserr.New(naeoserr.ErrPlugin, wasmResp.Error)
+	}
+	return wasmResp.Result, nil
+}
+func (w *wasmPluginAdapter) Shutdown() error { return nil }
 
 // InitializeAll initializes all registered in-process plugins.
 func (m *Manager) InitializeAll(ctx *PluginContext) error {
@@ -409,7 +488,7 @@ func (m *Manager) lazyLoad(name string, ctx *PluginContext) error {
 			if err := m.sandbox.ValidatePath(pInfo.Path); err != nil {
 				return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "sandbox validation failed for plugin %q", name)
 			}
-			p, err := m.loadGoPlugin(pInfo.Path)
+			p, err := m.loadPlugin(pInfo.Path)
 			if err != nil {
 				return naeoserr.Wrapf(err, naeoserr.ErrPlugin, "load plugin %q", name)
 			}

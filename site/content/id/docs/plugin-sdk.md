@@ -5,7 +5,7 @@ description: Perluas NAEOS dengan plugin kustom, generator, dan validator.
 
 ## Ikhtisar
 
-NAEOS menyediakan Plugin SDK untuk memperluas platform dengan fungsionalitas kustom. Plugin terintegrasi langsung ke dalam pipeline 9-tahap dan dapat menambahkan generator kode baru, validator, deployer, analis, dan hook siklus hidup.
+NAEOS menyediakan Plugin SDK untuk memperluas platform dengan fungsionalitas kustom. Plugin terintegrasi langsung ke dalam pipeline 11-tahap dan dapat menambahkan generator kode baru, validator, deployer, analis, dan hook siklus hidup.
 
 ## Interface Plugin
 
@@ -51,14 +51,63 @@ type MyPlugin struct {
 
 ### Plugin Native (Go)
 
+Plugin native adalah paket `main` Go yang dibangun dengan `-buildmode=plugin`.
+Plugin wajib mengekspor variabel metadata `PluginName` dan nilai `NaeosPlugin`
+yang mengimplementasikan `pluginhost.Plugin`:
+
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/NAEOS-foundation/naeos/internal/pluginhost"
+)
+
 type MyValidator struct {
     pluginhost.BasePlugin
 }
 
+func New() *MyValidator {
+    return &MyValidator{
+        BasePlugin: pluginhost.BasePlugin{
+            NameVal:        "my-validator",
+            VersionVal:     "1.0.0",
+            DescriptionVal: "Custom validation rules",
+        },
+    }
+}
+
+var (
+    pluginName        = "my-validator"
+    pluginVersion     = "1.0.0"
+    pluginDescription = "Custom validation rules"
+    pluginAuthor      = "you"
+
+    PluginName        = &pluginName
+    PluginVersion     = &pluginVersion
+    PluginDescription = &pluginDescription
+    PluginAuthor      = &pluginAuthor
+)
+
+var NaeosPlugin pluginhost.Plugin = New()
+
+func (v *MyValidator) Initialize(ctx *pluginhost.PluginContext) error {
+    ctx.Logger.Info("MyValidator initialized")
+    return nil
+}
+
 func (v *MyValidator) Execute(action string, params map[string]any) (any, error) {
-    // logika validasi
-    return issues, nil
+    if action != "validate" {
+        return nil, fmt.Errorf("unsupported action: %s", action)
+    }
+    return []map[string]string{
+        {"severity": "warning", "message": "custom check passed"},
+    }, nil
+}
+
+func (v *MyValidator) Shutdown() error {
+    return nil
 }
 ```
 
@@ -68,16 +117,54 @@ Build sebagai shared library:
 go build -buildmode=plugin -o my-validator.so .
 ```
 
+Karena plugin mengimpor paket internal NAEOS, aturan internal Go mengharuskan
+modul plugin berada di bawah prefiks `github.com/NAEOS-foundation/naeos` dan
+me-resolve `naeos` ke checkout sumber yang sesuai dengan CLI Anda:
+
+```
+replace github.com/NAEOS-foundation/naeos => /path/to/naeos
+```
+
+`naeos plugin init` sudah menyiapkan semua ini untuk Anda.
+
 ### Plugin WASM (TinyGo)
 
-```go
-//export generate
-func generate(modelPtr, modelLen uint32) uint64 {
-    model := sdk.ReadNEIR(modelPtr, modelLen)
-    return sdk.WriteResult(processModel(model))
-}
+Plugin WASM berjalan sebagai modul WASI. Saat eksekusi, host mengirim request
+(`{"method": "<action>", "params": {...}}`) melalui stdin dan mengharapkan
+respons JSON `{"ok": true, "result": ...}` atau `{"ok": false, "error": "..."}`
+pada stdout. Bahasa apa pun yang mengompilasi ke WASI dapat menerapkan protokol
+ini. Dengan TinyGo:
 
-func main() {}
+```go
+package main
+
+import (
+    "encoding/json"
+    "os"
+)
+
+func main() {
+    var req struct {
+        Method string `json:"method"`
+        Params map[string]any `json:"params"`
+    }
+    if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
+        json.NewEncoder(os.Stdout).Encode(map[string]any{
+            "ok": false, "error": "invalid request: " + err.Error(),
+        })
+        os.Exit(1)
+    }
+
+    switch req.Method {
+    case "ping":
+        json.NewEncoder(os.Stdout).Encode(map[string]any{"ok": true, "result": "pong"})
+    default:
+        json.NewEncoder(os.Stdout).Encode(map[string]any{
+            "ok": false, "error": "unknown action: " + req.Method,
+        })
+        os.Exit(1)
+    }
+}
 ```
 
 Build:
@@ -88,25 +175,20 @@ tinygo build -o plugin.wasm -target=wasi -scheduler=none .
 
 ## Manifes Plugin
 
-Setiap plugin yang dipublikasi harus menyertakan `plugin.yaml`:
+Setiap plugin menyertakan manifes `naeos.yaml` (dibuat otomatis oleh
+`naeos plugin init`):
 
 ```yaml
 name: my-generator
-version: "1.0.0"
+version: "0.1.0"
 description: Generate Rust service scaffolding
 author: NAEOS Foundation
-license: Apache-2.0
-actions:
-  - name: generate
-    description: Generate Rust service code
-    params:
-      output_dir: string
-    returns: array
-config:
-  template_dir:
-    type: string
-    required: false
+type: wasm              # "wasm" atau "native"
+tags: []
 ```
+
+Manifes ini wajib untuk `naeos marketplace publish`. Aksi dideklarasikan di
+kode melalui metode `Execute`, bukan di manifes.
 
 ## Konteks Plugin
 
@@ -178,51 +260,62 @@ naeos plugin enable/disable
 
 ## Menguji Plugin
 
+Muat, inisialisasi, dan periksa kesehatan plugin dengan test runner plugin:
+
 ```bash
-naeos test --plugin my-generator
-naeos test --plugin my-generator --input-file test-spec.yaml
+naeos plugin test my-generator
+naeos plugin test my-generator --plugin-dir ./my-plugins
 ```
+
+`naeos test` juga menjalankan tes untuk kode yang di-generate per bahasa (Go, TypeScript, Python, Java, Rust).
 
 ## Publikasi ke Marketplace
 
 ```bash
-naeos plugin package ./my-generator --output my-generator.tar.gz
-naeos marketplace publish my-generator.tar.gz
+# Publikasikan paket plugin Anda (direktori berisi naeos.yaml)
+naeos marketplace publish ./my-generator
 ```
 
-Marketplace memverifikasi checksum SHA-256, kesesuaian skema manifes, dan keunikan versi.
+Perintah publish memvalidasi bahwa paket berisi manifes `naeos.yaml` dengan
+kolom `name`, `version`, dan `type` sebelum dipublikasikan.
 
 ## Hot-Reload
 
-Plugin host mendukung hot-reloading saat pengembangan:
+Plugin host menyediakan watcher tingkat pustaka untuk pengembangan. `PluginWatcher` menggunakan `fsnotify` untuk mengawasi direktori plugin dan memuat ulang plugin `*.so` atau `*.wasm` yang berubah secara otomatis (debounce 500 ms):
 
-```bash
-naeos run --plugin-dir ./plugins --watch
+```go
+pw := pluginhost.NewPluginWatcher("./plugins", manager)
+if err := pw.Start(ctx); err != nil {
+    // handle error
+}
 ```
 
-File `*.so` atau `*.wasm` yang berubah akan dimuat ulang secara otomatis.
+Pada tingkat CLI, gunakan `naeos plugin test --plugin-dir ./plugins` untuk memeriksa ulang plugin setelah rebuild.
 
 ## Referensi SDK
 
 | Fungsi | Deskripsi |
 |--------|-----------|
-| `pluginhost.NewManager(config)` | Buat manager plugin baru |
-| `manager.Load(path)` | Muat plugin dari file |
-| `manager.Register(plugin)` | Daftarkan instance plugin |
-| `manager.List()` | Daftar semua plugin |
-| `sdk.ReadNEIR(ptr, len)` | Deserialisasi NEIR dari memori WASM |
-| `sdk.WriteResult(data)` | Serialisasi hasil ke memori WASM |
+| `pluginhost.NewManager(pluginDir)` | Buat manager plugin baru |
+| `manager.Install(path)` | Pasang plugin `.so` (membaca metadata yang diekspor) |
+| `manager.LoadAll(ctx)` | Muat dan inisialisasi semua plugin terpasang |
+| `manager.Register(plugin)` | Daftarkan instance plugin in-process |
+| `manager.Execute(ctx, name, action, params)` | Eksekusi aksi satu plugin |
+| `manager.List()` | Daftar semua plugin terpasang |
+| `manager.GetInfo(name)` | Ambil metadata satu plugin |
+| `manager.Cleanup()` | Shutdown semua plugin dan lepaskan resource |
+| Protokol WASM (stdin → stdout JSON) | Request: `{"method": "<action>", "params": {...}}`; sukses: `{"ok": true, "result": ...}`; gagal: `{"ok": false, "error": "..."}` |
 
 ## Praktik Terbaik
 
 - **Mulai kecil** — Embed `BasePlugin`, implementasi `Execute` dulu
 - **Gunakan semantic versioning** — Rilis sebagai `v1.0.0`
-- **Sertakan manifes** — Selalu kirim `plugin.yaml`
+- **Sertakan manifes** — Selalu kirim `naeos.yaml`
 - **Log dengan bermakna** — Gunakan `ctx.Logger` dengan key-value terstruktur
-- **Tangani error** — Kembalikan objek `Issue` deskriptif
-- **Uji dengan `naeos test`** — Validasi plugin terhadap spesifikasi nyata
+- **Tangani error** — Kembalikan struktur hasil yang deskriptif alih-alih panic
+- **Uji dengan `naeos plugin test`** — Validasi plugin terhadap spesifikasi nyata
 - **Jaga WASM tetap ramping** — Minimalisir impor untuk loading cepat
-- **Gunakan hot-reload** — Saat development, gunakan `--plugin-dir ./plugins --watch`
+- **Gunakan hot-reload** — Saat development, periksa ulang plugin setelah rebuild dengan `naeos plugin test --plugin-dir ./plugins`
 
 ## Pemecahan Masalah
 

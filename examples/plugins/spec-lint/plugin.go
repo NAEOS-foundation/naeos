@@ -27,6 +27,22 @@ func New() *Plugin {
 }
 
 var (
+	pluginName        = "spec-lint"
+	pluginVersion     = "0.1.0"
+	pluginDescription = "Lint NAEOS specifications for naming and structural conventions."
+	pluginAuthor      = "NAEOS Foundation"
+
+	PluginName        = &pluginName
+	PluginVersion     = &pluginVersion
+	PluginDescription = &pluginDescription
+	PluginAuthor      = &pluginAuthor
+)
+
+var _ pluginhost.Plugin = (*Plugin)(nil)
+
+var NaeosPlugin pluginhost.Plugin = New()
+
+var (
 	reModuleName = regexp.MustCompile(`^\s*-\s+name:\s*(\S+)`)
 	rePortValue  = regexp.MustCompile(`port:\s*(\d+)`)
 )
