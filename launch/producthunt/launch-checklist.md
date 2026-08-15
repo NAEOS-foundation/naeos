@@ -21,7 +21,8 @@ A step-by-step timeline for a successful Product Hunt launch. PH launches are mo
 - [ ] Re-test the quick start end-to-end on a clean machine:
   ```bash
   curl -fsSL https://naeos.dev/install.sh | sh
-  naeos create my-app
+  naeos create          # interactive wizard — enter your project name
+  cd my-app
   naeos run --input-file spec.yaml
   ```
 - [ ] Confirm `naeos version` reports v3.0.0 and the latest release is tagged on GitHub

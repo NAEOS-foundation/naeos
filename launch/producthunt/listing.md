@@ -58,7 +58,8 @@ And the spec stays the source of truth for the entire lifecycle. Watch mode re-r
 
 ```bash
 curl -fsSL https://naeos.dev/install.sh | sh
-naeos create my-app
+naeos create          # interactive wizard — enter your project name
+cd my-app
 naeos run --input-file spec.yaml
 ```
 

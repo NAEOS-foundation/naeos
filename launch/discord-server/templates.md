@@ -20,8 +20,9 @@ Copy-paste these into the matching channels. All text uses NAEOS brand voice
 > 3. Try NAEOS in 30 seconds:
 >    ```bash
 >    curl -fsSL https://naeos.dev/install.sh | sh
->    naeos create my-app
->    naeos run --config config.yaml --input-file spec.yaml
+>    naeos create          # interactive wizard — enter your project name
+>    cd my-app
+>    naeos run --input-file spec.yaml
 >    ```
 > 4. Get help in `#help-requests`, share what you build in `#showcase`.
 >

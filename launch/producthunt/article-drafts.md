@@ -77,7 +77,8 @@ Then convert to a HackerNoon draft and polish with the article below.
 >
 > ```bash
 > curl -fsSL https://naeos.dev/install.sh | sh
-> naeos create my-app
+> naeos create          # interactive wizard — enter your project name
+> cd my-app
 > naeos run --input-file spec.yaml
 > ```
 >
