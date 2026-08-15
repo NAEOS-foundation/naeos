@@ -5,6 +5,8 @@
 *.so
 *.dylib
 /naeos
+/discord-bot
+/tools/discord-bot/discord-bot
 
 # Test binary
 *.test
@@ -50,6 +52,9 @@ cmd/naeos/out/
 
 # Logs
 *.log
+
+# Discord bot state
+.naeos-bot-state.json
 
 # Temp
 tmp/
