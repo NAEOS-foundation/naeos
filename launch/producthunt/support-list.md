@@ -22,9 +22,10 @@ or is enthusiastic about spec-driven engineering.
 
 | Name | Channel | Contact | Relation | Status | Notes |
 |------|---------|---------|----------|--------|-------|
-|      |         |         |          |        |       |
-|      |         |         |          |        |       |
-|      |         |         |          |        |       |
+| ubet1303 | Email | abc905476@gmail.com | Contributor (quality/reliability, pipeline coverage, site) | | Strong candidate — active commits |
+| adibara15 | Email | naeosspect@gmail.com | Contributor (docs, CLI docsgen, test tooling) | | Deep contributor — likely to comment well |
+| indoblockforge | Email | 301887389+indoblockforge@users.noreply.github.com | Contributor (change phase 1) | | GitHub noreply — prefer Discord/DM if known |
+| velora-OS | Email | velorateknologiindonesia@gmail.com | Contributor (site redesign, ux/ui) | | Also as "velora-teknologi" — likely same person |
 
 ## Launch-day brief (send D-1 / D-day 00:00 PT)
 
