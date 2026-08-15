@@ -45,7 +45,7 @@ func NewBot(cfg Config, logger *slog.Logger) (*Bot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create discord session: %w", err)
 	}
-	session.Identify.Intents = discordgo.IntentGuildMessages
+	session.Identify.Intents = discordgo.IntentGuildMessages | discordgo.IntentGuildMembers
 
 	b := &Bot{
 		cfg:     cfg,
