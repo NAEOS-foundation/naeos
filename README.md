@@ -43,14 +43,15 @@ generation:
   languages: [go, typescript]
 EOF
 
-# Jalankan pipeline
-naeos run --config config.yaml --input-file spec.yaml
+# Init membuat config (naeos.yaml) yang otomatis dideteksi oleh run
+naeos init
+naeos run --input-file spec.yaml
 
 # Generate AI context
 naeos context --input-file spec.yaml
 
 # Compile ke AI tools
-naeos compile --all --input-file spec.yaml
+naeos ai compile --input-file spec.yaml --target opencode
 ```
 
 ## Features

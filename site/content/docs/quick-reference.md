@@ -13,7 +13,7 @@ A quick reference card for NAEOS — ideal for experienced users who need a fast
 go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
 
 # Create a new project
-naeos init my-project
+naeos init --name my-project
 
 # Run the full pipeline
 naeos run --input-file spec.yaml
