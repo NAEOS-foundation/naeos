@@ -34,8 +34,8 @@ one-command **server provisioner** that builds the channel/role structure from
 
 ```bash
 export DISCORD_TOKEN="your-bot-token"
-export DISCORD_APPLICATION_ID="your-app-id"
-export DISCORD_GUILD_ID="your-guild-id"            # optional: instant slash commands in one server
+export DISCORD_APP_ID="your-app-id"          # or DISCORD_APPLICATION_ID / DISCORD_CLIENT_ID
+export DISCORD_GUILD_ID="your-guild-id"      # optional: instant slash commands in one server (alias: DISCORD_SERVER_ID)
 export DISCORD_ANNOUNCE_CHANNEL="channel-id"        # optional: release notifications target
 export NAEOS_PH_LAUNCH_URL="https://www.producthunt.com/posts/naeos"
 export NAEOS_ANNOUNCE_ON_STARTUP="true"             # optional: post PH launch message on boot
@@ -66,8 +66,8 @@ After provisioning, run `serve` once, then `/setup` in `#announcements`.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DISCORD_TOKEN` | yes | — | Discord bot token |
-| `DISCORD_APP_ID` | yes | — | Discord application ID |
-| `DISCORD_GUILD_ID` | no | — | Guild ID for guild-scoped commands (recommended while testing) |
+| `DISCORD_APP_ID` | yes | — | Discord application ID (aliases: `DISCORD_APPLICATION_ID`, `DISCORD_CLIENT_ID`) |
+| `DISCORD_GUILD_ID` | no | — | Guild ID for guild-scoped commands (recommended while testing; alias: `DISCORD_SERVER_ID`) |
 | `DISCORD_ANNOUNCE_CHANNEL` | no | — | Channel ID for release + launch announcements |
 | `NAEOS_REPO` | no | `NAEOS-foundation/naeos` | GitHub repo to watch (`owner/repo`) |
 | `GITHUB_TOKEN` | no | — | GitHub token (avoids rate limits) |
