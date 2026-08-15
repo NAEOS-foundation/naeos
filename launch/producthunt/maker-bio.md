@@ -6,13 +6,13 @@ Fill in the placeholders, then update in your Product Hunt profile settings (pro
 
 ## Profile
 
-- **Name:** Bayu
-- **Headline (short):** [e.g. "Building NAEOS — the declarative engineering OS"]
-- **Location:** [City, Country]
+- **Name:** Bayu Priatno
+- **Headline (short):** On a mission to make specifications the source of truth for software. Maker of NAEOS — specify once, build anywhere.
+- **Location:** Jakarta, Indonesia
 - **Website:** https://naeos.dev
-- **X / Twitter:** [https://x.com/yourhandle]
+- **X / Twitter:** https://x.com/bayupriatno007
 - **GitHub:** https://github.com/NAEOS-foundation/naeos
-- **LinkedIn:** [https://linkedin.com/in/yourhandle]
+- **LinkedIn:** https://linkedin.com/in/bayu-priatno
 
 ## Bio (pick one, max ~160 characters for the short version)
 
@@ -27,7 +27,7 @@ Fill in the placeholders, then update in your Product Hunt profile settings (pro
 
 ## About (longer, for the "About me" section)
 
-I build NAEOS, an open-source declarative engineering platform that transforms specifications into validated, multi-language software systems — for humans and AI. Before NAEOS, I spent years watching spec documents drift out of sync with codebases; NAEOS is my answer: keep the specification as the single source of truth, and let the pipeline do the building, validating, and evolving. I'm a [language/framework] engineer passionate about developer tooling, AI-assisted engineering, and open source. When I'm not shipping, I [hobby].
+I build NAEOS, an open-source declarative engineering platform that transforms specifications into validated, multi-language software systems — for humans and AI. Before NAEOS, I spent years watching spec documents drift out of sync with codebases; NAEOS is my answer: keep the specification as the single source of truth, and let the pipeline do the building, validating, and evolving. I'm a [language/framework] engineer passionate about developer tooling, AI-assisted engineering, and open source. When I'm not shipping, I [hobby]. I'm based in Jakarta, Indonesia.
 
 ## Profile photo
 
