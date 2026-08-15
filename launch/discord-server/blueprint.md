@@ -141,8 +141,7 @@ Create roles in this order (highest first). Assign colors that match the brand.
 ## 4. Onboarding flow
 
 1. New member joins → lands in `#announcements` (set as the default landing channel in
-   Server Settings → Onboarding).
-2. `#announcements` pinned welcome message explains what NAEOS is + points to `#rules`, `#introductions`,
+   Server Settings → Onboarding).2. `#announcements` pinned welcome message explains what NAEOS is + points to `#rules`, `#introductions`,
    `#help-requests`.
 3. Ask members to introduce themselves in `#introductions` (optional but warm).
 4. Post the quick start in `#announcements` so people can try NAEOS in 30 seconds.
@@ -150,6 +149,10 @@ Create roles in this order (highest first). Assign colors that match the brand.
    `#showcase`, `#product-hunt`.
 
 Welcome message, rules, and community guidelines templates live in `templates.md`.
+
+Server invite: **https://discord.gg/WnUWmm7XMv** (create via
+`POST /channels/{id}/invites` with the bot, or right-click channel → Invite in
+the Discord client).
 
 ---
 

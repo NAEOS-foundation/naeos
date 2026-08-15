@@ -11,6 +11,8 @@ or is enthusiastic about spec-driven engineering.
 3. On D-1, send each the exact launch link + time ("upvote + comment if you can").
 4. Track status in the **Status** column: `teased`, `briefed`, `upvoted`, `commented`.
 
+Server invite for new members: **https://discord.gg/WnUWmm7XMv** (no expiry, unlimited uses, lands in `#general`).
+
 ## Teaser message (send D-4 to D-2)
 
 > Hey [Name] — quick heads up: we're launching NAEOS on Product Hunt this

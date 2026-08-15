@@ -93,4 +93,4 @@ Do not put links in gallery images — PH strips them and it looks unprofessiona
 - Documentation: https://docs.naeos.dev
 - Whitepaper (EN): https://naeos.dev/whitepaper
 - Release notes (v3.0.0): https://github.com/NAEOS-foundation/naeos/releases
-- Community: see `social-posts.md` for Discord/community links after launch
+- Community (Discord): https://discord.gg/WnUWmm7XMv

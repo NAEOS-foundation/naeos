@@ -48,6 +48,8 @@ Tweet 6 (try it):
 > Hey all — we just launched NAEOS on Product Hunt. It's an open-source declarative engineering platform: write a spec once, and it generates validated multi-language code (Go/TS/Python/Java/Rust) plus AI instruction sets for Copilot, Claude Code, Cursor, etc.
 >
 > Happy to answer any technical questions here or in the thread. If it's useful, an upvote helps a lot: [PH LINK]
+>
+> Community Discord: https://discord.gg/WnUWmm7XMv
 
 ## 4. Hacker News (Show HN — post after PH, not the same hour)
 
