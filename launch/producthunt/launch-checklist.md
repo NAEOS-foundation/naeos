@@ -2,7 +2,7 @@
 
 A step-by-step timeline for a successful Product Hunt launch. PH launches are most effective on **Tuesdays–Thursdays**; publish your post between **00:01–07:00 PT** so it rides the full US day. Work backwards from your chosen launch date.
 
-**Launch date: Tuesday, 18 August 2026** — full WIB/PT schedule in `launch-timeline.md`.
+**Launch date: Tuesday, 18 August 2026** — full WIB/PT schedule in `launch-timeline.md`; final copy in `launch-day-copy.md`.
 
 ---
 
