@@ -40,9 +40,8 @@ Create categories in this order, then channels inside them. Starred channels
 ### 🟢 WELCOME
 | Channel | Purpose |
 |---------|---------|
-| `#welcome` * | First channel people see. Post the welcome message (see templates) |
+| `#announcements` * | First channel people see. NAEOS bot posts releases + launch updates here (`/setup` in this channel) |
 | `#rules` * | Read-only. The rules (see templates) |
-| `#announcements` * | NAEOS bot posts releases + launch updates here (`/setup` in this channel) |
 | `#product-hunt` | Product Hunt launch discussion + upvote link |
 
 ### 💬 COMMUNITY
@@ -51,6 +50,10 @@ Create categories in this order, then channels inside them. Starred channels
 | `#general` | Main discussion |
 | `#introductions` | New members say hi |
 | `#showcase` | Share projects built with NAEOS |
+| `#software-architecture` | Design discussions, patterns, NEIR model |
+| `#build-in-public` | Members share what they're building |
+| `#ai-engineering` | AI-assisted engineering topics |
+| `#ai-agent` | AI agent workflows and integrations |
 | `#off-topic` | Casual chat |
 
 ### ⚙️ ENGINEERING (topics with forums where noted)
@@ -61,8 +64,15 @@ Create categories in this order, then channels inside them. Starred channels
 | `#ai-integration` | AI compiler, MCP server, Copilot/Claude/Cursor adapters |
 | `#go` | Go internals, kernel, LSP server, plugin SDK |
 | `#plugins` | WASM plugin SDK, official example plugins |
+| `#development` | General dev workflow and tooling |
 | `#architecture` | NEIR model, patterns, governance & policy |
-| `#roadmap` | Roadmap and RFC/ADR discussion |
+| `#knowledge-systems` | Spec-driven knowledge and context bundles |
+| `#plugin` | Plugin SDK development and recipes |
+| `#blueprints` | Industry profile blueprints (SaaS, AI Agent, FinTech, …) |
+| `#agent` | Agent execution and instruction sets |
+| `#testing` | Testing generated code and pipelines |
+| `#documentation` | Docs contributions and feedback |
+| `#contributing` | Contributor onboarding and PR help |
 
 ### 🆘 HELP
 | Channel | Purpose |
@@ -81,6 +91,7 @@ Create categories in this order, then channels inside them. Starred channels
 ### 🛡️ MODERATION (private, visible only to staff roles)
 | Channel | Purpose |
 |---------|---------|
+| `#moderator-only` | Staff coordination |
 | `#mod-chat` | Staff coordination |
 | `#mod-log` | Bots log moderation actions here |
 
@@ -88,8 +99,6 @@ Create categories in this order, then channels inside them. Starred channels
 - `#launch-day-announcements` — countdown + go-live post
 - `#launch-upvotes` — the PH link + how to support
 - `#launch-party` (voice)
-
----
 
 ## 3. Roles & permissions
 
@@ -131,12 +140,12 @@ Create roles in this order (highest first). Assign colors that match the brand.
 
 ## 4. Onboarding flow
 
-1. New member joins → lands in `#welcome` (set as the default landing channel in
+1. New member joins → lands in `#announcements` (set as the default landing channel in
    Server Settings → Onboarding).
-2. `#welcome` message explains what NAEOS is + points to `#rules`, `#introductions`,
+2. `#announcements` pinned welcome message explains what NAEOS is + points to `#rules`, `#introductions`,
    `#help-requests`.
 3. Ask members to introduce themselves in `#introductions` (optional but warm).
-4. Post the quick start in `#welcome` so people can try NAEOS in 30 seconds.
+4. Post the quick start in `#announcements` so people can try NAEOS in 30 seconds.
 5. Use **Server Guide** (Onboarding) to pin: `#announcements`, `#help-requests`,
    `#showcase`, `#product-hunt`.
 
@@ -198,7 +207,7 @@ T-0 (launch hour):
 
 D+1 → D+7:
 - Post a thank-you recap in `#announcements` (numbers + feedback themes).
-- Promote the top 3 feedback items as GitHub issues in `#roadmap`.
+- Promote the top 3 feedback items as GitHub issues in `#announcements`.
 - Move `#launch-upvotes` to archived; delete `#launch-party`.
 
 ---

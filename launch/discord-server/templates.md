@@ -5,7 +5,7 @@ Copy-paste these into the matching channels. All text uses NAEOS brand voice
 
 ---
 
-## 1. Welcome message — `#welcome`
+## 1. Welcome message — `#announcements`
 
 > # Welcome to the NAEOS Community
 >
@@ -55,7 +55,7 @@ Copy-paste these into the matching channels. All text uses NAEOS brand voice
 
 ---
 
-## 3. Community guidelines — `#welcome` (or server guide)
+## 3. Community guidelines — `#announcements` (or server guide)
 
 > ## How this community works
 > - **Open source first.** Everything we build is public. RFCs, ADRs, and roadmap
@@ -93,7 +93,7 @@ Copy-paste these into the matching channels. All text uses NAEOS brand voice
 > - **Comments:** [N]
 > - **Top feedback themes:** [theme 1], [theme 2], [theme 3]
 >
-> The feedback is now tracked as issues in the repo — watch `#roadmap` for what's next.
+> The feedback is now tracked as issues in the repo — watch `#announcements` for what's next.
 >
 > If you missed it, NAEOS is still live: [PH link]
 
