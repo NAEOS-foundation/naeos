@@ -4,7 +4,7 @@ Paste this as your first comment immediately after the product goes live (within
 
 ---
 
-Hi Product Hunt! [Maker Name] here, the maker of NAEOS. I'm genuinely excited (and a little nervous) to share this one.
+Hi Product Hunt! Bayu here, the maker of NAEOS. I'm genuinely excited (and a little nervous) to share this one.
 
 **The problem I kept hitting:** every project starts with a great spec document, and six months later the spec and the code are strangers. Nobody maintains the spec because the code "is the source of truth." But then the code base grows, the docs rot, and every new engineer or AI assistant has to reverse-engineer the whole system.
 

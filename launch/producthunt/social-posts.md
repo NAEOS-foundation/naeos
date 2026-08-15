@@ -86,7 +86,7 @@ Tweet 6 (try it):
 >
 > And if you've tried the quick start, a comment about your experience (good or bad) helps more than the upvote.
 >
-> Thanks for being part of this — [Maker Name]
+> Thanks for being part of this — Bayu
 
 ## Timing summary (PT)
 

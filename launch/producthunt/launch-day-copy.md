@@ -112,7 +112,7 @@ Reddit (r/devops, r/golang, r/programming — check each sub's self-promo rules 
 >
 > And if you've tried the quick start, a comment about your experience (good or bad) helps more than the upvote.
 >
-> Thanks for being part of this — [Maker Name]
+> Thanks for being part of this — Bayu
 
 ---
 

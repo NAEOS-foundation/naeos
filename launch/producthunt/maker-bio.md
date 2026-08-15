@@ -6,7 +6,7 @@ Fill in the placeholders, then update in your Product Hunt profile settings (pro
 
 ## Profile
 
-- **Name:** [Maker Name]
+- **Name:** Bayu
 - **Headline (short):** [e.g. "Building NAEOS — the declarative engineering OS"]
 - **Location:** [City, Country]
 - **Website:** https://naeos.dev

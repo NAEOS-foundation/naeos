@@ -14,7 +14,7 @@ Everything you need to fill out the Product Hunt submission form. Copy-paste dir
 | **Topics** | Developer Tools, Artificial Intelligence, Open Source, Software Engineering |
 | **Logo** | `brand/logo.svg` (GitHub avatar lockup; render as PNG at 240×240px on dark background) |
 | **Gallery** | See "Gallery images" section below |
-| **Maker** | [Maker Name] — [@handle] (see `maker-bio.md`) |
+| **Maker** | Bayu — [@handle] (see `maker-bio.md`) |
 | **First comment** | See `first-comment.md` |
 
 ### Tagline options (pick one)
