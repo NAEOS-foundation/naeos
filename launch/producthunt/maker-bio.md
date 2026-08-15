@@ -27,7 +27,7 @@ Fill in the placeholders, then update in your Product Hunt profile settings (pro
 
 ## About (longer, for the "About me" section)
 
-I build NAEOS, an open-source declarative engineering platform that transforms specifications into validated, multi-language software systems — for humans and AI. Before NAEOS, I spent years watching spec documents drift out of sync with codebases; NAEOS is my answer: keep the specification as the single source of truth, and let the pipeline do the building, validating, and evolving. I'm a [language/framework] engineer passionate about developer tooling, AI-assisted engineering, and open source. When I'm not shipping, I [hobby]. I'm based in Jakarta, Indonesia.
+I build NAEOS, an open-source declarative engineering platform that transforms specifications into validated, multi-language software systems — for humans and AI. Before NAEOS, I spent years watching spec documents drift out of sync with codebases; NAEOS is my answer: keep the specification as the single source of truth, and let the pipeline do the building, validating, and evolving. I'm a Go engineer passionate about developer tooling, AI-assisted engineering, and open source. When I'm not shipping, I'm tinkering with self-hosted tools and exploring new developer tooling. I'm based in Jakarta, Indonesia.
 
 ## Profile photo
 
