@@ -2,7 +2,8 @@
 
 Channels that accept public submissions or pitches for developer-tool launches.
 Prioritized by effort vs. payoff for an open-source dev tool (NAEOS, PH 18 Aug).
-Ready-to-paste drafts: `article-drafts.md`.
+Ready-to-paste drafts: `article-drafts.md`. Public editorial inboxes & beat
+writers: `editorial-contacts.md`.
 
 ---
 
