@@ -83,6 +83,28 @@ func (b *Bot) defaultCommands() []commandDef {
 			},
 			handler: b.cmdPing,
 		},
+		{
+			command: &discordgo.ApplicationCommand{
+				Name:        "announce",
+				Description: "Post a pre-launch announcement to the announcement channel (admin only)",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionString,
+						Name:        "message",
+						Description: "Which announcement to post",
+						Required:    true,
+						Choices: []*discordgo.ApplicationCommandOptionChoice{
+							{Name: "Welcome + mission (D-2)", Value: "welcome"},
+							{Name: "Launch Champion call", Value: "champion"},
+							{Name: "v3.1.0 walkthrough (D-1)", Value: "walkthrough"},
+							{Name: "Today's the day (D-0)", Value: "today"},
+							{Name: "Go-live (D-day)", Value: "golive"},
+						},
+					},
+				},
+			},
+			handler: b.cmdAnnounce,
+		},
 	}
 }
 
@@ -253,6 +275,61 @@ func (b *Bot) cmdDoctor(s *discordgo.Session, i *discordgo.InteractionCreate) {
 func (b *Bot) cmdPing(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	latency := s.HeartbeatLatency().Round(time.Millisecond)
 	_ = respond(s, i, fmt.Sprintf("Pong! Latency: %s", latency))
+}
+
+// cmdAnnounce posts a pre-launch announcement to the announcement channel.
+// Restricted to server administrators and the server owner.
+func (b *Bot) cmdAnnounce(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.GuildID == "" {
+		_ = respond(s, i, "`/announce` must be run inside a server text channel.")
+		return
+	}
+	if !b.isAdminOrOwner(s, i) {
+		_ = respond(s, i, "Only server administrators can post announcements.")
+		return
+	}
+
+	kind := ""
+	for _, opt := range i.ApplicationCommandData().Options {
+		if opt.Name == "message" {
+			kind, _ = opt.Value.(string)
+		}
+	}
+	msg, ok := preLaunchMessages[kind]
+	if !ok {
+		_ = respond(s, i, "Unknown announcement: "+kind)
+		return
+	}
+
+	channelID := b.announceChannelID()
+	if channelID == "" {
+		_ = respond(s, i, "No announcement channel set. Run `/setup` in the channel first.")
+		return
+	}
+
+	if _, err := s.ChannelMessageSend(channelID, msg); err != nil {
+		b.logger.Error("failed to post announcement", "kind", kind, "err", err)
+		_ = respond(s, i, "Failed to post announcement: "+err.Error())
+		return
+	}
+	b.logger.Info("posted announcement", "kind", kind, "channel", channelID)
+	_ = respond(s, i, "Posted **"+kind+"** to <#"+channelID+">.")
+}
+
+// isAdminOrOwner reports whether the interaction author is a server
+// administrator or the server owner.
+func (b *Bot) isAdminOrOwner(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
+	if i.Member != nil && i.Member.Permissions&discordgo.PermissionAdministrator != 0 {
+		return true
+	}
+	if i.GuildID != "" {
+		if guild, err := s.Guild(i.GuildID); err == nil && guild.OwnerID != "" {
+			if i.Member != nil && i.Member.User != nil && i.Member.User.ID == guild.OwnerID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (b *Bot) cmdSetup(s *discordgo.Session, i *discordgo.InteractionCreate) {
