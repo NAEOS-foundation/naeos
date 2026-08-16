@@ -97,7 +97,7 @@ Publikasikan, temukan, dan pasang ekstensi:
 
 Alat tambahan untuk alur kerja pengembangan yang lengkap:
 
-- 35+ perintah CLI
+- 65+ perintah CLI
 - Mode watch untuk hot-reload
 - Mesin diff untuk perbandingan spesifikasi
 - Mesin migrasi untuk versioning skema

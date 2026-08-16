@@ -14,7 +14,7 @@ Kartu referensi cepat untuk NAEOS — ideal untuk pengguna berpengalaman yang me
 go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
 
 # Buat proyek baru
-naeos init my-project
+naeos init --name my-project
 
 # Jalankan pipeline lengkap
 naeos run --input-file spec.yaml

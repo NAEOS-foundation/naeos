@@ -1,67 +1,118 @@
 ---
 title: Referensi CLI
 slug: cli-reference
-description: Referensi perintah lengkap untuk 35+ perintah CLI NAEOS.
+description: Referensi perintah lengkap untuk semua perintah CLI NAEOS.
 ---
 
-NAEOS menyediakan 35+ perintah CLI untuk setiap tahap pipeline rekayasa.
+NAEOS menyediakan CLI lengkap dengan perintah untuk setiap tahap pipeline rekayasa.
 
 ## Perintah Inti
 
 | Perintah | Deskripsi |
 |----------|-----------|
 | `naeos run` | Jalankan pipeline lengkap |
-| `naeos validate` | Validasi spesifikasi |
+| `naeos validate` | Validasi spesifikasi menggunakan pipeline NAEOS |
 | `naeos ai compile` | Kompilasi spesifikasi ke set instruksi AI |
-| `naeos context` | Generate bundel konteks AI |
+| `naeos context` | Generate bundel konteks AI dari spesifikasi |
 | `naeos test` | Jalankan tes untuk kode yang dihasilkan |
-| `naeos docgen` | Generate dokumentasi |
+| `naeos docgen` | Generate dokumentasi dari spesifikasi |
 
-## Perintah Proyek
+## Perintah Proyek & Spesifikasi
 
 | Perintah | Deskripsi |
 |----------|-----------|
-| `naeos init` | Inisialisasi konfigurasi |
-| `naeos create` | Buat proyek |
-| `naeos scaffold` | Generate scaffold |
-| `naeos export` | Ekspor artefak |
-| `naeos audit` | Audit spesifikasi |
-| `naeos diff` | Bandingkan spesifikasi |
-| `naeos repair` | Perbaiki spesifikasi |
+| `naeos init` | Inisialisasi proyek NAEOS baru atau generate config |
+| `naeos create` | Wizard pembuatan proyek interaktif |
+| `naeos scaffold` | Generate scaffold proyek starter |
+| `naeos import` | Impor spesifikasi dari format HCL ke NAEOS YAML/JSON |
+| `naeos export` | Ekspor artefak yang dihasilkan ke direktori |
+| `naeos audit` | Audit keamanan file yang dihasilkan atau sumber |
+| `naeos diff` | Bandingkan artefak yang dihasilkan dengan direktori output |
+| `naeos repair` | Perbaiki direktori output NAEOS |
+| `naeos lint` | Lint file spesifikasi |
+| `naeos inspect` | Periksa hasil pipeline NAEOS |
+| `naeos preview` | Pratinjau artefak yang dihasilkan tanpa menulisnya |
+| `naeos distributed` | Jalankan tugas pipeline dalam mode terdistribusi di banyak worker |
+
+## Build, Deploy & CI/CD
+
+| Perintah | Deskripsi |
+|----------|-----------|
+| `naeos build` | Build artefak dari spesifikasi |
+| `naeos cicd` | Generate konfigurasi pipeline CI/CD |
+| `naeos cloud` | Perintah deployment cloud |
+| `naeos deploy` | Deploy output pipeline ke lingkungan target |
+| `naeos gateway` | Manajemen API gateway |
+| `naeos graphql` | Mulai server API GraphQL |
 
 ## Perintah Manajemen
 
 | Perintah | Deskripsi |
 |----------|-----------|
-| `naeos mcp` | Mulai server MCP |
-| `naeos marketplace` | Jelajahi marketplace |
-| `naeos profile` | Kelola profil industri |
-| `naeos plugin` | Kelola plugin |
-| `naeos template` | Kelola template |
-| `naeos workspace` | Kelola workspace |
-| `naeos artifacts` | Kelola penyimpanan artefak |
-| `naeos migrate` | Migrasi skema |
-| `naeos rollback` | Kembalikan perubahan |
+| `naeos mcp` | Mulai server MCP (Model Context Protocol) |
+| `naeos marketplace` | Jelajahi dan instal template, profil, dan plugin |
+| `naeos profile` | Kelola profil industri spesifik |
+| `naeos plugin` | Kelola plugin NAEOS |
+| `naeos template` | Kelola template generasi, pustaka prompt, dan marketplace template |
+| `naeos workspace` | Kelola workspace multi-modul |
+| `naeos artifacts` | Kelola artefak proyek yang dihasilkan |
+| `naeos migrate` | Kelola migrasi skema spec |
+| `naeos migration` | Manajemen migrasi database |
+| `naeos rollback` | Kembalikan ke snapshot artefak sebelumnya |
+| `naeos lock` | Kelola file lock untuk build yang reproduktif |
 
-## Perintah Monitoring
-
-| Perintah | Deskripsi |
-|----------|-----------|
-| `naeos status` | Status pipeline |
-| `naeos doctor` | Pemeriksaan kesehatan sistem |
-| `naeos watch` | Pantau perubahan |
-| `naeos kernel` | Periksa kernel |
-| `naeos dashboard` | Mulai dashboard web |
-| `naeos api` | Mulai server API |
-
-## Perintah Utilitas
+## Monitoring & Operasi
 
 | Perintah | Deskripsi |
 |----------|-----------|
-| `naeos version` | Info versi |
-| `naeos ai` | Bantuan AI |
-| `naeos docs` | Dokumentasi |
-| `naeos completion` | Penyelesaian shell |
-| `naeos lock` | Kunci dependensi |
+| `naeos status` | Tampilkan status pipeline, sistem, dan proyek |
+| `naeos doctor` | Jalankan diagnostik pada lingkungan dan konfigurasi NAEOS |
+| `naeos watch` | Pantau perubahan spesifikasi dan jalankan ulang pipeline |
+| `naeos kernel` | Periksa kernel NAEOS dan service registry |
+| `naeos dashboard` | Mulai dashboard web NAEOS |
+| `naeos api` | Mulai server REST API NAEOS |
+| `naeos health` | Jalankan pemeriksaan kesehatan sistem dan diagnostik |
+| `naeos monitor` | Mulai server monitoring dengan metrik Prometheus |
+| `naeos observability` | Manajemen observability dan telemetri |
+| `naeos events` | Perintah event sourcing untuk audit trail dan replay pipeline |
+| `naeos history` | Tampilkan riwayat eksekusi pipeline dari event tersimpan |
+
+## Keamanan & Kepatuhan
+
+| Perintah | Deskripsi |
+|----------|-----------|
+| `naeos auth` | Manajemen autentikasi dan otorisasi |
+| `naeos security` | Manajemen keamanan dan rahasia (secrets) |
+| `naeos compliance` | Pelaporan kepatuhan dan ekspor audit log |
+| `naeos config` | Perintah manajemen konfigurasi |
+
+## Data & Integrasi
+
+| Perintah | Deskripsi |
+|----------|-----------|
+| `naeos db` | Manajemen koneksi dan migrasi database |
+| `naeos broker` | Manajemen message broker |
+| `naeos ws` | Mulai server WebSocket untuk pembaruan real-time |
+| `naeos lsp` | Mulai server NEIR Language Server Protocol |
+| `naeos supabase` | Manajemen backend Supabase |
+
+## Pengalaman Developer & Utilitas
+
+| Perintah | Deskripsi |
+|----------|-----------|
+| `naeos ai` | Perintah bantuan AI |
+| `naeos dx` | Alat pengalaman developer |
+| `naeos tui` | Alat antarmuka terminal (TUI) |
+| `naeos schema` | Operasi NEIR schema registry |
+| `naeos search` | Manajemen mesin pencarian full-text |
+| `naeos perf` | Alat optimasi performa |
+| `naeos benchmark` | Jalankan benchmark pipeline |
+| `naeos docs` | Generate dokumentasi proyek |
+| `naeos completion` | Generate skrip penyelesaian shell |
+| `naeos version` | Tampilkan versi NAEOS |
 
 Untuk penggunaan detail setiap perintah, jalankan `naeos <command> --help`.
+
+## Unduhan
+
+- [PDF Referensi CLI](/downloads/naeos-cli-reference.pdf)
