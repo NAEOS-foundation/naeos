@@ -13,6 +13,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
 | `social-posts.md` | Ready-to-post copy: X thread, LinkedIn, Discord/Slack, HN Show HN, Reddit, supporter email |
 | `assets/` | 5 gallery images (1600×900 PNG) + 240×240 logo — brand-accurate, ready to upload |
 | `assets/generate.js` | Script that renders all images (uses `sharp`); regenerate after brand/CLI changes |
+| `../discord-server/pre-launch.md` | Pre-launch content to grow the Discord community: social teasers, Discord announcements, Launch Champion call, sneeak-peek series (D-2 → D-0) |
 
 ## Quick start
 
@@ -29,6 +30,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
   - `v3.1.0-release.md` — the release being launched
   - `why-declarative-engineering.md` — explainer for the core idea
   - `ai-driven-development.md` — the AI integration story
+- **Discord server** — `launch/discord-server/` (`blueprint.md` server setup, `templates.md` paste-ready channel templates, `pre-launch.md` community growth content)
 - **Whitepaper** — `WHITEPAPER-EN.md` (English) / `WHITEPAPER.md` (Bahasa Indonesia)
 - **Screenshots source** — gallery images are pre-generated from real CLI output in `assets/`; regenerate with `node launch/producthunt/assets/generate.js`
 
