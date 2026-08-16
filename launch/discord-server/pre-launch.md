@@ -162,7 +162,7 @@ All times in **WIB (UTC+7)**. PT = WIB − 14h. Replace `[PH LINK]` once the pos
 Post one per day as a short thread. Keeps the server active pre-launch without
 launch-day noise.
 
-- **Day 1 (D-2):** "One spec, six languages" — show a tiny spec.yaml + the
+- **Day 1 (D-2):** "One spec, five languages" — show a tiny spec.yaml + the
   generated Go AND Python files side by side. The "wait, that's it?" moment.
 - **Day 2 (D-1):** "Your spec never lies" — `naeos validate` catches schema
   errors before codegen; show a broken spec → error → fix → green.
