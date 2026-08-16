@@ -20,8 +20,7 @@ vars = { HUGO_VERSION = "0.145.0", HUGO_EXTENDED = "true", HUGO_ENV = "productio
 directory = "site/public"
 binding = "ASSETS"
 
-# Page rules (optional - for redirects)
-[[env.production.routes]]
+# Route configuration for custom domain
+[[routes]]
 pattern = "naeos.dev/*"
-zone_id = "YOUR_ZONE_ID"
-custom_domain = true
+zone_id = "7d400c2262196f367392c4e3ba113ec1"
