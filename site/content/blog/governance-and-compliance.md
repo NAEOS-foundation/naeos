@@ -122,7 +122,7 @@ Generate a compliance report:
 
 ```bash
 naeos compliance report --framework soc2 --output report.json
-naeos compliance report --framework hipaa --output-format json
+naeos compliance report --framework hipaa --output hipaa-report.json
 ```
 
 ## SSO Integration

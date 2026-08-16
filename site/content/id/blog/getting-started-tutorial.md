@@ -26,11 +26,10 @@ go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
 Mulai dengan menginisialisasi proyek:
 
 ```bash
-naeos init --template microservices my-app
-cd my-app
+naeos init --template microservices --name my-app
 ```
 
-Ini membuat file `naeos.yaml`. Buka dan ganti isinya dengan:
+Ini membuat file konfigurasi `naeos.yaml`. Sekarang buat `spec.yaml` dengan modul dan layanan untuk proyek Anda:
 
 ```yaml
 project: my-app
@@ -66,7 +65,7 @@ generation:
 Periksa bahwa spesifikasi Anda valid:
 
 ```bash
-naeos validate
+naeos validate --input-file spec.yaml
 ```
 
 Anda akan melihat `✓ Specification is valid`.
@@ -76,7 +75,7 @@ Anda akan melihat `✓ Specification is valid`.
 Jalankan pipeline penuh untuk menghasilkan kode Go dan TypeScript:
 
 ```bash
-naeos run --input naeos.yaml
+naeos run --input-file spec.yaml
 ```
 
 Dalam hitungan detik, NAEOS menghasilkan:
@@ -110,7 +109,7 @@ out/
 Lihat representasi antara yang dibangun NAEOS dari spesifikasi Anda:
 
 ```bash
-naeos run --input naeos.yaml --verbose
+naeos run --input-file spec.yaml --verbose
 ```
 
 Model NEIR mencakup dependensi yang telah di-resolve, endpoint layanan, dan metadata arsitektur yang digunakan generator untuk menghasilkan kode yang benar dan konsisten di semua bahasa target.
@@ -118,6 +117,6 @@ Model NEIR mencakup dependensi yang telah di-resolve, endpoint layanan, dan meta
 ## Selanjutnya
 
 - Jelajahi [dokumentasi](/id/docs/getting-started/) untuk fitur spesifikasi lanjutan
-- Coba template berbeda: `naeos init --template fullstack my-app`
+- Coba template berbeda: `naeos init --template fullstack --name my-app`
 - Tambahkan kompilasi konteks AI dengan `naeos ai compile`
 - Bergabung dengan [komunitas di GitHub](https://github.com/NAEOS-foundation/naeos)

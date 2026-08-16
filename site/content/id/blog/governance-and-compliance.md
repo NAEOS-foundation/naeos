@@ -39,7 +39,7 @@ NAEOS menyediakan evaluasi kepatuhan bawaan untuk SOC 2 (8 kontrol), HIPAA (11 k
 
 ```bash
 naeos compliance report --framework soc2 --output report.json
-naeos compliance report --framework hipaa --output-format json
+naeos compliance report --framework hipaa --output hipaa-report.json
 ```
 
 ## Integrasi SSO

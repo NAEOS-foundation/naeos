@@ -26,11 +26,10 @@ go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest
 Start by initializing a project:
 
 ```bash
-naeos init --template microservices my-app
-cd my-app
+naeos init --template microservices --name my-app
 ```
 
-This creates a `naeos.yaml` file. Open it and replace the contents with:
+This creates a `naeos.yaml` configuration file. Now create a `spec.yaml` with the modules and services for your project:
 
 ```yaml
 project: my-app
@@ -66,7 +65,7 @@ generation:
 Check that your spec is valid:
 
 ```bash
-naeos validate
+naeos validate --input-file spec.yaml
 ```
 
 You should see `✓ Specification is valid`.
@@ -76,7 +75,7 @@ You should see `✓ Specification is valid`.
 Run the full pipeline to generate Go and TypeScript code:
 
 ```bash
-naeos run --input naeos.yaml
+naeos run --input-file spec.yaml
 ```
 
 In seconds, NAEOS produces:
@@ -110,7 +109,7 @@ out/
 See the intermediate representation NAEOS builds from your spec:
 
 ```bash
-naeos run --input naeos.yaml --verbose
+naeos run --input-file spec.yaml --verbose
 ```
 
 The NEIR model includes resolved dependencies, service endpoints, and architecture metadata that the generators use to produce correct, consistent code across all target languages.
@@ -118,6 +117,6 @@ The NEIR model includes resolved dependencies, service endpoints, and architectu
 ## What's Next
 
 - Explore the [documentation](/docs/getting-started/) for advanced spec features
-- Try different templates: `naeos init --template fullstack my-app`
+- Try different templates: `naeos init --template fullstack --name my-app`
 - Add AI context compilation with `naeos ai compile`
 - Join the [community on GitHub](https://github.com/NAEOS-foundation/naeos)
