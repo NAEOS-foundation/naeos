@@ -12,6 +12,21 @@ Discord `pre-launch.md` — reuse the same messaging.
 - Workspace URL (choose): `naeos-community`
 - Icon: `brand/logo-mark.svg` → `launch/slack-server/assets/workspace-icon.png` (if generated)
 
+## Automated setup (`tools/slack-setup`)
+
+Once the workspace exists, provision it automatically:
+
+1. Create a Slack app (`https://api.slack.com/apps` → From scratch → `NAEOS Bot`).
+2. Add OAuth scopes: `channels:manage`, `channels:read`, `channels:join`, `chat:write`, `users:read`; Install to workspace.
+3. Set `NAEOS_SLACK_TOKEN=<xoxb-...>` in `~/.env` (gitignored).
+4. Run:
+   ```bash
+   set -a; source ~/.env; set +a
+   go run ./tools/slack-setup -channels   # creates the blueprint channels
+   go run ./tools/slack-setup -messages   # posts welcome/rules/pre-launch to #announcements
+   ```
+   Idempotent — safe to re-run.
+
 ---
 
 ## 1. Channel structure
