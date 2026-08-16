@@ -10,7 +10,7 @@ Ready-to-post copy for every channel. Replace placeholders, adapt tone per chann
 >
 > NAEOS is a declarative engineering platform: describe your system once, and it builds, validates, and evolves real software — for humans and AI.
 >
-> Upvote + comment here: [PH LINK]
+> Upvote + comment here: https://www.producthunt.com/posts/naeos
 
 Tweet 2 (hook):
 > The problem: your spec doc and your codebase slowly drift apart until the docs are fiction and every new engineer reverse-engineers the system.
@@ -30,7 +30,7 @@ Tweet 6 (try it):
 >
 > Docs: https://docs.naeos.dev — GitHub: https://github.com/NAEOS-foundation/naeos
 >
-> Upvote on Product Hunt if it resonates: [PH LINK] 🙏
+> Upvote on Product Hunt if it resonates: https://www.producthunt.com/posts/naeos 🙏
 
 ## 2. LinkedIn post
 
@@ -41,13 +41,13 @@ Tweet 6 (try it):
 > The idea came from a familiar pain: specs rot, codebases drift, and knowledge lives only in people's heads. We built the pipeline that keeps intent and implementation aligned for the whole lifecycle.
 >
 > Open source, Apache 2.0, v3.1.0 out today. Try it: https://naeos.dev
-> Upvote / comment: [PH LINK]
+> Upvote / comment: https://www.producthunt.com/posts/naeos
 
 ## 3. Discord / Slack communities (short, community-respecting)
 
 > Hey all — we just launched NAEOS on Product Hunt. It's an open-source declarative engineering platform: write a spec once, and it generates validated multi-language code (Go/TS/Python/Java/Rust) plus AI instruction sets for Copilot, Claude Code, Cursor, etc.
 >
-> Happy to answer any technical questions here or in the thread. If it's useful, an upvote helps a lot: [PH LINK]
+> Happy to answer any technical questions here or in the thread. If it's useful, an upvote helps a lot: https://www.producthunt.com/posts/naeos
 >
 > Community Discord: https://discord.gg/WnUWmm7XMv
 
@@ -72,7 +72,7 @@ Tweet 6 (try it):
 > NAEOS: write one spec, get validated multi-language code (Go/TS/Python/Java/Rust), governance/audit trails, docs, and AI instruction sets for 6 tools + MCP server. The spec stays the source of truth for the project's whole lifecycle (watch mode, diff engine, schema migrations).
 >
 > Written in Go, Apache 2.0: https://github.com/NAEOS-foundation/naeos
-> Product Hunt: [PH LINK]
+> Product Hunt: https://www.producthunt.com/posts/naeos
 >
 > What's the worst part of spec/code drift you've dealt with? Genuinely curious — that's the problem space we're in.
 
@@ -84,7 +84,7 @@ Tweet 6 (try it):
 >
 > NAEOS just went live on Product Hunt. If you have 30 seconds, an upvote makes a huge difference for an open-source project like ours:
 >
-> [PH LINK]
+> https://www.producthunt.com/posts/naeos
 >
 > And if you've tried the quick start, a comment about your experience (good or bad) helps more than the upvote.
 >

@@ -31,7 +31,7 @@ Server invite for new members: **https://discord.gg/WnUWmm7XMv** (no expiry, unl
 
 ## Launch-day brief (send D-1 / D-day 00:00 PT)
 
-> 🎉 It's live: [PH LINK]
+> 🎉 It's live: https://www.producthunt.com/posts/naeos
 > If you can, hit upvote + leave a comment in the next few hours — the first 6
 > hours decide the rank. Thank you!
 

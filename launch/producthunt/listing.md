@@ -47,7 +47,7 @@ And the spec stays the source of truth for the entire lifecycle. Watch mode re-r
 - **Spec Language v2** — variable interpolation (`${var}`), environment resolution (`$env{VAR}`), cross-references (`$ref{path}`), multi-file composition (`$include{file}`), custom functions (`$fn{name(args)}`), and conditional sections (`$if` / `$endif`)
 - **Multi-language generation** — Go, TypeScript, Python, Java, Rust from one specification
 - **AI compiler** — instruction sets for 6 AI tools (Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode), MCP server, LLM-optimized context bundles
-- **35+ CLI commands** — run, validate, compile, context, test, docgen, mcp, marketplace, diff, watch, migrate, and more
+- **65+ CLI commands** — run, validate, compile, context, test, docgen, mcp, marketplace, diff, watch, migrate, and more
 - **NEIR-aware LSP server** — autocomplete, real-time diagnostics, hover docs, and go-to-definition for `.naeos.yaml` files
 - **Profile & plugin marketplaces** — 5 built-in industry profiles (SaaS, AI Agent, FinTech, Healthcare, Government), WASM plugin SDK with official example plugins
 - **Governance built-in** — policy evaluator, artifact review, and full audit trail
