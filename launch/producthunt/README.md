@@ -8,6 +8,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
 |------|---------------|
 | `listing.md` | Core submission: name, tagline options (≤60 chars), publish-ready description, topics, gallery image plan, links |
 | `first-comment.md` | Maker's kickoff comment to anchor the discussion at 00:01 PT |
+| `comment-thread.md` | Day-of comment thread: technical deep dive, AI angle, honest trade-offs, roadmap ask + reply templates |
 | `maker-bio.md` | PH profile: name, links, bio options, about section (fill in placeholders) |
 | `launch-checklist.md` | Full timeline: D-7 pre-launch, launch-day hour-by-hour, D+1–D+7 post-launch, metrics |
 | `social-posts.md` | Ready-to-post copy: X thread, LinkedIn, Discord/Slack, HN Show HN, Reddit, supporter email |
