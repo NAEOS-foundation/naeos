@@ -1,0 +1,28 @@
+name = "naeos"
+type = "site"
+account_id = "YOUR_ACCOUNT_ID"
+workers_dev = true
+
+# Build configuration
+[build]
+command = "cd site && hugo --minify"
+cwd = "."
+watch_paths = ["site/**/*.md", "site/**/*.toml", "site/**/*.yaml"]
+
+# Environment variables
+[env.production]
+name = "naeos-production"
+vars = { HUGO_VERSION = "0.145.0", HUGO_EXTENDED = "true", HUGO_ENV = "production" }
+route = "docs.naeos.dev/*"
+zone_id = "YOUR_ZONE_ID"
+
+# Asset bindings (optional - for static assets)
+[[assets]]
+directory = "site/public"
+binding = "ASSETS"
+
+# Page rules (optional - for redirects)
+[[env.production.routes]]
+pattern = "naeos.dev/*"
+zone_id = "YOUR_ZONE_ID"
+custom_domain = true
