@@ -31,6 +31,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
   - `why-declarative-engineering.md` — explainer for the core idea
   - `ai-driven-development.md` — the AI integration story
 - **Discord server** — `launch/discord-server/` (`blueprint.md` server setup, `templates.md` paste-ready channel templates, `pre-launch.md` community growth content)
+- **Slack workspace** — `launch/slack-server/blueprint.md` (channel structure, roles, onboarding, paste-ready messages)
 - **Whitepaper** — `WHITEPAPER-EN.md` (English) / `WHITEPAPER.md` (Bahasa Indonesia)
 - **Screenshots source** — gallery images are pre-generated from real CLI output in `assets/`; regenerate with `node launch/producthunt/assets/generate.js`
 
