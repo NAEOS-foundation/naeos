@@ -1,26 +1,12 @@
 name = "naeos-docs"
-type = "site"
 account_id = "31ddf36d0d0fdfb04cb4f88dbcf3909f"
-workers_dev = true
 pages_build_output_dir = "site/public"
 
 # Build configuration
 [build]
 command = "cd site && hugo --minify"
 cwd = "."
-watch_paths = ["site/**/*.md", "site/**/*.toml", "site/**/*.yaml"]
 
 # Environment variables
 [env.production]
-name = "naeos-docs-prod"
 vars = { HUGO_VERSION = "0.145.0", HUGO_EXTENDED = "true", HUGO_ENV = "production" }
-
-# Asset bindings (optional - for static assets)
-[[assets]]
-directory = "site/public"
-binding = "ASSETS"
-
-# Route configuration for custom domain
-[[routes]]
-pattern = "naeos.dev/*"
-zone_id = "7d400c2262196f367392c4e3ba113ec1"
