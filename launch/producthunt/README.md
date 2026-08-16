@@ -11,6 +11,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
 | `maker-bio.md` | PH profile: name, links, bio options, about section (fill in placeholders) |
 | `launch-checklist.md` | Full timeline: D-7 pre-launch, launch-day hour-by-hour, D+1–D+7 post-launch, metrics |
 | `social-posts.md` | Ready-to-post copy: X thread, LinkedIn, Discord/Slack, HN Show HN, Reddit, supporter email |
+| `support-emails.md` | D-1 support-list emails: teaser, co-maker invite, launch-day brief (personalizable) |
 | `assets/` | 5 gallery images (1600×900 PNG) + 240×240 logo — brand-accurate, ready to upload |
 | `assets/generate.js` | Script that renders all images (uses `sharp`); regenerate after brand/CLI changes |
 | `../discord-server/pre-launch.md` | Pre-launch content to grow the Discord community: social teasers, Discord announcements, Launch Champion call, sneeak-peek series (D-2 → D-0) |
