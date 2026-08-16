@@ -77,6 +77,17 @@ jobs:
         run: |
           sha256sum naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 naeos-windows-amd64.exe > checksums.txt
 
+      - name: Package tar.gz archives (installer format)
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          for pair in "linux-amd64:linux:amd64" "linux-arm64:linux:arm64" "darwin-amd64:darwin:amd64" "darwin-arm64:darwin:arm64"; do
+            bin="${pair%%:*}"; rest="${pair#*:}"; os="${rest%%:*}"; arch="${rest#*:}"
+            mkdir -p "arch/$bin"
+            cp "naeos-$bin" "arch/$bin/naeos"
+            cp LICENSE README.md CHANGELOG.md "arch/$bin/"
+            tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md naeos
+          done
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -89,39 +100,41 @@ jobs:
             ### Installation
 
             ```bash
+            curl -fsSL https://naeos.dev/install.sh | sh
+            ```
+
+            Or with Go:
+
+            ```bash
             go install github.com/NAEOS-foundation/naeos/cmd/naeos@${{ github.ref_name }}
             ```
 
             ### Binary Downloads
 
-            | Platform | Architecture | Binary |
-            |----------|-------------|--------|
-            | Linux | amd64 | `naeos-linux-amd64` |
-            | Linux | arm64 | `naeos-linux-arm64` |
-            | macOS | amd64 | `naeos-darwin-amd64` |
-            | macOS | arm64 | `naeos-darwin-arm64` |
+            | Platform | Architecture | Archive |
+            |----------|-------------|---------|
+            | Linux | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_amd64.tar.gz` |
+            | Linux | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz` |
+            | macOS | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz` |
+            | macOS | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz` |
             | Windows | amd64 | `naeos-windows-amd64.exe` |
 
-            ### What's New in v3.0.0
+            ### What's New in v3.1.0
 
-            - **NEIR v2.0 specification** — conditional modules (`Condition` + `ConditionalResolver`), environment profiles (`ActiveProfile`/`Inherits` + `ProfileResolver`), `$if{}/$endif` directives
-            - **Enterprise auth** — OAuth2/OIDC provider, SSO (OIDC, SAML 2.0, LDAP with BER parsing), RBAC with hierarchy + deny rules, 4 compliance role templates
-            - **Compliance suite** — SOC2/HIPAA/GDPR frameworks, audit hashed-chain + AES-256-GCM encrypted auditors, cloud export (AWS SigV4, GCS HMAC, Azure SharedKey), `naeos compliance report/verify/cloud-export`
-            - **Supabase backend integration** — DB adapter, Auth (GoTrue), Storage, Edge Functions, Admin API, CLI `naeos supabase` group
-            - **NEIR-aware LSP server** — autocomplete, diagnostics, hover, go-to-definition, code actions
-            - **VS Code extension generator** — `naeos dx vscode-gen` with TextMate grammar + LSP client
-            - **Pipeline performance** — parallel `CompileAll` (3× speedup), stage caching, lazy NEIR loading, `--profile`/`--memprofile` profiling
-            - **Distributed builds** — `naeos build --distributed --workers N` runs real pipelines per module
-            - **NEIR diff visualization** — `naeos diff --visual` side-by-side tree view
-            - **Plugin ecosystem** — official plugin registry on GitHub Pages, example plugins (hello/spec-lint/artifact-stats), WASM sandbox support
-            - **TUI live dashboard** — `naeos dashboard` with WebSocket live updates
-            - **Test coverage 86.9% overall** — 13 target packages ≥80% (websocket 95.8%, configschema 94.7%, auth 92.5%)
+            - **Pipeline caching** — `naeos run --cache-dir <dir>` caches intermediate stage results; rebuilds reuse cached output for faster iteration
+            - **Pipeline profiling on `naeos run`** — `--profile`/`--profile-out` capture per-stage timing, `--pprof` exposes a pprof HTTP server for live heap/CPU inspection
+            - **Architecture patterns** — monolithic, microservices, and serverless patterns in the NEIR model
+            - **WASM plugin hardening** — plugin host requires exported metadata symbols; expanded WASM sandbox support
           files: |
             naeos-linux-amd64
             naeos-linux-arm64
             naeos-darwin-amd64
             naeos-darwin-arm64
             naeos-windows-amd64.exe
+            naeos_${{ steps.version.outputs.VERSION }}_linux_amd64.tar.gz
+            naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz
+            naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz
+            naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz
             checksums.txt
           draft: false
           prerelease: false

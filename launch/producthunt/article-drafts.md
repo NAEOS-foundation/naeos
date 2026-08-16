@@ -16,7 +16,7 @@ Go to `proofofusefulness.com` → **Submit Project**:
 | URL | https://github.com/NAEOS-foundation/naeos |
 | Website | https://naeos.dev |
 | Tech stack | Go, YAML/JSON, WASM plugins, LSP, MCP server |
-| Traction proof | 391 commits, [N] stars, [N] forks, v3.0.0 released [date] |
+| Traction proof | 391 commits, [N] stars, [N] forks, v3.1.0 released [date] |
 | Short description | Declarative engineering platform: write a spec once, get validated multi-language code (Go/TS/Py/Java/Rust), governance, docs, and AI instruction sets — for humans and AI |
 
 Then convert to a HackerNoon draft and polish with the article below.
@@ -65,7 +65,7 @@ Then convert to a HackerNoon draft and polish with the article below.
 > Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode — and exposes an MCP
 > server. AI assistants work from an accurate model of your system, not a guess.
 >
-> ## What's in v3.0.0
+> ## What's in v3.1.0
 >
 > - Pipeline profiling + stage caching (rebuilds reuse cached results)
 > - NEIR-aware LSP server (autocomplete, diagnostics, go-to-definition for `.naeos.yaml`)

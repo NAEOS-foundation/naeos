@@ -21,7 +21,7 @@ Tweet 3 (the flip):
 Tweet 4 (AI):
 > It also compiles the model into instruction sets for 6 AI tools — Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode — plus an MCP server. AI assistants work from an accurate model, not a guess.
 
-Tweet 5 (v3.0.0):
+Tweet 5 (v3.1.0):
 > Today's release: pipeline profiling + stage caching, a NEIR-aware LSP server, distributed builds, VS Code extension generation, and official example plugins.
 
 Tweet 6 (try it):
@@ -40,7 +40,7 @@ Tweet 6 (try it):
 >
 > The idea came from a familiar pain: specs rot, codebases drift, and knowledge lives only in people's heads. We built the pipeline that keeps intent and implementation aligned for the whole lifecycle.
 >
-> Open source, Apache 2.0, v3.0.0 out today. Try it: https://naeos.dev
+> Open source, Apache 2.0, v3.1.0 out today. Try it: https://naeos.dev
 > Upvote / comment: [PH LINK]
 
 ## 3. Discord / Slack communities (short, community-respecting)
@@ -59,7 +59,7 @@ Tweet 6 (try it):
 >
 > One spec.yaml produces Go, TypeScript, Python, Java, or Rust code, governance checks, docs, and AI context — and a compiler emits instruction sets for 6 AI tools plus an MCP server so agents work from the model.
 >
-> v3.0.0 today: stage caching, a NEIR-aware LSP server, distributed builds, VS Code extension generation.
+> v3.1.0 today: stage caching, a NEIR-aware LSP server, distributed builds, VS Code extension generation.
 >
 > https://github.com/NAEOS-foundation/naeos — https://naeos.dev
 >

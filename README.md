@@ -251,6 +251,7 @@ docs/               # Documentation (56 NES specs)
 - [x] v2.1.0 — RBAC, multi-tenant workspaces, schema registry API, industry profiles, compliance export
 - [x] v2.2.0 — Supabase backend integration, lint zero-failure, fuzz testing, coverage-gated CI
 - [x] v3.0.0 — Pipeline profiling, stage caching, schema-based validation, NEIR-aware LSP server, official plugin examples
+- [x] v3.1.0 — Pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns, WASM plugin hardening
 
 For upcoming work, see [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) and [ROADMAP.md](ROADMAP.md).
 
@@ -260,4 +261,4 @@ Apache License 2.0
 
 ## Status
 
-🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v3.0.0 (Pipeline profiling, stage caching, NEIR-aware LSP server, official plugin examples).
+🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v3.1.0 (Pipeline caching on `naeos run`, run-level profiling, architecture patterns, WASM plugin hardening).

@@ -12,7 +12,7 @@ compiled Aug 2026 — verify each is still active before pitching. Aim to pitch
 |-----------|-------|-----------------|--------------|
 | **Golang Weekly** (golangweekly.substack.com) | Go news, tools, projects | Curated weekly | Email `golangweekly@inboxshield.ca` with short description — regularly features community projects |
 | **GoDaily** (godaily.dev) | Daily Go news (releases, advisories) | ~255 devs | Self-hosted/curated; submit via RSS/feed contact |
-| **Dev Signal** (thedevsignal.com) | AI tools for developers | ~4,200 devs | Monitors GitHub releases — release v3.0.0 + tag triggers pickup; reach via site contact |
+| **Dev Signal** (thedevsignal.com) | AI tools for developers | ~4,200 devs | Monitors GitHub releases — release v3.1.0 + tag triggers pickup; reach via site contact |
 | **The Open Source Drop** (opensourcedrop.com) | New open-source tools, analyzed | Weekly brief | Tracks trending tools (915 tracked) — aim for a trending week |
 | **Signal Brief** (thesignalbrief.co) | AI & dev tools intelligence | Weekly, 200+ stories filtered | Contact via site; free/weekly |
 | **AI Catchup** (aicatchup.com/newsletter) | AI tools & practices | Weekly | Submit via site |
@@ -45,7 +45,7 @@ compiled Aug 2026 — verify each is still active before pitching. Aim to pitch
 > sets for Copilot/Claude Code/Cursor/Gemini CLI/Codex/OpenCode + an MCP server.
 >
 > **The ask:** a free account to try, or a guest-post/feature slot. Launching on
-> Product Hunt 18 Aug with v3.0.0 (stage caching, NEIR-aware LSP, distributed
+> Product Hunt 18 Aug with v3.1.0 (stage caching, NEIR-aware LSP, distributed
 > builds). Happy to send a demo or answer questions.
 >
 > — Bayu, NAEOS founder (naeos.dev)
@@ -53,6 +53,6 @@ compiled Aug 2026 — verify each is still active before pitching. Aim to pitch
 ## Timing
 
 - **Now–D-5 (13 Aug):** pitch newsletters (they plan weeks ahead)
-- **D-day (18 Aug):** GitHub v3.0.0 tag goes live — Dev Signal, Open Source Drop
+- **D-day (18 Aug):** GitHub v3.1.0 tag goes live — Dev Signal, Open Source Drop
   may auto-pick it up
 - **D+1:** follow up with interested newsletters; share PH results

@@ -105,7 +105,7 @@ async function hero() {
   <text x="90" y="300" font-family="${SANS}" font-size="44" font-weight="700" fill="${C.text}">Specify Once. Build Anywhere.</text>
   <text x="90" y="360" font-family="${SANS}" font-size="24" fill="${C.muted}">A declarative engineering platform that turns one specification into validated,</text>
   <text x="90" y="396" font-family="${SANS}" font-size="24" fill="${C.muted}">multi-language software — for humans and AI.</text>
-  ${chip(90, 480, 'v3.0.0', C.cyan, C.panel)}
+  ${chip(90, 480, 'v3.1.0', C.cyan, C.panel)}
   ${chip(210, 480, 'Open Source · Apache 2.0', C.green, C.panel)}
   ${chip(480, 480, 'Go · Single Binary', C.violet, C.panel)}
   <g transform="translate(880,90)">

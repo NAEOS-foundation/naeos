@@ -16,7 +16,7 @@ Paste-ready emails/forms. All contacts verified as public submission channels
 > production-quality code in Go, TypeScript, Python, Java, and Rust — plus
 > governance checks, docs, and audit trails.
 >
-> **What's new:** v3.0.0 just released — pipeline profiling + stage caching,
+> **What's new:** v3.1.0 just released — pipeline profiling + stage caching,
 > a NEIR-aware LSP server, distributed builds, VS Code extension generation, and
 > official example plugins.
 >

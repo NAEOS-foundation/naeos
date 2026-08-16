@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-16
+
+### Added
+- **Pipeline caching on `naeos run`** — `--cache-dir <dir>` caches `schedule`/`generate` stage results keyed by NEIR hash; rebuilds with unchanged inputs reuse cached output.
+- **Pipeline profiling on `naeos run`** — `--profile` enables per-stage timing, `--profile-out <file>` writes the profile JSON, `--pprof <addr>` starts a pprof HTTP server for live heap/CPU inspection.
+- **Architecture patterns** — monolithic, microservices, and serverless patterns added to the NEIR model (`neir.ArchitecturePattern`).
+- **WASM plugin hardening** — plugin host requires exported metadata symbols; expanded WASM sandbox support.
+
+### Changed
+- **Website migrated to Cloudflare Pages** — docs served from `docs.naeos.dev`, root domain `naeos.dev` redirects; install script served from `/install.sh`.
+- **Release archives** — GitHub releases now include `naeos_<version>_<os>_<arch>.tar.gz` archives matching the installer format.
+
 ## [3.0.0] - 2026-08-08
 
 ### Added

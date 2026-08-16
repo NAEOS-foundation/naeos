@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.0.0 (rilis terbaru), aktif dikembangkan menuju v2.0.0 Dashboard & Distributed Builds |
+| **Versi Platform** | v3.1.0 (rilis terbaru), aktif dikembangkan menuju v2.0.0 Dashboard & Distributed Builds |
 
 ---
 
@@ -23,7 +23,7 @@ NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifika
 
 Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan jaminan *traceability* dari kebutuhan hingga deployment, serta integrasi mendalam dengan ekosistem AI coding agent.
 
-Platform ini telah mencapai **v3.0.0** dengan ekosistem fitur yang mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, hingga kepatuhan enterprise (SOC 2, HIPAA, GDPR).
+Platform ini telah mencapai **v3.1.0** dengan ekosistem fitur yang mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, hingga kepatuhan enterprise (SOC 2, HIPAA, GDPR).
 
 ---
 
@@ -408,6 +408,7 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 - **v1.x** — Stabilitas: database layer (PostgreSQL/MySQL/SQLite), 999 lint issues resolved, production hardening, prompt library, observability dashboard
 - **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), RBAC hierarkis, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, audit hashed chain + encrypted, stage caching, LSP, VS Code extension, distributed real builds, pipeline/memory profiling
 - **v3.0.0** — Rilis ekosistem: 20+ fitur baru, changelog, migration guide, deprecation notices
+- **v3.1.0** — Rilis performa: pipeline caching pada `naeos run`, profiling tingkat run (`--profile`/`--pprof`), pola arsitektur (monolithic/microservices/serverless), penguatan plugin WASM
 
 ### Metrik kesehatan platform (saat ini)
 
@@ -466,4 +467,4 @@ Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus be
 
 *NAEOS Foundation — "Engineering With Discipline"*
 
-*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.0.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
+*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.1.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*

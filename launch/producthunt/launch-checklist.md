@@ -25,7 +25,7 @@ A step-by-step timeline for a successful Product Hunt launch. PH launches are mo
   cd my-app
   naeos run --input-file spec.yaml
   ```
-- [ ] Confirm `naeos version` reports v3.0.0 and the latest release is tagged on GitHub
+- [ ] Confirm `naeos version` reports v3.1.0 and the latest release is tagged on GitHub
 - [ ] Have 1–2 community members (not you) dry-run the quick start and note friction — fix anything they trip on
 
 ### D-4 to D-2 — rally your audience

@@ -45,7 +45,7 @@ Tweet 6:
 >
 > The idea came from a familiar pain: specs rot, codebases drift, and knowledge lives only in people's heads. We built the pipeline that keeps intent and implementation aligned for the whole lifecycle.
 >
-> Open source, Apache 2.0, v3.0.0 out today. Try it: https://naeos.dev
+> Open source, Apache 2.0, v3.1.0 out today. Try it: https://naeos.dev
 > Upvote / comment: https://www.producthunt.com/posts/naeos
 
 ---
@@ -82,7 +82,7 @@ Hacker News (Show HN — post later in the day, not the same hour):
 >
 > One spec.yaml produces Go, TypeScript, Python, Java, or Rust code, governance checks, docs, and AI context — and a compiler emits instruction sets for 6 AI tools plus an MCP server so agents work from the model.
 >
-> v3.0.0 today: stage caching, a NEIR-aware LSP server, distributed builds, VS Code extension generation.
+> v3.1.0 today: stage caching, a NEIR-aware LSP server, distributed builds, VS Code extension generation.
 >
 > https://github.com/NAEOS-foundation/naeos — https://naeos.dev
 >

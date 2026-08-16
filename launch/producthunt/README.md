@@ -26,7 +26,7 @@ Everything you need to launch NAEOS on Product Hunt — listing content, maker b
 - **Brand assets** — `brand/` (logo variants, `brand.json` colors: dark `#05050a`, gradient `#08d6ff → #9333ea`)
 - **Website** — `site/` (Hugo site at https://naeos.dev)
 - **Launch-adjacent blog posts** — `site/content/blog/`:
-  - `v3.0.0-release.md` — the release being launched
+  - `v3.1.0-release.md` — the release being launched
   - `why-declarative-engineering.md` — explainer for the core idea
   - `ai-driven-development.md` — the AI integration story
 - **Whitepaper** — `WHITEPAPER-EN.md` (English) / `WHITEPAPER.md` (Bahasa Indonesia)

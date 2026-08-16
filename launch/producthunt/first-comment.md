@@ -10,7 +10,7 @@ Hi Product Hunt! Bayu here, the maker of NAEOS. I'm genuinely excited (and a lit
 
 **The idea:** flip it. Make the specification the source of truth, and make the tooling so good that keeping the spec accurate is the path of least resistance. That's NAEOS — you describe your system once, and it parses, validates, builds an internal engineering model (NEIR), and generates real code in Go, TypeScript, Python, Java, and Rust. Not a scaffold — a consistent, validated, auditable pipeline.
 
-**What's in v3.0.0 (the version we're launching with):**
+**What's in v3.1.0 (the version we're launching with):**
 - Pipeline profiling, memory analysis, and stage caching — rebuilds reuse cached results
 - A NEIR-aware LSP server with autocomplete, diagnostics, and go-to-definition for `.naeos.yaml`
 - Distributed builds with `naeos build --distributed --workers N`
