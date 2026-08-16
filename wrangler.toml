@@ -1,7 +1,8 @@
-name = "naeos"
+name = "naeos-docs"
 type = "site"
-account_id = "YOUR_ACCOUNT_ID"
+account_id = "31ddf36d0d0fdfb04cb4f88dbcf3909f"
 workers_dev = true
+pages_build_output_dir = "site/public"
 
 # Build configuration
 [build]
@@ -11,10 +12,8 @@ watch_paths = ["site/**/*.md", "site/**/*.toml", "site/**/*.yaml"]
 
 # Environment variables
 [env.production]
-name = "naeos-production"
+name = "naeos-docs-prod"
 vars = { HUGO_VERSION = "0.145.0", HUGO_EXTENDED = "true", HUGO_ENV = "production" }
-route = "docs.naeos.dev/*"
-zone_id = "YOUR_ZONE_ID"
 
 # Asset bindings (optional - for static assets)
 [[assets]]
