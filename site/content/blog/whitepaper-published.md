@@ -24,7 +24,6 @@ All diagrams are rendered with Mermaid and validated automatically in CI.
 ## Where to Read
 
 - **Website**: [English](/whitepaper/) · [Bahasa Indonesia](/id/whitepaper/)
-- **PDF**: [English](/downloads/naeos-whitepaper.pdf) · [Bahasa Indonesia](/downloads/naeos-whitepaper-id.pdf)
 - **Repository**: [WHITEPAPER-EN.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER-EN.md) · [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md)
 
 We hope this document helps engineers, architects, and organizations evaluate NAEOS as their platform engineering foundation. Feedback and suggestions are always welcome — open an issue or join the discussion on GitHub.
