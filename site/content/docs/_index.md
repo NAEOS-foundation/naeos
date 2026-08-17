@@ -31,7 +31,7 @@ Welcome to the NAEOS documentation. Here you'll find everything you need to get 
 
 ## Reference
 
-- **[CLI Reference](/docs/cli-reference/)** — Complete command reference for all 65+ CLI commands
+- **[CLI Reference](/docs/cli-reference/)** — Complete command reference for all 67 CLI commands
 - **[API Reference](/docs/api/)** — Interactive API documentation with Swagger UI
 - **[Cloud Deployment](/docs/cloud-deployment/)** — Deploy to AWS, GCP, or Azure
 - **[Distributed Builds](/docs/distributed-builds/)** — Parallelize pipeline execution across workers

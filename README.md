@@ -97,7 +97,7 @@ naeos ai compile --input-file spec.yaml --target opencode
 - **Audit Trail** — traceability
 
 ### Developer Tools
-- **65+ CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, etc.
+- **67 CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, etc.
 - **Watch Mode** — hot-reload pipeline on spec changes
 - **Diff Engine** — compare specs with colorized output
 - **Migration Engine** — schema version transforms (v0.1→v0.2→v0.3)
@@ -241,7 +241,7 @@ docs/               # Documentation (56 NES specs)
 - [x] v0.2.0 — Compiler Foundation (6 adapters, artifact store, profiles)
 - [x] v0.3.0 — Core Specification (Spec v2, validation, context bundles)
 - [x] v0.4.0 — MCP Server, migration engine, marketplace, benchmarks
-- [x] v1.0.0 — Stable release (test coverage, security hardening, 65+ commands)
+- [x] v1.0.0 — Stable release (test coverage, security hardening, 67 commands)
 - [x] v1.1.0 — Critical fixes (WebSocket races, interface{}→any, godoc, OpenAPI)
 - [x] v1.2.0 — Database layer (PostgreSQL/MySQL/SQLite, retry, logging, health checks)
 - [x] v1.3.0 — Quality, Correctness & Production Readiness (code gen fixes, security audit, CLI --output json/yaml)

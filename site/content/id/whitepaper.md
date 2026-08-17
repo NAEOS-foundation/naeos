@@ -416,7 +416,7 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 |--------|-------|
 | Test coverage | ~77% (target ≥85%) |
 | Lint pass rate | 100% (17 linters, termasuk gosec & errorlint) |
-| CLI commands | 65+ (150+ halaman dokumentasi CLI) |
+| CLI commands | 67 (150+ halaman dokumentasi CLI) |
 | Test coverage CLI | ~46% (target 100%) |
 | Package coverage ≥80% | 6 (supabase, messagequeue, marketplace, mcp, migration, dan lainnya) |
 

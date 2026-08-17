@@ -417,7 +417,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 |--------|-------|
 | Test coverage | ~77% (target ≥85%) |
 | Lint pass rate | 100% (17 linters, incl. gosec & errorlint) |
-| CLI commands | 65+ (150+ CLI doc pages) |
+| CLI commands | 67 (150+ CLI doc pages) |
 | CLI test coverage | ~46% (target 100%) |
 | Packages ≥80% coverage | 6 (supabase, messagequeue, marketplace, mcp, migration, and more) |
 

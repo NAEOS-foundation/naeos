@@ -135,7 +135,7 @@ This release focuses on developer experience and platform hardening:
 
 ### The Numbers
 
-- **65+ CLI commands** — run, validate, compile, context, test, docgen, mcp, marketplace, diff, watch, migrate, and more
+- **67 CLI commands** — run, validate, compile, context, test, docgen, mcp, marketplace, diff, watch, migrate, and more
 - **5 languages** — Go, TypeScript, Python, Java, Rust
 - **6 AI tools** — Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode
 - **86.9% test coverage** with race detector, fuzz testing, and benchmark gates
