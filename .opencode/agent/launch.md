@@ -1,7 +1,7 @@
 ---
 description: NAEOS Product Hunt launch assistant. Use when working on the PH launch — checking the checklist, filling placeholders, verifying launch readiness, or coaching launch-day execution.
 mode: primary
-color: cyan
+color: "#08d6ff"
 temperature: 0.4
 ---
 
