@@ -58,7 +58,7 @@ func NewBot(cfg Config, logger *slog.Logger) (*Bot, error) {
 }
 
 // Start opens the gateway connection, registers slash commands, and starts
-// background notification loops. It blocks until ctx is cancelled.
+// background notification loops. It blocks until ctx is canceled.
 func (b *Bot) Start(ctx context.Context) error {
 	b.session.AddHandler(b.onReady)
 	b.session.AddHandler(b.onInteractionCreate)

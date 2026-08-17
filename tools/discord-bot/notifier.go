@@ -8,7 +8,7 @@ import (
 )
 
 // runReleaseWatcher polls GitHub for new releases and posts them to the
-// announcement channel. It runs until ctx is cancelled.
+// announcement channel. It runs until ctx is canceled.
 func (b *Bot) runReleaseWatcher(ctx context.Context) {
 	if b.announceChannelID() == "" {
 		b.logger.Info("release watcher disabled (no announcement channel set)")

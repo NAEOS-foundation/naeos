@@ -225,7 +225,13 @@ func main() {
 			if ts, err := postMessage(ctx, token, announceID, m.text); err != nil {
 				log.Printf("post %s: %v", m.name, err)
 			} else {
-				log.Printf("posted %s (ts=%s)", m.name, ts)
+				safeTs := strings.Map(func(r rune) rune {
+					if (r >= '0' && r <= '9') || r == '.' {
+						return r
+					}
+					return -1
+				}, ts)
+				log.Printf("posted %s (ts=%s)", m.name, safeTs)
 			}
 		}
 	}

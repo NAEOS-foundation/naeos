@@ -262,7 +262,7 @@ func applyCategories(session *discordgo.Session, guildID string, plan ProvisionP
 			}
 			existing[ch.Name] = created
 
-			if err := applyOverwrites(session, created.ID, ch, roleIDs, logger); err != nil {
+			if err := applyOverwrites(session, created.ID, ch, roleIDs); err != nil {
 				return err
 			}
 			logger.Info("created channel", "channel", ch.Name, "category", cat.Name)
@@ -272,7 +272,7 @@ func applyCategories(session *discordgo.Session, guildID string, plan ProvisionP
 }
 
 // applyOverwrites sets permission rules for a channel.
-func applyOverwrites(session *discordgo.Session, channelID string, ch ChannelPlan, roleIDs map[string]string, logger *slog.Logger) error {
+func applyOverwrites(session *discordgo.Session, channelID string, ch ChannelPlan, roleIDs map[string]string) error {
 	everyone := roleIDs["@everyone"]
 	if everyone == "" {
 		return nil
