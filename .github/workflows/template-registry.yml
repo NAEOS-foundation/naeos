@@ -63,9 +63,11 @@ jobs:
           echo "found=$total" >> $GITHUB_OUTPUT
 
           official=$(cat site/static/templates/registry.json 2>/dev/null || echo '{"templates":[]}')
-          merged=$(echo "$templates" | jq --argjson official "$official" '{"templates": ($official.templates + .)}')
-          echo "$merged" > site/data/templates/registry.json
-          echo "$merged" > site/static/templates/registry.json
+          if [ "$total" -gt 0 ]; then
+            merged=$(echo "$templates" | jq --argjson official "$official" '{"templates": ($official.templates + .)}')
+            echo "$merged" > site/data/templates/registry.json
+            echo "$merged" > site/static/templates/registry.json
+          fi
 
       - name: Check for changes
         id: changes
