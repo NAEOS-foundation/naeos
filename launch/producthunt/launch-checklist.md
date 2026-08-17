@@ -85,7 +85,7 @@ A step-by-step timeline for a successful Product Hunt launch. PH launches are mo
 - [ ] Screenshot the final stats (upvotes, comments, rank) for the recap
 
 ### D+2 to D+7
-- [ ] Publish a launch recap blog post on `site/content/blog/` (e.g., "We launched NAEOS on Product Hunt") — link it in the repo and socials
+- [ ] Publish a launch recap blog post on `site/content/blog/` (use the draft in `launch/producthunt/recap-post-draft.md`, fill in real numbers) — link it in the repo and socials
 - [ ] Turn the top 3–5 feedback items into GitHub issues with labels, link them in a follow-up comment
 - [ ] Answer late comments; PH notifications keep coming for a week
 - [ ] Cross-post the recap on X, LinkedIn, and the community channels
