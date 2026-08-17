@@ -222,16 +222,10 @@ func main() {
 			{"pre-launch", preLaunchMessage},
 		}
 		for _, m := range msgs {
-			if ts, err := postMessage(ctx, token, announceID, m.text); err != nil {
+			if _, err := postMessage(ctx, token, announceID, m.text); err != nil {
 				log.Printf("post %s: %v", m.name, err)
 			} else {
-				safeTs := strings.Map(func(r rune) rune {
-					if (r >= '0' && r <= '9') || r == '.' {
-						return r
-					}
-					return -1
-				}, ts)
-				log.Printf("posted %s (ts=%s)", m.name, safeTs)
+				log.Printf("posted %s", m.name)
 			}
 		}
 	}
