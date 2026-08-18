@@ -17,7 +17,7 @@ Time: **D-1 evening (WIB)** is fine; they only need it before launch.
 > If you've poked at the quick start or seen the repo, you know what this is —
 > and an early upvote genuinely moves the needle for an open-source project.
 >
-> **Link goes live tomorrow:** https://www.producthunt.com/posts/naeos
+> **Link goes live tomorrow:** https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 > (upvote + comment if you can — even a one-liner like "built my API in minutes"
 > helps more than the upvote itself).
 >
@@ -53,7 +53,7 @@ Time: **D-1 evening (WIB)** is fine; they only need it before launch.
 
 > Hey [Name],
 >
-> It's live: https://www.producthunt.com/posts/naeos
+> It's live: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 >
 > If you can, hit **upvote** + leave a comment in the next few hours — the first
 > 6 hours decide the rank. A real one-liner about what you built helps most.

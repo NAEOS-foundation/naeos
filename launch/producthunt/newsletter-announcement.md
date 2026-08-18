@@ -44,7 +44,7 @@ naeos run --input-file spec.yaml
 ```
 
 **Upvote on Product Hunt if it resonates:**
-https://www.producthunt.com/posts/naeos
+https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 Open source, Apache 2.0, single Go binary. The whole roadmap is public.
 
@@ -156,14 +156,14 @@ naeos run --input-file spec.yaml
 - Website: https://naeos.dev
 - Docs: https://docs.naeos.dev
 - GitHub: https://github.com/NAEOS-foundation/naeos
-- Product Hunt: https://www.producthunt.com/posts/naeos
+- Product Hunt: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 - Discord: https://discord.gg/WnUWmm7XMv
 - Whitepaper: https://naeos.dev/whitepaper
 
 ### Help Us Out
 
 If this resonates, an upvote on Product Hunt helps enormously:
-https://www.producthunt.com/posts/naeos
+https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 And if you've tried the quick start, a comment about your experience (good or bad) helps more than the upvote.
 
@@ -210,7 +210,7 @@ naeos run --input-file spec.yaml
 ```
 
 **Upvote di Product Hunt jika resonate:**
-https://www.producthunt.com/posts/naeos
+https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 Open source, Apache 2.0, single Go binary. Seluruh roadmap publik.
 

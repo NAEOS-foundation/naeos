@@ -20,7 +20,7 @@ local time, so **PT + 14h = WIB**.
 | 21:00 | 08:00 PT | Rest — launch day is all-day engagement |
 
 Prep notes:
-- PH link will be `https://www.producthunt.com/posts/naeos` — replace `[PH LINK]`
+- PH link will be `https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social` — replace `[PH LINK]`
   in `social-posts.md` and `support-list.md` once the post is created.
 - Paste `first-comment.md` immediately after publishing.
 

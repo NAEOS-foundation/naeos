@@ -1,7 +1,7 @@
 # Launch-Day Copy — Ready to Paste
 
 Publish **Tuesday, 18 August 2026**. All copy below is final except the PH link —
-verify it equals `https://www.producthunt.com/posts/naeos` once the draft is live,
+verify it equals `https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social` once the draft is live,
 then paste directly.
 
 ---
@@ -13,7 +13,7 @@ Tweet 1:
 >
 > NAEOS is a declarative engineering platform: describe your system once, and it builds, validates, and evolves real software — for humans and AI.
 >
-> Upvote + comment here: https://www.producthunt.com/posts/naeos
+> Upvote + comment here: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 Tweet 2:
 > The problem: your spec doc and your codebase slowly drift apart until the docs are fiction and every new engineer reverse-engineers the system.
@@ -33,7 +33,7 @@ Tweet 6:
 >
 > Docs: https://docs.naeos.dev — GitHub: https://github.com/NAEOS-foundation/naeos
 >
-> Upvote on Product Hunt if it resonates: https://www.producthunt.com/posts/naeos 🙏
+> Upvote on Product Hunt if it resonates: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social 🙏
 
 ---
 
@@ -46,7 +46,7 @@ Tweet 6:
 > The idea came from a familiar pain: specs rot, codebases drift, and knowledge lives only in people's heads. We built the pipeline that keeps intent and implementation aligned for the whole lifecycle.
 >
 > Open source, Apache 2.0, v3.1.0 out today. Try it: https://naeos.dev
-> Upvote / comment: https://www.producthunt.com/posts/naeos
+> Upvote / comment: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 ---
 
@@ -55,15 +55,15 @@ Tweet 6:
 `#launch-upvotes`:
 > 🚀 **NAEOS is live on Product Hunt!**
 > Upvote + comment if you can — the first 6 hours decide the rank.
-> https://www.producthunt.com/posts/naeos
+> https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 `#announcements`:
 > We just went live on Product Hunt 🎉 Thanks for building this with us — your
 > upvote and a comment on your quick-start experience means the world.
-> https://www.producthunt.com/posts/naeos
+> https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 `#product-hunt`:
-> Launch thread: https://www.producthunt.com/posts/naeos — ask questions, share
+> Launch thread: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social — ask questions, share
 > feedback, and upvote if NAEOS saved you time. Comments from real users are gold.
 
 ---
@@ -73,7 +73,7 @@ Tweet 6:
 Discord/Slack communities:
 > Hey all — we just launched NAEOS on Product Hunt. It's an open-source declarative engineering platform: write a spec once, and it generates validated multi-language code (Go/TS/Python/Java/Rust) plus AI instruction sets for Copilot, Claude Code, Cursor, etc.
 >
-> Happy to answer any technical questions here or in the thread. If it's useful, an upvote helps a lot: https://www.producthunt.com/posts/naeos
+> Happy to answer any technical questions here or in the thread. If it's useful, an upvote helps a lot: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 Hacker News (Show HN — post later in the day, not the same hour):
 > Show HN: NAEOS — an open-source declarative engineering OS
@@ -94,7 +94,7 @@ Reddit (r/devops, r/golang, r/programming — check each sub's self-promo rules 
 > NAEOS: write one spec, get validated multi-language code (Go/TS/Python/Java/Rust), governance/audit trails, docs, and AI instruction sets for 6 tools + MCP server. The spec stays the source of truth for the project's whole lifecycle (watch mode, diff engine, schema migrations).
 >
 > Written in Go, Apache 2.0: https://github.com/NAEOS-foundation/naeos
-> Product Hunt: https://www.producthunt.com/posts/naeos
+> Product Hunt: https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 >
 > What's the worst part of spec/code drift you've dealt with? Genuinely curious — that's the problem space we're in.
 
@@ -108,7 +108,7 @@ Reddit (r/devops, r/golang, r/programming — check each sub's self-promo rules 
 >
 > NAEOS just went live on Product Hunt. If you have 30 seconds, an upvote makes a huge difference for an open-source project like ours:
 >
-> https://www.producthunt.com/posts/naeos
+> https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 >
 > And if you've tried the quick start, a comment about your experience (good or bad) helps more than the upvote.
 >

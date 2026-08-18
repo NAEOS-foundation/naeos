@@ -6,7 +6,7 @@ comment trail from the maker keeps the post active and answers questions
 proactively. Post in order, spread across the day, reply to real comments
 between each.
 
-**Link:** https://www.producthunt.com/posts/naeos
+**Link:** https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 
 ---
 

@@ -77,7 +77,7 @@ Copy-paste these into the matching channels. All text uses NAEOS brand voice
 > We're launching today. If NAEOS has helped you — or you're curious about
 > spec-driven engineering — an upvote means the world to an open-source project.
 >
-> **Upvote + comment here:** https://www.producthunt.com/posts/naeos
+> **Upvote + comment here:** https://www.producthunt.com/products/naeos?utm_source=other&utm_medium=social
 >
 > Every comment (even "what does this do?") helps. Ask us anything in
 > `#product-hunt` — the makers are here today.
