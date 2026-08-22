@@ -148,7 +148,9 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		resp.Result = map[string]any{
 			"protocolVersion": "2024-11-05",
 			"capabilities": map[string]any{
-				"tools": map[string]any{},
+				"tools":     map[string]any{},
+				"resources": map[string]any{},
+				"prompts":   map[string]any{},
 			},
 			"serverInfo": map[string]any{
 				"name":    "naeos-mcp",
@@ -168,6 +170,43 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
 		} else {
 			result, err := s.callTool(params.Name, params.Arguments)
+			if err != nil {
+				resp.Error = &JSONRPCError{Code: -32000, Message: err.Error()}
+			} else {
+				resp.Result = result
+			}
+		}
+	case "resources/list":
+		resp.Result = map[string]any{
+			"resources": s.listResources(),
+		}
+	case "resources/read":
+		var params struct {
+			URI string `json:"uri"`
+		}
+		if err := json.Unmarshal(req.Params, &params); err != nil || params.URI == "" {
+			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params: 'uri' is required"}
+		} else {
+			contents, err := s.readResource(params.URI)
+			if err != nil {
+				resp.Error = &JSONRPCError{Code: -32000, Message: err.Error()}
+			} else {
+				resp.Result = map[string]any{"contents": contents}
+			}
+		}
+	case "prompts/list":
+		resp.Result = map[string]any{
+			"prompts": builtinPrompts(),
+		}
+	case "prompts/get":
+		var params struct {
+			Name      string         `json:"name"`
+			Arguments map[string]any `json:"arguments"`
+		}
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
+		} else {
+			result, err := getPrompt(params.Name, params.Arguments)
 			if err != nil {
 				resp.Error = &JSONRPCError{Code: -32000, Message: err.Error()}
 			} else {

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **MCP resources** — `resources/list` and `resources/read` expose NAEOS concept docs (`naeos://docs/{concept}`), artifact store contents (`naeos://artifacts/{path}`), and pipeline job status (`naeos://jobs/{id}`) as MCP resources.
+- **MCP prompts** — `prompts/list` and `prompts/get` with four builtin templates: `review-spec`, `enrich-spec`, `explain-architecture`, `generate-spec`; arguments substituted verbatim into prompt messages.
+- **MCP capabilities advertisement** — `initialize` now advertises `resources` and `prompts` alongside `tools`.
+
+### Fixed
+- Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.
+
 ## [3.1.0] - 2026-08-16
 
 ### Added

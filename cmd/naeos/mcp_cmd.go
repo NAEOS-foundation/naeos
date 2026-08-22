@@ -23,12 +23,19 @@ func newMCPCommand() *cobra.Command {
 		Short: "Start MCP (Model Context Protocol) server",
 		Long: `Start an MCP server that exposes NAEOS tools to AI agents.
 
-The server implements the Model Context Protocol and provides tools:
-  - parse_spec: Parse a NAEOS specification
-  - validate_spec: Validate a specification
-  - generate_context: Generate AI context bundle
-  - compile_spec: Compile spec to AI instruction sets
-  - explain_concept: Explain NAEOS concepts
+The server implements the Model Context Protocol and provides:
+  Tools:
+    - parse_spec: Parse a NAEOS specification
+    - validate_spec: Validate a specification
+    - generate_context: Generate AI context bundle
+    - compile_spec: Compile spec to AI instruction sets
+    - explain_concept: Explain NAEOS concepts
+  Resources (naeos:// scheme):
+    - naeos://docs/{concept}: NAEOS concept documentation
+    - naeos://artifacts/{path}: Artifact contents from the store
+    - naeos://jobs/{id}: Pipeline job status
+  Prompts:
+    - review-spec, enrich-spec, explain-architecture, generate-spec
 
 Example:
   naeos mcp --port 8080
@@ -41,7 +48,7 @@ Example:
 
 			addr := fmt.Sprintf(":%d", port)
 			fmt.Fprintf(cmd.OutOrStdout(), "NAEOS MCP server starting on %s\n", addr)
-			fmt.Fprintf(cmd.OutOrStdout(), "Tools: parse_spec, validate_spec, generate_context, compile_spec, explain_concept\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Tools, resources (docs/artifacts/jobs), and prompts: review-spec, enrich-spec, explain-architecture, generate-spec\n")
 			fmt.Fprintf(cmd.OutOrStdout(), "Health check: http://localhost:%d/health\n", port)
 
 			srv := &http.Server{
