@@ -16,7 +16,8 @@
 **Artifact:** `github.com/NAEOS-foundation/naeos` (Apache License 2.0)
 **Web:** `https://naeos.dev`
 
-**DOI (Zenodo):** [10.5281/zenodo.22060578](https://doi.org/10.5281/zenodo.22060578)
+**DOI (Zenodo):** [10.5281/zenodo.22060578](https://doi.org/10.5281/zenodo.22060578) (concept — all versions)
+**This version (v1.1.0):** [10.5281/zenodo.22061988](https://doi.org/10.5281/zenodo.22061988)
 **Preprint:** *[optional: arXiv `cs.SE` identifier after endorsement]*
 **License:** Apache 2.0 (code) / CC BY 4.0 (manuscript)
 

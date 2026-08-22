@@ -1,6 +1,7 @@
 # NAEOS Thesis
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22060578.svg)](https://doi.org/10.5281/zenodo.22060578)
+[![DOI v1.1.0](https://zenodo.org/badge/DOI/10.5281/zenodo.22061988.svg)](https://doi.org/10.5281/zenodo.22061988)
 
 Technical monograph on the NAEOS declarative engineering runtime — prepared to international publication standards (IEEE-style citations, artifact-evaluation appendix, explicit novelty claims), framed for **independent publication** (Zenodo DOI / arXiv preprint / industry-track papers) rather than an academic degree.
 
