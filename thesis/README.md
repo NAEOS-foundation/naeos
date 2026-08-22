@@ -26,17 +26,18 @@ Technical monograph on the NAEOS declarative engineering runtime — prepared to
 
 Executed experiments (results already written into Chapter 6):
 
-- Determinism: two independent `naeos run` executions over `examples/spec-full.yaml`
-  produced 79 byte-identical artifacts (SHA-256 pairwise comparison).
+- Determinism: repeated `naeos run` executions over `examples/spec-full.yaml`
+  produced 79 byte-identical artifacts (SHA-256 pairwise comparison), including
+  warm-cache runs at 2.7× lower wall time (151 ms → 56 ms).
+- Mutation granularity: non-emitted field change → 0 artifacts; project-name change →
+  exactly its downstream set (10 + 1 rename); surfaced a template-propagation
+  limitation (service port) as an honest finding.
 - Benchmarks: full `pkg/pipeline` suite replicated on AMD EPYC 7763, including
   Small/Medium/Large scaling and parallel variants.
 
-Remaining `[TODO]` items in Chapter 6:
+Remaining `[TODO]` item in Chapter 6:
 
-- Warm-cache third run with per-stage hit rates (`--profile`).
-- Single-field mutation experiment (incremental invalidation granularity).
-- Dedicated three-adapter generation micro-benchmark.
-- Automated conformance tests for governance spot checks.
+- Per-stage hit-rate breakdown via `--profile` (requires profiling instrumentation).
 
 Before publication: the Zenodo DOI is minted and linked (10.5281/zenodo.22060578).
 Optionally add an arXiv preprint identifier later. All 38 references are complete

@@ -67,8 +67,25 @@ naeos benchmark -n 50 --output text
 
 **Observed result:** 50 iterations, 0 errors; average 31.971 ms; min 24.024 ms; max 103.676 ms.
 
-## A.6 Remaining Protocol Steps (Future Runs)
+## A.6 Warm-Cache and Mutation-Granularity Experiments (Section 6.2.1, 6.3.4)
 
-1. **Warm-cache run:** third execution with persistent cache directory (`--cache-dir .naeos/cache`); capture per-stage hit rates via `--profile`.
-2. **Mutation granularity:** change one field in `spec.yaml`; re-run; verify only downstream artifacts' hashes change.
-3. **Three-adapter micro-benchmark:** isolate generation stage timing to replicate the whitepaper's ≈1.4 ms vs ≈3 ms parallel claim directly.
+**Warm cache:**
+
+```bash
+naeos run --config config.yaml --input-file spec.yaml --language go --cache-dir .naeos/cache   # cold
+time naeos run --config config.yaml --input-file spec.yaml --language go --cache-dir .naeos/cache  # warm
+```
+
+**Observed:** cold 151 ms → warm 56 ms end-to-end wall time (2.7×); warm output byte-identical (79/79 vs.\ cold run).
+
+**Mutation granularity** (full re-hash after each single-field edit of `spec.yaml`):
+
+| Mutation | Command | Result |
+|---|---|---|
+| module description text | `sed 's/description: Authentication and authorization module/.../'` | 0 artifacts changed (field not emitted) |
+| service port 8080→9090 | `sed 's/port: 8080/port: 9090/'` | 0 changed — port not propagated by Go adapter (recorded limitation) |
+| project name +`-v2` | `sed 's/project: e-commerce-platform/project: e-commerce-platform-v2/'` | 10 changed + 1 package rename; 68 untouched |
+
+## A.7 Remaining Protocol Step
+
+Per-stage hit-rate breakdown via `--profile`: the flag requires profiling instrumentation to be enabled at build/run configuration; capture stage-level hit data once available and extend Table in Section 6.2.1.

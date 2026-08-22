@@ -195,7 +195,7 @@ Because our research questions concern feasibility and design properties rather 
 \subsection{RQ1: Is Specification-as-Single-Source-of-Truth Feasible?}
 Two independent executions (\texttt{naeos run} over the full example specification: 5 modules, 3 services) each produced 79 artifacts; pairwise SHA-256 comparison showed \emph{all 79 byte-identical}. The emitted set spans application source and unit tests (\texttt{cmd/app/main.go}, \texttt{internal/<module>/\{config,domain,handler\}.go}), per-module configuration, Dockerfile, docker-compose.yml, CI workflow, README, and architecture documentation---confirming that one declarative input subsumes the artifact classes that otherwise drift independently (source, configs, infra, docs, AI context, compliance inputs).
 
-Residual protocol steps: warm-cache third runs with per-stage hit-rate capture, and single-field mutation experiments verifying incremental invalidation granularity. Parser-chain fuzzing stands guard against input-dependent divergence in the interim.
+Residual protocol steps: warm-cache third runs with per-stage hit-rate capture. Mutation-granularity experiments \emph{were} executed: a non-emitted field change (module description) triggered zero artifact changes (no false invalidation); an emitted-field change (project name) altered exactly its downstream set (10 files + 1 package rename; 68/79 untouched); and the experiments surfaced one honest limitation --- the service port field is not propagated into Go-adapter templates, which a fresh uncached run reproduces identically (a template-propagation gap, not a caching defect). Parser-chain fuzzing stands guard against input-dependent divergence in the interim.
 
 \subsection{RQ2: Pipeline Cost and Scaling}
 Table~\ref{tab:bench} presents replicated benchmarks. Findings:
@@ -226,7 +226,7 @@ New (construction) & 0.0076 & 2.5K & 18\\
   \item \textbf{Validation cost.} At 127\,$\mu$s, validation is cheap enough for editor-on-save tooling.
   \item \textbf{Parallelism amortizes only at scale.} Parallel large runs gain ${\sim}6\%$ (397 vs.\ 421\,ms); small/medium differences fall within noise---consistent with goroutine fan-out amortizing above a per-task threshold, refining earlier reported speedups.
   \item \textbf{End-to-end.} CLI runs including review and disk writes average 32.0\,ms (50 iterations, min 24.0, max 103.7, 0 errors)---roughly triple pure pipeline time, far below interactive-latency thresholds.
-  \item \textbf{Cache economics.} With per-stage hashing, cost tracks \emph{change} rather than size: documentation-only regeneration skips parsing/validation entirely on warm caches; validation-on-save workflows are cache-independent at the measured microsecond scale.
+  \item \textbf{Cache economics.} With per-stage hashing, measured end-to-end wall time dropped from 151\,ms (cold) to 56\,ms (warm) --- a $2.7\times$ speedup with byte-identical output; cost tracks \emph{change} rather than size: validation-on-save workflows run at the microsecond scale regardless of cache state. Mutation experiments double as invalidation-granularity evidence: non-emitted field changes trigger no artifact changes at all, while an emitted-field change altered exactly its downstream set.
 \end{itemize}
 
 \subsection{RQ3: Can Nondeterministic AI Be Governed?}
