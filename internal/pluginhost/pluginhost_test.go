@@ -624,7 +624,11 @@ func TestSandboxExecuteWithTimeoutCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
+	release := make(chan struct{})
+	defer close(release)
+
 	_, err := s.ExecuteWithTimeout(ctx, func() (any, error) {
+		<-release
 		return "done", nil
 	})
 	if err == nil {
