@@ -42,7 +42,7 @@ IEEE-style numbered references. In-text keys from earlier chapters map to the en
 ## E. AI-Assisted Development
 
 - [R26] Anthropic, *Model Context Protocol Specification*. [Online]. Available: `https://modelcontextprotocol.io/`
-- [R27] H. Chen et al., "Teaching large language models an unfamiliar language on the fly through compositionality," or substitute with your selected LLM-for-code survey: e.g., Z. M. J. Mizrahi et al., *"State of LLM-assisted software engineering"* — **replace with a current survey of your choice**.
+- [R27] X. Hou, Y. Zhao, Y. Liu, Z. Yang, K. Wang, L. Li, X. Luo, D. Lo, J. Grundy, and H. Wang, "Large language models for software engineering: A systematic literature review," *ACM Transactions on Software Engineering and Methodology*, vol. 33, no. 8, art. 220, pp. 1–79, Sep. 2024, doi: 10.1145/3695988.
 - [R28] GitHub, *Copilot custom instructions documentation* (`copilot-instructions.md`). [Online]. Available: `https://docs.github.com/`
 - [R29] Anthropic, *Claude Code memory documentation* (`CLAUDE.md`). [Online]. Available: `https://docs.anthropic.com/`
 
@@ -61,4 +61,4 @@ IEEE-style numbered references. In-text keys from earlier chapters map to the en
 - [R37] European Parliament and Council, *Regulation (EU) 2016/679 (General Data Protection Regulation)*, Official Journal of the European Union, Apr. 2016.
 - [R38] Open Policy Agent / Styra, *Rego Policy Language*. [Online]. Available: `https://www.openpolicyagent.org/`
 
-> **Note:** Entry [R27] is intentionally flagged: insert one recent (2024–2026) peer-reviewed survey on LLM-assisted development with its full record. All other entries are stable canonical citations.
+> **Note:** All entries are stable canonical citations; [R27] is the most-cited peer-reviewed SLR on LLM4SE (395 primary studies, 2017–2024). Verify DOIs/page numbers against your library before final publication.

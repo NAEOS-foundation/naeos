@@ -38,6 +38,6 @@ Remaining `[TODO]` items in Chapter 6:
 
 Before publication: only two optional fields remain in `FRONTMATTER.md` — the Zenodo DOI
 (paste after connecting the repo to Zenodo and publishing a release) and the optional
-arXiv identifier. Complete reference [R27] (recent LLM-for-code survey). Author details,
-biography, declaration signature, and acknowledgments are already filled in for
-Bayu Priatno.
+arXiv identifier. All 38 references are complete canonical citations ([R27] = Hou et al.,
+ACM TOSEM 2024, the standard LLM4SE survey). Author details, biography, declaration
+signature, and acknowledgments are already filled in for Bayu Priatno.

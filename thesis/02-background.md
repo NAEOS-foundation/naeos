@@ -52,7 +52,7 @@ The distinction can be stated as a test: **can the tool regenerate your project 
 
 ## 2.5 AI-Assisted Development
 
-LLM-based assistants (Copilot, Claude, Cursor, Gemini, Codex) have moved from autocompletion to agentic participation: reading repositories, planning changes, and writing multi-file patches. Research and practitioner literature converge on two observations relevant here: (i) results depend heavily on the *context* provided to the model; and (ii) outputs are *nondeterministic*, which conflicts with reproducibility requirements in regulated environments.
+LLM-based assistants (Copilot, Claude, Cursor, Gemini, Codex) have moved from autocompletion to agentic participation: reading repositories, planning changes, and writing multi-file patches — a shift documented across 395 primary studies in the most comprehensive survey of the field [R27]. Research and practitioner literature converge on two observations relevant here: (i) results depend heavily on the *context* provided to the model; and (ii) outputs are *nondeterministic*, which conflicts with reproducibility requirements in regulated environments.
 
 **Contributions.** The Model Context Protocol (MCP) standardizes how agents discover and invoke external tools, decoupling agent vendors from capability providers. Repository-level instruction files (e.g., `CLAUDE.md`, `.cursorrules`) emerged as a de facto way to steer agents.
 
