@@ -1,5 +1,7 @@
 # NAEOS Thesis
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22060578.svg)](https://doi.org/10.5281/zenodo.22060578)
+
 Technical monograph on the NAEOS declarative engineering runtime — prepared to international publication standards (IEEE-style citations, artifact-evaluation appendix, explicit novelty claims), framed for **independent publication** (Zenodo DOI / arXiv preprint / industry-track papers) rather than an academic degree.
 
 > **Title:** *NAEOS: A Declarative Engineering Runtime for Specification-Driven, AI-Native Software Construction*
@@ -36,8 +38,8 @@ Remaining `[TODO]` items in Chapter 6:
 - Dedicated three-adapter generation micro-benchmark.
 - Automated conformance tests for governance spot checks.
 
-Before publication: only two optional fields remain in `FRONTMATTER.md` — the Zenodo DOI
-(paste after connecting the repo to Zenodo and publishing a release) and the optional
-arXiv identifier. All 38 references are complete canonical citations ([R27] = Hou et al.,
-ACM TOSEM 2024, the standard LLM4SE survey). Author details, biography, declaration
-signature, and acknowledgments are already filled in for Bayu Priatno.
+Before publication: the Zenodo DOI is minted and linked (10.5281/zenodo.22060578).
+Optionally add an arXiv preprint identifier later. All 38 references are complete
+canonical citations ([R27] = Hou et al., ACM TOSEM 2024, the standard LLM4SE survey).
+Author details, biography, declaration signature, and acknowledgments are already
+filled in for Bayu Priatno.
