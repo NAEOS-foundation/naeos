@@ -1,0 +1,124 @@
+% NAEOS — industry/tool-track paper (ICSE-SEIP / FSE-Industry / ASE-Industry style)
+% Compile: pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+% Or upload this file + refs.bib to Overleaf (compiler: pdfLaTeX).
+\documentclass[sigconf,nonacm]{acmart}
+
+\usepackage{booktabs}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true}
+
+\begin{document}
+
+\title[NAEOS: Specify Once, Build Anywhere]{Specify Once, Build Anywhere: A Canonical Intermediate Representation for Specification-Driven, AI-Native Software Construction}
+
+\author{Bayu Priatno}
+\affiliation{\institution{NAEOS Foundation}\city{}\country{}}
+\email{contact@naeos.dev}
+
+\begin{abstract}
+Modern software systems increasingly span five programming languages, three cloud targets, and six AI coding agents, while their normative descriptions decay across wikis, tickets, and hand-maintained per-tool configuration files. We characterize this condition as \emph{source-of-truth multiplicity} and present NAEOS, an open-source declarative engineering runtime that eliminates it structurally. NAEOS compiles a single human-readable specification through a nine-stage deterministic pipeline into a canonical intermediate representation---NEIR, a fourteen-domain model with semver schema governance---from which code, infrastructure definitions, documentation, compliance evidence, and AI instruction sets are derived as ordinary artifacts. Governance norms are compiled into executable rules enforced by validators and tamper-evident audit chains; third-party extensions run in a capability-restricted WebAssembly sandbox; AI agents integrate through one standard Model Context Protocol server rather than per-vendor adapters. We evaluate the system empirically: two independent compilations of a full example specification produced 79 byte-identical artifacts under SHA-256 pairwise comparison; benchmarks replicated on two hardware platforms across three model scales show 5.8\,ms small-spec full runs, $\sim$127\,$\mu$s validation, linear memory scaling with stable allocation profiles, and a $\sim$6\% parallel-generation speedup at scale. We formalize a \emph{determinism-preserving AI integration} pattern that confines LLM nondeterminism to audited assistive roles without contaminating reproducible derivation.
+\end{abstract}
+
+\keywords{declarative engineering, intermediate representation, deterministic pipelines, governance as code, AI-native software engineering, reproducibility}
+
+\maketitle
+
+\section{Introduction}
+A single industrial product today routinely spans Go services, TypeScript frontends, Python data tooling, Java components, and Rust performance paths, deployed across multiple clouds and co-developed with six or more AI coding agents~\cite{hou2024llm4se}. Each agent consumes project context in its own format (\texttt{copilot-instructions.md}, \texttt{CLAUDE.md}, \texttt{.cursorrules}, \texttt{AGENTS.md}), producing near-duplicate documents that decay independently and silently steer agents against the current architecture.
+
+We characterize the resulting condition as \emph{source-of-truth multiplicity}: no artifact can be trusted as the authoritative system description because authority is scattered across code, documentation, wikis, and per-tool configuration. Its recurring costs---integration rework, audit expense for SOC~2/HIPAA/GDPR evidence, knowledge evaporation, migration pain---share one root cause: \emph{derivation is performed by humans instead of machines}.
+
+This paper presents \textbf{NAEOS}, an open-source engineering runtime whose central claim we operationalize: \emph{the specification is the single source of truth; everything---code, documentation, configuration, infrastructure, compliance evidence, and AI context---must be derived from it through a deterministic, validated, auditable pipeline.}
+
+Our contributions:
+\begin{enumerate}
+  \item \textbf{NEIR}, a whole-system canonical IR spanning fourteen engineering domains with semver schema governance, reducing the generator matrix from $N{\times}M$ compilers to $N$ generators over one model (\S\ref{sec:neir});
+  \item \textbf{Governance as executable rules}: constitution-compiled checks with SHA-256-chained tamper-evident audits and automated compliance reporting (\S\ref{sec:governance});
+  \item \textbf{AI-target compilation}: six-agent instruction files derived from NEIR plus an MCP server, formalizing \emph{determinism-preserving AI integration} (\S\ref{sec:ai});
+  \item An evaluated reference implementation with committed baselines and executed experiments: byte-identical determinism (79/79 artifacts) and cross-platform benchmark replication (\S\ref{sec:eval}).
+\end{enumerate}
+
+\section{Background and Related Work}
+\textbf{Model-driven engineering} established specification-first construction but adoption stalled on heavyweight metamodels, hostile-to-git serializations, and round-tripping failures~\cite{schmidt2006mde}. NAEOS retains the philosophy while using diffable YAML, semver-governed schema evolution with migrations, and derivation-only generation that makes round-tripping moot.
+
+\textbf{Infrastructure as code} normalized declarative desired state with plan inspection~\cite{kugler2018iac}. NAEOS widens the declared surface from infrastructure to the entire engineering artifact set; stage caching keyed by content hashes plays the role Terraform state plays for plans.
+
+\textbf{Compiler IRs} solved $N{\times}M$ translation via shared intermediates~\cite{lattner2004llvm}. Classical IRs encode computation; none encode architecture, security, deployment, testing, and AI directives as one canonical, diff-able model. NEIR occupies a deliberate middle point: richer than an AST (system semantics), stricter than a graph (schema governance).
+
+\textbf{LLM-assisted development} surveys document rapid adoption alongside two structural tensions: output quality depends on curated context, and outputs are nondeterministic~\cite{hou2024llm4se}. Prior practice hand-maintains per-tool context files; no prior system compiles them as derived artifacts from a validated model.
+
+\section{Design}
+\subsection{Pipeline}
+NAEOS compiles specifications through nine stages: parse ($\$${}-directives, interpolation), normalize, resolve (\texttt{\$ref}/\texttt{\$include}), build NEIR, validate (cycles, port conflicts, boundaries), graph + policy evaluation, DAG scheduling, generate (language adapters), review \& write. Every stage is a pure function of its input plus configuration---the invariant that makes per-stage caching sound, fuzzing isolated, replay from event-sourced snapshots possible, and distributed execution safe.
+
+\subsection{NEIR: The Canonical Model}\label{sec:neir}
+NEIR spans fourteen domains: project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, metadata. Mandatory version metadata (\texttt{neir\_version}, \texttt{schema\_version}) governs evolution: additive changes ship as minors; breaking changes require major bumps, migration entries with rollback, and coordinated fixture updates across all generator test suites, which fail CI on any drift. Serialization is byte-deterministic by constitutional requirement, making content-hash caching sound.
+
+The IR economy is structural: five language generators (Go, TypeScript, Python, Java, Rust) and seven output surfaces (code, configs, infra, docs, AI context, schemas, reports) each implement exactly one consumer of NEIR. Adding a target touches nothing else.
+
+\subsection{Governance as Executable Rules}\label{sec:governance}
+A twelve-article Engineering Constitution (e.g., \emph{Specification First}, \emph{Reproducibility}, \emph{Human Accountability}) compiles into executable rules evaluated at pipeline stages 5, 4, and 9 respectively; every outcome lands in a SHA-256 hash-chained audit log (optionally AES-256-GCM encrypted, exportable to AWS/GCS/Azure). Framework-mapped controls produce SOC~2, HIPAA, and GDPR reports programmatically. A failed validation cites the article it protects---enforcement doubles as teaching.
+
+\subsection{Determinism-Preserving AI Integration}\label{sec:ai}
+NAEOS assigns AI a bounded architectural role (Table~\ref{tab:roles}): normative derivation contains no LLM calls; instruction sets for six agents (Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode) are pure functions of NEIR projected through tool-specific adapters; agents act through one self-describing MCP server whose tools map to validated operations under RBAC; prompts live in a versioned YAML library; all AI-assisted steps enter the audited chain, and release decisions remain human-only by constitution. Nondeterminism is thereby sandboxed like untrusted plugin code---permitted inside reviewed roles, never authoritative.
+
+\begin{table}[t]
+\centering
+\caption{Role separation for AI participation.}
+\label{tab:roles}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Role} & \textbf{Deterministic?} & \textbf{Examples}\\
+\midrule
+Normative derivation & Yes & code, infra, AI context, reports\\
+Assisted tasks & No (audited) & streamed compilation, review\\
+Release decisions & Humans only & constitutional Art.\ V, XI\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Extensions run as WebAssembly modules (pure-Go wazero host) with capability grants from plugin manifests, memory/time limits, signature verification, and hot reload---memory isolation by construction without CGo in the distributed binary.
+
+\section{Evaluation}\label{sec:eval}
+\textbf{Setup.} v3.1.0 (Go 1.25); committed baseline on Intel i5-2520M; replication for this paper on AMD EPYC 7763; race-detector CI throughout. All commands are disclosed in the artifact (\S\ref{sec:availability}).
+
+\textbf{RQ1: Is specification-as-single-source-of-truth feasible?}
+Two independent executions of the full example specification (5 modules, 3 services) each produced 79 artifacts; pairwise SHA-256 comparison showed \emph{all 79 byte-identical}. The emitted set spans source and tests, Dockerfiles, compose, CI workflow, and documentation. Residual steps: warm-cache hit-rate capture and single-field mutation granularity.
+
+\textbf{RQ2: What does the pipeline cost?}
+Table~\ref{tab:bench} shows replicated benchmarks. Small-spec full runs take 5.8\,ms; validation alone 127\,$\mu$s (editor-friendly). Scaling across two orders of magnitude is super-linear but bounded ($72\times$ wall time for $93\times$ allocations); memory tracks model size linearly with iteration-stable allocation counts. Parallel adapters help only above a per-task cost threshold ($-6\%$ at Large, noise at Small), refining earlier reported speedups. End-to-end CLI runs including disk writes average 32.0\,ms (50 iterations, 0 errors).
+
+\begin{table}[t]
+\centering
+\caption{Replicated pipeline benchmarks (EPYC 7763).}
+\label{tab:bench}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Benchmark} & \textbf{ms/op} & \textbf{B/op} & \textbf{allocs/op}\\
+\midrule
+Run / small & 5.83 & 174K & 1{,}281\\
+Run / medium & 36.37 & 3.7M & 17{,}810\\
+Run / large & 421.46 & 81.5M & 166{,}399\\
+Run / parallel large & 397.08 & 81.6M & 166{,}383\\
+Validate & 0.127 & 26K & 267\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{RQ3: Can nondeterministic AI be governed?}
+By construction: adapter wiring consumes NEIR only (C1--C2 verified by inspection); no agent SDK appears in core dependencies (C3); MCP tools route through validated operations and RBAC (C4); review outcomes enter the hashed chain (C5). Spot verifications confirm enforcement is executable behavior: schema-violating specs never reach generation; rule violations block offending artifacts rather than whole runs; appending a byte to the chained audit log invalidates all subsequent hashes.
+
+\textbf{Quality assurance.} $\sim$77\% platform coverage (CLI layer lower), 100\% pass on 17 linters incl.\ gosec, table-driven tests, parser fuzzing.
+
+\subsection{Threats to Validity}
+Parallel-speedup and health metrics partly originate in project self-reporting; determinism and benchmark results were independently executed for this paper. Example-scale specifications bound external validity; ``determinism'' means byte-level reproduction under fixed toolchains, with cross-version stability process-guaranteed rather than machine-proven.
+
+\section{Conclusion and Availability}\label{sec:availability}
+NAEOS demonstrates that the oldest idea in compilers---many sources through one canonical form---scales to engineering itself when combined with executable governance and standardized AI integration. The runtime (Apache-2.0), manuscript, and reproduction protocol are available at \url{https://github.com/NAEOS-foundation/naeos} (monograph: DOI 10.5281/zenodo.22060578; web: \url{https://naeos.dev}). Future work: cache-hit-rate characterization under realistic edits, monorepo-scale replication, binary plugin protocols, and user studies comparing compiled versus hand-maintained agent context.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}
