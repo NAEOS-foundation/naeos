@@ -1,0 +1,41 @@
+{
+  "title": "NAEOS: A Declarative Engineering Runtime for Specification-Driven, AI-Native Software Construction",
+  "description": "<p>Technical monograph on NAEOS (&quot;Specify Once. Build Anywhere.&quot;), an open-source declarative engineering runtime. Covers the NEIR canonical intermediate representation (fourteen domains, semver schema governance), the nine-stage deterministic compilation pipeline, executable governance compiled from an Engineering Constitution, vendor-neutral AI integration (six-agent instruction compiler + MCP server), and WASM-based plugin sandboxing. Includes executed empirical evaluation: byte-identical determinism across independent runs (79 artifacts), replicated benchmarks on two hardware platforms across three model scales.</p>",
+  "creators": [
+    {
+      "name": "Priatno, Bayu",
+      "affiliation": "NAEOS Foundation",
+      "orcid": ""
+    }
+  ],
+  "license": "apache-2.0",
+  "access_right": "open",
+  "upload_type": "publication",
+  "publication_type": "technicalnote",
+  "keywords": [
+    "declarative engineering",
+    "model-driven development",
+    "intermediate representation",
+    "deterministic build pipelines",
+    "AI-native software engineering",
+    "governance as code",
+    "traceability",
+    "WebAssembly sandboxing",
+    "reproducibility"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://naeos.dev",
+      "relation": "isSupplementedBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/NAEOS-foundation/naeos",
+      "relation": "isSupplementedBy",
+      "scheme": "url",
+      "resource_type": "software"
+    }
+  ],
+  "language": "eng",
+  "version": "1.0.0"
+}
