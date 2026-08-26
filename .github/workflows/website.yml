@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,30 +39,14 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npx opennextjs-cloudflare build
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: worker-output
-          path: |
-            site/.open-next
-            !site/.open-next/.next/cache
-          retention-days: 7
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: worker-output
-          path: .open-next
-      - name: List deploy files
-        run: ls -la .open-next/
+      - name: Debug build output
+        if: always()
+        run: find . -name ".open-next" -type d 2>/dev/null; ls -la .open-next/ 2>/dev/null || echo "No .open-next in site/"; ls -la ../.open-next/ 2>/dev/null || echo "No .open-next in root"
       - name: Deploy to Cloudflare
+        if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
           command: pages deploy .open-next/assets --project-name=naeos-docs --commit-dirty=true
