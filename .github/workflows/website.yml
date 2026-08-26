@@ -5,13 +5,11 @@ on:
     branches: [main]
     paths:
       - 'site/**'
-      - 'docs/openapi.yaml'
       - '.github/workflows/website.yml'
   pull_request:
     branches: [main]
     paths:
       - 'site/**'
-      - 'docs/openapi.yaml'
       - '.github/workflows/website.yml'
   workflow_dispatch:
 
@@ -30,92 +28,23 @@ jobs:
         working-directory: site
     steps:
       - uses: actions/checkout@v7
-      - name: Sync OpenAPI spec
-        run: cp ../docs/openapi.yaml static/openapi.yaml
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Generate static API docs from OpenAPI spec
-        run: |
-          npm install -g redoc-cli 2>&1 | tail -3
-          mkdir -p static/docs/api
-          redoc-cli bundle ../docs/openapi.yaml \
-            -o static/docs/api/index.html \
-            --title "NAEOS API Reference" \
-            --options.sortPropsAlphabetically \
-            --options.hideDownloadButton=false \
-            --options.theme.colors.primary.main="#08d6ff" 2>&1 | tail -5
-          # Create Hugo content page that includes the generated HTML
-          cat > content/docs/api/_index.md << 'EOF'
-          ---
-          title: API Reference
-          description: Interactive OpenAPI documentation for the NAEOS HTTP API.
-          layout: api
-          weight: 17
-          aliases: ["/docs/api-reference"]
-          ---
-
-          {{< api-docs >}}
-          EOF
-      - name: Generate OG images
-        run: |
-          npm ci 2>&1 | tail -3
-          node scripts/og.mjs
-      - name: Generate downloadable PDFs (CLI Reference, Getting Started)
-        run: |
-          sudo apt-get update && sudo apt-get install -y pandoc texlive-xetex texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
-          mkdir -p static/downloads
-          pandoc content/docs/cli-reference.md \
-            --pdf-engine=xelatex \
-            -V geometry:margin=1in \
-            -V title="NAEOS CLI Reference" \
-            -V subtitle="Version $(cat ../VERSION)" \
-            -V author="NAEOS Foundation" \
-            -V date="$(date +%Y-%m-%d)" \
-            -o static/downloads/naeos-cli-reference.pdf
-          pandoc content/docs/getting-started.md \
-            --pdf-engine=xelatex \
-            -V geometry:margin=1in \
-            -V title="NAEOS Getting Started" \
-            -V subtitle="Version $(cat ../VERSION)" \
-            -V author="NAEOS Foundation" \
-            -V date="$(date +%Y-%m-%d)" \
-            -o static/downloads/naeos-getting-started.pdf
-      - name: Generate Whitepaper PDFs (EN, ID)
-        run: |
-          npm install -g @mermaid-js/mermaid-cli 2>&1 | tail -3
-          bash ../scripts/whitepaper-pdf.sh \
-            ../WHITEPAPER-EN.md \
-            static/downloads/naeos-whitepaper.pdf \
-            "NAEOS Whitepaper"
-          bash ../scripts/whitepaper-pdf.sh \
-            ../WHITEPAPER.md \
-            static/downloads/naeos-whitepaper-id.pdf \
-            "Whitepaper NAEOS"
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: '0.145.0'
-          extended: false
-      - name: Build
-        run: hugo --minify --baseURL https://naeos.dev/
-      - name: Build (link-check variant)
-        run: hugo --minify --baseURL / --destination public-check
-      - name: Check links
-        run: |
-          curl -sfL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz -o /tmp/lychee.tar.gz
-          mkdir -p /tmp/lychee
-          tar -xzf /tmp/lychee.tar.gz -C /tmp/lychee --strip-components=1
-          /tmp/lychee/lychee --no-progress --max-concurrency 4 --timeout 20 --retry-wait-time 3 \
-            --root-dir "$GITHUB_WORKSPACE/site/public-check" \
-            public-check
-          rm -rf public-check
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build for Cloudflare Pages
+        run: npx @cloudflare/next-on-pages
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: site-public
-          path: site/public
+          name: pages-output
+          path: site/.vercel/output/static
           retention-days: 7
 
   deploy:
@@ -126,11 +55,11 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
-          name: site-public
-          path: site/public
+          name: pages-output
+          path: .vercel/output/static
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site/public --project-name=naeos-docs --commit-dirty=true
+          command: pages deploy .vercel/output/static --project-name=naeos-docs --commit-dirty=true
