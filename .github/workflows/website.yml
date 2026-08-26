@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  deployments: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -36,13 +37,13 @@ jobs:
         run: npm install --ignore-scripts --legacy-peer-deps
       - name: Typecheck
         run: npm run typecheck
-      - name: Build for Cloudflare Pages
-        run: npx @cloudflare/next-on-pages
+      - name: Build
+        run: npx opennextjs-cloudflare build
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: pages-output
-          path: site/.vercel/output/static
+          name: worker-output
+          path: site/.open-next
           retention-days: 7
 
   deploy:
@@ -53,11 +54,11 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
-          name: pages-output
-          path: .vercel/output/static
-      - name: Deploy to Cloudflare Pages
+          name: worker-output
+          path: .open-next
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .vercel/output/static --project-name=naeos-docs --commit-dirty=true
+          command: pages deploy .open-next/assets --project-name=naeos-docs --commit-dirty=true

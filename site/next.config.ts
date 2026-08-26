@@ -26,7 +26,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
-  outputFileTracingRoot: __dirname,
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
@@ -55,3 +54,6 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();

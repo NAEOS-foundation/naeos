@@ -1,8 +1,6 @@
 import { buildSearchIndex } from "@/lib/content";
 import type { Lang } from "@/lib/site";
 
-export const dynamic = "force-static";
-
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ lang: Lang }> },

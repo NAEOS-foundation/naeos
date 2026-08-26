@@ -78,4 +78,5 @@ public/
 .hugo_build.lock
 site/.next/
 site/.vercel/
+site/.open-next/
 site/tsconfig.tsbuildinfo
