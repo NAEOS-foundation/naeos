@@ -42,7 +42,8 @@ export function generateStaticParams() {
         p.lang === DEFAULT_LANG
           ? p.url.split("/").filter(Boolean)
           : p.url.split("/").filter(Boolean).slice(1),
-    }));
+    }))
+    .filter((p) => p.slug.length > 0);
 }
 
 export async function generateMetadata(props: {
