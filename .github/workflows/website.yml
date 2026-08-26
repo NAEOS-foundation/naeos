@@ -35,7 +35,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: site/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install --ignore-scripts
       - name: Typecheck
         run: npm run typecheck
       - name: Build for Cloudflare Pages
