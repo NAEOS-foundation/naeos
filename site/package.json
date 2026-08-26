@@ -12,8 +12,6 @@
     "pages:build": "npx @cloudflare/next-on-pages"
   },
   "dependencies": {
-    "@netlify/database": "^1.1.0",
-    "drizzle-orm": "^1.0.0-beta.22",
     "fuse.js": "^7.0.0",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
@@ -35,7 +33,6 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
-    "drizzle-kit": "^1.0.0-beta.22",
     "sharp": "^0.35.3",
     "typescript": "^5.9.3"
   }

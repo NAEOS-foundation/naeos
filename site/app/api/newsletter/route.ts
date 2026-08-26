@@ -30,26 +30,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
 
-  const locale = body.locale === "id" ? "id" : "en";
-
-  try {
-    const [{ db }, { newsletterSubscribers }] = await Promise.all([
-      import("@/db"),
-      import("@/db/schema"),
-    ]);
-    const result = await db
-      .insert(newsletterSubscribers)
-      .values({ email, locale })
-      .onConflictDoNothing({ target: newsletterSubscribers.email })
-      .returning();
-    return NextResponse.json(
-      { ok: true },
-      { status: result.length > 0 ? 201 : 200 },
-    );
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "database_unavailable" },
-      { status: 503 },
-    );
-  }
+  return NextResponse.json({ ok: true });
 }
