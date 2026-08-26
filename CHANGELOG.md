@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **MCP ping & pagination** — `ping` liveness method; cursor-based pagination for `tools/list`, `resources/list`, and `prompts/list` (opaque base64 cursor, 50 items per page, `nextCursor` in the response when more pages remain, `-32602` on malformed cursors).
+- **MCP completions** — `completion/complete` provides argument autocompletion: `ref/prompt` completes the `architecture` argument of `explain-architecture` with all 10 NEIR architecture patterns, `ref/resource` completes resource URIs (docs concepts, artifact paths, pipeline job IDs) against the live resource list with case-insensitive prefix filtering and the spec's 100-value cap. `initialize` now advertises the `completions` capability.
 - **MCP resources** — `resources/list` and `resources/read` expose NAEOS concept docs (`naeos://docs/{concept}`), artifact store contents (`naeos://artifacts/{path}`), and pipeline job status (`naeos://jobs/{id}`) as MCP resources.
 - **MCP prompts** — `prompts/list` and `prompts/get` with four builtin templates: `review-spec`, `enrich-spec`, `explain-architecture`, `generate-spec`; arguments substituted verbatim into prompt messages.
 - **MCP capabilities advertisement** — `initialize` now advertises `resources` and `prompts` alongside `tools`.

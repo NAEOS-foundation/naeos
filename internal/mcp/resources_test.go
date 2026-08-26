@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -369,7 +368,7 @@ func TestRenderPromptTemplateVerbatimValues(t *testing.T) {
 	if strings.Count(got, "{{spec}}") < 1 {
 		t.Error("value should be inserted verbatim without recursive substitution")
 	}
-	if !strings.Contains(got, fmt.Sprintf("%s", values["spec"])) {
+	if !strings.Contains(got, values["spec"]) {
 		t.Error("value text should appear in output")
 	}
 }

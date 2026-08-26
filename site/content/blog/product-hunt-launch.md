@@ -1,6 +1,6 @@
 ---
 title: "We Launched NAEOS on Product Hunt — Here's What Happened"
-description: A recap of our Product Hunt launch day: the numbers, the feedback, and what we learned building an open-source declarative engineering platform.
+description: "A recap of our Product Hunt launch day: the numbers, the feedback, and what we learned building an open-source declarative engineering platform."
 date: 2026-08-19
 author: "NAEOS Foundation"
 categories: ["launch", "community"]

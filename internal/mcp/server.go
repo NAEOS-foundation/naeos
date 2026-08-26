@@ -148,19 +148,78 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		resp.Result = map[string]any{
 			"protocolVersion": "2024-11-05",
 			"capabilities": map[string]any{
-				"tools":     map[string]any{},
-				"resources": map[string]any{},
-				"prompts":   map[string]any{},
+				"tools":       map[string]any{},
+				"resources":   map[string]any{},
+				"prompts":     map[string]any{},
+				"completions": map[string]any{},
 			},
 			"serverInfo": map[string]any{
 				"name":    "naeos-mcp",
 				"version": version.String(),
 			},
 		}
+	case "ping":
+		resp.Result = map[string]any{}
 	case "tools/list":
-		resp.Result = map[string]any{
-			"tools": s.listTools(),
+		var params struct {
+			Cursor string `json:"cursor"`
 		}
+		if len(req.Params) > 0 {
+			if err := json.Unmarshal(req.Params, &params); err != nil {
+				resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
+				break
+			}
+		}
+		page, next, err := paginate(s.listTools(), params.Cursor)
+		if err != nil {
+			resp.Error = &JSONRPCError{Code: -32602, Message: err.Error()}
+			break
+		}
+		result := map[string]any{"tools": page}
+		if next != "" {
+			result["nextCursor"] = next
+		}
+		resp.Result = result
+	case "resources/list":
+		var params struct {
+			Cursor string `json:"cursor"`
+		}
+		if len(req.Params) > 0 {
+			if err := json.Unmarshal(req.Params, &params); err != nil {
+				resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
+				break
+			}
+		}
+		page, next, err := paginate(s.listResources(), params.Cursor)
+		if err != nil {
+			resp.Error = &JSONRPCError{Code: -32602, Message: err.Error()}
+			break
+		}
+		result := map[string]any{"resources": page}
+		if next != "" {
+			result["nextCursor"] = next
+		}
+		resp.Result = result
+	case "prompts/list":
+		var params struct {
+			Cursor string `json:"cursor"`
+		}
+		if len(req.Params) > 0 {
+			if err := json.Unmarshal(req.Params, &params); err != nil {
+				resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
+				break
+			}
+		}
+		page, next, err := paginate(builtinPrompts(), params.Cursor)
+		if err != nil {
+			resp.Error = &JSONRPCError{Code: -32602, Message: err.Error()}
+			break
+		}
+		result := map[string]any{"prompts": page}
+		if next != "" {
+			result["nextCursor"] = next
+		}
+		resp.Result = result
 	case "tools/call":
 		var params struct {
 			Name      string         `json:"name"`
@@ -176,10 +235,6 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 				resp.Result = result
 			}
 		}
-	case "resources/list":
-		resp.Result = map[string]any{
-			"resources": s.listResources(),
-		}
 	case "resources/read":
 		var params struct {
 			URI string `json:"uri"`
@@ -194,10 +249,6 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 				resp.Result = map[string]any{"contents": contents}
 			}
 		}
-	case "prompts/list":
-		resp.Result = map[string]any{
-			"prompts": builtinPrompts(),
-		}
 	case "prompts/get":
 		var params struct {
 			Name      string         `json:"name"`
@@ -211,6 +262,22 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 				resp.Error = &JSONRPCError{Code: -32000, Message: err.Error()}
 			} else {
 				resp.Result = result
+			}
+		}
+	case "completion/complete":
+		var params completeRequestParams
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params"}
+		} else if params.Ref.Type == "" {
+			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params: 'ref.type' is required"}
+		} else if params.Argument.Name == "" {
+			resp.Error = &JSONRPCError{Code: -32602, Message: "invalid params: 'argument.name' is required"}
+		} else {
+			result, err := s.complete(params.Ref.Type, params.Ref.Name, params.Argument.Name, params.Argument.Value)
+			if err != nil {
+				resp.Error = &JSONRPCError{Code: -32000, Message: err.Error()}
+			} else {
+				resp.Result = map[string]any{"completion": result}
 			}
 		}
 	default:

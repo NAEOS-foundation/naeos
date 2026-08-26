@@ -76,3 +76,4 @@ bench/current.txt
 # Hugo build output (root-level runs)
 public/
 .hugo_build.lock
+site/.next/
