@@ -1,11 +1,2 @@
-[build]
-  base    = "site/"
-  command = "npm run build"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-[[redirects]]
-  from = "https://naeos.dev/*"
-  to = "https://docs.naeos.dev/:splat"
-  status = 301
+# Deprecated - using Cloudflare Pages instead
+# See wrangler.toml for configuration

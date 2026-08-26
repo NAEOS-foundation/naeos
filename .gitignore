@@ -77,3 +77,5 @@ bench/current.txt
 public/
 .hugo_build.lock
 site/.next/
+site/.vercel/
+site/tsconfig.tsbuildinfo

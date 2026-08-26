@@ -1,12 +1,9 @@
 name = "naeos-docs"
 account_id = "31ddf36d0d0fdfb04cb4f88dbcf3909f"
-pages_build_output_dir = "site/public"
+compatibility_date = "2024-09-25"
+pages_build_output_dir = ".vercel/output/static"
 
 # Build configuration
 [build]
-command = "cd site && hugo --minify"
+command = "cd site && npm install && npx @cloudflare/next-on-pages"
 cwd = "."
-
-# Environment variables
-[env.production]
-vars = { HUGO_VERSION = "0.145.0", HUGO_EXTENDED = "true", HUGO_ENV = "production" }
