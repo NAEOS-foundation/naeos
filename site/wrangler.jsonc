@@ -11,6 +11,12 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    { "pattern": "naeos.dev", "custom_domain": true },
+    { "pattern": "www.naeos.dev", "custom_domain": true },
+    { "pattern": "docs.naeos.dev", "custom_domain": true },
+    { "pattern": "registry.naeos.dev", "custom_domain": true }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
