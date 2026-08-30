@@ -148,8 +148,8 @@ func newSchemaListCommand() *cobra.Command {
 				fmt.Fprintln(cmd.OutOrStdout(), "Note: in-memory registry is empty.")
 				fmt.Fprintln(cmd.OutOrStdout(), "Local schema files available at:")
 				localPaths := []string{
-					"site/static/schemaregistry/latest.json",
-					"site/static/schemaregistry/v1/neir.json",
+					"site/public/schemaregistry/latest.json",
+					"site/public/schemaregistry/v1/neir.json",
 				}
 				for _, p := range localPaths {
 					if _, err := os.Stat(p); err == nil {

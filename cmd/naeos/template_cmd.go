@@ -324,7 +324,7 @@ To generate a local registry entry without publishing:
 				fmt.Fprintln(cmd.OutOrStdout(), "To add this template to the official registry, submit a PR at:")
 				fmt.Fprintln(cmd.OutOrStdout(), "  https://github.com/NAEOS-foundation/naeos")
 				fmt.Fprintln(cmd.OutOrStdout(), "")
-				fmt.Fprintln(cmd.OutOrStdout(), "Template entry (add to site/static/templates/registry.json):")
+				fmt.Fprintln(cmd.OutOrStdout(), "Template entry (add to site/public/templates/registry.json):")
 				entryData, _ := json.MarshalIndent(entry, "", "  ")
 				_, _ = cmd.OutOrStdout().Write(entryData)
 				_, _ = cmd.OutOrStdout().Write([]byte("\n"))

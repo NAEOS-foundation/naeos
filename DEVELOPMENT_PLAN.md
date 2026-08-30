@@ -1,4 +1,4 @@
-# NAEOS Development Plan — v2.2.0 → v3.0.0
+# NAEOS Development Plan — v2.2.0 → v4.0.0 (Enterprise)
 
 ## Fase 1: Kualitas & Keandalan
 
@@ -67,6 +67,54 @@
 | Enterprise features ✅ | Backend | **SSO**: OIDC, SAML 2.0 (XML parsing, NameID/attribute extraction), LDAP (TCP/TLS bind, ASN.1 BER search). **Audit**: hashed chain (`HashedAuditor`), encrypted (`EncryptedAuditor` AES-256-GCM), cloud export (AWS SigV4, GCS HMAC, Azure SharedKey). **Compliance**: SOC2 (8 controls), HIPAA (11), GDPR (8), `GenerateReport()`, CLI `naeos compliance report/list-frameworks/verify/cloud-export` |
 | v3.0.0 release ✅ | All | Changelog, migration guide v2→v3, release party blog post, deprecation notices. **Unreleased section di CHANGELOG.md sudah berisi semua 20+ item fitur v3.0.0.** |
 
+## Kebijakan Versi (Semver Ketat)
+
+Mengikuti semantic versioning secara disiplin — **tidak ada lompatan nomor versi**:
+
+| Jenis rilis | Format | Isi yang diperbolehkan |
+|-------------|--------|------------------------|
+| Patch | `x.y.z` → `x.y.(z+1)` | Bugfix, security fix, dependensi update. **Tanpa** fitur baru & perubahan API |
+| Minor | `x.y.z` → `x.(y+1).0` | Fitur baru backward-compatible |
+| Major | `x.y.z` → `(x+1).0.0` | Hanya jika ada breaking change yang tak terhindarkan |
+
+Aturan wajib:
+- `VERSION` di repo harus selalu sama dengan tag rilis (verifikasi di CI: tag == `v$(cat VERSION)`).
+- CHANGELOG diisi untuk setiap versi **sebelum** merge, bukan setelah rilis.
+- Setiap PR wajib mencantumkan target versi; CI memastikan kenaikan tepat satu angka (no-skip).
+- Setiap Major/Minor diikuti patch recovery bila perlu (mis. `v3.2.0` → `v3.2.1`).
+- Fitur baru = Minor. Bugfix = Patch. Tidak ada fitur baru dalam Patch.
+
+## Release Train — Arah Enterprise (v3.1.1 → v4.0.0)
+
+Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rilis = kenaikan tepat satu versi dari rilis sebelumnya.
+
+| Rilis | Jenis | Fase | Isi utama |
+|-------|-------|------|-----------|
+| v3.1.1 | Patch | Fase 7 | Backlog bugfix + security fix + dependensi update |
+| v3.1.2 | Patch | Fase 7 | Perbaikan race condition, queue, LSP, parser edge cases |
+| v3.1.3 | Patch | Fase 8 | `govulncheck` zero-critical + secret-scan CI + perbaikan penanganan secret |
+| v3.2.0 | Minor | Fase 7 | `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file |
+| v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
+| v3.3.0 | Minor | Fase 8 | SBOM (Syft/CycloneDX) + Cosign signing + `naeos verify` + aset rilis tersign |
+| v3.4.0 | Minor | Fase 7 | Helm chart + Kustomize, bundle air-gapped, config provider (env/file/K8s Secret/Vault), `naeos backup`/`restore`, API server stateless (state store Postgres) |
+| v3.5.0 | Minor | Fase 10 | Ekspor tracing OpenTelemetry (OTLP) + korelasi request_id → trace_id → tenant + SLO & alerting Prometheus + ekspor audit ke SIEM |
+| v3.6.0 | Minor | Fase 11 | Durable job queue (Postgres outbox) + worker pipeline jaringan (NATS/Kafka) + idempotency |
+| v3.7.0 | Minor | Fase 9 | REST API v2: pagination cursor, idempotency key, error envelope RFC 7807, rate-limit berjenjang, kebijakan versioning API |
+| v3.8.0 | Minor | Fase 9 | Webhooks/events outbound (HMAC-signed, retry + dead-letter, katalog event) |
+| v3.9.0 | Minor | Fase 9 | SDK resmi Go + TypeScript via OpenAPI codegen + drift-check CI |
+| v3.10.0 | Minor | Fase 8 | MFA TOTP/WebAuthn + kebijakan password + rotasi session/refresh token + API key terpetakan |
+| v3.11.0 | Minor | Fase 8 | SCIM 2.0 provisioning + JIT provisioning + break-glass & access review + FIPS-ready |
+| v3.12.0 | Minor | Fase 11 | Kuota/limit per-tenant (concurrency, artefak) + tier cache Redis + circuit breaker & retry policy |
+| v3.13.0 | Minor | Fase 12 | Policy-as-code antar-tenant + drift detection (`naeos plan`) + approval workflow & change management |
+| v3.14.0 | Minor | Fase 12 | Audit trail immutable/WORM/object storage + kebijakan retensi + bukti compliance live (SOC2/HIPAA/GDPR) |
+| v3.15.0 | Minor | Fase 12 | Edition/license gating (community vs enterprise), RBAC delegation + access reviews lanjutan |
+| v4.0.0 | Major | Semua | Hanya bila ada breaking change riil; jika tidak, nama rilis tetap v3.16.0 dst |
+
+Catatan:
+- **Prioritas**: stabil (Patch) → ops (v3.2.0–v3.4.0) → observability (v3.5.0) → skala (v3.6.0) → API/integrasi (v3.7.0–v3.9.0) → security lanjutan (v3.10.0–v3.11.0) → governance (v3.12.0–v3.15.0).
+- Setiap rilis Minor wajib menyertakan: CHANGELOG entry, CLI docs `naeos docsgen` regenerate, update website/site konten, dan doc PR sebelum code merge.
+- Jika sebuah item belum siap pada slotnya, rilis tersebut tetap rilis (berisi item yang siap) dan item dipindah ke slot berikutnya — **nomor versi tidak pernah di-skip**.
+
 ## Metrik Progress
 
 | Metrik | Saat Ini | Target Q1 2027 | Target Q3 2027 |
@@ -80,6 +128,17 @@
 | Build time (pipeline) | ~2s (small) | <1s (small) | <5s (medium) |
 | CI lint pass rate | 100% ✅ | 100% | 100% |
 | `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
+| Versi rilis — no-skip (urutan rilis == urutan versi) | — | ✅ terbukti di v3.1.1–v3.1.3 | ✅ terbukti hingga v3.10.0 |
+| `naeos serve` daemon (TLS, graceful shutdown) | ❌ belum ada | ✅ v3.2.0 | ✅ + systemd unit |
+| SBOM + artifact signing | ❌ belum ada | ✅ v3.3.0 (SBOM + Cosign + `naeos verify`) | ✅ di setiap rilis |
+| Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
+| Helm chart & air-gap bundle | ❌ belum ada | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
+| Observability (OTLP tracing + SLO) | ❌ metrics Prometheus saja | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
+| Durable job queue + worker jaringan | ❌ async in-memory saja | ✅ v3.6.0 (Postgres outbox) | ✅ NATS/Kafka workers |
+| REST API v2 (cursor, idempotency, RFC 7807) | ❌ v1 | ✅ v3.7.0 | ✅ + webhooks v3.8.0 + SDK v3.9.0 |
+| MFA + SCIM provisioning | ❌ belum ada | review (v3.10.0–v3.11.0) | ✅ v3.11.0 SCIM + MFA |
+| Governance (policy-as-code, drift, approval) | ❌ belum ada | design (v3.12.0–v3.13.0) | ✅ v3.14.0 sebagian besar |
+| Kehilangan data audit | 0 | 0 | 0 (immutable/WORM v3.14.0) |
 
 ## Completed (v2.2.0 → v3.0.0)
 
@@ -134,6 +193,7 @@
 ## Notes
 
 - **Prioritas**: Fase 1 dulu — kualitas sebelum fitur baru
+- **Versi**: Semver ketat, no-skip — lihat [Kebijakan Versi] dan [Release Train] di atas
 - **Website**: Setiap fase include update konten website sesuai fitur yang dirilis
 - **CI**: Tiap PR wajib lint + test + coverage check; coverage drop → block merge
 - **Dokumentasi**: Tiap API/fitur baru harus include doc PR sebelum code merge

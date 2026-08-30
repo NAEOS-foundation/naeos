@@ -8,9 +8,10 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+    "build:cf": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache local",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache local && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache local && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache local && opennextjs-cloudflare upload"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.0.0",

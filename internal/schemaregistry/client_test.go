@@ -104,7 +104,7 @@ func TestValidateNEIRSpecNotExist(t *testing.T) {
 
 func loadTestSchema(t *testing.T) map[string]any {
 	t.Helper()
-	c := NewNEIRClient("file://../../site/static/schemaregistry/latest.json")
+	c := NewNEIRClient("file://../../site/public/schemaregistry/latest.json")
 	schema, err := c.FetchSchema()
 	if err != nil {
 		t.Fatalf("load test schema: %v", err)
@@ -113,7 +113,7 @@ func loadTestSchema(t *testing.T) map[string]any {
 }
 
 func TestNEIRClientFetchSchema(t *testing.T) {
-	c := NewNEIRClient("file://../../site/static/schemaregistry/latest.json")
+	c := NewNEIRClient("file://../../site/public/schemaregistry/latest.json")
 	schema, err := c.FetchSchema()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
