@@ -18,7 +18,7 @@ export const SITE = {
   repoOwner: "NAEOS-foundation",
   repoName: "naeos",
   version: "3.1.0",
-  accentColor: "#00ff88",
+  accentColor: "#08d6ff",
   twitter: "https://twitter.com/naeos_dev",
   twitterHandle: "@naeos_dev",
   discord: "https://discord.gg/naeos",

@@ -76,7 +76,7 @@ export function startInteractiveTerminal(
         theme: {
           background: "rgba(0,0,0,0)",
           foreground: "#e8e8e8",
-          cursor: "#00ff88",
+          cursor: "#08d6ff",
         },
       });
       const fit = new w.FitAddon.FitAddon();
