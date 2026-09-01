@@ -15,8 +15,10 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
+
+concurrency:
+  group: pdf-docs
+  cancel-in-progress: true
 
 jobs:
   generate-pdf:
@@ -24,16 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: '0.145.0'
-
       - name: Sync OpenAPI spec
-        run: cp docs/openapi.yaml site/static/openapi.yaml
-
-      - name: Build Hugo site
-        run: cd site && hugo --minify
+        run: cp docs/openapi.yaml site/public/openapi.yaml
 
       - name: Setup Pandoc
         run: sudo apt-get update && sudo apt-get install -y pandoc texlive-xetex texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
@@ -47,7 +41,7 @@ jobs:
             -V subtitle="Version $(cat VERSION)" \
             -V author="NAEOS Foundation" \
             -V date="$(date +%Y-%m-%d)" \
-            -o site/static/downloads/naeos-cli-reference.pdf
+            -o site/public/downloads/naeos-cli-reference.pdf
 
       - name: Generate Getting Started PDF
         run: |
@@ -58,7 +52,7 @@ jobs:
             -V subtitle="Version $(cat VERSION)" \
             -V author="NAEOS Foundation" \
             -V date="$(date +%Y-%m-%d)" \
-            -o site/static/downloads/naeos-getting-started.pdf
+            -o site/public/downloads/naeos-getting-started.pdf
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -78,24 +72,32 @@ jobs:
         run: |
           bash scripts/whitepaper-pdf.sh \
             WHITEPAPER-EN.md \
-            site/static/downloads/naeos-whitepaper.pdf \
+            site/public/downloads/naeos-whitepaper.pdf \
             "NAEOS Whitepaper"
 
       - name: Generate Whitepaper PDF (ID)
         run: |
           bash scripts/whitepaper-pdf.sh \
             WHITEPAPER.md \
-            site/static/downloads/naeos-whitepaper-id.pdf \
+            site/public/downloads/naeos-whitepaper-id.pdf \
             "Whitepaper NAEOS"
 
-      - name: Rebuild site with PDFs
-        run: cd site && hugo --minify
+      - name: Verify PDFs generated
+        run: |
+          ls -la site/public/downloads/*.pdf
+          test -s site/public/downloads/naeos-whitepaper.pdf
+          test -s site/public/downloads/naeos-whitepaper-id.pdf
+          test -s site/public/downloads/naeos-cli-reference.pdf
+          test -s site/public/downloads/naeos-getting-started.pdf
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site/public
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/deploy-pages@v5
+      - name: Commit generated assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/public/downloads/*.pdf site/public/openapi.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "docs: regenerate PDF documentation and openapi spec"
+            git push
+          fi

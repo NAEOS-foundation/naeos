@@ -59,17 +59,17 @@ jobs:
 
           echo "found=$total" >> $GITHUB_OUTPUT
 
-          official=$(cat site/static/plugins/registry.json 2>/dev/null || echo '{"plugins":[]}')
+          official=$(cat site/public/plugins/registry.json 2>/dev/null || echo '{"plugins":[]}')
           if [ "$total" -gt 0 ]; then
             merged=$(echo "$plugins" | jq --argjson official "$official" '{"plugins": ($official.plugins + .)}')
             echo "$merged" > site/data/plugins.json
-            echo "$merged" > site/static/plugins/registry.json
+            echo "$merged" > site/public/plugins/registry.json
           fi
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet site/data/plugins.json site/static/plugins/registry.json; then
+          if git diff --quiet site/data/plugins.json site/public/plugins/registry.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -85,7 +85,7 @@ jobs:
           body: |
             Automated plugin registry update from GitHub topic `naeos-plugin`.
 
-            - **Official plugins**: curated entries in `site/static/plugins/registry.json`
+            - **Official plugins**: curated entries in `site/public/plugins/registry.json`
             - **Community plugins**: ${{ steps.discover.outputs.found }} repos found with `naeos-plugin` topic
           branch: chore/plugin-registry-update
           base: main

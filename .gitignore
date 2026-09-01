@@ -72,9 +72,7 @@ internal/api/.naeos/
 naeos-demo
 bench/current.txt
 
-# Hugo build output (root-level runs)
-/public/
-.hugo_build.lock
+# Next.js build output
 site/.next/
 site/.vercel/
 site/.open-next/

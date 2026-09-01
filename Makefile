@@ -124,41 +124,39 @@ install-completion: build
 ## og: Generate OG images (dark + light PNG from SVG)
 og:
 	@echo "Generating OG images..."
-	@cd site && npm install 2>&1 | tail -2 && node \
-		-e "const s=require('sharp'),f=require('fs'); \
-		Promise.all([s(f.readFileSync('static/images/og-dark.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default.png'),s(f.readFileSync('static/images/og-light.svg')).resize(1200,630,{fit:'fill'}).png().toFile('static/images/og-default-light.png')]).then(()=>console.log('  OG images generated')).catch(e=>{console.error(e);process.exit(1)})"
+	@cd site && npm install 2>&1 | tail -2 && node scripts/og.mjs
 
-## site: Build the Hugo website
+## site: Build the website (Next.js)
 site: og
 	@echo "Building website..."
-	cp docs/openapi.yaml site/static/openapi.yaml
-	cd site && hugo --minify
+	cp docs/openapi.yaml site/public/openapi.yaml
+	cd site && npm run build
 
 ## pdf: Generate PDF documentation
 pdf:
 	@echo "Generating PDF documentation..."
-	@mkdir -p site/static/downloads
+	@mkdir -p site/public/downloads
 	pandoc site/content/docs/cli-reference.md --pdf-engine=xelatex \
 		-V geometry:margin=1in \
 		-V title="NAEOS CLI Reference" \
 		-V subtitle="Version $(shell cat VERSION)" \
 		-V author="NAEOS Foundation" \
 		-V date="$(shell date +%Y-%m-%d)" \
-		-o site/static/downloads/naeos-cli-reference.pdf
+		-o site/public/downloads/naeos-cli-reference.pdf
 	pandoc site/content/docs/getting-started.md --pdf-engine=xelatex \
 		-V geometry:margin=1in \
 		-V title="NAEOS Getting Started" \
 		-V subtitle="Version $(shell cat VERSION)" \
 		-V author="NAEOS Foundation" \
 		-V date="$(shell date +%Y-%m-%d)" \
-		-o site/static/downloads/naeos-getting-started.pdf
+		-o site/public/downloads/naeos-getting-started.pdf
 	bash scripts/whitepaper-pdf.sh \
 		WHITEPAPER-EN.md \
-		site/static/downloads/naeos-whitepaper.pdf \
+		site/public/downloads/naeos-whitepaper.pdf \
 		"NAEOS Whitepaper"
 	bash scripts/whitepaper-pdf.sh \
 		WHITEPAPER.md \
-		site/static/downloads/naeos-whitepaper-id.pdf \
+		site/public/downloads/naeos-whitepaper-id.pdf \
 		"Whitepaper NAEOS"
 
 ## schema: Generate NEIR JSON Schema from Go types

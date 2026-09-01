@@ -1,7 +1,0 @@
-{
-  "title": {{ .Title | jsonify }},
-  "permalink": {{ .Permalink | jsonify }},
-  "section": {{ .Section | jsonify }},
-  "content": {{ .Plain | jsonify }},
-  "sections": []
-}
