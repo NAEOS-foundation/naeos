@@ -32,7 +32,7 @@ export function DocsSidebar({
       <input
         type="text"
         className="sidebar-search"
-        placeholder={lang === "id" ? "Filter..." : "Filter..."}
+        placeholder="Filter..."
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         aria-label={lang === "id" ? "Filter dokumen" : "Filter docs"}

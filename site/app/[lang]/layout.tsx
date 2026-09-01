@@ -64,7 +64,7 @@ export default async function RootLayout({
       : "Specify Once. Build Anywhere.";
 
   return (
-    <html lang={lang} data-theme="dark" suppressHydrationWarning>
+    <html lang={lang} data-theme="dark" data-ws-url="disabled" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

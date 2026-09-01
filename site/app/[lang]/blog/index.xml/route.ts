@@ -1,5 +1,11 @@
 import { generateRssFeed } from "@/lib/rss";
-import type { Lang } from "@/lib/site";
+import { LANGUAGES, type Lang } from "@/lib/site";
+
+export const dynamic = "force-static";
+
+export function generateStaticParams() {
+  return LANGUAGES.map((lang) => ({ lang }));
+}
 
 export async function GET(
   _req: Request,

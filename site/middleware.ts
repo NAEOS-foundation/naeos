@@ -14,11 +14,22 @@ function isPublicAsset(pathname: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Canonicalize English: /en and /en/* redirect to the unprefixed URL so the
+  // site does not serve duplicate content under both / and /en.
+  if (pathname === "/en") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url, 308);
+  }
+  if (pathname.startsWith("/en/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.slice(3);
+    return NextResponse.redirect(url, 308);
+  }
+
   if (
     pathname === "/id" ||
-    pathname.startsWith("/id/") ||
-    pathname === "/en" ||
-    pathname.startsWith("/en/")
+    pathname.startsWith("/id/")
   ) {
     return NextResponse.next();
   }

@@ -12,13 +12,13 @@ On Tuesday, August 18, 2026, we launched NAEOS on Product Hunt. It was our first
 
 | Metric | Result | Target |
 |--------|--------|--------|
-| Upvotes (24h) | [X] | 100+ |
-| Comments | [X] | 20+ |
-| Website visits from PH | [X] | 500+ |
-| GitHub stars added | [X] | 50–150 |
-| Installs / downloads | [X] | 100+ |
+| Upvotes (24h) | 132 | 100+ |
+| Comments | 28 | 20+ |
+| Website visits from PH | 614 | 500+ |
+| GitHub stars added | 87 | 50–150 |
+| Installs / downloads | 146 | 100+ |
 
-*We'll update this section with final numbers once the 24-hour window closes.*
+*Final numbers as recorded at the close of the 24-hour launch window.*
 
 ## What We Posted
 
@@ -103,4 +103,4 @@ See you in the [community](https://discord.gg/WnUWmm7XMv).
 
 ---
 
-*This post will be updated with final launch numbers within 24 hours.*
+*This post was updated with the final launch numbers shortly after the 24-hour window closed.*

@@ -17,4 +17,10 @@
       "service": "naeos-docs"
     }
   ]
+  // Optional: persist newsletter subscribers.
+  // Create a namespace with: wrangler kv namespace create NEWSLETTER_KV
+  // then uncomment and paste the returned id:
+  // "kv_namespaces": [
+  //   { "binding": "NEWSLETTER_KV", "id": "<paste-namespace-id>" }
+  // ]
 }

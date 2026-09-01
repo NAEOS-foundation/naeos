@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const KV_KEY_PREFIX = "subscriber:";
+
+interface NewsletterKv {
+  put(key: string, value: string): Promise<void>;
+}
 
 export const dynamic = "force-dynamic";
+
+async function newsletterKv(): Promise<NewsletterKv | null> {
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const env = ctx.env as CloudflareEnv & { NEWSLETTER_KV?: NewsletterKv };
+    if (!env.NEWSLETTER_KV) return null;
+    return env.NEWSLETTER_KV;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   let body: { email?: unknown; locale?: unknown; website?: unknown };
@@ -26,6 +43,16 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
+  }
+
+  const kv = await newsletterKv();
+  if (kv) {
+    const record = {
+      email,
+      locale: typeof body.locale === "string" ? body.locale : "en",
+      subscribed_at: new Date().toISOString(),
+    };
+    await kv.put(`${KV_KEY_PREFIX}${email}`, JSON.stringify(record));
   }
 
   return NextResponse.json({ ok: true });

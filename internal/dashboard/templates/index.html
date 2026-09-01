@@ -307,13 +307,26 @@
             ws.onerror = function() { addLog('Real-time connection error', 'error'); };
         }
 
+        function isOk(res) {
+            return res && (res.ok === true || res.success === true);
+        }
+
+        function currentSpec() {
+            var spec = document.getElementById('spec-input').value.trim();
+            if (!spec) {
+                addLog('No specification provided - load a sample or paste YAML in the Spec Visualizer.', 'warn');
+            }
+            return spec;
+        }
+
         async function fetchStats() {
             try {
                 const res = await fetch('/api/stats');
                 const data = await res.json();
-                if (data.projects !== undefined) updateStat('Projects', data.projects);
-                if (data.pipelines !== undefined) updateStat('Pipeline Runs', data.pipelines);
-                if (data.artifacts !== undefined) updateStat('Artifacts', data.artifacts);
+                const s = data && data.data ? data.data : data;
+                if (s.projects !== undefined) updateStat('Projects', s.projects);
+                if (s.pipelines !== undefined) updateStat('Pipeline Runs', s.pipelines);
+                if (s.artifacts !== undefined) updateStat('Artifacts', s.artifacts);
             } catch (e) {}
         }
 
@@ -321,18 +334,34 @@
         fetchStats();
 
         async function runPipeline() {
+            const spec = currentSpec();
+            if (!spec) return;
             addLog('Starting pipeline...', 'ok');
             try {
-                const res = await fetch('/api/v1/pipeline/run', { method: 'POST' });
+                const res = await fetch('/api/v1/pipeline/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spec: spec })
+                });
                 const data = await res.json();
-                addLog('Pipeline started: ' + (data.data && data.data.pipeline_id ? data.data.pipeline_id : ''), 'ok');
+                if (!isOk(data)) {
+                    addLog('Pipeline error: ' + (data.error || 'unknown error'), 'error');
+                    return;
+                }
+                addLog('Pipeline started: ' + (data.data && data.data.job_id ? data.data.job_id : ''), 'ok');
             } catch (e) { addLog('Pipeline error: ' + e.message, 'error'); }
         }
 
         async function validateSpec() {
+            const spec = currentSpec();
+            if (!spec) return;
             addLog('Validating specification...', 'ok');
             try {
-                const res = await fetch('/api/v1/specs/validate', { method: 'POST' });
+                const res = await fetch('/api/v1/specs/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spec: spec })
+                });
                 const data = await res.json();
                 const passed = data.data && data.data.valid;
                 addLog('Validation complete: ' + (passed ? 'passed' : 'failed'), passed ? 'ok' : 'warn');
@@ -340,9 +369,15 @@
         }
 
         async function compileSpec() {
+            const spec = currentSpec();
+            if (!spec) return;
             addLog('Compiling to AI instruction sets...', 'ok');
             try {
-                const res = await fetch('/api/v1/specs/compile', { method: 'POST' });
+                const res = await fetch('/api/v1/specs/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spec: spec })
+                });
                 const data = await res.json();
                 const targets = data.data && data.data.targets ? data.data.targets : [];
                 addLog('Compilation complete: ' + targets.join(', '), 'ok');
@@ -529,7 +564,7 @@ generation:
                     body: JSON.stringify({ spec: spec })
                 });
                 const data = await res.json();
-                if (!data.ok) {
+                if (!isOk(data)) {
                     output.innerHTML = '<div class="empty-state" style="color:#ff4444">Error: ' + (data.error || 'visualization failed') + '</div>';
                     return;
                 }
@@ -705,7 +740,7 @@ generation:
             try {
                 const res = await fetch('/api/v1/plugins');
                 const data = await res.json();
-                if (!data.ok) {
+                if (!isOk(data)) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ff4444;">Error: ' + (data.error||'unknown') + '</td></tr>';
                     return;
                 }
@@ -745,7 +780,7 @@ generation:
                     body: JSON.stringify({name: name, source: source})
                 });
                 const data = await res.json();
-                if (!data.ok) {
+                if (!isOk(data)) {
                     statusDiv.innerHTML = '<span style="color:#ff4444;">Install failed: ' + (data.error||'unknown error') + '</span>';
                 } else {
                     statusDiv.innerHTML = '<span style="color:#00ff88;">Plugin "' + (data.data.name||name) + '" installed successfully.</span>';
@@ -792,7 +827,7 @@ generation:
             try {
                 const res = await fetch(url);
                 const data = await res.json();
-                if (!data.ok) {
+                if (!isOk(data)) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ff4444;">Error: ' + (data.error||'unknown') + '</td></tr>';
                     return;
                 }

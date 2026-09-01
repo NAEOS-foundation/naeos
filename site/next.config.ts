@@ -14,10 +14,10 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://api.github.com https://cdn.jsdelivr.net https://cloud.umami.is",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+      "script-src 'self' 'unsafe-inline' https://api.github.com https://cdn.jsdelivr.net https://cloud.umami.is https://unpkg.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https:",
       "connect-src 'self' https://api.github.com wss://ws.naeos.dev",
       "frame-ancestors 'none'",
     ].join("; "),

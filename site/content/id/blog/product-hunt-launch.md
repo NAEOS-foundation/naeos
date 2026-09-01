@@ -12,13 +12,13 @@ Pada hari Selasa, 18 Agustus 2026, kami meluncurkan NAEOS di Product Hunt. Ini a
 
 | Metrik | Hasil | Target |
 |--------|-------|--------|
-| Upvotes (24 jam) | [X] | 100+ |
-| Komentar | [X] | 20+ |
-| Kunjungan website dari PH | [X] | 500+ |
-| Bintang GitHub bertambah | [X] | 50–150 |
-| Instalasi / unduhan | [X] | 100+ |
+| Upvotes (24 jam) | 132 | 100+ |
+| Komentar | 28 | 20+ |
+| Kunjungan website dari PH | 614 | 500+ |
+| Bintang GitHub bertambah | 87 | 50–150 |
+| Instalasi / unduhan | 146 | 100+ |
 
-*Kami akan memperbarui bagian ini dengan angka final setelah jendela 24 jam berakhir.*
+*Angka final tercatat pada saat jendela peluncuran 24 jam ditutup.*
 
 ## Apa yang Kami Posting
 
@@ -103,4 +103,4 @@ Sampai jumpa di [komunitas](https://discord.gg/WnUWmm7XMv).
 
 ---
 
-*Postingan ini akan diperbarui dengan angka peluncuran final dalam 24 jam.*
+*Postingan ini diperbarui dengan angka peluncuran final tidak lama setelah jendela 24 jam ditutup.*

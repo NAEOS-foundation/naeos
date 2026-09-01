@@ -118,7 +118,9 @@ export default function TemplatesGrid({
                 ))}
               </div>
               <div className="plugin-actions">
-                <a href={p.repo_url} className="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>
+                {p.repo_url ? (
+                  <a href={p.repo_url} className="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>
+                ) : null}
                 <button className="btn btn-primary btn-sm" onClick={() => copyCmd(p.name)}>
                   {copied === p.name ? "Copied!" : t("templates_use")}
                 </button>

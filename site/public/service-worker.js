@@ -1,5 +1,5 @@
 const CACHE = 'naeos-v1';
-const PRECACHE_URLS = ['/', '/offline/'];
+const PRECACHE_URLS = ['/', '/id/'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -22,6 +22,6 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(cache => cache.put(e.request, clone));
       }
       return response;
-    }).catch(() => caches.match('/offline/')))
+    }).catch(() => caches.match('/').then(cached => cached || caches.match('/id/'))))
   );
 });
