@@ -128,13 +128,15 @@ export default function Header({ lang }: Props) {
             className="mobile-menu-btn"
             aria-label={t("toggle_menu")}
             aria-expanded={menuOpen}
+            aria-haspopup="true"
+            aria-controls="mobile-navigation"
             onClick={() => setMenuOpen((v) => !v)}
           >
             <span /><span /><span />
           </button>
         </div>
       </div>
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`} role="navigation" aria-label="Mobile navigation">
+      <div id="mobile-navigation" className={`mobile-menu${menuOpen ? " open" : ""}`} role="navigation" aria-label="Mobile navigation" aria-hidden={!menuOpen}>
         {MOBILE_LINKS.map(([seg, key, indent]) => (
           <Link
             key={seg}

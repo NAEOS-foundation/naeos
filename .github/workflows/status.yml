@@ -1,0 +1,98 @@
+name: Status Data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Probe services and collect GitHub metrics
+        id: probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+
+          check_http() {
+            local url="$1"
+            local code ms start
+            start=$(date +%s%3N)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 --max-time 15 "$url" || echo 000)
+            ms=$(( $(date +%s%3N) - start ))
+            if [ "$code" = "000" ] || [ "$code" -ge 500 ]; then
+              echo '{"ok":false,"code":'$code',"latency_ms":'$ms'}'
+            else
+              echo '{"ok":true,"code":'$code',"latency_ms":'$ms'}'
+            fi
+          }
+
+          web=$(check_http "https://naeos.dev")
+          docs=$(check_http "https://docs.naeos.dev")
+          registry=$(check_http "https://registry.naeos.dev")
+
+          # WebSocket endpoint: cheap TCP/TLS connect + close as a liveness probe
+          ws_code="000"
+          ws_ms=0
+          start=$(date +%s%3N)
+          if timeout 15 bash -c 'exec 3<>/dev/tcp/ws.naeos.dev/443' 2>/dev/null; then
+            ws_code=200
+          fi
+          ws_ms=$(( $(date +%s%3N) - start ))
+          if [ "$ws_code" != "200" ]; then
+            ws='{"ok":false,"code":0,"latency_ms":'$ws_ms'}'
+          else
+            ws='{"ok":true,"code":200,"latency_ms":'$ws_ms'}'
+          fi
+
+          gh_data=$(gh api "repos/$REPO" --jq '{stars:.stargazers_count,forks:.forks_count,open_issues:.open_issues_count}' 2>/dev/null || echo '{"stars":0,"forks":0,"open_issues":0}')
+          version=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name // "unknown"' 2>/dev/null || echo "unknown")
+          version="${version#v}"
+
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          # shellcheck disable=SC2086
+          jq -n \
+            --arg updatedAt "$now" \
+            --argjson github "{stars:$(echo "$gh_data" | jq .stars),forks:$(echo "$gh_data" | jq .forks),open_issues:$(echo "$gh_data" | jq .open_issues),version:\"$version\"}" \
+            --argjson web "$web" \
+            --argjson docs "$docs" \
+            --argjson registry "$registry" \
+            --argjson ws "$ws" \
+          '{
+            updatedAt: $updatedAt,
+            source: "live",
+            github: $github,
+            services: [
+              { id:"web", name:"Website", url:"https://naeos.dev", target:"https://naeos.dev", kind:"http", status: ($web.ok ? "operational" : "down"), latencyMs: $web.latency_ms },
+              { id:"docs", name:"Docs", url:"https://docs.naeos.dev", target:"https://docs.naeos.dev", kind:"http", status: ($docs.ok ? "operational" : "down"), latencyMs: $docs.latency_ms },
+              { id:"registry", name:"Registry", url:"https://registry.naeos.dev", target:"https://registry.naeos.dev", kind:"http", status: ($registry.ok ? "operational" : "down"), latencyMs: $registry.latency_ms },
+              { id:"realtime", name:"Realtime", url:"https://naeos.dev/", target:"https://ws.naeos.dev/ws", kind:"ws", status: ($ws.ok ? "operational" : "down"), latencyMs: $ws.latency_ms }
+            ]
+          }' > site/data/status.json
+
+          cat site/data/status.json
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet site/data/status.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit status data
+        if: steps.changes.outputs.changed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "status: refresh live status metrics"
+          file_pattern: site/data/status.json
