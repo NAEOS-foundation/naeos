@@ -163,6 +163,56 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 						message = fmt.Sprintf("key %s not found in context", key)
 					}
 				}
+			case "gte":
+				subParts := strings.SplitN(args, ",", 2)
+				if len(subParts) == 2 {
+					key := strings.TrimSpace(subParts[0])
+					thresholdStr := strings.TrimSpace(subParts[1])
+					if actual, exists := ctx[key]; exists {
+						actualStr := fmt.Sprintf("%v", actual)
+						actualNum, err1 := strconv.ParseFloat(actualStr, 64)
+						thresholdNum, err2 := strconv.ParseFloat(thresholdStr, 64)
+						if err1 == nil && err2 == nil {
+							if actualNum < thresholdNum {
+								passed = false
+								message = fmt.Sprintf("expected %s >= %s, got %s", key, thresholdStr, actualStr)
+							} else {
+								message = fmt.Sprintf("condition met: %s >= %s", key, thresholdStr)
+							}
+						} else {
+							passed = false
+							message = fmt.Sprintf("cannot compare non-numeric values: %s=%s", key, actualStr)
+						}
+					} else {
+						passed = false
+						message = fmt.Sprintf("key %s not found in context", key)
+					}
+				}
+			case "lte":
+				subParts := strings.SplitN(args, ",", 2)
+				if len(subParts) == 2 {
+					key := strings.TrimSpace(subParts[0])
+					thresholdStr := strings.TrimSpace(subParts[1])
+					if actual, exists := ctx[key]; exists {
+						actualStr := fmt.Sprintf("%v", actual)
+						actualNum, err1 := strconv.ParseFloat(actualStr, 64)
+						thresholdNum, err2 := strconv.ParseFloat(thresholdStr, 64)
+						if err1 == nil && err2 == nil {
+							if actualNum > thresholdNum {
+								passed = false
+								message = fmt.Sprintf("expected %s <= %s, got %s", key, thresholdStr, actualStr)
+							} else {
+								message = fmt.Sprintf("condition met: %s <= %s", key, thresholdStr)
+							}
+						} else {
+							passed = false
+							message = fmt.Sprintf("cannot compare non-numeric values: %s=%s", key, actualStr)
+						}
+					} else {
+						passed = false
+						message = fmt.Sprintf("key %s not found in context", key)
+					}
+				}
 			case "in":
 				subParts := strings.SplitN(args, ",", 2)
 				if len(subParts) == 2 {

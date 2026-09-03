@@ -113,5 +113,9 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newSchemaCommand())
 	root.AddCommand(newSupabaseCommand())
 	root.AddCommand(newCLIDocsGenCommand())
+	root.AddCommand(newPolicyCommand())
+	root.AddCommand(newControlCommand())
+	root.AddCommand(newRuntimeCommand())
+	root.AddCommand(newEvidenceCommand())
 	return root
 }

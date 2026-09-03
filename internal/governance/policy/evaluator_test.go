@@ -225,6 +225,44 @@ func TestEvaluateInRule(t *testing.T) {
 	}
 }
 
+func TestEvaluateGteRule(t *testing.T) {
+	e := NewEvaluator()
+	rules := []Rule{
+		{RuleID: "r1", Condition: "gte:version,1.3", Enabled: true},
+	}
+	results, _ := e.EvaluateRules(rules, map[string]any{"version": 1.3})
+	if !results[0].Passed {
+		t.Fatalf("expected gte to pass for equal value, got: %s", results[0].Message)
+	}
+	results, _ = e.EvaluateRules(rules, map[string]any{"version": "1.5"})
+	if !results[0].Passed {
+		t.Fatalf("expected gte to pass for greater value, got: %s", results[0].Message)
+	}
+	results, _ = e.EvaluateRules(rules, map[string]any{"version": "1.2"})
+	if results[0].Passed {
+		t.Fatalf("expected gte to fail for lower value, got: %s", results[0].Message)
+	}
+}
+
+func TestEvaluateLteRule(t *testing.T) {
+	e := NewEvaluator()
+	rules := []Rule{
+		{RuleID: "r1", Condition: "lte:count,10", Enabled: true},
+	}
+	results, _ := e.EvaluateRules(rules, map[string]any{"count": 10})
+	if !results[0].Passed {
+		t.Fatalf("expected lte to pass for equal value, got: %s", results[0].Message)
+	}
+	results, _ = e.EvaluateRules(rules, map[string]any{"count": 5})
+	if !results[0].Passed {
+		t.Fatalf("expected lte to pass for lower value, got: %s", results[0].Message)
+	}
+	results, _ = e.EvaluateRules(rules, map[string]any{"count": 11})
+	if results[0].Passed {
+		t.Fatalf("expected lte to fail for greater value, got: %s", results[0].Message)
+	}
+}
+
 func TestDefaultRules(t *testing.T) {
 	rules := DefaultRules()
 	if len(rules) == 0 {
