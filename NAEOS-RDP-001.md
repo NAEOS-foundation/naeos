@@ -108,7 +108,7 @@ NAEOS currently has a strong conceptual foundation consisting of:
 - artifact-bound approval concept
 - Runtime concept
 - Plugin Registry direction
-- OpsWatch verification concept
+- independent verification concept
 - vendor-neutral positioning
 
 The principal development gap is:
@@ -455,7 +455,7 @@ Move NAEOS from an engineering prototype toward production ecosystem infrastruct
 
 Components
 
-- OpsWatch integration
+- independent verification
 - external verification
 - compliance workflows
 - plugin ecosystem
@@ -477,7 +477,7 @@ System
   │
   │ Evidence
   ▼
-OpsWatch
+Independent Verifier
   │
   │ Independent Verification
   ▼
@@ -486,7 +486,7 @@ Verification Result
 GitHub Issues
 
 NAEOS-050  Define verification contract
-NAEOS-051  Define OpsWatch integration
+NAEOS-051  Define independent verification
 NAEOS-052  Implement verification events
 NAEOS-053  Implement evidence verification
 NAEOS-054  Implement plugin lifecycle
@@ -654,7 +654,7 @@ Integrity
 
 M6 — Verification
 
-OpsWatch
+Independent Verification
 Verification
 Compliance
 

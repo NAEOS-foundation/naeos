@@ -532,45 +532,7 @@ This creates stronger guarantees around:
 
 ---
 
-16. OpsWatch Integration
-
-NAEOS architecture also evolved toward independent verification.
-
-The proposed relationship is:
-
-NAEOS
-  │
-  │ defines policy contract
-  ▼
-Runtime
-  │
-  │ executes
-  ▼
-OpsWatch
-  │
-  │ independently verifies
-  ▼
-Evidence
-
-The conceptual separation is:
-
-NAEOS
-
-Defines
-
-Runtime
-
-Executes
-
-OpsWatch
-
-Verifies
-
-This supports separation of duties and reduces reliance on the same execution system to verify itself.
-
----
-
-17. Plugin Registry
+16. Plugin Registry
 
 As NAEOS became more modular, the need for extensibility became explicit.
 
@@ -591,7 +553,7 @@ NAEOS should not depend on a single AI provider.
 
 ---
 
-18. Vendor-Neutral AI Architecture
+17. Vendor-Neutral AI Architecture
 
 NAEOS is designed to operate around multiple AI Coding Agents.
 
@@ -629,7 +591,7 @@ The architecture therefore becomes:
 
 ---
 
-19. Repository Evolution
+18. Repository Evolution
 
 The NAEOS repository became the primary engineering home for the project.
 
@@ -649,7 +611,7 @@ The repository therefore evolved alongside the architecture rather than function
 
 ---
 
-20. Documentation Evolution
+19. Documentation Evolution
 
 NAEOS documentation expanded across several domains.
 
@@ -688,7 +650,7 @@ AI Engineering
 
 ---
 
-21. Public Engineering Narrative
+20. Public Engineering Narrative
 
 NAEOS development also became a public engineering journey.
 
@@ -725,7 +687,7 @@ NAEOS Evolution
 
 ---
 
-22. Founder Journal
+21. Founder Journal
 
 The Founder Journal documents the human and engineering side of the project.
 
@@ -745,7 +707,7 @@ This provides historical context that formal architecture documents alone cannot
 
 ---
 
-23. NAEOS Engineering Notes
+22. NAEOS Engineering Notes
 
 The Engineering Notes series was established as a technical publication stream.
 
@@ -775,7 +737,7 @@ Production AI Engineering
 
 ---
 
-24. Brand Evolution
+23. Brand Evolution
 
 NAEOS branding developed in parallel with its technical identity.
 
@@ -805,7 +767,7 @@ The visual identity is intended to communicate:
 
 ---
 
-25. Community Evolution
+24. Community Evolution
 
 NAEOS expanded from an individual project toward an ecosystem model.
 
@@ -824,7 +786,7 @@ The long-term goal is to create an ecosystem around AI-native engineering rather
 
 ---
 
-26. Business Model Exploration
+25. Business Model Exploration
 
 Several possible models were explored:
 
@@ -841,7 +803,7 @@ However, the project's foundational philosophy remains:
 
 ---
 
-27. Infrastructure & Development Environment
+26. Infrastructure & Development Environment
 
 The development journey also included practical infrastructure work involving:
 
@@ -867,7 +829,7 @@ These experiences are part of the broader Founder Journey.
 
 ---
 
-28. Architectural Maturity
+27. Architectural Maturity
 
 NAEOS can currently be understood as evolving through the following maturity model:
 
@@ -904,7 +866,7 @@ The primary challenge is now moving from architecture and principles toward incr
 
 ---
 
-29. Current Conceptual Architecture
+28. Current Conceptual Architecture
 
 The current conceptual architecture can be summarized as:
 
@@ -947,7 +909,7 @@ The current conceptual architecture can be summarized as:
 
 ---
 
-30. Core Architectural Principles
+29. Core Architectural Principles
 
 The evolution of NAEOS has established several foundational principles.
 
@@ -993,7 +955,7 @@ Architectural rules should translate into enforceable engineering behavior.
 
 ---
 
-31. NAEOS Identity Today
+30. NAEOS Identity Today
 
 NAEOS should not be positioned as another AI coding assistant.
 
@@ -1025,7 +987,7 @@ Verification
 
 ---
 
-32. Project Thesis
+31. Project Thesis
 
 The complete project thesis can be summarized as follows:
 

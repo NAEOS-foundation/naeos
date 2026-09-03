@@ -117,5 +117,6 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newControlCommand())
 	root.AddCommand(newRuntimeCommand())
 	root.AddCommand(newEvidenceCommand())
+	root.AddCommand(newVerifyCommand())
 	return root
 }

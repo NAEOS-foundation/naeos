@@ -339,6 +339,13 @@ func ComputeArtifactHash(data []byte) string {
 	return fmt.Sprintf("%x", h)
 }
 
+// RecomputeHash recomputes the canonical hash of the given evidence record,
+// independent of the stored Hash field. It returns the expected SHA-256 hex
+// digest that the record's Hash field should equal.
+func RecomputeHash(rec EvidenceRecord) string {
+	return computeHashStatic(rec)
+}
+
 func (s *EvidenceStore) computeHash(rec EvidenceRecord) string {
 	return computeHashStatic(rec)
 }

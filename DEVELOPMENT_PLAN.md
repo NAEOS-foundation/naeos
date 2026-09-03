@@ -137,7 +137,7 @@ Catatan:
 | Durable job queue + worker jaringan | ❌ async in-memory saja | ✅ v3.6.0 (Postgres outbox) | ✅ NATS/Kafka workers |
 | REST API v2 (cursor, idempotency, RFC 7807) | ❌ v1 | ✅ v3.7.0 | ✅ + webhooks v3.8.0 + SDK v3.9.0 |
 | MFA + SCIM provisioning | ❌ belum ada | review (v3.10.0–v3.11.0) | ✅ v3.11.0 SCIM + MFA |
-| Governance (policy-as-code, drift, approval) | ❌ belum ada | design (v3.12.0–v3.13.0) | ✅ v3.14.0 sebagian besar |
+| Governance (policy-as-code, drift, approval) | ⚠️ policy-as-code + evidence + verification live (`internal/governance`, `internal/evidence`, `internal/verification` + CLI `policy`/`control`/`runtime`/`evidence`/`verify`) | ✅ policy-as-code + evidence (v3.13.0–v3.14.0) | ✅ v3.14.0 sebagian besar |
 | Kehilangan data audit | 0 | 0 | 0 (immutable/WORM v3.14.0) |
 
 ## Completed (v2.2.0 → v3.0.0)

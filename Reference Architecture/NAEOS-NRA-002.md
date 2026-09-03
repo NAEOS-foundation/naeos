@@ -808,7 +808,7 @@ Reference model:
                 ▼
           Verification
 
-An independent verification system may be implemented as OpsWatch or another compatible verifier.
+An independent verification system may be implemented as a compatible verifier component.
 
 Responsibility separation:
 
