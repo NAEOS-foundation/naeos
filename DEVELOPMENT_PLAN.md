@@ -95,7 +95,7 @@ Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rili
 | v3.1.3 | Patch | Fase 8 | `govulncheck` zero-critical + secret-scan CI + perbaikan penanganan secret |
 | v3.2.0 | Minor | Fase 7 | ✅ `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file (`internal/serve` + CLI) |
 | v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
-| v3.3.0 | Minor | Fase 8 | ✅ SBOM CycloneDX (`internal/sbom` + CLI `sbom generate/verify/inspect`) + SBOMVerifier; ⬜ Cosign signing + `naeos verify` expansion + aset rilis tersign |
+| v3.3.0 | Minor | Fase 8 | ✅ SBOM CycloneDX (`internal/sbom` + CLI `sbom generate/verify/inspect`) + SBOMVerifier + signing Ed25519 (`internal/signing` + CLI `sign keygen/sign/verify`); ⬜ `naeos verify` expansion + aset rilis tersign |
 | v3.4.0 | Minor | Fase 7 | Helm chart + Kustomize, bundle air-gapped, config provider (env/file/K8s Secret/Vault), `naeos backup`/`restore`, API server stateless (state store Postgres) |
 | v3.5.0 | Minor | Fase 10 | Ekspor tracing OpenTelemetry (OTLP) + korelasi request_id → trace_id → tenant + SLO & alerting Prometheus + ekspor audit ke SIEM |
 | v3.6.0 | Minor | Fase 11 | Durable job queue (Postgres outbox) + worker pipeline jaringan (NATS/Kafka) + idempotency |
@@ -130,7 +130,7 @@ Catatan:
 | `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
 | Versi rilis — no-skip (urutan rilis == urutan versi) | — | ✅ terbukti di v3.1.1–v3.1.3 | ✅ terbukti hingga v3.10.0 |
 | `naeos serve` daemon (TLS, graceful shutdown) | ✅ v3.2.0 (`naeos serve`/`serve run` + systemd install) | ✅ v3.2.0 | ✅ + systemd unit |
-| SBOM + artifact signing | ⚠️ SBOM CycloneDX live (`internal/sbom` + CLI `sbom generate/verify/inspect` + SBOMVerifier) | ✅ v3.3.0 (SBOM + Cosign + `naeos verify`) | ✅ di setiap rilis |
+| SBOM + artifact signing | ✅ SBOM CycloneDX + Ed25519 signing live (`internal/sbom`, `internal/signing` + CLI `sbom generate/verify/inspect` + `sign keygen/sign/verify` + SBOMVerifier) | ✅ v3.3.0 | ✅ di setiap rilis |
 | Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
 | Helm chart & air-gap bundle | ❌ belum ada | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
 | Observability (OTLP tracing + SLO) | ❌ metrics Prometheus saja | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
@@ -198,6 +198,7 @@ Catatan:
 
 - **SBOM generation (CycloneDX 1.5)** — `internal/sbom`: `BOM`/`Component`/`Hash`/`Dependency` model, `Generator` producing BOMs from component inventory or directory scan (`FromDir`), `Write`/`Load`/`Marshal`/`Unmarshal` for JSON persistence, `NewSerialNumber()` RFC 4122 v4 UUID, `Purl()` package URL builder. CLI: `naeos sbom generate --project X --version Y --dir /path` and `naeos sbom generate --output bom.json`; `naeos sbom verify bom.json` (format/hash/structure checks) and `naeos sbom inspect bom.json`. 20 tests covering full lifecycle.
 - **SBOMVerifier** — `internal/verification.SBOMVerifier` implementing the `Verifier` interface: verifies evidence record artifact hash matches SBOM content hash (live `ArtifactSource` or expected map). 7 tests covering match/mismatch/source scenarios.
+- **Artifact signing (Ed25519)** — `internal/signing`: `KeyPair` generation, Ed25519 sign/verify with SHA-256 digest, `Bundle` model for self-contained signature documents, `Write`/`Load`/`VerifyFile` for JSON persistence. CLI: `naeos sign keygen` (generate key pair), `naeos sign sign <artifact>` (sign file), `naeos sign verify <sig.json>` (verify signature). 24 tests covering full lifecycle.
 - **Version bump** — 3.2.0 → 3.3.0.
 
 ## Notes
