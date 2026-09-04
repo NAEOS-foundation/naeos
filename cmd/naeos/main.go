@@ -120,6 +120,8 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newVerifyCommand())
 	root.AddCommand(newSBomCommand())
 	root.AddCommand(newSignCommand())
+	root.AddCommand(newHelmCommand())
+	root.AddCommand(newAirgapCommand())
 	root.AddCommand(newServeCommand())
 	return root
 }
