@@ -93,7 +93,7 @@ Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rili
 | v3.1.1 | Patch | Fase 7 | Backlog bugfix + security fix + dependensi update |
 | v3.1.2 | Patch | Fase 7 | Perbaikan race condition, queue, LSP, parser edge cases |
 | v3.1.3 | Patch | Fase 8 | `govulncheck` zero-critical + secret-scan CI + perbaikan penanganan secret |
-| v3.2.0 | Minor | Fase 7 | `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file |
+| v3.2.0 | Minor | Fase 7 | ✅ `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file (`internal/serve` + CLI) |
 | v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
 | v3.3.0 | Minor | Fase 8 | SBOM (Syft/CycloneDX) + Cosign signing + `naeos verify` + aset rilis tersign |
 | v3.4.0 | Minor | Fase 7 | Helm chart + Kustomize, bundle air-gapped, config provider (env/file/K8s Secret/Vault), `naeos backup`/`restore`, API server stateless (state store Postgres) |
@@ -129,7 +129,7 @@ Catatan:
 | CI lint pass rate | 100% ✅ | 100% | 100% |
 | `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
 | Versi rilis — no-skip (urutan rilis == urutan versi) | — | ✅ terbukti di v3.1.1–v3.1.3 | ✅ terbukti hingga v3.10.0 |
-| `naeos serve` daemon (TLS, graceful shutdown) | ❌ belum ada | ✅ v3.2.0 | ✅ + systemd unit |
+| `naeos serve` daemon (TLS, graceful shutdown) | ✅ v3.2.0 (`naeos serve`/`serve run` + systemd install) | ✅ v3.2.0 | ✅ + systemd unit |
 | SBOM + artifact signing | ❌ belum ada | ✅ v3.3.0 (SBOM + Cosign + `naeos verify`) | ✅ di setiap rilis |
 | Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
 | Helm chart & air-gap bundle | ❌ belum ada | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
@@ -140,9 +140,7 @@ Catatan:
 | Governance (policy-as-code, drift, approval) | ⚠️ policy-as-code + evidence + verification live (`internal/governance`, `internal/evidence`, `internal/verification` + CLI `policy`/`control`/`runtime`/`evidence`/`verify`) | ✅ policy-as-code + evidence (v3.13.0–v3.14.0) | ✅ v3.14.0 sebagian besar |
 | Kehilangan data audit | 0 | 0 | 0 (immutable/WORM v3.14.0) |
 
-## Completed (v2.2.0 → v3.0.0)
-
-- **Supabase backend integration** — database adapter, Auth, Storage, Edge Functions, Admin API, CLI, CI
+## Completed (v2.2.0 → v3.0.0)- **Supabase backend integration** — database adapter, Auth, Storage, Edge Functions, Admin API, CLI, CI
 - **Lint zero-failure** — 28 lint issues fixed (`bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck`)
 - **Unit tests supabase** — 44 tests, coverage 84.1%
 - **Test flakiness** — `TestQueueFull` race condition fixed, `TestRealMySQLConnectNoOptionalConfig` timeout fixed
@@ -189,6 +187,12 @@ Catatan:
 - **LSP coverage boost** — 74% → 86% (CodeAction, Hover, Definition, handleMessage)
 - **Audit coverage boost** — 78% → 81% (ExportCSV, escapeCSV, edge cases)
 - **v3.0.0 changelog** — Unreleased section dengan 20+ item fitur baru untuk rilis v3.0.0
+
+## Completed (v3.2.0)
+
+- **`naeos serve` production daemon** — `internal/serve`: multi-listener plain HTTP + TLS (TLSv1.3 min), graceful shutdown on SIGINT/SIGTERM, YAML server config (`serve config` starter), systemd install/uninstall unit rendering (`serve install`/`uninstall`), CLI flags `--config/--port/--tls-cert/--tls-key/--auth/--jwt-secret`. API listeners reuse the REST API server with middleware/metrics and `healthz`/`readyz` probes. Embedded version bumped 3.1.0 → 3.2.0.
+- **`api.Server.Handler()` refactor** — extracted the fully-wrapped HTTP handler (metrics + logging + route middleware) out of `Start()` so external daemons can serve the exact same middleware chain.
+- **Serve test suite** — 20+ tests: config parse/validation (missing file, bad YAML, partial TLS, bad log level), multi-listener lifecycle (start → healthz 200 → graceful shutdown), TLS serving, systemd unit rendering (includes/excludes per input), plus 6 CLI tests (`serve --help`, `serve config`, `install`/`uninstall` user unit lifecycle).
 
 ## Notes
 

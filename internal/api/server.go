@@ -2256,14 +2256,18 @@ func parsePagination(r *http.Request) (offset, limit int) {
 
 var startTime = time.Now()
 
+// Handler returns the fully-wrapped HTTP handler: metrics, request logging,
+// and per-route middleware applied on top of the route table.
+func (s *Server) Handler() http.Handler {
+	mw := monitoring.MetricsMiddleware(s.metrics)
+	return mw(s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP)))
+}
+
 // Start begins listening for HTTP requests and handles graceful shutdown.
 func (s *Server) Start() error {
-	mw := monitoring.MetricsMiddleware(s.metrics)
-	wrappedHandler := mw(s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP)))
-
 	s.server = &http.Server{
 		Addr:         s.Addr,
-		Handler:      wrappedHandler,
+		Handler:      s.Handler(),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
