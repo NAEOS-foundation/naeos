@@ -118,6 +118,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newRuntimeCommand())
 	root.AddCommand(newEvidenceCommand())
 	root.AddCommand(newVerifyCommand())
+	root.AddCommand(newSBomCommand())
 	root.AddCommand(newServeCommand())
 	return root
 }
