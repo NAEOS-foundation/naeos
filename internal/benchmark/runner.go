@@ -24,9 +24,28 @@ type benchMetrics struct {
 	bytes  float64
 }
 
+// syncWriter serializes writes from concurrent goroutines to the same
+// underlying writer (parsed benchmark output and copied stderr).
+type syncWriter struct {
+	mu sync.Mutex
+	w  io.Writer
+}
+
+func newSyncWriter(w io.Writer) *syncWriter {
+	return &syncWriter{w: w}
+}
+
+func (s *syncWriter) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.w.Write(p)
+}
+
+var runCommand = exec.CommandContext
+
 func RunBenchmarks(packagePath string, output io.Writer) (*Baseline, error) {
 	args := []string{"test", "-bench=.", "-benchmem", "-count=5", "-run=^$", "-json", packagePath}
-	cmd := exec.CommandContext(context.Background(), "go", args...)
+	cmd := runCommand(context.Background(), "go", args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -44,48 +63,28 @@ func RunBenchmarks(packagePath string, output io.Writer) (*Baseline, error) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+	out := newSyncWriter(output)
 	go func() {
 		defer wg.Done()
-		_, _ = io.Copy(output, stderr)
+		_, _ = io.Copy(out, stderr)
 	}()
 
 	results := &Baseline{}
 	benchData := make(map[string]*benchMetrics)
 	benchCounts := make(map[string]int)
 
-	scanner := bufio.NewScanner(io.TeeReader(stdout, output))
+	scanner := bufio.NewScanner(io.TeeReader(stdout, out))
 	for scanner.Scan() {
-		line := scanner.Text()
-		var ev testEvent
-		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+		name, m, ok := parseBenchLine(scanner.Text())
+		if !ok {
 			continue
 		}
-		if ev.Action != "output" || !strings.HasPrefix(ev.Output, "Benchmark") {
-			continue
-		}
-		text := strings.TrimSpace(ev.Output)
-		parts := strings.Fields(text)
-		if len(parts) < 5 {
-			continue
-		}
-		name := parts[0]
-		if idx := strings.Index(name, "/"); idx > 0 {
-			name = name[:idx]
-		}
-
-		nsOp, _ := strconv.ParseFloat(strings.ReplaceAll(parts[2], ",", ""), 64)
-		allocs, _ := strconv.ParseFloat(strings.ReplaceAll(parts[4], ",", ""), 64)
-		var bytesOp float64
-		if len(parts) >= 7 {
-			bytesOp, _ = strconv.ParseFloat(strings.ReplaceAll(parts[6], ",", ""), 64)
-		}
-
-		if _, ok := benchData[name]; !ok {
+		if _, exists := benchData[name]; !exists {
 			benchData[name] = &benchMetrics{}
 		}
-		benchData[name].nsOp += nsOp
-		benchData[name].allocs += allocs
-		benchData[name].bytes += bytesOp
+		benchData[name].nsOp += m.nsOp
+		benchData[name].allocs += m.allocs
+		benchData[name].bytes += m.bytes
 		benchCounts[name]++
 	}
 
@@ -95,18 +94,50 @@ func RunBenchmarks(packagePath string, output io.Writer) (*Baseline, error) {
 		return nil, fmt.Errorf("go test: %w", err)
 	}
 
-	for name, m := range benchData {
-		count := benchCounts[name]
+	results.Results = summarize(benchData, benchCounts)
+	return results, nil
+}
+
+func parseBenchLine(line string) (string, benchMetrics, bool) {
+	var ev testEvent
+	if err := json.Unmarshal([]byte(line), &ev); err != nil {
+		return "", benchMetrics{}, false
+	}
+	if ev.Action != "output" || !strings.HasPrefix(ev.Output, "Benchmark") {
+		return "", benchMetrics{}, false
+	}
+	text := strings.TrimSpace(ev.Output)
+	parts := strings.Fields(text)
+	if len(parts) < 5 {
+		return "", benchMetrics{}, false
+	}
+	name := parts[0]
+	if idx := strings.Index(name, "/"); idx > 0 {
+		name = name[:idx]
+	}
+
+	m := benchMetrics{}
+	m.nsOp, _ = strconv.ParseFloat(strings.ReplaceAll(parts[2], ",", ""), 64)
+	m.bytes, _ = strconv.ParseFloat(strings.ReplaceAll(parts[4], ",", ""), 64)
+	if len(parts) >= 7 {
+		m.allocs, _ = strconv.ParseFloat(strings.ReplaceAll(parts[6], ",", ""), 64)
+	}
+	return name, m, true
+}
+
+func summarize(data map[string]*benchMetrics, counts map[string]int) []Result {
+	var results []Result
+	for name, m := range data {
+		count := counts[name]
 		if count == 0 {
 			continue
 		}
-		results.Results = append(results.Results, Result{
+		results = append(results, Result{
 			Name:        name,
 			NsPerOp:     m.nsOp / float64(count),
 			AllocsPerOp: m.allocs / float64(count),
 			BytesPerOp:  m.bytes / float64(count),
 		})
 	}
-
-	return results, nil
+	return results
 }
