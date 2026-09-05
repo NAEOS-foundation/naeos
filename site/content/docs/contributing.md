@@ -62,7 +62,7 @@ naeos/
 ├── governance/          # Governance documents
 ├── constitution/        # Engineering constitution
 ├── specification/       # Specification documents
-└── site/                # Hugo website
+└── site/                # Next.js website (Cloudflare Pages)
 ```
 
 ## Coding Standards

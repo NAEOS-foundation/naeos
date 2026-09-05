@@ -15,7 +15,7 @@ naeos/
 ├── internal/            # Package internal (74 package)
 ├── pkg/                 # Package publik (3 package)
 ├── docs/                # Spesifikasi NES (57 file)
-├── site/                # Website Hugo
+├── site/                # Website Next.js (Cloudflare Pages)
 ├── governance/          # Dokumen governance (8 file)
 ├── constitution/        # Konstitusi engineering (8 file)
 ├── specification/       # Dokumen spesifikasi (10 file)
@@ -188,7 +188,7 @@ pkg/
 | `internal/` | 74 | Package internal |
 | `pkg/` | 3 | Package API publik |
 | `docs/` | 57 | Spesifikasi NES |
-| `site/` | 100+ | Konten dan layout website Hugo |
+| `site/` | 100+ | Konten dan layout website Next.js |
 | `governance/` | 8 | Dokumen governance |
 | `specification/` | 10 | Dokumen spesifikasi |
 | **Total** | **320+** | |

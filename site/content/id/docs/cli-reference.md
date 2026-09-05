@@ -44,6 +44,8 @@ NAEOS menyediakan CLI lengkap dengan perintah untuk setiap tahap pipeline rekaya
 | `naeos deploy` | Deploy output pipeline ke lingkungan target |
 | `naeos gateway` | Manajemen API gateway |
 | `naeos graphql` | Mulai server API GraphQL |
+| `naeos helm` | Scaffolding dan validasi Helm chart |
+| `naeos airgap` | Buat, periksa, dan impor bundle distribusi air-gapped |
 
 ## Perintah Manajemen
 
@@ -76,6 +78,7 @@ NAEOS menyediakan CLI lengkap dengan perintah untuk setiap tahap pipeline rekaya
 | `naeos observability` | Manajemen observability dan telemetri |
 | `naeos events` | Perintah event sourcing untuk audit trail dan replay pipeline |
 | `naeos history` | Tampilkan riwayat eksekusi pipeline dari event tersimpan |
+| `naeos serve` | Jalankan NAEOS sebagai daemon produksi (HTTP/TLS, systemd) |
 
 ## Keamanan & Kepatuhan
 
@@ -84,7 +87,14 @@ NAEOS menyediakan CLI lengkap dengan perintah untuk setiap tahap pipeline rekaya
 | `naeos auth` | Manajemen autentikasi dan otorisasi |
 | `naeos security` | Manajemen keamanan dan rahasia (secrets) |
 | `naeos compliance` | Pelaporan kepatuhan dan ekspor audit log |
-| `naeos config` | Perintah manajemen konfigurasi |
+| `naeos config` | Manajemen dan resolusi konfigurasi (env/file/K8s secret/Vault) |
+| `naeos policy` | Kelola kebijakan governance |
+| `naeos control` | Evaluasi control plane governance |
+| `naeos evidence` | Evidence store immutable — audit trail governance |
+| `naeos verify` | Verifikasi independen bukti governance |
+| `naeos runtime` | Runtime gateway untuk eksekusi agen terotorisasi |
+| `naeos sign` | Tanda tangani dan verifikasi artefak (Ed25519) |
+| `naeos sbom` | Generasi dan verifikasi Software Bill of Materials |
 
 ## Data & Integrasi
 

@@ -63,7 +63,7 @@ naeos/
 ├── governance/          # Dokumen governance
 ├── constitution/        # Konstitusi engineering
 ├── specification/       # Dokumen spesifikasi
-└── site/                # Website Hugo
+└── site/                # Website Next.js (Cloudflare Pages)
 ```
 
 ## Standar Coding

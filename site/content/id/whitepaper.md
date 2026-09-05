@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.1.0 (rilis terbaru), aktif dikembangkan menuju v2.0.0 Dashboard & Distributed Builds |
+| **Versi Platform** | v3.4.0 (rilis terbaru), roadmap enterprise menuju v4.0.0 |
 
 ---
 
@@ -23,7 +23,7 @@ NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifika
 
 Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan jaminan *traceability* dari kebutuhan hingga deployment, serta integrasi mendalam dengan ekosistem AI coding agent.
 
-Platform ini telah mencapai **v3.1.0** dengan ekosistem fitur yang mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, hingga kepatuhan enterprise (SOC 2, HIPAA, GDPR).
+Platform ini telah mencapai **v3.4.0** dengan ekosistem fitur yang mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart & bundle air-gapped, hingga kepatuhan enterprise (SOC 2, HIPAA, GDPR).
 
 ---
 
@@ -409,21 +409,27 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 - **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), RBAC hierarkis, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, audit hashed chain + encrypted, stage caching, LSP, VS Code extension, distributed real builds, pipeline/memory profiling
 - **v3.0.0** — Rilis ekosistem: 20+ fitur baru, changelog, migration guide, deprecation notices
 - **v3.1.0** — Rilis performa: pipeline caching pada `naeos run`, profiling tingkat run (`--profile`/`--pprof`), pola arsitektur (monolithic/microservices/serverless), penguatan plugin WASM
+- **v3.2.0** — Rilis operasional: daemon produksi `naeos serve` (TLS, graceful shutdown, systemd), policy registry + control plane, runtime execution gateway, immutable evidence store, verifikasi independen, MCP resources/prompts/completions/ping
+- **v3.3.0** — Rilis supply-chain: SBOM (CycloneDX), penandatanganan artefak Ed25519, SBOM verifier
+- **v3.4.0** — Rilis deployment: scaffolding Helm chart, bundle air-gapped, config providers (env/file/K8s secret/Vault)
 
 ### Metrik kesehatan platform (saat ini)
 
 | Metrik | Nilai |
 |--------|-------|
-| Test coverage | ~77% (target ≥85%) |
-| Lint pass rate | 100% (17 linters, termasuk gosec & errorlint) |
-| CLI commands | 67 (150+ halaman dokumentasi CLI) |
-| Test coverage CLI | ~46% (target 100%) |
-| Package coverage ≥80% | 6 (supabase, messagequeue, marketplace, mcp, migration, dan lainnya) |
+| Test coverage | ~87% (target ≥85%) |
+| Lint pass rate | 100% (linters, termasuk gosec & errorlint) |
+| CLI commands | 200+ (284 halaman dokumentasi CLI) |
+| Test coverage CLI | ~80.8% (target 100%) |
+| Package coverage ≥80% | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, dan lainnya) |
 
 ### Roadmap
 
-- **v1.6.0** — Ekosistem & Dokumentasi (in progress)
-- **v2.0.0** — Dashboard UI, distributed builds
+- **v3.5.0** — Observability: ekspor tracing OpenTelemetry (OTLP), SLO & alerting Prometheus, ekspor audit ke SIEM
+- **v3.6.0** — Skala: durable job queue (Postgres outbox), worker pipeline jaringan (NATS/Kafka), idempotency
+- **v3.7.0+** — API v2, webhooks outbound, SDK resmi, MFA/SCIM, governance per-tenant
+
+Lihat [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) untuk roadmap enterprise lengkap.
 
 ---
 
@@ -452,7 +458,7 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 ## 10. Risiko & Pertimbangan Adopsi
 
 - **Kematangan ekosistem plugin** — Saat ini 0 plugin komunitas; target 5+ (Q1 2027) dan 20+ (Q3 2027). Mitigasi: plugin SDK, template generator, dan registry publik telah tersedia.
-- **Kurva belajar spec language** — Diimbangi oleh LSP, TUI wizard, dan 56 dokumen spesifikasi NES.
+- **Kurva belajar spec language** — Diimbangi oleh LSP, TUI wizard, dan 57 dokumen spesifikasi NES.
 - **Tantangan determinisme AI** — Konstitusi Pasal V dan VIII memastikan AI hanya membantu di dalam pipeline yang deterministik; manusia tetap memegang keputusan rilis.
 
 ---
@@ -467,4 +473,4 @@ Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus be
 
 *NAEOS Foundation — "Engineering With Discipline"*
 
-*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.1.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
+*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.4.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*

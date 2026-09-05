@@ -43,6 +43,8 @@ NAEOS provides a complete CLI with commands for every stage of the engineering p
 | `naeos deploy` | Deploy the pipeline output to a target environment |
 | `naeos gateway` | API gateway management |
 | `naeos graphql` | Start GraphQL API server |
+| `naeos helm` | Helm chart scaffolding and validation |
+| `naeos airgap` | Create, inspect, and import air-gapped distribution bundles |
 
 ## Management Commands
 
@@ -75,6 +77,7 @@ NAEOS provides a complete CLI with commands for every stage of the engineering p
 | `naeos observability` | Observability and telemetry management |
 | `naeos events` | Event sourcing commands for pipeline audit trail and replay |
 | `naeos history` | Show pipeline run history from persisted events |
+| `naeos serve` | Run NAEOS as a production daemon (HTTP/TLS, systemd) |
 
 ## Security & Compliance
 
@@ -83,7 +86,14 @@ NAEOS provides a complete CLI with commands for every stage of the engineering p
 | `naeos auth` | Authentication and authorization management |
 | `naeos security` | Security and secrets management |
 | `naeos compliance` | Compliance reporting and audit log export |
-| `naeos config` | Configuration management commands |
+| `naeos config` | Configuration management and resolution (env/file/K8s secret/Vault) |
+| `naeos policy` | Manage governance policies |
+| `naeos control` | Governance control plane evaluation |
+| `naeos evidence` | Immutable evidence store — governance audit trail |
+| `naeos verify` | Independently verify governance evidence |
+| `naeos runtime` | Runtime gateway for authorized agent execution |
+| `naeos sign` | Sign and verify artifacts (Ed25519) |
+| `naeos sbom` | Software Bill of Materials generation and verification |
 
 ## Data & Integration
 

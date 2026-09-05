@@ -415,11 +415,11 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 
 | Metric | Value |
 |--------|-------|
-| Test coverage | ~77% (target ≥85%) |
-| Lint pass rate | 100% (17 linters, incl. gosec & errorlint) |
-| CLI commands | 67 (150+ CLI doc pages) |
-| CLI test coverage | ~46% (target 100%) |
-| Packages ≥80% coverage | 6 (supabase, messagequeue, marketplace, mcp, migration, and more) |
+| Test coverage | ~87% (target ≥85%) |
+| Lint pass rate | 100% (linters, incl. gosec & errorlint) |
+| CLI commands | 200+ (284 CLI doc pages) |
+| CLI test coverage | ~80.8% (target 100%) |
+| Packages ≥80% coverage | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, and more) |
 
 ### Roadmap
 
@@ -453,7 +453,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 ## 10. Risks & Adoption Considerations
 
 - **Plugin ecosystem maturity** — Currently 0 community plugins; targets of 5+ (Q1 2027) and 20+ (Q3 2027). Mitigation: plugin SDK, template generator, and public registry are already available.
-- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 56 NES specification documents.
+- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 57 NES specification documents.
 - **AI determinism challenges** — Constitution Articles V and VIII ensure AI only assists within a deterministic pipeline; humans retain release decisions.
 
 ---

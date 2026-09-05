@@ -15,9 +15,9 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Wiki → Hugo migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke Hugo site. Wiki/ dihapus. |
-| CLI docs auto-generate ✅ | Site | `naeos docsgen` — regenerate 150+ file CLI docs (termasuk `naeos_supabase*.md`) |
-| API docs auto-generate ✅ | Site | `.github/workflows/website.yml` — copy `docs/openapi.yaml` ke `site/static/` tiap build Hugo (raw YAML, bukan Swagger UI) |
+| Wiki → Next.js/Cloudflare Pages migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke website (`site/`, Next.js on Cloudflare Pages). Wiki/ dihapus. |
+| CLI docs auto-generate ✅ | Site | `naeos docsgen` — regenerate 280+ file CLI docs (termasuk `naeos_supabase*.md`) |
+| API docs auto-generate ✅ | Site | `.github/workflows/website.yml` — copy `docs/openapi.yaml` ke `site/static/` tiap build (raw YAML, bukan Swagger UI) |
 | Blog content pipeline ✅ | Site | `.github/workflows/release-blog.yml` — triggered on `release: [published]`, auto-create blog post EN + ID, open PR |
 | Interactive playground ✅ | Site | xterm.js + WebSocket ke server demo di homepage. Hero terminal interaktif, fallback ke animasi statis. Demo server di `cmd/naeos-demo/` |
 | PDF generation ✅ | Site | CLI reference + getting-started sebagai PDF download via GitHub Action (`pdf-docs.yml`). Tersedia di `/downloads/` |
@@ -96,7 +96,7 @@ Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rili
 | v3.2.0 | Minor | Fase 7 | ✅ `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file (`internal/serve` + CLI) |
 | v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
 | v3.3.0 | Minor | Fase 8 | ✅ SBOM CycloneDX (`internal/sbom` + CLI `sbom generate/verify/inspect`) + SBOMVerifier + signing Ed25519 (`internal/signing` + CLI `sign keygen/sign/verify`); ⬜ `naeos verify` expansion + aset rilis tersign |
-| v3.4.0 | Minor | Fase 7 | ✅ Helm chart (`internal/helm` + CLI `helm init/validate`) + bundle air-gapped (`internal/airgap` + CLI `airgap bundle/import/inspect`); ⬜ config provider (env/file/K8s Secret/Vault) + `naeos backup`/`restore` + API server stateless (state store Postgres) |
+| v3.4.0 | Minor | Fase 7 | ✅ Helm chart (`internal/helm` + CLI `helm init/validate`) + ✅ bundle air-gapped (`internal/airgap` + CLI `airgap bundle/import/inspect`) + ✅ config provider (`internal/configprovider` + CLI `config resolve/test/sources`); ⬜ `naeos backup`/`restore` + API server stateless (state store Postgres) |
 | v3.5.0 | Minor | Fase 10 | Ekspor tracing OpenTelemetry (OTLP) + korelasi request_id → trace_id → tenant + SLO & alerting Prometheus + ekspor audit ke SIEM |
 | v3.6.0 | Minor | Fase 11 | Durable job queue (Postgres outbox) + worker pipeline jaringan (NATS/Kafka) + idempotency |
 | v3.7.0 | Minor | Fase 9 | REST API v2: pagination cursor, idempotency key, error envelope RFC 7807, rate-limit berjenjang, kebijakan versioning API |
@@ -133,6 +133,7 @@ Catatan:
 | SBOM + artifact signing | ✅ SBOM CycloneDX + Ed25519 signing live (`internal/sbom`, `internal/signing` + CLI `sbom generate/verify/inspect` + `sign keygen/sign/verify` + SBOMVerifier) | ✅ v3.3.0 | ✅ di setiap rilis |
 | Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
 | Helm chart & air-gap bundle | ✅ Helm scaffolding + airgap bundle v3.4.0 (`internal/helm`, `internal/airgap` + CLI `helm init/validate` + `airgap bundle/import/inspect`) | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
+| Config provider (env/file/K8s Secret/Vault) | ✅ `internal/configprovider` + CLI `config resolve/test/sources` v3.4.0 | ✅ v3.4.0 | ✅ v3.4.0 |
 | Observability (OTLP tracing + SLO) | ❌ metrics Prometheus saja | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
 | Durable job queue + worker jaringan | ❌ async in-memory saja | ✅ v3.6.0 (Postgres outbox) | ✅ NATS/Kafka workers |
 | REST API v2 (cursor, idempotency, RFC 7807) | ❌ v1 | ✅ v3.7.0 | ✅ + webhooks v3.8.0 + SDK v3.9.0 |
@@ -205,6 +206,7 @@ Catatan:
 
 - **Helm chart scaffolding** — `internal/helm`: `Chart` model with Chart.yaml metadata, values (typed Value with defaults/required/description), 7 template renderers (deployment, service, ingress, hpa, serviceaccount, _helpers, NOTES), `Validate`, `WriteToDisk`/`LoadFromDisk`, YAML parse/flatten. CLI: `naeos helm init <name>` + `naeos helm chart render/validate`. 22 tests.
 - **Air-gapped bundles** — `internal/airgap`: `Bundle` manifest with manifest hash, `Builder` (charts/images/SBOMs/signatures), tar.gz `WriteBundle`/`ReadBundle`, `Extract` with hash verification + path traversal protection, `VerifyChecksum`. CLI: `naeos airgap bundle/import/inspect`. 15 tests.
+- **Config providers** — `internal/configprovider`: `Provider` interface + env/file/K8s secret/Vault KV providers over an in-memory store, ordered `Chain`, `Resolver.ResolveMap`. CLI: `naeos config resolve/test/sources`. 17 tests.
 - **Version bump** — 3.3.0 → 3.4.0.
 
 ## Notes

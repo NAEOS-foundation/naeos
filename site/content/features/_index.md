@@ -97,7 +97,7 @@ Publish, discover, and install extensions:
 
 Additional tools for a complete development workflow:
 
-- 67 CLI commands
+- 200+ CLI commands
 - Watch mode for hot-reload
 - Diff engine for spec comparison
 - Migration engine for schema versioning

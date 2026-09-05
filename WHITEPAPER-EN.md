@@ -405,21 +405,27 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 - **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), hierarchical RBAC, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, hashed + encrypted audit chains, stage caching, LSP, VS Code extension, real distributed builds, pipeline/memory profiling
 - **v3.0.0** — Ecosystem release: 20+ new features, changelog, migration guide, deprecation notices
 - **v3.1.0** — Performance release: pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns (monolithic/microservices/serverless), WASM plugin hardening
+- **v3.2.0** — Operations release: production server daemon (`naeos serve`) with TLS, graceful shutdown, and systemd integration; policy registry + control plane, runtime execution gateway, immutable evidence store, independent verification, MCP resources/prompts/completions/ping
+- **v3.3.0** — Supply-chain release: SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
+- **v3.4.0** — Deployment release: Helm chart scaffolding, air-gapped bundles, config providers (env/file/K8s secret/Vault)
 
 ### Platform health metrics (current)
 
 | Metric | Value |
 |--------|-------|
-| Test coverage | ~77% (target ≥85%) |
-| Lint pass rate | 100% (17 linters, incl. gosec & errorlint) |
-| CLI commands | 35+ (150+ CLI doc pages) |
-| CLI test coverage | ~46% (target 100%) |
-| Packages ≥80% coverage | 6 (supabase, messagequeue, marketplace, mcp, migration, and more) |
+| Test coverage | ~87% (target ≥85%) |
+| Lint pass rate | 100% (linters, incl. gosec & errorlint) |
+| CLI commands | 200+ (284 CLI doc pages) |
+| CLI test coverage | ~80.8% (target 100%) |
+| Packages ≥80% coverage | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, and more) |
 
 ### Roadmap
 
-- **v1.6.0** — Ecosystem & Documentation (in progress)
-- **v2.0.0** — Dashboard UI, distributed builds
+- **v3.5.0** — Observability: OpenTelemetry (OTLP) tracing export, SLO & Prometheus alerting, audit export to SIEM
+- **v3.6.0** — Scale: durable job queue (Postgres outbox), networked pipeline workers (NATS/Kafka), idempotency
+- **v3.7.0+** — API v2, outbound webhooks, official SDKs, MFA/SCIM, per-tenant governance
+
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the full enterprise roadmap.
 
 ---
 
@@ -448,7 +454,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 ## 10. Risks & Adoption Considerations
 
 - **Plugin ecosystem maturity** — Currently 0 community plugins; targets of 5+ (Q1 2027) and 20+ (Q3 2027). Mitigation: plugin SDK, template generator, and public registry are already available.
-- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 56 NES specification documents.
+- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 57 NES specification documents.
 - **AI determinism challenges** — Constitution Articles V and VIII ensure AI only assists within a deterministic pipeline; humans retain release decisions.
 
 ---

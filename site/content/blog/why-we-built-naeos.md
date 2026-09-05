@@ -48,8 +48,8 @@ NAEOS has grown from a v0.1.0 foundation in July 2026 to **v3.1.0** today:
 
 - **5 languages** — Go, TypeScript, Python, Java, Rust — from one specification
 - **6 AI platforms** — instruction sets compiled from the NEIR model
-- **67 CLI commands** — run, validate, test, watch, diff, deploy, cloud, and more
-- **56 NES documents** — a specification-driven project, documented like it builds
+- **200+ CLI commands** — run, validate, test, watch, diff, deploy, cloud, serve, and more
+- **57 NES documents** — a specification-driven project, documented like it builds
 - **WASM plugin marketplace** — sandboxed, signature-verified third-party extensions
 - **Schema registry, policy engine, MCP server, LSP server, dashboard** — an operating system for engineering, not a code generator
 

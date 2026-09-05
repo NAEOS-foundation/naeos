@@ -70,6 +70,16 @@ This document serves as the master index for navigating the NAEOS repository.
 - [ROADMAP.md](ROADMAP.md) — project development roadmap.
 - [CHANGELOG.md](CHANGELOG.md) — version history and release notes.
 
+## 5.1 Specification & planning documents
+- [NAEOS-MTS-001.md](NAEOS-MTS-001.md) — master technical specification (core domain, policy, control plane, runtime & evidence).
+- [NAEOS-PER-001.md](NAEOS-PER-001.md) — project evolution (development history & evolution record).
+- [NAEOS-RDP-001.md](NAEOS-RDP-001.md) — roadmap & development plan (architecture to executable AI engineering foundation).
+
+## 5.2 Website and academic documents
+- [site/](site/) — Next.js website (Cloudflare Pages) with English and Indonesian (`site/content/id`) content.
+- [thesis/](thesis/) — academic thesis chapters.
+- [paper/](paper/) — LaTeX research paper (`main.tex`, `refs.bib`).
+
 ## 6. Architecture Decision Records (ADRs)
 - [docs/adr/001-why-go-for-runtime.md](docs/adr/001-why-go-for-runtime.md) — ADR-001: Why Go for the Runtime
 - [docs/adr/002-why-neir-as-central-model.md](docs/adr/002-why-neir-as-central-model.md) — ADR-002: Why NEIR as the Central Model

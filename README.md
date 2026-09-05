@@ -97,7 +97,7 @@ naeos ai compile --input-file spec.yaml --target opencode
 - **Audit Trail** — traceability
 
 ### Developer Tools
-- **67 CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, etc.
+- **200+ CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, serve, sign, helm, sbom, airgap, evidence, verify, policy, control, etc.
 - **Watch Mode** — hot-reload pipeline on spec changes
 - **Diff Engine** — compare specs with colorized output
 - **Migration Engine** — schema version transforms (v0.1→v0.2→v0.3)
@@ -185,7 +185,7 @@ A marketplace for profiles, plugins, and templates that can be published, search
 ## Repository Structure
 
 ```text
-cmd/naeos/           # CLI commands (35+ files)
+cmd/naeos/           # CLI commands (200+ commands)
 internal/
   specification/     # Parser, normalizer, resolver
   neir/             # NEIR model and builder
@@ -209,6 +209,7 @@ internal/
   eventsourcing/    # Event sourcing and aggregate snapshots
   distributed/      # Distributed task execution
   configreload/     # Configuration hot-reload
+  configprovider/   # Config providers (env, file, K8s secret, Vault)
   pipelinecache/    # Pipeline result caching
   pipelinemiddleware/ # Composable pipeline middleware
   audit/            # Audit logging layer
@@ -216,12 +217,20 @@ internal/
   profiledetect/    # Automatic language/framework detection
   ai/               # AI service and LLM integration
   pluginsdk/        # Plugin SDK with WASM runtime
+  serve/            # Production server daemon
+  sbom/             # SBOM generation (CycloneDX)
+  signing/          # Artifact signing (Ed25519)
+  verification/     # Independent verification
+  evidence/         # Immutable evidence store
+  helm/             # Helm chart scaffolding
+  airgap/           # Air-gapped bundles
+  runtime/          # Runtime execution gateway
 pkg/
   pipeline/         # Main pipeline
   kernel/           # System kernel
   config/           # Configuration
   plugin/           # Plugin system
-docs/               # Documentation (56 NES specs)
+docs/               # Documentation (57 NES specs)
 ```
 
 ## Documentation
@@ -241,7 +250,7 @@ docs/               # Documentation (56 NES specs)
 - [x] v0.2.0 — Compiler Foundation (6 adapters, artifact store, profiles)
 - [x] v0.3.0 — Core Specification (Spec v2, validation, context bundles)
 - [x] v0.4.0 — MCP Server, migration engine, marketplace, benchmarks
-- [x] v1.0.0 — Stable release (test coverage, security hardening, 67 commands)
+- [x] v1.0.0 — Stable release (test coverage, security hardening, 200+ commands)
 - [x] v1.1.0 — Critical fixes (WebSocket races, interface{}→any, godoc, OpenAPI)
 - [x] v1.2.0 — Database layer (PostgreSQL/MySQL/SQLite, retry, logging, health checks)
 - [x] v1.3.0 — Quality, Correctness & Production Readiness (code gen fixes, security audit, CLI --output json/yaml)
@@ -252,6 +261,9 @@ docs/               # Documentation (56 NES specs)
 - [x] v2.2.0 — Supabase backend integration, lint zero-failure, fuzz testing, coverage-gated CI
 - [x] v3.0.0 — Pipeline profiling, stage caching, schema-based validation, NEIR-aware LSP server, official plugin examples
 - [x] v3.1.0 — Pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns, WASM plugin hardening
+- [x] v3.2.0 — Production server daemon (`naeos serve`), TLS, graceful shutdown, systemd integration
+- [x] v3.3.0 — SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
+- [x] v3.4.0 — Helm chart scaffolding, air-gapped bundles, config providers
 
 For upcoming work, see [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) and [ROADMAP.md](ROADMAP.md).
 
@@ -261,4 +273,4 @@ Apache License 2.0
 
 ## Status
 
-🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v3.1.0 (Pipeline caching on `naeos run`, run-level profiling, architecture patterns, WASM plugin hardening).
+🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v3.4.0 (Helm chart scaffolding, air-gapped bundles, config providers).

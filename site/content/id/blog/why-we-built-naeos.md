@@ -48,8 +48,8 @@ NAEOS tumbuh dari fondasi v0.1.0 pada Juli 2026 menjadi **v3.1.0** hari ini:
 
 - **5 bahasa** — Go, TypeScript, Python, Java, Rust — dari satu spesifikasi
 - **6 platform AI** — set instruksi yang dikompilasi dari model NEIR
-- **67 command CLI** — run, validate, test, watch, diff, deploy, cloud, dan lainnya
-- **56 dokumen NES** — proyek yang digerakkan spesifikasi, terdokumentasi seperti yang dibangunnya
+- **200+ command CLI** — run, validate, test, watch, diff, deploy, cloud, dan lainnya
+- **57 dokumen NES** — proyek yang digerakkan spesifikasi, terdokumentasi seperti yang dibangunnya
 - **Marketplace plugin WASM** — ekstensi pihak ketiga yang di-sandbox dan diverifikasi tanda tangannya
 - **Schema registry, policy engine, server MCP, server LSP, dashboard** — operating system untuk engineering, bukan sekadar code generator
 
