@@ -1,19 +1,15 @@
-## naeos config show
+## naeos evidence verify
 
-Show the default config schema
-
-### Synopsis
-
-Display the default NAEOS configuration schema with field types and required fields.
+Verify the integrity of the evidence chain
 
 ```
-naeos config show [flags]
+naeos evidence verify [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for show
+  -h, --help   help for verify
 ```
 
 ### Options inherited from parent commands
@@ -26,5 +22,5 @@ naeos config show [flags]
 
 ### SEE ALSO
 
-* [naeos config](naeos_config.md)	 - Configuration management commands
+* [naeos evidence](naeos_evidence.md)	 - Governance evidence store — immutable audit trail
 
