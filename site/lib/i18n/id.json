@@ -97,7 +97,7 @@
   "next": "Berikutnya",
   "hero_open_source": "Sumber Terbuka",
   "home_what_is_extended": "Satu `naeos run` menghasilkan: kode produksi di Go, TypeScript, Python, Java, atau Rust; Dockerfile dan manifes Kubernetes; konfigurasi pipeline CI/CD; dokumentasi API; dan bundel instruksi AI untuk Copilot, Claude, Cursor, Gemini, Codex, dan OpenCode.",
-  "home_features_subtitle": "{{ .CLI }}+ perintah CLI · 5 bahasa · 6 platform AI · 56+ spesifikasi — satu sistem rekayasa terpadu.",
+  "home_features_subtitle": "{{ .CLI }}+ perintah CLI · 5 bahasa · 6 platform AI · 57+ spesifikasi — satu sistem rekayasa terpadu.",
   "home_quick_start_subtitle": "Dari ide ke proyek yang dihasilkan dalam waktu kurang dari 60 detik.",
   "home_step_install_title": "Pasang NAEOS",
   "home_step_install_desc": "Pasang melalui Go, gunakan Docker, atau unduh binary yang siap dijalankan.",

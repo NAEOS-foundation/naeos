@@ -14,7 +14,7 @@ aliases: ["/whitepaper/"]
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Platform Version** | v3.1.0 (latest release), actively developed toward v2.0.0 Dashboard & Distributed Builds |
+| **Platform Version** | v3.4.0 (latest release), enterprise roadmap toward v4.0.0 |
 
 ---
 
@@ -24,7 +24,7 @@ NAEOS is an open-source declarative engineering platform that transforms specifi
 
 Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then build, validate, and evolve software across multiple languages, frameworks, and platforms — with guaranteed traceability from requirements to deployment, and deep integration with the AI coding agent ecosystem.
 
-The platform has reached **v3.1.0** with a feature ecosystem spanning Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, and enterprise compliance (SOC 2, HIPAA, GDPR).
+The platform has reached **v3.4.0** with a feature ecosystem spanning Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, production server daemon (`naeos serve`), SBOM & artifact signing, Helm chart & air-gapped bundles, and enterprise compliance (SOC 2, HIPAA, GDPR).
 
 ---
 
@@ -410,6 +410,9 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 - **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), hierarchical RBAC, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, hashed + encrypted audit chains, stage caching, LSP, VS Code extension, real distributed builds, pipeline/memory profiling
 - **v3.0.0** — Ecosystem release: 20+ new features, changelog, migration guide, deprecation notices
 - **v3.1.0** — Performance release: pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns (monolithic/microservices/serverless), WASM plugin hardening
+- **v3.2.0** — Operations release: production server daemon (`naeos serve`) with TLS, graceful shutdown, and systemd integration; policy registry + control plane, runtime execution gateway, immutable evidence store, independent verification, MCP resources/prompts/completions/ping
+- **v3.3.0** — Supply-chain release: SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
+- **v3.4.0** — Deployment release: Helm chart scaffolding, air-gapped bundles, config providers (env/file/K8s secret/Vault)
 
 ### Platform health metrics (current)
 
@@ -468,4 +471,4 @@ Under Apache License 2.0, with a vendor-neutral architecture and a growing ecosy
 
 *NAEOS Foundation — "Engineering With Discipline"*
 
-*This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.1.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*
+*This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.4.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*

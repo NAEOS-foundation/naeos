@@ -97,7 +97,7 @@
   "next": "Next",
   "hero_open_source": "Open Source",
   "home_what_is_extended": "One `naeos run` produces: production-grade code in Go, TypeScript, Python, Java, or Rust; Dockerfiles and Kubernetes manifests; CI/CD pipeline configs; API documentation; and AI instruction bundles for Copilot, Claude, Cursor, Gemini, Codex, and OpenCode.",
-  "home_features_subtitle": "{{ .CLI }}+ CLI commands · 5 languages · 6 AI platforms · 56+ specifications — one unified engineering system.",
+  "home_features_subtitle": "{{ .CLI }}+ CLI commands · 5 languages · 6 AI platforms · 57+ specifications — one unified engineering system.",
   "home_quick_start_subtitle": "From idea to generated project in under 60 seconds.",
   "home_step_install_title": "Install NAEOS",
   "home_step_install_desc": "Install with Go, use Docker, or download a ready-to-run binary.",

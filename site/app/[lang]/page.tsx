@@ -7,6 +7,7 @@ import { CountUpNumber, GithubStats } from "@/components/home/HomeEffects";
 import { getPage, getBlogPosts } from "@/lib/content";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
 import { pageMetadata } from "@/lib/metadata";
+import { t as translate } from "@/lib/i18n";
 import enDict from "@/lib/i18n/en.json";
 import idDict from "@/lib/i18n/id.json";
 
@@ -388,7 +389,7 @@ export default async function HomePage(props: {
       <section className="section">
         <div className="container">
           <h2 className="section-title fade-in">{t("section_features")}</h2>
-          <p className="section-subtitle fade-in">{t("home_features_subtitle").replace("{{.CLI}}", String(SITE.stats.cli))}</p>
+          <p className="section-subtitle fade-in">{translate(lang, "home_features_subtitle", { CLI: SITE.stats.cli })}</p>
           <div className="features-grid stagger-fade">
             {features.map((f) => (
               <div key={f.key} className="feature-card">

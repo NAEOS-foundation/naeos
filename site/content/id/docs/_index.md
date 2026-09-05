@@ -30,7 +30,7 @@ Selamat datang di dokumentasi NAEOS. Di sini Anda akan menemukan semua yang dipe
 
 ## Referensi
 
-- **[Referensi CLI](/id/docs/cli-reference/)** — Referensi perintah lengkap untuk 67 perintah CLI
+- **[Referensi CLI](/id/docs/cli-reference/)** — Referensi perintah lengkap untuk 200+ perintah CLI
 - **[Build Terdistribusi](/id/docs/distributed-builds/)** — Paralelkan eksekusi pipeline di banyak worker
 - **[Dashboard](/id/docs/dashboard/)** — Pantau aktivitas pipeline dan kesehatan secara real time
 - **[Glosarium](/id/docs/glossary/)** — Istilah-istilah penting dan definisinya
