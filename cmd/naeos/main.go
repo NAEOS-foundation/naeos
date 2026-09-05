@@ -102,7 +102,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newImportCommand())
 	root.AddCommand(newHealthCommand())
 	root.AddCommand(newBenchmarkCommand())
-	root.AddCommand(newConfigCmd())
+	root.AddCommand(newConfigCommand())
 	root.AddCommand(newHistoryCommand())
 	root.AddCommand(newMigrationCmd())
 	root.AddCommand(newDeployCommand())
