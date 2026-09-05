@@ -7,12 +7,6 @@ export function generateStaticParams() {
   return LANGUAGES.map((lang) => ({ lang }));
 }
 
-export const dynamic = "force-static";
-
-export function generateStaticParams() {
-  return [{ lang: "en" }, { lang: "id" }];
-}
-
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ lang: string }> },
