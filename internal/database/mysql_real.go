@@ -38,7 +38,11 @@ func (m *RealMySQL) Connect(config *Config) error {
 
 	applyPoolConfig(db, config)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	timeout := 10 * time.Second
+	if config.Timeout > 0 {
+		timeout = config.Timeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {

@@ -129,7 +129,7 @@ func newServeInstallCommand() *cobra.Command {
 				}
 				unitPath = filepath.Join(unitDir, "naeos.service")
 			}
-			if err := os.WriteFile(unitPath, []byte(unit), 0644); err != nil {
+			if err := os.WriteFile(unitPath, []byte(unit), 0o600); err != nil {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "installed systemd unit: %s\n", unitPath)

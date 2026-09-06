@@ -176,7 +176,7 @@ func (p *K8sSecretProvider) Connected() bool {
 // VaultProvider resolves references from an in-memory Vault KV store.
 // The reference format is "path#key".
 type VaultProvider struct {
-	mu     sync.RWMutex
+	mu      sync.RWMutex
 	secrets map[string]string
 }
 

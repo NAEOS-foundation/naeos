@@ -32,7 +32,7 @@ type Bundle struct {
 	Algorithm   Algorithm `json:"algorithm"`
 	Artifact    Artifact  `json:"artifact"`
 	Signature   string    `json:"signature"`
-	PublicKey    string    `json:"publicKey"`
+	PublicKey   string    `json:"publicKey"`
 	SignedAt    string    `json:"signedAt"`
 	Signer      string    `json:"signer,omitempty"`
 }
@@ -119,7 +119,7 @@ func Sign(name string, content []byte, kp *KeyPair, opts ...SignOption) (*Bundle
 			Hash: Hash(content),
 			Size: int64(len(content)),
 		},
-		SignedAt: time.Now().UTC().Format(time.RFC3339),
+		SignedAt:  time.Now().UTC().Format(time.RFC3339),
 		PublicKey: kp.PublicKeyBase64(),
 	}
 

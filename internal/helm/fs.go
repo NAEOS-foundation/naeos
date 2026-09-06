@@ -35,7 +35,7 @@ func (c *Chart) WriteToDisk(dir string) error {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir")
 		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 			return naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", rel)
 		}
 	}

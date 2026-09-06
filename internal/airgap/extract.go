@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -58,7 +59,7 @@ func Extract(path string, opts ExtractOptions) (*Bundle, error) {
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -100,7 +101,7 @@ func Extract(path string, opts ExtractOptions) (*Bundle, error) {
 		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "create dir")
 		}
-		if err := os.WriteFile(dst, content, 0o644); err != nil {
+		if err := os.WriteFile(dst, content, 0o600); err != nil {
 			return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "write %s", rel)
 		}
 	}

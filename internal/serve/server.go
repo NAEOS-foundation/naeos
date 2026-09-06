@@ -96,7 +96,7 @@ func (s *Server) Start() error {
 }
 
 // StartWithContext is like Start but uses the provided context for shutdown
-// instead of OS signals. Cancelling the context triggers a graceful shutdown.
+// instead of OS signals. Canceling the context triggers a graceful shutdown.
 func (s *Server) StartWithContext(ctx context.Context) error {
 	if len(s.cfg.Listeners) == 0 {
 		return naeoserr.New(naeoserr.ErrConfig, "server: no listeners configured")
@@ -109,7 +109,7 @@ func (s *Server) StartWithContext(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	for _, l := range s.cfg.Listeners {
-		var handler http.Handler = http.NotFoundHandler()
+		var handler = http.NotFoundHandler()
 		if l.API && s.api != nil {
 			handler = s.api.Handler()
 		}
@@ -135,18 +135,16 @@ func (s *Server) StartWithContext(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 		slog.Warn("shutting down NAEOS server", "component", "serve")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), s.duration(s.cfg.ShutdownTimeout, 30*time.Second))
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.duration(s.cfg.ShutdownTimeout, 30*time.Second))
 		defer cancel()
 		_ = s.Shutdown(shutdownCtx)
 	}()
 
 	// A fatal error on any listener ends the daemon, mimicking systemd restarts.
 	var firstErr error
-	select {
-	case err := <-errCh:
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			firstErr = err
-		}
+	err := <-errCh
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		firstErr = err
 	}
 	if err := s.Shutdown(context.Background()); err != nil && firstErr == nil {
 		firstErr = err

@@ -8,17 +8,17 @@ import (
 
 // Chart is an in-memory Helm chart with Chart.yaml metadata and templates.
 type Chart struct {
-	APIVersion  string            `json:"apiVersion"`
-	Name        string            `json:"name"`
-	Version     string            `json:"version"`
-	Description string            `json:"description,omitempty"`
-	Type        string            `json:"type,omitempty"`
-	KubeVersion string            `json:"kubeVersion,omitempty"`
-	AppVersion  string            `json:"appVersion,omitempty"`
-	Keywords    []string          `json:"keywords,omitempty"`
-	Maintainers []Maintainer      `json:"maintainers,omitempty"`
-	Values      map[string]Value  `json:"values,omitempty"`
-	Templates   []Template        `json:"templates,omitempty"`
+	APIVersion  string           `json:"apiVersion"`
+	Name        string           `json:"name"`
+	Version     string           `json:"version"`
+	Description string           `json:"description,omitempty"`
+	Type        string           `json:"type,omitempty"`
+	KubeVersion string           `json:"kubeVersion,omitempty"`
+	AppVersion  string           `json:"appVersion,omitempty"`
+	Keywords    []string         `json:"keywords,omitempty"`
+	Maintainers []Maintainer     `json:"maintainers,omitempty"`
+	Values      map[string]Value `json:"values,omitempty"`
+	Templates   []Template       `json:"templates,omitempty"`
 }
 
 // Maintainer is a chart maintainer.
@@ -76,27 +76,27 @@ func NewChart(cfg ChartConfig) (*Chart, error) {
 
 	// Sensible default values.
 	chart.Values = map[string]Value{
-		"replicaCount": {Type: "int", Default: 1, Description: "Number of replicas"},
-		"image.repository": {Type: "string", Default: DefaultImageRepo(chart.Name), Description: "Container image repository"},
-		"image.tag":       {Type: "string", Default: chart.AppVersion, Description: "Container image tag"},
-		"image.pullPolicy": {Type: "string", Default: "IfNotPresent", Description: "Image pull policy"},
-		"service.type":    {Type: "string", Default: "ClusterIP", Description: "Kubernetes service type"},
-		"service.port":    {Type: "int", Default: 80, Description: "Service port"},
-		"service.targetPort": {Type: "int", Default: 8080, Description: "Container target port"},
-		"resources.limits.cpu":    {Type: "string", Default: "500m", Description: "CPU limit"},
-		"resources.limits.memory": {Type: "string", Default: "128Mi", Description: "Memory limit"},
-		"resources.requests.cpu":  {Type: "string", Default: "100m", Description: "CPU request"},
-		"resources.requests.memory": {Type: "string", Default: "64Mi", Description: "Memory request"},
-		"ingress.enabled":  {Type: "bool", Default: false, Description: "Enable ingress"},
-		"ingress.host":     {Type: "string", Default: chart.Name + ".example.com", Description: "Ingress host"},
-		"autoscaling.enabled": {Type: "bool", Default: false, Description: "Enable autoscaling"},
-		"autoscaling.minReplicas": {Type: "int", Default: 1, Description: "Min replicas"},
-		"autoscaling.maxReplicas": {Type: "int", Default: 10, Description: "Max replicas"},
+		"replicaCount":                               {Type: "int", Default: 1, Description: "Number of replicas"},
+		"image.repository":                           {Type: "string", Default: DefaultImageRepo(chart.Name), Description: "Container image repository"},
+		"image.tag":                                  {Type: "string", Default: chart.AppVersion, Description: "Container image tag"},
+		"image.pullPolicy":                           {Type: "string", Default: "IfNotPresent", Description: "Image pull policy"},
+		"service.type":                               {Type: "string", Default: "ClusterIP", Description: "Kubernetes service type"},
+		"service.port":                               {Type: "int", Default: 80, Description: "Service port"},
+		"service.targetPort":                         {Type: "int", Default: 8080, Description: "Container target port"},
+		"resources.limits.cpu":                       {Type: "string", Default: "500m", Description: "CPU limit"},
+		"resources.limits.memory":                    {Type: "string", Default: "128Mi", Description: "Memory limit"},
+		"resources.requests.cpu":                     {Type: "string", Default: "100m", Description: "CPU request"},
+		"resources.requests.memory":                  {Type: "string", Default: "64Mi", Description: "Memory request"},
+		"ingress.enabled":                            {Type: "bool", Default: false, Description: "Enable ingress"},
+		"ingress.host":                               {Type: "string", Default: chart.Name + ".example.com", Description: "Ingress host"},
+		"autoscaling.enabled":                        {Type: "bool", Default: false, Description: "Enable autoscaling"},
+		"autoscaling.minReplicas":                    {Type: "int", Default: 1, Description: "Min replicas"},
+		"autoscaling.maxReplicas":                    {Type: "int", Default: 10, Description: "Max replicas"},
 		"autoscaling.targetCPUUtilizationPercentage": {Type: "int", Default: 80, Description: "CPU target utilization"},
-		"nodeSelector": {Type: "object", Default: map[string]any{}, Description: "Node selector"},
-		"tolerations":  {Type: "array", Default: []any{}, Description: "Tolerations"},
-		"affinity":     {Type: "object", Default: map[string]any{}, Description: "Affinity"},
-		"fullnameOverride": {Type: "string", Default: chart.Name, Description: "Override full name"},
+		"nodeSelector":                               {Type: "object", Default: map[string]any{}, Description: "Node selector"},
+		"tolerations":                                {Type: "array", Default: []any{}, Description: "Tolerations"},
+		"affinity":                                   {Type: "object", Default: map[string]any{}, Description: "Affinity"},
+		"fullnameOverride":                           {Type: "string", Default: chart.Name, Description: "Override full name"},
 	}
 
 	chart.Templates = []Template{

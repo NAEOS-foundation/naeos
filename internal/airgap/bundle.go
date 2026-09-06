@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -23,15 +24,15 @@ const SpecVersion = "1.0"
 // Bundle is an air-gapped distribution bundle containing charts, images,
 // SBOMs, and signatures required to deploy NAEOS offline.
 type Bundle struct {
-	SpecVersion string    `json:"specVersion"`
-	Name        string    `json:"name"`
-	Version     string    `json:"version"`
-	CreatedAt   string    `json:"createdAt"`
-	Charts       []FileRef `json:"charts,omitempty"`
-	Images       []ImageRef `json:"images,omitempty"`
-	SBOMManifests []FileRef `json:"sboms,omitempty"`
-	Signatures   []FileRef `json:"signatures,omitempty"`
-	ManifestHash string  `json:"manifestHash"`
+	SpecVersion   string     `json:"specVersion"`
+	Name          string     `json:"name"`
+	Version       string     `json:"version"`
+	CreatedAt     string     `json:"createdAt"`
+	Charts        []FileRef  `json:"charts,omitempty"`
+	Images        []ImageRef `json:"images,omitempty"`
+	SBOMManifests []FileRef  `json:"sboms,omitempty"`
+	Signatures    []FileRef  `json:"signatures,omitempty"`
+	ManifestHash  string     `json:"manifestHash"`
 }
 
 // FileRef references an embedded file in the bundle tar.
@@ -218,11 +219,17 @@ func splitImage(line string) (string, string) {
 }
 
 func walkDirFunc(root string, exts []string, fn func(path, rel string, content []byte) error) error {
-	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	rootFS, err := os.OpenRoot(root)
+	if err != nil {
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "open root %s", root)
+	}
+	defer rootFS.Close()
+
+	err = fs.WalkDir(rootFS.FS(), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 		matched := false
@@ -235,16 +242,28 @@ func walkDirFunc(root string, exts []string, fn func(path, rel string, content [
 		if !matched {
 			return nil
 		}
-		content, err := os.ReadFile(path)
+		f, err := rootFS.Open(path)
 		if err != nil {
 			return err
 		}
-		rel, err := filepath.Rel(root, path)
+		content, readErr := io.ReadAll(f)
+		closeErr := f.Close()
+		if readErr != nil {
+			return readErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		rel, err := filepath.Rel(".", path)
 		if err != nil {
 			return err
 		}
-		return fn(path, rel, content)
+		return fn(filepath.Join(root, path), rel, content)
 	})
+	if err != nil {
+		return naeoserr.Wrapf(err, naeoserr.ErrInternal, "walk %s", root)
+	}
+	return nil
 }
 
 // WriteBundle writes the manifest and embedded files to a tar.gz archive.
