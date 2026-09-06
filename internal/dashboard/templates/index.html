@@ -225,8 +225,31 @@
         <!-- Settings Page -->
         <div id="page-settings" class="page">
             <div class="section">
-                <h2>Settings</h2>
-                <div class="empty-state">Settings panel coming soon.</div>
+                <h2>Server Configuration</h2>
+                <table>
+                    <thead>
+                        <tr><th>Setting</th><th>Value</th></tr>
+                    </thead>
+                    <tbody id="settings-table-body">
+                        <tr><td colspan="2" style="text-align:center;color:#666;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>Appearance</h2>
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="cycleTheme()">Toggle Theme</button>
+                    <span id="theme-label" style="color:#666;align-self:center;font-size:13px;"></span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Utilities</h2>
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="exportLogs()">Export Logs as JSON</button>
+                    <button class="btn btn-secondary" onclick="clearLogStream()">Clear Log Stream</button>
+                </div>
             </div>
         </div>
     </div>
@@ -883,6 +906,60 @@ generation:
             }
         }
 
+        // ---- Settings ----
+        async function loadSettings() {
+            const tbody = document.getElementById('settings-table-body');
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#666;">Loading...</td></tr>';
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                const s = data && data.data ? data.data : {};
+                const rows = [
+                    ['Refresh Interval', s.refresh_interval || '-'],
+                    ['Max Log Entries', s.max_log_entries || '-'],
+                    ['Max Subscribers', s.max_subscribers || '-'],
+                    ['Stats File Path', s.stats_file_path || '(in-memory)'],
+                ];
+                tbody.innerHTML = '';
+                rows.forEach(function(r) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td>' + r[0] + '</td><td style="font-family:monospace;">' + r[1] + '</td>';
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#ff4444;">Failed to load settings: ' + e.message + '</td></tr>';
+            }
+        }
+
+        function getTheme() {
+            return localStorage.getItem('theme') || 'dark';
+        }
+
+        function cycleTheme() {
+            const next = getTheme() === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', next);
+            document.documentElement.setAttribute('data-theme', next);
+            updateThemeLabel();
+        }
+
+        function updateThemeLabel() {
+            var label = document.getElementById('theme-label');
+            if (label) label.textContent = getTheme() === 'dark' ? 'Dark Mode' : 'Light Mode';
+        }
+
+        function exportLogs() {
+            var entries = document.querySelectorAll('#log-stream .log-entry, #activity-log .log-entry');
+            var logs = [];
+            entries.forEach(function(e) { logs.push(e.textContent); });
+            var blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'naeos-dashboard-logs-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         // Load data when tabs are shown
         const origSwitch = switchPage;
         switchPage = function(name) {
@@ -893,6 +970,10 @@ generation:
             }
             if (name === 'plugins') {
                 loadPlugins();
+            }
+            if (name === 'settings') {
+                loadSettings();
+                updateThemeLabel();
             }
         };
     </script>
