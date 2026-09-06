@@ -53,16 +53,35 @@ jobs:
             ws='{"ok":true,"code":200,"latency_ms":'$ws_ms'}'
           fi
 
-          gh_data=$(gh api "repos/$REPO" --jq '{stars:.stargazers_count,forks:.forks_count,open_issues:.open_issues_count}' 2>/dev/null || echo '{"stars":0,"forks":0,"open_issues":0}')
+          # jq --argjson requires strict JSON, not jq object literals, so keys are
+          # produced by jq (quoted) and string values are passed via --arg.
+          gh_data=$(gh api "repos/$REPO" --jq '{stars:.stargazers_count,forks:.forks_count,openIssues:.open_issues_count}' 2>/dev/null || echo '{"stars":0,"forks":0,"openIssues":0}')
           version=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name // "unknown"' 2>/dev/null || echo "unknown")
           version="${version#v}"
 
+          # Contributor count from the Link header's last page.
+          contributors=0
+          link=$(gh api -i "repos/$REPO/contributors?per_page=1&anon=true" 2>/dev/null | grep -i '^link:' || true)
+          last=$(printf '%s' "$link" | sed -n 's/.*page=\([0-9]*\)>; rel="last".*/\1/p')
+          if [ -n "$last" ]; then
+            contributors="$last"
+          else
+            contributors=$(gh api "repos/$REPO/contributors?per_page=100&anon=true" --jq 'length' 2>/dev/null || echo 0)
+          fi
+
+          github_json=$(printf '%s' "$gh_data" | jq \
+            --arg version "$version" \
+            --argjson contributors "$contributors" \
+            '.version = $version | .contributors = $contributors')
+
           now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-          # shellcheck disable=SC2086
+          # jq has no `?:` ternary operator (`?` is the error-suppression suffix),
+          # so status strings must use if/then/else. Values passed via --arg/--argjson
+          # keep this strict JSON.
           jq -n \
             --arg updatedAt "$now" \
-            --argjson github "{stars:$(echo "$gh_data" | jq .stars),forks:$(echo "$gh_data" | jq .forks),open_issues:$(echo "$gh_data" | jq .open_issues),version:\"$version\"}" \
+            --argjson github "$github_json" \
             --argjson web "$web" \
             --argjson docs "$docs" \
             --argjson registry "$registry" \
@@ -72,10 +91,10 @@ jobs:
             source: "live",
             github: $github,
             services: [
-              { id:"web", name:"Website", url:"https://naeos.dev", target:"https://naeos.dev", kind:"http", status: ($web.ok ? "operational" : "down"), latencyMs: $web.latency_ms },
-              { id:"docs", name:"Docs", url:"https://docs.naeos.dev", target:"https://docs.naeos.dev", kind:"http", status: ($docs.ok ? "operational" : "down"), latencyMs: $docs.latency_ms },
-              { id:"registry", name:"Registry", url:"https://registry.naeos.dev", target:"https://registry.naeos.dev", kind:"http", status: ($registry.ok ? "operational" : "down"), latencyMs: $registry.latency_ms },
-              { id:"realtime", name:"Realtime", url:"https://naeos.dev/", target:"https://ws.naeos.dev/ws", kind:"ws", status: ($ws.ok ? "operational" : "down"), latencyMs: $ws.latency_ms }
+              { id:"web", name:"Website", url:"https://naeos.dev", target:"https://naeos.dev", kind:"http", status: (if $web.ok then "operational" else "down" end), latencyMs: $web.latency_ms },
+              { id:"docs", name:"Docs", url:"https://docs.naeos.dev", target:"https://docs.naeos.dev", kind:"http", status: (if $docs.ok then "operational" else "down" end), latencyMs: $docs.latency_ms },
+              { id:"registry", name:"Registry", url:"https://registry.naeos.dev", target:"https://registry.naeos.dev", kind:"http", status: (if $registry.ok then "operational" else "down" end), latencyMs: $registry.latency_ms },
+              { id:"realtime", name:"Realtime", url:"https://naeos.dev/", target:"https://ws.naeos.dev/ws", kind:"ws", status: (if $ws.ok then "operational" else "down" end), latencyMs: $ws.latency_ms }
             ]
           }' > site/data/status.json
 

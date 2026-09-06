@@ -45,9 +45,33 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: naeos-site-opennext
-          path: site/.open-next/
+          # Relative to the job working-directory (site/), so .open-next/ resolves
+          # to site/.open-next/. A `site/` prefix here resolves to site/site/.open-next/
+          # and fails with "No files were found".
+          path: .open-next/
           if-no-files-found: error
           retention-days: 7
+      - name: Ensure newsletter KV namespace
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          # If the token lacks KV permissions this step self-heals (warns, not fails).
+          ID=$(npx wrangler kv namespace list 2>/dev/null | jq -r '.[] | select(.title == "NEWSLETTER_KV") | .id' | head -n1 || true)
+          if [ -z "$ID" ]; then
+            ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
+          fi
+          if [ -n "$ID" ]; then
+            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]' \
+              < wrangler.jsonc > wrangler.jsonc.tmp
+            mv wrangler.jsonc.tmp wrangler.jsonc
+            echo "Newsletter KV namespace bound: $ID"
+          else
+            echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
+          fi
       - name: Deploy to Cloudflare Workers
         if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v4
