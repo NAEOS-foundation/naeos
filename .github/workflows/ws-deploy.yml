@@ -1,0 +1,36 @@
+name: WebSocket Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/ws-worker/**'
+      - '.github/workflows/ws-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ws-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: infra/ws-worker
+        run: npm install
+      - name: Typecheck
+        working-directory: infra/ws-worker
+        run: npm run typecheck
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: infra/ws-worker
+          command: deploy
