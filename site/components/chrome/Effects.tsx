@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/lib/useTranslation";
-import { DEFAULT_LANG, type Lang } from "@/lib/site";
+import { type Lang } from "@/lib/site";
 
 export function ScrollReveal() {
   const pathname = usePathname();
@@ -33,13 +33,8 @@ export function ScrollReveal() {
   return null;
 }
 
-export function BackToTop() {
+export function BackToTop({ lang }: { lang: Lang }) {
   const [visible, setVisible] = useState(false);
-  const [lang, setLang] = useState<Lang>(DEFAULT_LANG);
-
-  useEffect(() => {
-    if (window.location.pathname.startsWith("/id")) setLang("id");
-  }, []);
 
   const { t } = useTranslation(lang);
 

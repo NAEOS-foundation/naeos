@@ -92,7 +92,7 @@ export default async function RootLayout({
         </main>
         <Footer lang={lang} tagline={tagline} />
         <SearchModal lang={lang} />
-        <BackToTop />
+        <BackToTop lang={lang} />
         <HeaderScrollEffect />
         <ServiceWorkerRegister />
         {SITE.umamiWebsiteId && (

@@ -10,6 +10,7 @@ import { pageMetadata } from "@/lib/metadata";
 import { t as translate } from "@/lib/i18n";
 import enDict from "@/lib/i18n/en.json";
 import idDict from "@/lib/i18n/id.json";
+import statusData from "@/data/status.json";
 
 type Dict = Record<string, string>;
 const DICTS: Record<Lang, Dict> = { en: enDict as Dict, id: idDict as Dict };
@@ -52,6 +53,10 @@ export default async function HomePage(props: {
   const t = (key: string) => DICTS[lang][key] ?? key;
   const base = lang === "en" ? "" : "/id";
   const posts = getBlogPosts(lang).slice(0, 3);
+
+  const githubStats =
+    (statusData as { github?: { stars?: number; forks?: number; openIssues?: number; contributors?: number } })
+      .github ?? {};
 
   const features = [
     { key: "pipeline", icon: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></> },
@@ -547,6 +552,12 @@ export default async function HomePage(props: {
           <h2 className="section-title github-stats-title fade-in">{t("home_community_title")}</h2>
           <div className="github-stats stagger-fade">
             <GithubStats
+              initial={{
+                stars: githubStats.stars,
+                forks: githubStats.forks,
+                issues: githubStats.openIssues,
+                contributors: githubStats.contributors,
+              }}
               labels={[
                 t("home_github_stars"),
                 t("home_github_forks"),
