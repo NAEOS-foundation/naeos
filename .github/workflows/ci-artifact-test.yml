@@ -19,39 +19,23 @@ jobs:
         run: npm install --ignore-scripts --legacy-peer-deps
       - name: Build
         run: npx opennextjs-cloudflare build
-      - name: Show cwd and layout
-        run: |
-          pwd
-          ls "$GITHUB_WORKSPACE"
-          ls -d "$GITHUB_WORKSPACE"/site/.open-next 2>/dev/null && echo "WORKSPACE_SITE_OPENNEXT_EXISTS"
-          ls -d .open-next && echo "CWD_OPENNEXT_EXISTS"
-      - name: Upload A - "site/.open-next/"
+      - name: Populate static assets cache
+        run: npx opennextjs-cloudflare populateCache local
+      - name: Upload A1 - hidden disabled (current behavior)
         uses: actions/upload-artifact@v7
+        continue-on-error: true
         with:
-          name: A-site-opennext
+          name: A1-hidden-off
           path: site/.open-next/
+          include-hidden-files: false
           if-no-files-found: error
           retention-days: 1
-      - name: Upload B - ".open-next/"
+      - name: Upload A2 - include-hidden-files true
         uses: actions/upload-artifact@v7
+        continue-on-error: true
         with:
-          name: B-opennext
-          path: .open-next/
-          if-no-files-found: error
-          retention-days: 1
-      - name: Upload C - absolute path
-        uses: actions/upload-artifact@v7
-        with:
-          name: C-absolute
-          path: ${{ github.workspace }}/site/.open-next/
-          if-no-files-found: error
-          retention-days: 1
-      - name: Archive tar.gz
-        run: tar -czf ../naeos-test.tar.gz -C .open-next .
-      - name: Upload D - tarball repo root
-        uses: actions/upload-artifact@v7
-        with:
-          name: D-tarball
-          path: naeos-test.tar.gz
+          name: A2-hidden-on
+          path: site/.open-next/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 1

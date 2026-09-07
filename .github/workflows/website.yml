@@ -45,10 +45,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: naeos-site-opennext
-          # Relative to the job working-directory (site/), so .open-next/ resolves
-          # to site/.open-next/. A `site/` prefix here resolves to site/site/.open-next/
-          # and fails with "No files were found".
-          path: .open-next/
+          # .open-next is a hidden (dot) directory; upload-artifact skips hidden
+          # paths unless include-hidden-files is set, which made the step find
+          # "no files" and abort the job before the deploy step. Path is
+          # relative to GITHUB_WORKSPACE, so the site/ prefix is required.
+          path: site/.open-next/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
       - name: Ensure newsletter KV namespace
