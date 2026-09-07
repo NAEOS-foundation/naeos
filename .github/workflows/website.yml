@@ -41,11 +41,13 @@ jobs:
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
+      - name: Archive OpenNext build
+        run: tar -czf ../naeos-site-opennext.tar.gz -C .open-next .
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: naeos-site-opennext
-          path: site/.open-next/
+          path: naeos-site-opennext.tar.gz
           if-no-files-found: error
           retention-days: 7
       - name: Deploy to Cloudflare Workers
