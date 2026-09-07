@@ -1,0 +1,57 @@
+name: CI Artifact Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  artifact-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --legacy-peer-deps
+      - name: Build
+        run: npx opennextjs-cloudflare build
+      - name: Show cwd and layout
+        run: |
+          pwd
+          ls "$GITHUB_WORKSPACE"
+          ls -d "$GITHUB_WORKSPACE"/site/.open-next 2>/dev/null && echo "WORKSPACE_SITE_OPENNEXT_EXISTS"
+          ls -d .open-next && echo "CWD_OPENNEXT_EXISTS"
+      - name: Upload A - "site/.open-next/"
+        uses: actions/upload-artifact@v7
+        with:
+          name: A-site-opennext
+          path: site/.open-next/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload B - ".open-next/"
+        uses: actions/upload-artifact@v7
+        with:
+          name: B-opennext
+          path: .open-next/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload C - absolute path
+        uses: actions/upload-artifact@v7
+        with:
+          name: C-absolute
+          path: ${{ github.workspace }}/site/.open-next/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Archive tar.gz
+        run: tar -czf ../naeos-test.tar.gz -C .open-next .
+      - name: Upload D - tarball repo root
+        uses: actions/upload-artifact@v7
+        with:
+          name: D-tarball
+          path: naeos-test.tar.gz
+          if-no-files-found: error
+          retention-days: 1
