@@ -62,7 +62,9 @@ jobs:
         run: |
           set -euo pipefail
           # If the token lacks KV permissions this step self-heals (warns, not fails).
-          ID=$(npx wrangler kv namespace list 2>/dev/null | jq -r '.[] | select(.title == "NEWSLETTER_KV") | .id' | head -n1 || true)
+          # Extract ids with grep: wrangler may prefix stdout with a telemetry
+          # banner, which breaks jq's strict JSON parse.
+          ID=$(npx wrangler kv namespace list 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           if [ -z "$ID" ]; then
             ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           fi
