@@ -38,7 +38,7 @@ Tiga hal terjadi setelah kami berkomitmen pada tesis ini:
 
 **1. Drift menjadi mustahil secara struktural.** Ketika layanan Go dan klien TypeScript di-generate dari model NEIR yang sama, keduanya tidak mungkin diam-diam tidak sepakat soal format error, kontrak API, atau konvensi penamaan. Konsistensi bukan lagi checklist review — ini invariant build.
 
-**2. Asisten AI akhirnya mendapat konteks nyata.** Model NEIR yang sama dikompilasi menjadi set instruksi untuk GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, dan OpenCode. Alat AI Anda berhenti membaca file terisolasi dan mulai membaca arsitektur — dependensi, pola, batasan, dan niat.
+**2. Asisten AI akhirnya mendapat konteks nyata.** Model NEIR yang sama dikompilasi menjadi set instruksi untuk GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf. Alat AI Anda berhenti membaca file terisolasi dan mulai membaca arsitektur — dependensi, pola, batasan, dan niat.
 
 **3. Governance menjadi executable.** Aturan kebijakan mengevaluasi model NEIR sebelum satu baris kode pun di-generate. Pelanggaran tertangkap di level spesifikasi, bukan di code review. RBAC, audit trail, dan template kebijakan yang berorientasi pada kepatuhan dapat diterapkan melalui pipeline.
 
@@ -47,7 +47,7 @@ Tiga hal terjadi setelah kami berkomitmen pada tesis ini:
 Status repositori saat ini adalah **v3.4.0** dan mencakup:
 
 - **5 bahasa** — Go, TypeScript, Python, Java, Rust — dari satu spesifikasi
-- **6 platform AI** — set instruksi yang dikompilasi dari model NEIR
+- **7 platform AI** — set instruksi yang dikompilasi dari model NEIR
 - **200+ command CLI** — run, validate, test, watch, diff, deploy, cloud, dan lainnya
 - **57 dokumen NES** — proyek yang digerakkan spesifikasi, terdokumentasi seperti yang dibangunnya
 - **Marketplace plugin WASM** — ekstensi pihak ketiga dalam sandbox

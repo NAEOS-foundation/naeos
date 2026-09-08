@@ -38,7 +38,7 @@ Three things happened after we committed to this thesis:
 
 **1. Drift became structurally impossible.** When Go services and TypeScript clients are generated from the same NEIR model, they cannot silently disagree about error formats, API contracts, or naming conventions. Consistency isn't a review checklist anymore — it's a build invariant.
 
-**2. AI assistants finally got real context.** The same NEIR model compiles into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode. Your AI tools stop reading isolated files and start reading the architecture — dependencies, patterns, boundaries, and intent.
+**2. AI assistants finally got real context.** The same NEIR model compiles into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and Windsurf. Your AI tools stop reading isolated files and start reading the architecture — dependencies, patterns, boundaries, and intent.
 
 **3. Governance became executable.** Policy rules evaluate the NEIR model before a single line is generated. Violations are caught at the specification level, not in code review. RBAC, audit trails, and compliance-oriented policy templates can be applied through the pipeline.
 
@@ -47,7 +47,7 @@ Three things happened after we committed to this thesis:
 The current repository state is **v3.4.0** and includes:
 
 - **5 languages** — Go, TypeScript, Python, Java, Rust — from one specification
-- **6 AI platforms** — instruction sets compiled from the NEIR model
+- **7 AI platforms** — instruction sets compiled from the NEIR model
 - **200+ CLI commands** — run, validate, test, watch, diff, deploy, cloud, serve, and more
 - **57 NES documents** — a specification-driven project, documented like it builds
 - **WASM plugin marketplace** — sandboxed, third-party extensions
