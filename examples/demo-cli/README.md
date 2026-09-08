@@ -15,6 +15,9 @@ go build -o naeos ./cmd/naeos
 ./examples/demo-cli/run-demo.sh
 ```
 
+For a one-page printable version of these instructions, see
+[`PRINT.md`](PRINT.md).
+
 The script writes an isolated run to `examples/demo-cli/.run/`. Override the
 location with `NAEOS_DEMO_OUTPUT_DIR`:
 
