@@ -33,5 +33,35 @@ printf 'Wrote %s\n' "$OUTPUT_DIR/context.md"
 printf '\n== 3/3 Run generation pipeline ==\n'
 "$NAEOS" run --config naeos.yaml --input-file spec.yaml --output json
 
+GENERATED_DIR="$OUTPUT_DIR/generated"
+REQUIRED_FILES=(
+  "$OUTPUT_DIR/context.md"
+  "$GENERATED_DIR/README.md"
+  "$GENERATED_DIR/go.mod"
+  "$GENERATED_DIR/package.json"
+)
+
+for required_file in "${REQUIRED_FILES[@]}"; do
+  if [[ ! -f "$required_file" ]]; then
+    printf 'Demo verification failed: expected file was not generated: %s\n' "$required_file" >&2
+    exit 1
+  fi
+done
+
+ARTIFACT_COUNT="$(find "$GENERATED_DIR" -type f | wc -l | tr -d ' ')"
+cat > "$OUTPUT_DIR/summary.md" <<EOF
+# NAEOS CLI Demo Result
+
+- Specification: \`spec.yaml\`
+- Configuration: \`naeos.yaml\`
+- AI context: \`context.md\`
+- Generated artifacts: ${ARTIFACT_COUNT}
+- Generated output: \`generated/\`
+
+The smoke test verified that the context bundle, Go module, TypeScript package,
+and generated project README were created.
+EOF
+
 printf '\nDemo complete. Output: %s\n' "$OUTPUT_DIR"
+printf 'Verified %s generated artifacts and wrote %s/summary.md\n' "$ARTIFACT_COUNT" "$OUTPUT_DIR"
 printf 'Inspect with: find %s -maxdepth 3 -type f | sort\n' "$OUTPUT_DIR"

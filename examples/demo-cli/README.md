@@ -28,6 +28,25 @@ To use another binary:
 NAEOS_BIN=/path/to/naeos ./examples/demo-cli/run-demo.sh
 ```
 
+## What to expect
+
+The demo validates `spec.yaml`, writes an AI context bundle, and generates a
+project containing Go and TypeScript output. The script also performs a smoke
+test for these files:
+
+```text
+.run/
+├── context.md
+├── summary.md
+└── generated/
+    ├── README.md
+    ├── go.mod
+    └── package.json
+```
+
+The exact artifact count can change as generators evolve. The demo prints the
+count and fails if the expected output files are missing.
+
 The AI compiler is intentionally not part of the default demo because it
 requires an LLM API key. After the demo, compile context for a target tool
 with:
@@ -37,3 +56,12 @@ naeos ai compile \
   --input-file examples/demo-cli/spec.yaml \
   --target opencode
 ```
+
+## Troubleshooting
+
+- `NAEOS CLI not found`: build the binary with `go build -o naeos ./cmd/naeos`,
+  or set `NAEOS_BIN` to an existing binary.
+- Permission denied when running the script: run `chmod +x
+  examples/demo-cli/run-demo.sh`.
+- To start from a clean output directory, remove only the demo output:
+  `rm -rf examples/demo-cli/.run`.
