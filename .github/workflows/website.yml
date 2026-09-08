@@ -41,16 +41,15 @@ jobs:
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
+      - name: Archive OpenNext build
+        run: tar -czf ../naeos-site-opennext.tar.gz -C .open-next .
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: naeos-site-opennext
-          # .open-next is a hidden (dot) directory; upload-artifact skips hidden
-          # paths unless include-hidden-files is set, which made the step find
-          # "no files" and abort the job before the deploy step. Path is
-          # relative to GITHUB_WORKSPACE, so the site/ prefix is required.
-          path: site/.open-next/
-          include-hidden-files: true
+          # Archive OpenNext build into a tarball so upload-artifact does not
+          # skip the hidden .open-next/ (dot) directory.
+          path: naeos-site-opennext.tar.gz
           if-no-files-found: error
           retention-days: 7
       - name: Ensure newsletter KV namespace
