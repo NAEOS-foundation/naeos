@@ -71,6 +71,22 @@ go build -o naeos ./cmd/naeos
 See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
 location and optional AI compiler usage.
 
+### Video demo
+
+<p align="center">
+  <a href="brand/marketing/naeos-terminal-demo-en.mp4">
+    <img src="brand/marketing/naeos-marketing-poster.png"
+         alt="Watch the NAEOS CLI demo"
+         width="80%" />
+  </a>
+</p>
+
+- English terminal demo — [`naeos-terminal-demo-en.mp4`](brand/marketing/naeos-terminal-demo-en.mp4)
+- Bahasa Indonesia terminal demo — [`naeos-terminal-demo-id.mp4`](brand/marketing/naeos-terminal-demo-id.mp4)
+- 30-second cut — [`naeos-demo-30s.mp4`](brand/marketing/naeos-demo-30s.mp4) · [`naeos-demo-en-30s.mp4`](brand/marketing/naeos-demo-en-30s.mp4)
+
+Poster and videos live in [`brand/marketing/`](brand/marketing/).
+
 ## Features
 
 ### Core Pipeline
