@@ -10,7 +10,7 @@
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Platform Version** | v3.1.0 (latest release), actively developed toward v2.0.0 Dashboard & Distributed Builds |
+| **Platform Version** | v3.4.0 (repository state) |
 
 ---
 
@@ -18,9 +18,9 @@
 
 NAEOS is an open-source declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline. NAEOS is not just a project generator — it is an *engineering runtime* that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with their specifications throughout the entire lifecycle.
 
-Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then build, validate, and evolve software across multiple languages, frameworks, and platforms — with guaranteed traceability from requirements to deployment, and deep integration with the AI coding agent ecosystem.
+Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
-The platform has reached **v3.1.0** with a feature ecosystem spanning Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, and enterprise compliance (SOC 2, HIPAA, GDPR).
+The current repository state includes Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, a production server daemon (`naeos serve`), SBOM and artifact signing, Helm chart scaffolding, and compliance-oriented policy templates for SOC 2, HIPAA, and GDPR workflows.
 
 ---
 
@@ -405,21 +405,27 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 - **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), hierarchical RBAC, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, hashed + encrypted audit chains, stage caching, LSP, VS Code extension, real distributed builds, pipeline/memory profiling
 - **v3.0.0** — Ecosystem release: 20+ new features, changelog, migration guide, deprecation notices
 - **v3.1.0** — Performance release: pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns (monolithic/microservices/serverless), WASM plugin hardening
+- **v3.2.0** — Operations release: production server daemon (`naeos serve`) with TLS, graceful shutdown, and systemd integration; policy registry + control plane, runtime execution gateway, immutable evidence store, independent verification, MCP resources/prompts/completions/ping
+- **v3.3.0** — Supply-chain release: SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
+- **v3.4.0** — Deployment release: Helm chart scaffolding, air-gapped bundles, config providers (env/file/K8s secret/Vault)
 
 ### Platform health metrics (current)
 
 | Metric | Value |
 |--------|-------|
-| Test coverage | ~77% (target ≥85%) |
-| Lint pass rate | 100% (17 linters, incl. gosec & errorlint) |
-| CLI commands | 35+ (150+ CLI doc pages) |
-| CLI test coverage | ~46% (target 100%) |
-| Packages ≥80% coverage | 6 (supabase, messagequeue, marketplace, mcp, migration, and more) |
+| Test coverage | ~87% (target ≥85%) |
+| Lint pass rate | 100% (linters, incl. gosec & errorlint) |
+| CLI commands | 200+ (284 CLI doc pages) |
+| CLI test coverage | ~80.8% (target 100%) |
+| Packages ≥80% coverage | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, and more) |
 
 ### Roadmap
 
-- **v1.6.0** — Ecosystem & Documentation (in progress)
-- **v2.0.0** — Dashboard UI, distributed builds
+- **v3.5.0** — Observability: OpenTelemetry (OTLP) tracing export, SLO & Prometheus alerting, audit export to SIEM
+- **v3.6.0** — Scale: durable job queue (Postgres outbox), networked pipeline workers (NATS/Kafka), idempotency
+- **v3.7.0+** — API v2, outbound webhooks, official SDKs, MFA/SCIM, per-tenant governance
+
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the current project roadmap and milestone status.
 
 ---
 
@@ -448,7 +454,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 ## 10. Risks & Adoption Considerations
 
 - **Plugin ecosystem maturity** — Currently 0 community plugins; targets of 5+ (Q1 2027) and 20+ (Q3 2027). Mitigation: plugin SDK, template generator, and public registry are already available.
-- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 56 NES specification documents.
+- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 57 NES specification documents.
 - **AI determinism challenges** — Constitution Articles V and VIII ensure AI only assists within a deterministic pipeline; humans retain release decisions.
 
 ---

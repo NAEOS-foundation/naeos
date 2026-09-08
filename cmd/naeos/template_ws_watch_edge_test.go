@@ -243,7 +243,7 @@ func TestTemplatePublishLocalAndJSON(t *testing.T) {
 	if !strings.Contains(output, "published") || !strings.Contains(output, "my-starter") {
 		t.Errorf("unexpected output: %q", output)
 	}
-	if !strings.Contains(output, "add to site/static/templates/registry.json") {
+	if !strings.Contains(output, "add to site/public/templates/registry.json") {
 		t.Errorf("expected PR hint for file:// registry, got %q", output)
 	}
 

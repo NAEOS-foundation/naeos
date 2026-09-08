@@ -1,0 +1,79 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#05050A"/>
+      <stop offset="0.55" stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#121A2E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="250" y1="150" x2="1100" y2="750" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08D6FF"/>
+      <stop offset="0.25" stop-color="#42A5FF"/>
+      <stop offset="0.58" stop-color="#5E60F5"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08D6FF" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#7C4DFF" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" rx="32" fill="url(#bg)"/>
+  <circle cx="1250" cy="200" r="320" fill="url(#glow)" opacity="0.5"/>
+  <circle cx="1300" cy="690" r="380" fill="#08D6FF" opacity="0.08"/>
+  <circle cx="280" cy="240" r="260" fill="#7C4DFF" opacity="0.10"/>
+
+  <g opacity="0.15">
+    <path d="M220 700L620 220L840 700H220Z" stroke="#7C4DFF" stroke-width="2"/>
+    <path d="M700 700L980 220L1180 700H700Z" stroke="#08D6FF" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(120 110)">
+    <rect x="0" y="0" width="220" height="70" rx="18" fill="#0E162C" stroke="#2A375D"/>
+    <rect x="18" y="16" width="38" height="38" rx="10" fill="url(#accent)"/>
+    <path d="M35 19V49H41V33H48V49H54V19H48V27H41V19H35Z" fill="#05050A"/>
+    <text x="78" y="46" fill="#F3F7FF" font-size="32" font-family="Inter, Arial, sans-serif" font-weight="700">NAEOS</text>
+  </g>
+
+  <text x="120" y="360" fill="#F3F7FF" font-size="88" font-family="Inter, Arial, sans-serif" font-weight="800">Specify Once.</text>
+  <text x="120" y="455" fill="#F3F7FF" font-size="88" font-family="Inter, Arial, sans-serif" font-weight="800">Build Anywhere.</text>
+
+  <rect x="120" y="500" width="530" height="5" rx="2.5" fill="url(#accent)"/>
+
+  <text x="120" y="580" fill="#C7D2F4" font-size="32" font-family="Inter, Arial, sans-serif" font-weight="500">Declarative engineering platform for AI-native software delivery.</text>
+
+  <g transform="translate(120 650)">
+    <rect x="0" y="0" width="175" height="58" rx="29" fill="#101B31" stroke="#2A375D"/>
+    <text x="87" y="37" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Spec-first</text>
+
+    <rect x="205" y="0" width="190" height="58" rx="29" fill="#101B31" stroke="#2A375D"/>
+    <text x="300" y="37" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">AI context</text>
+
+    <rect x="425" y="0" width="180" height="58" rx="29" fill="#101B31" stroke="#2A375D"/>
+    <text x="515" y="37" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Governance</text>
+  </g>
+
+  <g transform="translate(980 170)">
+    <rect x="0" y="0" width="420" height="460" rx="30" fill="#0D1327" stroke="#25324F"/>
+    <rect x="36" y="34" width="348" height="54" rx="16" fill="#111A30" stroke="#304160"/>
+    <text x="74" y="67" fill="#9BC7FF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600">Specification</text>
+    <text x="230" y="67" fill="#E8F2FF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">→</text>
+    <text x="300" y="67" fill="#AEE9FF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="end">NEIR</text>
+
+    <g>
+      <rect x="46" y="120" width="148" height="70" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <text x="120" y="163" fill="#E7EEFF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Parser</text>
+
+      <rect x="236" y="120" width="148" height="70" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <text x="310" y="163" fill="#E7EEFF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Resolver</text>
+
+      <rect x="46" y="234" width="148" height="70" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <text x="120" y="277" fill="#E7EEFF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Validator</text>
+
+      <rect x="236" y="234" width="148" height="70" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <text x="310" y="277" fill="#E7EEFF" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="600" text-anchor="middle">Generator</text>
+
+      <rect x="140" y="352" width="150" height="70" rx="16" fill="url(#accent)"/>
+      <text x="215" y="395" fill="#05050A" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Artifacts</text>
+    </g>
+  </g>
+</svg>

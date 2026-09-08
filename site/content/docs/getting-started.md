@@ -79,6 +79,40 @@ naeos context --input-file spec.yaml
 naeos ai compile --input-file spec.yaml --target opencode
 ```
 
+## Verify the result
+
+After `naeos run`, the generated project is written to the configured output
+directory (typically `./generated`). Confirm the pipeline produced the expected
+structure:
+
+```bash
+find generated -maxdepth 2 -type f | sort
+```
+
+You should see a project README, language-specific files, and configuration
+artifacts. The exact file list depends on the languages and modules in your
+specification.
+
+For a complete, isolated example that validates output automatically, run the
+[CLI demo](https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli):
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/demo-cli/run-demo.sh
+```
+
+The demo writes `context.md`, `summary.md`, and generated artifacts under
+`examples/demo-cli/.run/`.
+
+## Troubleshooting
+
+- If `naeos` is not found after `go install`, add `$(go env GOPATH)/bin` to
+  your `PATH`, or use the binary built from source.
+- If validation fails, check the reported field and compare the specification
+  with the [Spec Language guide](/docs/spec-language/).
+- If generation succeeds but files are not where expected, inspect
+  `naeos.yaml` and its `output_dir` value.
+
 ## Next Steps
 
 - Explore the [CLI Reference](/docs/cli-reference/) for all available commands

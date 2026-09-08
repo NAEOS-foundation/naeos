@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	outDir := "site/static/schemaregistry"
+	outDir := "site/public/schemaregistry"
 	if len(os.Args) > 1 {
 		outDir = os.Args[1]
 	}

@@ -14,7 +14,7 @@ naeos/
 ├── internal/            # Internal packages (74 packages)
 ├── pkg/                 # Public packages (3 packages)
 ├── docs/                # NES specifications (57 files)
-├── site/                # Hugo website
+├── site/                # Next.js website (Cloudflare Pages)
 ├── governance/          # Governance documents (8 files)
 ├── constitution/        # Engineering constitution (8 files)
 ├── specification/       # Specification documents (10 files)
@@ -188,7 +188,7 @@ pkg/
 | `internal/` | 74 | Internal packages |
 | `pkg/` | 3 | Public API packages |
 | `docs/` | 57 | NES specification documents |
-| `site/` | 100+ | Hugo website content and layouts |
+| `site/` | 100+ | Next.js website content and layouts |
 | `governance/` | 8 | Governance documents |
 | `specification/` | 10 | Specification documents |
 | **Total** | **320+** | |

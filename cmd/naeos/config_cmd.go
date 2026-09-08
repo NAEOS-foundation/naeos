@@ -1,209 +1,180 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/NAEOS-foundation/naeos/internal/configschema"
-	"github.com/NAEOS-foundation/naeos/internal/securityext"
+	"github.com/NAEOS-foundation/naeos/internal/configprovider"
 )
 
-func newConfigCmd() *cobra.Command {
+func newConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
-		Short: "Configuration management commands",
-	}
-
-	cmd.AddCommand(newConfigValidateCommand())
-	cmd.AddCommand(newConfigShowCommand())
-	cmd.AddCommand(newConfigEncryptCommand())
-	cmd.AddCommand(newConfigDecryptCommand())
-
-	return cmd
-}
-
-func newConfigEncryptCommand() *cobra.Command {
-	var inputPath, outputPath, passphrase string
-
-	cmd := &cobra.Command{
-		Use:   "encrypt",
-		Short: "Encrypt a config file with AES-256-GCM",
-		Long: `Encrypt a configuration file at rest using AES-256-GCM with a passphrase.
-Output is written as base64-encoded ciphertext.
-
-Example:
-  naeos config encrypt --input config.yaml --output config.enc
-  naeos config encrypt --input config.yaml --passphrase "my-secret" --output config.enc`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if inputPath == "" {
-				return fmt.Errorf("--input is required")
-			}
-			if passphrase == "" {
-				return fmt.Errorf("--passphrase is required")
-			}
-
-			data, err := os.ReadFile(inputPath)
-			if err != nil {
-				return fmt.Errorf("read input: %w", err)
-			}
-
-			encrypted, err := securityext.EncryptConfig(data, passphrase)
-			if err != nil {
-				return fmt.Errorf("encrypt: %w", err)
-			}
-
-			if outputPath != "" {
-				outputPath = filepath.Clean(outputPath)
-				if err := os.WriteFile(outputPath, []byte(encrypted), 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
-					return fmt.Errorf("write output: %w", err)
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Encrypted config written to %s\n", outputPath)
-			} else {
-				_, _ = cmd.OutOrStdout().Write([]byte(encrypted + "\n"))
-			}
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVarP(&inputPath, "input", "i", "", "path to config file (required)")
-	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "path to write encrypted output")
-	cmd.Flags().StringVarP(&passphrase, "passphrase", "p", "", "encryption passphrase (required)")
-	return cmd
-}
-
-func newConfigDecryptCommand() *cobra.Command {
-	var inputPath, outputPath, passphrase string
-
-	cmd := &cobra.Command{
-		Use:   "decrypt",
-		Short: "Decrypt an encrypted config file",
-		Long: `Decrypt a base64-encoded encrypted config file back to plaintext.
-
-Example:
-  naeos config decrypt --input config.enc --output config.yaml
-  naeos config decrypt --input config.enc --passphrase "my-secret" --output config.yaml`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if inputPath == "" {
-				return fmt.Errorf("--input is required")
-			}
-			if passphrase == "" {
-				return fmt.Errorf("--passphrase is required")
-			}
-
-			data, err := os.ReadFile(inputPath)
-			if err != nil {
-				return fmt.Errorf("read input: %w", err)
-			}
-
-			decrypted, err := securityext.DecryptConfig(strings.TrimSpace(string(data)), passphrase)
-			if err != nil {
-				return fmt.Errorf("decrypt: %w", err)
-			}
-
-			if outputPath != "" {
-				outputPath = filepath.Clean(outputPath)
-				if err := os.WriteFile(outputPath, decrypted, 0o600); err != nil { //nolint:gosec // G703: path is cleaned via filepath.Clean
-					return fmt.Errorf("write output: %w", err)
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Decrypted config written to %s\n", outputPath)
-			} else {
-				_, _ = cmd.OutOrStdout().Write(decrypted)
-				_, _ = cmd.OutOrStdout().Write([]byte("\n"))
-			}
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVarP(&inputPath, "input", "i", "", "path to encrypted config file (required)")
-	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "path to write decrypted output")
-	cmd.Flags().StringVarP(&passphrase, "passphrase", "p", "", "decryption passphrase (required)")
-	return cmd
-}
-
-func newConfigValidateCommand() *cobra.Command {
-	var inputPath string
-
-	cmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate a NAEOS config file against the schema",
-		Long: `Validate a configuration file (YAML or JSON) against the NAEOS config schema.
-Reports missing required fields and type mismatches.
-
-Example:
-  naeos config validate --input naeos.yaml
-  naeos config validate --input config.json --output json`,
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if inputPath == "" {
-				return fmt.Errorf("--input is required")
-			}
-
-			data, err := os.ReadFile(inputPath)
-			if err != nil {
-				return fmt.Errorf("read config: %w", err)
-			}
-
-			ext := ".yaml"
-			if strings.HasSuffix(inputPath, ".json") {
-				ext = ".json"
-			}
-
-			format := "yaml"
-			if ext == ".json" {
-				format = "json"
-			}
-
-			errs, _ := configschema.ValidateData(data, format)
-			if len(errs) == 0 {
-				_, _ = cmd.OutOrStdout().Write([]byte("✓ Config is valid\n"))
-			} else {
-				fmt.Fprintf(cmd.OutOrStdout(), "✗ Found %d validation error(s):\n", len(errs))
-				for _, e := range errs {
-					fmt.Fprintf(cmd.OutOrStdout(), "  [%s] %s\n", e.Field, e.Message)
-				}
-			}
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVarP(&inputPath, "input", "i", "", "path to config file (required)")
-	_ = cmd.MarkFlagRequired("input")
-	return cmd
-}
-
-func newConfigShowCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "show",
-		Short: "Show the default config schema",
-		Long:  `Display the default NAEOS configuration schema with field types and required fields.`,
+		Short: "Resolve configuration from environment, files, secrets, and Vault",
+		Long:  `Use references (env:VAR, file:/path, secret:ns/name/key, vault:path#key) to resolve configuration values.`,
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			schema := configschema.DefaultSchema()
-			_, _ = cmd.OutOrStdout().Write([]byte("NAEOS Configuration Schema\n"))
-			fmt.Fprintf(cmd.OutOrStdout(), "Type: %s\n", schema.Type)
-			fmt.Fprintf(cmd.OutOrStdout(), "Required: %s\n\n", strings.Join(schema.Required, ", "))
-			_, _ = cmd.OutOrStdout().Write([]byte("Properties:\n"))
-			for name, prop := range schema.Properties {
-				req := ""
-				for _, r := range schema.Required {
-					if r == name {
-						req = " [REQUIRED]"
-						break
-					}
-				}
-				def := ""
-				if prop.Default != nil {
-					def = fmt.Sprintf(" (default: %v)", prop.Default)
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "  %-15s %-10s %s%s%s\n", name, prop.Type, prop.Description, def, req)
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(newConfigResolveCommand())
+	cmd.AddCommand(newConfigTestCommand())
+	cmd.AddCommand(newConfigSourcesCommand())
+	return cmd
+}
+
+func buildChain(secrets, vault []string) (*configprovider.Chain, error) {
+	chain := configprovider.NewChain(configprovider.NewEnvProvider(), configprovider.NewFileProvider())
+
+	if len(secrets) > 0 {
+		sec := configprovider.NewK8sSecretProvider()
+		for _, s := range secrets {
+			loc, val, err := splitPair(s, "namespace/name/key")
+			if err != nil {
+				return nil, err
 			}
+			parts := strings.Split(loc, "/")
+			if len(parts) != 3 {
+				return nil, fmt.Errorf("invalid secret %q (want namespace/name/key)", loc)
+			}
+			sec.AddSecret(parts[0], parts[1], parts[2], val)
+		}
+		chain.Add(sec)
+	}
+
+	if len(vault) > 0 {
+		vp := configprovider.NewVaultProvider()
+		for _, s := range vault {
+			loc, val, err := splitPair(s, "path#key")
+			if err != nil {
+				return nil, err
+			}
+			parts := strings.Split(loc, "#")
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("invalid vault %q (want path#key)", loc)
+			}
+			vp.AddSecret(parts[0], parts[1], val)
+		}
+		chain.Add(vp)
+	}
+	return chain, nil
+}
+
+func splitPair(pair, format string) (string, string, error) {
+	idx := strings.Index(pair, "=")
+	if idx < 0 {
+		return "", "", fmt.Errorf("invalid value %q (want %s=value)", pair, format)
+	}
+	return pair[:idx], pair[idx+1:], nil
+}
+
+func newConfigResolveCommand() *cobra.Command {
+	var (
+		outputFmt string
+		secrets   []string
+		vault     []string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "resolve <config.json>",
+		Short: "Resolve a configuration file into concrete values",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			chain, err := buildChain(secrets, vault)
+			if err != nil {
+				return err
+			}
+
+			data, err := os.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
+
+			var input map[string]string
+			if err := json.Unmarshal(data, &input); err != nil {
+				return err
+			}
+
+			resolved, err := configprovider.NewResolver(chain).ResolveMap(input)
+			if err != nil {
+				return err
+			}
+
+			if outputFmt == "json" {
+				out, _ := json.MarshalIndent(resolved, "", "  ")
+				fmt.Fprintln(cmd.OutOrStdout(), string(out))
+				return nil
+			}
+
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "%-24s %-28s %-10s %s\n", "KEY", "VALUE", "SOURCE", "REFERENCE")
+			for _, cfg := range resolved {
+				fmt.Fprintf(out, "%-24s %-28q %-10s\n", cfg.Key, cfg.Value, cfg.Provider)
+			}
+			fmt.Fprintf(out, "resolved %d keys from %s\n", len(resolved), args[0])
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
+	cmd.Flags().StringSliceVarP(&secrets, "secret", "s", nil, "inject secret ns/name/key=value (repeatable)")
+	cmd.Flags().StringSliceVarP(&vault, "vault", "v", nil, "inject vault path#key=value (repeatable)")
+	return cmd
+}
+
+func newConfigTestCommand() *cobra.Command {
+	var (
+		secrets []string
+		vault   []string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "test <reference>",
+		Short: "Resolve a single config reference (e.g. env:FOO)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			chain, err := buildChain(secrets, vault)
+			if err != nil {
+				return err
+			}
+			ref, err := configprovider.ParseReference(args[0])
+			if err != nil {
+				return err
+			}
+			res, err := chain.Resolve(ref)
+			if err != nil {
+				return err
+			}
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "Provider: %s\nScheme:   %s\nValue:    %q\n", res.Provider, res.Scheme, res.Value)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringSliceVarP(&secrets, "secret", "s", nil, "inject secret ns/name/key=value (repeatable)")
+	cmd.Flags().StringSliceVarP(&vault, "vault", "v", nil, "inject vault path#key=value (repeatable)")
+	return cmd
+}
+
+func newConfigSourcesCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sources",
+		Short: "List available config sources and their reference syntax",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			out := cmd.OutOrStdout()
+			fmt.Fprintln(out, "SOURCES")
+			fmt.Fprintln(out, "  env     env:VAR_NAME          environment variable")
+			fmt.Fprintln(out, "  file    file:/path/to/file   trimmed file contents")
+			fmt.Fprintln(out, "  secret  secret:ns/name/key   Kubernetes secret (--secret)")
+			fmt.Fprintln(out, "  vault   vault:path#key       HashiCorp Vault KV (--vault)")
+			fmt.Fprintln(out, "  plain   value                passed through verbatim")
+			return nil
+		},
+	}
+	return cmd
 }

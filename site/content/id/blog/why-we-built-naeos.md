@@ -38,19 +38,19 @@ Tiga hal terjadi setelah kami berkomitmen pada tesis ini:
 
 **1. Drift menjadi mustahil secara struktural.** Ketika layanan Go dan klien TypeScript di-generate dari model NEIR yang sama, keduanya tidak mungkin diam-diam tidak sepakat soal format error, kontrak API, atau konvensi penamaan. Konsistensi bukan lagi checklist review — ini invariant build.
 
-**2. Asisten AI akhirnya mendapat konteks nyata.** Model NEIR yang sama dikompilasi menjadi set instruksi untuk GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, dan OpenCode. Alat AI Anda berhenti membaca file terisolasi dan mulai membaca arsitektur — dependensi, pola, batasan, dan niat.
+**2. Asisten AI akhirnya mendapat konteks nyata.** Model NEIR yang sama dikompilasi menjadi set instruksi untuk GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf. Alat AI Anda berhenti membaca file terisolasi dan mulai membaca arsitektur — dependensi, pola, batasan, dan niat.
 
-**3. Governance menjadi executable.** Aturan kebijakan mengevaluasi model NEIR sebelum satu baris kode pun di-generate. Pelanggaran tertangkap di level spesifikasi, bukan di code review. Lengkap dengan RBAC, audit trail, dan template kepatuhan SOC 2 / HIPAA / GDPR yang terintegrasi di pipeline.
+**3. Governance menjadi executable.** Aturan kebijakan mengevaluasi model NEIR sebelum satu baris kode pun di-generate. Pelanggaran tertangkap di level spesifikasi, bukan di code review. RBAC, audit trail, dan template kebijakan yang berorientasi pada kepatuhan dapat diterapkan melalui pipeline.
 
 ## Di Mana Kami Sekarang
 
-NAEOS tumbuh dari fondasi v0.1.0 pada Juli 2026 menjadi **v3.1.0** hari ini:
+Status repositori saat ini adalah **v3.4.0** dan mencakup:
 
 - **5 bahasa** — Go, TypeScript, Python, Java, Rust — dari satu spesifikasi
-- **6 platform AI** — set instruksi yang dikompilasi dari model NEIR
-- **67 command CLI** — run, validate, test, watch, diff, deploy, cloud, dan lainnya
-- **56 dokumen NES** — proyek yang digerakkan spesifikasi, terdokumentasi seperti yang dibangunnya
-- **Marketplace plugin WASM** — ekstensi pihak ketiga yang di-sandbox dan diverifikasi tanda tangannya
+- **7 platform AI** — set instruksi yang dikompilasi dari model NEIR
+- **200+ command CLI** — run, validate, test, watch, diff, deploy, cloud, dan lainnya
+- **57 dokumen NES** — proyek yang digerakkan spesifikasi, terdokumentasi seperti yang dibangunnya
+- **Marketplace plugin WASM** — ekstensi pihak ketiga dalam sandbox
 - **Schema registry, policy engine, server MCP, server LSP, dashboard** — operating system untuk engineering, bukan sekadar code generator
 
 ## Langkah Berikutnya
@@ -67,6 +67,6 @@ naeos create
 naeos run --input-file spec.yaml
 ```
 
-Satu spesifikasi. Lima bahasa. Nol drift. Baca [whitepaper](/id/whitepaper/) untuk tesis lengkapnya, dan bergabunglah dengan kami di [GitHub](https://github.com/NAEOS-foundation/naeos).
+Satu spesifikasi. Lima bahasa. Jalur yang lebih jelas untuk mengurangi drift. Baca [whitepaper](/id/whitepaper/) untuk tesis lengkapnya, dan bergabunglah dengan kami di [GitHub](https://github.com/NAEOS-foundation/naeos).
 
 Kami membangun NAEOS karena kami percaya rekayasa bisa deklaratif, tervalidasi, dan dapat diaudit — untuk manusia dan untuk AI. Tentukan sekali. Bangun di mana saja.

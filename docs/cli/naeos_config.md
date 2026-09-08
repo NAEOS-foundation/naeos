@@ -1,6 +1,14 @@
 ## naeos config
 
-Configuration management commands
+Resolve configuration from environment, files, secrets, and Vault
+
+### Synopsis
+
+Use references (env:VAR, file:/path, secret:ns/name/key, vault:path#key) to resolve configuration values.
+
+```
+naeos config [flags]
+```
 
 ### Options
 
@@ -19,8 +27,7 @@ Configuration management commands
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-* [naeos config decrypt](naeos_config_decrypt.md)	 - Decrypt an encrypted config file
-* [naeos config encrypt](naeos_config_encrypt.md)	 - Encrypt a config file with AES-256-GCM
-* [naeos config show](naeos_config_show.md)	 - Show the default config schema
-* [naeos config validate](naeos_config_validate.md)	 - Validate a NAEOS config file against the schema
+* [naeos config resolve](naeos_config_resolve.md)	 - Resolve a configuration file into concrete values
+* [naeos config sources](naeos_config_sources.md)	 - List available config sources and their reference syntax
+* [naeos config test](naeos_config_test.md)	 - Resolve a single config reference (e.g. env:FOO)
 

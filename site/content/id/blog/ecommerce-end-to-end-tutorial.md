@@ -14,7 +14,7 @@ Kita akan menggunakan `examples/spec-full.yaml` dari repository — spec referen
 
 ```bash
 curl -fsSL https://naeos.dev/install.sh | sh
-naeos version   # seharusnya mencetak 3.1.0
+naeos version   # seharusnya mencetak 3.4.0
 ```
 
 ## Langkah 1: Buat Proyek

@@ -14,8 +14,10 @@ import {
   BlogPostView,
   BlogListView,
 } from "@/components/views/PageViews";
+import { PageHeader } from "@/components/views/PageHeader";
 import PluginsGrid, { PluginPublishSteps } from "@/components/views/PluginsGrid";
 import TemplatesGrid from "@/components/views/TemplatesGrid";
+import StatusView from "@/components/views/StatusView";
 import {
   breadcrumbJsonLd,
   faqJsonLd,
@@ -148,6 +150,15 @@ export default async function ContentPage(props: {
       <>
         <GenericPageView page={page} />
         <JsonLd data={faqJsonLd(extractFaqItems(page.body))} />
+      </>
+    );
+  }
+
+  if (page.url === "/status") {
+    return (
+      <>
+        <PageHeader page={page} lang={lang} />
+        <StatusView lang={lang} />
       </>
     );
   }

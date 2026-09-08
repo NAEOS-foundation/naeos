@@ -486,6 +486,8 @@ func (ah *APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ah.handleActivity(w, r)
 	case "/api/health":
 		ah.handleHealth(w, r)
+	case "/api/settings":
+		ah.handleSettings(w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(APIResponse{
@@ -550,6 +552,21 @@ func (ah *APIHandler) handleHealth(w http.ResponseWriter, _ *http.Request) {
 		},
 	}
 
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(APIResponse{
+		OK:        true,
+		Data:      payload,
+		Timestamp: time.Now().Format(time.RFC3339),
+	})
+}
+
+func (ah *APIHandler) handleSettings(w http.ResponseWriter, _ *http.Request) {
+	payload := map[string]interface{}{
+		"refresh_interval": ah.config.RefreshInterval.String(),
+		"max_log_entries":  ah.config.MaxLogEntries,
+		"max_subscribers":  ah.config.MaxSubscribers,
+		"stats_file_path":  ah.config.StatsFilePath,
+	}
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(APIResponse{
 		OK:        true,

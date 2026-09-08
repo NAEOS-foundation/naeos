@@ -11,16 +11,17 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    { "pattern": "naeos.dev", "custom_domain": true },
+    { "pattern": "www.naeos.dev", "custom_domain": true },
+    { "pattern": "docs.naeos.dev", "custom_domain": true },
+    { "pattern": "registry.naeos.dev", "custom_domain": true }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
       "service": "naeos-docs"
     }
-  ]
-  // Optional: persist newsletter subscribers.
-  // Create a namespace with: wrangler kv namespace create NEWSLETTER_KV
-  // then uncomment and paste the returned id:
-  // "kv_namespaces": [
-  //   { "binding": "NEWSLETTER_KV", "id": "<paste-namespace-id>" }
-  // ]
+  ],
+  "kv_namespaces": []
 }

@@ -195,7 +195,7 @@ The implementation mirrors the architecture directly:
 
 ```text
 naeos/
-├── cmd/naeos/            # CLI entry point (~67 commands)
+├── cmd/naeos/            # CLI entry point (~200+ commands)
 ├── pkg/pipeline/         # Pipeline orchestration engine
 ├── pkg/kernel/           # Kernel services, event bus, lifecycle
 ├── pkg/config/           # Configuration loading and validation

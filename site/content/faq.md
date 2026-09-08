@@ -70,7 +70,7 @@ description: Common questions about NAEOS and declarative engineering.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>Yes. NAEOS is completely free and open source under the Apache License 2.0. You can use it for personal projects, commercial applications, or enterprise deployments without any licensing fees.</p>
+<p>Yes. NAEOS is free and open source under the Apache License 2.0. The license permits personal and commercial use without licensing fees; review the project documentation for deployment suitability.</p>
 </div>
 </div>
 

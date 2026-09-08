@@ -7,8 +7,10 @@ import { CountUpNumber, GithubStats } from "@/components/home/HomeEffects";
 import { getPage, getBlogPosts } from "@/lib/content";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
 import { pageMetadata } from "@/lib/metadata";
+import { t as translate } from "@/lib/i18n";
 import enDict from "@/lib/i18n/en.json";
 import idDict from "@/lib/i18n/id.json";
+import statusData from "@/data/status.json";
 
 type Dict = Record<string, string>;
 const DICTS: Record<Lang, Dict> = { en: enDict as Dict, id: idDict as Dict };
@@ -51,6 +53,10 @@ export default async function HomePage(props: {
   const t = (key: string) => DICTS[lang][key] ?? key;
   const base = lang === "en" ? "" : "/id";
   const posts = getBlogPosts(lang).slice(0, 3);
+
+  const githubStats =
+    (statusData as { github?: { stars?: number; forks?: number; openIssues?: number; contributors?: number } })
+      .github ?? {};
 
   const features = [
     { key: "pipeline", icon: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></> },
@@ -130,7 +136,7 @@ export default async function HomePage(props: {
       title: t("home_step_run_title"),
       desc: t("home_step_run_desc"),
       lang: "bash",
-      code: "naeos run --input spec.yaml --output-dir ./out",
+      code: "naeos run --config naeos.yaml --input-file spec.yaml",
     },
     {
       title: t("home_step_ai_title"),
@@ -140,10 +146,25 @@ export default async function HomePage(props: {
     },
   ];
 
-  const testimonials = [
-    { quote: t("home_testimonial_one"), initials: "SK", name: "Sarah Kim", role: t("home_testimonial_one_role") },
-    { quote: t("home_testimonial_two"), initials: "JR", name: "James Reyes", role: t("home_testimonial_two_role") },
-    { quote: t("home_testimonial_three"), initials: "AN", name: "Aditya Nugraha", role: t("home_testimonial_three_role") },
+  const cliDemoSteps = [
+    {
+      label: t("home_cli_demo_validate"),
+      code: "naeos validate --input-file spec.yaml --output json",
+    },
+    {
+      label: t("home_cli_demo_context"),
+      code: "naeos context --input-file spec.yaml --output markdown --output-file context.md",
+    },
+    {
+      label: t("home_cli_demo_generate"),
+      code: "naeos run --config naeos.yaml --input-file spec.yaml --output json",
+    },
+  ];
+
+  const proofPoints = [
+    { quote: t("home_proof_one"), initials: "01", name: "README", role: t("home_proof_one_source") },
+    { quote: t("home_proof_two"), initials: "02", name: "Quick Start", role: t("home_proof_two_source") },
+    { quote: t("home_proof_three"), initials: "03", name: "Architecture", role: t("home_proof_three_source") },
   ];
 
   return (
@@ -165,10 +186,10 @@ export default async function HomePage(props: {
           <h1 className="hero-title"><Html>{t("hero_title")}</Html></h1>
           <p className="hero-subtitle">{t("hero_subtitle")}</p>
           <div className="hero-actions">
-            <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg">
+            <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg" data-umami-event="hero-get-started">
               {t("cta_get_started")}
             </Link>
-            <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+            <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-github">
               {t("cta_view_on_github")}
             </a>
           </div>
@@ -193,10 +214,10 @@ export default async function HomePage(props: {
                 <div className="terminal-line output">  languages: [go, typescript]</div>
                 <div className="terminal-line prompt">$ naeos run --input spec.yaml</div>
                 <div className="terminal-line output">✓ Parsed → Normalized → Resolved</div>
-                <div className="terminal-line output">✓ NEIR built | <span className="highlight">4 modules</span>, <span className="highlight">8 services</span></div>
-                <div className="terminal-line output">✓ Policy evaluation: <span className="highlight">passed</span></div>
+                <div className="terminal-line output">✓ NEIR built</div>
+                <div className="terminal-line output">✓ Policy evaluation complete</div>
                 <div className="terminal-line output">✓ Generated: go/, typescript/</div>
-                <div className="terminal-line output">✓ <span className="highlight">Done</span> in 1.2s</div>
+                <div className="terminal-line output">✓ <span className="highlight">Pipeline complete</span></div>
                 <div className="terminal-line terminal-cursor" />
               </div>
             </div>
@@ -217,21 +238,21 @@ export default async function HomePage(props: {
               <span className="hero-float-icon">◆</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_neir")}</div>
-                <div className="hero-float-value">4 modules · 8 services</div>
+                <div className="hero-float-value">Project model</div>
               </div>
             </div>
             <div className="hero-float-card hero-float-validated fade-in-scale" aria-hidden="true">
               <span className="hero-float-icon">✓</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_validated")}</div>
-                <div className="hero-float-value">0 errors · 0 warnings</div>
+                <div className="hero-float-value">Policy checks</div>
               </div>
             </div>
             <div className="hero-float-card hero-float-generated fade-in-scale" aria-hidden="true">
               <span className="hero-float-icon">⚙</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_generated")}</div>
-                <div className="hero-float-value">go/ · typescript/ · infra/</div>
+                <div className="hero-float-value">Generated artifacts</div>
               </div>
             </div>
           </div>
@@ -270,7 +291,7 @@ export default async function HomePage(props: {
             <div className="logo-strip-group">
               <h3 className="logo-strip-label">{t("home_strip_ai_platforms")}</h3>
               <div className="logo-strip-items">
-                {["GitHub Copilot", "Claude Code", "Cursor", "Gemini CLI", "Codex", "OpenCode"].map((name) => (
+                {["GitHub Copilot", "Claude Code", "Cursor", "Gemini CLI", "Codex", "OpenCode", "Windsurf"].map((name) => (
                   <span key={name} className="stack-logo">{name}</span>
                 ))}
               </div>
@@ -312,7 +333,7 @@ export default async function HomePage(props: {
                 <li>{t("mk_solution_item2")}</li>
                 <li>{t("mk_solution_item3")}</li>
               </ul>
-              <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-sm">
+              <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-sm" data-umami-event="solution-get-started">
                 {t("cta_get_started")}
               </Link>
             </div>
@@ -388,7 +409,7 @@ export default async function HomePage(props: {
       <section className="section">
         <div className="container">
           <h2 className="section-title fade-in">{t("section_features")}</h2>
-          <p className="section-subtitle fade-in">{t("home_features_subtitle").replace("{{.CLI}}", String(SITE.stats.cli))}</p>
+          <p className="section-subtitle fade-in">{translate(lang, "home_features_subtitle", { CLI: SITE.stats.cli })}</p>
           <div className="features-grid stagger-fade">
             {features.map((f) => (
               <div key={f.key} className="feature-card">
@@ -454,6 +475,42 @@ export default async function HomePage(props: {
         </div>
       </section>
 
+      {/* Runnable CLI demo */}
+      <section className="section">
+        <div className="container fade-in">
+          <h2 className="section-title">{t("home_cli_demo_title")}</h2>
+          <p className="section-subtitle">{t("home_cli_demo_desc")}</p>
+          <div className="quick-start-steps stagger-fade">
+            {cliDemoSteps.map((step, i) => (
+              <div key={step.label} className="quick-start-step">
+                <div className="step-number">{i + 1}</div>
+                <div className="step-content">
+                  <h4>{step.label}</h4>
+                  <div className="code-block">
+                    <div className="code-block-header">
+                      <span>bash</span>
+                      <CopyButton text={step.code} label={t("copy_code")} />
+                    </div>
+                    <pre><code>{step.code}</code></pre>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <a
+              href={`${SITE.repo}/tree/main/examples/demo-cli`}
+              className="btn btn-primary"
+              target="_blank"
+              rel="noopener"
+              data-umami-event="cli-demo-source"
+            >
+              {t("home_cli_demo_source")}
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Quick start */}
       <section className="section">
         <div className="container">
@@ -483,17 +540,17 @@ export default async function HomePage(props: {
       {/* Testimonials */}
       <section className="section">
         <div className="container fade-in">
-          <h2 className="section-title">{t("home_testimonials_title")}</h2>
-          <p className="section-subtitle">{t("home_testimonials_desc")}</p>
+          <h2 className="section-title">{t("home_proof_title")}</h2>
+          <p className="section-subtitle">{t("home_proof_desc")}</p>
           <div className="testimonials-grid stagger-fade">
-            {testimonials.map((tm) => (
-              <div key={tm.name} className="testimonial-card">
-                <p>{tm.quote}</p>
+            {proofPoints.map((point) => (
+              <div key={point.name} className="testimonial-card">
+                <p>{point.quote}</p>
                 <div className="testimonial-author">
-                  <div className="testimonial-avatar">{tm.initials}</div>
+                  <div className="testimonial-avatar">{point.initials}</div>
                   <div className="testimonial-info">
-                    <h4>{tm.name}</h4>
-                    <span>{tm.role}</span>
+                    <h4>{point.name}</h4>
+                    <span>{point.role}</span>
                   </div>
                 </div>
               </div>
@@ -546,6 +603,12 @@ export default async function HomePage(props: {
           <h2 className="section-title github-stats-title fade-in">{t("home_community_title")}</h2>
           <div className="github-stats stagger-fade">
             <GithubStats
+              initial={{
+                stars: githubStats.stars,
+                forks: githubStats.forks,
+                issues: githubStats.openIssues,
+                contributors: githubStats.contributors,
+              }}
               labels={[
                 t("home_github_stars"),
                 t("home_github_forks"),

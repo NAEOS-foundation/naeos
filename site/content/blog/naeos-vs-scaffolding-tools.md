@@ -41,7 +41,7 @@ NAEOS doesn't render templates — it **builds a model and derives everything fr
 1. You write one specification (YAML/JSON): modules, dependencies, services, endpoints, architecture pattern, deployment strategy, testing targets.
 2. The pipeline parses, resolves, and validates it into **NEIR** — the NAEOS Engineering Intermediate Representation — a canonical model of the entire system.
 3. Language adapters derive code from that model: Go, TypeScript, Python, Java, Rust from the *same* model, with the same validation, the same dependency graph, the same structural guarantees.
-4. AI compilers derive context for Copilot, Claude, Cursor, Gemini, Codex, and OpenCode from the same model.
+4. AI compilers derive context for Copilot, Claude, Cursor, Gemini, Codex, OpenCode, and Windsurf from the same model.
 5. Policy rules evaluate the model *before* generation. Governance executes, instead of living in a PDF.
 
 The difference is not the output — it's the **source of truth**. Templates capture what a project looked like once. A specification captures what the system is, and everything is derived from it, every time, deterministically.
@@ -52,7 +52,7 @@ The difference is not the output — it's the **source of truth**. Templates cap
 |------------|-------|---------------|--------|-------------|-------|--------|
 | Declarative spec (YAML/JSON) | **Yes** | Partial | Partial | Partial | No | No |
 | Multi-language generation (5) | **Yes** | Any (your templates) | Any | API only | No | Per-generator |
-| AI context generation (6 platforms) | **Yes** | — | — | — | — | — |
+| AI context generation (7 platforms) | **Yes** | — | — | — | — | — |
 | Pipeline engine (11-stage DAG) | **Yes** | — | — | — | — | — |
 | Built-in governance (RBAC + audit) | **Yes** | — | — | — | — | — |
 | WASM plugin system | **Yes** | Jinja only | Jinja only | — | JS snippets | JS generators |

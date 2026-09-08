@@ -23,12 +23,12 @@ description: Pasang NAEOS dan mulai rekayasa proyek Anda.
     <div class="download-card">
       <h3>Biner (amd64)</h3>
       <p>Linux x86_64 — unduh dan jalankan.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-amd64.tar.gz" class="btn btn-primary">Unduh untuk Linux</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-amd64" class="btn btn-primary">Unduh untuk Linux</a>
     </div>
     <div class="download-card">
       <h3>Biner (arm64)</h3>
       <p>Linux ARM64 — untuk Raspberry Pi, AWS Graviton, dll.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-arm64.tar.gz" class="btn btn-primary">Unduh ARM64</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-arm64" class="btn btn-primary">Unduh ARM64</a>
     </div>
   </div>
 </div>
@@ -38,12 +38,12 @@ description: Pasang NAEOS dan mulai rekayasa proyek Anda.
     <div class="download-card">
       <h3>Biner (amd64)</h3>
       <p>macOS x86_64 — untuk Intel Mac.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-amd64.tar.gz" class="btn btn-primary">Unduh untuk macOS Intel</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-amd64" class="btn btn-primary">Unduh untuk macOS Intel</a>
     </div>
     <div class="download-card">
       <h3>Biner (arm64)</h3>
       <p>macOS ARM64 — untuk Apple Silicon (M1/M2/M3/M4).</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-arm64.tar.gz" class="btn btn-primary">Unduh untuk macOS Apple Silicon</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-arm64" class="btn btn-primary">Unduh untuk macOS Apple Silicon</a>
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@ description: Pasang NAEOS dan mulai rekayasa proyek Anda.
     <div class="download-card">
       <h3>Biner (amd64)</h3>
       <p>Windows x86_64.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-windows-amd64.zip" class="btn btn-primary">Unduh untuk Windows</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-windows-amd64.exe" class="btn btn-primary">Unduh untuk Windows</a>
     </div>
   </div>
 </div>

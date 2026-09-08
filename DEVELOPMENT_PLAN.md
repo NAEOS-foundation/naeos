@@ -1,4 +1,4 @@
-# NAEOS Development Plan — v2.2.0 → v3.0.0
+# NAEOS Development Plan — v2.2.0 → v4.0.0 (Enterprise)
 
 ## Fase 1: Kualitas & Keandalan
 
@@ -15,9 +15,9 @@
 
 | Item | Area | Detail |
 |------|------|--------|
-| Wiki → Hugo migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke Hugo site. Wiki/ dihapus. |
-| CLI docs auto-generate ✅ | Site | `naeos docsgen` — regenerate 150+ file CLI docs (termasuk `naeos_supabase*.md`) |
-| API docs auto-generate ✅ | Site | `.github/workflows/website.yml` — copy `docs/openapi.yaml` ke `site/static/` tiap build Hugo (raw YAML, bukan Swagger UI) |
+| Wiki → Next.js/Cloudflare Pages migration ✅ | Site | Semua halaman wiki sudah dimigrasi ke website (`site/`, Next.js on Cloudflare Pages). Wiki/ dihapus. |
+| CLI docs auto-generate ✅ | Site | `naeos docsgen` — regenerate 280+ file CLI docs (termasuk `naeos_supabase*.md`) |
+| API docs auto-generate ✅ | Site | `.github/workflows/website.yml` — copy `docs/openapi.yaml` ke `site/static/` tiap build (raw YAML, bukan Swagger UI) |
 | Blog content pipeline ✅ | Site | `.github/workflows/release-blog.yml` — triggered on `release: [published]`, auto-create blog post EN + ID, open PR |
 | Interactive playground ✅ | Site | xterm.js + WebSocket ke server demo di homepage. Hero terminal interaktif, fallback ke animasi statis. Demo server di `cmd/naeos-demo/` |
 | PDF generation ✅ | Site | CLI reference + getting-started sebagai PDF download via GitHub Action (`pdf-docs.yml`). Tersedia di `/downloads/` |
@@ -67,6 +67,54 @@
 | Enterprise features ✅ | Backend | **SSO**: OIDC, SAML 2.0 (XML parsing, NameID/attribute extraction), LDAP (TCP/TLS bind, ASN.1 BER search). **Audit**: hashed chain (`HashedAuditor`), encrypted (`EncryptedAuditor` AES-256-GCM), cloud export (AWS SigV4, GCS HMAC, Azure SharedKey). **Compliance**: SOC2 (8 controls), HIPAA (11), GDPR (8), `GenerateReport()`, CLI `naeos compliance report/list-frameworks/verify/cloud-export` |
 | v3.0.0 release ✅ | All | Changelog, migration guide v2→v3, release party blog post, deprecation notices. **Unreleased section di CHANGELOG.md sudah berisi semua 20+ item fitur v3.0.0.** |
 
+## Kebijakan Versi (Semver Ketat)
+
+Mengikuti semantic versioning secara disiplin — **tidak ada lompatan nomor versi**:
+
+| Jenis rilis | Format | Isi yang diperbolehkan |
+|-------------|--------|------------------------|
+| Patch | `x.y.z` → `x.y.(z+1)` | Bugfix, security fix, dependensi update. **Tanpa** fitur baru & perubahan API |
+| Minor | `x.y.z` → `x.(y+1).0` | Fitur baru backward-compatible |
+| Major | `x.y.z` → `(x+1).0.0` | Hanya jika ada breaking change yang tak terhindarkan |
+
+Aturan wajib:
+- `VERSION` di repo harus selalu sama dengan tag rilis (verifikasi di CI: tag == `v$(cat VERSION)`).
+- CHANGELOG diisi untuk setiap versi **sebelum** merge, bukan setelah rilis.
+- Setiap PR wajib mencantumkan target versi; CI memastikan kenaikan tepat satu angka (no-skip).
+- Setiap Major/Minor diikuti patch recovery bila perlu (mis. `v3.2.0` → `v3.2.1`).
+- Fitur baru = Minor. Bugfix = Patch. Tidak ada fitur baru dalam Patch.
+
+## Release Train — Arah Enterprise (v3.1.1 → v4.0.0)
+
+Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rilis = kenaikan tepat satu versi dari rilis sebelumnya.
+
+| Rilis | Jenis | Fase | Isi utama |
+|-------|-------|------|-----------|
+| v3.1.1 | Patch | Fase 7 | Backlog bugfix + security fix + dependensi update |
+| v3.1.2 | Patch | Fase 7 | Perbaikan race condition, queue, LSP, parser edge cases |
+| v3.1.3 | Patch | Fase 8 | `govulncheck` zero-critical + secret-scan CI + perbaikan penanganan secret |
+| v3.2.0 | Minor | Fase 7 | ✅ `naeos serve` daemon produksi: TLS, graceful shutdown, multi-listener, systemd unit, server config file (`internal/serve` + CLI) |
+| v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
+| v3.3.0 | Minor | Fase 8 | ✅ SBOM CycloneDX (`internal/sbom` + CLI `sbom generate/verify/inspect`) + SBOMVerifier + signing Ed25519 (`internal/signing` + CLI `sign keygen/sign/verify`); ⬜ `naeos verify` expansion + aset rilis tersign |
+| v3.4.0 | Minor | Fase 7 | ✅ Helm chart (`internal/helm` + CLI `helm init/validate`) + ✅ bundle air-gapped (`internal/airgap` + CLI `airgap bundle/import/inspect`) + ✅ config provider (`internal/configprovider` + CLI `config resolve/test/sources`); ⬜ `naeos backup`/`restore` + API server stateless (state store Postgres) |
+| v3.5.0 | Minor | Fase 10 | Ekspor tracing OpenTelemetry (OTLP) + korelasi request_id → trace_id → tenant + SLO & alerting Prometheus + ekspor audit ke SIEM |
+| v3.6.0 | Minor | Fase 11 | Durable job queue (Postgres outbox) + worker pipeline jaringan (NATS/Kafka) + idempotency |
+| v3.7.0 | Minor | Fase 9 | REST API v2: pagination cursor, idempotency key, error envelope RFC 7807, rate-limit berjenjang, kebijakan versioning API |
+| v3.8.0 | Minor | Fase 9 | Webhooks/events outbound (HMAC-signed, retry + dead-letter, katalog event) |
+| v3.9.0 | Minor | Fase 9 | SDK resmi Go + TypeScript via OpenAPI codegen + drift-check CI |
+| v3.10.0 | Minor | Fase 8 | MFA TOTP/WebAuthn + kebijakan password + rotasi session/refresh token + API key terpetakan |
+| v3.11.0 | Minor | Fase 8 | SCIM 2.0 provisioning + JIT provisioning + break-glass & access review + FIPS-ready |
+| v3.12.0 | Minor | Fase 11 | Kuota/limit per-tenant (concurrency, artefak) + tier cache Redis + circuit breaker & retry policy |
+| v3.13.0 | Minor | Fase 12 | Policy-as-code antar-tenant + drift detection (`naeos plan`) + approval workflow & change management |
+| v3.14.0 | Minor | Fase 12 | Audit trail immutable/WORM/object storage + kebijakan retensi + bukti compliance live (SOC2/HIPAA/GDPR) |
+| v3.15.0 | Minor | Fase 12 | Edition/license gating (community vs enterprise), RBAC delegation + access reviews lanjutan |
+| v4.0.0 | Major | Semua | Hanya bila ada breaking change riil; jika tidak, nama rilis tetap v3.16.0 dst |
+
+Catatan:
+- **Prioritas**: stabil (Patch) → ops (v3.2.0–v3.4.0) → observability (v3.5.0) → skala (v3.6.0) → API/integrasi (v3.7.0–v3.9.0) → security lanjutan (v3.10.0–v3.11.0) → governance (v3.12.0–v3.15.0).
+- Setiap rilis Minor wajib menyertakan: CHANGELOG entry, CLI docs `naeos docsgen` regenerate, update website/site konten, dan doc PR sebelum code merge.
+- Jika sebuah item belum siap pada slotnya, rilis tersebut tetap rilis (berisi item yang siap) dan item dipindah ke slot berikutnya — **nomor versi tidak pernah di-skip**.
+
 ## Metrik Progress
 
 | Metrik | Saat Ini | Target Q1 2027 | Target Q3 2027 |
@@ -80,10 +128,20 @@
 | Build time (pipeline) | ~2s (small) | <1s (small) | <5s (medium) |
 | CI lint pass rate | 100% ✅ | 100% | 100% |
 | `fmt.Println`/`log.Print` sisa | 0 | 0 | 0 |
+| Versi rilis — no-skip (urutan rilis == urutan versi) | — | ✅ terbukti di v3.1.1–v3.1.3 | ✅ terbukti hingga v3.10.0 |
+| `naeos serve` daemon (TLS, graceful shutdown) | ✅ v3.2.0 (`naeos serve`/`serve run` + systemd install) | ✅ v3.2.0 | ✅ + systemd unit |
+| SBOM + artifact signing | ✅ SBOM CycloneDX + Ed25519 signing live (`internal/sbom`, `internal/signing` + CLI `sbom generate/verify/inspect` + `sign keygen/sign/verify` + SBOMVerifier) | ✅ v3.3.0 | ✅ di setiap rilis |
+| Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
+| Helm chart & air-gap bundle | ✅ Helm scaffolding + airgap bundle v3.4.0 (`internal/helm`, `internal/airgap` + CLI `helm init/validate` + `airgap bundle/import/inspect`) | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
+| Config provider (env/file/K8s Secret/Vault) | ✅ `internal/configprovider` + CLI `config resolve/test/sources` v3.4.0 | ✅ v3.4.0 | ✅ v3.4.0 |
+| Observability (OTLP tracing + SLO) | ❌ metrics Prometheus saja | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
+| Durable job queue + worker jaringan | ❌ async in-memory saja | ✅ v3.6.0 (Postgres outbox) | ✅ NATS/Kafka workers |
+| REST API v2 (cursor, idempotency, RFC 7807) | ❌ v1 | ✅ v3.7.0 | ✅ + webhooks v3.8.0 + SDK v3.9.0 |
+| MFA + SCIM provisioning | ❌ belum ada | review (v3.10.0–v3.11.0) | ✅ v3.11.0 SCIM + MFA |
+| Governance (policy-as-code, drift, approval) | ⚠️ policy-as-code + evidence + verification live (`internal/governance`, `internal/evidence`, `internal/verification` + CLI `policy`/`control`/`runtime`/`evidence`/`verify`) | ✅ policy-as-code + evidence (v3.13.0–v3.14.0) | ✅ v3.14.0 sebagian besar |
+| Kehilangan data audit | 0 | 0 | 0 (immutable/WORM v3.14.0) |
 
-## Completed (v2.2.0 → v3.0.0)
-
-- **Supabase backend integration** — database adapter, Auth, Storage, Edge Functions, Admin API, CLI, CI
+## Completed (v2.2.0 → v3.0.0)- **Supabase backend integration** — database adapter, Auth, Storage, Edge Functions, Admin API, CLI, CI
 - **Lint zero-failure** — 28 lint issues fixed (`bodyclose`, `noctx`, `gofmt`, `unconvert`, `errcheck`)
 - **Unit tests supabase** — 44 tests, coverage 84.1%
 - **Test flakiness** — `TestQueueFull` race condition fixed, `TestRealMySQLConnectNoOptionalConfig` timeout fixed
@@ -131,9 +189,30 @@
 - **Audit coverage boost** — 78% → 81% (ExportCSV, escapeCSV, edge cases)
 - **v3.0.0 changelog** — Unreleased section dengan 20+ item fitur baru untuk rilis v3.0.0
 
+## Completed (v3.2.0)
+
+- **`naeos serve` production daemon** — `internal/serve`: multi-listener plain HTTP + TLS (TLSv1.3 min), graceful shutdown on SIGINT/SIGTERM, YAML server config (`serve config` starter), systemd install/uninstall unit rendering (`serve install`/`uninstall`), CLI flags `--config/--port/--tls-cert/--tls-key/--auth/--jwt-secret`. API listeners reuse the REST API server with middleware/metrics and `healthz`/`readyz` probes. Embedded version bumped 3.1.0 → 3.2.0.
+- **`api.Server.Handler()` refactor** — extracted the fully-wrapped HTTP handler (metrics + logging + route middleware) out of `Start()` so external daemons can serve the exact same middleware chain.
+- **Serve test suite** — 20+ tests: config parse/validation (missing file, bad YAML, partial TLS, bad log level), multi-listener lifecycle (start → healthz 200 → graceful shutdown), TLS serving, systemd unit rendering (includes/excludes per input), plus 6 CLI tests (`serve --help`, `serve config`, `install`/`uninstall` user unit lifecycle).
+
+## Completed (v3.3.0)
+
+- **SBOM generation (CycloneDX 1.5)** — `internal/sbom`: `BOM`/`Component`/`Hash`/`Dependency` model, `Generator` producing BOMs from component inventory or directory scan (`FromDir`), `Write`/`Load`/`Marshal`/`Unmarshal` for JSON persistence, `NewSerialNumber()` RFC 4122 v4 UUID, `Purl()` package URL builder. CLI: `naeos sbom generate --project X --version Y --dir /path` and `naeos sbom generate --output bom.json`; `naeos sbom verify bom.json` (format/hash/structure checks) and `naeos sbom inspect bom.json`. 20 tests covering full lifecycle.
+- **SBOMVerifier** — `internal/verification.SBOMVerifier` implementing the `Verifier` interface: verifies evidence record artifact hash matches SBOM content hash (live `ArtifactSource` or expected map). 7 tests covering match/mismatch/source scenarios.
+- **Artifact signing (Ed25519)** — `internal/signing`: `KeyPair` generation, Ed25519 sign/verify with SHA-256 digest, `Bundle` model for self-contained signature documents, `Write`/`Load`/`VerifyFile` for JSON persistence. CLI: `naeos sign keygen` (generate key pair), `naeos sign sign <artifact>` (sign file), `naeos sign verify <sig.json>` (verify signature). 24 tests covering full lifecycle.
+- **Version bump** — 3.2.0 → 3.3.0.
+
+## Completed (v3.4.0)
+
+- **Helm chart scaffolding** — `internal/helm`: `Chart` model with Chart.yaml metadata, values (typed Value with defaults/required/description), 7 template renderers (deployment, service, ingress, hpa, serviceaccount, _helpers, NOTES), `Validate`, `WriteToDisk`/`LoadFromDisk`, YAML parse/flatten. CLI: `naeos helm init <name>` + `naeos helm chart render/validate`. 22 tests.
+- **Air-gapped bundles** — `internal/airgap`: `Bundle` manifest with manifest hash, `Builder` (charts/images/SBOMs/signatures), tar.gz `WriteBundle`/`ReadBundle`, `Extract` with hash verification + path traversal protection, `VerifyChecksum`. CLI: `naeos airgap bundle/import/inspect`. 15 tests.
+- **Config providers** — `internal/configprovider`: `Provider` interface + env/file/K8s secret/Vault KV providers over an in-memory store, ordered `Chain`, `Resolver.ResolveMap`. CLI: `naeos config resolve/test/sources`. 17 tests.
+- **Version bump** — 3.3.0 → 3.4.0.
+
 ## Notes
 
 - **Prioritas**: Fase 1 dulu — kualitas sebelum fitur baru
+- **Versi**: Semver ketat, no-skip — lihat [Kebijakan Versi] dan [Release Train] di atas
 - **Website**: Setiap fase include update konten website sesuai fitur yang dirilis
 - **CI**: Tiap PR wajib lint + test + coverage check; coverage drop → block merge
 - **Dokumentasi**: Tiap API/fitur baru harus include doc PR sebelum code merge

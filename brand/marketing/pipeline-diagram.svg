@@ -1,0 +1,70 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#05050A"/>
+      <stop offset="1" stop-color="#0E1220"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08D6FF"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" rx="32" fill="url(#bg2)"/>
+  <text x="120" y="110" fill="#F3F7FF" font-size="54" font-family="Inter, Arial, sans-serif" font-weight="800">NAEOS Engineering Pipeline</text>
+  <text x="120" y="160" fill="#C7D2F4" font-size="28" font-family="Inter, Arial, sans-serif" font-weight="500">Specification → Normalization → Resolution → NEIR → Validation → Generation</text>
+
+  <g transform="translate(120 210)">
+    <rect x="0" y="0" width="220" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="110" y="48" fill="#E7EEFF" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Spec</text>
+    <text x="110" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">YAML / JSON</text>
+
+    <rect x="270" y="0" width="220" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="380" y="48" fill="#E7EEFF" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Normalize</text>
+    <text x="380" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Intent model</text>
+
+    <rect x="540" y="0" width="220" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="650" y="48" fill="#E7EEFF" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Resolve</text>
+    <text x="650" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Refs + config</text>
+
+    <rect x="810" y="0" width="220" height="110" rx="24" fill="url(#accent2)"/>
+    <text x="920" y="48" fill="#05050A" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="800" text-anchor="middle">NEIR</text>
+    <text x="920" y="82" fill="#0A0B12" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Shared model</text>
+
+    <rect x="1080" y="0" width="220" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="1190" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Validate</text>
+    <text x="1190" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Rules + policy</text>
+
+    <path d="M220 55H270" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M490 55H540" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M760 55H810" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1030 55H1080" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(120 420)">
+    <rect x="0" y="0" width="250" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="125" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Schedule</text>
+    <text x="125" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">DAG execution</text>
+
+    <rect x="310" y="0" width="250" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="435" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Generate</text>
+    <text x="435" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Go / TS / Python</text>
+
+    <rect x="620" y="0" width="250" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="745" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">AI Context</text>
+    <text x="745" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Copilot / Claude</text>
+
+    <rect x="930" y="0" width="250" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="1055" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Govern</text>
+    <text x="1055" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Policies + review</text>
+
+    <rect x="1240" y="0" width="250" height="110" rx="24" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="1365" y="48" fill="#E7EEFF" font-size="24" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">Artifacts</text>
+    <text x="1365" y="82" fill="#A3B4D7" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="500" text-anchor="middle">Code + docs</text>
+
+    <path d="M250 55H310" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M560 55H620" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M870 55H930" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1180 55H1240" stroke="#7C4DFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

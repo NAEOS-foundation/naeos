@@ -6,6 +6,7 @@ This document serves as the master index for navigating the NAEOS repository.
 - [README.md](README.md) — project summary and main entry point.
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines.
+- [MARKETING-STRATEGY.md](MARKETING-STRATEGY.md) — evidence-based marketing strategy, content calendar, funnel, and experiment backlog.
 - [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English).
 - [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia).
 
@@ -70,6 +71,16 @@ This document serves as the master index for navigating the NAEOS repository.
 - [ROADMAP.md](ROADMAP.md) — project development roadmap.
 - [CHANGELOG.md](CHANGELOG.md) — version history and release notes.
 
+## 5.1 Specification & planning documents
+- [NAEOS-MTS-001.md](NAEOS-MTS-001.md) — master technical specification (core domain, policy, control plane, runtime & evidence).
+- [NAEOS-PER-001.md](NAEOS-PER-001.md) — project evolution (development history & evolution record).
+- [NAEOS-RDP-001.md](NAEOS-RDP-001.md) — roadmap & development plan (architecture to executable AI engineering foundation).
+
+## 5.2 Website and academic documents
+- [site/](site/) — Next.js website (Cloudflare Pages) with English and Indonesian (`site/content/id`) content.
+- [thesis/](thesis/) — academic thesis chapters.
+- [paper/](paper/) — LaTeX research paper (`main.tex`, `refs.bib`).
+
 ## 6. Architecture Decision Records (ADRs)
 - [docs/adr/001-why-go-for-runtime.md](docs/adr/001-why-go-for-runtime.md) — ADR-001: Why Go for the Runtime
 - [docs/adr/002-why-neir-as-central-model.md](docs/adr/002-why-neir-as-central-model.md) — ADR-002: Why NEIR as the Central Model
@@ -83,6 +94,7 @@ This document serves as the master index for navigating the NAEOS repository.
 ## 7. Templates and processes
 - [templates/ADR-template.md](templates/ADR-template.md) — Architecture Decision Record template.
 - [templates/RFC-template.md](templates/RFC-template.md) — Request for Comments template.
+- [.github/ISSUE_TEMPLATE/marketing_experiment.md](.github/ISSUE_TEMPLATE/marketing_experiment.md) — evidence-based marketing experiment template.
 - [examples/adr-example.md](examples/adr-example.md) — completed ADR example.
 - [examples/rfc-example.md](examples/rfc-example.md) — completed RFC example.
 

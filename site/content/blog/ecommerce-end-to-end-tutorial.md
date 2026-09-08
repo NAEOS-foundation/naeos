@@ -14,7 +14,7 @@ We'll use `examples/spec-full.yaml` from the repository — it's the reference s
 
 ```bash
 curl -fsSL https://naeos.dev/install.sh | sh
-naeos version   # should print 3.1.0
+naeos version   # should print 3.4.0
 ```
 
 ## Step 1: Create the Project

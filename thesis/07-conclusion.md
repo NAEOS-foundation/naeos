@@ -13,13 +13,13 @@
 1. **NEIR** — a fourteen-domain canonical engineering IR with semver schema governance, deterministic serialization, lazy loading, and structural diffing.
 2. **Executable governance** — constitution-compiled rules enforced through validators, policy engines, tamper-evident audit chains (SHA-256 chaining, AES-256-GCM encryption), and automated SOC 2/HIPAA/GDPR reporting.
 3. **AI-native compilation** — six-agent instruction compilation from one source, MCP-based capability exposure, NEIR-aware LSP, context bundles, and a centralized prompt library.
-4. **A production-quality reference implementation** — Go runtime, ~67 CLI commands, staged pipeline with caching/middleware/profiling/event sourcing, five-backend broker abstraction, distributed execution, and WASM plugin sandboxing — evaluated with committed performance baselines, independently replicated benchmarks across model scales, an executed determinism experiment, and an extensive test regime (race-detector CI, fuzzing, ~77 % coverage).
+4. **A production-quality reference implementation** — Go runtime, ~200+ CLI commands, staged pipeline with caching/middleware/profiling/event sourcing, five-backend broker abstraction, distributed execution, and WASM plugin sandboxing — evaluated with committed performance baselines, independently replicated benchmarks across model scales, an executed determinism experiment, and an extensive test regime (race-detector CI, fuzzing, ~87 % coverage).
 
 ## 7.3 Limitations
 
 **Schema evolution cost.** NEIR breadth makes schema changes expensive across generators; semver, fixtures, and migration tooling manage but do not eliminate this. As the generator count grows, the coordination cost of major-version changes grows with it — an inherent cost of the central-IR trade accepted in ADR-002.
 
-**Adoption friction.** The specification language has a learning curve; mitigated by the LSP, TUI wizard, and 56 NES documents, but empirical onboarding studies are lacking, and organizations with entrenched imperative workflows face cultural as much as technical adoption cost.
+**Adoption friction.** The specification language has a learning curve; mitigated by the LSP, TUI wizard, and 57 NES documents, but empirical onboarding studies are lacking, and organizations with entrenched imperative workflows face cultural as much as technical adoption cost.
 
 **Ecosystem immaturity.** Zero community plugins at evaluation time; marketplace targets (5+ by Q1 2027) remain unproven. The sandbox's security properties are strongest precisely where the ecosystem is weakest — a gap between mechanism and network effect that only time and community can close.
 

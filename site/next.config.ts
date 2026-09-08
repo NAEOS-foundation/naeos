@@ -26,6 +26,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
+  staticPageGenerationTimeout: 300,
+  experimental: {
+    staticGenerationMaxConcurrency: 2,
+  },
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },

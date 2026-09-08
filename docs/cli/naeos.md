@@ -20,6 +20,7 @@ Specify Once. Build Anywhere.
 ### SEE ALSO
 
 * [naeos ai](naeos_ai.md)	 - AI-powered assistance commands
+* [naeos airgap](naeos_airgap.md)	 - Air-gapped distribution bundles
 * [naeos api](naeos_api.md)	 - Start NAEOS REST API server
 * [naeos artifacts](naeos_artifacts.md)	 - Manage generated project artifacts
 * [naeos audit](naeos_audit.md)	 - Security audit of generated or source files
@@ -31,8 +32,9 @@ Specify Once. Build Anywhere.
 * [naeos cloud](naeos_cloud.md)	 - Cloud deployment commands
 * [naeos completion](naeos_completion.md)	 - Generate shell completion scripts
 * [naeos compliance](naeos_compliance.md)	 - Compliance reporting and audit log export
-* [naeos config](naeos_config.md)	 - Configuration management commands
+* [naeos config](naeos_config.md)	 - Resolve configuration from environment, files, secrets, and Vault
 * [naeos context](naeos_context.md)	 - Generate AI context bundles from specifications
+* [naeos control](naeos_control.md)	 - Governance control plane evaluation
 * [naeos create](naeos_create.md)	 - Interactive project creation wizard
 * [naeos dashboard](naeos_dashboard.md)	 - Start NAEOS web dashboard
 * [naeos db](naeos_db.md)	 - Database connection and migration management
@@ -44,10 +46,12 @@ Specify Once. Build Anywhere.
 * [naeos doctor](naeos_doctor.md)	 - Run diagnostics on the NAEOS environment and configuration
 * [naeos dx](naeos_dx.md)	 - Developer experience tools
 * [naeos events](naeos_events.md)	 - Event sourcing commands for pipeline audit trail and replay
+* [naeos evidence](naeos_evidence.md)	 - Governance evidence store — immutable audit trail
 * [naeos export](naeos_export.md)	 - Export generated artifacts to a directory
 * [naeos gateway](naeos_gateway.md)	 - API gateway management
 * [naeos graphql](naeos_graphql.md)	 - Start GraphQL API server
 * [naeos health](naeos_health.md)	 - Run system health checks and diagnostics
+* [naeos helm](naeos_helm.md)	 - Helm chart scaffolding and validation
 * [naeos history](naeos_history.md)	 - Show pipeline run history from persisted events
 * [naeos import](naeos_import.md)	 - Import specifications from HCL format to NAEOS YAML/JSON
 * [naeos init](naeos_init.md)	 - Initialize a new NAEOS project or generate config
@@ -64,21 +68,27 @@ Specify Once. Build Anywhere.
 * [naeos observability](naeos_observability.md)	 - Observability and telemetry management
 * [naeos perf](naeos_perf.md)	 - Performance optimization tools
 * [naeos plugin](naeos_plugin.md)	 - Manage NAEOS plugins
+* [naeos policy](naeos_policy.md)	 - Manage governance policies
 * [naeos preview](naeos_preview.md)	 - Preview generated artifacts without writing them
 * [naeos profile](naeos_profile.md)	 - Manage industry-specific project profiles
 * [naeos repair](naeos_repair.md)	 - Repair the NAEOS output directory
 * [naeos rollback](naeos_rollback.md)	 - Rollback to a previous snapshot of generated artifacts
 * [naeos run](naeos_run.md)	 - Execute the NAEOS pipeline
+* [naeos runtime](naeos_runtime.md)	 - Runtime gateway for authorized agent execution
+* [naeos sbom](naeos_sbom.md)	 - Software Bill of Materials generation and verification
 * [naeos scaffold](naeos_scaffold.md)	 - Generate a starter project scaffold
 * [naeos schema](naeos_schema.md)	 - NEIR schema registry operations
 * [naeos search](naeos_search.md)	 - Full-text search engine management
 * [naeos security](naeos_security.md)	 - Security and secrets management
+* [naeos serve](naeos_serve.md)	 - Run NAEOS as a production daemon
+* [naeos sign](naeos_sign.md)	 - Digital artifact signing and verification
 * [naeos status](naeos_status.md)	 - Show current pipeline, system and project status
 * [naeos supabase](naeos_supabase.md)	 - Supabase backend management
 * [naeos template](naeos_template.md)	 - Manage generation templates, prompt library, and template marketplace
 * [naeos test](naeos_test.md)	 - Run tests for generated code
 * [naeos tui](naeos_tui.md)	 - Terminal user interface tools
 * [naeos validate](naeos_validate.md)	 - Validate a specification using the NAEOS pipeline
+* [naeos verify](naeos_verify.md)	 - Independently verify governance evidence
 * [naeos version](naeos_version.md)	 - Show NAEOS version
 * [naeos watch](naeos_watch.md)	 - Watch for specification changes and re-run the pipeline
 * [naeos workflow](naeos_workflow.md)	 - Workflow and approval management

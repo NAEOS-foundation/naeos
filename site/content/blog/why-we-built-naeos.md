@@ -38,19 +38,19 @@ Three things happened after we committed to this thesis:
 
 **1. Drift became structurally impossible.** When Go services and TypeScript clients are generated from the same NEIR model, they cannot silently disagree about error formats, API contracts, or naming conventions. Consistency isn't a review checklist anymore — it's a build invariant.
 
-**2. AI assistants finally got real context.** The same NEIR model compiles into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, and OpenCode. Your AI tools stop reading isolated files and start reading the architecture — dependencies, patterns, boundaries, and intent.
+**2. AI assistants finally got real context.** The same NEIR model compiles into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and Windsurf. Your AI tools stop reading isolated files and start reading the architecture — dependencies, patterns, boundaries, and intent.
 
-**3. Governance became executable.** Policy rules evaluate the NEIR model before a single line is generated. Violations are caught at the specification level, not in code review. With RBAC, an audit trail, and SOC 2 / HIPAA / GDPR compliance templates built into the pipeline.
+**3. Governance became executable.** Policy rules evaluate the NEIR model before a single line is generated. Violations are caught at the specification level, not in code review. RBAC, audit trails, and compliance-oriented policy templates can be applied through the pipeline.
 
 ## Where We Are Now
 
-NAEOS has grown from a v0.1.0 foundation in July 2026 to **v3.1.0** today:
+The current repository state is **v3.4.0** and includes:
 
 - **5 languages** — Go, TypeScript, Python, Java, Rust — from one specification
-- **6 AI platforms** — instruction sets compiled from the NEIR model
-- **67 CLI commands** — run, validate, test, watch, diff, deploy, cloud, and more
-- **56 NES documents** — a specification-driven project, documented like it builds
-- **WASM plugin marketplace** — sandboxed, signature-verified third-party extensions
+- **7 AI platforms** — instruction sets compiled from the NEIR model
+- **200+ CLI commands** — run, validate, test, watch, diff, deploy, cloud, serve, and more
+- **57 NES documents** — a specification-driven project, documented like it builds
+- **WASM plugin marketplace** — sandboxed, third-party extensions
 - **Schema registry, policy engine, MCP server, LSP server, dashboard** — an operating system for engineering, not a code generator
 
 ## What's Next
@@ -67,6 +67,6 @@ naeos create
 naeos run --input-file spec.yaml
 ```
 
-One specification. Five languages. Zero drift. [Read the whitepaper](/whitepaper/) for the full thesis, and join us on [GitHub](https://github.com/NAEOS-foundation/naeos).
+One specification. Five languages. A clearer path for reducing drift. [Read the whitepaper](/whitepaper/) for the full thesis, and join us on [GitHub](https://github.com/NAEOS-foundation/naeos).
 
-We built NAEOS because we believe engineering can be declarative, validated, and auditable — for humans and for AI. Specify once. Build anywhere.
+We built NAEOS because we believe engineering can be more declarative, more transparent, and more structured for humans and for AI. Specify once. Build anywhere.

@@ -54,7 +54,7 @@ The NAEOS Engineering Intermediate Representation is the canonical model represe
 
 ## Code Generator
 
-Generate production-ready code with per-language adapters:
+Generate code artifacts with per-language adapters:
 
 - **Go** — Standard library patterns, net/http, testing
 - **TypeScript** — Express/NestJS patterns, type safety
@@ -64,7 +64,7 @@ Generate production-ready code with per-language adapters:
 
 ## AI Compiler
 
-Transform NEIR into AI instruction sets for 6 coding assistants:
+Transform NEIR into AI instruction sets for 7 coding assistants:
 
 - **GitHub Copilot** — `.github/copilot-instructions.md`
 - **Claude Code** — `CLAUDE.md`
@@ -72,6 +72,7 @@ Transform NEIR into AI instruction sets for 6 coding assistants:
 - **Gemini CLI** — `.gemini/CONFIG.md`
 - **Codex** — `AGENTS.md`
 - **OpenCode** — `AGENTS.md`
+- **Windsurf** — `.windsurfrules`
 
 ## Governance & Policy
 
@@ -97,7 +98,7 @@ Publish, discover, and install extensions:
 
 Additional tools for a complete development workflow:
 
-- 67 CLI commands
+- 200+ CLI commands
 - Watch mode for hot-reload
 - Diff engine for spec comparison
 - Migration engine for schema versioning
