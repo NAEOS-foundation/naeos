@@ -16,6 +16,11 @@ NAEOS is not just a project generator. NAEOS is an engineering runtime that unde
 
 Build an open-source engineering platform that enables developers and organizations to describe their system once, then build, validate, and evolve software across multiple languages, frameworks, and platforms.
 
+## Project Guides
+
+- [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.
+- [Marketing experiment template](.github/ISSUE_TEMPLATE/marketing_experiment.md) — record campaign hypotheses, metrics, results, and learnings.
+
 ## Quick Start
 
 ```bash
@@ -54,6 +59,18 @@ naeos context --input-file spec.yaml
 naeos ai compile --input-file spec.yaml --target opencode
 ```
 
+### Runnable CLI demo
+
+Run the complete local demo (validate → context → generate):
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/demo-cli/run-demo.sh
+```
+
+See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
+location and optional AI compiler usage.
+
 ## Features
 
 ### Core Pipeline
@@ -76,13 +93,14 @@ naeos ai compile --input-file spec.yaml --target opencode
 
 ### AI Integration
 - **Compiler** — transform NEIR ke AI instruction sets
-- **6 Output Adapters**:
+- **7 Output Adapters**:
   - GitHub Copilot — `.github/copilot-instructions.md`
   - Claude Code — `CLAUDE.md`
   - Cursor — `.cursorrules`
   - Gemini CLI — `.gemini/CONFIG.md`
   - Codex — `AGENTS.md`
   - OpenCode — `AGENTS.md`
+  - Windsurf — `.windsurfrules`
 - **MCP Server** — Model Context Protocol untuk AI agent integration
 - **Context Bundles** — LLM-optimized project summaries
 
@@ -141,7 +159,7 @@ Specifications use NAEOS Specification Language v2 as the single source of truth
 NAEOS Engineering Intermediate Representation is the central engineering model representing the entire system. NEIR encompasses project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, and metadata.
 
 ### Compiler
-The compiler transforms NEIR into AI instruction sets for 6 target tools.
+The compiler transforms NEIR into AI instruction sets for 7 target tools.
 
 ### Marketplace
 A marketplace for profiles, plugins, and templates that can be published, searched, and installed.

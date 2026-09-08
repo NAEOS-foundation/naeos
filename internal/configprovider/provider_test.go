@@ -20,9 +20,9 @@ func TestParseReferencePlain(t *testing.T) {
 func TestParseReferenceScheme(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		input string
+		input  string
 		scheme Scheme
-		value string
+		value  string
 	}{
 		{"env:API_KEY", SchemeEnv, "API_KEY"},
 		{"file:/etc/app/key", SchemeFile, "/etc/app/key"},

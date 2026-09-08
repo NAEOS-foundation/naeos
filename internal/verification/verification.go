@@ -34,14 +34,14 @@ type Contract struct {
 
 // VerificationResult is the evidence produced by a verification run.
 type VerificationResult struct {
-	Status   VerificationStatus
-	Contract string
+	Status          VerificationStatus
+	Contract        string
 	ContractVersion string
-	Target   string // evidence ID or artifact hash being verified
-	Checks   []CheckResult
-	Timestamp time.Time
-	Verifier string
-	Message  string
+	Target          string // evidence ID or artifact hash being verified
+	Checks          []CheckResult
+	Timestamp       time.Time
+	Verifier        string
+	Message         string
 }
 
 // CheckResult records the outcome of a single verification check.
@@ -71,10 +71,10 @@ func WithContract(c Contract) VerifierOption {
 // VerifierChain runs multiple verifiers and aggregates their results. All
 // verifiers must pass for the overall result to be VERIFIED.
 type VerifierChain struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	verifiers []Verifier
-	contract Contract
-	history  []VerificationResult
+	contract  Contract
+	history   []VerificationResult
 }
 
 // NewChain creates a VerifierChain with the given verifiers and contract.
@@ -115,11 +115,11 @@ func (v *VerifierChain) Verify(rec evidence.EvidenceRecord) (VerificationResult,
 	v.mu.RUnlock()
 
 	agg := VerificationResult{
-		Status:      StatusVerified,
-		Contract:    contract.Name,
+		Status:          StatusVerified,
+		Contract:        contract.Name,
 		ContractVersion: contract.Version,
-		Target:      rec.ID,
-		Timestamp:   time.Now().UTC(),
+		Target:          rec.ID,
+		Timestamp:       time.Now().UTC(),
 	}
 
 	for _, ver := range verifiers {

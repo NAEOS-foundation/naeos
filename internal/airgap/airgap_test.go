@@ -10,9 +10,9 @@ import (
 func TestSplitImage(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		input      string
-		wantName   string
-		wantTag    string
+		input    string
+		wantName string
+		wantTag  string
 	}{
 		{"nginx:1.25", "nginx", "1.25"},
 		{"postgres", "postgres", "latest"},
@@ -75,10 +75,10 @@ func TestVerifyChecksumTampered(t *testing.T) {
 func TestSummary(t *testing.T) {
 	t.Parallel()
 	b := &Bundle{
-		Name:      "app",
-		Version:   "1.0.0",
-		Charts:    []FileRef{{Path: "a"}},
-		Images:    []ImageRef{{Name: "nginx"}},
+		Name:       "app",
+		Version:    "1.0.0",
+		Charts:     []FileRef{{Path: "a"}},
+		Images:     []ImageRef{{Name: "nginx"}},
 		Signatures: []FileRef{{Path: "app.sig.json"}},
 	}
 	s := b.Summary()

@@ -120,7 +120,7 @@ export default function Header({ lang }: Props) {
             <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
             <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
           </div>
-          <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta">{t("cta_get_started")}</Link>
+          <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta" data-umami-event="header-get-started">{t("cta_get_started")}</Link>
           <button
             className="mobile-menu-btn"
             aria-label={t("toggle_menu")}

@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.4.0 (rilis terbaru), roadmap enterprise menuju v4.0.0 |
+| **Versi Platform** | v3.4.0 (status repositori) |
 
 ---
 
@@ -21,9 +21,9 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 
 NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas. NAEOS bukan sekadar *project generator* — ia adalah *engineering runtime* yang memahami spesifikasi, membangun model internal (NEIR), mengorkestrasi rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasinya sepanjang siklus hidup.
 
-Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan jaminan *traceability* dari kebutuhan hingga deployment, serta integrasi mendalam dengan ekosistem AI coding agent.
+Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan model engineering yang dapat dibagi untuk kode, dokumentasi, konfigurasi, dan konteks AI.
 
-Platform ini telah mencapai **v3.4.0** dengan ekosistem fitur yang mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart & bundle air-gapped, hingga kepatuhan enterprise (SOC 2, HIPAA, GDPR).
+Status repositori saat ini mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart scaffolding, dan template kebijakan yang berorientasi pada kepatuhan SOC 2, HIPAA, dan GDPR.
 
 ---
 
@@ -429,7 +429,7 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 - **v3.6.0** — Skala: durable job queue (Postgres outbox), worker pipeline jaringan (NATS/Kafka), idempotency
 - **v3.7.0+** — API v2, webhooks outbound, SDK resmi, MFA/SCIM, governance per-tenant
 
-Lihat [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) untuk roadmap enterprise lengkap.
+Lihat [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) untuk roadmap proyek saat ini dan status milestone.
 
 ---
 

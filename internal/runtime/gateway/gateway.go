@@ -25,16 +25,16 @@ type ToolRequest struct {
 
 // ExecutionResult records the outcome of an authorized tool execution.
 type ExecutionResult struct {
-	Request    ToolRequest
-	Decision   control.Decision
-	PolicyID   string
-	RuleID     string
-	Status     string // "completed", "denied", "failed", "skipped"
-	Output     string
-	Hash       string // SHA-256 of output/payload
-	Duration   time.Duration
-	Timestamp  time.Time
-	Reasons    []string
+	Request   ToolRequest
+	Decision  control.Decision
+	PolicyID  string
+	RuleID    string
+	Status    string // "completed", "denied", "failed", "skipped"
+	Output    string
+	Hash      string // SHA-256 of output/payload
+	Duration  time.Duration
+	Timestamp time.Time
+	Reasons   []string
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -71,7 +71,7 @@ type ControlPlane interface {
 // Option configures an ExecutionGateway.
 type Option func(*ExecutionGateway)
 
-// FailClosed controls the behaviour when the sandbox executor returns an
+// FailClosed controls the behavior when the sandbox executor returns an
 // error. When true (default) the gateway treats execution errors as denied.
 func FailClosed(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.failClosed = enabled }
@@ -94,8 +94,8 @@ type ExecutionGateway struct {
 	adapters     map[string]AgentAdapter
 	restrictions []Restriction
 
-	mu      sync.RWMutex
-	history []ExecutionResult
+	mu         sync.RWMutex
+	history    []ExecutionResult
 	failClosed bool
 }
 

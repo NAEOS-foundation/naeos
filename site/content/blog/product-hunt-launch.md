@@ -1,24 +1,16 @@
 ---
 title: "We Launched NAEOS on Product Hunt — Here's What Happened"
-description: "A recap of our Product Hunt launch day: the numbers, the feedback, and what we learned building an open-source declarative engineering platform."
+description: "A transparent Product Hunt launch retrospective: the campaign structure, lessons to validate, and next experiments."
 date: 2026-08-19
 author: "NAEOS Foundation"
 categories: ["launch", "community"]
 ---
 
-On Tuesday, August 18, 2026, we launched NAEOS on Product Hunt. It was our first public launch as an open-source project, and we wanted to share the experience honestly — the numbers, the feedback, and what we're taking away from it.
+On Tuesday, August 18, 2026, we prepared a Product Hunt launch for NAEOS. This retrospective documents the campaign structure and the questions we still need to validate. No launch metrics are claimed here unless they are linked to a source of record.
 
-## The Day in Numbers
+## Measurement Plan
 
-| Metric | Result | Target |
-|--------|--------|--------|
-| Upvotes (24h) | 132 | 100+ |
-| Comments | 28 | 20+ |
-| Website visits from PH | 614 | 500+ |
-| GitHub stars added | 87 | 50–150 |
-| Installs / downloads | 146 | 100+ |
-
-*Final numbers as recorded at the close of the 24-hour launch window.*
+The campaign should measure Product Hunt referrals, GitHub visits, quick-start completion, first successful run, and new discussions. The repository does not currently verify final Product Hunt upvotes, comments, traffic, downloads, or attribution, so those numbers are intentionally not reported here.
 
 ## What We Posted
 
@@ -35,58 +27,46 @@ The launch went live at 00:01 PT (14:01 WIB). Here's the sequence:
 
 ### The Positive
 
-> "The AI angle is interesting — instruction sets for 6 tools + MCP server. Haven't seen that before."
+### Feedback to Collect
 
-> "Pipeline caching is a smart move. Rebuilds in seconds instead of minutes."
-
-> "Finally a spec-driven tool that doesn't stop at scaffolding."
-
-### The Constructive
-
-> "The spec language has a learning curve ($ref, $include, $fn, $if). Documentation is thorough, but it's real syntax."
-
-> "Not magic for arbitrary bespoke UI — but for APIs, services, schemas, governance, it shines."
-
-> "Would love to see more language support beyond the big 5."
-
-We asked for honest feedback, and we got it. The themes:
+Ask participants to evaluate the AI compiler, pipeline caching, specification language, and language coverage. Publish direct quotes only after obtaining permission and linking to the original discussion.
 
 1. **Spec language complexity** — real syntax, real learning curve. We'll improve onboarding docs.
-2. **AI integration** — people love the instruction set compiler. We'll add more tools.
-3. **Pipeline caching** — the most praised feature. We'll extend it to more stages.
+2. **AI integration** — measure whether the instruction set compiler leads to a reproducible quick-start run.
+3. **Pipeline caching** — measure whether caching changes repeat-run behavior before expanding its scope.
 
 ## What We Learned
 
-### First 6 Hours Matter Most
+### Early Activation
 
-PH ranks products based on early momentum. We hit the top 5 in the first hour and stayed there. The key: having a support list of people who upvote + comment within the first hour.
+Measure whether early visitors move from the launch page to the quick start and complete a first run. Do not infer activation from impressions alone.
 
-### Comments > Upvotes
+### Comments and Reproducibility
 
-A thoughtful comment ("I tried the quick start and here's what happened") carries more weight than an upvote. We encouraged every supporter to leave a comment, even a one-liner.
+A quick-start report with the command, result, and next question is more useful than an unqualified reaction.
 
 ### The Maker's Comment Sets the Tone
 
-Our first comment explained the problem (spec/code drift) before pitching the solution. Several commenters said this was what convinced them to try NAEOS.
+The opening comment should explain the problem (spec/code drift) before presenting NAEOS.
 
-### Community Channels Amplify
+### Community Channels Need Attribution
 
-Discord and Slack announcements drove 30% of our early traffic. Having a community before the launch made the difference.
+Use channel-specific links or campaign parameters before claiming which community channel contributed traffic.
 
 ## What's Next
 
-Based on launch feedback, here's what we're prioritizing:
+Based on the campaign hypotheses, here's what we're testing next:
 
 1. **Spec language onboarding** — interactive tutorial, not just docs
 2. **More AI tools** — Windsurf, Aider, Cline instruction sets
 3. **Pipeline caching improvements** — cache across runs, not just within a session
-4. **Better quick start** — 30-second demo that actually works on any machine
+4. **Better quick start** — a short, reproducible demo with documented prerequisites
 
-We're turning the top feedback items into GitHub issues this week. Track them in the [roadmap](/roadmap/).
+Record validated feedback as GitHub issues with evidence and acceptance criteria. Track project priorities in the [roadmap](/roadmap/).
 
 ## Thank You
 
-To everyone who upvoted, commented, shared, or tried NAEOS on launch day — thank you. This project exists because spec/code drift is a real problem, and we believe the specification should be the source of truth.
+To everyone who reviews, tests, or challenges the project — thank you. This project exists because spec/code drift is a real problem, and we believe the specification should be the source of truth.
 
 If you haven't tried NAEOS yet:
 
@@ -103,4 +83,4 @@ See you in the [community](https://discord.gg/WnUWmm7XMv).
 
 ---
 
-*This post was updated with the final launch numbers shortly after the 24-hour window closed.*
+*Launch metrics are intentionally omitted until a source of record is available.*

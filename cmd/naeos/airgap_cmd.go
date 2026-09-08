@@ -27,13 +27,13 @@ func newAirgapCommand() *cobra.Command {
 
 func newAirgapBundleCommand() *cobra.Command {
 	var (
-		name     string
-		version  string
-		charts   string
-		images   string
-		sbom     string
-		sigs     string
-		output   string
+		name    string
+		version string
+		charts  string
+		images  string
+		sbom    string
+		sigs    string
+		output  string
 	)
 
 	cmd := &cobra.Command{

@@ -137,18 +137,18 @@ Example:
 			}
 
 			rec := evidence.EvidenceRecord{
-				Actor:             actor,
-				Resource:          result.Request.Resource,
-				Action:            result.Request.Action,
-				Environment:       environment,
-				PolicyID:          result.PolicyID,
-				RuleID:            result.RuleID,
-				Decision:          result.Decision,
-				DecisionReasons:   result.Reasons,
-				ExecutionStatus:   result.Status,
-				ExecutionOutput:   result.Output,
+				Actor:               actor,
+				Resource:            result.Request.Resource,
+				Action:              result.Request.Action,
+				Environment:         environment,
+				PolicyID:            result.PolicyID,
+				RuleID:              result.RuleID,
+				Decision:            result.Decision,
+				DecisionReasons:     result.Reasons,
+				ExecutionStatus:     result.Status,
+				ExecutionOutput:     result.Output,
 				ExecutionDurationMs: result.Duration.Milliseconds(),
-				ArtifactHash:      result.Hash,
+				ArtifactHash:        result.Hash,
 			}
 
 			saved, err := store.Append(rec)

@@ -65,9 +65,9 @@ func newSignKeygenCommand() *cobra.Command {
 
 func newSignSignCommand() *cobra.Command {
 	var (
-		keyPath  string
-		output   string
-		signer   string
+		keyPath   string
+		output    string
+		signer    string
 		outputFmt string
 	)
 

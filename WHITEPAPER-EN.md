@@ -10,7 +10,7 @@
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Platform Version** | v3.1.0 (latest release), actively developed toward v2.0.0 Dashboard & Distributed Builds |
+| **Platform Version** | v3.4.0 (repository state) |
 
 ---
 
@@ -18,9 +18,9 @@
 
 NAEOS is an open-source declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline. NAEOS is not just a project generator — it is an *engineering runtime* that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with their specifications throughout the entire lifecycle.
 
-Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then build, validate, and evolve software across multiple languages, frameworks, and platforms — with guaranteed traceability from requirements to deployment, and deep integration with the AI coding agent ecosystem.
+Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
-The platform has reached **v3.1.0** with a feature ecosystem spanning Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, and enterprise compliance (SOC 2, HIPAA, GDPR).
+The current repository state includes Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, a production server daemon (`naeos serve`), SBOM and artifact signing, Helm chart scaffolding, and compliance-oriented policy templates for SOC 2, HIPAA, and GDPR workflows.
 
 ---
 
@@ -425,7 +425,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 - **v3.6.0** — Scale: durable job queue (Postgres outbox), networked pipeline workers (NATS/Kafka), idempotency
 - **v3.7.0+** — API v2, outbound webhooks, official SDKs, MFA/SCIM, per-tenant governance
 
-See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the full enterprise roadmap.
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the current project roadmap and milestone status.
 
 ---
 

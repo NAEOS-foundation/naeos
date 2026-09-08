@@ -1,0 +1,15 @@
+{
+  "name": "naeos-ws-worker",
+  "private": true,
+  "version": "3.4.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260903.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.0.0"
+  }
+}

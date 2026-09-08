@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -68,10 +70,10 @@ func (g *Generator) Generate(components []Component) (*BOM, error) {
 	}}
 	if g.cfg.Project != "" {
 		bom.Metadata.Component = &Component{
-			Type:  Application,
-			Name:  g.cfg.Project,
+			Type:    Application,
+			Name:    g.cfg.Project,
 			Version: g.cfg.Version,
-			Purl:  Purl("pkg", g.cfg.Project, g.cfg.Version),
+			Purl:    Purl("pkg", g.cfg.Project, g.cfg.Version),
 		}
 	}
 
@@ -94,27 +96,38 @@ func (g *Generator) Generate(components []Component) (*BOM, error) {
 // when no package manager inventory exists.
 func (g *Generator) FromDir(root string) (*BOM, error) {
 	var comps []Component
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	rootFS, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, naeoserr.Wrapf(err, naeoserr.ErrInternal, "open root %s", root)
+	}
+	defer rootFS.Close()
+
+	err = fs.WalkDir(rootFS.FS(), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
-		rel, err := filepath.Rel(root, path)
+		rel := path
+		f, err := rootFS.Open(path)
 		if err != nil {
 			return err
 		}
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return err
+		content, readErr := io.ReadAll(f)
+		closeErr := f.Close()
+		if readErr != nil {
+			return readErr
+		}
+		if closeErr != nil {
+			return closeErr
 		}
 		h := sha256.Sum256(content)
 		comps = append(comps, Component{
 			Type:     File,
 			Name:     filepath.Base(path),
 			FileName: rel,
-			Path:     path,
+			Path:     filepath.Join(root, path),
 			Hashes: []Hash{{
 				Alg: "SHA-256",
 				Val: hex.EncodeToString(h[:]),

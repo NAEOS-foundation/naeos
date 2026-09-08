@@ -14,7 +14,7 @@ export interface ServiceStatus {
 export interface StatusPayload {
   updatedAt: string;
   source: "static" | "live";
-  github: { stars: number; forks: number; openIssues: number; version: string };
+  github: { stars: number; forks: number; openIssues: number; version: string; contributors?: number };
   services: ServiceStatus[];
 }
 

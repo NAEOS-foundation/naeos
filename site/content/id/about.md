@@ -29,7 +29,7 @@ Kami membayangkan dunia di mana tim rekayasa menghabiskan lebih sedikit waktu un
 
 <div class="about-card">
 <h3>Deterministik</h3>
-<p>Input yang sama selalu menghasilkan output yang sama. Pipeline NAEOS dapat direproduksi, diaudit, dan diuji — penting untuk rekayasa enterprise.</p>
+<p>NAEOS dirancang dengan pipeline yang dapat direproduksi, diaudit, dan diuji. Tinjau kemampuan yang terdokumentasi dan kecocokan proyek sebelum menggunakannya dalam lingkungan organisasi.</p>
 </div>
 </div>
 

@@ -6,7 +6,7 @@ author: "NAEOS Foundation"
 categories: ["tutorial"]
 ---
 
-NAEOS lets you describe your entire project — modules, services, APIs, dependencies — in a single YAML spec, then generates production-ready code for your chosen languages and platforms.
+NAEOS lets you describe your project — modules, services, APIs, and dependencies — in a single YAML spec, then generates code artifacts for supported languages and platforms.
 
 In this tutorial you'll build a simple microservices project with a Go API gateway and a TypeScript auth service.
 

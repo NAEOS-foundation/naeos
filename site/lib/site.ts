@@ -22,7 +22,7 @@ export const SITE = {
   twitter: "https://twitter.com/naeos_dev",
   twitterHandle: "@naeos_dev",
   discord: "https://discord.gg/naeos",
-  stats: { cli: 200, languages: 5, ai_platforms: 6, specs: 57 },
+  stats: { cli: 200, languages: 5, ai_platforms: 7, specs: 57 },
   websocketUrl: "wss://ws.naeos.dev/ws",
   umamiWebsiteId: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "",
 } as const;

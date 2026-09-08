@@ -52,11 +52,7 @@ func parseChartYAML(data []byte) (*chartMeta, error) {
 		Keywords:    meta.Keywords,
 	}
 	for _, m := range meta.Maintainers {
-		result.Maintainers = append(result.Maintainers, Maintainer{
-			Name:  m.Name,
-			Email: m.Email,
-			URL:   m.URL,
-		})
+		result.Maintainers = append(result.Maintainers, Maintainer(m))
 	}
 	return result, nil
 }

@@ -38,9 +38,26 @@ export function CountUpNumber({ target }: { target: number }) {
   }, [target]);
 
   return (
-    <div className="stat-number" ref={ref} aria-hidden="true">
-      0
-    </div>
+    <>
+      <div className="stat-number" ref={ref} aria-hidden="true">
+        0
+      </div>
+      <span
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: "0",
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+          border: "0",
+        }}
+      >
+        {target}
+      </span>
+    </>
   );
 }
 
@@ -74,11 +91,18 @@ function setCachedStats(data: GhStats) {
   }
 }
 
-export function GithubStats({ labels }: { labels: string[] }) {
+export function GithubStats({
+  labels,
+  initial,
+}: {
+  labels: string[];
+  initial?: GhStats;
+}) {
   const refs = useRef<(HTMLDivElement | null)[]>([]);
-  const [stats, setStats] = useState<GhStats>(() => getCachedStats() ?? {});
+  const [stats, setStats] = useState<GhStats>(() => initial ?? getCachedStats() ?? {});
 
   useEffect(() => {
+    if (initial) return;
     if (getCachedStats()) return;
     let cancelled = false;
 
@@ -111,7 +135,7 @@ export function GithubStats({ labels }: { labels: string[] }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initial]);
 
   useEffect(() => {
     const values = [stats.stars, stats.forks, stats.issues, stats.contributors];
@@ -120,6 +144,8 @@ export function GithubStats({ labels }: { labels: string[] }) {
       if (el && v !== undefined) animateCounter(el, v);
     });
   }, [stats]);
+
+  const valueKey = ["stars", "forks", "issues", "contributors"] as const;
 
   return (
     <>
@@ -130,8 +156,9 @@ export function GithubStats({ labels }: { labels: string[] }) {
             ref={(el) => {
               refs.current[i] = el;
             }}
+            aria-hidden="true"
           >
-            {stats[["stars", "forks", "issues", "contributors"][i] as keyof GhStats] ?? "—"}
+            {stats[valueKey[i]] ?? 0}
           </div>
           <div className="github-stat-label">{label}</div>
         </div>

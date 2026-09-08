@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -213,12 +212,4 @@ func verifyBOM(bom *sbom.BOM) []sbomCheck {
 	})
 
 	return checks
-}
-
-func loadSBomStorePath() string {
-	path, err := os.UserHomeDir()
-	if err != nil {
-		return ".sbom.json"
-	}
-	return path + "/.config/naeos/sbom.json"
 }

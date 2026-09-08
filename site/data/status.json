@@ -1,16 +1,49 @@
 {
-  "updatedAt": "2026-08-31T00:00:00Z",
-  "source": "static",
+  "updatedAt": "2026-09-08T15:33:47Z",
+  "source": "live",
   "github": {
-    "stars": 0,
-    "forks": 0,
-    "openIssues": 0,
-    "version": "3.1.0"
+    "forks": 6,
+    "openIssues": 11,
+    "stars": 12,
+    "version": "3.4.0",
+    "contributors": 10
   },
   "services": [
-    { "id": "web", "name": "Website", "url": "https://naeos.dev", "target": "https://naeos.dev", "kind": "http", "status": "operational", "latencyMs": 0 },
-    { "id": "docs", "name": "Docs", "url": "https://docs.naeos.dev", "target": "https://docs.naeos.dev", "kind": "http", "status": "operational", "latencyMs": 0 },
-    { "id": "registry", "name": "Registry", "url": "https://registry.naeos.dev", "target": "https://registry.naeos.dev", "kind": "http", "status": "operational", "latencyMs": 0 },
-    { "id": "realtime", "name": "Realtime", "url": "https://naeos.dev/", "target": "https://ws.naeos.dev/ws", "kind": "ws", "status": "operational", "latencyMs": 0 }
+    {
+      "id": "web",
+      "name": "Website",
+      "url": "https://naeos.dev",
+      "target": "https://naeos.dev",
+      "kind": "http",
+      "status": "operational",
+      "latencyMs": 616
+    },
+    {
+      "id": "docs",
+      "name": "Docs",
+      "url": "https://docs.naeos.dev",
+      "target": "https://docs.naeos.dev",
+      "kind": "http",
+      "status": "operational",
+      "latencyMs": 723
+    },
+    {
+      "id": "registry",
+      "name": "Registry",
+      "url": "https://registry.naeos.dev",
+      "target": "https://registry.naeos.dev",
+      "kind": "http",
+      "status": "operational",
+      "latencyMs": 568
+    },
+    {
+      "id": "realtime",
+      "name": "Realtime",
+      "url": "https://naeos.dev/",
+      "target": "https://ws.naeos.dev/ws",
+      "kind": "ws",
+      "status": "down",
+      "latencyMs": 106
+    }
   ]
 }

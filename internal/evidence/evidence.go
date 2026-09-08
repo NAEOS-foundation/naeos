@@ -17,38 +17,38 @@ import (
 // integrity hash, forming a complete, tamper-evident audit trail for
 // consequential AI engineering actions.
 type EvidenceRecord struct {
-	ID            string               `json:"id"`
-	Timestamp     time.Time            `json:"timestamp"`
-	Actor         string               `json:"actor"`
-	Resource      string               `json:"resource"`
-	Action        string               `json:"action"`
-	Environment   string               `json:"environment,omitempty"`
-	PolicyID      string               `json:"policy_id"`
-	PolicyVersion string               `json:"policy_version"`
-	RuleID        string               `json:"rule_id,omitempty"`
-	Decision      control.Decision     `json:"decision"`
-	DecisionReasons []string           `json:"decision_reasons,omitempty"`
-	ArtifactName  string               `json:"artifact_name,omitempty"`
-	ArtifactHash  string               `json:"artifact_hash,omitempty"`
-	ArtifactSize  int                  `json:"artifact_size,omitempty"`
-	ExecutionStatus string             `json:"execution_status,omitempty"`
-	ExecutionOutput string             `json:"execution_output,omitempty"`
-	ExecutionDurationMs int64          `json:"execution_duration_ms,omitempty"`
-	Approval      *ApprovalRecord      `json:"approval,omitempty"`
-	Metadata      map[string]any       `json:"metadata,omitempty"`
-	PreviousHash  string               `json:"previous_hash"`
-	Hash          string               `json:"hash"`
+	ID                  string           `json:"id"`
+	Timestamp           time.Time        `json:"timestamp"`
+	Actor               string           `json:"actor"`
+	Resource            string           `json:"resource"`
+	Action              string           `json:"action"`
+	Environment         string           `json:"environment,omitempty"`
+	PolicyID            string           `json:"policy_id"`
+	PolicyVersion       string           `json:"policy_version"`
+	RuleID              string           `json:"rule_id,omitempty"`
+	Decision            control.Decision `json:"decision"`
+	DecisionReasons     []string         `json:"decision_reasons,omitempty"`
+	ArtifactName        string           `json:"artifact_name,omitempty"`
+	ArtifactHash        string           `json:"artifact_hash,omitempty"`
+	ArtifactSize        int              `json:"artifact_size,omitempty"`
+	ExecutionStatus     string           `json:"execution_status,omitempty"`
+	ExecutionOutput     string           `json:"execution_output,omitempty"`
+	ExecutionDurationMs int64            `json:"execution_duration_ms,omitempty"`
+	Approval            *ApprovalRecord  `json:"approval,omitempty"`
+	Metadata            map[string]any   `json:"metadata,omitempty"`
+	PreviousHash        string           `json:"previous_hash"`
+	Hash                string           `json:"hash"`
 }
 
 // ApprovalRecord captures an explicit human or system approval bound to
 // a specific artifact version.
 type ApprovalRecord struct {
-	Approver      string    `json:"approver"`
-	ArtifactHash  string    `json:"artifact_hash"`
-	ArtifactName  string    `json:"artifact_name"`
-	Timestamp     time.Time `json:"timestamp"`
-	Reason        string    `json:"reason,omitempty"`
-	Valid         bool      `json:"valid"`
+	Approver     string    `json:"approver"`
+	ArtifactHash string    `json:"artifact_hash"`
+	ArtifactName string    `json:"artifact_name"`
+	Timestamp    time.Time `json:"timestamp"`
+	Reason       string    `json:"reason,omitempty"`
+	Valid        bool      `json:"valid"`
 }
 
 // EvidenceStore is an append-only, tamper-evident store of evidence
@@ -213,13 +213,13 @@ func (s *EvidenceStore) Approvals() []EvidenceRecord {
 // Query filters records by the given criteria. Empty fields are
 // wildcards. Results are returned newest-first.
 type EvidenceQuery struct {
-	Actor      string
-	Resource   string
-	PolicyID   string
-	Decision   control.Decision
-	From       time.Time
-	To         time.Time
-	Limit      int
+	Actor    string
+	Resource string
+	PolicyID string
+	Decision control.Decision
+	From     time.Time
+	To       time.Time
+	Limit    int
 }
 
 func (s *EvidenceStore) Query(q EvidenceQuery) []EvidenceRecord {
@@ -273,16 +273,16 @@ func (s *EvidenceStore) Records() []EvidenceRecord {
 
 // Summary returns aggregate statistics about the evidence store.
 type EvidenceSummary struct {
-	TotalRecords    int                        `json:"total_records"`
-	ByDecision      map[control.Decision]int   `json:"by_decision"`
-	ByActor         map[string]int             `json:"by_actor"`
-	ByPolicy        map[string]int             `json:"by_policy"`
-	ByEnvironment   map[string]int             `json:"by_environment"`
-	ApprovedCount   int                        `json:"approved_count"`
-	DeniedCount     int                        `json:"denied_count"`
-	ApprovalRequiredCount int                  `json:"approval_required_count"`
-	WithArtifacts   int                        `json:"with_artifacts"`
-	ChainIntact     bool                       `json:"chain_intact"`
+	TotalRecords          int                      `json:"total_records"`
+	ByDecision            map[control.Decision]int `json:"by_decision"`
+	ByActor               map[string]int           `json:"by_actor"`
+	ByPolicy              map[string]int           `json:"by_policy"`
+	ByEnvironment         map[string]int           `json:"by_environment"`
+	ApprovedCount         int                      `json:"approved_count"`
+	DeniedCount           int                      `json:"denied_count"`
+	ApprovalRequiredCount int                      `json:"approval_required_count"`
+	WithArtifacts         int                      `json:"with_artifacts"`
+	ChainIntact           bool                     `json:"chain_intact"`
 }
 
 func (s *EvidenceStore) Summary() EvidenceSummary {
@@ -290,10 +290,10 @@ func (s *EvidenceStore) Summary() EvidenceSummary {
 	defer s.mu.RUnlock()
 
 	summary := EvidenceSummary{
-		TotalRecords: len(s.records),
-		ByDecision:   make(map[control.Decision]int),
-		ByActor:      make(map[string]int),
-		ByPolicy:     make(map[string]int),
+		TotalRecords:  len(s.records),
+		ByDecision:    make(map[control.Decision]int),
+		ByActor:       make(map[string]int),
+		ByPolicy:      make(map[string]int),
 		ByEnvironment: make(map[string]int),
 	}
 
@@ -357,49 +357,49 @@ func (s *EvidenceStore) computeHashUnlocked(rec EvidenceRecord) string {
 func computeHashStatic(rec EvidenceRecord) string {
 	// Hash the canonical content fields, excluding the Hash field itself.
 	type hashable struct {
-		ID              string          `json:"id"`
-		Timestamp       time.Time       `json:"timestamp"`
-		Actor           string          `json:"actor"`
-		Resource        string          `json:"resource"`
-		Action          string          `json:"action"`
-		Environment     string          `json:"environment"`
-		PolicyID        string          `json:"policy_id"`
-		PolicyVersion   string          `json:"policy_version"`
-		RuleID          string          `json:"rule_id"`
-		Decision        string          `json:"decision"`
-		DecisionReasons []string        `json:"decision_reasons"`
-		ArtifactName    string          `json:"artifact_name"`
-		ArtifactHash    string          `json:"artifact_hash"`
-		ArtifactSize    int             `json:"artifact_size"`
-		ExecutionStatus string          `json:"execution_status"`
-		ExecutionOutput string          `json:"execution_output"`
-		ExecutionDurationMs int64       `json:"execution_duration_ms"`
-		Approval        *ApprovalRecord `json:"approval"`
-		Metadata        map[string]any  `json:"metadata"`
-		PreviousHash    string          `json:"previous_hash"`
+		ID                  string          `json:"id"`
+		Timestamp           time.Time       `json:"timestamp"`
+		Actor               string          `json:"actor"`
+		Resource            string          `json:"resource"`
+		Action              string          `json:"action"`
+		Environment         string          `json:"environment"`
+		PolicyID            string          `json:"policy_id"`
+		PolicyVersion       string          `json:"policy_version"`
+		RuleID              string          `json:"rule_id"`
+		Decision            string          `json:"decision"`
+		DecisionReasons     []string        `json:"decision_reasons"`
+		ArtifactName        string          `json:"artifact_name"`
+		ArtifactHash        string          `json:"artifact_hash"`
+		ArtifactSize        int             `json:"artifact_size"`
+		ExecutionStatus     string          `json:"execution_status"`
+		ExecutionOutput     string          `json:"execution_output"`
+		ExecutionDurationMs int64           `json:"execution_duration_ms"`
+		Approval            *ApprovalRecord `json:"approval"`
+		Metadata            map[string]any  `json:"metadata"`
+		PreviousHash        string          `json:"previous_hash"`
 	}
 
 	h := hashable{
-		ID:              rec.ID,
-		Timestamp:       rec.Timestamp,
-		Actor:           rec.Actor,
-		Resource:        rec.Resource,
-		Action:          rec.Action,
-		Environment:     rec.Environment,
-		PolicyID:        rec.PolicyID,
-		PolicyVersion:   rec.PolicyVersion,
-		RuleID:          rec.RuleID,
-		Decision:        string(rec.Decision),
-		DecisionReasons: rec.DecisionReasons,
-		ArtifactName:    rec.ArtifactName,
-		ArtifactHash:    rec.ArtifactHash,
-		ArtifactSize:    rec.ArtifactSize,
-		ExecutionStatus: rec.ExecutionStatus,
-		ExecutionOutput: rec.ExecutionOutput,
+		ID:                  rec.ID,
+		Timestamp:           rec.Timestamp,
+		Actor:               rec.Actor,
+		Resource:            rec.Resource,
+		Action:              rec.Action,
+		Environment:         rec.Environment,
+		PolicyID:            rec.PolicyID,
+		PolicyVersion:       rec.PolicyVersion,
+		RuleID:              rec.RuleID,
+		Decision:            string(rec.Decision),
+		DecisionReasons:     rec.DecisionReasons,
+		ArtifactName:        rec.ArtifactName,
+		ArtifactHash:        rec.ArtifactHash,
+		ArtifactSize:        rec.ArtifactSize,
+		ExecutionStatus:     rec.ExecutionStatus,
+		ExecutionOutput:     rec.ExecutionOutput,
 		ExecutionDurationMs: rec.ExecutionDurationMs,
-		Approval:        rec.Approval,
-		Metadata:        rec.Metadata,
-		PreviousHash:    rec.PreviousHash,
+		Approval:            rec.Approval,
+		Metadata:            rec.Metadata,
+		PreviousHash:        rec.PreviousHash,
 	}
 
 	data, _ := json.Marshal(h)

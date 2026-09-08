@@ -8,6 +8,7 @@ import {
   BackToTop,
   ScrollProgress,
   HeaderScrollEffect,
+  ScrollReveal,
   ServiceWorkerRegister,
 } from "@/components/chrome/Effects";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
@@ -92,8 +93,9 @@ export default async function RootLayout({
         </main>
         <Footer lang={lang} tagline={tagline} />
         <SearchModal lang={lang} />
-        <BackToTop />
+        <BackToTop lang={lang} />
         <HeaderScrollEffect />
+        <ScrollReveal />
         <ServiceWorkerRegister />
         {SITE.umamiWebsiteId && (
           <Script

@@ -28,10 +28,10 @@ type BOM struct {
 
 // Metadata captures document-level information about the BOM.
 type Metadata struct {
-	Timestamp  string         `json:"timestamp,omitempty"`
-	Tools      []Tool         `json:"tools,omitempty"`
-	Component  *Component     `json:"component,omitempty"`
-	Properties []Property     `json:"properties,omitempty"`
+	Timestamp  string     `json:"timestamp,omitempty"`
+	Tools      []Tool     `json:"tools,omitempty"`
+	Component  *Component `json:"component,omitempty"`
+	Properties []Property `json:"properties,omitempty"`
 }
 
 // Tool describes the tool that produced the BOM.
@@ -43,18 +43,18 @@ type Tool struct {
 
 // Component is a software element tracked in the BOM.
 type Component struct {
-	Type       ComponentType  `json:"type"`
-	Name       string         `json:"name"`
-	BOMRef     string         `json:"bom-ref,omitempty"`
-	Group      string         `json:"group,omitempty"`
-	Version    string         `json:"version,omitempty"`
-	Supplier   string         `json:"supplier,omitempty"`
-	License    string         `json:"license,omitempty"`
-	Hashes     []Hash         `json:"hashes,omitempty"`
-	Purl       string         `json:"purl,omitempty"`
-	FileName   string         `json:"fileName,omitempty"`
-	Path       string         `json:"path,omitempty"`
-	Properties []Property     `json:"properties,omitempty"`
+	Type       ComponentType `json:"type"`
+	Name       string        `json:"name"`
+	BOMRef     string        `json:"bom-ref,omitempty"`
+	Group      string        `json:"group,omitempty"`
+	Version    string        `json:"version,omitempty"`
+	Supplier   string        `json:"supplier,omitempty"`
+	License    string        `json:"license,omitempty"`
+	Hashes     []Hash        `json:"hashes,omitempty"`
+	Purl       string        `json:"purl,omitempty"`
+	FileName   string        `json:"fileName,omitempty"`
+	Path       string        `json:"path,omitempty"`
+	Properties []Property    `json:"properties,omitempty"`
 }
 
 // Property is an arbitrary key-value annotation.
@@ -78,10 +78,10 @@ type Dependency struct {
 // NewBOM creates a new CycloneDX BOM document with a fresh serial number.
 func NewBOM() *BOM {
 	return &BOM{
-		BOMFormat:   "CycloneDX",
-		SpecVersion: SpecVersion,
+		BOMFormat:    "CycloneDX",
+		SpecVersion:  SpecVersion,
 		SerialNumber: NewSerialNumber(),
-		Version:     1,
+		Version:      1,
 	}
 }
 
