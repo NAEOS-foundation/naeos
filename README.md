@@ -59,6 +59,18 @@ naeos context --input-file spec.yaml
 naeos ai compile --input-file spec.yaml --target opencode
 ```
 
+### Runnable CLI demo
+
+Run the complete local demo (validate → context → generate):
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/demo-cli/run-demo.sh
+```
+
+See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
+location and optional AI compiler usage.
+
 ## Features
 
 ### Core Pipeline
@@ -147,7 +159,7 @@ Specifications use NAEOS Specification Language v2 as the single source of truth
 NAEOS Engineering Intermediate Representation is the central engineering model representing the entire system. NEIR encompasses project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, and metadata.
 
 ### Compiler
-The compiler transforms NEIR into AI instruction sets for 6 target tools.
+The compiler transforms NEIR into AI instruction sets for 7 target tools.
 
 ### Marketplace
 A marketplace for profiles, plugins, and templates that can be published, searched, and installed.

@@ -136,13 +136,28 @@ export default async function HomePage(props: {
       title: t("home_step_run_title"),
       desc: t("home_step_run_desc"),
       lang: "bash",
-      code: "naeos run --input spec.yaml --output-dir ./out",
+      code: "naeos run --config naeos.yaml --input-file spec.yaml",
     },
     {
       title: t("home_step_ai_title"),
       desc: t("home_step_ai_desc"),
       lang: "bash",
       code: "naeos ai compile --input-file spec.yaml --target opencode",
+    },
+  ];
+
+  const cliDemoSteps = [
+    {
+      label: t("home_cli_demo_validate"),
+      code: "naeos validate --input-file spec.yaml --output json",
+    },
+    {
+      label: t("home_cli_demo_context"),
+      code: "naeos context --input-file spec.yaml --output markdown --output-file context.md",
+    },
+    {
+      label: t("home_cli_demo_generate"),
+      code: "naeos run --config naeos.yaml --input-file spec.yaml --output json",
     },
   ];
 
@@ -457,6 +472,42 @@ export default async function HomePage(props: {
           <h2 className="section-title">{t("home_playground_title")}</h2>
           <p className="section-subtitle">{t("home_playground_desc")}</p>
           <Playground lang={lang} />
+        </div>
+      </section>
+
+      {/* Runnable CLI demo */}
+      <section className="section">
+        <div className="container fade-in">
+          <h2 className="section-title">{t("home_cli_demo_title")}</h2>
+          <p className="section-subtitle">{t("home_cli_demo_desc")}</p>
+          <div className="quick-start-steps stagger-fade">
+            {cliDemoSteps.map((step, i) => (
+              <div key={step.label} className="quick-start-step">
+                <div className="step-number">{i + 1}</div>
+                <div className="step-content">
+                  <h4>{step.label}</h4>
+                  <div className="code-block">
+                    <div className="code-block-header">
+                      <span>bash</span>
+                      <CopyButton text={step.code} label={t("copy_code")} />
+                    </div>
+                    <pre><code>{step.code}</code></pre>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <a
+              href={`${SITE.repo}/tree/main/examples/demo-cli`}
+              className="btn btn-primary"
+              target="_blank"
+              rel="noopener"
+              data-umami-event="cli-demo-source"
+            >
+              {t("home_cli_demo_source")}
+            </a>
+          </div>
         </div>
       </section>
 

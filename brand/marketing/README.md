@@ -18,6 +18,11 @@ Core message:
 - hero-banner.svg — hero visual for landing pages, launch announcements, and social headers
 - pipeline-diagram.svg — architecture visual for docs, blogs, and product explainers
 - social-template.md — short copy templates for X, LinkedIn, and GitHub announcement posts
+- demo-script.md — English teaser, pitch, and technical demo narration
+- demo-script-id.md — Indonesian teaser, pitch, and technical demo narration
+- video-demo-storyboard.md — scene-by-scene production storyboard
+- youtube-demo-script.md — 60–90 second YouTube explainer script
+- youtube-short-script.md — 20–45 second YouTube Shorts script
 
 ## Recommended use
 
