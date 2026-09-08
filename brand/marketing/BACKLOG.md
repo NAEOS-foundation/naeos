@@ -24,7 +24,8 @@ Status values: backlog | in-progress | blocked | done
 | Title | Objective | Audience | Channel | Effort | Expected impact | Dependencies | Status | Owner | Success metric |
 |---|---|---|---|---|---|---|---|---|---|
 | CLI demo day content pack (HN, X, LinkedIn, Reddit) | Convert Awareness to First successful run | AI engineers/architects | Multi | S | High | CLI demo in repo | done | Founder | run-demo.sh clones/results |
-| Publish 30-day marketing engine calendar | Give team/community predictable rhythm | All | Website | M | Medium | Positioning | backlog | Founder | Schedule adherence |
+| Video demo release + announcement (Discord/Slack, README, site) | Visual discovery + community broadcast | All | Discord/Slack/README/site | S | Medium | Demo video produced | done | Founder | Views, channel reach, announce post visible |
+| Publish 30-day marketing engine calendar | Give team/community predictable rhythm | All | Website | M | Medium | Positioning | done | Founder | Schedule adherence |
 | NEIR architecture article series | Educate on central engineering model | Software architects | Dev.to/Medium/HN | M | Medium | Architecture docs | backlog | Founder | Article reads, referrals |
 | Governance + audit trail stories | Build enterprise trust | Regulated/enterprise | LinkedIn | M | Medium | Product features | backlog | Founder | Enterprise inquiries |
 
@@ -42,7 +43,7 @@ Status values: backlog | in-progress | blocked | done
 | Title | Objective | Audience | Channel | Effort | Expected impact | Dependencies | Status | Owner | Success metric |
 |---|---|---|---|---|---|---|---|---|---|
 | Benchmark/measurement experiments | Validate claims | Technical | HN/Medium | M | Low/Medium | Benchmarks | backlog | Founder | Reproducible numbers |
-| Video demo (30s/60s) | Visual discovery | All | YouTube/X | M | Low | Product demo | backlog | Founder | Views to repo clicks |
+| Video content repurposing (Shorts/adaptations dari demo loop) | Extend video reach | All | YouTube/Shorts | S | Low | Master demo clips | backlog | Founder | Views to repo clicks |
 | Dev.to / Medium repurposing | Wider reach | Developers | Dev.to/Medium | S | Low | Content engine | backlog | Founder | Cross-post reads |
 | Reddit founder-journey experiments | Authentic feedback | r/ExperiencedDevs | Reddit | S | Low | Founder story | done* | Founder | Comments/feedback quality |
 
