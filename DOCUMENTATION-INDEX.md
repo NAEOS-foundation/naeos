@@ -6,6 +6,7 @@ This document serves as the master index for navigating the NAEOS repository.
 - [README.md](README.md) — project summary and main entry point.
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines.
+- [MARKETING-STRATEGY.md](MARKETING-STRATEGY.md) — evidence-based marketing strategy, content calendar, funnel, and experiment backlog.
 - [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English).
 - [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia).
 
@@ -93,6 +94,7 @@ This document serves as the master index for navigating the NAEOS repository.
 ## 7. Templates and processes
 - [templates/ADR-template.md](templates/ADR-template.md) — Architecture Decision Record template.
 - [templates/RFC-template.md](templates/RFC-template.md) — Request for Comments template.
+- [.github/ISSUE_TEMPLATE/marketing_experiment.md](.github/ISSUE_TEMPLATE/marketing_experiment.md) — evidence-based marketing experiment template.
 - [examples/adr-example.md](examples/adr-example.md) — completed ADR example.
 - [examples/rfc-example.md](examples/rfc-example.md) — completed RFC example.
 
