@@ -8,6 +8,13 @@ categories: ["tutorial", "case-study"]
 
 This case study uses the checked-in [NAEOS CLI demo](https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli). It is an executable example, not a claim about a production deployment.
 
+## Watch the demo
+
+<video controls poster="/downloads/naeos-marketing-poster.png" width="100%">
+  <source src="/downloads/naeos-terminal-demo-en.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
 ## The example
 
 The specification describes a small `demo-app` with:

@@ -101,6 +101,20 @@ go build ./cmd/naeos/</code></pre>
 | CLI Reference | [naeos-cli-reference.pdf](/downloads/naeos-cli-reference.pdf) |
 | Getting Started | [naeos-getting-started.pdf](/downloads/naeos-getting-started.pdf) |
 
+## Video Demos
+
+<video controls poster="/downloads/naeos-marketing-poster.png" width="100%">
+  <source src="/downloads/naeos-terminal-demo-en.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+| Video | Format |
+|-------|--------|
+| English terminal demo | [naeos-terminal-demo-en.mp4](/downloads/naeos-terminal-demo-en.mp4) |
+| Bahasa Indonesia terminal demo | [naeos-terminal-demo-id.mp4](/downloads/naeos-terminal-demo-id.mp4) |
+| 30-second demo (EN) | [naeos-demo-en-30s.mp4](/downloads/naeos-demo-en-30s.mp4) |
+| 30-second demo | [naeos-demo-30s.mp4](/downloads/naeos-demo-30s.mp4) |
+
 ## Verify Installation
 
 ```bash

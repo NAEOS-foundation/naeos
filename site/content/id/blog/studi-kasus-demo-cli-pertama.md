@@ -8,6 +8,13 @@ categories: ["tutorial", "case-study"]
 
 Studi kasus ini menggunakan [demo CLI NAEOS](https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli) yang tersimpan di repository. Ini adalah contoh yang dapat dijalankan ulang, bukan klaim tentang deployment production.
 
+## Tonton demo
+
+<video controls poster="/downloads/naeos-marketing-poster.png" width="100%">
+  <source src="/downloads/naeos-terminal-demo-id.mp4" type="video/mp4" />
+  Browser Anda tidak mendukung tag video.
+</video>
+
 ## Contohnya
 
 Spesifikasi mendeskripsikan `demo-app` dengan:
