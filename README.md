@@ -20,6 +20,17 @@ Build an open-source engineering platform that enables developers and organizati
 
 - [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.
 - [Marketing experiment template](.github/ISSUE_TEMPLATE/marketing_experiment.md) — record campaign hypotheses, metrics, results, and learnings.
+- [Marketing assets](brand/marketing/) — posts, scripts, video demo, and backlog for social campaigns.
+
+## Social posting scripts
+
+Scripts in `scripts/` publish announcement content to community channels. Credentials (tokens) live in the gitignored `.env`; never commit them.
+
+| Script | Purpose | Env vars | Example |
+|---|---|---|---|
+| [`scripts/linkdin-post.sh`](scripts/linkdin-post.sh) | Post to the personal LinkedIn feed (Posts API, public) | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_URN` | `./scripts/linkdin-post.sh --file brand/marketing/linkedin-post-cli-demo.md` |
+
+All scripts support `--dry-run` to preview the payload without publishing.
 
 ## Quick Start
 
