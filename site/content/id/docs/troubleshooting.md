@@ -274,7 +274,7 @@ Jika masalah Anda tidak tercakup di sini:
 
 1. Periksa [GitHub Issues](https://github.com/NAEOS-foundation/naeos/issues) untuk masalah serupa
 2. Cari di [GitHub Discussions](https://github.com/NAEOS-foundation/naeos/discussions)
-3. Tanya di [komunitas Discord](https://discord.gg/naeos)
+3. Tanya di [komunitas Discord](https://discord.com/invite/WnUWmm7XMv)
 4. Buka issue baru dengan:
    - Versi NAEOS (`naeos version`)
    - Sistem operasi dan arsitektur

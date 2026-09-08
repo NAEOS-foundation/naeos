@@ -79,7 +79,7 @@ naeos run --input-file spec.yaml
 
 Sumber terbuka, Apache 0, satu binary Go. Seluruh roadmap publik.
 
-Sampai jumpa di [komunitas](https://discord.gg/WnUWmm7XMv).
+Sampai jumpa di [komunitas](https://discord.com/invite/WnUWmm7XMv).
 
 ---
 

@@ -267,7 +267,7 @@ If your issue isn't covered here:
 
 1. Check the [GitHub Issues](https://github.com/NAEOS-foundation/naeos/issues) for similar problems
 2. Search the [GitHub Discussions](https://github.com/NAEOS-foundation/naeos/discussions)
-3. Ask in the [Discord community](https://discord.gg/naeos)
+3. Ask in the [Discord community](https://discord.com/invite/WnUWmm7XMv)
 4. Open a new issue with:
    - NAEOS version (`naeos version`)
    - Operating system and architecture

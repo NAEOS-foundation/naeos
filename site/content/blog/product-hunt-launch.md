@@ -79,7 +79,7 @@ naeos run --input-file spec.yaml
 
 Open source, Apache 2.0, single Go binary. The whole roadmap is public.
 
-See you in the [community](https://discord.gg/WnUWmm7XMv).
+See you in the [community](https://discord.com/invite/WnUWmm7XMv).
 
 ---
 

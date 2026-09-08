@@ -25,7 +25,7 @@ export const MAIN_ENTITY = {
         sameAs: [
           SITE.repo,
           SITE.twitter,
-          SITE.discord ?? "https://discord.gg/naeos",
+          SITE.discord,
         ],
       },
     },
