@@ -1,24 +1,16 @@
 ---
 title: "Kami Meluncurkan NAEOS di Product Hunt — Ini yang Terjadi"
-description: "Ringkasan hari peluncuran Product Hunt kami: angka-angka, umpan balik, dan apa yang kami pelajari dari membangun platform rekayasa deklaratif sumber terbuka."
+description: "Retrospective transparan Product Hunt: struktur kampanye, pelajaran yang perlu divalidasi, dan eksperimen berikutnya."
 date: 2026-08-19
 author: "NAEOS Foundation"
 categories: ["launch", "community"]
 ---
 
-Pada hari Selasa, 18 Agustus 2026, kami meluncurkan NAEOS di Product Hunt. Ini adalah peluncuran publik pertama kami sebagai proyek sumber terbuka, dan kami ingin berbagi pengalaman secara jujur — angka-angkanya, umpan baliknya, dan apa yang kami ambil dari pengalaman ini.
+Pada hari Selasa, 18 Agustus 2026, kami menyiapkan peluncuran NAEOS di Product Hunt. Retrospective ini mendokumentasikan struktur kampanye dan pertanyaan yang masih perlu kami validasi. Tidak ada metrik peluncuran yang diklaim tanpa tautan ke sumber pencatatan.
 
-## Hari dalam Angka
+## Rencana Pengukuran
 
-| Metrik | Hasil | Target |
-|--------|-------|--------|
-| Upvotes (24 jam) | 132 | 100+ |
-| Komentar | 28 | 20+ |
-| Kunjungan website dari PH | 614 | 500+ |
-| Bintang GitHub bertambah | 87 | 50–150 |
-| Instalasi / unduhan | 146 | 100+ |
-
-*Angka final tercatat pada saat jendela peluncuran 24 jam ditutup.*
+Kampanye seharusnya mengukur referral Product Hunt, kunjungan GitHub, penyelesaian quick start, run pertama yang berhasil, dan diskusi baru. Repository saat ini tidak memverifikasi jumlah upvote, komentar, traffic, download, atau atribusi final Product Hunt, sehingga angka tersebut sengaja tidak dilaporkan.
 
 ## Apa yang Kami Posting
 
@@ -35,58 +27,46 @@ Peluncuran berlangsung pada pukul 00:01 PT (14:01 WIB). Berikut urutannya:
 
 ### Positif
 
-> "Sudut pandang AI-nya menarik — set instruksi untuk 6工具 + server MCP. Belum pernah melihat ini sebelumnya."
+### Umpan Balik yang Perlu Dikumpulkan
 
-> "Pipeline caching adalah langkah cerdas. Rebuild dalam hitungan detik, bukan menit."
-
-> "Akhirnya ada tool berbasis spesifikasi yang tidak berhenti di scaffolding."
-
-### Konstruktif
-
-> "Bahasa spesifikasi memiliki kurva belajar ($ref, $include, $fn, $if). Dokumentasinya lengkap, tapi ini sintaksis yang nyata."
-
-> "Bkan magic untuk UI bespoke sembarang — tapi untuk API, layanan, skema, governance, ini bersinar."
-
-> "Ingin melihat lebih banyak dukungan bahasa selain 5 besar."
-
-Kami meminta umpan balik jujur, dan kami mendapatkannya. Tema-temanya:
+Minta peserta menilai kompiler AI, pipeline caching, bahasa spesifikasi, dan cakupan bahasa. Publikasikan kutipan langsung hanya setelah mendapat izin dan menautkan diskusi asli.
 
 1. **Kompleksitas bahasa spesifikasi** — sintaksis nyata, kurva belajar nyata. Kami akan meningkatkan dokumentasi onboarding.
-2. **Integrasi AI** — orang-orang menyukai kompiler set instruksi. Kami akan menambahkan lebih banyak tools.
-3. **Pipeline caching** — fitur yang paling dipuji. Kami akan memperluasnya ke lebih banyak tahap.
+2. **Integrasi AI** — ukur apakah kompiler set instruksi menghasilkan run quick start yang dapat direproduksi.
+3. **Pipeline caching** — ukur dampak caching pada repeat run sebelum memperluas cakupannya.
 
 ## Apa yang Kami Pelajari
 
-### 6 Jam Pertama Paling Penting
+### Aktivasi Awal
 
-PH memberi peringkat produk berdasarkan momentum awal. Kami masuk top 5 dalam jam pertama dan bertahan di sana. Kuncinya: memiliki daftar dukungan orang yang upvote + komentar dalam jam pertama.
+Ukur apakah pengunjung awal berpindah dari halaman peluncuran ke quick start dan menyelesaikan run pertama. Jangan menyimpulkan aktivasi hanya dari impressions.
 
-### Komentar > Upvotes
+### Komentar dan Reproduksibilitas
 
-Komentar yang bijaksana ("Saya mencoba quick start dan ini yang terjadi") membawa bobot lebih dari upvote. Kami mendorong setiap pendukung untuk meninggalkan komentar, meskipun satu baris.
+Laporan quick start dengan command, hasil, dan pertanyaan berikutnya lebih berguna daripada reaksi tanpa konteks.
 
 ### Komentar Maker Menentukan Nada
 
-Komentar pertama kami menjelaskan masalah (drift spesifikasi/kode) sebelum menawarkan solusi. Beberapa pengomentar mengatakan inilah yang meyakinkan mereka untuk mencoba NAEOS.
+Komentar pembuka sebaiknya menjelaskan masalah (drift spesifikasi/kode) sebelum memperkenalkan NAEOS.
 
-### Channel Komunitas Menguatkan
+### Atribusi Channel Komunitas
 
-Pengumuman Discord dan Slack mendorong 30% lalu lintas awal kami. Memiliki komunitas sebelum peluncuran menjadi pembeda.
+Gunakan tautan khusus channel atau parameter kampanye sebelum menyatakan channel komunitas mana yang menghasilkan traffic.
 
 ## Selanjutnya
 
-Berdasarkan umpan balik peluncuran, berikut yang menjadi prioritas kami:
+Berdasarkan hipotesis kampanye, berikut yang kami uji selanjutnya:
 
 1. **Onboarding bahasa spesifikasi** — tutorial interaktif, bukan sekadar dokumentasi
 2. **Lebih banyak tools AI** — set instruksi Windsurf, Aider, Cline
 3. **Peningkatan pipeline caching** — cache lintas run, bukan hanya dalam satu sesi
-4. **Quick start yang lebih baik** — demo 30 detik yang benar-benar berfungsi di mesin mana pun
+4. **Quick start yang lebih baik** — demo singkat yang dapat direproduksi dengan prasyarat terdokumentasi
 
-Kami mengubah item umpan balik teratas menjadi isu GitHub minggu ini. Pantau di [roadmap](/roadmap/).
+Catat umpan balik yang tervalidasi sebagai isu GitHub dengan evidence dan acceptance criteria. Pantau prioritas proyek di [roadmap](/roadmap/).
 
 ## Terima Kasih
 
-Untuk semua yang upvote, berkomentar, membagikan, atau mencoba NAEOS di hari peluncuran — terima kasih. Proyek ini ada karena drift spesifikasi/kode adalah masalah nyata, dan kami percaya spesifikasi harus menjadi sumber kebenaran.
+Untuk semua yang meninjau, menguji, atau menantang proyek ini — terima kasih. Proyek ini ada karena drift spesifikasi/kode adalah masalah nyata, dan kami percaya spesifikasi harus menjadi sumber kebenaran.
 
 Jika Anda belum mencoba NAEOS:
 
@@ -103,4 +83,4 @@ Sampai jumpa di [komunitas](https://discord.gg/WnUWmm7XMv).
 
 ---
 
-*Postingan ini diperbarui dengan angka peluncuran final tidak lama setelah jendela 24 jam ditutup.*
+*Metrik peluncuran sengaja tidak dicantumkan sampai tersedia sumber pencatatan.*

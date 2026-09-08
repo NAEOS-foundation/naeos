@@ -38,19 +38,19 @@ Supercharge your AI coding assistants with full project context. NAEOS compiles 
 - Maintain alignment between spec changes and AI context
 - Reduce manual prompt engineering for AI tools
 
-**Supported:** All 6 AI platforms
+**Supported:** All 7 documented AI platforms
 
 ---
 
-## Enterprise Governance
+## Governance Workflows
 
-Maintain architecture consistency across large teams. NAEOS enforces policies, standards, and security rules.
+Use documented policies, standards, and security rules to review engineering workflows.
 
 - Define architecture policies with 7 operators
 - RBAC permission system for team access control
 - Audit trail with full traceability
 - Artifact review and approval workflows
-- Compliance reporting and policy evaluation
+- Policy evaluation and artifact review
 
 **Key features:** Policy Engine, Audit Trail, RBAC
 

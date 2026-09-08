@@ -29,7 +29,7 @@ We envision a world where engineering teams spend less time on boilerplate and c
 
 <div class="about-card">
 <h3>Deterministic</h3>
-<p>Same input always produces the same output. NAEOS pipelines are reproducible, auditable, and testable — essential for enterprise engineering.</p>
+<p>NAEOS is designed around reproducible, auditable, and testable pipelines. Review the documented capabilities and project fit before using it in an organizational environment.</p>
 </div>
 </div>
 

@@ -3,7 +3,7 @@ title: Perbandingan Fitur
 description: Bagaimana NAEOS dibandingkan dengan alat pembangkit proyek dan scaffolding lainnya.
 ---
 
-NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklaratif dengan pipeline DAG 11-tahap, kompiler AI, tata kelola bawaan, dan dukungan multi-bahasa. Berikut perbandingannya dengan alat serupa.
+NAEOS bukan hanya generator kode biasa. NAEOS adalah platform rekayasa deklaratif dengan pipeline, kompiler AI, tata kelola yang dapat dieksekusi, dan dukungan multi-bahasa. Berikut perbandingannya dengan alat serupa.
 
 ## Tabel Perbandingan
 
@@ -122,7 +122,7 @@ NAEOS bukan sekadar generator kode biasa. NAEOS adalah platform rekayasa deklara
     </tr>
     <tr>
       <td>Kepatuhan (SOC 2 / HIPAA / GDPR)</td>
-      <td class="highlight-col"><span class="check-yes">Bawaan</span></td>
+      <td class="highlight-col"><span class="check-yes">Template kebijakan</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
@@ -167,13 +167,13 @@ Generasi konteks AI adalah fitur kelas satu. NAEOS mengkompilasi NEIR menjadi se
 
 ### Dibangun untuk Tim
 
-Tata kelola, RBAC, jejak audit, dan kerangka kepatuhan dibangun langsung ke dalam pipeline.
+Tata kelola, RBAC, jejak audit, dan evaluasi kebijakan merupakan bagian pipeline yang terdokumentasi.
 
 ## Kapan Menggunakan Setiap Alat
 
 | Alat | Terbaik Untuk |
 |------|---------------|
-| **NAEOS** | Proyek full-stack, microservices, pengembangan berbantuan AI, tata kelola enterprise |
+| **NAEOS** | Proyek full-stack, microservices, pengembangan berbantuan AI, workflow berbasis kebijakan |
 | **Cookie Cutter** | Scaffolding proyek Python cepat dari template |
 | **Copier** | Proyek Python dengan pembaruan template |
 | **OpenAPI Generator** | Membuat klien API dan stub server dari spesifikasi OpenAPI |
@@ -182,6 +182,6 @@ Tata kelola, RBAC, jejak audit, dan kerangka kepatuhan dibangun langsung ke dala
 
 ## Mulai
 
-Siap mencoba NAEOS? [Pasang NAEOS](/id/download/) dan buat proyek pertama Anda dalam hitungan menit.
+Siap mencoba NAEOS? [Pasang NAEOS](/id/download/) dan ikuti quick start yang terdokumentasi.
 
 Lihat juga: [Fitur](/id/features/), [Dokumentasi](/id/docs/getting-started/), [Studi Kasus](/id/use-cases/)

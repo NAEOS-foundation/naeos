@@ -146,10 +146,10 @@ export default async function HomePage(props: {
     },
   ];
 
-  const testimonials = [
-    { quote: t("home_testimonial_one"), initials: "SK", name: "Sarah Kim", role: t("home_testimonial_one_role") },
-    { quote: t("home_testimonial_two"), initials: "JR", name: "James Reyes", role: t("home_testimonial_two_role") },
-    { quote: t("home_testimonial_three"), initials: "AN", name: "Aditya Nugraha", role: t("home_testimonial_three_role") },
+  const proofPoints = [
+    { quote: t("home_proof_one"), initials: "01", name: "README", role: t("home_proof_one_source") },
+    { quote: t("home_proof_two"), initials: "02", name: "Quick Start", role: t("home_proof_two_source") },
+    { quote: t("home_proof_three"), initials: "03", name: "Architecture", role: t("home_proof_three_source") },
   ];
 
   return (
@@ -171,10 +171,10 @@ export default async function HomePage(props: {
           <h1 className="hero-title"><Html>{t("hero_title")}</Html></h1>
           <p className="hero-subtitle">{t("hero_subtitle")}</p>
           <div className="hero-actions">
-            <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg">
+            <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg" data-umami-event="hero-get-started">
               {t("cta_get_started")}
             </Link>
-            <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+            <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-github">
               {t("cta_view_on_github")}
             </a>
           </div>
@@ -199,10 +199,10 @@ export default async function HomePage(props: {
                 <div className="terminal-line output">  languages: [go, typescript]</div>
                 <div className="terminal-line prompt">$ naeos run --input spec.yaml</div>
                 <div className="terminal-line output">✓ Parsed → Normalized → Resolved</div>
-                <div className="terminal-line output">✓ NEIR built | <span className="highlight">4 modules</span>, <span className="highlight">8 services</span></div>
-                <div className="terminal-line output">✓ Policy evaluation: <span className="highlight">passed</span></div>
+                <div className="terminal-line output">✓ NEIR built</div>
+                <div className="terminal-line output">✓ Policy evaluation complete</div>
                 <div className="terminal-line output">✓ Generated: go/, typescript/</div>
-                <div className="terminal-line output">✓ <span className="highlight">Done</span> in 1.2s</div>
+                <div className="terminal-line output">✓ <span className="highlight">Pipeline complete</span></div>
                 <div className="terminal-line terminal-cursor" />
               </div>
             </div>
@@ -223,21 +223,21 @@ export default async function HomePage(props: {
               <span className="hero-float-icon">◆</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_neir")}</div>
-                <div className="hero-float-value">4 modules · 8 services</div>
+                <div className="hero-float-value">Project model</div>
               </div>
             </div>
             <div className="hero-float-card hero-float-validated fade-in-scale" aria-hidden="true">
               <span className="hero-float-icon">✓</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_validated")}</div>
-                <div className="hero-float-value">0 errors · 0 warnings</div>
+                <div className="hero-float-value">Policy checks</div>
               </div>
             </div>
             <div className="hero-float-card hero-float-generated fade-in-scale" aria-hidden="true">
               <span className="hero-float-icon">⚙</span>
               <div>
                 <div className="hero-float-label">{t("mk_hero_float_generated")}</div>
-                <div className="hero-float-value">go/ · typescript/ · infra/</div>
+                <div className="hero-float-value">Generated artifacts</div>
               </div>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default async function HomePage(props: {
             <div className="logo-strip-group">
               <h3 className="logo-strip-label">{t("home_strip_ai_platforms")}</h3>
               <div className="logo-strip-items">
-                {["GitHub Copilot", "Claude Code", "Cursor", "Gemini CLI", "Codex", "OpenCode"].map((name) => (
+                {["GitHub Copilot", "Claude Code", "Cursor", "Gemini CLI", "Codex", "OpenCode", "Windsurf"].map((name) => (
                   <span key={name} className="stack-logo">{name}</span>
                 ))}
               </div>
@@ -318,7 +318,7 @@ export default async function HomePage(props: {
                 <li>{t("mk_solution_item2")}</li>
                 <li>{t("mk_solution_item3")}</li>
               </ul>
-              <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-sm">
+              <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-sm" data-umami-event="solution-get-started">
                 {t("cta_get_started")}
               </Link>
             </div>
@@ -489,17 +489,17 @@ export default async function HomePage(props: {
       {/* Testimonials */}
       <section className="section">
         <div className="container fade-in">
-          <h2 className="section-title">{t("home_testimonials_title")}</h2>
-          <p className="section-subtitle">{t("home_testimonials_desc")}</p>
+          <h2 className="section-title">{t("home_proof_title")}</h2>
+          <p className="section-subtitle">{t("home_proof_desc")}</p>
           <div className="testimonials-grid stagger-fade">
-            {testimonials.map((tm) => (
-              <div key={tm.name} className="testimonial-card">
-                <p>{tm.quote}</p>
+            {proofPoints.map((point) => (
+              <div key={point.name} className="testimonial-card">
+                <p>{point.quote}</p>
                 <div className="testimonial-author">
-                  <div className="testimonial-avatar">{tm.initials}</div>
+                  <div className="testimonial-avatar">{point.initials}</div>
                   <div className="testimonial-info">
-                    <h4>{tm.name}</h4>
-                    <span>{tm.role}</span>
+                    <h4>{point.name}</h4>
+                    <span>{point.role}</span>
                   </div>
                 </div>
               </div>

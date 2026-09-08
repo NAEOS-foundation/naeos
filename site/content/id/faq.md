@@ -70,7 +70,7 @@ description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>Ya. NAEOS sepenuhnya gratis dan open source di bawah Lisensi Apache 2.0. Anda dapat menggunakannya untuk proyek pribadi, aplikasi komersial, atau deployment enterprise tanpa biaya lisensi apa pun.</p>
+<p>Ya. NAEOS gratis dan open source di bawah Lisensi Apache 2.0. Lisensi mengizinkan penggunaan pribadi dan komersial tanpa biaya lisensi; tinjau dokumentasi proyek untuk menilai kecocokan deployment.</p>
 </div>
 </div>
 </div>
