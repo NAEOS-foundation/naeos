@@ -42,15 +42,15 @@ Tingkatkan asisten coding AI Anda dengan konteks proyek lengkap. NAEOS mengkompi
 
 ---
 
-## Tata Kelola Enterprise
+## Workflow Tata Kelola
 
-Jaga konsistensi arsitektur di seluruh tim besar. NAEOS menegakkan kebijakan, standar, dan aturan keamanan.
+Gunakan kebijakan, standar, dan aturan keamanan yang terdokumentasi untuk meninjau workflow engineering.
 
 - Definisikan kebijakan arsitektur dengan 7 operator
 - Sistem izin RBAC untuk kontrol akses tim
 - Jejak audit dengan ketertelusuran penuh
 - Alur kerja peninjauan dan persetujuan artefak
-- Pelaporan kepatuhan dan evaluasi kebijakan
+- Evaluasi kebijakan dan review artefak
 
 **Fitur utama:** Policy Engine, Audit Trail, RBAC
 

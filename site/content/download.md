@@ -23,12 +23,12 @@ description: Install NAEOS and start engineering your next project.
     <div class="download-card">
       <h3>Binary (amd64)</h3>
       <p>Linux x86_64 binary — download and run.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-amd64.tar.gz" class="btn btn-primary">Download for Linux</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-amd64" class="btn btn-primary">Download for Linux</a>
     </div>
     <div class="download-card">
       <h3>Binary (arm64)</h3>
       <p>Linux ARM64 binary — for Raspberry Pi, AWS Graviton, etc.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-arm64.tar.gz" class="btn btn-primary">Download ARM64</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-linux-arm64" class="btn btn-primary">Download ARM64</a>
     </div>
   </div>
 </div>
@@ -38,12 +38,12 @@ description: Install NAEOS and start engineering your next project.
     <div class="download-card">
       <h3>Binary (amd64)</h3>
       <p>macOS x86_64 binary — for Intel Macs.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-amd64.tar.gz" class="btn btn-primary">Download for macOS Intel</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-amd64" class="btn btn-primary">Download for macOS Intel</a>
     </div>
     <div class="download-card">
       <h3>Binary (arm64)</h3>
       <p>macOS ARM64 binary — for Apple Silicon (M1/M2/M3/M4).</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-arm64.tar.gz" class="btn btn-primary">Download for macOS Apple Silicon</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-darwin-arm64" class="btn btn-primary">Download for macOS Apple Silicon</a>
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@ description: Install NAEOS and start engineering your next project.
     <div class="download-card">
       <h3>Binary (amd64)</h3>
       <p>Windows x86_64 binary.</p>
-      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-windows-amd64.zip" class="btn btn-primary">Download for Windows</a>
+      <a href="https://github.com/NAEOS-foundation/naeos/releases/latest/download/naeos-windows-amd64.exe" class="btn btn-primary">Download for Windows</a>
     </div>
   </div>
 </div>

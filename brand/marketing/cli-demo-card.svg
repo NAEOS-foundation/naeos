@@ -1,0 +1,73 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cli-bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#05050A"/>
+      <stop offset="0.58" stop-color="#0B1224"/>
+      <stop offset="1" stop-color="#171333"/>
+    </linearGradient>
+    <linearGradient id="cli-accent" x1="180" y1="180" x2="1350" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08D6FF"/>
+      <stop offset="0.52" stop-color="#4D8DFF"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <filter id="cli-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="32" fill="url(#cli-bg)"/>
+  <circle cx="1320" cy="120" r="260" fill="#08D6FF" opacity="0.13" filter="url(#cli-glow)"/>
+  <circle cx="1410" cy="780" r="300" fill="#7C4DFF" opacity="0.14" filter="url(#cli-glow)"/>
+
+  <g transform="translate(110 92)">
+    <rect width="218" height="70" rx="18" fill="#0E162C" stroke="#2A375D"/>
+    <rect x="18" y="16" width="38" height="38" rx="10" fill="url(#cli-accent)"/>
+    <path d="M35 20V52H41V35H48V52H54V20H48V28H41V20H35Z" fill="#05050A"/>
+    <text x="82" y="46" fill="#F3F7FF" font-size="30" font-family="Inter,Arial,sans-serif" font-weight="700">NAEOS</text>
+  </g>
+
+  <text x="110" y="292" fill="#F3F7FF" font-size="72" font-family="Inter,Arial,sans-serif" font-weight="800">Run the CLI Demo.</text>
+  <text x="110" y="372" fill="#C7D2F4" font-size="32" font-family="Inter,Arial,sans-serif">One specification. A validated, inspectable project output.</text>
+  <rect x="110" y="420" width="520" height="5" rx="2.5" fill="url(#cli-accent)"/>
+
+  <g transform="translate(110 510)">
+    <rect width="610" height="210" rx="24" fill="#090F20" stroke="#263657"/>
+    <circle cx="30" cy="30" r="7" fill="#FF6B7A"/>
+    <circle cx="55" cy="30" r="7" fill="#FFD166"/>
+    <circle cx="80" cy="30" r="7" fill="#58E39A"/>
+    <text x="30" y="86" fill="#8EACD8" font-size="22" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">$</text>
+    <text x="55" y="86" fill="#E9F5FF" font-size="22" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">./run-demo.sh</text>
+    <text x="30" y="128" fill="#58E39A" font-size="20" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ validate</text>
+    <text x="30" y="162" fill="#58E39A" font-size="20" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ context.md</text>
+    <text x="30" y="196" fill="#58E39A" font-size="20" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ generated/</text>
+  </g>
+
+  <g transform="translate(930 150)">
+    <rect width="500" height="570" rx="30" fill="#0D1428" stroke="#2A3C63"/>
+    <text x="42" y="62" fill="#A9D9FF" font-size="22" font-family="Inter,Arial,sans-serif" font-weight="700">REPOSITORY DEMO</text>
+    <text x="42" y="112" fill="#F3F7FF" font-size="34" font-family="Inter,Arial,sans-serif" font-weight="800">Specification</text>
+    <path d="M250 100H318" stroke="#08D6FF" stroke-width="4" stroke-linecap="round"/>
+    <path d="m306 86 14 14-14 14" stroke="#08D6FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="350" y="112" fill="#AEE9FF" font-size="34" font-family="Inter,Arial,sans-serif" font-weight="800">Artifacts</text>
+
+    <g transform="translate(42 160)">
+      <rect width="416" height="72" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <circle cx="34" cy="36" r="13" fill="#08D6FF"/>
+      <text x="68" y="44" fill="#E7EEFF" font-size="24" font-family="Inter,Arial,sans-serif" font-weight="700">Validate</text>
+      <text x="360" y="44" fill="#8FA9D2" font-size="20" font-family="Inter,Arial,sans-serif" text-anchor="end">spec.yaml</text>
+    </g>
+    <g transform="translate(42 254)">
+      <rect width="416" height="72" rx="16" fill="#111B34" stroke="#2A3C63"/>
+      <circle cx="34" cy="36" r="13" fill="#4D8DFF"/>
+      <text x="68" y="44" fill="#E7EEFF" font-size="24" font-family="Inter,Arial,sans-serif" font-weight="700">Context</text>
+      <text x="360" y="44" fill="#8FA9D2" font-size="20" font-family="Inter,Arial,sans-serif" text-anchor="end">context.md</text>
+    </g>
+    <g transform="translate(42 348)">
+      <rect width="416" height="72" rx="16" fill="url(#cli-accent)"/>
+      <circle cx="34" cy="36" r="13" fill="#05050A"/>
+      <text x="68" y="44" fill="#05050A" font-size="24" font-family="Inter,Arial,sans-serif" font-weight="800">Generate</text>
+      <text x="360" y="44" fill="#071024" font-size="20" font-family="Inter,Arial,sans-serif" font-weight="700" text-anchor="end">generated/</text>
+    </g>
+    <text x="42" y="490" fill="#C7D2F4" font-size="21" font-family="Inter,Arial,sans-serif">Open source · Reproducible · Inspectable</text>
+  </g>
+</svg>

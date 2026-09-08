@@ -1,0 +1,47 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="social-bg" x1="0" y1="0" x2="1200" y2="1200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#05050A"/>
+      <stop offset="1" stop-color="#171333"/>
+    </linearGradient>
+    <linearGradient id="social-accent" x1="200" y1="200" x2="950" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08D6FF"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" rx="44" fill="url(#social-bg)"/>
+  <circle cx="1030" cy="150" r="250" fill="#08D6FF" opacity="0.1"/>
+  <circle cx="180" cy="1080" r="300" fill="#7C4DFF" opacity="0.12"/>
+
+  <g transform="translate(88 84)">
+    <rect width="190" height="62" rx="16" fill="#0E162C" stroke="#2A375D"/>
+    <rect x="16" y="14" width="34" height="34" rx="9" fill="url(#social-accent)"/>
+    <path d="M31 18V44H36V31H42V44H47V18H42V25H36V18H31Z" fill="#05050A"/>
+    <text x="68" y="41" fill="#F3F7FF" font-size="27" font-family="Inter,Arial,sans-serif" font-weight="700">NAEOS</text>
+  </g>
+
+  <text x="88" y="320" fill="#F3F7FF" font-size="68" font-family="Inter,Arial,sans-serif" font-weight="800">One spec.</text>
+  <text x="88" y="397" fill="#F3F7FF" font-size="68" font-family="Inter,Arial,sans-serif" font-weight="800">Three outcomes.</text>
+  <rect x="88" y="438" width="440" height="5" rx="2.5" fill="url(#social-accent)"/>
+
+  <g transform="translate(88 520)">
+    <rect width="1024" height="105" rx="22" fill="#0E162C" stroke="#2A3C63"/>
+    <circle cx="44" cy="52" r="16" fill="#08D6FF"/>
+    <text x="82" y="60" fill="#E7EEFF" font-size="29" font-family="Inter,Arial,sans-serif" font-weight="700">Validate</text>
+    <path d="M280 52H350" stroke="#536C9A" stroke-width="3" stroke-linecap="round"/>
+    <text x="382" y="60" fill="#E7EEFF" font-size="29" font-family="Inter,Arial,sans-serif" font-weight="700">Context</text>
+    <path d="M600 52H670" stroke="#536C9A" stroke-width="3" stroke-linecap="round"/>
+    <text x="702" y="60" fill="#E7EEFF" font-size="29" font-family="Inter,Arial,sans-serif" font-weight="700">Generate</text>
+  </g>
+
+  <g transform="translate(88 700)">
+    <rect width="1024" height="250" rx="26" fill="#090F20" stroke="#263657"/>
+    <text x="42" y="62" fill="#8EACD8" font-size="22" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">$ ./run-demo.sh</text>
+    <text x="42" y="115" fill="#58E39A" font-size="24" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ specification valid</text>
+    <text x="42" y="160" fill="#58E39A" font-size="24" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ context.md written</text>
+    <text x="42" y="205" fill="#58E39A" font-size="24" font-family="ui-monospace,SFMono-Regular,Consolas,monospace">✓ generated/ verified</text>
+  </g>
+
+  <text x="88" y="1035" fill="#C7D2F4" font-size="24" font-family="Inter,Arial,sans-serif">Specification-driven engineering for AI-assisted development.</text>
+  <text x="88" y="1085" fill="#08D6FF" font-size="24" font-family="Inter,Arial,sans-serif" font-weight="700">naeos.dev</text>
+</svg>

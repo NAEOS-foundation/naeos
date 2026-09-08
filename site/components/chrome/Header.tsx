@@ -76,12 +76,9 @@ export default function Header({ lang }: Props) {
   const isActive = (href: string) =>
     href !== "" && href !== "/" && (pathname === href || pathname.startsWith(`${href}/`));
 
-  const altHref =
-    lang === "en"
-      ? pathname === "/" || pathname === ""
-        ? "/id/"
-        : `/id${pathname}`
-      : pathname.replace(/^\/id\/?/, "/") || "/";
+  const langlessPath = pathname.replace(/^\/(?:en|id)(?=\/|$)/, "") || "/";
+  const enHref = langlessPath;
+  const idHref = `/id${langlessPath}`;
 
   return (
     <header className="site-header" role="banner">
@@ -120,10 +117,10 @@ export default function Header({ lang }: Props) {
             <svg className="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
           </button>
           <div className="lang-switcher">
-            <a href={pathname} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
-            <a href={altHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
+            <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
+            <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
           </div>
-          <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta">{t("cta_get_started")}</Link>
+          <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta" data-umami-event="header-get-started">{t("cta_get_started")}</Link>
           <button
             className="mobile-menu-btn"
             aria-label={t("toggle_menu")}
@@ -149,8 +146,8 @@ export default function Header({ lang }: Props) {
           </Link>
         ))}
         <div className="lang-switcher mobile" style={{ padding: "0.75rem 1rem" }}>
-          <a href={pathname} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
-          <a href={altHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
+          <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
+          <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
         </div>
         <div className="mobile-menu-actions">
           <button className="btn btn-secondary btn-sm" onClick={() => toggleTheme()} style={{ flex: 1 }}>{t("toggle_theme")}</button>

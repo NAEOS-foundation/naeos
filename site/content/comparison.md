@@ -3,7 +3,7 @@ title: Feature Comparison
 description: How NAEOS compares to other project generation and scaffolding tools.
 ---
 
-NAEOS is not just another code generator. It's a declarative engineering platform with an 11-stage DAG pipeline, AI compiler, built-in governance, and multi-language support. Here's how it stacks up against similar tools.
+NAEOS is not only a code generator. It is a declarative engineering platform with a pipeline, AI compiler, governance hooks, and multi-language support. Here is a practical comparison with similar tools.
 
 ## Comparison Table
 
@@ -122,7 +122,7 @@ NAEOS is not just another code generator. It's a declarative engineering platfor
     </tr>
     <tr>
       <td>Compliance (SOC 2 / HIPAA / GDPR)</td>
-      <td class="highlight-col"><span class="check-yes">Built-in</span></td>
+      <td class="highlight-col"><span class="check-yes">Policy templates</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
       <td><span class="check-no">—</span></td>
@@ -165,17 +165,17 @@ NAEOS builds the **NEIR model** — a canonical intermediate representation of y
 
 ### AI-Native Design
 
-AI context generation is a first-class feature, not an afterthought. NAEOS compiles NEIR into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, OpenAI Codex, and OpenCode. No other tool in this comparison produces AI context.
+AI context generation is a first-class feature, not an afterthought. NAEOS compiles NEIR into instruction sets for seven documented AI platforms. The comparison focuses on the capabilities documented for each tool.
 
 ### Built for Teams
 
-Governance, RBAC, audit trails, and compliance frameworks are built into the pipeline. NAEOS doesn't just generate code — it ensures the code respects organizational policies.
+Governance, RBAC, audit trails, and policy evaluation are documented parts of the pipeline. NAEOS does more than generate code: it provides mechanisms for reviewing engineering policies and artifacts.
 
 ## When to Use Each Tool
 
 | Tool | Best For |
 |------|----------|
-| **NAEOS** | Full-stack projects, microservices, AI-assisted development, enterprise governance |
+| **NAEOS** | Full-stack projects, microservices, AI-assisted development, policy-aware workflows |
 | **Cookie Cutter** | Quick Python project scaffolding from templates |
 | **Copier** | Python projects with template updates (data-driven) |
 | **OpenAPI Generator** | Generating API clients and server stubs from OpenAPI specs |
@@ -184,6 +184,6 @@ Governance, RBAC, audit trails, and compliance frameworks are built into the pip
 
 ## Get Started
 
-Ready to try NAEOS? [Install NAEOS](/download/) and create your first project in minutes.
+Ready to try NAEOS? [Install NAEOS](/download/) and create your first project using the documented quick start.
 
 See also: [Features](/features/), [Documentation](/docs/getting-started/), [Use Cases](/use-cases/)

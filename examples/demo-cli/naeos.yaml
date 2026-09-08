@@ -1,0 +1,8 @@
+pipeline:
+  name: demo-app
+  mode: development
+  verbose: true
+  output_dir: ./generated
+  language:
+    - go
+    - typescript

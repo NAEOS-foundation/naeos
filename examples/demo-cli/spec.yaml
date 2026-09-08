@@ -1,0 +1,22 @@
+project: demo-app
+
+modules:
+  - name: auth
+    path: ./auth
+  - name: api
+    path: ./api
+    dependencies:
+      - auth
+
+services:
+  - name: gateway
+    kind: http
+    port: 8080
+
+architecture:
+  pattern: hexagonal
+
+generation:
+  languages:
+    - go
+    - typescript
