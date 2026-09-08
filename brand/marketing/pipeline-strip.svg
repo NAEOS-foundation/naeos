@@ -1,0 +1,53 @@
+<svg width="1800" height="500" viewBox="0 0 1800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="strip-bg" x1="0" y1="0" x2="1800" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#05050A"/>
+      <stop offset="1" stop-color="#111A30"/>
+    </linearGradient>
+    <linearGradient id="strip-accent" x1="100" y1="100" x2="1650" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08D6FF"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1800" height="500" rx="28" fill="url(#strip-bg)"/>
+  <text x="90" y="92" fill="#F3F7FF" font-size="42" font-family="Inter,Arial,sans-serif" font-weight="800">From specification to system</text>
+  <text x="90" y="135" fill="#A9B9DA" font-size="22" font-family="Inter,Arial,sans-serif">A shared engineering model connects validation, generation, AI context, and artifacts.</text>
+
+  <g transform="translate(90 220)">
+    <rect width="220" height="120" rx="22" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="110" y="55" fill="#E7EEFF" font-size="26" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">SPEC</text>
+    <text x="110" y="88" fill="#8FA9D2" font-size="19" font-family="Inter,Arial,sans-serif" text-anchor="middle">YAML / JSON</text>
+  </g>
+  <path d="M310 280H372" stroke="url(#strip-accent)" stroke-width="5" stroke-linecap="round"/>
+  <path d="m360 265 15 15-15 15" stroke="#7C4DFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(400 220)">
+    <rect width="220" height="120" rx="22" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="110" y="55" fill="#E7EEFF" font-size="26" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">NEIR</text>
+    <text x="110" y="88" fill="#8FA9D2" font-size="19" font-family="Inter,Arial,sans-serif" text-anchor="middle">SHARED MODEL</text>
+  </g>
+  <path d="M620 280H682" stroke="url(#strip-accent)" stroke-width="5" stroke-linecap="round"/>
+  <path d="m670 265 15 15-15 15" stroke="#7C4DFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(710 220)">
+    <rect width="220" height="120" rx="22" fill="url(#strip-accent)"/>
+    <text x="110" y="55" fill="#05050A" font-size="25" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">VALIDATE</text>
+    <text x="110" y="88" fill="#071024" font-size="19" font-family="Inter,Arial,sans-serif" font-weight="700" text-anchor="middle">RULES + POLICY</text>
+  </g>
+  <path d="M930 280H992" stroke="url(#strip-accent)" stroke-width="5" stroke-linecap="round"/>
+  <path d="m980 265 15 15-15 15" stroke="#7C4DFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(1020 220)">
+    <rect width="220" height="120" rx="22" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="110" y="55" fill="#E7EEFF" font-size="26" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">GENERATE</text>
+    <text x="110" y="88" fill="#8FA9D2" font-size="19" font-family="Inter,Arial,sans-serif" text-anchor="middle">CODE + DOCS</text>
+  </g>
+  <path d="M1240 280H1302" stroke="url(#strip-accent)" stroke-width="5" stroke-linecap="round"/>
+  <path d="m1290 265 15 15-15 15" stroke="#7C4DFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(1330 220)">
+    <rect width="220" height="120" rx="22" fill="#0E162C" stroke="#2D3C5C"/>
+    <text x="110" y="55" fill="#E7EEFF" font-size="25" font-family="Inter,Arial,sans-serif" font-weight="800" text-anchor="middle">AI CONTEXT</text>
+    <text x="110" y="88" fill="#8FA9D2" font-size="19" font-family="Inter,Arial,sans-serif" text-anchor="middle">BUNDLE + ADAPTERS</text>
+  </g>
+</svg>

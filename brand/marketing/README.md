@@ -17,6 +17,9 @@ Core message:
 
 - hero-banner.svg — hero visual for landing pages, launch announcements, and social headers
 - pipeline-diagram.svg — architecture visual for docs, blogs, and product explainers
+- pipeline-strip.svg — compact workflow visual for articles, decks, and presentations
+- cli-demo-card.svg — 16:9 case-study card for the runnable CLI demo
+- cli-demo-social-card.svg — square social card for demo announcements
 - social-template.md — short copy templates for X, LinkedIn, and GitHub announcement posts
 - demo-script.md — English teaser, pitch, and technical demo narration
 - demo-script-id.md — Indonesian teaser, pitch, and technical demo narration
