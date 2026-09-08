@@ -1,0 +1,136 @@
+[
+  {
+    "date": "2026-09-10",
+    "slug": "video-demo-published",
+    "title": "CLI Demo Video is Live",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**NAEOS CLI DEMO — VIDEO RESMI** :clapper:\n\nVideo demo resmi CLI NAEOS sudah rilis: satu spec YAML -> proyek Go + TypeScript, dengan validasi, AI context, dan smoke test.\n\nTonton: https://naeos.dev/download/\nCoba sendiri: `go build -o naeos ./cmd/naeos` lalu `./examples/demo-cli/run-demo.sh`",
+    "slack": ":clapper: *NAEOS CLI Demo Video*\n\nVideo demo resmi sudah rilis: satu spec YAML -> proyek Go + TypeScript (validasi + AI context + smoke test).\n\nTonton: https://naeos.dev/download/\nCoba: `go build -o naeos ./cmd/naeos` lalu `./examples/demo-cli/run-demo.sh`",
+    "linkedin": "We released the official video walkthrough of the NAEOS CLI demo.\n\nOne YAML spec -> a validated Go + TypeScript project, plus an AI context bundle and a smoke test.\n\nMore: naeos.dev/download\nRepo: github.com/NAEOS-foundation/naeos\n\nSpecify once. Build anywhere."
+  },
+  {
+    "date": "2026-09-11",
+    "slug": "why-spec-matters",
+    "title": "Why Specifications Matter",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Kenapa spec penting untuk AI-assisted development?** :thinking:\n\nKode saja tidak mendefinisikan sistem. NAEOS menjadikan engineering intent machine-readable: satu spec -> validasi -> artifact -> AI context. Traceable dari awal sampai akhir.\n\nBaca: https://github.com/NAEOS-foundation/naeos",
+    "slack": "*Why spec matters*\n\nCode alone does not define a system. NAEOS keeps engineering intent machine-readable: one spec -> validation -> artifacts -> AI context.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "AI generation is fast. The harder problem is keeping what is built coherent with what was intended.\n\nNAEOS keeps engineering intent machine-readable: one specification drives validation, artifacts, and AI context from a single model.\n\nExplore: github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-12",
+    "slug": "neir-model",
+    "title": "NEIR: The Engineering Intermediate Representation",
+    "enabled": true,
+    "platforms": ["discord", "slack"],
+    "discord": "**Apa itu NEIR?** :gear:\n\nNAEOS Engineering Intermediate Representation = satu model terstruktur dari sistem yang sedang dibangun. Semua tool hilir (generator, compiler AI, governance) mengonsumsi konteks engineering yang sama.\n\nDetail: https://github.com/NAEOS-foundation/naeos",
+    "slack": "*What is NEIR?*\n\nNEIR is the central engineering model. Downstream tools (generators, AI compiler, governance) all consume the same structured context.\n\nhttps://github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-13",
+    "slug": "ai-context-bundle",
+    "title": "AI Context from the Spec",
+    "enabled": true,
+    "platforms": ["discord", "linkedin"],
+    "discord": "**Konteks AI yang diturunkan dari spec, bukan copy-paste prompt.** :brain:\n\nNAEOS me-*compile* spec jadi instruction set untuk GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf.\n\nCoba: `naeos ai compile --input-file spec.yaml --target opencode`",
+    "linkedin": "AI context should come from the engineering model, not from prompt copy-paste.\n\nNAEOS compiles a specification into instruction sets for GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and Windsurf.\n\nTry: `naeos ai compile --input-file spec.yaml --target opencode`"
+  },
+  {
+    "date": "2026-09-14",
+    "slug": "validation-first",
+    "title": "Validation Before Generation",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Validasi dulu, generate kemudian.** :white_check_mark:\n\nNAEOS memeriksa circular deps, port conflicts, dan module boundaries SEBELUM menghasilkan kode. Error ditemukan lebih awal, bukan setelah artifact dibuat.\n\nDemo lokal: https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli",
+    "slack": "*Validate, then generate.*\n\nNAEOS checks circular deps, port conflicts, and module boundaries before generating code.\n\nDemo: https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli",
+    "linkedin": "Validate first, generate second.\n\nNAEOS checks circular dependencies, port conflicts, and module boundaries before producing any artifact, so errors are caught early.\n\nTry the runnable demo: github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli"
+  },
+  {
+    "date": "2026-09-15",
+    "slug": "pipeline-traceability",
+    "title": "Traceability Across the Pipeline",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Dari spec ke artifact, semua bisa ditelusuri.** :mag:\n\nspec.yaml -> validation -> context bundle -> generated artifacts -> summary.md. Setiap tahap bisa diperiksa ulang.\n\nCoba: `./examples/demo-cli/run-demo.sh`",
+    "slack": "*Traceable pipeline.*\n\nspec.yaml -> validation -> context bundle -> generated artifacts -> summary.md. Every stage is inspectable.\n\nRun: `./examples/demo-cli/run-demo.sh`",
+    "linkedin": "Reproducibility starts with traceability.\n\nIn the NAEOS pipeline, every stage — spec, validation, context bundle, generated artifacts, summary — can be inspected and re-run.\n\n`./examples/demo-cli/run-demo.sh`"
+  },
+  {
+    "date": "2026-09-16",
+    "slug": "governance-policy",
+    "title": "Governance: Policies and Audit Trails",
+    "enabled": true,
+    "platforms": ["discord", "linkedin"],
+    "discord": "**Siapa yang memverifikasi kode hasil AI?** :shield:\n\nNAEOS menyediakan governance: policy, artifact review, audit trail, dan verifikasi. Cocok untuk organisasi yang butuh kontrol engineering.\n\nDetail: https://github.com/NAEOS-foundation/naeos",
+    "linkedin": "When AI generates faster, who verifies?\n\nNAEOS adds a governance layer — policies, artifact review, audit trails, and verification — so engineering stays accountable.\n\nExplore the repo: github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-17",
+    "slug": "ecosystem-plugins",
+    "title": "Plugins and Profiles",
+    "enabled": true,
+    "platforms": ["discord", "slack"],
+    "discord": "**NAEOS adalah platform, bukan tool satu-trik.** :package:\n\nPlugin, profile, marketplace, dan MCP memungkinkan Anda memperluas pipeline engineering sesuai kebutuhan.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "slack": "*Extendable by design.*\n\nPlugins, profiles, marketplace, and MCP extend the NAEOS pipeline.\n\nhttps://github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-18",
+    "slug": "first-contribution",
+    "title": "First Contribution",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Kontribusi pertama Anda di NAEOS.** :handshake:\n\nRepo open source, issues bertanda `good first issue` siap dikerjakan. Plugin, profile, docs, atau code — semua disambut.\n\nMulai: https://github.com/NAEOS-foundation/naeos/issues",
+    "slack": "*First contribution welcome.*\n\nNAEOS is open source. `good first issue` labels are ready. Code, docs, plugins, profiles — all welcome.\n\nhttps://github.com/NAEOS-foundation/naeos/issues",
+    "linkedin": "Open source is an invitation, not a spectator sport.\n\nNAEOS labels `good first issue` and welcomes code, docs, plugins, and profile contributions.\n\nStart: github.com/NAEOS-foundation/naeos/issues"
+  },
+  {
+    "date": "2026-09-19",
+    "slug": "architecture-deep-dive",
+    "title": "Architecture Deep Dive",
+    "enabled": true,
+    "platforms": ["discord"],
+    "discord": "**Arsitektur NAEOS dalam satu rangkaian:** :architecture:\n\nParser -> Normalizer -> Resolver -> NEIR -> Validator -> Scheduler -> Generator -> Compiler -> Governance -> Artifacts\n\nBaca: https://github.com/NAEOS-foundation/naeos",
+    "slack": ""
+  },
+  {
+    "date": "2026-09-20",
+    "slug": "open-source-journey",
+    "title": "Building in Public",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Kami membangun in public.** :building_construction:\n\nArsitektur, keputusan desain, eksperimen, dan pelajaran dibagikan terbuka. Gabung dalam perjalanan.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "slack": "*Building in public.*\n\nArchitecture decisions, experiments, and lessons are shared openly.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "We are building NAEOS in public.\n\nArchitecture decisions, experiments, failures, and lessons are shared openly in the repository.\n\nFollow along: github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-21",
+    "slug": "specify-once-build-anywhere",
+    "title": "Specify Once, Build Anywhere",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Specify Once. Build Anywhere.** :rocket:\n\nGambarkan sistem sekali, lalu bangun, validasi, dan evolusi di banyak bahasa/framework dari model yang sama.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "slack": "*Specify Once. Build Anywhere.*\n\nDescribe your system once, then build, validate, and evolve across languages and frameworks.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "Specify once. Build anywhere.\n\nOne engineering model, many languages and frameworks, with validation and governance held together.\n\nExplore: github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-22",
+    "slug": "try-video-both-langs",
+    "title": "Watch the Demo in Your Language",
+    "enabled": true,
+    "platforms": ["discord", "slack"],
+    "discord": "**Demo dalam dua bahasa.** :earth_asia:\n\nVideo demo NAEOS tersedia EN dan ID.\n\nEnglish: https://naeos.dev/download/\nBahasa Indonesia: https://naeos.dev/id/download/",
+    "slack": "*Demo in two languages.*\n\nEnglish: https://naeos.dev/download/\nBahasa Indonesia: https://naeos.dev/id/download/"
+  },
+  {
+    "date": "2026-09-23",
+    "slug": "community-feedback",
+    "title": "Give Feedback",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Kami ingin mendengar dari Anda.** :mega:\n\nArtifact apa yang paling berguna? Adapter/tool apa yang Anda ingin lihat berikutnya? Feedbackmu menentukan roadmap.\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
+    "slack": "*Your feedback shapes the roadmap.*\n\nWhich artifacts matter most to you? Which adapters next?\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
+    "linkedin": "Your feedback shapes the NAEOS roadmap.\n\nWhich artifacts are most useful to you? Which AI-tool adapters should we build next?\n\nShare feedback: github.com/NAEOS-foundation/naeos/discussions"
+  }
+]

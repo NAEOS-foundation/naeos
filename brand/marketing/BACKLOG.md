@@ -26,6 +26,7 @@ Status values: backlog | in-progress | blocked | done
 | CLI demo day content pack (HN, X, LinkedIn, Reddit) | Convert Awareness to First successful run | AI engineers/architects | Multi | S | High | CLI demo in repo | done | Founder | run-demo.sh clones/results |
 | Video demo release + announcement (Discord/Slack/LinkedIn, README, site) | Visual discovery + community broadcast | All | Discord/Slack/LinkedIn/README/site | S | Medium | Demo video produced | done | Founder | Views, channel reach, announce post visible |
 | Publish 30-day marketing engine calendar | Give team/community predictable rhythm | All | Website | M | Medium | Positioning | done | Founder | Schedule adherence |
+| Automated social scheduler (content-calendar.json + social-post.sh + GH Action cron) | Publish calendar entries daily across Discord/Slack/LinkedIn | Community + founders | CI/brand | S | Medium | Tokens + scripts | done | Founder | Scheduled posts land on time |
 | NEIR architecture article series | Educate on central engineering model | Software architects | Dev.to/Medium/HN | M | Medium | Architecture docs | backlog | Founder | Article reads, referrals |
 | Governance + audit trail stories | Build enterprise trust | Regulated/enterprise | LinkedIn | M | Medium | Product features | backlog | Founder | Enterprise inquiries |
 

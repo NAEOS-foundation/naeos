@@ -1,0 +1,46 @@
+name: social-post
+
+on:
+  schedule:
+    - cron: "30 7 * * *" # 07:30 UTC daily
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Override date (YYYY-MM-DD, UTC). Default: today"
+        required: false
+        type: string
+      platforms:
+        description: "Comma-separated platforms (discord,slack,linkedin). Default: all"
+        required: false
+        type: string
+        default: "discord,slack,linkedin"
+      dry_run:
+        description: "Dry run (validate only, do not post)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post scheduled content
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DISCORD_ANNOUNCE_CHANNEL: ${{ secrets.DISCORD_ANNOUNCE_CHANNEL }}
+          NAEOS_SLACK_TOKEN: ${{ secrets.NAEOS_SLACK_TOKEN }}
+          NAEOS_SLACK_ANNOUNCE_CHANNEL: ${{ secrets.NAEOS_SLACK_ANNOUNCE_CHANNEL }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
+        run: |
+          ARGS=()
+          if [ -n "${{ inputs.date }}" ]; then ARGS+=(--date "${{ inputs.date }}"); fi
+          if [ -n "${{ inputs.platforms }}" ]; then ARGS+=(--platforms "${{ inputs.platforms }}"); fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          ./scripts/social-post.sh "${ARGS[@]}"
