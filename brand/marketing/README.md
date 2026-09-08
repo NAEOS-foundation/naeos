@@ -23,6 +23,7 @@ Core message:
 - video-demo-storyboard.md — scene-by-scene production storyboard
 - youtube-demo-script.md — 60–90 second YouTube explainer script
 - youtube-short-script.md — 20–45 second YouTube Shorts script
+- cli-demo-case-study-video.md — evidence-based 75–90 second CLI case study
 
 ## Recommended use
 
@@ -30,6 +31,7 @@ Core message:
 - LinkedIn: pipeline-diagram.svg + founder narrative
 - X: social-template.md + one strong claim and one CTA
 - Product page: hero-banner.svg with supporting pipeline diagram
+- Case study: `cli-demo-case-study-video.md` + the runnable demo in `examples/demo-cli/`
 
 ## Brand baseline
 
