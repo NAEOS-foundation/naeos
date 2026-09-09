@@ -68,7 +68,9 @@ type Evaluator interface {
 | `not_empty` | `not_empty:key` | Check if key value is not empty |
 | `contains` | `contains:key,substr` | Check if value contains substring |
 | `gt` | `gt:key,value` | Greater than comparison |
+| `gte` | `gte:key,value` | Greater than or equal comparison |
 | `lt` | `lt:key,value` | Less than comparison |
+| `lte` | `lte:key,value` | Less than or equal comparison |
 | `in` | `in:key,v1,v2,...` | Check if value is in allowed list |
 | `equals` | `key:expected` | Exact equality match (default) |
 

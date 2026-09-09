@@ -354,7 +354,7 @@ Ditambah:
 ### 5.6 Tata Kelola & Kepatuhan
 
 **Policy & Governance:**
-- Policy Evaluator — 7 operator, 5 aturan bawaan
+- Policy Evaluator — 9 operator, 5 aturan bawaan
 - Artifact Review — pemeriksaan artefak terhadap aturan governance
 - Audit Trail — jejak keputusan yang dapat ditelusuri
 - RBAC hierarkis — role admin/developer/viewer dengan parent chain dan deny rules; 4 template kepatuhan (auditor, SOC2, GDPR, HIPAA)

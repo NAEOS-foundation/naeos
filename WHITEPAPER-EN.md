@@ -354,7 +354,7 @@ Additionally:
 ### 5.6 Governance & Compliance
 
 **Policy & Governance:**
-- Policy Evaluator — 7 operators, 5 built-in rules
+- Policy Evaluator — 9 operators, 5 built-in rules
 - Artifact Review — artifact inspection against governance rules
 - Audit Trail — traceable decision trail
 - Hierarchical RBAC — admin/developer/viewer roles with parent chains and deny rules; 4 compliance templates (auditor, SOC2, GDPR, HIPAA)

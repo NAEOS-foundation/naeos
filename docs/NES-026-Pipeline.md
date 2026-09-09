@@ -356,8 +356,11 @@ Evaluates governance rules with operators:
 - `not_empty:key` - Check if key is not empty
 - `contains:key,substr` - Check if value contains substring
 - `gt:key,value` - Greater than comparison
+- `gte:key,value` - Greater than or equal comparison
 - `lt:key,value` - Less than comparison
+- `lte:key,value` - Less than or equal comparison
 - `in:key,v1,v2` - Check if value is in list
+- `key:expected` - Exact equality match (default)
 
 ### 6.10 Graph
 

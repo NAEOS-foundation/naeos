@@ -15,7 +15,7 @@ The policy model covers rule definition, precedence, evaluator logic, and policy
 ### 4.1 Functional Requirements
 - FR-001: The system shall support declarative policy definitions.
 - FR-002: The policy engine shall evaluate rules according to defined precedence.
-- FR-003: The system shall support 7 comparison operators.
+- FR-003: The system shall support 9 comparison operators.
 - FR-004: The policy engine shall provide default rules for common constraints.
 
 ### 4.2 Non-Functional Requirements
@@ -40,13 +40,15 @@ type PolicyRule struct {
 
 | Operator | Deskripsi | Contoh |
 |----------|-----------|--------|
-| exists | Field ada | project.exists |
-| not_empty | Field tidak kosong | project.name.not_empty |
-| contains | Mengandung string | architecture.pattern.contains("microservices") |
-| gt | Lebih besar dari | modules.length.gt(0) |
-| lt | Lebih kecil dari | services.length.lt(10) |
-| in | Salah satu dari daftar | deployment.strategy.in("kubernetes","docker") |
-| == | Sama dengan | project.name == "my-project" |
+| exists | Field ada | exists:project |
+| not_empty | Field tidak kosong | not_empty:project.name |
+| contains | Mengandung string | contains:architecture.pattern,microservices |
+| gt | Lebih besar dari | gt:modules.length,0 |
+| gte | Lebih besar atau sama dengan | gte:services.length,1 |
+| lt | Lebih kecil dari | lt:services.length,10 |
+| lte | Lebih kecil atau sama dengan | lte:services.length,10 |
+| in | Salah satu dari daftar | in:deployment.strategy,kubernetes,docker |
+| equals | Sama dengan (default) | project.name:my-project |
 
 ### 5.3 Default Rules
 

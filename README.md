@@ -1,7 +1,7 @@
 # NAEOS Foundation — NAEOS
 
 [![CI](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg)](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Go Version](https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/NAEOS-foundation/naeos)](https://goreportcard.com/report/github.com/NAEOS-foundation/naeos)
 [![Release](https://img.shields.io/github/v/release/NAEOS-foundation/naeos)](https://github.com/NAEOS-foundation/naeos/releases)
@@ -33,7 +33,7 @@ Scripts in `scripts/` publish announcement content to community channels. Creden
 
 The content calendar lives at [`brand/marketing/content-calendar.json`](brand/marketing/content-calendar.json) (date → platforms → message per channel). The [`social-post.yml`](.github/workflows/social-post.yml) workflow runs it automatically at 07:30 UTC daily; the required values are supplied as GitHub repository secrets (`DISCORD_TOKEN`, `DISCORD_ANNOUNCE_CHANNEL`, `NAEOS_SLACK_TOKEN`, `NAEOS_SLACK_ANNOUNCE_CHANNEL`, `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_URN`).
 
-All scripts support `--dry-run` to preview the payload without publishing.
+All scripts support `--dry-run` to preview the payload without publishing. `social-post.sh` also guards against duplicate posts (retries failed sends up to 3 times, logs every post to `.social-post.log`, and skips dates/platforms already sent), plus `--show-log` / `--reset-log` for inspecting or clearing that log.
 
 ## Quick Start
 
@@ -137,10 +137,10 @@ Poster and videos live in [`brand/marketing/`](brand/marketing/).
 ### Marketplace
 - **Profile Marketplace** — publish, search, download industry profiles
 - **Plugin Marketplace** — install, uninstall, search plugins
-- **5 Built-in Profiles**: SaaS, AI Agent, FinTech, Healthcare, Government
+- **6 Built-in Profiles**: SaaS, AI Agent, FinTech, Healthcare, Education, Government
 
 ### Governance
-- **Policy Evaluator** — 7 operators, 5 default rules
+- **Policy Evaluator** — 9 operators, 5 default rules
 - **Artifact Review** — governance rules
 - **Audit Trail** — traceability
 
