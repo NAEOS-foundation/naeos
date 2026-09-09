@@ -132,5 +132,73 @@
     "discord": "**Kami ingin mendengar dari Anda.** :mega:\n\nArtifact apa yang paling berguna? Adapter/tool apa yang Anda ingin lihat berikutnya? Feedbackmu menentukan roadmap.\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
     "slack": "*Your feedback shapes the roadmap.*\n\nWhich artifacts matter most to you? Which adapters next?\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
     "linkedin": "Your feedback shapes the NAEOS roadmap.\n\nWhich artifacts are most useful to you? Which AI-tool adapters should we build next?\n\nShare feedback: github.com/NAEOS-foundation/naeos/discussions"
+  },
+  {
+    "date": "2026-09-24",
+    "slug": "case-study-demo",
+    "title": "Case Study: A Reviewer Tries the Demo",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Studi kasus: satu tim mencoba spec-driven engineering.** :book:\n\nBagaimana seorang reviewer yang skeptis menjalankan demo NAEOS — satu spec YAML jadi proyek Go + TypeScript dengan validasi. Enam alasan tim mencoba pendekatan ini.\n\nBaca: https://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli",
+    "slack": "*Case study: spec-driven engineering in practice.*\n\nA skeptical reviewer runs the NAEOS demo: one YAML spec into a validated Go + TypeScript project.\n\nhttps://github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli",
+    "linkedin": "Case study: what happens when a skeptical reviewer actually runs the demo.\n\nOne YAML spec -> validated Go + TypeScript project, with AI context and a smoke test.\n\nSix reasons a team starts exploring spec-driven engineering:\n\n1. Single source of truth\n2. Validation before generation\n3. Reproducible pipeline\n4. AI context from the model\n5. Traceability end to end\n6. Governance hooks\n\nMore: github.com/NAEOS-foundation/naeos/tree/main/examples/demo-cli"
+  },
+  {
+    "date": "2026-09-25",
+    "slug": "machine-readable-architecture",
+    "title": "What If Architecture Were Machine-Readable?",
+    "enabled": true,
+    "platforms": ["discord", "slack"],
+    "discord": "**Bagaimana jika arsitektur bisa diaudit seperti kode?** :eye:\n\nKetika arsitektur menjadi machine-readable, ia bisa divalidasi, diuji, dan dievolusi — bukan sekadar dokumen hias. NEIR menjadikan itu praktis.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "slack": "*What if architecture were machine-readable?*\n\nThen it could be validated, tested, and evolved like code. NEIR makes that practical.\n\nhttps://github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-26",
+    "slug": "run-it-once",
+    "title": "The 30-Day Challenge: Run NAEOS Once",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Tantangan 30 hari: jalankan NAEOS sekali.** :muscle:\n\nCoba `go build -o naeos ./cmd/naeos`, lalu `./examples/demo-cli/run-demo.sh`. Kirim hasilnya ke GitHub Discussions!\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
+    "slack": "*30-day challenge: run NAEOS once.*\n\nBuild the CLI and run the demo. Share your results in GitHub Discussions.\n\nhttps://github.com/NAEOS-foundation/naeos/discussions",
+    "linkedin": "A 30-day challenge: just run NAEOS once.\n\n`go build -o naeos ./cmd/naeos && ./examples/demo-cli/run-demo.sh`\n\nOne YAML spec becomes a validated project with AI context and a smoke test. Prove it to yourself in under two minutes.\n\nShare what you get: github.com/NAEOS-foundation/naeos/discussions"
+  },
+  {
+    "date": "2026-09-27",
+    "slug": "research-open-source",
+    "title": "Built for Research and Open Collaboration",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**NAEOS open source & terbuka untuk riset.** :mortar_board:\n\nArchitecture decisions, experiments, dan benchmark tersedia untuk dikaji. Cocok untuk riset spec-driven engineering dan AI-native development.\n\nKolaborasi: https://github.com/NAEOS-foundation/naeos",
+    "slack": "*Open for research and collaboration.*\n\nArchitecture decisions, experiments, and benchmarks are open for study — useful for spec-driven engineering and AI-native development research.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "NAEOS is open source and open to research collaboration.\n\nIf your lab or team studies specification-driven engineering, AI-native development infrastructure, or verifiable software pipelines, the repository is yours to inspect and build on.\n\nCollab: github.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-28",
+    "slug": "roadmap-preview",
+    "title": "What's Next on the Roadmap",
+    "enabled": true,
+    "platforms": ["discord", "slack"],
+    "discord": "**Roadmap NAEOS: apa yang kami bangun berikutnya.** :compass:\n\nAdaptor baru, governance, plugin marketplace, dan eksperimen benchmark. Roadmap dibuka untuk feedback komunitas.\n\nLihat: https://github.com/NAEOS-foundation/naeos/blob/main/ROADMAP.md",
+    "slack": "*What's next for NAEOS.*\n\nNew adapters, governance, plugin marketplace, benchmark experiments. The roadmap is open for community feedback.\n\nhttps://github.com/NAEOS-foundation/naeos/blob/main/ROADMAP.md"
+  },
+  {
+    "date": "2026-09-29",
+    "slug": "lessons-in-public",
+    "title": "Lessons From Building in Public",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**Pelajaran dari membangun in public.** :student:\n\nKeputusan yang salah, eksperimen yang gagal, dan trade-off adalah bagian dari perjalanan. Kami membagikan semuanya.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "slack": "*Lessons from building in public.*\n\nWrong decisions, failed experiments, trade-offs — shared openly.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "Building in public means sharing the mistakes too.\n\nTwenty days in, here's what we've learned:\n\n- Validation before generation saves more than it costs\n- A machine-readable spec beats tribal knowledge\n- Community feedback outranks internal assumptions\n\nThe full journey is in the repository.\n\ngithub.com/NAEOS-foundation/naeos"
+  },
+  {
+    "date": "2026-09-30",
+    "slug": "first-30-days",
+    "title": "30 Days of NAEOS — Recap",
+    "enabled": true,
+    "platforms": ["discord", "slack", "linkedin"],
+    "discord": "**30 hari NAEOS: recap.** :tada:\n\nDemo CLI, video demo, konsep spec-driven engineering, governance, ecosystem, dan roadmap. Terima kasih sudah ikut perjalanan ini.\n\nMulai 30 hari berikutnya: https://github.com/NAEOS-foundation/naeos",
+    "slack": "*30 days of NAEOS in review.*\n\nCLI demo, video demo, spec-driven engineering concepts, governance, ecosystem, and roadmap. Thanks for following along.\n\nhttps://github.com/NAEOS-foundation/naeos",
+    "linkedin": "30 days of NAEOS, in review.\n\nWhat shipped:\n\n- Runnable CLI demo (YAML spec -> validated Go + TypeScript project)\n- Video walkthrough, EN and ID\n- Spec-driven engineering content series\n- Governance, ecosystem, and roadmap published openly\n\nThe next 30 days start now.\n\ngithub.com/NAEOS-foundation/naeos"
   }
 ]

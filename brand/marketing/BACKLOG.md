@@ -27,6 +27,7 @@ Status values: backlog | in-progress | blocked | done
 | Video demo release + announcement (Discord/Slack/LinkedIn, README, site) | Visual discovery + community broadcast | All | Discord/Slack/LinkedIn/README/site | S | Medium | Demo video produced | done | Founder | Views, channel reach, announce post visible |
 | Publish 30-day marketing engine calendar | Give team/community predictable rhythm | All | Website | M | Medium | Positioning | done | Founder | Schedule adherence |
 | Automated social scheduler (content-calendar.json + social-post.sh + GH Action cron) | Publish calendar entries daily across Discord/Slack/LinkedIn | Community + founders | CI/brand | S | Medium | Tokens + scripts | done | Founder | Scheduled posts land on time |
+| Social scheduler hardening (retry/backoff, duplicate prevention, post log, concurrency guard, calendar thru Sep 30) | Make scheduled posting reliable and idempotent | Community + founders | CI/brand | S | Medium | Scheduler v1 | done | Founder | No duplicate/failed silent posts |
 | NEIR architecture article series | Educate on central engineering model | Software architects | Dev.to/Medium/HN | M | Medium | Architecture docs | backlog | Founder | Article reads, referrals |
 | Governance + audit trail stories | Build enterprise trust | Regulated/enterprise | LinkedIn | M | Medium | Product features | backlog | Founder | Enterprise inquiries |
 

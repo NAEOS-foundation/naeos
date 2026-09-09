@@ -23,9 +23,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: social-post-${{ inputs.date || 'daily' }}
+  cancel-in-progress: false
+
 jobs:
   post:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,3 +49,5 @@ jobs:
           if [ -n "${{ inputs.platforms }}" ]; then ARGS+=(--platforms "${{ inputs.platforms }}"); fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
           ./scripts/social-post.sh "${ARGS[@]}"
+        shell: bash
+        working-directory: ${{ github.workspace }}

@@ -45,6 +45,10 @@ cmd/naeos/out/
 .env
 .env.local
 
+# Local test spec files
+naeos.yaml
+naeos.yml
+
 # SQLite database files
 *.db
 *.db-shm
