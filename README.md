@@ -145,14 +145,6 @@ location and optional AI compiler usage.
 ## Demo
 
 <p align="center">
-  <a href="brand/marketing/naeos-terminal-demo-en.mp4">
-    <img src="brand/marketing/naeos-marketing-poster.png"
-         alt="Watch the NAEOS CLI demo"
-         width="80%" />
-  </a>
-</p>
-
-<p align="center">
   <a href="https://youtu.be/C9QDlUqqaaI">
     <img src="https://img.youtube.com/vi/C9QDlUqqaaI/maxresdefault.jpg"
          alt="Watch the NAEOS demo on YouTube"
