@@ -1,22 +1,72 @@
-# NAEOS Foundation — NAEOS
+<div align="center">
 
-[![CI](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg)](https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/NAEOS-foundation/naeos)](https://goreportcard.com/report/github.com/NAEOS-foundation/naeos)
-[![Release](https://img.shields.io/github/v/release/NAEOS-foundation/naeos)](https://github.com/NAEOS-foundation/naeos/releases)
+<h1>NAEOS</h1>
 
-> Specify Once. Build Anywhere.
+<p><strong>Nusantara Engineering &amp; Architecture Operating System</strong></p>
 
-NAEOS (Nusantara Engineering & Architecture Operating System) is a declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline.
+<p>
+  <em>Specify once. Build anywhere.</em>
+</p>
 
-NAEOS is not just a project generator. NAEOS is an engineering runtime that understands specifications, builds an internal model, orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle.
+<p>
+  <a href="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml">
+    <img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status">
+  </a>
+  <a href="https://go.dev">
+    <img src="https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white" alt="Go version">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 license">
+  </a>
+  <a href="https://github.com/NAEOS-foundation/naeos/releases">
+    <img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release">
+  </a>
+</p>
+
+</div>
+
+NAEOS is a declarative engineering platform that transforms software specifications into validated, extensible engineering workflows. It provides a consistent model for defining, generating, governing, and evolving software systems.
+
+Unlike a project generator, NAEOS maintains an engineering model throughout the lifecycle: it parses specifications, builds **NEIR** (NAEOS Engineering Intermediate Representation), validates dependencies and policies, orchestrates execution, generates artifacts, and compiles context for AI development tools.
+
+## Contents
+
+- [Vision](#vision)
+- [How NAEOS works](#how-naeos-works)
+- [Quick start](#quick-start)
+- [Demo](#demo)
+- [Capabilities](#capabilities)
+- [Architecture](#architecture)
+- [Core components](#core-components)
+- [CLI commands](#cli-commands)
+- [Repository structure](#repository-structure)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Vision
 
-Build an open-source engineering platform that enables developers and organizations to describe their system once, then build, validate, and evolve software across multiple languages, frameworks, and platforms.
+NAEOS aims to help developers and organizations describe a system once, then build, validate, and evolve it across languages, frameworks, and platforms through an open-source engineering platform.
 
-## Project Guides
+## How NAEOS works
+
+```text
+Specification
+     │
+     ▼
+Parse → Normalize → Resolve → Build NEIR → Validate
+                                             │
+                                             ▼
+                                  Schedule → Generate
+                                             │
+                                             ▼
+                           AI context · Governance · Artifacts
+```
+
+The specification is the source of truth. NAEOS turns it into a structured engineering model that can be consumed by validation, generation, governance, documentation, and AI tooling.
+
+## Project guides
 
 - [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.
 - [Marketing experiment template](.github/ISSUE_TEMPLATE/marketing_experiment.md) — record campaign hypotheses, metrics, results, and learnings.
@@ -35,15 +85,15 @@ The content calendar lives at [`brand/marketing/content-calendar.json`](brand/ma
 
 All scripts support `--dry-run` to preview the payload without publishing. `social-post.sh` also guards against duplicate posts (retries failed sends up to 3 times, logs every post to `.social-post.log`, and skips dates/platforms already sent), plus `--show-log` / `--reset-log` for inspecting or clearing that log.
 
-## Quick Start
+## Quick start
 
 ```bash
-# Clone dan build
+# Clone and build
 git clone https://github.com/NAEOS-foundation/naeos.git
 cd naeos
 go build ./cmd/naeos/
 
-# Buat spesifikasi
+# Create a specification
 cat > spec.yaml << 'EOF'
 project: my-app
 modules:
@@ -62,18 +112,25 @@ generation:
   languages: [go, typescript]
 EOF
 
-# Init membuat config (naeos.yaml) yang otomatis dideteksi oleh run
+# Initialize configuration and run the pipeline
 naeos init
 naeos run --input-file spec.yaml
 
 # Generate AI context
 naeos context --input-file spec.yaml
 
-# Compile ke AI tools
+# Compile instructions for an AI tool
 naeos ai compile --input-file spec.yaml --target opencode
 ```
 
-### Runnable CLI demo
+The example above demonstrates the core workflow: define a specification, run validation and orchestration, generate an AI context bundle, and compile instructions for a target AI tool.
+
+### Requirements
+
+- Go 1.25 or later
+- Git
+
+### Run the local CLI demo
 
 Run the complete local demo (validate → context → generate):
 
@@ -85,7 +142,7 @@ go build -o naeos ./cmd/naeos
 See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
 location and optional AI compiler usage.
 
-### Video demo
+## Demo
 
 <p align="center">
   <a href="brand/marketing/naeos-terminal-demo-en.mp4">
@@ -95,13 +152,23 @@ location and optional AI compiler usage.
   </a>
 </p>
 
+<p align="center">
+  <a href="https://youtu.be/C9QDlUqqaaI">
+    <img src="https://img.youtube.com/vi/C9QDlUqqaaI/maxresdefault.jpg"
+         alt="Watch the NAEOS demo on YouTube"
+         width="80%" />
+  </a>
+</p>
+
+- [Watch the NAEOS demo on YouTube](https://youtu.be/C9QDlUqqaaI)
+
 - English terminal demo — [`naeos-terminal-demo-en.mp4`](brand/marketing/naeos-terminal-demo-en.mp4)
-- Bahasa Indonesia terminal demo — [`naeos-terminal-demo-id.mp4`](brand/marketing/naeos-terminal-demo-id.mp4)
-- 30-second cut — [`naeos-demo-30s.mp4`](brand/marketing/naeos-demo-30s.mp4) · [`naeos-demo-en-30s.mp4`](brand/marketing/naeos-demo-en-30s.mp4)
+- Indonesian terminal demo — [`naeos-terminal-demo-id.mp4`](brand/marketing/naeos-terminal-demo-id.mp4)
+- 30-second cuts — [`naeos-demo-30s.mp4`](brand/marketing/naeos-demo-30s.mp4) and [`naeos-demo-en-30s.mp4`](brand/marketing/naeos-demo-en-30s.mp4)
 
-Poster and videos live in [`brand/marketing/`](brand/marketing/).
+The poster and local videos are available in [`brand/marketing/`](brand/marketing/).
 
-## Features
+## Capabilities
 
 ### Core Pipeline
 - **Parser** — YAML/JSON specification parsing with variable interpolation
@@ -122,7 +189,7 @@ Poster and videos live in [`brand/marketing/`](brand/marketing/).
 - Schema versioning with auto-check (minimum v0.1.0)
 
 ### AI Integration
-- **Compiler** — transform NEIR ke AI instruction sets
+- **Compiler** — transform NEIR into AI instruction sets
 - **7 Output Adapters**:
   - GitHub Copilot — `.github/copilot-instructions.md`
   - Claude Code — `CLAUDE.md`
@@ -131,7 +198,7 @@ Poster and videos live in [`brand/marketing/`](brand/marketing/).
   - Codex — `AGENTS.md`
   - OpenCode — `AGENTS.md`
   - Windsurf — `.windsurfrules`
-- **MCP Server** — Model Context Protocol untuk AI agent integration
+- **MCP Server** — Model Context Protocol for AI agent integration
 - **Context Bundles** — LLM-optimized project summaries
 
 ### Marketplace
@@ -144,7 +211,7 @@ Poster and videos live in [`brand/marketing/`](brand/marketing/).
 - **Artifact Review** — governance rules
 - **Audit Trail** — traceability
 
-### Developer Tools
+### Developer tools
 - **200+ CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, serve, sign, helm, sbom, airgap, evidence, verify, policy, control, etc.
 - **Watch Mode** — hot-reload pipeline on spec changes
 - **Diff Engine** — compare specs with colorized output
@@ -173,7 +240,7 @@ Poster and videos live in [`brand/marketing/`](brand/marketing/).
 └─────────────┴──────────────┴──────────────┴─────────────┘
 ```
 
-## Core Components
+## Core components
 
 ### Kernel
 The kernel provides the runtime foundation:
@@ -315,10 +382,14 @@ docs/               # Documentation (57 NES specs)
 
 For upcoming work, see [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) and [ROADMAP.md](ROADMAP.md).
 
+## Contributing
+
+Contributions, documentation improvements, issue reports, and new integrations are welcome. Start with the [contribution guidelines](CONTRIBUTING.md), then review the [getting started guide](GETTING-STARTED.md) and open an issue or pull request.
+
 ## License
 
-Apache License 2.0
+NAEOS is released under the [Apache License 2.0](LICENSE).
 
 ## Status
 
-🟢 **Active Development** — NAEOS is under active development with full features for specification-driven engineering. Latest version: v3.4.0 (Helm chart scaffolding, air-gapped bundles, config providers).
+**Active development** — The latest documented release is v3.4.0, which includes Helm chart scaffolding, air-gapped bundles, and configuration providers. See the [release history](CHANGELOG.md) for details.
