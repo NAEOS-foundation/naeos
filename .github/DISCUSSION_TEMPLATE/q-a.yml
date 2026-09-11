@@ -1,0 +1,45 @@
+---
+title: "[Help]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before asking for help, please [search existing discussions](https://github.com/NAEOS-foundation/naeos/discussions?discussions_q=category%3AQ%26A) in the Q&A category and check the documentation:
+
+        - [GETTING-STARTED.md](https://github.com/NAEOS-foundation/naeos/blob/main/GETTING-STARTED.md)
+        - [docs/NES-041-Troubleshooting.md](https://github.com/NAEOS-foundation/naeos/blob/main/docs/NES-041-Troubleshooting.md)
+        - `naeos doctor` — built-in environment diagnosis
+
+        Your question may already be answered. Be specific enough that someone can answer without guessing.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you need help with?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: What You Tried
+      description: Include the command you ran, a minimal specification/configuration, and any troubleshooting you already did.
+      render: yaml
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The NAEOS version you are using. Test with the latest release when possible.
+      placeholder: e.g. 3.4.0
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Error Output
+      description: For long output, use a GitHub Gist and paste the link here.
+      render: text
+    validations:
+      required: false

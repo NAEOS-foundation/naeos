@@ -98,6 +98,16 @@ This document serves as the master index for navigating the NAEOS repository.
 - [examples/adr-example.md](examples/adr-example.md) — completed ADR example.
 - [examples/rfc-example.md](examples/rfc-example.md) — completed RFC example.
 
+### 7.1 Community
+- [docs/community/contributor-ladder.md](docs/community/contributor-ladder.md) — the nine contributor stages from Observer to Ecosystem partner.
+- [docs/community/discussions.md](docs/community/discussions.md) — GitHub Discussions guide (categories, norms, and contribution flow).
+- [CONTRIBUTING.md](CONTRIBUTING.md) — engineering contribution guidelines.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — community conduct.
+- [SECURITY.md](SECURITY.md) — security / vulnerability reporting.
+- [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE/) — issue templates (bug, feature, documentation, plugin/profile, marketing experiment).
+- [.github/DISCUSSION_TEMPLATE/](.github/DISCUSSION_TEMPLATE/) — structured GitHub Discussions forms (ideas, Q&A, show-and-tell).
+- [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) — pull request template.
+
 ## 8. Modular documentation structure
 - [docs/README.md](docs/README.md) — NAEOS documentation structure map.
 - [docs/NES-000-Foundation.md](docs/NES-000-Foundation.md) — foundation.

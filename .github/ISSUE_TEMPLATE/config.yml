@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: NAEOS Discussions
+    url: https://github.com/NAEOS-foundation/naeos/discussions
+    about: Ask questions, share ideas, show-and-tell, and follow the Founder Journal.
+  - name: NAEOS Discord
+    url: https://discord.gg/naeos
+    about: Real-time discussion with the community and maintainers (powered by tools/discord-bot).
+  - name: NAEOS Documentation
+    url: https://naeos.dev/docs/getting-started
+    about: Documentation and getting-started guides before opening an issue.

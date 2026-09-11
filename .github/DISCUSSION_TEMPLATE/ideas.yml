@@ -1,0 +1,41 @@
+---
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before starting a new idea, please [search existing discussions](https://github.com/NAEOS-foundation/naeos/discussions?discussions_q=category%3AIdeas) in the Ideas category and use reactions to up-vote ideas you support.
+
+        Every idea maps to a stage in the [contributor ladder](https://github.com/NAEOS-foundation/naeos/blob/main/CONTRIBUTING.md). Even rough sketches are welcome.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A written overview of the idea or proposed change.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe the problem this idea solves or the scenario where it helps. The more concrete, the better.
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: Sketch (optional)
+      description: Optional example specification, CLI command, configuration, or workflow snippet of how the idea might look in practice.
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related discussions, issues, pull requests, or documentation.
+      placeholder: |
+        #GH-0000
+    validations:
+      required: false

@@ -1,0 +1,35 @@
+---
+title: "[Show and tell]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share what you built or learned with NAEOS: a project generated from a specification, a plugin, a profile, an integration, a benchmark, or an experiment.
+
+        Before posting, please [search existing discussions](https://github.com/NAEOS-foundation/naeos/discussions?discussions_q=category%3A%22Show%20and%20tell%22) to avoid duplicates.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What did you build or learn?
+      description: A short summary of the project or experiment.
+    validations:
+      required: true
+  - type: textarea
+    id: recipe
+    attributes:
+      label: Recipe
+      description: The specification, commands, or configuration that made it work — others can reproduce or fork it.
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: takeaways
+    attributes:
+      label: Takeaways
+      description: What worked, what surprised you, and what you would improve.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        If you would like your project featured in the NAEOS website, ecosystem docs, or benchmarks, mention maintainers or open a related idea discussion.

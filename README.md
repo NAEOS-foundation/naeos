@@ -378,6 +378,13 @@ For upcoming work, see [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) and [ROADMAP.m
 
 Contributions, documentation improvements, issue reports, and new integrations are welcome. Start with the [contribution guidelines](CONTRIBUTING.md), then review the [getting started guide](GETTING-STARTED.md) and open an issue or pull request.
 
+## Community & Support
+
+- [Contributor ladder](docs/community/contributor-ladder.md) — the nine stages from Observer to Ecosystem partner.
+- [Discussions](https://github.com/NAEOS-foundation/naeos/discussions) — ask questions, share ideas, and show what you built.
+- [Discord](https://discord.gg/naeos) — real-time discussion with the community and maintainers.
+- [Discussions guide](docs/community/discussions.md) — categories, norms, and how conversations become contributions.
+
 ## License
 
 NAEOS is released under the [Apache License 2.0](LICENSE).
