@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 // ============================================================================
@@ -34,6 +37,12 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/policy", server.handleGetPolicy)
 	server.mux.HandleFunc("/api/grants", server.handleGetGrants)
 	server.mux.HandleFunc("/api/verification", server.handleVerifySession)
+	server.mux.HandleFunc("/api/control-plane/decision", server.handleControlPlaneDecision)
+	server.mux.HandleFunc("/api/control-plane/session", server.handleControlPlaneSession)
+	server.mux.HandleFunc("/api/control-plane/evidence", server.handleControlPlaneEvidence)
+	server.mux.HandleFunc("/api/control-plane/approval", server.handleControlPlaneApproval)
+	server.mux.HandleFunc("/api/control-plane/approval/", server.handleControlPlaneApprovalStatus)
+	server.mux.HandleFunc("/api/control-plane/approval/approve", server.handleControlPlaneApprovalApprove)
 	server.mux.HandleFunc("/api/reset", server.handleReset)
 
 	return server
@@ -209,6 +218,195 @@ func (as *APIServer) handleVerifySession(w http.ResponseWriter, r *http.Request)
 
 	verification := as.setup.IndependentVerifier.VerifySession(req.AgentID)
 	writeJSON(w, verification)
+}
+
+func (as *APIServer) handleControlPlaneDecision(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		AgentID      string `json:"agent_id"`
+		Capability   string `json:"capability"`
+		PolicyID     string `json:"policy_id,omitempty"`
+		ArtifactHash string `json:"artifact_hash,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+	if req.AgentID == "" || req.Capability == "" {
+		http.Error(w, "agent_id and capability are required", http.StatusBadRequest)
+		return
+	}
+
+	grant, err := as.setup.GrantStore.GetGrantByAgent(req.AgentID)
+	if err != nil {
+		writeJSON(w, map[string]interface{}{
+			"status":  "DENY",
+			"allowed": false,
+			"reason":  "grant_missing",
+			"message": err.Error(),
+		})
+		return
+	}
+	policyID := req.PolicyID
+	if policyID == "" {
+		policyID = grant.PolicyID
+	}
+	policy, err := as.setup.PolicyStore.GetPolicy(policyID)
+	if err != nil {
+		writeJSON(w, map[string]interface{}{
+			"status":  "DENY",
+			"allowed": false,
+			"reason":  "policy_missing",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	decision := as.setup.ControlPlaneGateway.Authorize(controlplane.AuthorizeRequest{
+		AgentID: req.AgentID,
+		Action: controlplane.Action{
+			AgentID:      req.AgentID,
+			Capability:   controlplane.Capability(req.Capability),
+			ArtifactHash: req.ArtifactHash,
+			Context:      map[string]string{"source": "api"},
+		},
+		Grant:   toControlPlaneGrant(grant),
+		Policy:  toControlPlanePolicy(policy),
+		Context: controlplane.AuthorizationContext{Now: time.Now().UTC()},
+	})
+
+	writeJSON(w, map[string]interface{}{
+		"status":         string(decision.Status),
+		"decision_id":    decision.DecisionID,
+		"request_id":     decision.RequestID,
+		"allowed":        decision.Status == controlplane.DecisionAllow,
+		"needs_approval": decision.Status == controlplane.DecisionPending,
+		"reason":         string(decision.Reason),
+		"message":        decision.Message,
+		"policy_id":      decision.PolicyID,
+		"policy_version": decision.PolicyVersion,
+		"requested":      string(decision.Requested),
+	})
+}
+
+func (as *APIServer) handleControlPlaneSession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		AgentID string `json:"agent_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if as.setup.ControlPlaneGateway == nil || as.setup.ControlPlaneGateway.Ledger == nil {
+		writeJSON(w, map[string]interface{}{"result": "FAIL", "policy_compliant": false, "issues": []string{"control plane ledger unavailable"}})
+		return
+	}
+	if as.setup.ControlPlaneVerifier == nil {
+		writeJSON(w, map[string]interface{}{"result": "FAIL", "policy_compliant": false, "issues": []string{"control plane verifier unavailable"}})
+		return
+	}
+	summary := as.setup.ControlPlaneVerifier.VerifySession(req.AgentID)
+	writeJSON(w, summary)
+}
+
+func (as *APIServer) handleControlPlaneEvidence(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if as.setup.ControlPlaneGateway == nil || as.setup.ControlPlaneGateway.Ledger == nil {
+		writeJSON(w, map[string]interface{}{
+			"events": []interface{}{},
+			"total":  0,
+		})
+		return
+	}
+
+	events := as.setup.ControlPlaneGateway.Ledger.Events()
+	writeJSON(w, map[string]interface{}{
+		"events": events,
+		"total":  len(events),
+	})
+}
+
+func (as *APIServer) handleControlPlaneApproval(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		DecisionID string `json:"decision_id"`
+		Approver   string `json:"approver"`
+		ExpiresIn  int    `json:"expires_in_seconds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+	expiresAt := time.Time{}
+	if req.ExpiresIn > 0 {
+		expiresAt = time.Now().UTC().Add(time.Duration(req.ExpiresIn) * time.Second)
+	}
+	approval, err := as.setup.ControlPlaneGateway.RequestApproval(
+		controlplane.DecisionResult{DecisionID: req.DecisionID, Status: controlplane.DecisionPending},
+		req.Approver,
+		expiresAt,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, approval)
+}
+
+func (as *APIServer) handleControlPlaneApprovalApprove(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		ApprovalID   string `json:"approval_id"`
+		Reason       string `json:"reason"`
+		ArtifactHash string `json:"artifact_hash"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+	approval, err := as.setup.ControlPlaneGateway.Approve(req.ApprovalID, req.Reason, req.ArtifactHash, time.Now().UTC())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, approval)
+}
+
+func (as *APIServer) handleControlPlaneApprovalStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	approvalID := strings.TrimPrefix(r.URL.Path, "/api/control-plane/approval/")
+	if approvalID == "" || approvalID == "approve" {
+		http.Error(w, "approval ID is required", http.StatusBadRequest)
+		return
+	}
+	approval, err := as.setup.ControlPlaneGateway.Approvals.Get(approvalID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	writeJSON(w, approval)
 }
 
 // handleReset resets the demo to initial state.

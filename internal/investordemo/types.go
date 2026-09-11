@@ -191,6 +191,8 @@ type ExecutionRequest struct {
 type ExecutionResult struct {
 	ExecutionID        string                 `json:"execution_id"`
 	RequestID          string                 `json:"request_id"`
+	DecisionID         string                 `json:"decision_id,omitempty"`
+	EvidenceID         string                 `json:"evidence_id,omitempty"`
 	Timestamp          time.Time              `json:"timestamp"`
 	AgentID            string                 `json:"agent_id"`
 	Capability         Capability             `json:"capability"`

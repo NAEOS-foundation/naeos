@@ -247,6 +247,176 @@ func TestAPIVerification(t *testing.T) {
 	}
 }
 
+func TestAPIControlPlaneDecision(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/decision", `{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp["status"] != "ALLOW" {
+		t.Errorf("expected ALLOW, got %v", resp["status"])
+	}
+	if resp["allowed"] != true {
+		t.Errorf("expected allowed=true, got %v", resp["allowed"])
+	}
+
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/decision", `{"agent_id":"agent-payment-01","capability":"credential.rotate"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp["status"] != "DENY" {
+		t.Errorf("expected DENY, got %v", resp["status"])
+	}
+}
+
+func TestAPIControlPlaneSession(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/session", `{"agent_id":"agent-payment-01"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	var resp map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp["result"] == nil {
+		t.Fatal("expected result field in session summary")
+	}
+}
+
+func TestAPIControlPlaneEvidence(t *testing.T) {
+	as, _ := newTestAPI(t)
+	doJSON(t, as, http.MethodPost, "/api/control-plane/decision", `{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+
+	rec := doJSON(t, as, http.MethodGet, "/api/control-plane/evidence", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	var resp struct {
+		Events []map[string]interface{} `json:"events"`
+		Total  int                      `json:"total"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Total != 1 || len(resp.Events) != 1 {
+		t.Fatalf("expected one control-plane evidence event, got total=%d events=%d", resp.Total, len(resp.Events))
+	}
+
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/evidence", "")
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405, got %d", rec.Code)
+	}
+}
+
+func TestAPIControlPlaneApprovalLifecycle(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/approval", `{"decision_id":"DEC-API-1","approver":"reviewer-1","expires_in_seconds":60}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var approval struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &approval); err != nil {
+		t.Fatal(err)
+	}
+	if approval.ID == "" {
+		t.Fatal("expected approval ID")
+	}
+	rec = doJSON(t, as, http.MethodGet, "/api/control-plane/approval/"+approval.ID, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected approval status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var status struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatal(err)
+	}
+	if status.Status != "pending" {
+		t.Fatalf("expected pending status, got %s", status.Status)
+	}
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/approval/approve",
+		`{"approval_id":"`+approval.ID+`","reason":"reviewed","artifact_hash":"sha256:test"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, as, http.MethodGet, "/api/control-plane/approval/"+approval.ID, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected approved status 200, got %d", rec.Code)
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatal(err)
+	}
+	if status.Status != "approved" {
+		t.Fatalf("expected approved status, got %s", status.Status)
+	}
+}
+
+func TestAPIControlPlaneEndToEndEvidenceFlow(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("decision returned %d", rec.Code)
+	}
+	var decision struct {
+		Status     string `json:"status"`
+		RequestID  string `json:"request_id"`
+		DecisionID string `json:"decision_id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &decision); err != nil {
+		t.Fatal(err)
+	}
+	if decision.Status != "ALLOW" || decision.RequestID == "" || decision.DecisionID == "" {
+		t.Fatalf("unexpected decision response: %+v", decision)
+	}
+
+	rec = doJSON(t, as, http.MethodGet, "/api/control-plane/evidence", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("evidence returned %d", rec.Code)
+	}
+	var evidence struct {
+		Events []struct {
+			RequestID  string `json:"request_id"`
+			DecisionID string `json:"decision_id"`
+		} `json:"events"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &evidence); err != nil {
+		t.Fatal(err)
+	}
+	if len(evidence.Events) == 0 {
+		t.Fatal("expected evidence event")
+	}
+	last := evidence.Events[len(evidence.Events)-1]
+	if last.RequestID != decision.RequestID || last.DecisionID != decision.DecisionID {
+		t.Fatalf("decision/evidence correlation mismatch: decision=%+v evidence=%+v", decision, last)
+	}
+
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/session", `{"agent_id":"agent-payment-01"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("session returned %d", rec.Code)
+	}
+	var session struct {
+		Result          string `json:"result"`
+		PolicyCompliant bool   `json:"policy_compliant"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &session); err != nil {
+		t.Fatal(err)
+	}
+	if session.Result != "PASS" || !session.PolicyCompliant {
+		t.Fatalf("unexpected session result: %+v", session)
+	}
+}
+
 func TestAPIReset(t *testing.T) {
 	as, _ := newTestAPI(t)
 

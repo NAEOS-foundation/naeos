@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 // generateID generates a unique ID with a prefix.
@@ -24,14 +26,16 @@ func generateNonce() string {
 // ============================================================================
 
 type DemoSetup struct {
-	PolicyStore         *PolicyStore
-	GrantStore          *GrantStore
-	AuditLedger         *AuditLedger
-	PolicyEngine        *PolicyEngine
-	CapabilityAuthority *CapabilityAuthority
-	HandoffValidator    *HandoffValidator
-	IndependentVerifier *IndependentVerifier
-	ExecutionGate       *ExecutionGate
+	PolicyStore          *PolicyStore
+	GrantStore           *GrantStore
+	AuditLedger          *AuditLedger
+	PolicyEngine         *PolicyEngine
+	CapabilityAuthority  *CapabilityAuthority
+	HandoffValidator     *HandoffValidator
+	IndependentVerifier  *IndependentVerifier
+	ExecutionGate        *ExecutionGate
+	ControlPlaneGateway  *controlplane.DecisionGateway
+	ControlPlaneVerifier *controlplane.SessionVerifier
 }
 
 // SetupDemoEnvironment sets up the initial demo state with policies, grants, and components.
@@ -55,6 +59,8 @@ func SetupDemoEnvironment() *DemoSetup {
 
 	// Create execution gate
 	executionGate := NewExecutionGate(capabilityAuthority, handoffValidator, auditLedger, policyEngine, independentVerifier)
+	controlPlaneGateway := newControlPlaneGateway(policyStore, grantStore)
+	executionGate.controlPlaneGateway = controlPlaneGateway
 
 	// Create the demo policy
 	policy := &Policy{
@@ -100,16 +106,22 @@ func SetupDemoEnvironment() *DemoSetup {
 	}
 
 	_ = grantStore.StoreGrant(grant)
+	controlPlaneGateway = newControlPlaneGateway(policyStore, grantStore)
+	executionGate.controlPlaneGateway = controlPlaneGateway
+	controlPlaneVerifier := controlplane.NewSessionVerifier(controlPlaneGateway.Ledger, controlPlaneGateway.Evaluator)
+	auditLedger.SetObserver(&controlPlaneAuditObserver{ledger: controlPlaneGateway.Ledger})
 
 	return &DemoSetup{
-		PolicyStore:         policyStore,
-		GrantStore:          grantStore,
-		AuditLedger:         auditLedger,
-		PolicyEngine:        policyEngine,
-		CapabilityAuthority: capabilityAuthority,
-		HandoffValidator:    handoffValidator,
-		IndependentVerifier: independentVerifier,
-		ExecutionGate:       executionGate,
+		PolicyStore:          policyStore,
+		GrantStore:           grantStore,
+		AuditLedger:          auditLedger,
+		PolicyEngine:         policyEngine,
+		CapabilityAuthority:  capabilityAuthority,
+		HandoffValidator:     handoffValidator,
+		IndependentVerifier:  independentVerifier,
+		ExecutionGate:        executionGate,
+		ControlPlaneGateway:  controlPlaneGateway,
+		ControlPlaneVerifier: controlPlaneVerifier,
 	}
 }
 

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 // ============================================================================
@@ -299,6 +301,7 @@ type ExecutionGate struct {
 	auditLedger         *AuditLedger
 	policyEngine        *PolicyEngine
 	verifier            *IndependentVerifier
+	controlPlaneGateway *controlplane.DecisionGateway
 }
 
 // NewExecutionGate creates a new execution gate.
@@ -331,7 +334,16 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		Executed:    false,
 	}
 
-	// Step 1: Get the agent's grant and check authorization
+	// Step 1: The reusable control plane is the authoritative decision boundary.
+	decision, ok := eg.enforceControlPlane(request)
+	result.DecisionID = decision.DecisionID
+	if !ok {
+		result.Error = fmt.Sprintf("Authorization denied by control plane: %s", decision.Message)
+		eg.recordAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, "", 0, "BLOCK", string(decision.Reason))
+		return result, nil
+	}
+
+	// Step 2: Keep the legacy authority as a compatibility consistency check.
 	authDecision := eg.capabilityAuthority.CheckAuthorization(request.AgentID, request.Capability)
 	if !authDecision.Authorized {
 		result.Error = fmt.Sprintf("Authorization denied: %s", authDecision.Reason)
@@ -339,7 +351,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		return result, nil
 	}
 
-	// Step 2: If a handoff contract was provided, validate it
+	// Step 3: If a handoff contract was provided, validate it
 	if request.HandoffContract != nil {
 		handoffValidation := eg.handoffValidator.ValidateHandoff(request.HandoffContract)
 		if !handoffValidation.Valid {
@@ -349,7 +361,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		}
 	}
 
-	// Step 3: Re-check authorization at execution time using current policy
+	// Step 4: Re-check authorization at execution time using current policy
 	// This ensures that policy changes are respected even if the authorization was valid before
 	currentGrant, err := eg.capabilityAuthority.grantStore.GetGrantByAgent(request.AgentID)
 	if err != nil || !currentGrant.IsValid() {
@@ -358,7 +370,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		return result, nil
 	}
 
-	// Step 3b: Verify the grant's policy version still matches the active policy.
+	// Step 4b: Verify the grant's policy version still matches the active policy.
 	// If the policy has been superseded (e.g., POLICY-017 v17 → v18), the old grant
 	// is stale and must be blocked. This enforces Demo Principle #6:
 	// "Bind authorization to policy version."
@@ -396,7 +408,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		return result, nil
 	}
 
-	// Step 4: Authorization granted - execute the capability
+	// Step 5: Authorization granted - execute the capability
 	result.Authorized = true
 	result.Executed = true
 	result.Result = map[string]interface{}{
@@ -404,13 +416,52 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		"capability": request.Capability,
 	}
 
-	// Step 5: Run independent verification
+	// Step 6: Run independent verification
 	verificationResult := eg.verifier.Verify(request.AgentID, request.Capability, currentGrant.PolicyID)
 	result.VerificationStatus = verificationResult.Result
 
 	eg.recordAuditEvent("EXECUTION_ALLOWED", request.AgentID, request.Capability, currentGrant.PolicyID, currentGrant.PolicyVersion, "ALLOW", "AUTHORIZED")
 
 	return result, nil
+}
+
+func (eg *ExecutionGate) enforceControlPlane(request *ExecutionRequest) (controlplane.DecisionResult, bool) {
+	if eg == nil || eg.controlPlaneGateway == nil {
+		return controlplane.DecisionResult{
+			Status:  controlplane.DecisionDeny,
+			Reason:  controlplane.DecisionReason("gateway_unavailable"),
+			Message: "control plane gateway unavailable",
+		}, false
+	}
+
+	grant, err := eg.capabilityAuthority.grantStore.GetGrantByAgent(request.AgentID)
+	if err != nil {
+		return controlplane.DecisionResult{Status: controlplane.DecisionDeny, Reason: controlplane.ReasonDeniedByGrant, Message: fmt.Sprintf("grant not found for %s", request.AgentID)}, false
+	}
+	policy, err := eg.policyEngine.policyStore.GetPolicy(grant.PolicyID)
+	if err != nil {
+		return controlplane.DecisionResult{Status: controlplane.DecisionDeny, Reason: controlplane.ReasonNoPolicyFound, Message: fmt.Sprintf("policy not found for %s", grant.PolicyID)}, false
+	}
+
+	decision := eg.controlPlaneGateway.Authorize(controlplane.AuthorizeRequest{
+		RequestID: request.RequestID,
+		AgentID:   request.AgentID,
+		Action: controlplane.Action{
+			AgentID:    request.AgentID,
+			Capability: controlplane.Capability(request.Capability),
+			Context: map[string]string{
+				"request_id": request.RequestID,
+			},
+		},
+		Grant:   toControlPlaneGrant(grant),
+		Policy:  toControlPlanePolicy(policy),
+		Context: controlplane.AuthorizationContext{Now: time.Now()},
+	})
+
+	if decision.Status == controlplane.DecisionAllow {
+		return decision, true
+	}
+	return decision, false
 }
 
 // recordAuditEvent is a helper that records an execution audit event.
