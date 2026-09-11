@@ -38,6 +38,7 @@ Specify Once. Build Anywhere.
 * [naeos create](naeos_create.md)	 - Interactive project creation wizard
 * [naeos dashboard](naeos_dashboard.md)	 - Start NAEOS web dashboard
 * [naeos db](naeos_db.md)	 - Database connection and migration management
+* [naeos demo](naeos_demo.md)	 - Run the investor demo control-plane server
 * [naeos deploy](naeos_deploy.md)	 - Deploy the pipeline output to a target environment
 * [naeos diff](naeos_diff.md)	 - Compare generated artifacts with existing output directory
 * [naeos distributed](naeos_distributed.md)	 - Run pipeline tasks in distributed mode across multiple workers

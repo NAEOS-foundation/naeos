@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -108,5 +110,83 @@ func TestObsDashboard(t *testing.T) {
 
 	if !strings.Contains(output, "Starting observability dashboard") {
 		t.Fatalf("expected dashboard start message, got %q", output)
+	}
+}
+
+func TestObsExportNoEndpoint(t *testing.T) {
+	root := NewRootCommand()
+	_, err := executeCommand(root, "observability", "export")
+	if err == nil {
+		t.Fatal("expected error when endpoint missing")
+	}
+}
+
+func TestObsExportSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	root := NewRootCommand()
+	output, err := executeCommand(root, "observability", "export", "--endpoint", srv.URL, "--count", "2")
+	if err != nil {
+		t.Fatalf("observability export failed: %v", err)
+	}
+	if !strings.Contains(output, "Exported 2 spans") {
+		t.Fatalf("expected export confirmation, got %q", output)
+	}
+}
+
+func TestObsSIEMNoEndpoint(t *testing.T) {
+	root := NewRootCommand()
+	_, err := executeCommand(root, "observability", "siem")
+	if err == nil {
+		t.Fatal("expected error when endpoint missing")
+	}
+}
+
+func TestObsSIEMCEF(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+
+	root := NewRootCommand()
+	output, err := executeCommand(root, "observability", "siem", "--endpoint", srv.URL)
+	if err != nil {
+		t.Fatalf("observability siem failed: %v", err)
+	}
+	if !strings.Contains(output, "CEF:0|") {
+		t.Fatalf("expected CEF frame in output, got %q", output)
+	}
+}
+
+func TestObsSIEMJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	root := NewRootCommand()
+	output, err := executeCommand(root, "observability", "siem", "--endpoint", srv.URL, "--format", "json")
+	if err != nil {
+		t.Fatalf("observability siem json failed: %v", err)
+	}
+	if !strings.Contains(output, "sample-001") {
+		t.Fatalf("expected sample event id in output, got %q", output)
+	}
+}
+
+func TestObsSLO(t *testing.T) {
+	root := NewRootCommand()
+	output, err := executeCommand(root, "observability", "slo", "--service", "orders-api")
+	if err != nil {
+		t.Fatalf("observability slo failed: %v", err)
+	}
+	if !strings.Contains(output, "Target:            99.00%") {
+		t.Fatalf("expected SLO target in output, got %q", output)
+	}
+	if !strings.Contains(output, "Prometheus alerting rules") {
+		t.Fatalf("expected alert rules in output, got %q", output)
 	}
 }

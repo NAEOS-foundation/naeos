@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf og schema
+.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf og schema demo demo-build demo-check
 
 # Variables
 BINARY := naeos
@@ -39,8 +39,8 @@ lint:
 ## fmt: Format code
 fmt:
 	@echo "Formatting code..."
-	gofmt -s -w .
-	goimports -w -local $(MODULE) .
+	gofmt -s -w $$(git ls-files '*.go')
+	goimports -w -local $(MODULE) $$(git ls-files '*.go')
 
 ## vet: Run go vet
 vet:
@@ -65,7 +65,7 @@ version:
 ## fmt-check: Check formatting without modifying files
 fmt-check:
 	@echo "Checking code formatting..."
-	@unformatted=$$(gofmt -l .); if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
+	@unformatted=$$(gofmt -l $$(git ls-files '*.go')); if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
 
 ## check: Run all checks (fmt, vet, lint, test)
 check: fmt fmt-check vet lint test
@@ -102,6 +102,21 @@ security:
 e2e:
 	@echo "Building and running e2e tests..."
 	go build ./cmd/naeos/ && go test -tags=e2e -run=TestE2E ./...
+
+## demo-build: Build the investor demo server binary
+demo-build:
+	@echo "Building investor demo server..."
+	go build -o naeos-demo ./cmd/naeos-demo/
+
+## demo: Build and run the investor demo server
+demo: demo-build
+	@echo "Starting investor demo server (Ctrl+C to stop)..."
+	./naeos-demo
+
+## demo-check: Verify demo server builds and tests pass
+demo-check:
+	@echo "Checking investor demo module..."
+	go test -race -count=1 ./internal/investordemo/ ./cmd/naeos-demo/ -timeout 300s
 
 ## help: Show this help message
 help:

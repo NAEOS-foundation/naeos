@@ -97,7 +97,7 @@ Roadmap enterprise self-hosted dibagi menjadi rilis kecil berurutan. Setiap rili
 | v3.2.1 | Patch | Fase 7 | Follow-up hardening `naeos serve` |
 | v3.3.0 | Minor | Fase 8 | ✅ SBOM CycloneDX (`internal/sbom` + CLI `sbom generate/verify/inspect`) + SBOMVerifier + signing Ed25519 (`internal/signing` + CLI `sign keygen/sign/verify`); ⬜ `naeos verify` expansion + aset rilis tersign |
 | v3.4.0 | Minor | Fase 7 | ✅ Helm chart (`internal/helm` + CLI `helm init/validate`) + ✅ bundle air-gapped (`internal/airgap` + CLI `airgap bundle/import/inspect`) + ✅ config provider (`internal/configprovider` + CLI `config resolve/test/sources`); ⬜ `naeos backup`/`restore` + API server stateless (state store Postgres) |
-| v3.5.0 | Minor | Fase 10 | Ekspor tracing OpenTelemetry (OTLP) + korelasi request_id → trace_id → tenant + SLO & alerting Prometheus + ekspor audit ke SIEM |
+| v3.5.0 | Minor | Fase 10 | ✅ Ekspor tracing OpenTelemetry (OTLP) `internal/observability` + ✅ korelasi request_id → trace_id → tenant (middleware `naeos serve`) + ✅ SLO & alerting Prometheus `internal/monitoring` + ✅ ekspor audit ke SIEM (CEF) + CLI `observability export/siem/slo` |
 | v3.6.0 | Minor | Fase 11 | Durable job queue (Postgres outbox) + worker pipeline jaringan (NATS/Kafka) + idempotency |
 | v3.7.0 | Minor | Fase 9 | REST API v2: pagination cursor, idempotency key, error envelope RFC 7807, rate-limit berjenjang, kebijakan versioning API |
 | v3.8.0 | Minor | Fase 9 | Webhooks/events outbound (HMAC-signed, retry + dead-letter, katalog event) |
@@ -131,10 +131,10 @@ Catatan:
 | Versi rilis — no-skip (urutan rilis == urutan versi) | — | ✅ terbukti di v3.1.1–v3.1.3 | ✅ terbukti hingga v3.10.0 |
 | `naeos serve` daemon (TLS, graceful shutdown) | ✅ v3.2.0 (`naeos serve`/`serve run` + systemd install) | ✅ v3.2.0 | ✅ + systemd unit |
 | SBOM + artifact signing | ✅ SBOM CycloneDX + Ed25519 signing live (`internal/sbom`, `internal/signing` + CLI `sbom generate/verify/inspect` + `sign keygen/sign/verify` + SBOMVerifier) | ✅ v3.3.0 | ✅ di setiap rilis |
-| Dependency vuln scan (govulncheck) | ❌ belum ada di CI | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
+| Dependency vuln scan (govulncheck) | ✅ CI job `vulncheck` (ci.yml, `govulncheck ./...`) | ✅ v3.1.3 zero-critical | ✅ zero-critical terus |
 | Helm chart & air-gap bundle | ✅ Helm scaffolding + airgap bundle v3.4.0 (`internal/helm`, `internal/airgap` + CLI `helm init/validate` + `airgap bundle/import/inspect`) | ✅ v3.4.0 | ✅ v3.4.0 + Kustomize |
 | Config provider (env/file/K8s Secret/Vault) | ✅ `internal/configprovider` + CLI `config resolve/test/sources` v3.4.0 | ✅ v3.4.0 | ✅ v3.4.0 |
-| Observability (OTLP tracing + SLO) | ❌ metrics Prometheus saja | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
+| Observability (OTLP tracing + SLO) | ✅ `internal/observability` (OTLP exporter, korelasi trx, SIEM CEF) + `internal/monitoring` (SLO + alert rules) + CLI `observability export/siem/slo` + middleware `naeos serve` | ✅ v3.4.0 metrics | ✅ v3.5.0 OTLP + SLO |
 | Durable job queue + worker jaringan | ❌ async in-memory saja | ✅ v3.6.0 (Postgres outbox) | ✅ NATS/Kafka workers |
 | REST API v2 (cursor, idempotency, RFC 7807) | ❌ v1 | ✅ v3.7.0 | ✅ + webhooks v3.8.0 + SDK v3.9.0 |
 | MFA + SCIM provisioning | ❌ belum ada | review (v3.10.0–v3.11.0) | ✅ v3.11.0 SCIM + MFA |

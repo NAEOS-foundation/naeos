@@ -38,6 +38,19 @@ type Auth struct {
 	JWTSecret string `yaml:"jwt_secret,omitempty" json:"jwt_secret,omitempty"`
 }
 
+// Observability holds optional telemetry export settings. When OTLPEndpoint
+// is set, request spans are exported to an OpenTelemetry collector.
+type Observability struct {
+	// OTLPEndpoint is the base URL of an OTLP/HTTP collector (e.g. "http://localhost:4318").
+	// Empty disables OTLP export.
+	OTLPEndpoint string `yaml:"otlp_endpoint,omitempty" json:"otlp_endpoint,omitempty"`
+}
+
+// IsEnabled reports whether any telemetry export is configured.
+func (o Observability) IsEnabled() bool {
+	return o.OTLPEndpoint != ""
+}
+
 // Config is the server daemon configuration. It is parsed from a YAML file via
 // LoadConfig and validated by Validate.
 type Config struct {
@@ -46,6 +59,8 @@ type Config struct {
 	Listeners []Listener `yaml:"listeners" json:"listeners"`
 	// Auth applies to every API listener unless overridden per-listener.
 	Auth Auth `yaml:"auth,omitempty" json:"auth,omitempty"`
+	// Observability configures optional OTLP tracing and SIEM audit export.
+	Observability Observability `yaml:"observability,omitempty" json:"observability,omitempty"`
 	// ShutdownTimeout is the graceful shutdown grace period (e.g. "30s").
 	ShutdownTimeout string `yaml:"shutdown_timeout,omitempty" json:"shutdown_timeout,omitempty"`
 	// ReadTimeout / WriteTimeout / IdleTimeout tune the underlying HTTP server.

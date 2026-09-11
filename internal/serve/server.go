@@ -17,7 +17,15 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 
 	"github.com/NAEOS-foundation/naeos/internal/api"
+	"github.com/NAEOS-foundation/naeos/internal/observability"
 )
+
+// telemetry holds optional OTLP tracing configured via Config.Observability.
+type telemetry struct {
+	tracer *observability.Tracer
+	otlp   *observability.OTLPHTTPExporter
+	corr   *observability.CorrelationStore
+}
 
 // Server is the production NAEOS daemon. It owns one or more HTTP/HTTPS
 // listeners and coordinates graceful shutdown across all of them.
@@ -28,6 +36,7 @@ type Server struct {
 	logLevel slog.Level
 	mu       sync.Mutex
 	stopped  bool
+	tel      *telemetry
 }
 
 // New builds a daemon from a validated Config. API listeners are backed by a
@@ -62,6 +71,14 @@ func New(cfg *Config) (*Server, error) {
 	if apiServer != nil {
 		for key, rps := range cfg.APIKeys {
 			apiServer.RegisterAPIKey(key, rps)
+		}
+	}
+
+	if cfg.Observability.OTLPEndpoint != "" {
+		s.tel = &telemetry{
+			tracer: observability.NewTracer("naeos-serve"),
+			otlp:   observability.NewOTLPHTTPExporter(cfg.Observability.OTLPEndpoint),
+			corr:   observability.NewCorrelationStore(),
 		}
 	}
 
@@ -112,6 +129,10 @@ func (s *Server) StartWithContext(ctx context.Context) error {
 		var handler = http.NotFoundHandler()
 		if l.API && s.api != nil {
 			handler = s.api.Handler()
+		}
+
+		if s.tel != nil {
+			handler = s.tel.middleware(handler)
 		}
 
 		srv := &http.Server{
@@ -199,6 +220,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 			errs = append(errs, err)
 		}
 	}
+	if s.tel != nil {
+		if err := s.tel.otlp.ExportSpans(s.tel.tracer.GetSpans()); err != nil {
+			slog.Warn("failed to export spans on shutdown", "component", "serve", "err", err)
+		}
+	}
 	if len(errs) > 0 {
 		return fmt.Errorf("shutdown: %w", errors.Join(errs...))
 	}
@@ -214,6 +240,35 @@ func (s *Server) duration(raw string, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+// middleware wraps a handler with request correlation and OTLP tracing.
+// request_id and tenant_id are extracted from headers and stored in the
+// correlation store keyed to the generated trace_id.
+func (t *telemetry) middleware(next http.Handler) http.Handler {
+	return observability.CorrelationMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqID := observability.RequestIDFromContext(r)
+		tenantID := observability.TenantIDFromContext(r)
+
+		span := t.tracer.StartSpan("http.request")
+		span.Attributes["http.method"] = r.Method
+		span.Attributes["http.path"] = r.URL.Path
+		if tenantID != "" {
+			span.Attributes["tenant_id"] = tenantID
+		}
+		defer t.tracer.EndSpan(span)
+
+		if reqID != "" {
+			t.corr.Record(reqID, span.TraceID, tenantID)
+			span.Attributes["request_id"] = reqID
+		}
+
+		next.ServeHTTP(w, r)
+
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			t.tracer.SetStatus(span, observability.SpanStatusOK, "completed")
+		}
+	}))
 }
 
 func orDefault(v, def string) string {

@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Observability (OTLP + correlation + SLO + SIEM)** — `internal/observability`: `OTLPHTTPExporter` (OTLP/HTTP JSON traces over `/{endpoint}/v1/traces` with custom client/headers), `CorrelationStore` + `CorrelationMiddleware` linking `X-Request-ID`/`X-Tenant-ID` → `trace_id` on every request (wired into `naeos serve` when `otlp_endpoint` is configured), and `SIEMExporter` with CEF/NDJSON framing for audit events. `internal/monitoring`: `SLO` + `SLOReport`, burn-rate evaluation with Prometheus alerting rules (critical 14.4, warning 3.0). New CLI: `naeos observability export|slo|siem`. 40+ tests.
+- **Investor demo control plane** — `internal/investordemo` policy engine, grant store, execution gate (signed handoff + replay protection), independent verifier, and a scripted 10-step investor demo (`RunAllScenarios`, `/api/investor-demo`). New CLI: `naeos demo` serves the demo API + landing page; `cmd/naeos-demo` standalone server; Makefile targets `demo`, `demo-build`, `demo-check`. Coverage raised to 87.5%.
+- **govulncheck CI job** — `ci.yml` `vulncheck` job runs `govulncheck ./...` on every push (zero vulnerabilities as of 2026-09-10).
+- **CI demo build + tests** — `ci.yml` builds `naeos-demo` and runs demo module tests.
+- **Makefile fmt hardening** — `fmt`/`fmt-check` now only format tracked Go files so test-generated artifacts under ignored dirs never break the check pipeline.
+
 ### Fixed
 - Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.
 

@@ -34,8 +34,11 @@ naeos observability [flags]
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos observability dashboard](naeos_observability_dashboard.md)	 - Start the observability dashboard
+* [naeos observability export](naeos_observability_export.md)	 - Export collected spans to an OTLP collector
 * [naeos observability log](naeos_observability_log.md)	 - Write a log entry
 * [naeos observability metrics](naeos_observability_metrics.md)	 - Show collected metrics
+* [naeos observability siem](naeos_observability_siem.md)	 - Export sample audit events to a SIEM collector
+* [naeos observability slo](naeos_observability_slo.md)	 - Show a reference SLO with burn-rate alert rules
 * [naeos observability status](naeos_observability_status.md)	 - Show observability stack status
 * [naeos observability trace](naeos_observability_trace.md)	 - Create a new trace span
 
