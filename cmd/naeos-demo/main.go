@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+
+	"github.com/NAEOS-foundation/naeos/internal/investordemo"
 )
 
 var (
@@ -274,6 +276,7 @@ func main() {
 		log.Printf("WARNING: naeos binary not found in PATH (%v). Demo will fail on command execution.", err)
 	}
 
+	// Create the traditional demo server
 	server := newDemoServer()
 
 	go func() {
@@ -282,12 +285,39 @@ func main() {
 		}
 	}()
 
+	// Setup the investor demo control plane
+	investorDemoSetup := investordemo.SetupDemoEnvironment()
+	apiServer := investordemo.NewAPIServer(investorDemoSetup)
+
+	// Register existing WebSocket handlers
 	http.HandleFunc("/ws", server.handleWS)
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	fmt.Printf("NAEOS Demo Server listening on %s\n", *addr)
+	// Register investor demo API handlers
+	http.Handle("/api/", apiServer)
+
+	// Serve the investor demo dashboard and static files
+	http.HandleFunc("/", handleDashboard)
+	http.HandleFunc("/dashboard", handleDashboard)
+	http.HandleFunc("/index.html", handleDashboard)
+
+	fmt.Printf("NAEOS Demo Server (with Investor Demo) listening on %s\n", *addr)
+	fmt.Printf("  - Traditional WebSocket demo: ws://localhost%s/ws\n", *addr)
+	fmt.Printf("  - Investor Demo Dashboard: http://localhost%s/\n", *addr)
+	fmt.Printf("  - Investor Demo API: http://localhost%s/api/\n", *addr)
+
 	log.Fatal(http.ListenAndServe(*addr, nil))
+}
+
+// handleDashboard serves the investor demo dashboard HTML
+func handleDashboard(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" && r.URL.Path != "/dashboard" && r.URL.Path != "/index.html" {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "cmd/naeos-demo/dashboard.html")
 }
