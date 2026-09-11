@@ -105,6 +105,15 @@ func (pe *PolicyEngine) EvaluateCapability(policyID string, policyVersion int, c
 		return false, fmt.Sprintf("Policy evaluation failed: %v", err)
 	}
 
+	// Protected capabilities must always fail closed, even if a stale or malformed grant
+	// contains them. This preserves the control-plane invariant that trust-boundary actions
+	// cannot be authorized by an agent's own reasoning or a widened capability list.
+	for _, protected := range policy.ProtectedCapabilities {
+		if protected == capability {
+			return false, fmt.Sprintf("Capability %s is protected by policy %s v%d and cannot be authorized", capability, policyID, policyVersion)
+		}
+	}
+
 	// Check explicitly denied capabilities
 	for _, denied := range policy.DeniedCapabilities {
 		if denied == capability {

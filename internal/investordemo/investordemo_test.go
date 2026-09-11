@@ -44,6 +44,31 @@ func TestPolicyEngine_ProtectedCapability(t *testing.T) {
 	}
 }
 
+func TestPolicyEngine_ProtectedCapabilityDeniedEvenIfGranted(t *testing.T) {
+	setup := SetupDemoEnvironment()
+
+	// Simulate a malformed or stale grant that includes a protected capability.
+	setup.GrantStore.StoreGrant(&CapabilityGrant{
+		GrantID:       "GRANT-PROTECTED",
+		AgentID:       "agent-malicious",
+		PolicyID:      "POLICY-017",
+		PolicyVersion: 17,
+		Capabilities:  []Capability{"credential.rotate"},
+		CreatedAt:     time.Now(),
+		ExpiresAt:     time.Now().Add(1 * time.Hour),
+		Status:        "active",
+		Revoked:       false,
+	})
+
+	allowed, reason := setup.PolicyEngine.EvaluateCapability("POLICY-017", 17, "credential.rotate")
+	if allowed {
+		t.Fatalf("Expected credential.rotate to remain denied even when a malformed grant includes it: %s", reason)
+	}
+	if !strings.Contains(reason, "protected") {
+		t.Fatalf("Expected protected capability denial reason, got: %s", reason)
+	}
+}
+
 // ============================================================================
 // Tests for Capability Authority
 // ============================================================================

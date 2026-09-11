@@ -8,7 +8,23 @@ The NAEOS Investor Demo is a technical demonstration of NAEOS acting as a contro
 
 > AI agents can reason and perform engineering work, but authorization, policy enforcement, verification, and audit must remain outside the agent's control.
 
+**Investor framing:** The demo is not a toy access-control screen; it operationalizes a core enterprise requirement: an autonomous system may propose an action, but it may not self-approve privileged or consequential work. That is the distinction between reasoning and trust.
+
 **Scripted walkthrough:** See [INVESTOR-DEMO-SCRIPT.md](INVESTOR-DEMO-SCRIPT.md) for the deterministic 10-step demo shown to investors/technical audiences.
+
+## Investor narrative
+
+NAEOS is positioned as the control plane for AI-native engineering. The system enables agentic software workflows without handing the agent authority over the trust boundary. In the demo, the agent is allowed to read the repository, modify code in an approved scope, and run tests, but it is explicitly forbidden from rotating credentials, modifying IAM policy, deploying to production, publishing externally, or altering the rule set that governs its own permissions.
+
+That distinction is the product story: the model can generate intent, but NAEOS owns the authorization decision and the independent verification loop. The result is a repeatable framework for enterprise-grade governance, auditability, and policy enforcement.
+
+### Why this matters to investors
+
+- The protocol is explicit and inspectable, not implicit or model-driven.
+- Authorization is evaluated in a separate control plane, not inside the agent.
+- Old grants are revalidated against the current policy before execution.
+- Handoff contracts detect escalation, replay, and provenance mismatch.
+- The system produces an append-only audit trail for review, verification, and future investigation.
 
 ## Observability integration
 
