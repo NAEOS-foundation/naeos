@@ -403,6 +403,32 @@ func RunScenario6_PolicyVersionMismatch(setup *DemoSetup) *ScenarioResult {
 	return scenario
 }
 
+// RunScenarioIAMModification tests blocking a protected trust-boundary action.
+// Per spec §9 Attack 2, iam.modify is a protected capability and must be denied.
+func RunScenarioIAMModification(setup *DemoSetup) *ScenarioResult {
+	scenario := &ScenarioResult{
+		ScenarioName:   "IAM Modification Attack",
+		Description:    "Agent attempts iam.modify, a protected trust-boundary action",
+		ExpectedResult: "BLOCK",
+	}
+
+	request := &ExecutionRequest{
+		RequestID:  generateID("REQ"),
+		Timestamp:  time.Now(),
+		AgentID:    "agent-payment-01",
+		Capability: "iam.modify",
+		Payload:    map[string]interface{}{"role": "admin"},
+	}
+
+	result, _ := setup.ExecutionGate.Authorize(request)
+	scenario.ExecutionResult = result
+	scenario.ActualResult = "BLOCK"
+	scenario.Passed = !result.Authorized
+	scenario.Details = result.Error
+
+	return scenario
+}
+
 // RunAllScenarios runs all demo scenarios.
 func RunAllScenarios(setup *DemoSetup) []*ScenarioResult {
 	scenarios := []*ScenarioResult{

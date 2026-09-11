@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **govulncheck CI job** — `ci.yml` `vulncheck` job runs `govulncheck ./...` on every push (zero vulnerabilities as of 2026-09-10).
 - **CI demo build + tests** — `ci.yml` builds `naeos-demo` and runs demo module tests.
 - **Makefile fmt hardening** — `fmt`/`fmt-check` now only format tracked Go files so test-generated artifacts under ignored dirs never break the check pipeline.
+- **Investor demo hardening** — Dashboard adds a "Run Investor Demo" button (renders the 10-step scripted walkthrough + security posture), six per-attack controls now run the real control-plane scenarios (including IAM modification and stale authorization), a `/api/scenario` endpoint, provenance mismatch now fails closed, storage seams (`GrantRepository`, `AuditEventStore`, `PolicyRepository`) documented, and the threat model is documented in `internal/investordemo/README.md`.
 
 ### Fixed
 - Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.

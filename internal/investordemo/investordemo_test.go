@@ -1,6 +1,7 @@
 package investordemo
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -311,6 +312,50 @@ func TestHandoffValidator_ProvenanceMutation(t *testing.T) {
 	if !result.ProvenanceMismatch {
 		t.Errorf("Expected provenance mismatch detection")
 	}
+	if result.Valid {
+		t.Errorf("Expected provenance mismatch to fail closed (contract must be invalid)")
+	}
+	if !contains(result.Errors, "Provenance mismatch") {
+		t.Errorf("Expected provenance mismatch error detail, got %v", result.Errors)
+	}
+}
+
+func TestHandoffValidator_MissingProvenance(t *testing.T) {
+	setup := SetupDemoEnvironment()
+
+	// Contract without any provenance is missing a trust root and must fail closed.
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-payment-01",
+		RequestedCapability:    "repository.write",
+		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
+		PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		CreatedAt:              time.Now(),
+		ExpiresAt:              time.Now().Add(1 * time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: generateNonce(), Timestamp: time.Now()},
+	}
+
+	result := setup.HandoffValidator.ValidateHandoff(contract)
+	if !result.ProvenanceMismatch {
+		t.Errorf("Expected missing provenance to be detected as a mismatch")
+	}
+	if result.Valid {
+		t.Errorf("Expected contract without provenance to fail closed")
+	}
+}
+
+// contains reports whether a slice contains the given substring in any element.
+func contains(items []string, substr string) bool {
+	for _, it := range items {
+		if strings.Contains(it, substr) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestHandoffValidator_UnsupportedContractVersion(t *testing.T) {

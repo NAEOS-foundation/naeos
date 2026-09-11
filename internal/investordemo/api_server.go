@@ -29,6 +29,7 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/execute", server.handleExecute)
 	server.mux.HandleFunc("/api/audit", server.handleAuditEvents)
 	server.mux.HandleFunc("/api/scenarios", server.handleRunScenarios)
+	server.mux.HandleFunc("/api/scenario", server.handleRunScenario)
 	server.mux.HandleFunc("/api/investor-demo", server.handleInvestorDemo)
 	server.mux.HandleFunc("/api/policy", server.handleGetPolicy)
 	server.mux.HandleFunc("/api/grants", server.handleGetGrants)
@@ -136,6 +137,43 @@ func (as *APIServer) handleRunScenarios(w http.ResponseWriter, r *http.Request) 
 		"scenarios": scenarios,
 		"total":     len(scenarios),
 	})
+}
+
+// scenarioRunners maps a scenario name (used by the dashboard attack buttons)
+// to the function that runs the corresponding demo scenario.
+var scenarioRunners = map[string]func(*DemoSetup) *ScenarioResult{
+	"authorized_read":          RunScenario1_AuthorizedRepositoryRead,
+	"credential_rotation":      RunScenario2_UnauthorizedCredentialRotation,
+	"iam_modify":               RunScenarioIAMModification,
+	"policy_self_modification": RunScenario3_PolicySelfModification,
+	"capability_escalation":    RunScenario4_CapabilityEscalationViaHandoff,
+	"replay":                   RunScenario5_ReplayAttack,
+	"stale_authorization":      RunScenario6_PolicyVersionMismatch,
+}
+
+// handleRunScenario runs a single named demo scenario through the real control plane.
+func (as *APIServer) handleRunScenario(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Name string `json:"name"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	runner, ok := scenarioRunners[req.Name]
+	if !ok {
+		http.Error(w, fmt.Sprintf("Unknown scenario: %q", req.Name), http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, runner(as.setup))
 }
 
 // handleGetPolicy returns the current policy.

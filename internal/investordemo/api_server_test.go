@@ -322,3 +322,52 @@ func TestAPIUnknownRoute(t *testing.T) {
 		t.Errorf("expected 404, got %d", rec.Code)
 	}
 }
+
+func TestAPIScenario(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/scenario", `{"name":"credential_rotation"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	var s ScenarioResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &s); err != nil {
+		t.Fatal(err)
+	}
+	if !s.Passed {
+		t.Errorf("expected credential_rotation scenario to pass")
+	}
+	if !strings.Contains(s.ActualResult, "BLOCK") {
+		t.Errorf("expected BLOCK result, got %s", s.ActualResult)
+	}
+}
+
+func TestAPIScenarioIAM(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/scenario", `{"name":"iam_modify"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	var s ScenarioResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &s); err != nil {
+		t.Fatal(err)
+	}
+	if !s.Passed {
+		t.Errorf("expected iam_modify scenario to pass")
+	}
+}
+
+func TestAPIScenarioNotFound(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/scenario", `{"name":"nonexistent"}`)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rec.Code)
+	}
+}
+
+func TestAPIScenarioMethodNotAllowed(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodGet, "/api/scenario", "")
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405, got %d", rec.Code)
+	}
+}

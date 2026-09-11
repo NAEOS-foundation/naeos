@@ -177,10 +177,21 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 		}
 	}
 
-	// Check provenance
-	if contract.Provenance == nil || contract.Provenance["source"] != contract.Initiator {
-		result.Warnings = append(result.Warnings, "Provenance mismatch or missing")
+	// Check provenance.
+	// Provenance mismatch is a hard failure: a contract that claims a source
+	// different from its initiator must be rejected (fail closed).
+	if contract.Provenance == nil {
+		result.Errors = append(result.Errors, "Contract provenance is missing")
 		result.ProvenanceMismatch = true
+		result.Valid = false
+	} else if source, ok := contract.Provenance["source"]; !ok || source != contract.Initiator {
+		result.Errors = append(result.Errors, "Provenance mismatch: source does not match initiator")
+		result.ProvenanceMismatch = true
+		result.Valid = false
+		hv.recordAuditEvent("PROVENANCE_MISMATCH_DETECTED", contract.Initiator, map[string]interface{}{
+			"initiator": contract.Initiator,
+			"source":    contract.Provenance["source"],
+		})
 	}
 
 	// Record validation event

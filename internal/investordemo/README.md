@@ -228,6 +228,32 @@ The web dashboard provides:
 - **Verification Status**: Independent verification results
 - **Security Posture**: Metrics on allowed/blocked/attempted actions
 
+## Threat Model (§16)
+
+### Trusted components
+
+- **Policy Engine** — evaluates capabilities against versioned policy.
+- **Capability Authority** — validates grants against policy.
+- **Execution Gate** — the single enforcement point for all consequential actions.
+- **Handoff Contract Validator** — rejects tampered, replayed, escalated, and expired contracts.
+- **Independent Verifier** — separate from execution path; reviews the audit log.
+- **Audit Ledger** — append-only, cannot be modified by any agent or component.
+
+### Untrusted components
+
+- **Agent reasoning** — the model's justification for an action is never the authorization decision.
+- **Agent-generated payloads** — payloads are data, not permission.
+- **Tool output** — treated as untrusted data.
+- **Downstream agents** — no capability inheritance beyond explicit grant.
+- **External inputs** — may be adversarial.
+- **Cached agent state** — may be stale or tampered.
+
+### Key invariant
+
+> The agent is not the root of trust.
+
+Agent intent is requests; NAEOS is authorization. The model's reasoning never becomes the authorization decision.
+
 ## Key Invariants
 
 The demo enforces these critical security invariants:
@@ -314,7 +340,7 @@ cmd/naeos-demo/
 ## Architecture Decisions
 
 1. **Modular design**: Each component is independent and testable.
-2. **In-memory storage**: Acceptable for demo; replace with persistent storage in production.
+2. **In-memory storage**: Acceptable for demo; replace with persistent storage in production. The interfaces `GrantRepository`, `AuditEventStore`, and `PolicyRepository` (defined in `storage.go`) document and enforce the replacement seam — concrete types implement them and a compile-time assertion verifies the contract.
 3. **HTTP + WebSockets**: RESTful API for scenarios, WebSockets for interactive demo.
 4. **Append-only audit**: Events cannot be modified or deleted.
 5. **Simple policy model**: Demonstrated capabilities; extend with more complex policies as needed.

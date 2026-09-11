@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>NAEOS Investor Demo - Control Plane</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			background: linear-gradient(135deg, #1e1e2e 0%, #0f0f1e 100%);
+			color: #e0e0e0;
+			min-height: 100vh;
+		}
+		.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+		header {
+			background: rgba(255, 255, 255, 0.05);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			padding: 20px 0;
+			margin-bottom: 30px;
+			border-radius: 8px;
+		}
+		h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+		.subtitle { font-size: 14px; color: #888; }
+		.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+		.card {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 12px;
+			padding: 24px;
+			backdrop-filter: blur(10px);
+		}
+		.card h2 { font-size: 18px; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; }
+		.card h3 { font-size: 14px; color: #aaa; margin-top: 16px; margin-bottom: 8px; }
+		.status {
+			display: inline-block;
+			padding: 4px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: 600;
+			margin: 4px 0;
+		}
+		.status.active { background: #10b981; color: white; }
+		.status.blocked { background: #ef4444; color: white; }
+		.status.pending { background: #f59e0b; color: white; }
+		.control-row {
+			display: flex;
+			gap: 8px;
+			margin-top: 12px;
+		}
+		button {
+			background: #3b82f6;
+			border: none;
+			color: white;
+			padding: 8px 16px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: 600;
+			transition: all 0.3s;
+		}
+		button:hover { background: #2563eb; transform: translateY(-2px); }
+		button.secondary { background: #6b7280; }
+		button.secondary:hover { background: #4b5563; }
+		button.danger { background: #ef4444; }
+		button.danger:hover { background: #dc2626; }
+		input, textarea {
+			background: rgba(255, 255, 255, 0.05);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 6px;
+			padding: 8px 12px;
+			color: #e0e0e0;
+			font-size: 13px;
+			margin: 8px 0;
+			width: 100%;
+			font-family: monospace;
+		}
+		.event-log {
+			background: rgba(0, 0, 0, 0.3);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			border-radius: 6px;
+			padding: 12px;
+			max-height: 300px;
+			overflow-y: auto;
+			font-family: monospace;
+			font-size: 12px;
+			margin-top: 12px;
+		}
+		.event { padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+		.event.allow { color: #10b981; }
+		.event.block { color: #ef4444; }
+		.pipeline {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 12px;
+			margin: 12px 0;
+		}
+		.pipeline-step {
+			background: rgba(255, 255, 255, 0.1);
+			padding: 4px 8px;
+			border-radius: 4px;
+			flex: 1;
+			text-align: center;
+		}
+		.pipeline-step.pass { background: #10b98122; color: #10b981; }
+		.pipeline-step.fail { background: #ef444422; color: #ef4444; }
+		.arrow { color: #666; }
+		.metric {
+			display: flex;
+			justify-content: space-between;
+			padding: 8px 0;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		}
+		.metric-value { font-weight: 600; }
+		.full-width { grid-column: 1 / -1; }
+		code {
+			background: rgba(0, 0, 0, 0.3);
+			padding: 2px 6px;
+			border-radius: 3px;
+			font-family: monospace;
+			font-size: 12px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<header>
+			<h1>NAEOS Control Plane Demo</h1>
+			<p class="subtitle">Engineering authorization and policy enforcement for AI agents</p>
+			<button onclick="runInvestorDemo()" style="margin-top: 16px; padding: 12px 24px; font-size: 15px;">&#9654; Run Investor Demo</button>
+			<span id="demoStatus" style="margin-left: 12px; font-size: 13px; color: #888;"></span>
+		</header>
+
+		<!-- Investor Demo Result -->
+		<div class="card full-width" id="investorDemoCard" style="display: none; margin-bottom: 20px;">
+			<h2>Investor Demo — Scripted Walkthrough</h2>
+			<div id="investorDemoSteps"></div>
+			<h3>NAEOS Security Posture</h3>
+			<div id="investorPosture"></div>
+		</div>
+
+		<div class="grid">
+			<!-- Agent Status -->
+			<div class="card">
+				<h2>Agent Status</h2>
+				<div>
+					<h3>Agent ID</h3>
+					<code>agent-payment-01</code>
+				</div>
+				<div>
+					<h3>Grant ID</h3>
+					<code>GRANT-001</code>
+					<span class="status active">Active</span>
+				</div>
+				<div>
+					<h3>Policy</h3>
+					<code>POLICY-017 v17</code>
+				</div>
+				<div>
+					<h3>Allowed Capabilities</h3>
+					<code>repository.read, repository.write, test.execute</code>
+				</div>
+			</div>
+
+			<!-- Test Execution -->
+			<div class="card">
+				<h2>Test Capabilities</h2>
+				<label>Capability to test:</label>
+				<input id="testCapability" type="text" value="repository.read" placeholder="e.g., repository.read">
+				<div class="control-row">
+					<button onclick="testCapability()">Test</button>
+					<button class="secondary" onclick="runAllScenarios()">Run All Scenarios</button>
+				</div>
+				<div id="testResult"></div>
+			</div>
+
+			<!-- Authorization Checks -->
+			<div class="card">
+				<h2>Authorization Pipeline</h2>
+				<div id="pipelineSteps" class="pipeline">
+					<div class="pipeline-step" id="step1">Intent</div>
+					<div class="arrow">-&gt;</div>
+					<div class="pipeline-step" id="step2">Policy</div>
+					<div class="arrow">-&gt;</div>
+					<div class="pipeline-step" id="step3">Grant</div>
+					<div class="arrow">-&gt;</div>
+					<div class="pipeline-step" id="step4">Execute</div>
+					<div class="arrow">-&gt;</div>
+					<div class="pipeline-step" id="step5">Verify</div>
+				</div>
+				<div id="pipelineDetails" style="font-size: 12px; color: #aaa; margin-top: 12px;"></div>
+			</div>
+
+		<!-- Policy Enforcement -->
+		<div class="card">
+			<h2>Attack Scenarios</h2>
+			<div style="font-size: 12px; color: #888; margin-bottom: 10px;">Each button runs a real control-plane path — not a mock.</div>
+			<div class="control-row" style="flex-direction: column; gap: 10px;">
+				<button onclick="testScenario('credential_rotation')">Attack 1: Credential Rotation</button>
+				<button onclick="testScenario('iam_modify')">Attack 2: IAM Modification</button>
+				<button onclick="testScenario('policy_self_modification')">Attack 3: Policy Self-Modification</button>
+				<button onclick="testScenario('capability_escalation')">Attack 4: Capability Escalation</button>
+				<button onclick="testScenario('replay')">Attack 5: Replay Attack</button>
+				<button onclick="testScenario('stale_authorization')">Attack 6: Policy Version Mismatch</button>
+				<button class="danger" onclick="resetDemo()" style="margin-top: 8px;">Reset Demo</button>
+			</div>
+			<div id="testResult"></div>
+		</div>
+
+
+			<!-- Live Audit Events -->
+			<div class="card full-width">
+				<h2>Live Event Stream</h2>
+				<div class="event-log" id="eventLog">
+					<div style="color: #888;">Waiting for events...</div>
+				</div>
+			</div>
+
+			<!-- Verification Status -->
+			<div class="card">
+				<h2>Verification Status</h2>
+				<button onclick="verifySession()">Verify Agent Session</button>
+				<div id="verificationResult"></div>
+			</div>
+
+			<!-- Security Posture -->
+			<div class="card">
+				<h2>Security Posture</h2>
+				<div class="metric">
+					<span>Authorized actions:</span>
+					<span class="metric-value" id="countAllow">0</span>
+				</div>
+				<div class="metric">
+					<span>Blocked actions:</span>
+					<span class="metric-value" id="countBlock">0</span>
+				</div>
+				<div class="metric">
+					<span>Escalation attempts prevented:</span>
+					<span class="metric-value" id="countEscalation">0</span>
+				</div>
+				<div class="metric">
+					<span>Replay attempts detected:</span>
+					<span class="metric-value" id="countReplay">0</span>
+				</div>
+				<button class="secondary" onclick="refreshMetrics()" style="width: 100%; margin-top: 12px;">Refresh Metrics</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const API_BASE = '/api';
+
+		async function apiCall(endpoint, method = 'GET', body = null) {
+			const opts = { method };
+			if (body) {
+				opts.headers = { 'Content-Type': 'application/json' };
+				opts.body = JSON.stringify(body);
+			}
+			try {
+				const res = await fetch(API_BASE + endpoint, opts);
+				return res.ok ? res.json() : { error: 'API error' };
+			} catch (e) {
+				return { error: e.message };
+			}
+		}
+
+		async function testCapability() {
+			const cap = document.getElementById('testCapability').value || 'repository.read';
+			const result = await apiCall('/execute', 'POST', {
+				agent_id: 'agent-payment-01',
+				capability: cap,
+				payload: {}
+			});
+
+			const html = result.authorized ?
+				'<p style="color: #10b981; margin-top: 12px;"><strong>ALLOW</strong></p>' :
+				'<p style="color: #ef4444; margin-top: 12px;"><strong>BLOCKED</strong><br/>' + result.error + '</p>';
+			document.getElementById('testResult').innerHTML = html;
+
+			updatePipeline(result.authorized);
+			updateEventLog();
+		}
+
+		async function runAllScenarios() {
+			const scenarios = await apiCall('/scenarios', 'POST');
+			if (scenarios.scenarios) {
+				let html = '<h3 style="margin-top: 12px;">Scenario Results:</h3>';
+				scenarios.scenarios.forEach(s => {
+					const icon = s.passed ? 'PASS' : 'FAIL';
+					const color = s.passed ? '#10b981' : '#ef4444';
+					html += '<div style="color: ' + color + '; margin: 8px 0;"><strong>' + icon + ' ' + s.scenario_name + '</strong></div>';
+				});
+				document.getElementById('testResult').innerHTML = html;
+			}
+			updateEventLog();
+		}
+
+		async function testScenario(type) {
+			document.getElementById('testResult').innerHTML = '<p style="color: #888; margin-top: 12px;">Running...</p>';
+
+			const result = await apiCall('/scenario', 'POST', { name: type });
+
+			if (result.error) {
+				document.getElementById('testResult').innerHTML = '<p style="color: #f59e0b; margin-top: 12px;">' + result.error + '</p>';
+				updateEventLog();
+				return;
+			}
+
+			const color = result.passed ? '#10b981' : '#ef4444';
+			const label = result.expected_result === 'ALLOW' ? 'ALLOWED' : 'BLOCKED';
+			const icon  = result.passed ? '&#10003; Expected' : '&#10007; UNEXPECTED';
+			const html = '<p style="color: ' + color + '; margin-top: 12px;">' +
+				'<strong>' + icon + '</strong><br/>' +
+				result.scenario_name + '<br/>' +
+				'<code>' + (result.details || '').replace(/</g, '&lt;') + '</code></p>';
+			document.getElementById('testResult').innerHTML = html;
+			updatePipeline(!result.passed);
+			updateEventLog();
+		}
+
+		async function runInvestorDemo() {
+			document.getElementById('demoStatus').textContent = 'Running scripted demo...';
+			document.getElementById('demoStatus').style.color = '#f59e0b';
+			document.getElementById('investorDemoCard').style.display = '';
+
+			const result = await apiCall('/investor-demo', 'POST');
+
+			if (result.error) {
+				document.getElementById('investorDemoSteps').innerHTML =
+					'<p style="color: #f59e0b;">Error: ' + result.error + '</p>';
+				document.getElementById('demoStatus').textContent = 'Error';
+				document.getElementById('demoStatus').style.color = '#ef4444';
+				return;
+			}
+
+			// Render steps
+			let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">' +
+				'<tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.15);">' +
+				'<th style="padding:6px;">#</th><th style="padding:6px;">Name</th><th style="padding:6px;">Result</th></tr>';
+
+			(result.steps || []).forEach(s => {
+				const color = s.blocked ? '#ef4444' : '#10b981';
+				html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
+					'<td style="padding:6px;">' + s.step + '</td>' +
+					'<td style="padding:6px;">' + s.name + '</td>' +
+					'<td style="padding:6px;color:' + color + ';font-weight:600;">' + s.result + '</td></tr>';
+			});
+			html += '</table>';
+			document.getElementById('investorDemoSteps').innerHTML = html;
+
+			// Render posture
+			const p = result.posture || {};
+			const postureHtml = '<table style="border-collapse:collapse;font-size:13px;margin-top:8px;">' +
+				'<tr><td style="padding:4px 12px 4px 0;">Authorized actions:</td><td style="padding:4px 0;">' + (p.authorized_actions || 0) + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Blocked actions:</td><td style="padding:4px 0;">' + (p.blocked_actions || 0) + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Handoff violations:</td><td style="padding:4px 0;">' + (p.handoff_violations || 0) + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Replay attempts:</td><td style="padding:4px 0;">' + (p.replay_attempts || 0) + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Policy changes:</td><td style="padding:4px 0;">' + (p.policy_changes || 0) + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Verification status:</td><td style="padding:4px 0;">' + (p.verification_status || '-') + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">Audit events:</td><td style="padding:4px 0;">' + (p.audit_events || 0) + '</td></tr>' +
+				'</table>';
+			document.getElementById('investorPosture').innerHTML = postureHtml;
+
+			const statusEl = document.getElementById('demoStatus');
+			statusEl.textContent = 'Complete';
+			statusEl.style.color = '#10b981';
+
+			updateEventLog();
+			refreshMetrics();
+		}
+
+		function updatePipeline(passed) {
+			const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+			steps.forEach(s => {
+				document.getElementById(s).className = 'pipeline-step ' + (passed ? 'pass' : 'fail');
+			});
+		}
+
+		async function updateEventLog() {
+			const events = await apiCall('/audit');
+			if (events.events) {
+				const log = document.getElementById('eventLog');
+				log.innerHTML = events.events.map(e => {
+					const cls = e.event_type.indexOf('GRANTED') >= 0 ? 'allow' : (e.decision === 'ALLOW' ? 'allow' : 'block');
+					const icon = cls === 'allow' ? '[+]' : '[-]';
+					return '<div class="event ' + cls + '">' + icon + ' ' + e.event_type + ' - ' + e.agent_id + ' - ' + (e.requested_capability || 'system') + '</div>';
+				}).join('');
+			}
+		}
+
+		async function verifySession() {
+			const result = await apiCall('/verification', 'POST', { agent_id: 'agent-payment-01' });
+			const html = '<p style="color: ' + (result.result === 'PASS' ? '#10b981' : '#ef4444') + '; margin-top: 12px;"><strong>' +
+				(result.result === 'PASS' ? 'PASSED' : 'FAILED') + '</strong><br/>' +
+				result.summary + '</p>';
+			document.getElementById('verificationResult').innerHTML = html;
+		}
+
+		async function refreshMetrics() {
+			const events = await apiCall('/audit');
+			if (events.events) {
+				const allow = events.events.filter(e => e.decision === 'ALLOW').length;
+				const block = events.events.filter(e => e.decision === 'BLOCK').length;
+				const escalation = events.events.filter(e => e.event_type === 'CAPABILITY_ESCALATION_DETECTED').length;
+				const replay = events.events.filter(e => e.event_type === 'REPLAY_ATTACK_DETECTED').length;
+
+				document.getElementById('countAllow').textContent = allow;
+				document.getElementById('countBlock').textContent = block;
+				document.getElementById('countEscalation').textContent = escalation;
+				document.getElementById('countReplay').textContent = replay;
+			}
+		}
+
+		async function resetDemo() {
+			await apiCall('/reset', 'POST');
+			document.getElementById('testResult').innerHTML = '';
+			document.getElementById('eventLog').innerHTML = '<div style="color: #888;">Events cleared</div>';
+			document.getElementById('verificationResult').innerHTML = '';
+			refreshMetrics();
+		}
+
+		// Refresh metrics and events every 2 seconds
+		setInterval(() => {
+			updateEventLog();
+			refreshMetrics();
+		}, 2000);
+
+		// Initial load
+		refreshMetrics();
+		updateEventLog();
+	</script>
+</body>
+</html>
