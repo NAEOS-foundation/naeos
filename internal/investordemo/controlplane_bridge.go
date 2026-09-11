@@ -30,8 +30,11 @@ func (o *controlPlaneAuditObserver) OnRecorded(event *AuditEvent) {
 		Decision:   decision,
 		Reason:     controlplane.DecisionReason(event.Reason),
 		Metadata: map[string]string{
-			"policy_id":      event.PolicyID,
-			"policy_version": fmt.Sprintf("%d", event.PolicyVersion),
+			"policy_id":       event.PolicyID,
+			"policy_version":  fmt.Sprintf("%d", event.PolicyVersion),
+			"source":          "legacy-compatibility",
+			"projection":      "true",
+			"legacy_event_id": event.EventID,
 		},
 	})
 }

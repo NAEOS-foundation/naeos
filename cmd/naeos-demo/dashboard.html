@@ -372,6 +372,20 @@
 				</div>
 			</div>
 
+			<div class="card full-width">
+				<h2>Approval Workflow</h2>
+				<div style="font-size: 12px; color: #9ca9bd; margin-bottom: 10px;">Approvals are bound to a canonical decision and artifact hash.</div>
+				<input id="approvalDecisionId" placeholder="Decision ID">
+				<input id="approvalArtifactHash" placeholder="Artifact hash (optional)">
+				<div class="control-row">
+					<button onclick="requestApproval()">Request Approval</button>
+					<button class="secondary" onclick="loadApprovalStatus()">Refresh Status</button>
+					<button onclick="approveControlPlane()">Approve</button>
+					<button class="danger" onclick="rejectControlPlane()">Reject</button>
+				</div>
+				<div id="approvalStatus" class="scenario-proof">No approval selected.</div>
+			</div>
+
 			<!-- Verification Status -->
 			<div class="card">
 				<h2>Verification Status</h2>
@@ -457,6 +471,44 @@
 			updateProofBox(cap, allowed ? 'authorized' : 'blocked', msg);
 			updatePipeline(allowed, cap, allowed ? 'policy matched grant' : ('reason: ' + (result.reason || 'policy denied request')));
 			updateEventLog();
+		}
+
+		async function requestApproval() {
+			const decisionId = document.getElementById('approvalDecisionId').value.trim();
+			const result = await apiCall('/control-plane/approval', 'POST', {
+				decision_id: decisionId, approver: 'investor-demo-reviewer', expires_in_seconds: 900
+			});
+			if (result.error) {
+				document.getElementById('approvalStatus').textContent = result.error;
+				return;
+			}
+			document.getElementById('approvalStatus').textContent = 'PENDING ' + result.id;
+			document.getElementById('approvalDecisionId').dataset.approvalId = result.id;
+		}
+
+		async function loadApprovalStatus() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			if (!approvalId) return;
+			const result = await apiCall('/control-plane/approval/' + approvalId);
+			document.getElementById('approvalStatus').textContent = result.error || (result.status || 'unknown').toUpperCase();
+		}
+
+		async function approveControlPlane() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			const result = await apiCall('/control-plane/approval/approve', 'POST', {
+				approval_id: approvalId,
+				reason: 'Approved in investor demo',
+				artifact_hash: document.getElementById('approvalArtifactHash').value.trim()
+			});
+			document.getElementById('approvalStatus').textContent = result.error || 'APPROVED';
+		}
+
+		async function rejectControlPlane() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			const result = await apiCall('/control-plane/approval/reject', 'POST', {
+				approval_id: approvalId, reason: 'Rejected in investor demo'
+			});
+			document.getElementById('approvalStatus').textContent = result.error || 'REJECTED';
 		}
 
 		async function runAllScenarios() {

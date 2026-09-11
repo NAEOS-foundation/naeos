@@ -43,6 +43,7 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/control-plane/approval", server.handleControlPlaneApproval)
 	server.mux.HandleFunc("/api/control-plane/approval/", server.handleControlPlaneApprovalStatus)
 	server.mux.HandleFunc("/api/control-plane/approval/approve", server.handleControlPlaneApprovalApprove)
+	server.mux.HandleFunc("/api/control-plane/approval/reject", server.handleControlPlaneApprovalReject)
 	server.mux.HandleFunc("/api/reset", server.handleReset)
 
 	return server
@@ -357,8 +358,24 @@ func (as *APIServer) handleControlPlaneApproval(w http.ResponseWriter, r *http.R
 	if req.ExpiresIn > 0 {
 		expiresAt = time.Now().UTC().Add(time.Duration(req.ExpiresIn) * time.Second)
 	}
+	if as.setup.ControlPlaneGateway == nil || as.setup.ControlPlaneGateway.Ledger == nil {
+		http.Error(w, "control plane ledger unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	event, ok := as.setup.ControlPlaneGateway.Ledger.Decision(req.DecisionID)
+	if !ok {
+		http.Error(w, "decision not found", http.StatusBadRequest)
+		return
+	}
 	approval, err := as.setup.ControlPlaneGateway.RequestApproval(
-		controlplane.DecisionResult{DecisionID: req.DecisionID, Status: controlplane.DecisionPending},
+		controlplane.DecisionResult{
+			DecisionID:   req.DecisionID,
+			AgentID:      event.AgentID,
+			Requested:    event.Capability,
+			PolicyID:     event.Metadata["policy_id"],
+			ArtifactHash: event.ArtifactHash,
+			Status:       event.Decision,
+		},
 		req.Approver,
 		expiresAt,
 	)
@@ -384,6 +401,27 @@ func (as *APIServer) handleControlPlaneApprovalApprove(w http.ResponseWriter, r 
 		return
 	}
 	approval, err := as.setup.ControlPlaneGateway.Approve(req.ApprovalID, req.Reason, req.ArtifactHash, time.Now().UTC())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, approval)
+}
+
+func (as *APIServer) handleControlPlaneApprovalReject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		ApprovalID string `json:"approval_id"`
+		Reason     string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
+		return
+	}
+	approval, err := as.setup.ControlPlaneGateway.Reject(req.ApprovalID, req.Reason, time.Now().UTC())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

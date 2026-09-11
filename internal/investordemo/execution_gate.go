@@ -409,6 +409,27 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	}
 
 	// Step 5: Authorization granted - execute the capability
+	artifactHash := request.ArtifactHash
+	if artifactHash == "" && request.Payload != nil {
+		artifactHash = calculatePayloadDigest(request.Payload)
+	}
+	decision, executionEvidence := eg.controlPlaneGateway.ExecuteDecision(controlplane.AuthorizeRequest{
+		RequestID:  request.RequestID,
+		DecisionID: decision.DecisionID,
+		AgentID:    request.AgentID,
+		Action: controlplane.Action{
+			AgentID:      request.AgentID,
+			Capability:   controlplane.Capability(request.Capability),
+			ArtifactHash: artifactHash,
+			Payload:      request.Payload,
+		},
+	}, decision)
+	if decision.Status != controlplane.DecisionAllow {
+		result.Error = fmt.Sprintf("Execution denied by control plane: %s", decision.Message)
+		return result, nil
+	}
+	result.ExecutionID = executionEvidence.ExecutionID
+	result.EvidenceID = executionEvidence.ID
 	result.Authorized = true
 	result.Executed = true
 	result.Result = map[string]interface{}{
@@ -443,12 +464,17 @@ func (eg *ExecutionGate) enforceControlPlane(request *ExecutionRequest) (control
 		return controlplane.DecisionResult{Status: controlplane.DecisionDeny, Reason: controlplane.ReasonNoPolicyFound, Message: fmt.Sprintf("policy not found for %s", grant.PolicyID)}, false
 	}
 
+	artifactHash := request.ArtifactHash
+	if artifactHash == "" && request.Payload != nil {
+		artifactHash = calculatePayloadDigest(request.Payload)
+	}
 	decision := eg.controlPlaneGateway.Authorize(controlplane.AuthorizeRequest{
 		RequestID: request.RequestID,
 		AgentID:   request.AgentID,
 		Action: controlplane.Action{
-			AgentID:    request.AgentID,
-			Capability: controlplane.Capability(request.Capability),
+			AgentID:      request.AgentID,
+			Capability:   controlplane.Capability(request.Capability),
+			ArtifactHash: artifactHash,
 			Context: map[string]string{
 				"request_id": request.RequestID,
 			},

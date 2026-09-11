@@ -1,7 +1,10 @@
 package controlplane
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -32,6 +35,73 @@ type Ledger struct {
 // NewLedger creates a fresh append-only ledger.
 func NewLedger() *Ledger {
 	return &Ledger{events: make([]LedgerEvent, 0)}
+}
+
+// Save persists the ledger as a JSON snapshot using an atomic rename.
+func (l *Ledger) Save(path string) error {
+	if l == nil {
+		return fmt.Errorf("ledger unavailable")
+	}
+	if path == "" {
+		return fmt.Errorf("ledger path is required")
+	}
+	data, err := json.Marshal(l.Events())
+	if err != nil {
+		return fmt.Errorf("marshal ledger: %w", err)
+	}
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return fmt.Errorf("create ledger directory: %w", err)
+	}
+	tmp, err := os.CreateTemp(dir, ".ledger-*.tmp")
+	if err != nil {
+		return fmt.Errorf("create ledger snapshot: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+	if err := tmp.Chmod(0o600); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("protect ledger snapshot: %w", err)
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("write ledger snapshot: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("sync ledger snapshot: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close ledger snapshot: %w", err)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		return fmt.Errorf("commit ledger snapshot: %w", err)
+	}
+	return nil
+}
+
+// LoadLedger restores a ledger snapshot and rejects malformed JSON.
+func LoadLedger(path string) (*Ledger, error) {
+	if path == "" {
+		return nil, fmt.Errorf("ledger path is required")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read ledger snapshot: %w", err)
+	}
+	var events []LedgerEvent
+	if err := json.Unmarshal(data, &events); err != nil {
+		return nil, fmt.Errorf("decode ledger snapshot: %w", err)
+	}
+	ledger := NewLedger()
+	for _, event := range events {
+		if event.ID == "" || event.Timestamp.IsZero() {
+			return nil, fmt.Errorf("invalid ledger event %q", event.ID)
+		}
+		ledger.events = append(ledger.events, event)
+		ledger.nextID++
+	}
+	return ledger, nil
 }
 
 // Append adds an event to the ledger. It is always append-only and uses a monotonic event ID.
@@ -69,6 +139,31 @@ func (l *Ledger) EventsForAgent(agentID string) []LedgerEvent {
 		}
 	}
 	return out
+}
+
+// Decision returns the canonical authorization event for a decision ID.
+func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
+	if l == nil || decisionID == "" {
+		return LedgerEvent{}, false
+	}
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	var latest LedgerEvent
+	for i := len(l.events) - 1; i >= 0; i-- {
+		event := l.events[i]
+		if event.EventType == "AUTHORIZATION_DECISION" && event.DecisionID == decisionID {
+			if latest.ID == "" {
+				latest = event
+			}
+			if event.Decision == DecisionPending {
+				return event, true
+			}
+		}
+	}
+	if latest.ID != "" {
+		return latest, true
+	}
+	return LedgerEvent{}, false
 }
 
 // VerificationSummary is the result of a session verification against the evidence ledger.

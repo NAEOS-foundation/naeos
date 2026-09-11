@@ -103,11 +103,13 @@ type AuthorizationContext struct {
 type DecisionResult struct {
 	DecisionID    string         `json:"decision_id,omitempty"`
 	RequestID     string         `json:"request_id,omitempty"`
+	AgentID       string         `json:"agent_id,omitempty"`
 	Status        DecisionStatus `json:"status"`
 	Reason        DecisionReason `json:"reason"`
 	PolicyID      string         `json:"policy_id,omitempty"`
 	PolicyVersion int            `json:"policy_version,omitempty"`
 	Requested     Capability     `json:"requested,omitempty"`
+	ArtifactHash  string         `json:"artifact_hash,omitempty"`
 	ApprovedGrant string         `json:"approved_grant,omitempty"`
 	NeedsApproval bool           `json:"needs_approval,omitempty"`
 	Message       string         `json:"message,omitempty"`

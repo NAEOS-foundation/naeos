@@ -121,15 +121,8 @@ func TestDecisionGateway_RequiresMatchingApprovalArtifactAndConsumesApproval(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := gateway.Approve(approval.ID, "reviewed", "sha256:wrong", time.Now()); err != nil {
-		t.Fatal(err)
-	}
-	mismatch := gateway.Authorize(AuthorizeRequest{
-		RequestID: "REQ-APPROVAL", DecisionID: pending.DecisionID, ApprovalID: approval.ID,
-		Action: action, Grant: grant, Policy: policy, Timestamp: time.Now(),
-	})
-	if mismatch.Status != DecisionDeny {
-		t.Fatalf("expected artifact mismatch to deny, got %s", mismatch.Status)
+	if _, err := gateway.Approve(approval.ID, "reviewed", "sha256:wrong", time.Now()); err == nil {
+		t.Fatal("expected mismatched artifact approval to be rejected")
 	}
 	approval, err = gateway.RequestApproval(pending, "reviewer-1", time.Now().Add(time.Hour))
 	if err != nil {

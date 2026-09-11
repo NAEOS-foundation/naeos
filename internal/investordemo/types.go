@@ -180,6 +180,7 @@ type ExecutionRequest struct {
 	AgentID         string                 `json:"agent_id"`
 	Capability      Capability             `json:"capability"`
 	Payload         map[string]interface{} `json:"payload"`
+	ArtifactHash    string                 `json:"artifact_hash,omitempty"`
 	HandoffContract *HandoffContract       `json:"handoff_contract,omitempty"`
 }
 

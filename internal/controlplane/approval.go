@@ -8,15 +8,19 @@ import (
 
 // Approval records an explicit human or service approval for a pending decision.
 type Approval struct {
-	ID           string    `json:"id"`
-	DecisionID   string    `json:"decision_id"`
-	Approver     string    `json:"approver"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	ApprovedAt   time.Time `json:"approved_at,omitempty"`
-	ArtifactHash string    `json:"artifact_hash,omitempty"`
-	Reason       string    `json:"reason,omitempty"`
+	ID            string     `json:"id"`
+	DecisionID    string     `json:"decision_id"`
+	AgentID       string     `json:"agent_id"`
+	Capability    Capability `json:"capability"`
+	PolicyID      string     `json:"policy_id"`
+	PolicyVersion int        `json:"policy_version"`
+	Approver      string     `json:"approver"`
+	Status        string     `json:"status"`
+	CreatedAt     time.Time  `json:"created_at"`
+	ExpiresAt     time.Time  `json:"expires_at"`
+	ApprovedAt    time.Time  `json:"approved_at,omitempty"`
+	ArtifactHash  string     `json:"artifact_hash,omitempty"`
+	Reason        string     `json:"reason,omitempty"`
 }
 
 // IsValid reports whether an approval can authorize execution now.
@@ -34,20 +38,25 @@ func NewApprovalStore() *ApprovalStore {
 	return &ApprovalStore{approvals: make(map[string]Approval)}
 }
 
-func (s *ApprovalStore) Create(decisionID, approver string, expiresAt time.Time) (Approval, error) {
+func (s *ApprovalStore) Create(result DecisionResult, approver string, expiresAt time.Time) (Approval, error) {
 	if s == nil {
 		return Approval{}, fmt.Errorf("approval store unavailable")
 	}
-	if decisionID == "" || approver == "" {
-		return Approval{}, fmt.Errorf("decision ID and approver are required")
+	if result.DecisionID == "" || result.Status != DecisionPending || approver == "" {
+		return Approval{}, fmt.Errorf("pending decision ID and approver are required")
 	}
 	approval := Approval{
-		ID:         controlPlaneID("APR"),
-		DecisionID: decisionID,
-		Approver:   approver,
-		Status:     "pending",
-		CreatedAt:  time.Now().UTC(),
-		ExpiresAt:  expiresAt,
+		ID:            controlPlaneID("APR"),
+		DecisionID:    result.DecisionID,
+		AgentID:       result.AgentID,
+		Capability:    result.Requested,
+		PolicyID:      result.PolicyID,
+		PolicyVersion: result.PolicyVersion,
+		Approver:      approver,
+		Status:        "pending",
+		CreatedAt:     time.Now().UTC(),
+		ExpiresAt:     expiresAt,
+		ArtifactHash:  result.ArtifactHash,
 	}
 	s.mu.Lock()
 	s.approvals[approval.ID] = approval
@@ -62,6 +71,7 @@ func (s *ApprovalStore) Approve(id, reason, artifactHash string, now time.Time) 
 	if !ok {
 		return Approval{}, fmt.Errorf("approval %s not found", id)
 	}
+
 	if approval.Status != "pending" {
 		return Approval{}, fmt.Errorf("approval %s is already %s", id, approval.Status)
 	}
@@ -70,10 +80,38 @@ func (s *ApprovalStore) Approve(id, reason, artifactHash string, now time.Time) 
 		s.approvals[id] = approval
 		return Approval{}, fmt.Errorf("approval %s is expired", id)
 	}
+	if approval.ArtifactHash != "" && artifactHash != "" && approval.ArtifactHash != artifactHash {
+		return Approval{}, fmt.Errorf("approval %s artifact hash does not match decision", id)
+	}
+	if approval.ArtifactHash != "" {
+		artifactHash = approval.ArtifactHash
+	}
 	approval.Status = "approved"
 	approval.ApprovedAt = now.UTC()
 	approval.Reason = reason
 	approval.ArtifactHash = artifactHash
+	s.approvals[id] = approval
+	return approval, nil
+}
+
+// Reject records an explicit human rejection for a pending approval.
+func (s *ApprovalStore) Reject(id, reason string, now time.Time) (Approval, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	approval, ok := s.approvals[id]
+	if !ok {
+		return Approval{}, fmt.Errorf("approval %s not found", id)
+	}
+	if approval.Status != "pending" {
+		return Approval{}, fmt.Errorf("approval %s is already %s", id, approval.Status)
+	}
+	if !approval.ExpiresAt.IsZero() && !now.Before(approval.ExpiresAt) {
+		approval.Status = "expired"
+		s.approvals[id] = approval
+		return Approval{}, fmt.Errorf("approval %s is expired", id)
+	}
+	approval.Status = "rejected"
+	approval.Reason = reason
 	s.approvals[id] = approval
 	return approval, nil
 }

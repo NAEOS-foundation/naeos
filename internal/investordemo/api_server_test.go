@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 func newTestAPI(t *testing.T) (*APIServer, *DemoSetup) {
@@ -317,8 +319,18 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 }
 
 func TestAPIControlPlaneApprovalLifecycle(t *testing.T) {
-	as, _ := newTestAPI(t)
-	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/approval", `{"decision_id":"DEC-API-1","approver":"reviewer-1","expires_in_seconds":60}`)
+	as, setup := newTestAPI(t)
+	setup.ControlPlaneGateway.Ledger.Append(controlplane.LedgerEvent{
+		DecisionID:   "DEC-API-1",
+		AgentID:      "agent-payment-01",
+		Capability:   "production.deploy",
+		ArtifactHash: "sha256:test",
+		EventType:    "AUTHORIZATION_DECISION",
+		Decision:     controlplane.DecisionPending,
+		Metadata:     map[string]string{"policy_id": "POLICY-017", "policy_version": "17"},
+	})
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/approval",
+		`{"decision_id":"DEC-API-1","approver":"reviewer-1","expires_in_seconds":60}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
@@ -358,6 +370,33 @@ func TestAPIControlPlaneApprovalLifecycle(t *testing.T) {
 	}
 	if status.Status != "approved" {
 		t.Fatalf("expected approved status, got %s", status.Status)
+	}
+
+	as, setup = newTestAPI(t)
+	setup.ControlPlaneGateway.Ledger.Append(controlplane.LedgerEvent{
+		DecisionID: "DEC-API-REJECT", AgentID: "agent-payment-01",
+		Capability: "production.deploy", EventType: "AUTHORIZATION_DECISION",
+		Decision: controlplane.DecisionPending,
+		Metadata: map[string]string{"policy_id": "POLICY-017", "policy_version": "17"},
+	})
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/approval",
+		`{"decision_id":"DEC-API-REJECT","approver":"reviewer-1","expires_in_seconds":60}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected rejection approval creation 200, got %d", rec.Code)
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &approval); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/approval/reject",
+		`{"approval_id":"`+approval.ID+`","reason":"risk review failed"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected rejection 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatal(err)
+	}
+	if status.Status != "rejected" {
+		t.Fatalf("expected rejected status, got %s", status.Status)
 	}
 }
 

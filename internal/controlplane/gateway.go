@@ -74,6 +74,8 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 
 	result := g.Evaluator.EvaluateAction(req.Action, req.Grant, req.Policy, effectiveNow)
 	result.RequestID = req.RequestID
+	result.AgentID = req.AgentID
+	result.ArtifactHash = req.Action.ArtifactHash
 	if req.DecisionID == "" {
 		result.DecisionID = controlPlaneID("DEC")
 	} else {
@@ -82,6 +84,10 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 	if result.Status == DecisionPending && req.ApprovalID != "" && g.Approvals != nil {
 		if approval, err := g.Approvals.Get(req.ApprovalID); err == nil &&
 			approval.DecisionID == result.DecisionID &&
+			approval.AgentID == result.AgentID &&
+			approval.Capability == result.Requested &&
+			approval.PolicyID == result.PolicyID &&
+			approval.PolicyVersion == result.PolicyVersion &&
 			approval.ArtifactHash == req.Action.ArtifactHash &&
 			approval.IsValid(effectiveNow) {
 			result.Status = DecisionAllow
@@ -105,14 +111,15 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 			grantID = req.Grant.GrantID
 		}
 		g.Ledger.Append(LedgerEvent{
-			Timestamp:  req.Timestamp,
-			RequestID:  req.RequestID,
-			DecisionID: result.DecisionID,
-			AgentID:    req.AgentID,
-			Capability: req.Action.Capability,
-			EventType:  "AUTHORIZATION_DECISION",
-			Decision:   result.Status,
-			Reason:     result.Reason,
+			Timestamp:    req.Timestamp,
+			RequestID:    req.RequestID,
+			DecisionID:   result.DecisionID,
+			AgentID:      req.AgentID,
+			Capability:   req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash,
+			EventType:    "AUTHORIZATION_DECISION",
+			Decision:     result.Status,
+			Reason:       result.Reason,
 			Metadata: map[string]string{
 				"policy_id": policyID,
 				"grant_id":  grantID,
@@ -131,6 +138,22 @@ func (g *DecisionGateway) Execute(req AuthorizeRequest) (DecisionResult, LedgerE
 		req.RequestID = controlPlaneID("REQ")
 	}
 	result := g.Authorize(req)
+	return g.executeDecision(req, result)
+}
+
+// ExecuteDecision records an already-authorized action at the execution boundary.
+// Callers must obtain the decision from Authorize immediately before execution.
+func (g *DecisionGateway) ExecuteDecision(req AuthorizeRequest, result DecisionResult) (DecisionResult, LedgerEvent) {
+	if req.Timestamp.IsZero() {
+		req.Timestamp = time.Now().UTC()
+	}
+	if req.RequestID == "" {
+		req.RequestID = result.RequestID
+	}
+	return g.executeDecision(req, result)
+}
+
+func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionResult) (DecisionResult, LedgerEvent) {
 	if g.Ledger == nil {
 		return result, LedgerEvent{}
 	}
@@ -207,7 +230,38 @@ func (g *DecisionGateway) RequestApproval(result DecisionResult, approver string
 	if result.Status != DecisionPending {
 		return Approval{}, fmt.Errorf("decision %s does not require approval", result.DecisionID)
 	}
-	return g.Approvals.Create(result.DecisionID, approver, expiresAt)
+	if g.Ledger == nil {
+		return Approval{}, fmt.Errorf("control plane ledger unavailable")
+	}
+	event, ok := g.Ledger.Decision(result.DecisionID)
+	if !ok {
+		return Approval{}, fmt.Errorf("decision %s not found in control plane ledger", result.DecisionID)
+	}
+	if event.Decision != DecisionPending {
+		return Approval{}, fmt.Errorf("decision %s is not pending approval", result.DecisionID)
+	}
+	if result.AgentID != "" && event.AgentID != result.AgentID {
+		return Approval{}, fmt.Errorf("decision %s agent binding mismatch", result.DecisionID)
+	}
+	if result.Requested != "" && event.Capability != result.Requested {
+		return Approval{}, fmt.Errorf("decision %s capability binding mismatch", result.DecisionID)
+	}
+	if result.PolicyID != "" && event.Metadata["policy_id"] != result.PolicyID {
+		return Approval{}, fmt.Errorf("decision %s policy binding mismatch", result.DecisionID)
+	}
+	if result.ArtifactHash != "" && event.ArtifactHash != result.ArtifactHash {
+		return Approval{}, fmt.Errorf("decision %s artifact binding mismatch", result.DecisionID)
+	}
+	result.AgentID = event.AgentID
+	result.Requested = event.Capability
+	result.PolicyID = event.Metadata["policy_id"]
+	if result.ArtifactHash == "" {
+		result.ArtifactHash = event.ArtifactHash
+	}
+	if version := event.Metadata["policy_version"]; version != "" {
+		_, _ = fmt.Sscanf(version, "%d", &result.PolicyVersion)
+	}
+	return g.Approvals.Create(result, approver, expiresAt)
 }
 
 // Approve marks a pending approval as approved.
@@ -216,4 +270,12 @@ func (g *DecisionGateway) Approve(approvalID, reason, artifactHash string, now t
 		return Approval{}, fmt.Errorf("approval store unavailable")
 	}
 	return g.Approvals.Approve(approvalID, reason, artifactHash, now)
+}
+
+// Reject records an explicit rejection for a pending approval.
+func (g *DecisionGateway) Reject(approvalID, reason string, now time.Time) (Approval, error) {
+	if g == nil || g.Approvals == nil {
+		return Approval{}, fmt.Errorf("approval store unavailable")
+	}
+	return g.Approvals.Reject(approvalID, reason, now)
 }
