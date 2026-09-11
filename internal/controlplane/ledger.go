@@ -1,6 +1,7 @@
 package controlplane
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,18 +24,43 @@ type LedgerEvent struct {
 	Decision     DecisionStatus    `json:"decision,omitempty"`
 	Reason       DecisionReason    `json:"reason,omitempty"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
+	PreviousHash string            `json:"previous_hash,omitempty"`
+	EventHash    string            `json:"event_hash,omitempty"`
 }
 
 // Ledger is an append-only event log for decisions and executions.
 type Ledger struct {
-	mu     sync.RWMutex
-	events []LedgerEvent
-	nextID int
+	mu                   sync.RWMutex
+	events               []LedgerEvent
+	nextID               int
+	persistencePath      string
+	persistenceMu        sync.Mutex
+	lastPersistenceError error
 }
 
 // NewLedger creates a fresh append-only ledger.
 func NewLedger() *Ledger {
 	return &Ledger{events: make([]LedgerEvent, 0)}
+}
+
+// SetPersistencePath enables snapshot persistence after appends.
+func (l *Ledger) SetPersistencePath(path string) {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	l.persistencePath = path
+	l.mu.Unlock()
+}
+
+// PersistenceError returns the latest snapshot error, if any.
+func (l *Ledger) PersistenceError() error {
+	if l == nil {
+		return fmt.Errorf("ledger unavailable")
+	}
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.lastPersistenceError
 }
 
 // Save persists the ledger as a JSON snapshot using an atomic rename.
@@ -98,6 +124,16 @@ func LoadLedger(path string) (*Ledger, error) {
 		if event.ID == "" || event.Timestamp.IsZero() {
 			return nil, fmt.Errorf("invalid ledger event %q", event.ID)
 		}
+		if event.EventHash == "" || event.EventHash != hashLedgerEvent(event) {
+			return nil, fmt.Errorf("invalid ledger event hash %q", event.ID)
+		}
+		if len(ledger.events) == 0 {
+			if event.PreviousHash != "" {
+				return nil, fmt.Errorf("invalid initial ledger link %q", event.ID)
+			}
+		} else if event.PreviousHash != ledger.events[len(ledger.events)-1].EventHash {
+			return nil, fmt.Errorf("broken ledger hash chain at %q", event.ID)
+		}
 		ledger.events = append(ledger.events, event)
 		ledger.nextID++
 	}
@@ -107,7 +143,6 @@ func LoadLedger(path string) (*Ledger, error) {
 // Append adds an event to the ledger. It is always append-only and uses a monotonic event ID.
 func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	l.nextID++
 	if event.ID == "" {
 		event.ID = fmt.Sprintf("EVT-%05d", l.nextID)
@@ -115,8 +150,31 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now().UTC()
 	}
+	if len(l.events) > 0 {
+		event.PreviousHash = l.events[len(l.events)-1].EventHash
+	}
+	event.EventHash = hashLedgerEvent(event)
 	l.events = append(l.events, event)
+	path := l.persistencePath
+	l.mu.Unlock()
+	if path != "" {
+		if err := l.Save(path); err != nil {
+			l.mu.Lock()
+			l.lastPersistenceError = err
+			l.mu.Unlock()
+		} else {
+			l.mu.Lock()
+			l.lastPersistenceError = nil
+			l.mu.Unlock()
+		}
+	}
 	return event
+}
+
+func hashLedgerEvent(event LedgerEvent) string {
+	event.EventHash = ""
+	data, _ := json.Marshal(event)
+	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
 
 // Events returns a snapshot of the ledger.
@@ -141,6 +199,31 @@ func (l *Ledger) EventsForAgent(agentID string) []LedgerEvent {
 	return out
 }
 
+// Query returns evidence matching non-empty correlation filters.
+func (l *Ledger) Query(filters map[string]string) []LedgerEvent {
+	events := l.Events()
+	out := make([]LedgerEvent, 0, len(events))
+	for _, event := range events {
+		if filters["agent_id"] != "" && event.AgentID != filters["agent_id"] {
+			continue
+		}
+		if filters["request_id"] != "" && event.RequestID != filters["request_id"] {
+			continue
+		}
+		if filters["decision_id"] != "" && event.DecisionID != filters["decision_id"] {
+			continue
+		}
+		if filters["execution_id"] != "" && event.ExecutionID != filters["execution_id"] {
+			continue
+		}
+		if filters["event_type"] != "" && event.EventType != filters["event_type"] {
+			continue
+		}
+		out = append(out, event)
+	}
+	return out
+}
+
 // Decision returns the canonical authorization event for a decision ID.
 func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	if l == nil || decisionID == "" {
@@ -148,22 +231,26 @@ func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	}
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	var latest LedgerEvent
 	for i := len(l.events) - 1; i >= 0; i-- {
 		event := l.events[i]
 		if event.EventType == "AUTHORIZATION_DECISION" && event.DecisionID == decisionID {
-			if latest.ID == "" {
-				latest = event
-			}
-			if event.Decision == DecisionPending {
-				return event, true
-			}
+			return event, true
 		}
 	}
-	if latest.ID != "" {
-		return latest, true
-	}
 	return LedgerEvent{}, false
+}
+
+// HasExecution reports whether a decision already produced an execution event.
+func (l *Ledger) HasExecution(decisionID string) bool {
+	if l == nil || decisionID == "" {
+		return false
+	}
+	for _, event := range l.Events() {
+		if event.DecisionID == decisionID && event.EventType == "EXECUTION_ALLOWED" {
+			return true
+		}
+	}
+	return false
 }
 
 // VerificationSummary is the result of a session verification against the evidence ledger.

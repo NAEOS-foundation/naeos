@@ -105,9 +105,12 @@ func (as *APIServer) handleExecute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		AgentID    string                 `json:"agent_id"`
-		Capability string                 `json:"capability"`
-		Payload    map[string]interface{} `json:"payload"`
+		AgentID      string                 `json:"agent_id"`
+		Capability   string                 `json:"capability"`
+		Payload      map[string]interface{} `json:"payload"`
+		DecisionID   string                 `json:"decision_id,omitempty"`
+		ApprovalID   string                 `json:"approval_id,omitempty"`
+		ArtifactHash string                 `json:"artifact_hash,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -116,10 +119,13 @@ func (as *APIServer) handleExecute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	execRequest := &ExecutionRequest{
-		RequestID:  generateID("REQ"),
-		AgentID:    req.AgentID,
-		Capability: Capability(req.Capability),
-		Payload:    req.Payload,
+		RequestID:    generateID("REQ"),
+		AgentID:      req.AgentID,
+		Capability:   Capability(req.Capability),
+		Payload:      req.Payload,
+		DecisionID:   req.DecisionID,
+		ApprovalID:   req.ApprovalID,
+		ArtifactHash: req.ArtifactHash,
 	}
 
 	result, _ := as.setup.ExecutionGate.Authorize(execRequest)
@@ -333,11 +339,19 @@ func (as *APIServer) handleControlPlaneEvidence(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	events := as.setup.ControlPlaneGateway.Ledger.Events()
-	writeJSON(w, map[string]interface{}{
+	filters := map[string]string{}
+	for _, key := range []string{"agent_id", "request_id", "decision_id", "execution_id", "event_type"} {
+		filters[key] = r.URL.Query().Get(key)
+	}
+	events := as.setup.ControlPlaneGateway.Ledger.Query(filters)
+	response := map[string]interface{}{
 		"events": events,
 		"total":  len(events),
-	})
+	}
+	if err := as.setup.ControlPlaneGateway.Ledger.PersistenceError(); err != nil {
+		response["persistence_error"] = err.Error()
+	}
+	writeJSON(w, response)
 }
 
 func (as *APIServer) handleControlPlaneApproval(w http.ResponseWriter, r *http.Request) {

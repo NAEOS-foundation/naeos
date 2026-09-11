@@ -316,6 +316,17 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected 405, got %d", rec.Code)
 	}
+
+	rec = doJSON(t, as, http.MethodGet, "/api/control-plane/evidence?agent_id=agent-payment-01&event_type=AUTHORIZATION_DECISION", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected filtered evidence 200, got %d", rec.Code)
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Total != 1 || resp.Events[0]["agent_id"] != "agent-payment-01" {
+		t.Fatalf("unexpected filtered evidence: %+v", resp)
+	}
 }
 
 func TestAPIControlPlaneApprovalLifecycle(t *testing.T) {
@@ -407,6 +418,7 @@ func TestAPIControlPlaneEndToEndEvidenceFlow(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("decision returned %d", rec.Code)
 	}
+
 	var decision struct {
 		Status     string `json:"status"`
 		RequestID  string `json:"request_id"`
@@ -453,6 +465,53 @@ func TestAPIControlPlaneEndToEndEvidenceFlow(t *testing.T) {
 	}
 	if session.Result != "PASS" || !session.PolicyCompliant {
 		t.Fatalf("unexpected session result: %+v", session)
+	}
+}
+
+func TestAPIControlPlaneApprovalExecutionFlow(t *testing.T) {
+	as, _ := newTestAPI(t)
+	rec := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
+		`{"agent_id":"agent-payment-01","capability":"approval.request","artifact_hash":"sha256:approval-demo"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("decision returned %d: %s", rec.Code, rec.Body.String())
+	}
+	var decision struct {
+		Status string `json:"status"`
+		ID     string `json:"decision_id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &decision); err != nil {
+		t.Fatal(err)
+	}
+	if decision.Status != "REQUIRE_APPROVAL" {
+		t.Fatalf("expected approval-required decision, got %+v", decision)
+	}
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/approval",
+		`{"decision_id":"`+decision.ID+`","approver":"reviewer-1","expires_in_seconds":60}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("approval creation returned %d: %s", rec.Code, rec.Body.String())
+	}
+	var approval struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &approval); err != nil {
+		t.Fatal(err)
+	}
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/approval/approve",
+		`{"approval_id":"`+approval.ID+`","reason":"approved","artifact_hash":"sha256:approval-demo"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("approval returned %d: %s", rec.Code, rec.Body.String())
+	}
+	rec = doJSON(t, as, http.MethodPost, "/api/execute",
+		`{"agent_id":"agent-payment-01","capability":"approval.request","decision_id":"`+decision.ID+`","approval_id":"`+approval.ID+`","artifact_hash":"sha256:approval-demo","payload":{"change":"demo"}}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("execution returned %d: %s", rec.Code, rec.Body.String())
+	}
+	var execution ExecutionResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &execution); err != nil {
+		t.Fatal(err)
+	}
+	if !execution.Authorized || !execution.Executed {
+		t.Fatalf("expected approved execution, got %+v", execution)
 	}
 }
 

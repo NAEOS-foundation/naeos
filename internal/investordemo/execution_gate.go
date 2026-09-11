@@ -343,15 +343,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		return result, nil
 	}
 
-	// Step 2: Keep the legacy authority as a compatibility consistency check.
-	authDecision := eg.capabilityAuthority.CheckAuthorization(request.AgentID, request.Capability)
-	if !authDecision.Authorized {
-		result.Error = fmt.Sprintf("Authorization denied: %s", authDecision.Reason)
-		eg.recordAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, "", 0, "BLOCK", authDecision.BlockReason)
-		return result, nil
-	}
-
-	// Step 3: If a handoff contract was provided, validate it
+	// Step 2: If a handoff contract was provided, validate it.
 	if request.HandoffContract != nil {
 		handoffValidation := eg.handoffValidator.ValidateHandoff(request.HandoffContract)
 		if !handoffValidation.Valid {
@@ -361,54 +353,15 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		}
 	}
 
-	// Step 4: Re-check authorization at execution time using current policy
-	// This ensures that policy changes are respected even if the authorization was valid before
+	// Step 3: Read current grant state for verification context. The control plane
+	// remains the sole authority for allow/deny decisions.
 	currentGrant, err := eg.capabilityAuthority.grantStore.GetGrantByAgent(request.AgentID)
-	if err != nil || !currentGrant.IsValid() {
-		result.Error = "Authorization is stale or invalid at execution time"
-		eg.recordAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, "", 0, "BLOCK", "STALE_AUTHORIZATION")
+	if err != nil {
+		result.Error = "Grant context unavailable after control-plane authorization"
 		return result, nil
 	}
 
-	// Step 4b: Verify the grant's policy version still matches the active policy.
-	// If the policy has been superseded (e.g., POLICY-017 v17 → v18), the old grant
-	// is stale and must be blocked. This enforces Demo Principle #6:
-	// "Bind authorization to policy version."
-	activePolicy, policyErr := eg.policyEngine.policyStore.GetPolicy(currentGrant.PolicyID)
-	if policyErr != nil || activePolicy.Version != currentGrant.PolicyVersion {
-		result.Error = fmt.Sprintf("Authorization is stale: granted under %s v%d but current active policy has changed",
-			currentGrant.PolicyID, currentGrant.PolicyVersion)
-		activeVersion := 0
-		if policyErr == nil {
-			activeVersion = activePolicy.Version
-		}
-		_ = eg.auditLedger.RecordEvent(&AuditEvent{
-			Timestamp:           time.Now(),
-			EventType:           "EXECUTION_BLOCKED",
-			AgentID:             request.AgentID,
-			RequestedCapability: request.Capability,
-			PolicyID:            currentGrant.PolicyID,
-			PolicyVersion:       currentGrant.PolicyVersion,
-			Decision:            "BLOCK",
-			Reason:              "STALE_AUTHORIZATION",
-			Details: map[string]interface{}{
-				"grant_policy_version":  currentGrant.PolicyVersion,
-				"active_policy_version": activeVersion,
-			},
-		})
-		return result, nil
-	}
-
-	// Check if the capability is protected (like iam.modify, policy.modify, credential.rotate)
-	// Protected capabilities should never be executed
-	isProtected, _ := eg.policyEngine.IsProtectedCapability(currentGrant.PolicyID, currentGrant.PolicyVersion, request.Capability)
-	if isProtected {
-		result.Error = fmt.Sprintf("Capability %s is protected and cannot be executed", request.Capability)
-		eg.recordAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, currentGrant.PolicyID, currentGrant.PolicyVersion, "BLOCK", "PROTECTED_CAPABILITY")
-		return result, nil
-	}
-
-	// Step 5: Authorization granted - execute the capability
+	// Step 4: Authorization granted - execute the capability.
 	artifactHash := request.ArtifactHash
 	if artifactHash == "" && request.Payload != nil {
 		artifactHash = calculatePayloadDigest(request.Payload)
@@ -417,6 +370,7 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 		RequestID:  request.RequestID,
 		DecisionID: decision.DecisionID,
 		AgentID:    request.AgentID,
+		ApprovalID: request.ApprovalID,
 		Action: controlplane.Action{
 			AgentID:      request.AgentID,
 			Capability:   controlplane.Capability(request.Capability),
@@ -469,8 +423,10 @@ func (eg *ExecutionGate) enforceControlPlane(request *ExecutionRequest) (control
 		artifactHash = calculatePayloadDigest(request.Payload)
 	}
 	decision := eg.controlPlaneGateway.Authorize(controlplane.AuthorizeRequest{
-		RequestID: request.RequestID,
-		AgentID:   request.AgentID,
+		RequestID:  request.RequestID,
+		DecisionID: request.DecisionID,
+		AgentID:    request.AgentID,
+		ApprovalID: request.ApprovalID,
 		Action: controlplane.Action{
 			AgentID:      request.AgentID,
 			Capability:   controlplane.Capability(request.Capability),

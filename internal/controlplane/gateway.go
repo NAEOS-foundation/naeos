@@ -121,8 +121,9 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 			Decision:     result.Status,
 			Reason:       result.Reason,
 			Metadata: map[string]string{
-				"policy_id": policyID,
-				"grant_id":  grantID,
+				"policy_id":      policyID,
+				"policy_version": fmt.Sprintf("%d", result.PolicyVersion),
+				"grant_id":       grantID,
 			},
 		})
 	}
@@ -156,6 +157,35 @@ func (g *DecisionGateway) ExecuteDecision(req AuthorizeRequest, result DecisionR
 func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionResult) (DecisionResult, LedgerEvent) {
 	if g.Ledger == nil {
 		return result, LedgerEvent{}
+	}
+	canonical, ok := g.Ledger.Decision(result.DecisionID)
+	if !ok || canonical.Decision != DecisionAllow ||
+		canonical.RequestID != result.RequestID ||
+		canonical.AgentID != req.AgentID ||
+		canonical.Capability != req.Action.Capability ||
+		canonical.ArtifactHash != req.Action.ArtifactHash {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedByPolicy
+		result.Message = "execution decision is not canonical or no longer allowed"
+		return result, g.Ledger.Append(LedgerEvent{
+			RequestID: req.RequestID, DecisionID: result.DecisionID,
+			AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash,
+			EventType:    "EXECUTION_BLOCKED", Decision: DecisionDeny,
+			Reason: result.Reason,
+		})
+	}
+	if g.Ledger.HasExecution(result.DecisionID) {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedByPolicy
+		result.Message = "decision has already been executed"
+		return result, g.Ledger.Append(LedgerEvent{
+			RequestID: req.RequestID, DecisionID: result.DecisionID,
+			AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash,
+			EventType:    "EXECUTION_BLOCKED", Decision: DecisionDeny,
+			Reason: result.Reason,
+		})
 	}
 
 	policyID := "unknown"

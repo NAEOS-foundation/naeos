@@ -176,6 +176,8 @@ type AuditEvent struct {
 // ExecutionRequest represents a request to execute an action.
 type ExecutionRequest struct {
 	RequestID       string                 `json:"request_id"`
+	DecisionID      string                 `json:"decision_id,omitempty"`
+	ApprovalID      string                 `json:"approval_id,omitempty"`
 	Timestamp       time.Time              `json:"timestamp"`
 	AgentID         string                 `json:"agent_id"`
 	Capability      Capability             `json:"capability"`

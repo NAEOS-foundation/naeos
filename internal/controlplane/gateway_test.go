@@ -96,6 +96,24 @@ func TestDecisionGateway_DeniesWhenGatewayEvaluatorIsUnavailable(t *testing.T) {
 	if result.Status != DecisionDeny {
 		t.Fatalf("expected DENY for unavailable gateway, got %s", result.Status)
 	}
+
+}
+
+func TestDecisionGateway_RejectsForgedExecutionDecision(t *testing.T) {
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-FORGED", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	result, _ := gateway.ExecuteDecision(AuthorizeRequest{
+		RequestID: "REQ-FORGED", AgentID: "agent-1",
+		Action: Action{AgentID: "agent-1", Capability: "repository.read"},
+	}, DecisionResult{RequestID: "REQ-FORGED", DecisionID: "DEC-FORGED", Status: DecisionAllow})
+	if result.Status != DecisionDeny {
+		t.Fatalf("expected forged decision to be denied, got %s", result.Status)
+	}
 }
 
 func TestDecisionGateway_RequiresMatchingApprovalArtifactAndConsumesApproval(t *testing.T) {
