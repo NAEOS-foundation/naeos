@@ -319,7 +319,7 @@
 					<button onclick="testCapability()">Test</button>
 					<button class="secondary" onclick="runAllScenarios()">Run All Scenarios</button>
 				</div>
-				<div id="testResult"></div>
+				<div id="capabilityTestResult"></div>
 			</div>
 
 			<!-- Authorization Checks -->
@@ -352,7 +352,7 @@
 					<button onclick="testScenario('stale_authorization')">Attack 6: Policy Version Mismatch</button>
 					<button class="danger" onclick="resetDemo()" style="margin-top: 8px;">Reset Demo</button>
 				</div>
-				<div id="testResult" class="scenario-proof"></div>
+				<div id="scenarioTestResult" class="scenario-proof"></div>
 			</div>
 
 			<!-- Live Audit Events -->
@@ -361,6 +361,29 @@
 				<div class="event-log" id="eventLog">
 					<div style="color: #94a3b8;">Waiting for events...</div>
 				</div>
+			</div>
+
+			<!-- Control Plane Evidence -->
+			<div class="card full-width">
+				<h2>Control Plane Evidence</h2>
+				<div style="font-size: 12px; color: #9ca9bd; margin-bottom: 10px;">Append-only decision records emitted by the reusable control-plane gateway.</div>
+				<div class="event-log" id="controlPlaneEvidence">
+					<div style="color: #94a3b8;">Waiting for control-plane decisions...</div>
+				</div>
+			</div>
+
+			<div class="card full-width">
+				<h2>Approval Workflow</h2>
+				<div style="font-size: 12px; color: #9ca9bd; margin-bottom: 10px;">Approvals are bound to a canonical decision and artifact hash.</div>
+				<input id="approvalDecisionId" placeholder="Decision ID">
+				<input id="approvalArtifactHash" placeholder="Artifact hash (optional)">
+				<div class="control-row">
+					<button onclick="requestApproval()">Request Approval</button>
+					<button class="secondary" onclick="loadApprovalStatus()">Refresh Status</button>
+					<button onclick="approveControlPlane()">Approve</button>
+					<button class="danger" onclick="rejectControlPlane()">Reject</button>
+				</div>
+				<div id="approvalStatus" class="scenario-proof">No approval selected.</div>
 			</div>
 
 			<!-- Verification Status -->
@@ -428,23 +451,64 @@
 
 		async function testCapability() {
 			const cap = document.getElementById('testCapability').value || 'repository.read';
-			const result = await apiCall('/execute', 'POST', {
+			const result = await apiCall('/control-plane/decision', 'POST', {
 				agent_id: 'agent-payment-01',
-				capability: cap,
-				payload: {}
+				capability: cap
 			});
 
-			const msg = result.authorized ?
-				'Capability matched the active grant and policy.' :
-				(result.error || 'Denied by the NAEOS control plane.');
-			const html = result.authorized ?
+			if (result.error) {
+				document.getElementById('capabilityTestResult').innerHTML = '<p style="color: #fca5a5; margin-top: 12px;"><strong>ERROR</strong><br/>' + result.error + '</p>';
+				return;
+			}
+
+			const allowed = result.allowed === true;
+			const msg = result.message || result.reason || 'No detailed reason returned.';
+			const html = allowed ?
 				'<p style="color: #6ee7b7; margin-top: 12px;"><strong>ALLOW</strong><br/><span style="color:#cbd5e1;">' + msg + '</span></p>' :
 				'<p style="color: #fca5a5; margin-top: 12px;"><strong>BLOCKED</strong><br/>' + msg + '</p>';
-			document.getElementById('testResult').innerHTML = html;
+			document.getElementById('capabilityTestResult').innerHTML = html;
 
-			updateProofBox(cap, result.authorized ? 'authorized' : 'blocked', msg);
-			updatePipeline(result.authorized, cap, result.authorized ? 'policy matched grant' : 'policy denied request');
+			updateProofBox(cap, allowed ? 'authorized' : 'blocked', msg);
+			updatePipeline(allowed, cap, allowed ? 'policy matched grant' : ('reason: ' + (result.reason || 'policy denied request')));
 			updateEventLog();
+		}
+
+		async function requestApproval() {
+			const decisionId = document.getElementById('approvalDecisionId').value.trim();
+			const result = await apiCall('/control-plane/approval', 'POST', {
+				decision_id: decisionId, approver: 'investor-demo-reviewer', expires_in_seconds: 900
+			});
+			if (result.error) {
+				document.getElementById('approvalStatus').textContent = result.error;
+				return;
+			}
+			document.getElementById('approvalStatus').textContent = 'PENDING ' + result.id;
+			document.getElementById('approvalDecisionId').dataset.approvalId = result.id;
+		}
+
+		async function loadApprovalStatus() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			if (!approvalId) return;
+			const result = await apiCall('/control-plane/approval/' + approvalId);
+			document.getElementById('approvalStatus').textContent = result.error || (result.status || 'unknown').toUpperCase();
+		}
+
+		async function approveControlPlane() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			const result = await apiCall('/control-plane/approval/approve', 'POST', {
+				approval_id: approvalId,
+				reason: 'Approved in investor demo',
+				artifact_hash: document.getElementById('approvalArtifactHash').value.trim()
+			});
+			document.getElementById('approvalStatus').textContent = result.error || 'APPROVED';
+		}
+
+		async function rejectControlPlane() {
+			const approvalId = document.getElementById('approvalDecisionId').dataset.approvalId;
+			const result = await apiCall('/control-plane/approval/reject', 'POST', {
+				approval_id: approvalId, reason: 'Rejected in investor demo'
+			});
+			document.getElementById('approvalStatus').textContent = result.error || 'REJECTED';
 		}
 
 		async function runAllScenarios() {
@@ -456,7 +520,7 @@
 					const color = s.passed ? '#6ee7b7' : '#fca5a5';
 					html += '<div style="color: ' + color + '; margin: 8px 0;"><strong>' + icon + ' ' + s.scenario_name + '</strong></div>';
 				});
-				document.getElementById('testResult').innerHTML = html;
+				document.getElementById('scenarioTestResult').innerHTML = html;
 			}
 			updateProofBox('multi-scenario', 'verified', 'All attack paths were evaluated and denied where required.');
 			updatePipeline(true, 'all scenarios', 'all policy checks passed');
@@ -464,12 +528,12 @@
 		}
 
 		async function testScenario(type) {
-			document.getElementById('testResult').innerHTML = '<p style="color: #cbd5e1; margin-top: 12px;">Running...</p>';
+			document.getElementById('scenarioTestResult').innerHTML = '<p style="color: #cbd5e1; margin-top: 12px;">Running...</p>';
 
 			const result = await apiCall('/scenario', 'POST', { name: type });
 
 			if (result.error) {
-				document.getElementById('testResult').innerHTML = '<p style="color: #fcd34d; margin-top: 12px;">' + result.error + '</p>';
+				document.getElementById('scenarioTestResult').innerHTML = '<p style="color: #fcd34d; margin-top: 12px;">' + result.error + '</p>';
 				updateEventLog();
 				return;
 			}
@@ -483,7 +547,7 @@
 				result.scenario_name + '<br/>' +
 				'<span style="color:#cbd5e1;">' + label + '</span><br/>' +
 				'<code>' + scenarioReason + '</code></p>';
-			document.getElementById('testResult').innerHTML = html;
+			document.getElementById('scenarioTestResult').innerHTML = html;
 			updateProofBox(result.scenario_name || 'attack', result.passed ? 'verified' : 'blocked', scenarioReason);
 			updatePipeline(result.passed, result.scenario_name, result.passed ? 'expected policy outcome met' : 'policy boundary enforced');
 			updateEventLog();
@@ -566,15 +630,42 @@
 			}
 		}
 
+		async function updateControlPlaneEvidence() {
+			const evidence = await apiCall('/control-plane/evidence');
+			if (!evidence.events) return;
+			const log = document.getElementById('controlPlaneEvidence');
+			if (!evidence.events.length) {
+				log.innerHTML = '<div style="color: #94a3b8;">No control-plane decisions recorded.</div>';
+				return;
+			}
+			log.innerHTML = evidence.events.map(e => {
+				const allowed = e.decision === 'ALLOW';
+				const cls = allowed ? 'allow' : 'block';
+				const icon = allowed ? '[+]' : '[-]';
+				return '<div class="event ' + cls + '">' + icon + ' ' +
+					(e.event_type || 'AUTHORIZATION_DECISION') + ' - ' +
+					(e.agent_id || 'unknown-agent') + ' - ' +
+					(e.capability || 'unknown-capability') + ' - ' +
+					(e.reason || 'no reason') +
+					' <span style="color:#94a3b8;">[' + (e.id || 'no-event-id') +
+					' / ' + (e.decision_id || 'no-decision-id') + ']</span></div>';
+			}).join('');
+		}
+
 		async function verifySession() {
-			const result = await apiCall('/verification', 'POST', { agent_id: 'agent-payment-01' });
+			const result = await apiCall('/control-plane/session', 'POST', { agent_id: 'agent-payment-01' });
+			if (result.error) {
+				document.getElementById('verificationResult').innerHTML = '<p style="color:#fca5a5;margin-top:12px;">' + result.error + '</p>';
+				return;
+			}
 			const color = result.result === 'PASS' ? '#10b981' : '#ef4444';
 			const html = '<div style="margin-top: 14px; padding: 12px; border-radius: 10px; background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.12);">' +
 				'<div style="color:' + color + '; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">' +
 				(result.result === 'PASS' ? 'PASSED' : 'FAILED') + '</div>' +
-				'<div style="color:#dfeafc; font-size:13px; line-height:1.6;">' + (result.summary || 'No summary available') + '</div>' +
-				'<div class="verification-item" style="margin-top:10px;"><span>Unauthorized actions</span><strong>' + (result.unauthorized_actions || 0) + '</strong></div>' +
-				'<div class="verification-item"><span>Policy compliance</span><strong>' + (result.policy_compliance ? 'YES' : 'NO') + '</strong></div>' +
+				'<div style="color:#dfeafc; font-size:13px; line-height:1.6;">' + (result.summary || 'Session was evaluated against the evidence ledger.') + '</div>' +
+				'<div class="verification-item" style="margin-top:10px;"><span>Unauthorized actions</span><strong>' + (result.unauthorized || 0) + '</strong></div>' +
+				'<div class="verification-item"><span>Policy compliance</span><strong>' + (result.policy_compliant ? 'YES' : 'NO') + '</strong></div>' +
+				(result.issues && result.issues.length ? '<div class="verification-item"><span>Issues</span><strong>' + result.issues.join('; ') + '</strong></div>' : '') +
 				'</div>';
 			document.getElementById('verificationResult').innerHTML = html;
 		}
@@ -597,21 +688,25 @@
 
 		async function resetDemo() {
 			await apiCall('/reset', 'POST');
-			document.getElementById('testResult').innerHTML = '';
+			document.getElementById('capabilityTestResult').innerHTML = '';
+			document.getElementById('scenarioTestResult').innerHTML = '';
 			document.getElementById('eventLog').innerHTML = '<div style="color: #888;">Events cleared</div>';
 			document.getElementById('verificationResult').innerHTML = '';
+			updateControlPlaneEvidence();
 			refreshMetrics();
 		}
 
 		// Refresh metrics and events every 2 seconds
 		setInterval(() => {
 			updateEventLog();
+			updateControlPlaneEvidence();
 			refreshMetrics();
 		}, 2000);
 
 		// Initial load
 		refreshMetrics();
 		updateEventLog();
+		updateControlPlaneEvidence();
 	</script>
 </body>
 </html>

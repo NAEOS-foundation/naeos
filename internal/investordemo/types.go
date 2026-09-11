@@ -176,10 +176,13 @@ type AuditEvent struct {
 // ExecutionRequest represents a request to execute an action.
 type ExecutionRequest struct {
 	RequestID       string                 `json:"request_id"`
+	DecisionID      string                 `json:"decision_id,omitempty"`
+	ApprovalID      string                 `json:"approval_id,omitempty"`
 	Timestamp       time.Time              `json:"timestamp"`
 	AgentID         string                 `json:"agent_id"`
 	Capability      Capability             `json:"capability"`
 	Payload         map[string]interface{} `json:"payload"`
+	ArtifactHash    string                 `json:"artifact_hash,omitempty"`
 	HandoffContract *HandoffContract       `json:"handoff_contract,omitempty"`
 }
 
@@ -191,6 +194,8 @@ type ExecutionRequest struct {
 type ExecutionResult struct {
 	ExecutionID        string                 `json:"execution_id"`
 	RequestID          string                 `json:"request_id"`
+	DecisionID         string                 `json:"decision_id,omitempty"`
+	EvidenceID         string                 `json:"evidence_id,omitempty"`
 	Timestamp          time.Time              `json:"timestamp"`
 	AgentID            string                 `json:"agent_id"`
 	Capability         Capability             `json:"capability"`
