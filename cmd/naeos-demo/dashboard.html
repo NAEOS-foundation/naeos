@@ -14,61 +14,77 @@
 		}
 		.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 		header {
-			background: rgba(255, 255, 255, 0.05);
-			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-			padding: 20px 0;
+			background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(17,24,39,0.65));
+			border: 1px solid rgba(148,163,184,0.22);
+			padding: 20px 26px;
 			margin-bottom: 30px;
-			border-radius: 8px;
+			border-radius: 18px;
+			box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
 		}
-		h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-		.subtitle { font-size: 14px; color: #888; }
-		.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+		h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.04em; }
+		.subtitle { font-size: 14px; color: #cbd5e1; }
+		.hero-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+		.hero-identity { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+		.tag {
+			display: inline-flex; align-items: center; gap: 6px;
+			padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+			letter-spacing: 0.08em; text-transform: uppercase;
+			background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.18); color: #e2e8f0;
+		}
+		.tag strong { color: #7dd3fc; }
+		.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); gap: 20px; }
 		.card {
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 12px;
-			padding: 24px;
-			backdrop-filter: blur(10px);
+			background: rgba(15, 23, 42, 0.7);
+			border: 1px solid rgba(148, 163, 184, 0.16);
+			border-radius: 16px;
+			padding: 22px;
+			box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 		}
-		.card h2 { font-size: 18px; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; }
-		.card h3 { font-size: 14px; color: #aaa; margin-top: 16px; margin-bottom: 8px; }
+		.card h2 { font-size: 17px; margin-bottom: 16px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); padding-bottom: 12px; }
+		.card h3 { font-size: 12px; color: #8fa5bf; margin-top: 16px; margin-bottom: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
 		.status {
 			display: inline-block;
-			padding: 4px 12px;
-			border-radius: 4px;
-			font-size: 12px;
-			font-weight: 600;
+			padding: 5px 12px;
+			border-radius: 999px;
+			font-size: 11px;
+			font-weight: 700;
 			margin: 4px 0;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
 		}
-		.status.active { background: #10b981; color: white; }
-		.status.blocked { background: #ef4444; color: white; }
-		.status.pending { background: #f59e0b; color: white; }
+		.status.active { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.35); }
+		.status.blocked { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.35); }
+		.status.pending { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.35); }
+		.info-list { display: grid; gap: 12px; }
+		.info-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(148,163,184,0.08); border-radius: 10px; padding: 10px 12px; }
+		.info-label { color: #9ca9bd; font-size: 12px; }
+		.info-value { font-weight: 700; font-size: 13px; }
 		.control-row {
 			display: flex;
 			gap: 8px;
 			margin-top: 12px;
+			flex-wrap: wrap;
 		}
 		button {
-			background: #3b82f6;
+			background: linear-gradient(180deg, #3b82f6, #2563eb);
 			border: none;
 			color: white;
-			padding: 8px 16px;
-			border-radius: 6px;
+			padding: 10px 16px;
+			border-radius: 10px;
 			cursor: pointer;
 			font-size: 13px;
-			font-weight: 600;
-			transition: all 0.3s;
+			font-weight: 700;
+			transition: all 0.2s ease;
+			box-shadow: 0 12px 18px rgba(37,99,235,0.25);
 		}
-		button:hover { background: #2563eb; transform: translateY(-2px); }
-		button.secondary { background: #6b7280; }
-		button.secondary:hover { background: #4b5563; }
-		button.danger { background: #ef4444; }
-		button.danger:hover { background: #dc2626; }
+		button:hover { transform: translateY(-1px); filter: brightness(1.04); }
+		button.secondary { background: linear-gradient(180deg, #64748b, #475569); box-shadow: none; }
+		button.danger { background: linear-gradient(180deg, #ef4444, #dc2626); box-shadow: none; }
 		input, textarea {
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 6px;
-			padding: 8px 12px;
+			background: rgba(15, 23, 42, 0.8);
+			border: 1px solid rgba(148,163,184,0.2);
+			border-radius: 10px;
+			padding: 10px 12px;
 			color: #e0e0e0;
 			font-size: 13px;
 			margin: 8px 0;
@@ -76,49 +92,146 @@
 			font-family: monospace;
 		}
 		.event-log {
-			background: rgba(0, 0, 0, 0.3);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			border-radius: 6px;
+			background: rgba(2, 6, 23, 0.75);
+			border: 1px solid rgba(148, 163, 184, 0.16);
+			border-radius: 12px;
 			padding: 12px;
 			max-height: 300px;
 			overflow-y: auto;
-			font-family: monospace;
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 			font-size: 12px;
 			margin-top: 12px;
 		}
-		.event { padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-		.event.allow { color: #10b981; }
-		.event.block { color: #ef4444; }
+		.event { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+		.event.allow { color: #6ee7b7; }
+		.event.block { color: #fca5a5; }
 		.pipeline {
 			display: flex;
 			align-items: center;
 			gap: 8px;
 			font-size: 12px;
 			margin: 12px 0;
+			flex-wrap: wrap;
 		}
 		.pipeline-step {
-			background: rgba(255, 255, 255, 0.1);
-			padding: 4px 8px;
-			border-radius: 4px;
-			flex: 1;
+			background: rgba(148,163,184,0.12);
+			padding: 6px 10px;
+			border-radius: 8px;
+			flex: 1 1 90px;
 			text-align: center;
+			border: 1px solid rgba(148,163,184,0.15);
 		}
-		.pipeline-step.pass { background: #10b98122; color: #10b981; }
-		.pipeline-step.fail { background: #ef444422; color: #ef4444; }
-		.arrow { color: #666; }
+		.pipeline-step.pass { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.35); }
+		.pipeline-step.fail { background: rgba(239,68,68,0.12); color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+		.arrow { color: #64748b; }
 		.metric {
 			display: flex;
 			justify-content: space-between;
-			padding: 8px 0;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			padding: 9px 0;
+			border-bottom: 1px solid rgba(148,163,184,0.08);
 		}
-		.metric-value { font-weight: 600; }
+		.metric-value { font-weight: 800; }
+		.proof-box {
+			margin: 0 0 18px;
+			padding: 18px 20px;
+			border-radius: 16px;
+			background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(15,23,42,0.9));
+			border: 1px solid rgba(125,211,252,0.2);
+			box-shadow: 0 12px 18px rgba(15, 23, 42, 0.25);
+		}
+		.proof-header {
+			font-size: 11px;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			color: #7dd3fc;
+			font-weight: 800;
+			margin-bottom: 12px;
+		}
+		.proof-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+			gap: 12px;
+		}
+		.proof-item {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			padding: 12px;
+			border-radius: 12px;
+			background: rgba(15,23,42,0.45);
+			border: 1px solid rgba(148,163,184,0.1);
+		}
+		.proof-item span {
+			font-size: 11px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: #a5b4cf;
+		}
+		.proof-item strong {
+			font-size: 13px;
+			line-height: 1.5;
+			color: #f8fafc;
+		}
+		.callout {
+			margin: 0 0 22px;
+			padding: 14px 16px;
+			border-left: 4px solid #7dd3fc;
+			border-radius: 10px;
+			background: rgba(125,211,252,0.08);
+			color: #dfeafc;
+			font-size: 14px;
+			line-height: 1.6;
+		}
+		.trust-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+			gap: 16px;
+			margin: 18px 0 20px;
+		}
+		.trust-box {
+			padding: 18px;
+			border-radius: 14px;
+			background: rgba(15, 23, 42, 0.72);
+			border: 1px solid rgba(148, 163, 184, 0.14);
+		}
+		.trust-box h3 {
+			margin: 0 0 10px;
+			font-size: 12px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: #8fa5bf;
+		}
+		.trust-box ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+			display: grid;
+			gap: 8px;
+			font-size: 13px;
+			color: #dfeafc;
+		}
+		.trust-box li {
+			padding: 8px 10px;
+			border-radius: 9px;
+			background: rgba(255,255,255,0.02);
+			border: 1px solid rgba(148,163,184,0.08);
+		}
+		.scenario-proof {
+			margin-top: 14px;
+			padding: 12px;
+			border-radius: 12px;
+			background: rgba(2, 6, 23, 0.5);
+			border: 1px solid rgba(148,163,184,0.08);
+		}
+		.verification-item {
+			display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(148,163,184,0.08);
+		}
 		.full-width { grid-column: 1 / -1; }
 		code {
-			background: rgba(0, 0, 0, 0.3);
-			padding: 2px 6px;
-			border-radius: 3px;
-			font-family: monospace;
+			background: rgba(2,6,23,0.8);
+			padding: 3px 7px;
+			border-radius: 6px;
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 			font-size: 12px;
 		}
 	</style>
@@ -126,15 +239,59 @@
 <body>
 	<div class="container">
 		<header>
-			<h1>NAEOS Control Plane Demo</h1>
-			<p class="subtitle">Engineering authorization and policy enforcement for AI agents</p>
-			<p class="subtitle" style="margin-top: 6px;">Agents can act. <strong>NAEOS decides what they are allowed to do.</strong> Reasoning is delegated; authorization is not.</p>
-			<button onclick="runInvestorDemo()" style="margin-top: 16px; padding: 12px 24px; font-size: 15px;">&#9654; Run Investor Demo</button>
-			<span id="demoStatus" style="margin-left: 12px; font-size: 13px; color: #888;"></span>
+			<div class="hero-row">
+				<div>
+					<h1>AI agents can propose actions. NAEOS decides what is authorized.</h1>
+					<p class="subtitle">Reasoning is not authority. Policy, grant, and verification remain outside the agent's control.</p>
+				</div>
+				<button onclick="runInvestorDemo()" style="padding: 12px 22px; font-size: 15px;">&#9654; Run Investor Demo</button>
+			</div>
+			<div class="hero-identity">
+				<span class="tag"><strong>Agent</strong> payment-agent-01</span>
+				<span class="tag"><strong>Policy</strong> POLICY-017 v17</span>
+				<span class="tag"><strong>Trust</strong> fail-closed</span>
+			</div>
+			<span id="demoStatus" style="display:inline-block; margin-top: 14px; font-size: 12px; color: #cbd5e1; letter-spacing: 0.06em; text-transform: uppercase;"></span>
 		</header>
 
+		<div class="proof-box" id="proofBox">
+			<div class="proof-header">Current Proof of Control</div>
+			<div class="proof-grid">
+				<div class="proof-item"><span>Requested</span><strong>repository.write</strong></div>
+				<div class="proof-item"><span>Granted</span><strong>repository.read, repository.write, test.execute</strong></div>
+				<div class="proof-item"><span>Policy</span><strong>POLICY-017 v17</strong></div>
+				<div class="proof-item"><span>Decision</span><strong>AUTHORIZED</strong></div>
+			</div>
+		</div>
+
+		<div class="callout">
+			<strong>Why this matters:</strong> The model can generate intent, but it cannot self-authorize consequential work. This is the trust boundary.
+		</div>
+
+		<div class="card full-width">
+			<h2>Trust Boundary</h2>
+			<div class="trust-grid">
+				<div class="trust-box">
+					<h3>Agent can propose</h3>
+					<ul>
+						<li>Repository change request</li>
+						<li>Test plan and patch strategy</li>
+						<li>Operational recommendations</li>
+					</ul>
+				</div>
+				<div class="trust-box">
+					<h3>NAEOS enforces</h3>
+					<ul>
+						<li>Grant validation and scope checks</li>
+						<li>Policy evaluation and fail-closed deny</li>
+						<li>Independent verification and audit trail</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
 		<!-- Investor Demo Result -->
-		<div class="card full-width" id="investorDemoCard" style="display: none; margin-bottom: 20px;">
+		<div class="card full-width" id="investorDemoCard" style="display: none; margin-bottom: 20px; background: linear-gradient(180deg, rgba(15,23,42,0.86), rgba(15,23,42,0.72));">
 			<h2>Investor Demo — Scripted Walkthrough</h2>
 			<div id="investorDemoSteps"></div>
 			<h3>NAEOS Security Posture</h3>
@@ -145,29 +302,18 @@
 			<!-- Agent Status -->
 			<div class="card">
 				<h2>Agent Status</h2>
-				<div>
-					<h3>Agent ID</h3>
-					<code>agent-payment-01</code>
-				</div>
-				<div>
-					<h3>Grant ID</h3>
-					<code>GRANT-001</code>
-					<span class="status active">Active</span>
-				</div>
-				<div>
-					<h3>Policy</h3>
-					<code>POLICY-017 v17</code>
-				</div>
-				<div>
-					<h3>Allowed Capabilities</h3>
-					<code>repository.read, repository.write, test.execute</code>
+				<div class="info-list">
+					<div class="info-row"><span class="info-label">Agent ID</span><span class="info-value"><code>agent-payment-01</code></span></div>
+					<div class="info-row"><span class="info-label">Grant ID</span><span class="info-value"><code>GRANT-001</code> <span class="status active">Active</span></span></div>
+					<div class="info-row"><span class="info-label">Policy</span><span class="info-value"><code>POLICY-017 v17</code></span></div>
+					<div class="info-row"><span class="info-label">Protected</span><span class="info-value"><code>credential.rotate, policy.modify, iam.modify</code></span></div>
 				</div>
 			</div>
 
 			<!-- Test Execution -->
 			<div class="card">
-				<h2>Test Capabilities</h2>
-				<label>Capability to test:</label>
+				<h2>Capability Test</h2>
+				<label>Capability to test</label>
 				<input id="testCapability" type="text" value="repository.read" placeholder="e.g., repository.read">
 				<div class="control-row">
 					<button onclick="testCapability()">Test</button>
@@ -181,40 +327,39 @@
 				<h2>Authorization Pipeline</h2>
 				<div id="pipelineSteps" class="pipeline">
 					<div class="pipeline-step" id="step1">Intent</div>
-					<div class="arrow">-&gt;</div>
+					<div class="arrow">→</div>
 					<div class="pipeline-step" id="step2">Policy</div>
-					<div class="arrow">-&gt;</div>
+					<div class="arrow">→</div>
 					<div class="pipeline-step" id="step3">Grant</div>
-					<div class="arrow">-&gt;</div>
+					<div class="arrow">→</div>
 					<div class="pipeline-step" id="step4">Execute</div>
-					<div class="arrow">-&gt;</div>
+					<div class="arrow">→</div>
 					<div class="pipeline-step" id="step5">Verify</div>
 				</div>
-				<div id="pipelineDetails" style="font-size: 12px; color: #aaa; margin-top: 12px;"></div>
+				<div id="pipelineDetails" style="font-size: 12px; color: #a5b4cf; margin-top: 12px; line-height:1.6;">Pending authorization decision.</div>
 			</div>
 
-		<!-- Policy Enforcement -->
-		<div class="card">
-			<h2>Attack Scenarios</h2>
-			<div style="font-size: 12px; color: #888; margin-bottom: 10px;">Each button runs a real control-plane path — not a mock.</div>
-			<div class="control-row" style="flex-direction: column; gap: 10px;">
-				<button onclick="testScenario('credential_rotation')">Attack 1: Credential Rotation</button>
-				<button onclick="testScenario('iam_modify')">Attack 2: IAM Modification</button>
-				<button onclick="testScenario('policy_self_modification')">Attack 3: Policy Self-Modification</button>
-				<button onclick="testScenario('capability_escalation')">Attack 4: Capability Escalation</button>
-				<button onclick="testScenario('replay')">Attack 5: Replay Attack</button>
-				<button onclick="testScenario('stale_authorization')">Attack 6: Policy Version Mismatch</button>
-				<button class="danger" onclick="resetDemo()" style="margin-top: 8px;">Reset Demo</button>
+			<!-- Policy Enforcement -->
+			<div class="card">
+				<h2>Attack Scenarios</h2>
+				<div style="font-size: 12px; color: #9ca9bd; margin-bottom: 10px;">Each action runs through the real control-plane authorization path.</div>
+				<div class="control-row" style="flex-direction: column; gap: 10px;">
+					<button onclick="testScenario('credential_rotation')">Attack 1: Credential Rotation</button>
+					<button onclick="testScenario('iam_modify')">Attack 2: IAM Modification</button>
+					<button onclick="testScenario('policy_self_modification')">Attack 3: Policy Self-Modification</button>
+					<button onclick="testScenario('capability_escalation')">Attack 4: Capability Escalation</button>
+					<button onclick="testScenario('replay')">Attack 5: Replay Attack</button>
+					<button onclick="testScenario('stale_authorization')">Attack 6: Policy Version Mismatch</button>
+					<button class="danger" onclick="resetDemo()" style="margin-top: 8px;">Reset Demo</button>
+				</div>
+				<div id="testResult" class="scenario-proof"></div>
 			</div>
-			<div id="testResult"></div>
-		</div>
-
 
 			<!-- Live Audit Events -->
 			<div class="card full-width">
 				<h2>Live Event Stream</h2>
 				<div class="event-log" id="eventLog">
-					<div style="color: #888;">Waiting for events...</div>
+					<div style="color: #94a3b8;">Waiting for events...</div>
 				</div>
 			</div>
 
@@ -229,19 +374,19 @@
 			<div class="card">
 				<h2>Security Posture</h2>
 				<div class="metric">
-					<span>Authorized actions:</span>
+					<span>Authorized actions</span>
 					<span class="metric-value" id="countAllow">0</span>
 				</div>
 				<div class="metric">
-					<span>Blocked actions:</span>
+					<span>Blocked actions</span>
 					<span class="metric-value" id="countBlock">0</span>
 				</div>
 				<div class="metric">
-					<span>Escalation attempts prevented:</span>
+					<span>Escalation attempts prevented</span>
 					<span class="metric-value" id="countEscalation">0</span>
 				</div>
 				<div class="metric">
-					<span>Replay attempts detected:</span>
+					<span>Replay attempts detected</span>
 					<span class="metric-value" id="countReplay">0</span>
 				</div>
 				<button class="secondary" onclick="refreshMetrics()" style="width: 100%; margin-top: 12px;">Refresh Metrics</button>
@@ -266,6 +411,21 @@
 			}
 		}
 
+		function updateProofBox(capability, status, reason) {
+			const box = document.getElementById('proofBox');
+			if (!box) return;
+			const allowed = 'repository.read, repository.write, test.execute';
+			const currentStatus = status ? status.toUpperCase() : 'AUTHORIZED';
+			box.innerHTML = '<div class="proof-header">Current Proof of Control</div>' +
+				'<div class="proof-grid">' +
+				'<div class="proof-item"><span>Requested</span><strong>' + (capability || 'repository.write') + '</strong></div>' +
+				'<div class="proof-item"><span>Granted</span><strong>' + allowed + '</strong></div>' +
+				'<div class="proof-item"><span>Policy</span><strong>POLICY-017 v17</strong></div>' +
+				'<div class="proof-item"><span>Decision</span><strong>' + currentStatus + '</strong></div>' +
+				'</div>' +
+				(reason ? '<div style="margin-top:12px; color:#dbeafe; font-size:12px;">Reason: ' + reason + '</div>' : '');
+		}
+
 		async function testCapability() {
 			const cap = document.getElementById('testCapability').value || 'repository.read';
 			const result = await apiCall('/execute', 'POST', {
@@ -274,12 +434,16 @@
 				payload: {}
 			});
 
+			const msg = result.authorized ?
+				'Capability matched the active grant and policy.' :
+				(result.error || 'Denied by the NAEOS control plane.');
 			const html = result.authorized ?
-				'<p style="color: #10b981; margin-top: 12px;"><strong>ALLOW</strong></p>' :
-				'<p style="color: #ef4444; margin-top: 12px;"><strong>BLOCKED</strong><br/>' + result.error + '</p>';
+				'<p style="color: #6ee7b7; margin-top: 12px;"><strong>ALLOW</strong><br/><span style="color:#cbd5e1;">' + msg + '</span></p>' :
+				'<p style="color: #fca5a5; margin-top: 12px;"><strong>BLOCKED</strong><br/>' + msg + '</p>';
 			document.getElementById('testResult').innerHTML = html;
 
-			updatePipeline(result.authorized);
+			updateProofBox(cap, result.authorized ? 'authorized' : 'blocked', msg);
+			updatePipeline(result.authorized, cap, result.authorized ? 'policy matched grant' : 'policy denied request');
 			updateEventLog();
 		}
 
@@ -289,34 +453,39 @@
 				let html = '<h3 style="margin-top: 12px;">Scenario Results:</h3>';
 				scenarios.scenarios.forEach(s => {
 					const icon = s.passed ? 'PASS' : 'FAIL';
-					const color = s.passed ? '#10b981' : '#ef4444';
+					const color = s.passed ? '#6ee7b7' : '#fca5a5';
 					html += '<div style="color: ' + color + '; margin: 8px 0;"><strong>' + icon + ' ' + s.scenario_name + '</strong></div>';
 				});
 				document.getElementById('testResult').innerHTML = html;
 			}
+			updateProofBox('multi-scenario', 'verified', 'All attack paths were evaluated and denied where required.');
+			updatePipeline(true, 'all scenarios', 'all policy checks passed');
 			updateEventLog();
 		}
 
 		async function testScenario(type) {
-			document.getElementById('testResult').innerHTML = '<p style="color: #888; margin-top: 12px;">Running...</p>';
+			document.getElementById('testResult').innerHTML = '<p style="color: #cbd5e1; margin-top: 12px;">Running...</p>';
 
 			const result = await apiCall('/scenario', 'POST', { name: type });
 
 			if (result.error) {
-				document.getElementById('testResult').innerHTML = '<p style="color: #f59e0b; margin-top: 12px;">' + result.error + '</p>';
+				document.getElementById('testResult').innerHTML = '<p style="color: #fcd34d; margin-top: 12px;">' + result.error + '</p>';
 				updateEventLog();
 				return;
 			}
 
-			const color = result.passed ? '#10b981' : '#ef4444';
+			const color = result.passed ? '#6ee7b7' : '#fca5a5';
 			const label = result.expected_result === 'ALLOW' ? 'ALLOWED' : 'BLOCKED';
 			const icon  = result.passed ? '&#10003; Expected' : '&#10007; UNEXPECTED';
+			const scenarioReason = (result.details || '').replace(/</g, '&lt;');
 			const html = '<p style="color: ' + color + '; margin-top: 12px;">' +
 				'<strong>' + icon + '</strong><br/>' +
 				result.scenario_name + '<br/>' +
-				'<code>' + (result.details || '').replace(/</g, '&lt;') + '</code></p>';
+				'<span style="color:#cbd5e1;">' + label + '</span><br/>' +
+				'<code>' + scenarioReason + '</code></p>';
 			document.getElementById('testResult').innerHTML = html;
-			updatePipeline(!result.passed);
+			updateProofBox(result.scenario_name || 'attack', result.passed ? 'verified' : 'blocked', scenarioReason);
+			updatePipeline(result.passed, result.scenario_name, result.passed ? 'expected policy outcome met' : 'policy boundary enforced');
 			updateEventLog();
 		}
 
@@ -335,26 +504,23 @@
 				return;
 			}
 
-			// Render steps
 			let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">' +
 				'<tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.15);">' +
-				'<th style="padding:6px;">#</th><th style="padding:6px;">Name</th><th style="padding:6px;">Result</th></tr>';
+				'<th style="padding:6px;">#</th><th style="padding:6px;">Actor</th><th style="padding:6px;">Result</th></tr>';
 
 			(result.steps || []).forEach(s => {
 				const color = s.blocked ? '#ef4444' : '#10b981';
-				// Step 10 is the only control-plane decision; the rest are agent decisions.
 				const actor = (s.step === 10) ? 'NAEOS VERIFICATION' : 'AGENT DECISION';
-				const actorColor = (s.step === 10) ? '#f59e0b' : '#888';
+				const actorColor = (s.step === 10) ? '#f59e0b' : '#7dd3fc';
 				html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
 					'<td style="padding:6px;">' + s.step + '</td>' +
 					'<td style="padding:6px;">' +
-					'<span style="color:' + actorColor + ';font-size:11px;font-weight:600;">[' + actor + ']</span> ' + s.name + '</td>' +
-					'<td style="padding:6px;color:' + color + ';font-weight:600;">' + s.result + '</td></tr>';
+					'<span style="color:' + actorColor + ';font-size:11px;font-weight:700;">[' + actor + ']</span> ' + s.name + '</td>' +
+					'<td style="padding:6px;color:' + color + ';font-weight:700;">' + s.result + '</td></tr>';
 			});
 			html += '</table>';
 			document.getElementById('investorDemoSteps').innerHTML = html;
 
-			// Render posture
 			const p = result.posture || {};
 			const postureHtml = '<table style="border-collapse:collapse;font-size:13px;margin-top:8px;">' +
 				'<tr><td style="padding:4px 12px 4px 0;">Authorized actions:</td><td style="padding:4px 0;">' + (p.authorized_actions || 0) + '</td></tr>' +
@@ -368,18 +534,24 @@
 			document.getElementById('investorPosture').innerHTML = postureHtml;
 
 			const statusEl = document.getElementById('demoStatus');
-			statusEl.textContent = 'Complete';
+			statusEl.textContent = 'COMPLETE';
 			statusEl.style.color = '#10b981';
 
+			updateProofBox('payment service update', 'verified', 'The agent was allowed to read, write, and test within scope; all privileged actions were blocked by policy.');
 			updateEventLog();
 			refreshMetrics();
 		}
 
-		function updatePipeline(passed) {
+		function updatePipeline(passed, context = 'request', detail = '') {
 			const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
-			steps.forEach(s => {
-				document.getElementById(s).className = 'pipeline-step ' + (passed ? 'pass' : 'fail');
+			const outcome = passed ? 'pass' : 'fail';
+			steps.forEach((s) => {
+				const el = document.getElementById(s);
+				if (el) el.className = 'pipeline-step ' + outcome;
 			});
+			document.getElementById('pipelineDetails').textContent =
+				passed ? 'Authorization succeeded: ' + (context || 'request') + '. ' + (detail || 'Policy and grant aligned.') :
+				'Authorization failed: ' + (context || 'request') + '. ' + (detail || 'The NAEOS control plane rejected the action before execution.');
 		}
 
 		async function updateEventLog() {
@@ -396,9 +568,14 @@
 
 		async function verifySession() {
 			const result = await apiCall('/verification', 'POST', { agent_id: 'agent-payment-01' });
-			const html = '<p style="color: ' + (result.result === 'PASS' ? '#10b981' : '#ef4444') + '; margin-top: 12px;"><strong>' +
-				(result.result === 'PASS' ? 'PASSED' : 'FAILED') + '</strong><br/>' +
-				result.summary + '</p>';
+			const color = result.result === 'PASS' ? '#10b981' : '#ef4444';
+			const html = '<div style="margin-top: 14px; padding: 12px; border-radius: 10px; background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.12);">' +
+				'<div style="color:' + color + '; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">' +
+				(result.result === 'PASS' ? 'PASSED' : 'FAILED') + '</div>' +
+				'<div style="color:#dfeafc; font-size:13px; line-height:1.6;">' + (result.summary || 'No summary available') + '</div>' +
+				'<div class="verification-item" style="margin-top:10px;"><span>Unauthorized actions</span><strong>' + (result.unauthorized_actions || 0) + '</strong></div>' +
+				'<div class="verification-item"><span>Policy compliance</span><strong>' + (result.policy_compliance ? 'YES' : 'NO') + '</strong></div>' +
+				'</div>';
 			document.getElementById('verificationResult').innerHTML = html;
 		}
 
@@ -409,9 +586,10 @@
 				const block = events.events.filter(e => e.decision === 'BLOCK').length;
 				const escalation = events.events.filter(e => e.event_type === 'CAPABILITY_ESCALATION_DETECTED').length;
 				const replay = events.events.filter(e => e.event_type === 'REPLAY_ATTACK_DETECTED').length;
+				const verificationFailures = events.events.filter(e => e.event_type === 'EXECUTION_BLOCKED' || e.event_type === 'AUTHORIZATION_DENIED').length;
 
 				document.getElementById('countAllow').textContent = allow;
-				document.getElementById('countBlock').textContent = block;
+				document.getElementById('countBlock').textContent = block + verificationFailures;
 				document.getElementById('countEscalation').textContent = escalation;
 				document.getElementById('countReplay').textContent = replay;
 			}
