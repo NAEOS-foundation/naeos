@@ -260,7 +260,6 @@ func (ca *CapabilityAuthority) RevokeGrant(grantID string, reason string) error 
 // since audit recording in the demo is best-effort (append-only in-memory store).
 func (ca *CapabilityAuthority) recordAuditEvent(eventType, agentID string, cap Capability, policyID string, policyVersion int, decision, reason string) {
 	_ = ca.auditLedger.RecordEvent(&AuditEvent{
-		EventID:             generateID("AUD"),
 		Timestamp:           time.Now(),
 		EventType:           eventType,
 		AgentID:             agentID,

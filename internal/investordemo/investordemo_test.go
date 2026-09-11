@@ -577,12 +577,13 @@ func TestAuditLedger_AppendOnly(t *testing.T) {
 	// Record multiple events
 	for i := 0; i < 5; i++ {
 		event := &AuditEvent{
-			EventID:   generateID("AUD"),
 			Timestamp: time.Now(),
 			EventType: "TEST",
 			AgentID:   "agent-test",
 		}
-		ledger.RecordEvent(event)
+		if err := ledger.RecordEvent(event); err != nil {
+			t.Fatalf("record event %d: %v", i, err)
+		}
 	}
 
 	events := ledger.GetEvents()
@@ -595,6 +596,24 @@ func TestAuditLedger_AppendOnly(t *testing.T) {
 	eventsAgain := ledger.GetEvents()
 	if eventsAgain[0].AgentID == "modified" {
 		t.Errorf("Events should be immutable")
+	}
+}
+
+func TestAuditLedger_SequentialIDs(t *testing.T) {
+	ledger := NewAuditLedger()
+
+	for i := 0; i < 3; i++ {
+		if err := ledger.RecordEvent(&AuditEvent{Timestamp: time.Now(), EventType: "TEST", AgentID: "a"}); err != nil {
+			t.Fatalf("record event: %v", err)
+		}
+	}
+
+	events := ledger.GetEvents()
+	want := []string{"AUD-00001", "AUD-00002", "AUD-00003"}
+	for i, w := range want {
+		if events[i].EventID != w {
+			t.Errorf("event[%d]: expected ID %s, got %s", i, w, events[i].EventID)
+		}
 	}
 }
 

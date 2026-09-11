@@ -13,6 +13,7 @@ import (
 type AuditLedger struct {
 	mu     sync.RWMutex
 	events []*AuditEvent
+	nextID uint64
 }
 
 // NewAuditLedger creates a new audit ledger.
@@ -23,12 +24,15 @@ func NewAuditLedger() *AuditLedger {
 }
 
 // RecordEvent records an audit event (append-only).
+// When the event has no EventID, a sequential ID (AUD-00001, AUD-00002, ...)
+// is assigned, matching the numbering style used in the investor demo spec.
 func (al *AuditLedger) RecordEvent(event *AuditEvent) error {
 	al.mu.Lock()
 	defer al.mu.Unlock()
 
 	if event.EventID == "" {
-		return fmt.Errorf("event ID is required")
+		al.nextID++
+		event.EventID = fmt.Sprintf("AUD-%05d", al.nextID)
 	}
 
 	// Events are append-only - cannot be modified

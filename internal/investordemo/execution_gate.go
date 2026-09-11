@@ -208,7 +208,6 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 // since audit recording in the demo is best-effort (append-only in-memory store).
 func (hv *HandoffValidator) recordAuditEvent(eventType, agentID string, details map[string]interface{}) {
 	_ = hv.auditLedger.RecordEvent(&AuditEvent{
-		EventID:   generateID("AUD"),
 		Timestamp: time.Now(),
 		EventType: eventType,
 		AgentID:   agentID,
@@ -372,7 +371,6 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 			activeVersion = activePolicy.Version
 		}
 		_ = eg.auditLedger.RecordEvent(&AuditEvent{
-			EventID:             generateID("AUD"),
 			Timestamp:           time.Now(),
 			EventType:           "EXECUTION_BLOCKED",
 			AgentID:             request.AgentID,
@@ -418,7 +416,6 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 // recordAuditEvent is a helper that records an execution audit event.
 func (eg *ExecutionGate) recordAuditEvent(eventType, agentID string, cap Capability, policyID string, policyVersion int, decision, reason string) {
 	_ = eg.auditLedger.RecordEvent(&AuditEvent{
-		EventID:             generateID("AUD"),
 		Timestamp:           time.Now(),
 		EventType:           eventType,
 		AgentID:             agentID,

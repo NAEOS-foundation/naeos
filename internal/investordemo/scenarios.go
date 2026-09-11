@@ -363,7 +363,6 @@ func RunScenario6_PolicyVersionMismatch(setup *DemoSetup) *ScenarioResult {
 
 	// Record a POLICY_CHANGE audit event
 	_ = setup.AuditLedger.RecordEvent(&AuditEvent{
-		EventID:       generateID("AUD"),
 		Timestamp:     time.Now(),
 		EventType:     "POLICY_CHANGE",
 		AgentID:       "system",

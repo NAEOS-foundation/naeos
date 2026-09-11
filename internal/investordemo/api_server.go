@@ -414,7 +414,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 	}
 	_ = as.setup.PolicyStore.UpdatePolicy(newPolicy)
 	_ = as.setup.AuditLedger.RecordEvent(&AuditEvent{
-		EventID: generateID("AUD"), Timestamp: time.Now(),
+		Timestamp: time.Now(),
 		EventType: "POLICY_CHANGE", AgentID: "system",
 		PolicyID: "POLICY-017", PolicyVersion: 18,
 		Details: map[string]interface{}{"previous_version": 17, "new_version": 18},

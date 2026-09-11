@@ -128,6 +128,7 @@
 		<header>
 			<h1>NAEOS Control Plane Demo</h1>
 			<p class="subtitle">Engineering authorization and policy enforcement for AI agents</p>
+			<p class="subtitle" style="margin-top: 6px;">Agents can act. <strong>NAEOS decides what they are allowed to do.</strong> Reasoning is delegated; authorization is not.</p>
 			<button onclick="runInvestorDemo()" style="margin-top: 16px; padding: 12px 24px; font-size: 15px;">&#9654; Run Investor Demo</button>
 			<span id="demoStatus" style="margin-left: 12px; font-size: 13px; color: #888;"></span>
 		</header>
@@ -341,9 +342,13 @@
 
 			(result.steps || []).forEach(s => {
 				const color = s.blocked ? '#ef4444' : '#10b981';
+				// Step 10 is the only control-plane decision; the rest are agent decisions.
+				const actor = (s.step === 10) ? 'NAEOS VERIFICATION' : 'AGENT DECISION';
+				const actorColor = (s.step === 10) ? '#f59e0b' : '#888';
 				html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
 					'<td style="padding:6px;">' + s.step + '</td>' +
-					'<td style="padding:6px;">' + s.name + '</td>' +
+					'<td style="padding:6px;">' +
+					'<span style="color:' + actorColor + ';font-size:11px;font-weight:600;">[' + actor + ']</span> ' + s.name + '</td>' +
 					'<td style="padding:6px;color:' + color + ';font-weight:600;">' + s.result + '</td></tr>';
 			});
 			html += '</table>';
@@ -357,7 +362,7 @@
 				'<tr><td style="padding:4px 12px 4px 0;">Handoff violations:</td><td style="padding:4px 0;">' + (p.handoff_violations || 0) + '</td></tr>' +
 				'<tr><td style="padding:4px 12px 4px 0;">Replay attempts:</td><td style="padding:4px 0;">' + (p.replay_attempts || 0) + '</td></tr>' +
 				'<tr><td style="padding:4px 12px 4px 0;">Policy changes:</td><td style="padding:4px 0;">' + (p.policy_changes || 0) + '</td></tr>' +
-				'<tr><td style="padding:4px 12px 4px 0;">Verification status:</td><td style="padding:4px 0;">' + (p.verification_status || '-') + '</td></tr>' +
+				'<tr><td style="padding:4px 12px 4px 0;">NAEOS VERIFICATION:</td><td style="padding:4px 0;">' + (p.verification_status || '-') + '</td></tr>' +
 				'<tr><td style="padding:4px 12px 4px 0;">Audit events:</td><td style="padding:4px 0;">' + (p.audit_events || 0) + '</td></tr>' +
 				'</table>';
 			document.getElementById('investorPosture').innerHTML = postureHtml;

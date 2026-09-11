@@ -8,6 +8,8 @@ The NAEOS Investor Demo is a technical demonstration of NAEOS acting as a contro
 
 > AI agents can reason and perform engineering work, but authorization, policy enforcement, verification, and audit must remain outside the agent's control.
 
+**Scripted walkthrough:** See [INVESTOR-DEMO-SCRIPT.md](INVESTOR-DEMO-SCRIPT.md) for the deterministic 10-step demo shown to investors/technical audiences.
+
 ## Architecture
 
 ```
