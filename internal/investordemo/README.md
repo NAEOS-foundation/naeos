@@ -10,6 +10,21 @@ The NAEOS Investor Demo is a technical demonstration of NAEOS acting as a contro
 
 **Scripted walkthrough:** See [INVESTOR-DEMO-SCRIPT.md](INVESTOR-DEMO-SCRIPT.md) for the deterministic 10-step demo shown to investors/technical audiences.
 
+## Observability integration
+
+The demo control plane can stream into the NAEOS observability stack without
+any dependency on it (see the bridge in `internal/demoobs`):
+
+- **SIEM:** every audit event recorded by the ledger is forwarded to a SIEM
+  collector as CEF (default) or NDJSON. Forwarding is asynchronous and drops
+  events (with a counter) if the collector cannot keep up, so a slow SIEM can
+  never block the control plane.
+- **OTLP/HTTP:** every control-plane API request is traced and exported to an
+  OTLP-compatible backend, tagged with the request ID and tenant.
+
+Both are attached via `AuditLedger.SetObserver` / an HTTP middleware at the
+server boundary (`naeos demo --siem-endpoint … --otlp-endpoint …`).
+
 ## Architecture
 
 ```

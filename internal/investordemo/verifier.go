@@ -10,10 +10,19 @@ import (
 // Audit Ledger - Append-only event log
 // ============================================================================
 
+// AuditObserver receives every audit event as it is recorded. It lets the
+// control plane emit events externally (e.g. SIEM, tracing) without coupling
+// the ledger to any specific transport.
+type AuditObserver interface {
+	// OnRecorded is called after the event has been appended to the ledger.
+	OnRecorded(event *AuditEvent)
+}
+
 type AuditLedger struct {
-	mu     sync.RWMutex
-	events []*AuditEvent
-	nextID uint64
+	mu       sync.RWMutex
+	events   []*AuditEvent
+	nextID   uint64
+	observer AuditObserver
 }
 
 // NewAuditLedger creates a new audit ledger.
@@ -23,20 +32,34 @@ func NewAuditLedger() *AuditLedger {
 	}
 }
 
+// SetObserver attaches an observer that receives every recorded event.
+// The observer is invoked outside the ledger lock so a slow observer never
+// blocks recording. Setting a new observer replaces the previous one.
+func (al *AuditLedger) SetObserver(o AuditObserver) {
+	al.mu.Lock()
+	defer al.mu.Unlock()
+	al.observer = o
+}
+
 // RecordEvent records an audit event (append-only).
 // When the event has no EventID, a sequential ID (AUD-00001, AUD-00002, ...)
 // is assigned, matching the numbering style used in the investor demo spec.
 func (al *AuditLedger) RecordEvent(event *AuditEvent) error {
-	al.mu.Lock()
-	defer al.mu.Unlock()
+	var observer AuditObserver
 
+	al.mu.Lock()
 	if event.EventID == "" {
 		al.nextID++
 		event.EventID = fmt.Sprintf("AUD-%05d", al.nextID)
 	}
-
 	// Events are append-only - cannot be modified
 	al.events = append(al.events, event)
+	observer = al.observer
+	al.mu.Unlock()
+
+	if observer != nil {
+		observer.OnRecorded(event)
+	}
 	return nil
 }
 

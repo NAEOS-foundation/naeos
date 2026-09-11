@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI demo build + tests** — `ci.yml` builds `naeos-demo` and runs demo module tests.
 - **Makefile fmt hardening** — `fmt`/`fmt-check` now only format tracked Go files so test-generated artifacts under ignored dirs never break the check pipeline.
 - **Investor demo hardening** — Dashboard adds a "Run Investor Demo" button (renders the 10-step scripted walkthrough + security posture), six per-attack controls now run the real control-plane scenarios (including IAM modification and stale authorization), a `/api/scenario` endpoint, provenance mismatch now fails closed, sequential audit event IDs (`AUD-%05d`), storage seams (`GrantRepository`, `AuditEventStore`, `PolicyRepository`) documented, and the threat model + investor demo script are documented (`INVESTOR-DEMO-SCRIPT.md`).
+- **Investor demo observability** — The demo control plane now integrates with the NAEOS observability stack. `naeos demo` (and the standalone `naeos-demo` server) accepts `--siem-endpoint` to forward every audit event to a SIEM collector as CEF or NDJSON (async, drop-on-backpressure, tenant header support) and `--otlp-endpoint` to export request traces to an OTLP/HTTP collector. The bridge lives in the new `internal/demoobs` package; the ledger hook is `AuditLedger.SetObserver`.
 
 ### Fixed
 - Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.

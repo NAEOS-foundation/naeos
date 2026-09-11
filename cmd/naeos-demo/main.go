@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,7 +19,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/NAEOS-foundation/naeos/internal/demoobs"
 	"github.com/NAEOS-foundation/naeos/internal/investordemo"
+	"github.com/NAEOS-foundation/naeos/internal/observability"
 )
 
 var (
@@ -28,6 +31,11 @@ var (
 	sessTTL   = flag.Duration("session-ttl", 5*time.Minute, "session idle timeout")
 	allowOrig = flag.String("allow-origin", "*", "allowed origin (or * for all)")
 	whitelist = flag.String("whitelist", "init,validate,compile,run,version,help,spec", "comma-separated allowed subcommands")
+
+	siemEndpoint = flag.String("siem-endpoint", "", "SIEM collector URL to forward audit events (CEF)")
+	siemFormat   = flag.String("siem-format", "cef", "SIEM framing format: cef or json")
+	otlpEndpoint = flag.String("otlp-endpoint", "", "OTLP/HTTP collector base URL for request tracing")
+	tenantID     = flag.String("tenant-id", "", "tenant identifier attached to exported events")
 )
 
 var upgrader = websocket.Upgrader{
@@ -287,6 +295,34 @@ func main() {
 
 	// Setup the investor demo control plane
 	investorDemoSetup := investordemo.SetupDemoEnvironment()
+
+	logger := slog.Default()
+	obsCfg := demoobs.Config{
+		OTLPEndpoint: *otlpEndpoint,
+		SIEMEndpoint: *siemEndpoint,
+		SIEMFormat:   *siemFormat,
+		TenantID:     *tenantID,
+	}
+
+	var siem *demoobs.SIEMForwarder
+	if obsCfg.HasSIEM() {
+		siem = demoobs.NewSIEMForwarder(
+			obsCfg.SIEMEndpoint,
+			obsCfg.SIEMFormatValue(),
+			demoobs.WithTenant(obsCfg.TenantID),
+			demoobs.WithLogger(logger),
+		)
+		defer siem.Close()
+		investorDemoSetup.AuditLedger.SetObserver(siem)
+	}
+
+	var tracer *observability.Tracer
+	var otlpExp observability.Exporter
+	if obsCfg.HasOTLP() {
+		tracer = demoobs.NewDemoTracer()
+		otlpExp = observability.NewOTLPHTTPExporter(obsCfg.OTLPEndpoint)
+	}
+
 	apiServer := investordemo.NewAPIServer(investorDemoSetup)
 
 	// Register existing WebSocket handlers
@@ -304,12 +340,23 @@ func main() {
 	http.HandleFunc("/dashboard", handleDashboard)
 	http.HandleFunc("/index.html", handleDashboard)
 
+	var handler http.Handler = http.DefaultServeMux
+	if tracer != nil && otlpExp != nil {
+		handler = demoobs.TracingMiddleware(tracer, otlpExp, logger)(handler)
+	}
+
 	fmt.Printf("NAEOS Demo Server (with Investor Demo) listening on %s\n", *addr)
 	fmt.Printf("  - Traditional WebSocket demo: ws://localhost%s/ws\n", *addr)
 	fmt.Printf("  - Investor Demo Dashboard: http://localhost%s/\n", *addr)
 	fmt.Printf("  - Investor Demo API: http://localhost%s/api/\n", *addr)
+	if siem != nil {
+		fmt.Printf("  - SIEM forwarding: %s (%s)\n", obsCfg.SIEMEndpoint, obsCfg.SIEMFormatName())
+	}
+	if otlpExp != nil {
+		fmt.Printf("  - OTLP tracing: %s/v1/traces\n", obsCfg.OTLPEndpoint)
+	}
 
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	log.Fatal(http.ListenAndServe(*addr, handler))
 }
 
 // handleDashboard serves the investor demo dashboard HTML
