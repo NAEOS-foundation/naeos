@@ -30,6 +30,9 @@ NAEOS bertujuan menjadi sistem operasi deklaratif standar untuk proyek engineeri
 - ✅ **Generasi Kode** — Hasilkan scaffolding proyek dari model NEIR
 - ✅ **Integrasi OpenCode** — Alur kerja pengembangan berbasis AI
 - ✅ **Situs Web Resmi** — Pusat dokumentasi dan komunitas NAEOS.dev
+- ✅ **Stack Observability (v3.5.0)** — Ekspor trace OTLP, korelasi request, alerting burn-rate SLO, ekspor SIEM
+- ✅ **Control Plane Demo Investor (v3.5.0)** — Server referensi `naeos demo` untuk authorization, policy, verification, dan audit
+- ✅ **Pemindaian Keamanan di CI** — govulncheck pada push dan pull request
 
 ## Rencana Masa Depan
 

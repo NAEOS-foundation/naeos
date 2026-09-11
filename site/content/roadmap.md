@@ -30,6 +30,9 @@ NAEOS aims to become the standard declarative operating system for engineering p
 - ✅ **Code Generation** — Generate project scaffolding from NEIR models
 - ✅ **OpenCode Integration** — AI-powered development workflow
 - ✅ **Official Website** — NAEOS.dev documentation and community hub
+- ✅ **Observability Stack (v3.5.0)** — OTLP trace export, request correlation, SLO burn-rate alerting, SIEM export
+- ✅ **Investor Demo Control Plane (v3.5.0)** — `naeos demo` reference server for authorization, policy, verification, and audit
+- ✅ **Security Scanning in CI** — govulncheck on push and pull requests
 
 ## Future Plans
 

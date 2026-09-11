@@ -85,6 +85,38 @@ Built-in policy engine and governance framework:
 - Artifact review and approval workflows
 - Policy evaluator with structured output
 
+## Observability & SLO
+
+Built-in telemetry for tracing, logging, metrics, and reliability:
+
+- **OTLP export** — Export spans to any OpenTelemetry-compatible collector over OTLP/HTTP
+- **Request correlation** — `X-Request-ID` / `X-Tenant-ID` headers link every request to its trace and tenant
+- **Service-level objectives** — Error-budget computation with Prometheus burn-rate alerting rules
+- **SIEM export** — Stream audit events to SIEM collectors in Common Event Format (CEF) or NDJSON
+- **Daemon integration** — `naeos serve` applies per-request tracing middleware via `observability.otlp_endpoint`
+
+```bash
+naeos observability trace --name "http-request"
+naeos observability export --endpoint http://localhost:4318
+naeos observability slo --service orders-api
+naeos observability siem --endpoint http://localhost:9000
+```
+
+## Investor Demo
+
+A reference control plane for agent-driven workflows, where security decisions run outside agent control:
+
+- **`naeos demo`** — One-command control-plane server with graceful shutdown
+- **Authorization** — Decide whether an agent may act
+- **Capability grants** — Grant and revoke agent capabilities with full traceability
+- **Policy enforcement** — Enforce governance rules before execution
+- **Verification** — Verify session and artifact integrity
+- **Audit trail** — Every decision recorded and retrievable via the audit API
+
+```bash
+naeos demo --addr :9091
+```
+
 ## Marketplace
 
 Publish, discover, and install extensions:
