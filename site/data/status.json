@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-12T20:04:47Z",
+  "updatedAt": "2026-09-12T22:24:50Z",
   "source": "live",
   "github": {
     "forks": 6,
@@ -16,7 +16,7 @@
       "target": "https://naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 492
+      "latencyMs": 436
     },
     {
       "id": "docs",
@@ -25,7 +25,7 @@
       "target": "https://docs.naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 450
+      "latencyMs": 434
     },
     {
       "id": "registry",
@@ -34,7 +34,7 @@
       "target": "https://registry.naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 644
+      "latencyMs": 687
     },
     {
       "id": "realtime",
@@ -43,7 +43,7 @@
       "target": "https://ws.naeos.dev/ws",
       "kind": "ws",
       "status": "down",
-      "latencyMs": 46
+      "latencyMs": 47
     }
   ]
 }
