@@ -1,182 +1,90 @@
 ---
 title: Investors
-description: NAEOS is the engineering control plane for the AI-native software era.
+description: NAEOS is the engineering control plane for AI-native software delivery.
 ---
 
-# NAEOS Investor Page
+# NAEOS Investor Overview
 
-> AI coding agents generate code. NAEOS provides the engineering control plane around them.
+> NAEOS is building the control plane for AI-native engineering.
 
-## The thesis
+## Executive summary
 
-NAEOS is building the system layer for AI-native software engineering.
+NAEOS is positioned at the intersection of two major shifts in software development: the rapid adoption of AI coding systems and the growing need for governance, structure, and traceability in engineering operations.
 
-The repository already shows a coherent technical foundation: a declarative specification language, a pipeline that parses and normalizes specifications, builds a structured engineering model (NEIR), validates dependencies and policies, schedules work, generates artifacts, compiles AI context, and produces evidence.
+The repository already contains a substantial technical foundation for this category. It includes declarative specification input, pipeline execution, NEIR-based modeling, policy and validation stages, AI context bundling, artifact generation, evidence capture, and CLI-driven workflows. The opportunity is to turn that foundation into a durable platform for teams that want AI-generated engineering without sacrificing control.
 
-This matters because AI coding tools are improving faster than many engineering systems are adapting. As agent capability increases, the need for governance, validation, repeatability, and auditability becomes more important, not less.
+## The market opportunity
 
-## What NAEOS is today
+AI coding tools are moving from experimentation to production use. As organizations adopt AI assistance in software delivery, the bottleneck shifts from generation quality to engineering trust.
 
-### Current
+The enterprises that can adopt AI at scale are the ones that need:
 
-NAEOS is an open-source engineering platform that transforms software specifications into validated, governed, AI-ready workflows.
+- architecture validation
+- dependency and policy enforcement
+- traceability from specification to output
+- governance over agent actions
+- reproducible execution and auditability
 
-The current repository demonstrates the following capabilities:
+That need creates a new category: the engineering control plane.
 
-- Declarative specification input with YAML/JSON parsing
-- Pipeline stages for parse, normalize, resolve, NEIR construction, and validation
-- Policy evaluation and governance hooks
-- AI context bundling for downstream tooling
-- Multi-language generation and artifact review
-- CLI-based developer workflows
-- Evidence, audit, observability, and demo control-plane components
+## What NAEOS already has
 
-For a current repository-level view, see [README.md](https://github.com/NAEOS-foundation/naeos/blob/main/README.md), [ARCHITECTURE-OVERVIEW.md](https://github.com/NAEOS-foundation/naeos/blob/main/ARCHITECTURE-OVERVIEW.md), [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md), and [ROADMAP.md](https://github.com/NAEOS-foundation/naeos/blob/main/ROADMAP.md).
+The current repository already demonstrates meaningful product substance:
 
-## Why the problem exists now
+- declarative specification input using YAML and JSON
+- pipeline execution for parse, normalize, resolve, NEIR construction, and validation
+- policy evaluation and governance hooks
+- AI context bundling for downstream tools
+- artifact generation, evidence capture, and observability
+- CLI workflows for verification, run, context, policy, and demo execution
 
-AI coding agents can generate code quickly, but software engineering is not only code generation. It also requires:
+The strongest public proof is that the architecture is already implemented in code and is runnable in the repository.
 
-- consistent engineering intent
-- architecture and dependency validation
-- policy enforcement
-- context management across tools
-- traceability from spec to artifact
-- governance around agent actions
-- reproducible execution
+## Why NAEOS is differentiated
 
-This is the gap NAEOS is designed to solve.
+NAEOS is differentiated by four core advantages:
 
-## The architecture layer that matters
+1. Structured engineering intent: NEIR provides a machine-readable representation of the system being built.
+2. Deterministic governance: validation and policy enforcement can happen before generation, not after.
+3. Open-source distribution: the project can be validated in public and improved by contributors.
+4. Commercial control-plane layer: the most valuable layer is not model access, but trust, governance, and operational control.
 
-### Current
+In practical terms, NAEOS is designed for teams that need AI to accelerate delivery without creating uncontrolled drift.
 
-The current repository already treats NEIR as the persistent engineering model.
+## Business model
 
-```text
-Specification
-      ↓
-Parse → Normalize → Resolve → Build NEIR
-      ↓
-Validate → Policy → AI Context
-      ↓
-Execution / Generation
-      ↓
-Artifacts → Evidence / Audit
-```
+A realistic commercialization path is an open-core model with a paid control-plane layer.
 
-This is not just another coding assistant. It is an engineering system around AI-assisted execution.
-
-## NEIR: the strategic moat
-
-### Current
-
-NEIR is the repository's central engineering representation. It gives NAEOS a structured model that can be validated, governed, transformed, documented, and supplied to downstream AI tools.
-
-This is one of the most important differentiators in the system:
-
-- the specification is the source of truth
-- the model is machine-readable
-- validation and policy happen before generation
-- context can be compiled consistently
-- evidence can be attached to artifacts and execution
-
-## Why NAEOS is different
-
-| Category | AI coding tools | NAEOS |
-|---|---|---|
-| Core role | Code generation | Engineering control plane |
-| Source of truth | Prompt or file changes | Declarative specification + NEIR |
-| Governance | Often external or ad hoc | Built into the pipeline |
-| Validation | Variable or partial | Deterministic and structured |
-| AI context | Often tool-specific | Compiled systematically |
-| Auditability | Limited | Evidence and traceability built in |
-| Execution model | Agent action | Controlled pipeline with policy and review |
-
-## Current technical foundation
-
-### Current
-
-The repository already contains a substantial portion of the foundation:
-
-- `pkg/pipeline` — the main execution pipeline
-- `internal/neir` — NEIR model and validation components
-- `internal/governance/policy` — policy evaluation and rules
-- `internal/context/bundle` — AI context generation
-- `internal/evidence` — evidence and audit support
-- `internal/investordemo` — control-plane demo and deterministic authorization flow
-- `internal/demoobs` — observability and SIEM/OTLP export support
-- `cmd/naeos` — CLI surface for validation, context, run, demo, policy, and verification workflows
-
-Our strongest current proof point is that the repository already implements the architecture in code, not only in a pitch deck.
-
-## Open source and future commercialization
-
-### Current
-
-NAEOS is open source under Apache 2.0 and built in public. That is an important adoption advantage because it enables technical validation, external contribution, and ecosystem development.
-
-### Target
-
-A realistic commercial path is to keep the open core broadly useful while monetizing the control-plane layer through:
+Potential monetization levers include:
 
 - centralized governance and policy management
 - audit and evidence workflows
 - enterprise integrations
 - managed control-plane services
 - hosted or managed deployment surfaces
-- team-level collaboration and compliance controls
+- collaboration and compliance controls for teams
 
-### Vision
+The most important strategic point is that the open core can remain broadly useful, while the monetizable layer sits on top of governance, auditability, and enterprise reliability.
 
-The long-term direction is to become the default control plane for AI-native engineering teams that need trust, structure, and governance around AI-assisted software creation.
+## 12-month roadmap
 
-## Current development stage
+The next 12 months should focus on turning repository evidence into stronger traction and clearer product-market fit:
 
-### Current
+- expand design-partner validation with real engineering teams
+- improve end-to-end examples and integration coverage
+- strengthen governance, observability, and audit features
+- grow contributor and ecosystem participation
+- build clearer managed and enterprise offerings on top of the open core
 
-The repository is already substantial and demonstrably functional. The current implementation includes runnable CLI workflows, a working pipeline, policy evaluation, context generation, demo control-plane capabilities, and evidence/audit hooks.
+## Investment case
 
-### Target
+NAEOS is attractive to investors because it sits in a large emerging category: AI-native engineering infrastructure.
 
-The next priority is to convert the existing technical foundation into a sharper developer wedge and clearer commercial story:
+The investment case is not that NAEOS is merely another AI tool. It is that NAEOS is building the system layer required for AI-assisted software delivery at scale.
 
-- clearer proof of the control-plane workflow
-- stronger end-to-end examples
-- stronger governance and audit narratives
-- stronger enterprise and partner positioning
-- broader design-partner validation
+## Repository evidence
 
-### Vision
-
-Over the next 12 months, the goal is to make NAEOS the default engineering layer for teams that want AI to be productive without sacrificing architectural clarity, policy compliance, or operational traceability.
-
-## 12-month targets
-
-### Target
-
-These are targets, not current results:
-
-- 10–20 design partners
-- 100+ active engineering teams using the project
-- 3–5 enterprise pilots
-- 8–10 technical integrations across AI and developer tooling
-- 50+ external contributors
-- a stronger, repeatable control-plane workflow for real teams
-
-## Why investors should care
-
-NAEOS is attractive to investors who understand developer infrastructure, AI systems, open-source platforms, and the emerging category of AI-native engineering tools.
-
-The strongest argument is not that NAEOS is “another AI tool.” It is that NAEOS is building the system infrastructure that AI-native software delivery requires.
-
-## Founder direction
-
-NAEOS is being built in public. The project is explicitly positioned as an infrastructure bet on the future of engineering, not merely a productivity wrapper around an LLM.
-
-## Contact
-
-The repository is the primary source of truth for technical evaluation and public evidence.
+The repository is the primary source of technical truth and public evidence:
 
 - GitHub: [NAEOS Foundation / naeos](https://github.com/NAEOS-foundation/naeos)
 - README: [README.md](https://github.com/NAEOS-foundation/naeos/blob/main/README.md)
@@ -186,6 +94,6 @@ The repository is the primary source of truth for technical evaluation and publi
 
 ## Bottom line
 
-NAEOS is building the engineering control plane for the AI-native software era.
+NAEOS is building the infrastructure layer that makes AI-native engineering trustworthy, repeatable, and enterprise-ready.
 
-The project already has real technical substance. The opportunity is to turn that substance into a durable developer platform, a trusted control plane, and a strong long-term infrastructure company.
+The repository already contains substantial technical evidence. The opportunity is to convert that foundation into a durable platform, a strong open-source ecosystem, and a meaningful control-plane business.

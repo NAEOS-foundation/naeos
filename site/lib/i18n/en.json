@@ -9,6 +9,7 @@
   "nav_community": "Community",
   "nav_plugins": "Plugins",
   "nav_investor_deck": "Investor Deck",
+  "nav_launch_announcement": "Launch Announcement",
   "plugins_install": "Install",
   "plugins_publish_title": "Publish your plugin",
   "plugins_publish_intro": "Build a plugin with the NAEOS Plugin SDK, then publish it to the registry.",

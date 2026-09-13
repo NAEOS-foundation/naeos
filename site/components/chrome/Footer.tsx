@@ -59,6 +59,7 @@ export default function Footer({ lang, tagline }: FooterProps) {
               <a href={`${base}/roadmap`}>{t("footer_roadmap")}</a>
               <a href={`${base}/blog`}>{t("nav_blog")}</a>
               <a href={`${base}/plugins`}>{t("nav_plugins")}</a>
+              <a href={`${base}/launch-announcement`}>{t("nav_launch_announcement")}</a>
               <a href={`${base}/showcase`}>{t("nav_showcase")}</a>
               <a href={`${base}/cookbook`}>{t("nav_cookbook")}</a>
               <a href={`${base}/use-cases`}>{t("footer_use_cases")}</a>
