@@ -268,6 +268,36 @@ git add docs/cli/
 git commit -m "docs: update CLI reference"
 ```
 
+## License
+
+NAEOS is released under the [Apache License 2.0](LICENSE). Unless you state
+otherwise, any contribution you intentionally submit for inclusion in the work
+is licensed to NAEOS under the same terms (inbound = outbound), consistent with
+Section 5 of the Apache License. Do not submit code you do not have the right
+to contribute.
+
+## Developer Certificate of Origin (DCO)
+
+Every commit must include a `Signed-off-by` trailer:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+Use `git commit -s` to add it automatically. By signing off, you certify that,
+per the [Developer Certificate of Origin](https://developercertificate.org/):
+
+1. You authored the contribution, or received it from a prior contributor who
+   authored it, and it does not incorporate unlicensed third-party material.
+2. You have the right to submit it for inclusion in this project.
+
+The DCO check (`.github/workflows/dco.yml`) verifies every commit in a pull
+request. If you contribute on behalf of an employer, client, or other party,
+make sure that party has granted you the right to contribute under the
+Apache License 2.0. NAEOS Foundation may require a Contributor License
+Agreement (CLA) for commercial or corporate contributions, especially ahead of
+the NAEOS Cloud / Enterprise products.
+
 ## Pull Request Process
 
 1. **Branch** from `main` with a descriptive name

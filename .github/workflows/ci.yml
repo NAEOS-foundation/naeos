@@ -33,6 +33,8 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
+      - name: License headers
+        run: bash scripts/check-license-headers.sh
 
   test:
     name: Test

@@ -1,0 +1,42 @@
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: Sign-off check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Verify Signed-off-by on all commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          if ! git rev-parse --verify -q "$base" >/dev/null 2>&1; then
+            base="$(git rev-list --max-parents=0 --first-parent HEAD)"
+          fi
+          merge_base="$(git merge-base "$base" "$head")"
+          bad=0
+          for hash in $(git rev-list "$merge_base..$head"); do
+            if ! git log -1 --format=%B "$hash" | grep -q '^Signed-off-by:'; then
+              echo "::error::commit $hash is missing a Signed-off-by trailer"
+              bad=1
+            fi
+          done
+          if [ "$bad" -eq 1 ]; then
+            echo
+            echo "Every commit must include a 'Signed-off-by: Name <email>' trailer."
+            echo "This certifies compliance with the Developer Certificate of Origin."
+            echo "Fix with: git commit --amend -s  (or use 'git commit -s' for new commits)."
+            exit 1
+          fi
+          echo "All commits carry a Signed-off-by trailer."

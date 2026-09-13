@@ -387,7 +387,15 @@ Contributions, documentation improvements, issue reports, and new integrations a
 
 ## License
 
-NAEOS is released under the [Apache License 2.0](LICENSE).
+NAEOS is released under the [Apache License 2.0](LICENSE). See the
+[NOTICE](NOTICE) for attribution and branding information. Contributions are
+accepted under the
+[Developer Certificate of Origin](https://developercertificate.org/)
+(see [CONTRIBUTING.md](CONTRIBUTING.md#developer-certificate-of-origin-dco)).
+
+The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS
+Foundation. The Apache License grants no trademark rights; see
+[NOTICE](NOTICE) for the current branding and trademark policy.
 
 ## Status
 

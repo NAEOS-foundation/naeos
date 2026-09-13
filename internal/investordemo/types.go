@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 // Package investordemo contains the NAEOS investor demo implementation.
 // This demonstrates NAEOS as a control plane for AI agent authorization, policy enforcement,
 // and independent verification.

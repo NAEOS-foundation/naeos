@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 // Command slack-setup provisions the NAEOS Slack workspace: creates channels
 // from launch/slack-server/blueprint.md and optionally posts paste-ready
 // messages. Idempotent — safe to re-run.
