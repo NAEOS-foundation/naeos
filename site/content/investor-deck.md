@@ -7,6 +7,11 @@ description: A concise investor brief for NAEOS, the engineering control plane f
 
 > NAEOS is not another AI coding assistant. It is an engineering control plane that turns specifications into validated, governable, AI-ready software workflows.
 
+## View or download the deck
+
+- [Open the investor pitch deck in your browser](/NAEOS-PITCHDECK.pdf)
+- [Download the investor pitch deck PDF](/NAEOS-PITCHDECK.pdf)
+
 ## Thesis
 
 NAEOS is building the system layer for AI-native software engineering.
