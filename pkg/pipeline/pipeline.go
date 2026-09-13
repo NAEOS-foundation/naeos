@@ -149,6 +149,7 @@ type Result struct {
 	Tasks             []scheduler.Task
 	Graph             *graph.PlannerGraph
 	Reviews           []*review.ReviewResult
+	PolicyResults     []policy.EvaluationResult
 }
 
 func WithCache(cache ParseCache) func(*Config) {
@@ -810,6 +811,7 @@ func (p *Pipeline) fetchSchema() (map[string]any, error) {
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
 	if len(p.policies) == 0 {
+		result.PolicyResults = nil
 		return nil
 	}
 	p.logVerbose("evaluating %d policy rules", len(p.policies))
@@ -822,6 +824,7 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 	if err != nil {
 		return fmt.Errorf("policy evaluation failed: %w", err)
 	}
+	result.PolicyResults = results
 	for _, res := range results {
 		if !res.Passed {
 			return fmt.Errorf("policy evaluation failed: rule %s: %s", res.RuleID, res.Message)
