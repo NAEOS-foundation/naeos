@@ -1,4 +1,7 @@
 "use client";
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 
 import { useMemo } from "react";
 import enDict from "@/lib/i18n/en.json";

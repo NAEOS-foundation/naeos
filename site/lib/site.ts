@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 export const LANGUAGES = ["en", "id"] as const;
 export type Lang = (typeof LANGUAGES)[number];
 

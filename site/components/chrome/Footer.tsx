@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 import Link from "next/link";
 import enDict from "@/lib/i18n/en.json";
 import idDict from "@/lib/i18n/id.json";

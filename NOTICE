@@ -34,6 +34,20 @@ Third-Party Notices
 The NAEOS runtime is statically linked against third-party libraries, all of
 which are permissively licensed (Apache-2.0, BSD, MIT, ISC, MPL-2.0). A machine
 readable software bill of materials (SBOM) and the full third-party license
-attribution are published with each release artifact. The website and developer
-tooling additionally use JavaScript packages whose licenses are recorded in the
-respective lockfiles (site/package-lock.json, infra/ws-worker/package-lock.json).
+attribution are published with each release artifact.
+
+The website and developer tooling additionally use JavaScript packages whose
+licenses are recorded in the respective lockfiles (site/package-lock.json,
+infra/ws-worker/package-lock.json). Notable items:
+
+  - khroma (transitive, via mermaid): MIT License (upstream
+    https://github.com/fabiospampinato/khroma). The npm registry metadata for
+    khroma omits its license field; the upstream project is MIT-licensed.
+  - sharp and the platform binaries @img/sharp-*: Apache-2.0.
+  - @img/sharp-libvips-*: LGPL-3.0-or-later. These are prebuilt libvips
+    binaries used only at build time by the site's devDependencies to process
+    images; they are not distributed as part of the NAEOS runtime or website
+    runtime output.
+
+Nothing in this repository is licensed under, or requires distribution under,
+GPL or AGPL terms.
