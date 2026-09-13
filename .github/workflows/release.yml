@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 jobs:
   release:
@@ -98,43 +99,32 @@ jobs:
             tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md "naeos_${VERSION}.bom.json" naeos
           done
 
+      - name: Prepare release notes
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          TAG="${GITHUB_REF#refs/tags/}"
+          {
+            printf '## NAEOS %s\n\n' "$VERSION"
+            printf 'Declarative platform engineering system — transform specifications into validated, multi-language project structures.\n\n'
+            printf '### Installation\n\n```bash\ncurl -fsSL https://naeos.dev/install.sh | sh\n```\n\nOr with Go:\n\n```bash\ngo install github.com/NAEOS-foundation/naeos/cmd/naeos@%s\n```\n\n' "$TAG"
+            printf '### Binary Downloads\n\n'
+            printf '| Platform | Architecture | Archive |\n|----------|-------------|---------|\n'
+            printf '| Linux | amd64 | `naeos_%s_linux_amd64.tar.gz` |\n' "$VERSION"
+            printf '| Linux | arm64 | `naeos_%s_linux_arm64.tar.gz` |\n' "$VERSION"
+            printf '| macOS | amd64 | `naeos_%s_darwin_amd64.tar.gz` |\n' "$VERSION"
+            printf '| macOS | arm64 | `naeos_%s_darwin_arm64.tar.gz` |\n' "$VERSION"
+            printf '| Windows | amd64 | `naeos-windows-amd64.exe` |\n\n'
+            printf '### What\x27s New in %s\n\n' "$VERSION"
+            awk -v "v=${VERSION}" 'BEGIN{f=0} $0 ~ "^## \\[" v "\\]"{f=1; next} f && /^## \[/{exit} f' CHANGELOG.md \
+              | grep -v '^\- \*\*Version bump'
+          } > /tmp/release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@e598afbe1493e6b1bafb1f389cabb956eab91231
         with:
           name: NAEOS ${{ steps.version.outputs.VERSION }}
-          body: |
-            ## NAEOS ${{ steps.version.outputs.VERSION }}
-
-            Declarative platform engineering system — transform specifications into validated, multi-language project structures.
-
-            ### Installation
-
-            ```bash
-            curl -fsSL https://naeos.dev/install.sh | sh
-            ```
-
-            Or with Go:
-
-            ```bash
-            go install github.com/NAEOS-foundation/naeos/cmd/naeos@${{ github.ref_name }}
-            ```
-
-            ### Binary Downloads
-
-            | Platform | Architecture | Archive |
-            |----------|-------------|---------|
-            | Linux | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_amd64.tar.gz` |
-            | Linux | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz` |
-            | macOS | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz` |
-            | macOS | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz` |
-            | Windows | amd64 | `naeos-windows-amd64.exe` |
-
-            ### What's New in v3.1.0
-
-            - **Pipeline caching** — `naeos run --cache-dir <dir>` caches intermediate stage results; rebuilds reuse cached output for faster iteration
-            - **Pipeline profiling on `naeos run`** — `--profile`/`--profile-out` capture per-stage timing, `--pprof` exposes a pprof HTTP server for live heap/CPU inspection
-            - **Architecture patterns** — monolithic, microservices, and serverless patterns in the NEIR model
-            - **WASM plugin hardening** — plugin host requires exported metadata symbols; expanded WASM sandbox support
+          body_path: /tmp/release-notes.md
           files: |
             naeos-linux-amd64
             naeos-linux-arm64
@@ -149,3 +139,44 @@ jobs:
             checksums.txt
           draft: false
           prerelease: false
+
+      - name: Generate release blog posts
+        id: blog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          TAG="${GITHUB_REF#refs/tags/}"
+          DATE=$(date +%Y-%m-%d)
+          gh release view "$TAG" --json body -q .body > /tmp/release-body.md
+          CHANGED=false
+          if [ ! -f "site/content/blog/${TAG}-release.md" ]; then
+            printf -- '---\ntitle: "NAEOS %s Release"\ndate: %s\ndescription: "Release notes for NAEOS %s — new features, improvements, and bug fixes."\ncategories: ["release"]\n---\n' \
+              "$VERSION" "$DATE" "$VERSION" > "site/content/blog/${TAG}-release.md"
+            cat /tmp/release-body.md >> "site/content/blog/${TAG}-release.md"
+            CHANGED=true
+          fi
+          mkdir -p site/content/id/blog
+          if [ ! -f "site/content/id/blog/${TAG}-release.md" ]; then
+            printf -- '---\ntitle: "Rilis NAEOS %s"\ndate: %s\ndescription: "Catatan rilis untuk NAEOS %s — fitur baru, perbaikan, dan perbaikan bug."\ncategories: ["release"]\n---\n' \
+              "$VERSION" "$DATE" "$VERSION" > "site/content/id/blog/${TAG}-release.md"
+            cat /tmp/release-body.md >> "site/content/id/blog/${TAG}-release.md"
+            CHANGED=true
+          fi
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Create release blog post PR
+        if: steps.blog.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          token: ${{ github.token }}
+          commit-message: "blog: add ${{ github.ref_name }} release post"
+          title: "Blog: Add ${{ github.ref_name }} release post"
+          body: |
+            Auto-generated blog post for the ${{ github.ref_name }} release.
+            
+            Changes:
+            - Added English blog post (if missing)
+            - Added Indonesian blog post (if missing)
+          branch: blog/${{ github.ref_name }}
+          delete-branch: true
