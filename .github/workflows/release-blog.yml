@@ -44,31 +44,19 @@ jobs:
           TAG="${{ steps.release.outputs.tag }}"
           VERSION="${{ steps.release.outputs.version }}"
           DATE="${{ steps.release.outputs.date }}"
-          
+
           # Create English blog post
           mkdir -p site/content/blog
-          cat > "site/content/blog/${TAG}-release.md" << BLOGEOF
----
-title: "NAEOS $VERSION Release"
-date: $DATE
-description: "Release notes for NAEOS $VERSION — new features, improvements, and bug fixes."
-categories: ["release"]
----
-BLOGEOF
-          
+          printf -- '---\ntitle: "NAEOS %s Release"\ndate: %s\ndescription: "Release notes for NAEOS %s — new features, improvements, and bug fixes."\ncategories: ["release"]\n---\n' \
+            "$VERSION" "$DATE" "$VERSION" > "site/content/blog/${TAG}-release.md"
+
           cat /tmp/release-body.md >> "site/content/blog/${TAG}-release.md"
-          
+
           # Create Indonesian blog post
           mkdir -p site/content/id/blog
-          cat > "site/content/id/blog/${TAG}-release.md" << BLOGEOF
----
-title: "Rilis NAEOS $VERSION"
-date: $DATE
-description: "Catatan rilis untuk NAEOS $VERSION — fitur baru, perbaikan, dan perbaikan bug."
-categories: ["release"]
----
-BLOGEOF
-          
+          printf -- '---\ntitle: "Rilis NAEOS %s"\ndate: %s\ndescription: "Catatan rilis untuk NAEOS %s — fitur baru, perbaikan, dan perbaikan bug."\ncategories: ["release"]\n---\n' \
+            "$VERSION" "$DATE" "$VERSION" > "site/content/id/blog/${TAG}-release.md"
+
           cat /tmp/release-body.md >> "site/content/id/blog/${TAG}-release.md"
 
       - name: Create Pull Request

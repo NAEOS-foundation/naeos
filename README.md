@@ -385,6 +385,12 @@ Contributions, documentation improvements, issue reports, and new integrations a
 - [Discord](https://discord.gg/naeos) — real-time discussion with the community and maintainers.
 - [Discussions guide](docs/community/discussions.md) — categories, norms, and how conversations become contributions.
 
+## Governance
+
+- [Open-core boundary](docs/open-core.md) — how open-source NAEOS Core relates to future NAEOS Cloud / Enterprise offerings.
+- [AI-assisted provenance policy](docs/ai-provenance.md) — guidance for commits written or generated with AI tools.
+- [Engineering Constitution](constitution/) and [governance](governance/) — how the project governs itself.
+
 ## License
 
 NAEOS is released under the [Apache License 2.0](LICENSE). See the

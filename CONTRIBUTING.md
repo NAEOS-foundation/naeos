@@ -298,6 +298,23 @@ Apache License 2.0. NAEOS Foundation may require a Contributor License
 Agreement (CLA) for commercial or corporate contributions, especially ahead of
 the NAEOS Cloud / Enterprise products.
 
+## AI-Assisted Contributions
+
+AI-assisted and agent-generated contributions are welcome. You remain
+responsible for the rights to every line you submit, whether written by hand or
+produced by a tool, and for keeping secrets and third-party material out of the
+repository. See the [AI-assisted contribution provenance
+policy](docs/ai-provenance.md) for the full guidance.
+
+## Security
+
+Never commit secrets: API keys, tokens, passwords, private keys, cloud
+credentials, `.env` files, or personal/customer data — even in tests or
+examples. Review your diff for accidental secrets before pushing; if a secret
+is found in history, rotate it and contact the maintainers. Prefer
+[`.env.example`](.env.example) with placeholder values for any documented
+configuration.
+
 ## Pull Request Process
 
 1. **Branch** from `main` with a descriptive name
