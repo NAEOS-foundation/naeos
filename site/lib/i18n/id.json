@@ -9,6 +9,7 @@
   "nav_community": "Komunitas",
   "nav_plugins": "Plugin",
   "nav_investor_deck": "Investor Deck",
+  "nav_launch_announcement": "Pengumuman Peluncuran",
   "plugins_install": "Pasang",
   "plugins_publish_title": "Publikasikan plugin Anda",
   "plugins_publish_intro": "Bangun plugin dengan NAEOS Plugin SDK, lalu publikasikan ke registry.",

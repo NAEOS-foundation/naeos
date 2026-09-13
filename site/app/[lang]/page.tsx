@@ -276,6 +276,102 @@ export default async function HomePage(props: {
         </div>
       </div>
 
+      {/* Executive summary */}
+      <section className="section">
+        <div className="container fade-in">
+          <div className="problem-grid">
+            <div className="problem-card problem-card-before">
+              <span className="problem-tag problem-tag-red">
+                {lang === "id" ? "Ringkasan eksekutif" : "Executive summary"}
+              </span>
+              <h3>
+                {lang === "id"
+                  ? "NAEOS adalah control plane untuk engineering AI-native."
+                  : "NAEOS is the control plane for AI-native engineering."}
+              </h3>
+              <p>
+                {lang === "id"
+                  ? "NAEOS mengubah spesifikasi perangkat lunak menjadi workflow yang tervalidasi, teratur, dan siap untuk AI. Platform ini menggabungkan NEIR, policy enforcement, traceability, dan evidence agar AI dapat mempercepat delivery tanpa mengorbankan kontrol."
+                  : "NAEOS turns software specifications into validated, governed, AI-ready workflows. It combines NEIR, policy enforcement, traceability, and evidence so AI can accelerate delivery without sacrificing control."}
+              </p>
+            </div>
+            <div className="problem-arrow" aria-hidden="true">→</div>
+            <div className="problem-card problem-card-after">
+              <span className="problem-tag problem-tag-green">
+                {lang === "id" ? "Kenapa penting" : "Why it matters"}
+              </span>
+              <h3>
+                {lang === "id"
+                  ? "AI menghasilkan kode. NAEOS mengelola engineering di sekitarnya."
+                  : "AI generates code. NAEOS governs the engineering around it."}
+              </h3>
+              <p>
+                {lang === "id"
+                  ? "Masalah utama sekarang bukan lagi kualitas generation, tetapi trust, auditability, dan repeatability. NAEOS hadir untuk memberi tim engineering lapisan sistem yang dibutuhkan agar adopsi AI bisa berkembang secara aman dan terukur."
+                  : "The main bottleneck is no longer generation quality; it is trust, auditability, and repeatability. NAEOS gives engineering teams the system layer they need to scale AI adoption safely and predictably."}
+              </p>
+              <Link href={`${base}/investors`} className="btn btn-primary btn-sm" data-umami-event="home-investor-summary">
+                {lang === "id" ? "Lihat investor page" : "View investor page"}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What makes NAEOS different */}
+      <section className="section">
+        <div className="container fade-in">
+          <h2 className="section-title">
+            {lang === "id" ? "Apa yang membuat NAEOS berbeda" : "What makes NAEOS different"}
+          </h2>
+          <p className="section-subtitle">
+            {lang === "id"
+              ? "NAEOS tidak hanya menghasilkan kode. NAEOS mengorganisasi seluruh alur engineering di sekitar spesifikasi, governance, dan bukti."
+              : "NAEOS does not only generate code. It organizes the entire engineering workflow around specification, governance, and evidence."}
+          </p>
+          <div className="use-cases-grid stagger-fade">
+            <div className="use-case-card">
+              <span className="use-case-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none"><path d="M5 10.5 16 4l11 6.5v11L16 28l-11-6.5v-11Zm11 0V28M5 10.5l11 6.5 11-6.5" /></svg>
+              </span>
+              <h3>{lang === "id" ? "Spesifikasi sebagai sumber kebenaran" : "Specification as the source of truth"}</h3>
+              <p>
+                {lang === "id"
+                  ? "Semua intent engineering dimodelkan sebagai spesifikasi yang dapat dipahami mesin, dipetakan, dan dijalankan secara konsisten."
+                  : "Engineering intent is modeled as a machine-readable specification that can be understood, mapped, and executed consistently."}
+              </p>
+            </div>
+            <div className="use-case-card">
+              <span className="use-case-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none"><path d="M7 20.5 13.5 14l4 4L25 6.5M25 6.5H18M25 6.5v7" /></svg>
+              </span>
+              <h3>{lang === "id" ? "AI workflow yang terukur" : "Measurable AI workflows"}</h3>
+              <p>
+                {lang === "id"
+                  ? "NAEOS menambahkan validasi, policy, dan konteks yang jelas di setiap tahap agar AI bisa bekerja lebih aman dan lebih repeatable."
+                  : "NAEOS adds validation, policy, and clear context at every stage so AI can work more safely and more repeatably."}
+              </p>
+            </div>
+            <div className="use-case-card">
+              <span className="use-case-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none"><path d="M8 6h16v20H8zM12 10h8M12 16h8M12 22h8" /></svg>
+              </span>
+              <h3>{lang === "id" ? "Delivery yang bisa dilacak" : "Traceable delivery"}</h3>
+              <p>
+                {lang === "id"
+                  ? "Artifacts, keputusan, dan bukti dapat ditelusuri kembali ke spesifikasi awal, sehingga review dan audit menjadi lebih mudah."
+                  : "Artifacts, decisions, and evidence can be traced back to the original specification, making review and audit far easier."}
+              </p>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg" data-umami-event="home-structure-get-started">
+              {lang === "id" ? "Mulai dengan NAEOS" : "Get started with NAEOS"}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Social proof */}
       <section className="section social-proof">
         <div className="container fade-in">
