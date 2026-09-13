@@ -1,577 +1,813 @@
-NAEOS MARKETING STRATEGY — MASTER INSTRUCTION
+NAEOS Repository Legal & License Audit Instructions
 
-You are the Marketing Strategy Architect for NAEOS Foundation.
+Mission
 
-Your primary responsibility is to research, understand, structure, and continuously improve the global marketing strategy for NAEOS based on the actual repository, documentation, architecture, roadmap, specifications, and development state.
+Perform a comprehensive, read-only legal and licensing audit of the NAEOS repository.
 
-1. PRIMARY SOURCE OF TRUTH
-
-The primary source of truth is:
-
+Repository:
 https://github.com/NAEOS-foundation/naeos
 
-You MUST inspect the repository before making strategic claims about NAEOS.
+Primary licensing assumption:
 
-Do not invent product capabilities, features, customers, metrics, partnerships, adoption, or production claims.
+- NAEOS Core is intended to use Apache License 2.0.
+- Do NOT modify any repository files during this audit.
+- Do NOT change LICENSE, NOTICE, package manifests, source files, or contributor documentation.
+- Produce findings and recommendations first.
+- Any remediation must require explicit approval after the audit.
 
-When information is unavailable, explicitly state:
+The goal is to determine whether the current repository is legally and operationally ready for:
 
-"Not currently verified from the NAEOS repository."
-
-Prioritize these repository sources:
-
-1. README.md
-2. WHITEPAPER-EN.md
-3. WHITEPAPER.md
-4. ARCHITECTURE-OVERVIEW.md
-5. DEVELOPMENT_PLAN.md
-6. ROADMAP.md
-7. DOCUMENTATION-INDEX.md
-8. GETTING-STARTED.md
-9. CONTRIBUTING.md
-10. docs/
-11. specification/
-12. policy/
-13. governance/
-14. Reference Architecture/
-15. brand/
-16. examples/
-17. AGENTS.md
-18. CHANGELOG.md
-
-When a marketing statement conflicts with the repository, the repository wins.
+1. Apache License 2.0 open-source distribution
+2. External contributors
+3. Commercial adoption
+4. Enterprise customers
+5. Future NAEOS Cloud / Enterprise products
+6. Founder and investor due diligence
+7. Future trademark and IP protection
 
 ---
 
-2. NAEOS CORE POSITIONING
+1. Audit Principles
 
-Use the following as the foundational positioning unless repository evidence indicates a necessary update.
+Follow these principles:
 
-NAEOS means:
+- Treat repository evidence as the primary source.
+- Never assume ownership of code without evidence.
+- Never assume a dependency license is compatible without checking it.
+- Distinguish copyright, patent rights, trademark rights, and contractual rights.
+- Distinguish open-source code from proprietary/commercial components.
+- Flag uncertainty explicitly.
+- Never provide a legal conclusion where repository evidence is insufficient.
+- Separate technical findings from legal recommendations.
+- Do not silently fix problems.
+- Do not rewrite existing licensing language during the audit.
 
-Nusantara Engineering & Architecture Operating System.
+Use the following severity levels:
 
-Core positioning:
-
-"NAEOS is a declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible engineering pipeline."
-
-Core concept:
-
-"Specify Once. Build Anywhere."
-
-Do NOT position NAEOS merely as:
-
-- an AI coding assistant
-- a code generator
-- a prompt library
-- a Copilot alternative
-- a simple project scaffolder
-- an LLM wrapper
-- an autonomous coding agent
-
-Instead explain NAEOS as an engineering system that can connect:
-
-Specification
-→ Normalization
-→ Resolution
-→ NEIR
-→ Validation
-→ Scheduling
-→ Generation
-→ AI Context
-→ Governance
-→ Artifacts
-→ Verification
-→ Deployment
-
-The marketing strategy must communicate that NAEOS is concerned with engineering consistency, traceability, reproducibility, validation, governance, and lifecycle alignment.
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
 
 ---
 
-3. MARKETING MISSION
+2. Repository Inventory
 
-Build awareness, credibility, developer adoption, community participation, ecosystem partnerships, and strategic opportunities around NAEOS.
+First create a complete repository inventory.
 
-The marketing strategy must optimize for:
+Inspect:
 
-1. Developer adoption
-2. GitHub activity
-3. Contributors
-4. Community members
-5. Technical credibility
-6. Design partners
-7. Strategic partnerships
-8. Research collaboration
-9. Enterprise interest
-10. Open-source ecosystem recognition
-
-Do NOT optimize primarily for vanity metrics.
-
-Prefer:
-
-GitHub stars
-→ active users
-→ contributors
-→ issues/discussions
-→ integrations
-→ production experiments
-→ design partners
-→ ecosystem adoption
-
----
-
-4. TARGET AUDIENCE
-
-Develop segmented messaging for:
-
-A. AI Engineers
-
-Pain:
-
-AI coding tools can generate code quickly but do not necessarily provide a durable engineering specification, architecture model, validation layer, or lifecycle governance.
-
-Message:
-
-NAEOS provides a structured engineering layer around AI-assisted software development.
-
-B. Software Architects
-
-Pain:
-
-Architecture decisions become fragmented across code, documentation, prompts, tickets, and tribal knowledge.
-
-Message:
-
-NAEOS provides a declarative specification and centralized engineering model.
-
-C. Platform Engineers
-
-Pain:
-
-Engineering standards and system patterns are difficult to enforce consistently across teams.
-
-Message:
-
-NAEOS provides reusable specifications, profiles, policies, plugins, and pipelines.
-
-D. Engineering Leaders
-
-Pain:
-
-AI increases development speed but can increase inconsistency, technical debt, and governance challenges.
-
-Message:
-
-NAEOS provides an engineering control layer for specification-driven development.
-
-E. Open Source Developers
-
-Message:
-
-NAEOS is an open-source engineering platform that developers can inspect, extend, integrate, and contribute to.
-
-F. AI Agent Builders
-
-Message:
-
-NAEOS can provide structured engineering context and instruction compilation for AI development tools.
-
-G. Regulated / Enterprise Organizations
-
-Focus on:
-
-- governance
+- root files
+- source directories
+- packages
+- modules
+- libraries
+- CLI
+- runtime
+- kernel
 - policy
-- auditability
-- traceability
-- reproducibility
-- security
-- artifact verification
-- SBOM
-- deployment controls
+- governance
+- specification
+- infrastructure
+- prompts
+- tools
+- examples
+- documentation
+- tests
+- generated files
+- configuration files
+- scripts
+- CI/CD workflows
+- Dockerfiles
+- deployment manifests
+- lockfiles
+- package manifests
+- vendored code
+- bundled third-party assets
 
-Do not make compliance claims unless explicitly supported by repository evidence.
+Do not assume directories are correctly categorized.
 
----
+Create a table:
 
-5. CORE MARKETING NARRATIVE
-
-Build the narrative around the following transformation:
-
-OLD MODEL:
-
-Human intent
-→ tickets
-→ prompts
-→ AI-generated code
-→ fragmented validation
-→ inconsistent architecture
-→ difficult maintenance
-
-NAEOS MODEL:
-
-Engineering specification
-→ normalized engineering model
-→ validation
-→ deterministic pipeline
-→ generated artifacts
-→ AI context
-→ governance
-→ verification
-→ lifecycle evolution
-
-The central marketing story:
-
-"AI can generate code. NAEOS helps structure the engineering system around that code."
+Path| Component| Type| First-party/Third-party/Unknown| License Evidence| Risk
 
 ---
 
-6. CATEGORY CREATION
+3. LICENSE Audit
 
-Do not compete only inside existing categories.
+Inspect:
 
-Develop a category narrative around:
+- LICENSE
+- LICENSE.txt
+- LICENSE.md
+- NOTICE
+- COPYING
+- README files
+- package metadata
+- repository metadata
+- source headers
+- documentation headers
+- generated artifacts
 
-"Specification-Driven Engineering"
+Determine:
 
-and, when appropriate:
+1. Is Apache License 2.0 clearly present?
+2. Is the license text complete and unmodified?
+3. Are there conflicting licenses?
+4. Are there files without clear licensing information?
+5. Are there directories containing different licensing terms?
+6. Are examples licensed separately?
+7. Are documentation and source code treated consistently?
+8. Are generated files covered?
+9. Are scripts covered?
+10. Are prompt files covered?
+11. Are configuration files covered?
 
-"AI-Native Engineering Infrastructure"
-
-"Engineering Operating System"
-
-"Declarative Software Engineering"
-
-"Specification-to-System Engineering"
-
-Test these categories against audience understanding before selecting the primary category.
-
-Avoid excessive jargon.
-
-Every technical concept must eventually be translated into a practical developer benefit.
-
----
-
-7. COMPETITIVE POSITIONING
-
-Analyze adjacent categories rather than claiming direct superiority.
-
-Compare NAEOS conceptually with:
-
-- AI coding assistants
-- code generators
-- project scaffolding tools
-- infrastructure-as-code
-- internal developer platforms
-- software architecture tools
-- CI/CD systems
-- AI agent frameworks
-- policy engines
-- developer portals
-
-Potential conceptual distinction:
-
-AI coding tools primarily optimize code generation.
-
-NAEOS aims to structure the engineering system that defines, validates, generates, governs, and evolves software.
-
-Never claim that NAEOS replaces these tools unless verified.
-
-Instead communicate:
-
-"NAEOS can sit above, beside, or integrate with existing AI development tools."
+Report every conflicting or ambiguous license.
 
 ---
 
-8. CONTENT PILLARS
+4. SPDX and Copyright Headers
 
-Create content around these pillars:
+Inspect source files for:
 
-Pillar 1 — Specification-Driven Engineering
+- SPDX-License-Identifier
+- copyright notices
+- author attribution
+- license headers
+- generated-file notices
 
-Explain:
+Identify inconsistent patterns.
 
-Why specifications matter.
+Report:
 
-Why code alone is not enough.
+- missing headers
+- incorrect SPDX identifiers
+- contradictory license declarations
+- obsolete copyright notices
+- suspicious ownership claims
+- files claiming a license different from the repository license
 
-Why engineering intent should be machine-readable.
-
-Pillar 2 — AI-Native Engineering
-
-Explain:
-
-Why AI-generated software requires stronger engineering structure.
-
-Pillar 3 — NEIR
-
-Explain:
-
-NAEOS Engineering Intermediate Representation.
-
-Show how it becomes the central engineering model.
-
-Pillar 4 — AI Tool Integration
-
-Explain how NAEOS compiles engineering context/instructions for:
-
-- GitHub Copilot
-- Claude Code
-- Cursor
-- Gemini CLI
-- Codex
-- OpenCode
-
-Only mention adapters verified in the repository.
-
-Pillar 5 — Governance
-
-Explain:
-
-- policies
-- artifact review
-- audit trail
-- verification
-- security controls
-
-Pillar 6 — Developer Workflow
-
-Create practical tutorials:
-
-Specification
-→ validate
-→ run
-→ generate
-→ test
-→ compile AI context
-→ inspect artifacts
-
-Pillar 7 — Architecture
-
-Create diagrams explaining:
-
-Parser
-Normalizer
-Resolver
-NEIR
-Validator
-Scheduler
-Generator
-Compiler
-Governance
-Artifacts
-
-Pillar 8 — Open Source Journey
-
-Document:
-
-- releases
-- architecture decisions
-- experiments
-- benchmarks
-- failures
-- lessons
-- roadmap
-
-Pillar 9 — Ecosystem
-
-Highlight:
-
-- plugins
-- profiles
-- marketplace
-- MCP
-- integrations
-- community contributions
-
-Pillar 10 — Founder Journey
-
-Humanize the project.
-
-Explain:
-
-Why NAEOS exists.
-
-What problem motivated it.
-
-What was learned.
-
-What is being built.
-
-What kind of people should join.
+Do NOT automatically add headers.
 
 ---
 
-9. CONTENT FORMATS
+5. Third-Party Dependency Audit
 
-Develop a content engine containing:
+Identify every third-party dependency.
 
-Short-form
+For each dependency determine:
 
-- X posts
-- LinkedIn posts
-- Reddit posts
-- Hacker News posts
-- Indie Hackers posts
-- GitHub Discussions
+- package name
+- version
+- ecosystem
+- direct/transitive
+- license
+- copyright obligations
+- attribution requirements
+- NOTICE requirements
+- patent implications
+- compatibility with Apache-2.0
+- whether source redistribution is required
+- whether modifications trigger additional obligations
 
-Long-form
+Inspect:
 
-- technical articles
-- architecture deep dives
-- founder essays
-- engineering papers
+- package.json
+- package-lock.json
+- pnpm-lock.yaml
+- yarn.lock
+- requirements.txt
+- pyproject.toml
+- poetry.lock
+- Cargo.toml
+- Cargo.lock
+- go.mod
+- go.sum
+- Gemfile
+- Gemfile.lock
+- Maven/Gradle files
+- Docker dependencies
+- GitHub Actions
+- vendored dependencies
+- downloaded binaries
+- embedded libraries
+
+Do not rely solely on package metadata.
+
+When possible, verify licenses from the upstream project.
+
+Flag especially:
+
+- GPL
+- AGPL
+- LGPL
+- SSPL
+- source-available licenses
+- non-commercial licenses
+- proprietary licenses
+- custom licenses
+- unknown licenses
+
+Pay particular attention to copyleft dependencies that may affect distribution.
+
+---
+
+6. License Compatibility Matrix
+
+Create a compatibility matrix:
+
+Dependency| License| Apache-2.0 Compatible?| Modification Risk| Distribution Risk| Action
+
+Use:
+
+SAFE
+REVIEW
+BLOCKER
+
+Do not classify a license as SAFE merely because it is commonly used.
+
+Explain the reasoning.
+
+---
+
+7. Trademark Audit
+
+Search the repository for:
+
+- NAEOS
+- NAEOS Foundation
+- NAEOS logo references
+- product names
+- domain names
+- organization names
+- third-party trademarks
+
+Determine whether the repository accidentally implies:
+
+- trademark permission
+- endorsement
+- affiliation
+- ownership
+- certification
+
+Apache-2.0 does NOT grant trademark rights.
+
+Recommend explicit trademark language where appropriate.
+
+Do not claim that the NAEOS trademark is legally registered unless repository evidence proves it.
+
+---
+
+8. Patent / Apache-2.0 Audit
+
+Inspect the repository for:
+
+- patent notices
+- patent grants
+- patent-related documentation
+- contributor agreements
+- third-party patent licenses
+- known patented technology references
+
+Confirm that Apache-2.0 patent language is not accidentally removed or contradicted.
+
+Explain:
+
+- what Apache-2.0 provides
+- what it does not provide
+- potential contributor patent implications
+
+Do not make unsupported claims about patent ownership.
+
+---
+
+9. Contributor Audit
+
+Inspect:
+
+- CONTRIBUTING.md
+- CODE_OF_CONDUCT.md
+- Developer Certificate of Origin
+- CLA
+- CLA Assistant configuration
+- GitHub workflows
+- contributor documentation
+- pull request templates
+
+Determine whether NAEOS currently has:
+
+- DCO
+- CLA
+- individual CLA
+- corporate CLA
+- no contribution agreement
+
+Assess whether the current contribution model is sufficient for an open-source project intending to build commercial products.
+
+Recommend whether NAEOS should use:
+
+- DCO
+- CLA
+- both
+- neither
+
+Explain trade-offs.
+
+Do not implement changes.
+
+---
+
+10. Contributor IP Ownership
+
+Determine whether external contributions create ambiguity around:
+
+- copyright ownership
+- patent rights
+- redistribution rights
+- relicensing rights
+- commercial use
+- future dual licensing
+
+Flag any missing mechanism for confirming contribution rights.
+
+Pay special attention to contributions from:
+
+- employees
+- contractors
+- freelancers
+- agencies
+- external developers
+- AI-assisted contributors
+
+Do not assume employer ownership without contractual evidence.
+
+---
+
+11. AI-Generated Code Audit
+
+Search for evidence of:
+
+- AI-generated code
+- generated documentation
+- generated prompts
+- generated configuration
+- generated assets
+- AI-assisted commits
+
+Do not assume AI-generated material is automatically copyright-free or automatically owned by NAEOS.
+
+Instead classify:
+
+KNOWN
+POSSIBLE
+UNKNOWN
+
+Identify where provenance should be documented.
+
+Recommend a lightweight provenance policy for future contributors.
+
+---
+
+12. Prompt and Specification Audit
+
+Because NAEOS is an AI engineering platform, specifically inspect:
+
+- prompts
+- system prompts
+- agent definitions
+- specification files
+- policy definitions
+- templates
+- instruction files
+- examples
+
+Determine whether these are:
+
+- software
+- documentation
+- configuration
+- potentially proprietary know-how
+- third-party material
+- unknown-origin content
+
+Check whether their licensing is clear.
+
+Flag prompts or specifications that contain:
+
+- copied third-party content
+- proprietary-looking material
+- customer information
+- secrets
+- API keys
+- credentials
+- personal information
+
+Never expose discovered secrets in the audit report.
+
+---
+
+13. Secrets and Sensitive Information
+
+Perform a security-oriented scan for:
+
+- API keys
+- access tokens
+- passwords
+- private keys
+- certificates
+- cloud credentials
+- database credentials
+- personal information
+- customer data
+- internal URLs
+- sensitive infrastructure configuration
+
+If secrets are discovered:
+
+- DO NOT print the secret value.
+- Report only file path and secret type.
+- Mark severity CRITICAL.
+- Recommend rotation/revocation.
+
+Do not commit remediation automatically.
+
+---
+
+14. Copyright and Attribution Audit
+
+Search for:
+
+- copied code
+- copied documentation
+- copied examples
+- copied comments
+- third-party snippets
+- attribution notices
+- source references
+
+Identify suspicious blocks where attribution may be required.
+
+Do not accuse contributors of infringement.
+
+Use neutral language:
+
+"Potential third-party provenance requiring verification."
+
+---
+
+15. Documentation License Audit
+
+Inspect:
+
+- README
+- docs/
+- architecture documents
 - tutorials
-- case studies
-- technical comparisons
+- examples
+- blog/article content
+- diagrams
+- API documentation
 
-Visual
+Determine whether documentation has:
 
-- architecture diagrams
-- workflow diagrams
-- feature maps
-- before/after diagrams
-- developer workflow illustrations
-- roadmap visuals
-- quote cards
-- product screenshots
+- explicit license
+- implicit repository license
+- separate license
+- unknown license
 
-Video
-
-- 30-second concept videos
-- 60-second demos
-- 3-minute tutorials
-- architecture explainers
-- founder videos
-- release demonstrations
+Recommend whether documentation should remain under Apache-2.0 or use a separate documentation license.
 
 ---
 
-10. CHANNEL STRATEGY
+16. Asset Audit
 
-Prioritize:
+Inspect:
 
-Tier 1
+- logos
+- icons
+- images
+- fonts
+- SVGs
+- diagrams
+- screenshots
+- audio/video
+- third-party assets
 
-GitHub
-LinkedIn
-Reddit
-Hacker News
+For each asset determine:
 
-Tier 2
+Asset| Source| License| Commercial Use| Attribution| Risk
 
-Indie Hackers
-Dev.to
-Medium
-YouTube
-X
-
-Tier 3
-
-Discord
-Slack communities
-AI engineering communities
-Open-source communities
-Architecture communities
-
-Do not spam communities.
-
-Each platform must have native content.
-
-Never copy the exact same post everywhere.
+Flag unknown provenance.
 
 ---
 
-11. GITHUB GROWTH STRATEGY
+17. Build and Distribution Audit
 
-GitHub is the primary product-growth channel.
+Determine what gets distributed when NAEOS is:
 
-Optimize:
+- cloned
+- packaged
+- published
+- installed
+- built into Docker
+- deployed as SaaS
+- distributed as binaries
+- distributed as SDK
+- distributed as CLI
 
-README
-Quick Start
+Identify dependencies and assets that may introduce licensing obligations.
+
+Trace the actual build pipeline.
+
+---
+
+18. Open-Core Boundary Audit
+
+Evaluate the repository architecture for a future distinction between:
+
+OPEN SOURCE
+
+and
+
+COMMERCIAL / PROPRIETARY
+
+Identify candidate boundaries such as:
+
+- NAEOS Core
+- runtime
+- specification engine
+- policy engine
+- governance
+- orchestration
+- enterprise controls
+- hosted services
+- cloud infrastructure
+- observability
+- security
+- administration
+- billing
+- managed services
+
+Do NOT recommend moving code to proprietary licensing merely because it is commercially valuable.
+
+Instead evaluate:
+
+- community value
+- ecosystem value
+- differentiation
+- SaaS defensibility
+- enterprise value
+- contributor expectations
+- architectural coupling
+
+Produce:
+
+Component| Recommended Model| Reason
+Core| Apache-2.0 / Review| ...
+...| ...| ...
+
+---
+
+19. Investor Due-Diligence Audit
+
+Assess whether an investor could reasonably ask:
+
+1. Who owns the code?
+2. Who owns the trademark?
+3. Are all contributors covered?
+4. Are dependencies license-compatible?
+5. Are there GPL/AGPL contamination risks?
+6. Are contractor IP rights assigned?
+7. Are founder IP rights assigned to the company?
+8. Is the open-source strategy documented?
+9. Is the commercial strategy compatible with the OSS license?
+10. Are there unresolved third-party IP issues?
+11. Are secrets or customer data present?
+12. Is the repository legally clean enough for due diligence?
+
+Create an:
+
+Investor Readiness Score
+
+Score each category:
+
+0 = missing
+1 = weak
+2 = adequate
+3 = strong
+
+Categories:
+
+- License
+- Dependency compliance
+- Copyright
+- Contributor governance
+- IP ownership
+- Trademark
+- Security hygiene
+- Documentation licensing
+- Commercial/open-core strategy
+- Due diligence readiness
+
+---
+
+20. Required Final Report
+
+Produce a report with exactly this structure:
+
+NAEOS Legal & License Audit
+
+Executive Summary
+
+Summarize the overall status.
+
+Overall Risk
+
+CRITICAL / HIGH / MEDIUM / LOW
+
+Top 10 Findings
+
+#| Severity| Finding| Evidence| Recommendation
+
+License Audit
+
+Explain the current licensing state.
+
+Dependency Audit
+
+Provide the dependency/license table.
+
+Contributor/IP Audit
+
+Explain contribution and ownership risks.
+
+Trademark Audit
+
+Explain brand-related findings.
+
+Security / Secrets Audit
+
+Report sensitive information without exposing secret values.
+
+AI Provenance Audit
+
+Report AI-generated or potentially generated material.
+
+Open-Core Assessment
+
+Recommend possible boundaries between open-source and commercial components.
+
+Investor Due-Diligence Assessment
+
+Explain readiness and gaps.
+
+Remediation Plan
+
+Divide actions into:
+
+P0 — Immediate
+
+Issues that can create material legal/security risk.
+
+P1 — Before External Contributors
+
+Issues that should be solved before broad contribution.
+
+P2 — Before Commercial Launch
+
+Issues required before selling NAEOS.
+
+P3 — Before Fundraising
+
+Issues needed for investor due diligence.
+
+Proposed Repository Changes
+
+List exact files that should eventually be created or modified.
+
+IMPORTANT:
+Do NOT modify them during this audit.
+
+Questions Requiring Founder/Legal Counsel
+
+List questions that cannot be answered from repository evidence.
+
+---
+
+21. Evidence Rules
+
+Every finding must include evidence.
+
+Use:
+
+- file path
+- line number where possible
+- dependency name/version
+- upstream license source where available
+- configuration file
+- GitHub metadata
+
+Never write:
+
+"probably okay."
+
+Instead write:
+
+"Evidence indicates X; verification of Y is still required."
+
+---
+
+22. No Automatic Remediation
+
+During this audit:
+
+DO NOT:
+
+- modify LICENSE
+- create NOTICE
+- modify package files
+- add SPDX headers
+- change dependencies
+- remove dependencies
+- modify source code
+- rewrite CONTRIBUTING.md
+- add CLA
+- add DCO
+- change repository settings
+- change GitHub workflows
+
+The first phase is strictly AUDIT ONLY.
+
+After the report is reviewed, a separate implementation task may be created.
+
+---
+
+23. Final Recommendation
+
+End the report with:
+
+Recommended NAEOS Licensing Strategy
+
+Evaluate this default strategy:
+
+NAEOS Core
+→ Apache License 2.0
+
+NAEOS Brand
+→ Separate trademark protection
+
+NAEOS Cloud
+→ Commercial SaaS terms
+
+NAEOS Enterprise
+→ Commercial terms / proprietary components where justified
+
+Contributions
+→ DCO or CLA recommendation based on audit findings
+
 Documentation
-Examples
-Issues
-Discussions
-Roadmap
-Release notes
-Contribution guide
-Architecture documentation
+→ Explicitly licensed
 
-Every major feature should have:
+Third-party dependencies
+→ Maintain an auditable software bill of materials/license inventory
 
-1. Why it exists
-2. Problem it solves
-3. Minimal example
-4. Technical explanation
-5. Demo
-6. Documentation
-7. Contribution opportunity
-
-Create campaigns around:
-
-- first contribution
-- first plugin
-- first profile
-- first generated project
-- first integration
-- first issue
-- first discussion
+Do not assume this strategy is correct. Validate it against the actual repository architecture and dependency graph.
 
 ---
 
-12. DEVELOPER FUNNEL
+24. Important Legal Disclaimer
 
-Build this funnel:
+This audit is a technical repository and license-compliance assessment, not legal advice.
 
-AWARENESS
-↓
-Technical curiosity
-↓
-GitHub visit
-↓
-README understanding
-↓
-Quick Start
-↓
-First successful run
-↓
-Experimentation
-↓
-GitHub Star
-↓
-Issue / Discussion
-↓
-Contribution
-↓
-Integration
-↓
-Design Partner
-↓
-Strategic adoption
+When the audit identifies material ambiguity involving:
 
-Every marketing campaign must identify which stage it targets.
+- ownership
+- copyright
+- patents
+- trademarks
+- employment IP
+- contractor IP
+- licensing
+- corporate ownership
+- investment
 
----
+mark the issue for review by qualified Indonesian or relevant-jurisdiction legal counsel.
 
-13. LANDING PAGE STRATEGY
+The audit must distinguish:
 
-The homepage must immediately communicate:
+TECHNICAL FACT
 
-WHAT:
+from
 
-NAEOS is a declarative engineering platform.
+LEGAL INTERPRETATION
 
-WHY:
+and
 
-AI-assisted development needs a stronger engineering foundation.
+LEGAL ADVICE.
 
-HOW:
-
-Specify once → validate → generate → govern → evolve.
-
-CTA:
+Never present legal assumptions as established facts.
 
 "Try NAEOS"
 
