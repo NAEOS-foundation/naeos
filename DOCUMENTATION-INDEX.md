@@ -78,8 +78,7 @@ This document serves as the master index for navigating the NAEOS repository.
 
 ## 5.2 Website and academic documents
 - [site/](site/) — Next.js website (Cloudflare Pages) with English and Indonesian (`site/content/id`) content.
-- [thesis/](thesis/) — academic thesis chapters.
-- [paper/](paper/) — LaTeX research paper (`main.tex`, `refs.bib`).
+
 
 ## 6. Architecture Decision Records (ADRs)
 - [docs/adr/001-why-go-for-runtime.md](docs/adr/001-why-go-for-runtime.md) — ADR-001: Why Go for the Runtime
