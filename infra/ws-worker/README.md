@@ -45,7 +45,7 @@ dengan token. Verifikasi setelah deploy:
 
 ```sh
 curl https://ws.naeos.dev/healthz
-# {"ok":true,"service":"naeos-ws","version":"3.4.0"}
+# {"ok":true,"service":"naeos-ws","version":"3.5.0"}
 ```
 
 ## Protokol
@@ -64,13 +64,13 @@ Contoh dialog:
 
 ```text
 > (connect)
-S: !ready NAEOS Playground 3.4.0. Type 'help'.
+S: !ready NAEOS Playground 3.5.0. Type 'help'.
 S: !prompt
 > help
 S: !ready Available commands: help, version, status, ping
 S: !prompt
 > version
-S: !ready NAEOS 3.4.0 (Cloudflare Worker playground sandbox)
+S: !ready NAEOS 3.5.0 (Cloudflare Worker playground sandbox)
 S: !prompt
 ```
 

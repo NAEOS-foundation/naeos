@@ -405,4 +405,4 @@ Foundation. The Apache License grants no trademark rights; see
 
 ## Status
 
-**Active development** — The latest documented release is v3.4.0, which includes Helm chart scaffolding, air-gapped bundles, and configuration providers. See the [release history](CHANGELOG.md) for details.
+**Active development** — The latest documented release is v3.5.0, which brings observability (OTLP tracing, SLOs, SIEM export) and the investor demo control plane. See the [release history](CHANGELOG.md) for details.

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [3.5.0] - 2026-09-13
+
+### Added
+- **Observability (OTLP + correlation + SLO + SIEM)** — `internal/observability`: `OTLPHTTPExporter` (OTLP/HTTP JSON traces over `/{endpoint}/v1/traces` with custom client/headers), `CorrelationStore` + `CorrelationMiddleware` linking `X-Request-ID`/`X-Tenant-ID` → `trace_id` on every request (wired into `naeos serve` when `otlp_endpoint` is configured), and `SIEMExporter` with CEF/NDJSON framing for audit events. `internal/monitoring`: `SLO` + `SLOReport`, burn-rate evaluation with Prometheus alerting rules (critical 14.4, warning 3.0). New CLI: `naeos observability export|slo|siem`. 40+ tests.
+- **Investor demo control plane** — `internal/investordemo` policy engine, grant store, execution gate (signed handoff + replay protection), independent verifier, and a scripted 10-step investor demo (`RunAllScenarios`, `/api/investor-demo`). New CLI: `naeos demo` serves the demo API + landing page; `cmd/naeos-demo` standalone server; Makefile targets `demo`, `demo-build`, `demo-check`. Coverage raised to 87.5%.
+- **govulncheck CI job** — `ci.yml` `vulncheck` job runs `govulncheck ./...` on every push (zero vulnerabilities as of 2026-09-10).
+- **CI demo build + tests** — `ci.yml` builds `naeos-demo` and runs demo module tests.
+- **Makefile fmt hardening** — `fmt`/`fmt-check` now only format tracked Go files so test-generated artifacts under ignored dirs never break the check pipeline.
+- **Investor demo hardening** — Dashboard adds a "Run Investor Demo" button (renders the 10-step scripted walkthrough + security posture), six per-attack controls now run the real control-plane scenarios (including IAM modification and stale authorization), a `/api/scenario` endpoint, provenance mismatch now fails closed, sequential audit event IDs (`AUD-%05d`), storage seams (`GrantRepository`, `AuditEventStore`, `PolicyRepository`) documented, and the threat model + investor demo script are documented (`INVESTOR-DEMO-SCRIPT.md`).
+- **Investor demo observability** — The demo control plane now integrates with the NAEOS observability stack. `naeos demo` (and the standalone `naeos-demo` server) accepts `--siem-endpoint` to forward every audit event to a SIEM collector as CEF or NDJSON (async, drop-on-backpressure, tenant header support) and `--otlp-endpoint` to export request traces to an OTLP/HTTP collector. The bridge lives in the new `internal/demoobs` package; the ledger hook is `AuditLedger.SetObserver`.
+- **Version bump** — 3.4.0 → 3.5.0.
+
+### Fixed
+- Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.
+
 ## [3.4.0] - 2026-09-05
 
 ### Added
@@ -35,20 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Immutable evidence store** — `internal/evidence` tamper-evident `EvidenceStore` (append-only, SHA-256 hash chain linking `previous_hash → hash`, chain verification with `Verify()`). `EvidenceRecord` model unifying decision + execution + artifact: policy ID/version, rule ID, decision + reasons, artifact name/hash/size, execution status/output/duration, approval binding (`ApprovalRecord`), actor/resource/environment metadata. `ComputeArtifactHash()` for SHA-256 content hashing. Query engine: `Query(EvidenceQuery)` with actor/resource/policy/decision/time-range/limit filters. `Summary()` with aggregate stats (by-decision/actor/policy/environment, chain-intact check). CLI: `naeos evidence log|query|verify|summary|hash` with JSON persistence under `~/.config/naeos/evidence.json`. 19 tests covering chain integrity, tamper detection, hash linking, composite queries, time ranges, approval binding, concurrent safety.
 - **Independent verification** — `internal/verification` implements NAEOS's independent-verification architecture: `Verifier` interface + `Contract` verification contract; `VerifierChain` aggregating multiple verifiers (all-must-pass, with add/remove lifecycle); `EvidenceChainVerifier` verifying record hash authenticity + store presence; `ArtifactHashVerifier` re-hashing artifact content (live `ArtifactSource` or expected map) and matching record hashes; `ApprovalBindingVerifier` verifying approval↔artifact hash binding; `EventBus` fan-out to named `EventSink`s (failure-isolated) with memory sink. CLI: `naeos verify evidence` (full chain) and `naeos verify report`. 16 tests covering each verifier, chain aggregation, event fan-out/isolation, concurrent safety.
 - **Version bump** — 3.1.0 → 3.2.0.
-
-## [Unreleased]
-
-### Added
-- **Observability (OTLP + correlation + SLO + SIEM)** — `internal/observability`: `OTLPHTTPExporter` (OTLP/HTTP JSON traces over `/{endpoint}/v1/traces` with custom client/headers), `CorrelationStore` + `CorrelationMiddleware` linking `X-Request-ID`/`X-Tenant-ID` → `trace_id` on every request (wired into `naeos serve` when `otlp_endpoint` is configured), and `SIEMExporter` with CEF/NDJSON framing for audit events. `internal/monitoring`: `SLO` + `SLOReport`, burn-rate evaluation with Prometheus alerting rules (critical 14.4, warning 3.0). New CLI: `naeos observability export|slo|siem`. 40+ tests.
-- **Investor demo control plane** — `internal/investordemo` policy engine, grant store, execution gate (signed handoff + replay protection), independent verifier, and a scripted 10-step investor demo (`RunAllScenarios`, `/api/investor-demo`). New CLI: `naeos demo` serves the demo API + landing page; `cmd/naeos-demo` standalone server; Makefile targets `demo`, `demo-build`, `demo-check`. Coverage raised to 87.5%.
-- **govulncheck CI job** — `ci.yml` `vulncheck` job runs `govulncheck ./...` on every push (zero vulnerabilities as of 2026-09-10).
-- **CI demo build + tests** — `ci.yml` builds `naeos-demo` and runs demo module tests.
-- **Makefile fmt hardening** — `fmt`/`fmt-check` now only format tracked Go files so test-generated artifacts under ignored dirs never break the check pipeline.
-- **Investor demo hardening** — Dashboard adds a "Run Investor Demo" button (renders the 10-step scripted walkthrough + security posture), six per-attack controls now run the real control-plane scenarios (including IAM modification and stale authorization), a `/api/scenario` endpoint, provenance mismatch now fails closed, sequential audit event IDs (`AUD-%05d`), storage seams (`GrantRepository`, `AuditEventStore`, `PolicyRepository`) documented, and the threat model + investor demo script are documented (`INVESTOR-DEMO-SCRIPT.md`).
-- **Investor demo observability** — The demo control plane now integrates with the NAEOS observability stack. `naeos demo` (and the standalone `naeos-demo` server) accepts `--siem-endpoint` to forward every audit event to a SIEM collector as CEF or NDJSON (async, drop-on-backpressure, tenant header support) and `--otlp-endpoint` to export request traces to an OTLP/HTTP collector. The bridge lives in the new `internal/demoobs` package; the ledger hook is `AuditLedger.SetObserver`.
-
-### Fixed
-- Flaky `TestSandboxExecuteWithTimeoutCancellation`: the worker function now blocks until cancellation so the `select` outcome is deterministic.
 
 ## [3.1.0] - 2026-08-16
 

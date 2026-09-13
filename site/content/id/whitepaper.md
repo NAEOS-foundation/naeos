@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.4.0 (status repositori) |
+| **Versi Platform** | v3.5.0 (status repositori) |
 
 ---
 
@@ -411,6 +411,7 @@ Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** d
 - **v3.1.0** — Rilis performa: pipeline caching pada `naeos run`, profiling tingkat run (`--profile`/`--pprof`), pola arsitektur (monolithic/microservices/serverless), penguatan plugin WASM
 - **v3.2.0** — Rilis operasional: daemon produksi `naeos serve` (TLS, graceful shutdown, systemd), policy registry + control plane, runtime execution gateway, immutable evidence store, verifikasi independen, MCP resources/prompts/completions/ping
 - **v3.3.0** — Rilis supply-chain: SBOM (CycloneDX), penandatanganan artefak Ed25519, SBOM verifier
+- **v3.5.0** — Rilis observability & control plane: tracing OTLP, alerting SLO, ekspor SIEM (CEF/NDJSON), dan control plane demo investor
 - **v3.4.0** — Rilis deployment: scaffolding Helm chart, bundle air-gapped, config providers (env/file/K8s secret/Vault)
 
 ### Metrik kesehatan platform (saat ini)
@@ -473,4 +474,4 @@ Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus be
 
 *NAEOS Foundation — "Engineering With Discipline"*
 
-*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.4.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
+*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.5.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*

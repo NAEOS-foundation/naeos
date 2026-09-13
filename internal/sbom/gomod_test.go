@@ -82,8 +82,8 @@ func TestGeneratorFromGoModules(t *testing.T) {
 	dir := writeModuleTestDir(t)
 	gen := NewGenerator(GeneratorConfig{
 		Project:     "NAEOS",
-		Version:     "3.4.0",
-		ToolVersion: "3.4.0",
+		Version:     "3.5.0",
+		ToolVersion: "3.5.0",
 	})
 	bom, err := gen.FromGoModules(dir)
 	if err != nil {
