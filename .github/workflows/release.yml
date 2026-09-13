@@ -77,6 +77,15 @@ jobs:
         run: |
           sha256sum naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 naeos-windows-amd64.exe > checksums.txt
 
+      - name: Generate and verify SBOM
+        run: |
+          go run ./cmd/naeos/ sbom generate \
+            --modules \
+            --project NAEOS \
+            --version "${{ steps.version.outputs.VERSION }}" \
+            --output "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
+          go run ./cmd/naeos/ sbom verify "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
+
       - name: Package tar.gz archives (installer format)
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
@@ -85,7 +94,8 @@ jobs:
             mkdir -p "arch/$bin"
             cp "naeos-$bin" "arch/$bin/naeos"
             cp LICENSE README.md CHANGELOG.md "arch/$bin/"
-            tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md naeos
+            cp "naeos_${VERSION}.bom.json" "arch/$bin/"
+            tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md "naeos_${VERSION}.bom.json" naeos
           done
 
       - name: Create GitHub Release
@@ -135,6 +145,7 @@ jobs:
             naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz
             naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz
             naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz
+            naeos_${{ steps.version.outputs.VERSION }}.bom.json
             checksums.txt
           draft: false
           prerelease: false

@@ -9,8 +9,9 @@ naeos sbom generate [flags]
 ### Options
 
 ```
-      --dir string             scan directory for file-level components
+      --dir string             directory to scan (file-level) or Go module root (with --modules)
   -h, --help                   help for generate
+      --modules                generate a Go module-level SBOM from go.mod/go.sum
       --output string          write SBOM to file (instead of stdout)
       --output-format string   output format: json or table (default "json")
       --project string         project name (used as BOM root component)

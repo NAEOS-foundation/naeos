@@ -35,6 +35,7 @@ func newSBomGenerateCommand() *cobra.Command {
 		output    string
 		dir       string
 		outputFmt string
+		modules   bool
 	)
 
 	cmd := &cobra.Command{
@@ -50,19 +51,20 @@ func newSBomGenerateCommand() *cobra.Command {
 
 			var bom *sbom.BOM
 			var err error
-			if dir != "" {
+			switch {
+			case modules:
+				root := dir
+				if root == "" {
+					root = "."
+				}
+				bom, err = gen.FromGoModules(root)
+			case dir != "":
 				bom, err = gen.FromDir(dir)
-			} else {
+			default:
 				bom, err = gen.Generate(nil)
 			}
 			if err != nil {
 				return err
-			}
-
-			if outputFmt == "json" {
-				data, _ := json.MarshalIndent(bom, "", "  ")
-				fmt.Fprintln(cmd.OutOrStdout(), string(data))
-				return nil
 			}
 
 			if output != "" {
@@ -70,6 +72,12 @@ func newSBomGenerateCommand() *cobra.Command {
 					return err
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "SBOM written to %s (%d components)\n", output, bom.ComponentCount())
+				return nil
+			}
+
+			if outputFmt == "json" {
+				data, _ := json.MarshalIndent(bom, "", "  ")
+				fmt.Fprintln(cmd.OutOrStdout(), string(data))
 				return nil
 			}
 
@@ -82,7 +90,8 @@ func newSBomGenerateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "project name (used as BOM root component)")
 	cmd.Flags().StringVar(&version, "version", "", "project version")
 	cmd.Flags().StringVar(&output, "output", "", "write SBOM to file (instead of stdout)")
-	cmd.Flags().StringVar(&dir, "dir", "", "scan directory for file-level components")
+	cmd.Flags().StringVar(&dir, "dir", "", "directory to scan (file-level) or Go module root (with --modules)")
+	cmd.Flags().BoolVar(&modules, "modules", false, "generate a Go module-level SBOM from go.mod/go.sum")
 	cmd.Flags().StringVar(&outputFmt, "output-format", "json", "output format: json or table")
 	return cmd
 }

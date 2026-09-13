@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf og schema demo demo-build demo-check
+.PHONY: build test lint fmt clean vet tidy check run help docker docker-local benchmark security e2e install-completion man site pdf og schema demo demo-build demo-check sbom
 
 # Variables
 BINARY := naeos
@@ -117,6 +117,11 @@ demo: demo-build
 demo-check:
 	@echo "Checking investor demo module..."
 	go test -race -count=1 ./internal/investordemo/ ./cmd/naeos-demo/ -timeout 300s
+
+## sbom: Generate a module-level CycloneDX SBOM from go.mod/go.sum
+sbom:
+	@mkdir -p dist/sbom
+	go run ./cmd/naeos/ sbom generate --modules --project NAEOS --version $(VERSION) --output dist/sbom/naeos.bom.json
 
 ## help: Show this help message
 help:
