@@ -124,8 +124,9 @@ Example:
 					"services": len(result.NEIR.Services),
 				},
 				"policy": map[string]any{
-					"status": policyStatus,
-					"rules":  len(cfg.Policies),
+					"status":  policyStatus,
+					"rules":   len(cfg.Policies),
+					"results": result.PolicyResults,
 				},
 				"context": bundle,
 				"evidence": map[string]any{

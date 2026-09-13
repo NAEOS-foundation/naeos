@@ -78,6 +78,28 @@ func TestRunOutputIncludesControlPlaneContext(t *testing.T) {
 	}
 }
 
+func TestRunRejectsInvalidPolicyConfiguration(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	specPath := filepath.Join(dir, "spec.yaml")
+
+	if err := os.WriteFile(specPath, []byte("project: invalid-policy-demo\nmodules:\n  - name: api\n    path: ./internal/api\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"), 0o644); err != nil {
+		t.Fatalf("write spec: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, []byte("pipeline:\n  name: demo\n  mode: development\n  verbose: true\n  output_dir: ./out\n  policies:\n    - rule_id: failing-rule\n      condition: exists:nonexistent_key\n      enabled: true\n"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	err := run([]string{"run", "--config", configPath, "--input-file", specPath, "--output", "json"})
+	if err == nil {
+		t.Fatal("expected invalid policy configuration to be rejected")
+	}
+	if !strings.Contains(err.Error(), "policy evaluation failed") {
+		t.Fatalf("expected policy evaluation failure, got %q", err)
+	}
+}
+
 func TestValidateUsesConfigFile(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")
