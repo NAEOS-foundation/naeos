@@ -4,6 +4,7 @@
 package observability
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -159,7 +160,7 @@ func (e *SIEMExporter) frame(event audit.AuditEvent) (string, error) {
 }
 
 func (e *SIEMExporter) post(payload string) error {
-	req, err := http.NewRequest(http.MethodPost, e.endpoint, strings.NewReader(payload))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, e.endpoint, strings.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("create siem request: %w", err)
 	}
