@@ -26,14 +26,44 @@ cp "$DEMO_DIR/naeos.yaml" "$OUTPUT_DIR/naeos.yaml"
 
 cd "$OUTPUT_DIR"
 
-printf '\n== 1/3 Validate specification ==\n'
+printf '\n== 1/4 Validate specification ==\n'
 "$NAEOS" validate --input-file spec.yaml --output json
 
-printf '\n== 2/3 Generate AI context bundle ==\n'
+printf '\n== 2/4 Generate AI context bundle ==\n'
 "$NAEOS" context --input-file spec.yaml --output markdown --output-file context.md
 printf 'Wrote %s\n' "$OUTPUT_DIR/context.md"
 
-printf '\n== 3/3 Run generation pipeline ==\n'
+printf '\n== 3/4 Demonstrate deterministic policy rejection ==\n'
+cat > "$OUTPUT_DIR/invalid-naeos.yaml" <<'EOF'
+pipeline:
+  name: demo-app
+  mode: development
+  verbose: true
+  output_dir: ./generated
+  language:
+    - go
+    - typescript
+  policies:
+    - rule_id: failing-rule
+      condition: exists:nonexistent_key
+      enabled: true
+EOF
+
+if "$NAEOS" run --config invalid-naeos.yaml --input-file spec.yaml --output json > "$OUTPUT_DIR/invalid-policy.log" 2>&1; then
+  printf 'Expected invalid policy configuration to be rejected, but the run succeeded.\n' >&2
+  cat "$OUTPUT_DIR/invalid-policy.log" >&2
+  exit 1
+fi
+
+if ! grep -q 'policy evaluation failed' "$OUTPUT_DIR/invalid-policy.log"; then
+  printf 'Expected a policy-evaluation failure message, but got:\n' >&2
+  cat "$OUTPUT_DIR/invalid-policy.log" >&2
+  exit 1
+fi
+
+printf 'Rejected invalid policy configuration as expected.\n'
+
+printf '\n== 4/4 Run generation pipeline ==\n'
 "$NAEOS" run --config naeos.yaml --input-file spec.yaml --output json
 
 GENERATED_DIR="$OUTPUT_DIR/generated"

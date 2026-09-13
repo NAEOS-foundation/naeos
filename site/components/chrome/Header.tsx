@@ -43,6 +43,7 @@ const MAIN_LINKS = [
   ["showcase", "nav_showcase"],
   ["cookbook", "nav_cookbook"],
   ["download", "nav_download"],
+  ["investor-deck", "nav_investor_deck"],
   ["community", "nav_community"],
 ] as const;
 

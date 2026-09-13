@@ -232,12 +232,9 @@ func TestPipelinePolicyEvaluationFailingCondition(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	result, err := p.Run("project: policy-fail")
-	if err != nil {
-		t.Fatalf("Run should not fail on policy condition failure: %v", err)
-	}
-	if result == nil {
-		t.Fatal("expected result")
+	_, err = p.Run("project: policy-fail")
+	if err == nil {
+		t.Fatal("expected Run to fail when a policy rule fails")
 	}
 }
 

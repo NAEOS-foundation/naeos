@@ -1,0 +1,3 @@
+name: demo-app
+port: 8080
+mode: development

@@ -34,8 +34,13 @@ NAEOS_BIN=/path/to/naeos ./examples/demo-cli/run-demo.sh
 ## What to expect
 
 The demo validates `spec.yaml`, writes an AI context bundle, and generates a
-project containing Go and TypeScript output. The script also performs a smoke
-test for these files:
+project containing Go and TypeScript output. It also demonstrates the
+control-plane rejection path first: an intentionally invalid policy
+configuration is rejected deterministically, then the valid `naeos.yaml`
+configuration runs successfully. The `naeos run --output json` step now emits
+explicit engineering-run metadata such as `run_id`, `specification_hash`, and
+`neir_hash`, which makes the control-plane workflow easier to trace and
+automate.
 
 ```text
 .run/

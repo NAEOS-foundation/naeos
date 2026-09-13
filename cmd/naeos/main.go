@@ -95,6 +95,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newBrokerCommand())
 	root.AddCommand(newSearchCommand())
 	root.AddCommand(newWorkflowCommand())
+	root.AddCommand(newAgentCommand())
 	root.AddCommand(newGatewayCommand())
 	root.AddCommand(newObservabilityCommand())
 	root.AddCommand(newSecurityCommand())

@@ -192,6 +192,9 @@ export default async function HomePage(props: {
             <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg" data-umami-event="hero-get-started">
               {t("cta_get_started")}
             </Link>
+            <Link href={`${base}/investor-deck`} className="btn btn-secondary btn-lg" data-umami-event="hero-investor-deck">
+              {t("cta_investor_deck")}
+            </Link>
             <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-github">
               {t("cta_view_on_github")}
             </a>
