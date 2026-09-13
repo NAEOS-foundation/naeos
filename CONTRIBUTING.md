@@ -16,7 +16,7 @@ Thank you for your interest in contributing to NAEOS!
 
 ### Prerequisites
 
-- Go 1.25 or later
+- Go 1.26.6 or later
 - Git
 - golangci-lint (required — runs in CI and blocks PRs)
 
