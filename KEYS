@@ -1,0 +1,16 @@
+NAEOS release signing key (Ed25519)
+====================================
+
+All GitHub Release assets are signed with the NAEOS release key and ship
+with a matching `<artifact>.sig.json` bundle alongside the release.
+
+Verify any downloaded asset with:
+
+    naeos sign verify <artifact>.sig.json
+
+The bundle embeds the public key, artifact hash, and signature, so no
+separate key argument is required.
+
+Public key (base64):
+
+gZtytlfFHBCQ7ddID9JBwbsOl1CTwZjEx9akLfog2To=

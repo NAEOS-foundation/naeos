@@ -99,6 +99,46 @@ jobs:
             tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md "naeos_${VERSION}.bom.json" naeos
           done
 
+      - name: Sign release artifacts
+        id: sign
+        env:
+          NAEOS_SIGNING_KEY: ${{ secrets.NAEOS_SIGNING_KEY }}
+        run: |
+          if [ -z "$NAEOS_SIGNING_KEY" ]; then
+            echo "::error::NAEOS_SIGNING_KEY secret is not configured. Releases cannot be published unsigned."
+            echo "Generate a key pair with: naeos sign keygen -o release-key.json"
+            echo "Then store it as a base64 secret: base64 -w0 release-key.json | gh secret set NAEOS_SIGNING_KEY --repo NAEOS-foundation/naeos"
+            exit 1
+          fi
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          mkdir -p release-signatures
+          printf '%s' "$NAEOS_SIGNING_KEY" | base64 -d > /tmp/naeos-release-key.json
+          for f in \
+            naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 \
+            naeos-windows-amd64.exe checksums.txt \
+            "naeos_${VERSION}.bom.json" \
+            "naeos_${VERSION}_linux_amd64.tar.gz" "naeos_${VERSION}_linux_arm64.tar.gz" \
+            "naeos_${VERSION}_darwin_amd64.tar.gz" "naeos_${VERSION}_darwin_arm64.tar.gz" \
+          ; do
+            ./naeos-linux-amd64 sign sign "$f" --key /tmp/naeos-release-key.json \
+              --signer "NAEOS Foundation" -o "release-signatures/$(basename "$f").sig.json"
+          done
+          python3 -c "import json; print(json.load(open('/tmp/naeos-release-key.json'))['publicKey'])" \
+            > release-signatures/naeos-release-key.txt
+          echo "Signed 11 release artifacts"
+
+      - name: Verify release signatures
+        run: |
+          for sig in release-signatures/*.sig.json; do
+            out=$(./naeos-linux-amd64 sign verify "$sig")
+            echo "$out"
+            printf '%s' "$out" | grep -q '\[PASS\]' || {
+              echo "::error::Signature verification failed: $sig"
+              exit 1
+            }
+          done
+          echo "All release signatures verified"
+
       - name: Prepare release notes
         id: notes
         run: |
@@ -118,6 +158,7 @@ jobs:
             printf '### What\x27s New in %s\n\n' "$VERSION"
             awk -v "v=${VERSION}" 'BEGIN{f=0} $0 ~ "^## \\[" v "\\]"{f=1; next} f && /^## \[/{exit} f' CHANGELOG.md \
               | grep -v '^\- \*\*Version bump'
+            printf '\n### Signature Verification\n\nAll release assets are signed with the NAEOS release key (Ed25519) and ship with a matching `*.sig.json` bundle. Verify with:\n\n```bash\ncurl -fsSLO https://github.com/NAEOS-foundation/naeos/releases/download/%s/naeos-linux-amd64\ncurl -fsSLO https://github.com/NAEOS-foundation/naeos/releases/download/%s/naeos-linux-amd64.sig.json\nnaeos sign verify naeos-linux-amd64.sig.json\n```\n' "$TAG" "$TAG"
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
@@ -137,6 +178,7 @@ jobs:
             naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz
             naeos_${{ steps.version.outputs.VERSION }}.bom.json
             checksums.txt
+            release-signatures/*
           draft: false
           prerelease: false
 
