@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/agent"
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
 )
@@ -30,7 +31,7 @@ func newRuntimeCommand() *cobra.Command {
 }
 
 func newRuntimeExecCommand() *cobra.Command {
-	var tool, action, resource, environment, actor, contextJSON, adapterName, outputFmt string
+	var tool, action, resource, environment, actor, contextJSON, adapterName, outputFmt, sessionID, storePath string
 
 	cmd := &cobra.Command{
 		Use:   "exec",
@@ -73,6 +74,13 @@ Example:
 			} else {
 				result, err = gw.Authorize(req)
 			}
+			if sessionID != "" {
+				if persistErr := persistSessionAction(sessionID, storePath, result); persistErr != nil {
+					if err == nil {
+						err = persistErr
+					}
+				}
+			}
 			if err != nil {
 				return err
 			}
@@ -110,10 +118,56 @@ Example:
 	cmd.Flags().StringVar(&actor, "actor", "", "actor identity")
 	cmd.Flags().StringVar(&contextJSON, "context", "", "JSON evaluation context")
 	cmd.Flags().StringVar(&adapterName, "adapter", "", "agent adapter to use")
+	cmd.Flags().StringVar(&sessionID, "session-id", "", "persist the execution result into the named agent session")
+	cmd.Flags().StringVar(&storePath, "store-path", "", "path to the agent session store JSON file")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	_ = cmd.MarkFlagRequired("tool")
 	_ = cmd.MarkFlagRequired("action")
 	return cmd
+}
+
+func persistSessionAction(sessionID, storePath string, result gateway.ExecutionResult) error {
+	if result.Request.Tool == "" {
+		return nil
+	}
+
+	store, err := loadAgentStore(storePath)
+	if err != nil {
+		return fmt.Errorf("load agent store: %w", err)
+	}
+
+	session, ok := store.GetSession(sessionID)
+	if !ok {
+		return fmt.Errorf("session %s not found", sessionID)
+	}
+
+	params := map[string]any{
+		"tool":        result.Request.Tool,
+		"resource":    result.Request.Resource,
+		"environment": result.Request.Environment,
+		"actor":       result.Request.Actor,
+		"payload":     result.Request.Payload,
+	}
+	if result.Request.Action != "" {
+		params["action"] = result.Request.Action
+	}
+
+	_, err = store.AppendAction(sessionID, agent.Action{
+		AgentID:    session.AgentID,
+		Type:       result.Request.Action,
+		Target:     result.Request.Resource,
+		Reason:     strings.Join(result.Reasons, "; "),
+		Parameters: params,
+		Decision:   string(result.Decision),
+		PolicyID:   result.PolicyID,
+	})
+	if err != nil {
+		return fmt.Errorf("append action: %w", err)
+	}
+	if err := store.Save(); err != nil {
+		return fmt.Errorf("save agent store: %w", err)
+	}
+	return nil
 }
 
 func newRuntimeRestrictionsCommand() *cobra.Command {

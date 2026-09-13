@@ -1,0 +1,3 @@
+name: gateway
+port: 0
+kind: http

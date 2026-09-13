@@ -24,6 +24,9 @@ type ValidationError struct {
 type ValidationResult struct {
 	Valid    bool              `json:"valid"`
 	Status   string            `json:"status"`
+	Project  string            `json:"project,omitempty"`
+	Modules  int               `json:"modules,omitempty"`
+	Services int               `json:"services,omitempty"`
 	Errors   []ValidationError `json:"errors,omitempty"`
 	Warnings []string          `json:"warnings,omitempty"`
 	Summary  string            `json:"summary"`

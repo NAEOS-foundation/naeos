@@ -66,6 +66,24 @@ Parse → Normalize → Resolve → Build NEIR → Validate
 
 The specification is the source of truth. NAEOS turns it into a structured engineering model that can be consumed by validation, generation, governance, documentation, and AI tooling.
 
+## AI Engineering Control Plane
+
+NAEOS now exposes a coherent control-plane workflow around the existing pipeline:
+
+```text
+Specification
+  ↓
+Parse → Normalize → Resolve → Build NEIR
+  ↓
+Validate → Policy → AI Context
+  ↓
+Execution / Generation
+  ↓
+Artifacts → Evidence / Audit
+```
+
+The `naeos run` command is the primary demonstration path. In JSON mode it returns explicit engineering-run metadata such as `run_id`, `specification_hash`, and `neir_hash`, so a developer can trace the exact specification, derived NEIR, validation state, policy evaluation, generated context, and produced artifacts.
+
 ## Project guides
 
 - [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.

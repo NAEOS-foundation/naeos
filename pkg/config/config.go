@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,12 +19,13 @@ type File struct {
 
 // Pipeline contains the configurable components for the NAEOS pipeline.
 type Pipeline struct {
-	Name      string   `json:"name" yaml:"name"`
-	Mode      string   `json:"mode" yaml:"mode"`
-	Verbose   bool     `json:"verbose" yaml:"verbose"`
-	OutputDir string   `json:"output_dir" yaml:"output_dir"`
-	Language  []string `json:"language" yaml:"language"`
-	Target    string   `json:"target" yaml:"target"`
+	Name      string        `json:"name" yaml:"name"`
+	Mode      string        `json:"mode" yaml:"mode"`
+	Verbose   bool          `json:"verbose" yaml:"verbose"`
+	OutputDir string        `json:"output_dir" yaml:"output_dir"`
+	Language  []string      `json:"language" yaml:"language"`
+	Target    string        `json:"target" yaml:"target"`
+	Policies  []policy.Rule `json:"policies" yaml:"policies"`
 }
 
 // LoadFile reads configuration from a JSON or YAML file.

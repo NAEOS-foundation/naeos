@@ -47,3 +47,29 @@ func TestParseUnsupportedFormat(t *testing.T) {
 		t.Error("expected error for unsupported format")
 	}
 }
+
+func TestLoadFilePipelinePolicies(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	content := `pipeline:
+  name: demo
+  policies:
+    - rule_id: policy-1
+      condition: exists:project
+      enabled: true
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := LoadFile(path)
+	if err != nil {
+		t.Fatalf("LoadFile returned error: %v", err)
+	}
+	if len(cfg.Pipeline.Policies) != 1 {
+		t.Fatalf("expected 1 policy loaded, got %d", len(cfg.Pipeline.Policies))
+	}
+	if cfg.Pipeline.Policies[0].RuleID != "policy-1" {
+		t.Fatalf("expected policy rule id policy-1, got %q", cfg.Pipeline.Policies[0].RuleID)
+	}
+}
