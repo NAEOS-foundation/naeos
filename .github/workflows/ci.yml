@@ -79,7 +79,7 @@ jobs:
           cache: true
       - name: Run govulncheck
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
           $(go env GOPATH)/bin/govulncheck ./...
 
   coverage:
