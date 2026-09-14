@@ -26,7 +26,7 @@ jobs:
           cache: false
       - name: Run gitleaks (OSS binary, working tree)
         run: |
-          go install github.com/gitleaks/gitleaks/v8@v8.24.2
+          go install github.com/zricethezav/gitleaks/v8@v8.24.2
           $(go env GOPATH)/bin/gitleaks detect --source . --no-git -v
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
