@@ -40,10 +40,17 @@ which are permissively licensed (Apache-2.0, BSD, MIT, ISC, MPL-2.0). A machine
 readable software bill of materials (SBOM) and the full third-party license
 attribution are published with each release artifact.
 
+The single MPL-2.0 dependency is the MySQL driver (go-sql-driver/mysql),
+used unmodified. MPL-2.0 obligations are file-level (they cover the driver's
+own files, not the NAEOS codebase); no driver files have been modified.
+
 The website and developer tooling additionally use JavaScript packages whose
 licenses are recorded in the respective lockfiles (site/package-lock.json,
-infra/ws-worker/package-lock.json). Notable items:
+infra/ws-worker/package-lock.json). Runtime CDN assets are recorded in
+site/THIRD-PARTY-NOTICES.md. Notable items:
 
+  - dompurify (transitive, via mermaid): dual-licensed MPL-2.0 OR Apache-2.0;
+    the Apache-2.0 option applies for NAEOS distribution.
   - khroma (transitive, via mermaid): MIT License (upstream
     https://github.com/fabiospampinato/khroma). The npm registry metadata for
     khroma omits its license field; the upstream project is MIT-licensed.
