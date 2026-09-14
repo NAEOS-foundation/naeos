@@ -4,11 +4,15 @@
 
 # Verifies every tracked first-party source file carries the NAEOS Apache-2.0
 # SPDX header. Covers Go, TypeScript/JavaScript, shell scripts, and Python.
+#
+# Generated output is excluded: demo run artifacts, Next.js generated types,
+# and local CLI test output must not carry SPDX headers (they are regenerated,
+# so headers would be wiped, and they are not first-party source).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-mapfile -t files < <(git ls-files '*.go' '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' '*.sh' '*.py')
+mapfile -t files < <(git ls-files '*.go' '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' '*.sh' '*.py' | grep -v -e '^examples/demo-cli/.run/' -e '^site/next-env.d.ts$' -e '^cmd/naeos/out/')
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no tracked source files to check"
   exit 0

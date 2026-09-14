@@ -17,33 +17,33 @@ import (
 
 // Action captures a single task or tool invocation associated with a session.
 type Action struct {
-	ID        string         `json:"id"`
-	SessionID string         `json:"session_id"`
-	AgentID   string         `json:"agent_id,omitempty"`
-	Type      string         `json:"type"`
-	Target    string         `json:"target"`
-	Reason    string         `json:"reason,omitempty"`
-	SpecRefs  []string       `json:"spec_refs,omitempty"`
+	ID         string         `json:"id"`
+	SessionID  string         `json:"session_id"`
+	AgentID    string         `json:"agent_id,omitempty"`
+	Type       string         `json:"type"`
+	Target     string         `json:"target"`
+	Reason     string         `json:"reason,omitempty"`
+	SpecRefs   []string       `json:"spec_refs,omitempty"`
 	Parameters map[string]any `json:"parameters,omitempty"`
-	Decision  string         `json:"decision,omitempty"`
-	PolicyID  string         `json:"policy_id,omitempty"`
-	CreatedAt time.Time      `json:"created_at"`
+	Decision   string         `json:"decision,omitempty"`
+	PolicyID   string         `json:"policy_id,omitempty"`
+	CreatedAt  time.Time      `json:"created_at"`
 }
 
 // Session represents an autonomous task session and its visible state.
 type Session struct {
-	ID                  string    `json:"id"`
-	AgentID             string    `json:"agent_id"`
-	Project             string    `json:"project,omitempty"`
-	Workspace           string    `json:"workspace,omitempty"`
-	Specification       string    `json:"specification,omitempty"`
+	ID                   string    `json:"id"`
+	AgentID              string    `json:"agent_id"`
+	Project              string    `json:"project,omitempty"`
+	Workspace            string    `json:"workspace,omitempty"`
+	Specification        string    `json:"specification,omitempty"`
 	SpecificationVersion string    `json:"specification_version,omitempty"`
-	Status              string    `json:"status"`
-	Permissions         []string  `json:"permissions,omitempty"`
-	Denied              []string  `json:"denied,omitempty"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
-	Actions             []Action  `json:"actions,omitempty"`
+	Status               string    `json:"status"`
+	Permissions          []string  `json:"permissions,omitempty"`
+	Denied               []string  `json:"denied,omitempty"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
+	Actions              []Action  `json:"actions,omitempty"`
 }
 
 type storeFile struct {
@@ -54,8 +54,8 @@ type storeFile struct {
 // foundation. It intentionally uses existing NAEOS JSON conventions and can be
 // expanded later without changing the public shape.
 type Store struct {
-	path    string
-	mu      sync.RWMutex
+	path     string
+	mu       sync.RWMutex
 	sessions []Session
 }
 
@@ -159,9 +159,7 @@ func (s *Store) ListActions() []Action {
 
 	var out []Action
 	for _, session := range s.sessions {
-		for _, action := range session.Actions {
-			out = append(out, action)
-		}
+		out = append(out, session.Actions...)
 	}
 	return out
 }

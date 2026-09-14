@@ -32,11 +32,11 @@ export default function SwaggerApi({ specUrl, lang }: { specUrl: string; lang: L
           }
           const cssLink = document.createElement("link");
           cssLink.rel = "stylesheet";
-          cssLink.href = "https://unpkg.com/swagger-ui-dist@5/swagger-ui.css";
+          cssLink.href = "https://unpkg.com/swagger-ui-dist@5.32.15/swagger-ui.css";
           document.head.appendChild(cssLink);
 
           const script = document.createElement("script");
-          script.src = "https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js";
+          script.src = "https://unpkg.com/swagger-ui-dist@5.32.15/swagger-ui-bundle.js";
           script.onload = () => resolve();
           script.onerror = () => reject(new Error("failed to load swagger-ui"));
           document.body.appendChild(script);

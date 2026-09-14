@@ -1,0 +1,32 @@
+name: Secrets scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      # NOTE: gitleaks-action (Node wrapper) requires a paid GITLEAKS_LICENSE
+      # for organizations since 2025, so we run the free OSS binary directly
+      # (pinned, same as the govulncheck pattern in ci.yml).
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Run gitleaks (OSS binary, working tree)
+        run: |
+          go install github.com/zricethezav/gitleaks/v8@v8.24.2
+          $(go env GOPATH)/bin/gitleaks detect --source . --no-git -v
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

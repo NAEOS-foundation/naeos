@@ -23,3 +23,27 @@ updates:
       - ci
     commit-message:
       prefix: "ci"
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - site
+    commit-message:
+      prefix: "deps(site)"
+
+  - package-ecosystem: npm
+    directory: /infra/ws-worker
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - infra
+    commit-message:
+      prefix: "deps(worker)"
