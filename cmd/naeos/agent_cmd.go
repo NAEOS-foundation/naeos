@@ -226,14 +226,14 @@ func newAgentAppendActionCommand() *cobra.Command {
 			}
 
 			action, err := store.AppendAction(sessionID, agent.Action{
-				AgentID:   agentID,
-				Type:      actionType,
-				Target:    target,
-				Reason:    reason,
-				SpecRefs:  specRefs,
+				AgentID:    agentID,
+				Type:       actionType,
+				Target:     target,
+				Reason:     reason,
+				SpecRefs:   specRefs,
 				Parameters: params,
-				Decision:  decision,
-				PolicyID:  policyID,
+				Decision:   decision,
+				PolicyID:   policyID,
 			})
 			if err != nil {
 				return err
