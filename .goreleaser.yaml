@@ -22,6 +22,11 @@ builds:
 archives:
   - format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - CHANGELOG.md
     format_overrides:
       - goos: windows
         format: zip
@@ -40,5 +45,8 @@ dockers:
       - "ghcr.io/naeos-foundation/naeos:{{ .Version }}-amd64"
       - "ghcr.io/naeos-foundation/naeos:latest"
     dockerfile: Dockerfile.release
+    extra_files:
+      - LICENSE
+      - NOTICE
     build_flag_templates:
       - "--platform=linux/amd64"

@@ -5,3 +5,13 @@ docs
 vendor
 tmp
 *.test
+node_modules
+site/node_modules
+infra/ws-worker/node_modules
+.opencode/node_modules
+site/.next
+site/.open-next
+dist
+*.db
+*.db-*
+.env
