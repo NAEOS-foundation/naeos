@@ -66,6 +66,24 @@ Parse → Normalize → Resolve → Build NEIR → Validate
 
 The specification is the source of truth. NAEOS turns it into a structured engineering model that can be consumed by validation, generation, governance, documentation, and AI tooling.
 
+## AI Engineering Control Plane
+
+NAEOS now exposes a coherent control-plane workflow around the existing pipeline:
+
+```text
+Specification
+  ↓
+Parse → Normalize → Resolve → Build NEIR
+  ↓
+Validate → Policy → AI Context
+  ↓
+Execution / Generation
+  ↓
+Artifacts → Evidence / Audit
+```
+
+The `naeos run` command is the primary demonstration path. In JSON mode it returns explicit engineering-run metadata such as `run_id`, `specification_hash`, and `neir_hash`, so a developer can trace the exact specification, derived NEIR, validation state, policy evaluation, generated context, and produced artifacts.
+
 ## Project guides
 
 - [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.
@@ -385,10 +403,24 @@ Contributions, documentation improvements, issue reports, and new integrations a
 - [Discord](https://discord.gg/naeos) — real-time discussion with the community and maintainers.
 - [Discussions guide](docs/community/discussions.md) — categories, norms, and how conversations become contributions.
 
+## Governance
+
+- [Open-core boundary](docs/open-core.md) — how open-source NAEOS Core relates to future NAEOS Cloud / Enterprise offerings.
+- [AI-assisted provenance policy](docs/ai-provenance.md) — guidance for commits written or generated with AI tools.
+- [Engineering Constitution](constitution/) and [governance](governance/) — how the project governs itself.
+
 ## License
 
-NAEOS is released under the [Apache License 2.0](LICENSE).
+NAEOS is released under the [Apache License 2.0](LICENSE). See the
+[NOTICE](NOTICE) for attribution and branding information. Contributions are
+accepted under the
+[Developer Certificate of Origin](https://developercertificate.org/)
+(see [CONTRIBUTING.md](CONTRIBUTING.md#developer-certificate-of-origin-dco)).
+
+The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS
+Foundation. The Apache License grants no trademark rights; see
+[NOTICE](NOTICE) for the current branding and trademark policy.
 
 ## Status
 
-**Active development** — The latest documented release is v3.4.0, which includes Helm chart scaffolding, air-gapped bundles, and configuration providers. See the [release history](CHANGELOG.md) for details.
+**Active development** — The latest documented release is v3.5.0, which brings observability (OTLP tracing, SLOs, SIEM export) and the investor demo control plane. See the [release history](CHANGELOG.md) for details.

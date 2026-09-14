@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package policy
 
 import (
@@ -9,12 +12,12 @@ import (
 )
 
 type Rule struct {
-	RuleID    string
-	Condition string
-	Priority  int
-	Action    string
-	Scope     string
-	Enabled   bool
+	RuleID    string `json:"rule_id" yaml:"rule_id"`
+	Condition string `json:"condition" yaml:"condition"`
+	Priority  int    `json:"priority" yaml:"priority"`
+	Action    string `json:"action" yaml:"action"`
+	Scope     string `json:"scope" yaml:"scope"`
+	Enabled   bool   `json:"enabled" yaml:"enabled"`
 }
 
 type EvaluationResult struct {

@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 jobs:
   release:
@@ -15,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version-file: go.mod
 
@@ -77,6 +78,15 @@ jobs:
         run: |
           sha256sum naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 naeos-windows-amd64.exe > checksums.txt
 
+      - name: Generate and verify SBOM
+        run: |
+          go run ./cmd/naeos/ sbom generate \
+            --modules \
+            --project NAEOS \
+            --version "${{ steps.version.outputs.VERSION }}" \
+            --output "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
+          go run ./cmd/naeos/ sbom verify "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
+
       - name: Package tar.gz archives (installer format)
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
@@ -84,47 +94,78 @@ jobs:
             bin="${pair%%:*}"; rest="${pair#*:}"; os="${rest%%:*}"; arch="${rest#*:}"
             mkdir -p "arch/$bin"
             cp "naeos-$bin" "arch/$bin/naeos"
-            cp LICENSE README.md CHANGELOG.md "arch/$bin/"
-            tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE README.md CHANGELOG.md naeos
+            cp LICENSE NOTICE README.md CHANGELOG.md "arch/$bin/"
+            cp "naeos_${VERSION}.bom.json" "arch/$bin/"
+            tar -C "arch/$bin" -czf "naeos_${VERSION}_${os}_${arch}.tar.gz" LICENSE NOTICE README.md CHANGELOG.md "naeos_${VERSION}.bom.json" naeos
           done
 
+      - name: Sign release artifacts
+        id: sign
+        env:
+          NAEOS_SIGNING_KEY: ${{ secrets.NAEOS_SIGNING_KEY }}
+        run: |
+          if [ -z "$NAEOS_SIGNING_KEY" ]; then
+            echo "::error::NAEOS_SIGNING_KEY secret is not configured. Releases cannot be published unsigned."
+            echo "Generate a key pair with: naeos sign keygen -o release-key.json"
+            echo "Then store it as a base64 secret: base64 -w0 release-key.json | gh secret set NAEOS_SIGNING_KEY --repo NAEOS-foundation/naeos"
+            exit 1
+          fi
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          mkdir -p release-signatures
+          printf '%s' "$NAEOS_SIGNING_KEY" | base64 -d > /tmp/naeos-release-key.json
+          for f in \
+            naeos-linux-amd64 naeos-linux-arm64 naeos-darwin-amd64 naeos-darwin-arm64 \
+            naeos-windows-amd64.exe checksums.txt \
+            "naeos_${VERSION}.bom.json" \
+            "naeos_${VERSION}_linux_amd64.tar.gz" "naeos_${VERSION}_linux_arm64.tar.gz" \
+            "naeos_${VERSION}_darwin_amd64.tar.gz" "naeos_${VERSION}_darwin_arm64.tar.gz" \
+          ; do
+            ./naeos-linux-amd64 sign sign "$f" --key /tmp/naeos-release-key.json \
+              --signer "NAEOS Foundation" -o "release-signatures/$(basename "$f").sig.json"
+          done
+          python3 -c "import json; print(json.load(open('/tmp/naeos-release-key.json'))['publicKey'])" \
+            > release-signatures/naeos-release-key.txt
+          echo "Signed 11 release artifacts"
+
+      - name: Verify release signatures
+        run: |
+          for sig in release-signatures/*.sig.json; do
+            out=$(./naeos-linux-amd64 sign verify "$sig")
+            echo "$out"
+            printf '%s' "$out" | grep -q '\[PASS\]' || {
+              echo "::error::Signature verification failed: $sig"
+              exit 1
+            }
+          done
+          echo "All release signatures verified"
+
+      - name: Prepare release notes
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          TAG="${GITHUB_REF#refs/tags/}"
+          {
+            printf '## NAEOS %s\n\n' "$VERSION"
+            printf 'Declarative platform engineering system — transform specifications into validated, multi-language project structures.\n\n'
+            printf '### Installation\n\n```bash\ncurl -fsSL https://naeos.dev/install.sh | sh\n```\n\nOr with Go:\n\n```bash\ngo install github.com/NAEOS-foundation/naeos/cmd/naeos@%s\n```\n\n' "$TAG"
+            printf '### Binary Downloads\n\n'
+            printf '| Platform | Architecture | Archive |\n|----------|-------------|---------|\n'
+            printf '| Linux | amd64 | `naeos_%s_linux_amd64.tar.gz` |\n' "$VERSION"
+            printf '| Linux | arm64 | `naeos_%s_linux_arm64.tar.gz` |\n' "$VERSION"
+            printf '| macOS | amd64 | `naeos_%s_darwin_amd64.tar.gz` |\n' "$VERSION"
+            printf '| macOS | arm64 | `naeos_%s_darwin_arm64.tar.gz` |\n' "$VERSION"
+            printf '| Windows | amd64 | `naeos-windows-amd64.exe` |\n\n'
+            printf '### What\x27s New in %s\n\n' "$VERSION"
+            awk -v "v=${VERSION}" 'BEGIN{f=0} $0 ~ "^## \\[" v "\\]"{f=1; next} f && /^## \[/{exit} f' CHANGELOG.md \
+              | grep -v '^\- \*\*Version bump'
+            printf '\n### Signature Verification\n\nAll release assets are signed with the NAEOS release key (Ed25519) and ship with a matching `*.sig.json` bundle. Verify with:\n\n```bash\ncurl -fsSLO https://github.com/NAEOS-foundation/naeos/releases/download/%s/naeos-linux-amd64\ncurl -fsSLO https://github.com/NAEOS-foundation/naeos/releases/download/%s/naeos-linux-amd64.sig.json\nnaeos sign verify naeos-linux-amd64.sig.json\n```\n' "$TAG" "$TAG"
+          } > /tmp/release-notes.md
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@e598afbe1493e6b1bafb1f389cabb956eab91231
         with:
           name: NAEOS ${{ steps.version.outputs.VERSION }}
-          body: |
-            ## NAEOS ${{ steps.version.outputs.VERSION }}
-
-            Declarative platform engineering system — transform specifications into validated, multi-language project structures.
-
-            ### Installation
-
-            ```bash
-            curl -fsSL https://naeos.dev/install.sh | sh
-            ```
-
-            Or with Go:
-
-            ```bash
-            go install github.com/NAEOS-foundation/naeos/cmd/naeos@${{ github.ref_name }}
-            ```
-
-            ### Binary Downloads
-
-            | Platform | Architecture | Archive |
-            |----------|-------------|---------|
-            | Linux | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_amd64.tar.gz` |
-            | Linux | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz` |
-            | macOS | amd64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz` |
-            | macOS | arm64 | `naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz` |
-            | Windows | amd64 | `naeos-windows-amd64.exe` |
-
-            ### What's New in v3.1.0
-
-            - **Pipeline caching** — `naeos run --cache-dir <dir>` caches intermediate stage results; rebuilds reuse cached output for faster iteration
-            - **Pipeline profiling on `naeos run`** — `--profile`/`--profile-out` capture per-stage timing, `--pprof` exposes a pprof HTTP server for live heap/CPU inspection
-            - **Architecture patterns** — monolithic, microservices, and serverless patterns in the NEIR model
-            - **WASM plugin hardening** — plugin host requires exported metadata symbols; expanded WASM sandbox support
+          body_path: /tmp/release-notes.md
           files: |
             naeos-linux-amd64
             naeos-linux-arm64
@@ -135,6 +176,49 @@ jobs:
             naeos_${{ steps.version.outputs.VERSION }}_linux_arm64.tar.gz
             naeos_${{ steps.version.outputs.VERSION }}_darwin_amd64.tar.gz
             naeos_${{ steps.version.outputs.VERSION }}_darwin_arm64.tar.gz
+            naeos_${{ steps.version.outputs.VERSION }}.bom.json
             checksums.txt
+            release-signatures/*
           draft: false
           prerelease: false
+
+      - name: Generate release blog posts
+        id: blog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          TAG="${GITHUB_REF#refs/tags/}"
+          DATE=$(date +%Y-%m-%d)
+          gh release view "$TAG" --json body -q .body > /tmp/release-body.md
+          CHANGED=false
+          if [ ! -f "site/content/blog/${TAG}-release.md" ]; then
+            printf -- '---\ntitle: "NAEOS %s Release"\ndate: %s\ndescription: "Release notes for NAEOS %s — new features, improvements, and bug fixes."\ncategories: ["release"]\n---\n' \
+              "$VERSION" "$DATE" "$VERSION" > "site/content/blog/${TAG}-release.md"
+            cat /tmp/release-body.md >> "site/content/blog/${TAG}-release.md"
+            CHANGED=true
+          fi
+          mkdir -p site/content/id/blog
+          if [ ! -f "site/content/id/blog/${TAG}-release.md" ]; then
+            printf -- '---\ntitle: "Rilis NAEOS %s"\ndate: %s\ndescription: "Catatan rilis untuk NAEOS %s — fitur baru, perbaikan, dan perbaikan bug."\ncategories: ["release"]\n---\n' \
+              "$VERSION" "$DATE" "$VERSION" > "site/content/id/blog/${TAG}-release.md"
+            cat /tmp/release-body.md >> "site/content/id/blog/${TAG}-release.md"
+            CHANGED=true
+          fi
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Create release blog post PR
+        if: steps.blog.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          token: ${{ github.token }}
+          commit-message: "blog: add ${{ github.ref_name }} release post"
+          title: "Blog: Add ${{ github.ref_name }} release post"
+          body: |
+            Auto-generated blog post for the ${{ github.ref_name }} release.
+            
+            Changes:
+            - Added English blog post (if missing)
+            - Added Indonesian blog post (if missing)
+          branch: blog/${{ github.ref_name }}
+          delete-branch: true

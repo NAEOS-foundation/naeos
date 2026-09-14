@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package config
 
 import (
@@ -6,6 +9,8 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
 // File holds pipeline configuration loaded from disk.
@@ -15,12 +20,13 @@ type File struct {
 
 // Pipeline contains the configurable components for the NAEOS pipeline.
 type Pipeline struct {
-	Name      string   `json:"name" yaml:"name"`
-	Mode      string   `json:"mode" yaml:"mode"`
-	Verbose   bool     `json:"verbose" yaml:"verbose"`
-	OutputDir string   `json:"output_dir" yaml:"output_dir"`
-	Language  []string `json:"language" yaml:"language"`
-	Target    string   `json:"target" yaml:"target"`
+	Name      string        `json:"name" yaml:"name"`
+	Mode      string        `json:"mode" yaml:"mode"`
+	Verbose   bool          `json:"verbose" yaml:"verbose"`
+	OutputDir string        `json:"output_dir" yaml:"output_dir"`
+	Language  []string      `json:"language" yaml:"language"`
+	Target    string        `json:"target" yaml:"target"`
+	Policies  []policy.Rule `json:"policies" yaml:"policies"`
 }
 
 // LoadFile reads configuration from a JSON or YAML file.

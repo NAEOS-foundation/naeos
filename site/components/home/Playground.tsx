@@ -1,4 +1,7 @@
 "use client";
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { jsYaml } from "@/components/home/jsyamlBridge";

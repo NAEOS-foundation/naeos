@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 import type { Metadata } from "next";
 import Script from "next/script";
 import { notFound } from "next/navigation";

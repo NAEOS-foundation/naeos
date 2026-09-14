@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package pipeline
 
 import (
@@ -7,6 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+	"github.com/NAEOS-foundation/naeos/internal/evidence"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 )
 
@@ -167,6 +174,164 @@ services:
 	}
 	if len(runResult.Tasks) == 0 {
 		t.Error("Run should produce tasks")
+	}
+}
+
+func TestIntegrationRunRecordsPolicyEvaluationResults(t *testing.T) {
+	t.Parallel()
+	spec := `project: policy-eval-test
+modules:
+  - name: core
+    path: ./internal/core
+services:
+  - name: api
+    kind: http
+    port: 8080
+`
+
+	p, err := New(Config{
+		Policies: []policy.Rule{{
+			RuleID:    "project-required",
+			Condition: "exists:project",
+			Enabled:   true,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	result, err := p.Run(spec)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if len(result.PolicyResults) == 0 {
+		t.Fatal("expected policy evaluation results to be recorded")
+	}
+	if result.PolicyResults[0].RuleID != "project-required" {
+		t.Fatalf("expected first policy result to be project-required, got %q", result.PolicyResults[0].RuleID)
+	}
+	if !result.PolicyResults[0].Passed {
+		t.Fatalf("expected policy evaluation to pass, got %+v", result.PolicyResults[0])
+	}
+	if len(result.Artifacts) == 0 {
+		t.Fatal("expected artifacts to be generated after a successful policy-evaluated run")
+	}
+}
+
+func TestIntegrationEndToEndControlPlaneWorkflow(t *testing.T) {
+	t.Parallel()
+	spec := `project: end-to-end-control-plane
+modules:
+  - name: core
+    path: ./internal/core
+  - name: web
+    path: ./internal/web
+    dependencies: [core]
+services:
+  - name: api
+    kind: http
+    port: 8080
+`
+
+	p, err := New(Config{
+		Policies: []policy.Rule{{
+			RuleID:    "project-required",
+			Condition: "exists:project",
+			Enabled:   true,
+		}},
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	result, err := p.Run(spec)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.NEIR == nil || result.NEIR.Project == nil {
+		t.Fatal("expected NEIR with project metadata")
+	}
+	if result.NEIR.Project.Name != "end-to-end-control-plane" {
+		t.Fatalf("expected project name end-to-end-control-plane, got %q", result.NEIR.Project.Name)
+	}
+	if result.RunID == "" || result.SpecificationHash == "" || result.NEIRHash == "" {
+		t.Fatal("expected run metadata to be populated")
+	}
+	if len(result.PolicyResults) == 0 {
+		t.Fatal("expected policy evaluation results to be recorded for the run")
+	}
+	if !result.PolicyResults[0].Passed {
+		t.Fatalf("expected policy evaluation to pass, got %+v", result.PolicyResults[0])
+	}
+	if result.Graph == nil || result.Graph.NodeCount() == 0 {
+		t.Fatal("expected execution graph to be populated")
+	}
+	if len(result.Tasks) == 0 {
+		t.Fatal("expected execution plan to be generated")
+	}
+	if len(result.Artifacts) == 0 {
+		t.Fatal("expected artifacts to be generated")
+	}
+	if len(result.NEIR.Modules) == 0 || len(result.NEIR.Services) == 0 {
+		t.Fatal("expected materialized NEIR modules and services to be populated")
+	}
+
+	bundle := contextbundle.NewGenerator(nil).GenerateFromNEIR(result.NEIR)
+	if bundle == nil {
+		t.Fatal("expected context bundle to be generated from NEIR")
+	}
+	if bundle.Project != result.NEIR.Project.Name {
+		t.Fatalf("expected context bundle project %q, got %q", result.NEIR.Project.Name, bundle.Project)
+	}
+	if len(bundle.Modules) == 0 || len(bundle.Services) == 0 {
+		t.Fatal("expected context bundle to include modules and services")
+	}
+
+	store := evidence.NewStore()
+	for _, artifact := range result.Artifacts {
+		if len(artifact.Content) == 0 {
+			t.Fatalf("expected artifact %q to contain generated content", artifact.Path)
+		}
+		_, err := store.Append(evidence.EvidenceRecord{
+			Actor:           "integration-test",
+			Resource:        artifact.Path,
+			Action:          "artifact-generated",
+			PolicyID:        "project-required",
+			RuleID:          "project-required",
+			Decision:        control.DecisionAllow,
+			ArtifactName:    artifact.Path,
+			ArtifactHash:    evidence.ComputeArtifactHash(artifact.Content),
+			ArtifactSize:    len(artifact.Content),
+			ExecutionStatus: "completed",
+			Metadata: map[string]any{
+				"project":             result.NEIR.Project.Name,
+				"run_id":              result.RunID,
+				"specification_hash":  result.SpecificationHash,
+				"neir_hash":           result.NEIRHash,
+				"context_bundle":      bundle.Project,
+				"generated_artifacts": len(result.Artifacts),
+			},
+		})
+		if err != nil {
+			t.Fatalf("append evidence for artifact %q: %v", artifact.Path, err)
+		}
+	}
+	if store.Len() == 0 {
+		t.Fatal("expected evidence store to capture generated artifacts")
+	}
+	if idx, err := store.Verify(); err != nil || idx != -1 {
+		t.Fatalf("expected evidence chain to verify cleanly, idx=%d err=%v", idx, err)
+	}
+
+	summary := store.Summary()
+	if !summary.ChainIntact {
+		t.Fatal("expected evidence summary to report a clean chain")
 	}
 }
 

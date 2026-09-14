@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2024-2026 NAEOS Foundation
+# SPDX-License-Identifier: Apache-2.0
+
 # Generate whitepaper PDF with mermaid diagrams rendered via mermaid-cli.
 #
 # Usage: scripts/whitepaper-pdf.sh <input.md> <output.pdf> <title>

@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package pipeline
 
 import (
@@ -137,12 +140,16 @@ type PipelineObserver interface {
 }
 
 type Result struct {
-	Source    string
-	NEIR      *model.NEIR
-	Artifacts []engine.Artifact
-	Tasks     []scheduler.Task
-	Graph     *graph.PlannerGraph
-	Reviews   []*review.ReviewResult
+	RunID             string
+	Source            string
+	SpecificationHash string
+	NEIRHash          string
+	NEIR              *model.NEIR
+	Artifacts         []engine.Artifact
+	Tasks             []scheduler.Task
+	Graph             *graph.PlannerGraph
+	Reviews           []*review.ReviewResult
+	PolicyResults     []policy.EvaluationResult
 }
 
 func WithCache(cache ParseCache) func(*Config) {
@@ -180,6 +187,7 @@ func ConfigFromFile(path string) (Config, error) {
 		Verbose:   fileCfg.Pipeline.Verbose,
 		OutputDir: fileCfg.Pipeline.OutputDir,
 		Languages: fileCfg.Pipeline.Language,
+		Policies:  fileCfg.Pipeline.Policies,
 	}, nil
 }
 
@@ -729,6 +737,14 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profile.Finish()
 	}
 
+	if result != nil {
+		result.RunID = pipelineID
+		result.SpecificationHash = specHash(input)
+		if result.NEIR != nil {
+			result.NEIRHash = neirHash(result.NEIR)
+		}
+	}
+
 	p.runNotify(pipelineID, startTime, result, err)
 	return result, err
 }
@@ -795,6 +811,7 @@ func (p *Pipeline) fetchSchema() (map[string]any, error) {
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
 	if len(p.policies) == 0 {
+		result.PolicyResults = nil
 		return nil
 	}
 	p.logVerbose("evaluating %d policy rules", len(p.policies))
@@ -803,8 +820,15 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		"modules":  len(result.NEIR.Modules),
 		"services": len(result.NEIR.Services),
 	}
-	if _, err := p.evaluator.EvaluateRules(p.policies, ctx); err != nil {
+	results, err := p.evaluator.EvaluateRules(p.policies, ctx)
+	if err != nil {
 		return fmt.Errorf("policy evaluation failed: %w", err)
+	}
+	result.PolicyResults = results
+	for _, res := range results {
+		if !res.Passed {
+			return fmt.Errorf("policy evaluation failed: rule %s: %s", res.RuleID, res.Message)
+		}
 	}
 	return nil
 }
@@ -815,6 +839,11 @@ type taskList struct {
 
 type artifactList struct {
 	Artifacts []engine.Artifact `json:"artifacts"`
+}
+
+func specHash(input string) string {
+	h := sha256.Sum256([]byte(input))
+	return fmt.Sprintf("%x", h[:8])
 }
 
 func neirHash(neir *model.NEIR) string {

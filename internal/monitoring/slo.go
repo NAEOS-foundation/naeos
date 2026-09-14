@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package monitoring
 
 import (
@@ -171,9 +174,9 @@ func (s SLO) RulesYAML() string {
 	sb.WriteString("  - name: naeos-slo\n")
 	sb.WriteString("    rules:\n")
 	for _, r := range s.AlertRules() {
-		sb.WriteString(fmt.Sprintf("      - alert: %s\n", r.Alert))
-		sb.WriteString(fmt.Sprintf("        expr: %s\n", r.Expr))
-		sb.WriteString(fmt.Sprintf("        for: %s\n", r.For))
+		fmt.Fprintf(&sb, "      - alert: %s\n", r.Alert)
+		fmt.Fprintf(&sb, "        expr: %s\n", r.Expr)
+		fmt.Fprintf(&sb, "        for: %s\n", r.For)
 		sb.WriteString("        labels:\n")
 		sk := make([]string, 0, len(r.Labels))
 		for k := range r.Labels {
@@ -181,10 +184,10 @@ func (s SLO) RulesYAML() string {
 		}
 		sort.Strings(sk)
 		for _, k := range sk {
-			sb.WriteString(fmt.Sprintf("          %s: %q\n", k, r.Labels[k]))
+			fmt.Fprintf(&sb, "          %s: %q\n", k, r.Labels[k])
 		}
 		sb.WriteString("        annotations:\n")
-		sb.WriteString(fmt.Sprintf("          summary: %q\n", r.Summary))
+		fmt.Fprintf(&sb, "          summary: %q\n", r.Summary)
 	}
 	return sb.String()
 }

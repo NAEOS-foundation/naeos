@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -92,6 +95,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newBrokerCommand())
 	root.AddCommand(newSearchCommand())
 	root.AddCommand(newWorkflowCommand())
+	root.AddCommand(newAgentCommand())
 	root.AddCommand(newGatewayCommand())
 	root.AddCommand(newObservabilityCommand())
 	root.AddCommand(newSecurityCommand())

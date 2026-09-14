@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -21,6 +24,9 @@ type ValidationError struct {
 type ValidationResult struct {
 	Valid    bool              `json:"valid"`
 	Status   string            `json:"status"`
+	Project  string            `json:"project,omitempty"`
+	Modules  int               `json:"modules,omitempty"`
+	Services int               `json:"services,omitempty"`
 	Errors   []ValidationError `json:"errors,omitempty"`
 	Warnings []string          `json:"warnings,omitempty"`
 	Summary  string            `json:"summary"`

@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -8,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
@@ -79,13 +83,77 @@ Example:
 				fmt.Printf("profile saved to %s\n", profileOut)
 			}
 
+			projectName := ""
+			if result.NEIR != nil && result.NEIR.Project != nil {
+				projectName = result.NEIR.Project.Name
+			}
+
+			bundle := contextbundle.NewGenerator(nil).GenerateFromNEIR(result.NEIR)
+
+			policyStatus := "not_configured"
+			if len(cfg.Policies) > 0 {
+				policyStatus = "evaluated"
+			}
+
+			artifactDetails := make([]map[string]any, 0, len(result.Artifacts))
+			for _, artifact := range result.Artifacts {
+				artifactDetails = append(artifactDetails, map[string]any{
+					"path": artifact.Path,
+					"size": len(artifact.Content),
+				})
+			}
+
 			payload := map[string]any{
-				"pipeline":   cfg.Name,
-				"mode":       cfg.Mode,
-				"verbose":    cfg.Verbose,
-				"output_dir": cfg.OutputDir,
-				"artifacts":  len(result.Artifacts),
-				"tasks":      len(result.Tasks),
+				"pipeline":           cfg.Name,
+				"mode":               cfg.Mode,
+				"verbose":            cfg.Verbose,
+				"output_dir":         cfg.OutputDir,
+				"status":             "success",
+				"run_id":             result.RunID,
+				"specification_hash": result.SpecificationHash,
+				"neir_hash":          result.NEIRHash,
+				"project":            projectName,
+				"artifacts":          len(result.Artifacts),
+				"artifact_details":   artifactDetails,
+				"tasks":              len(result.Tasks),
+				"execution_plan":     result.Tasks,
+				"validation": map[string]any{
+					"status":   "passed",
+					"project":  projectName,
+					"modules":  len(result.NEIR.Modules),
+					"services": len(result.NEIR.Services),
+				},
+				"policy": map[string]any{
+					"status":  policyStatus,
+					"rules":   len(cfg.Policies),
+					"results": result.PolicyResults,
+				},
+				"context": bundle,
+				"evidence": map[string]any{
+					"review_count": len(result.Reviews),
+					"reviews":      result.Reviews,
+					"graph_nodes":  result.Graph.NodeCount(),
+					"graph_edges":  result.Graph.EdgeCount(),
+				},
+				"audit": map[string]any{
+					"status":         "available",
+					"stages":         []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
+					"artifact_count": len(result.Artifacts),
+					"task_count":     len(result.Tasks),
+				},
+				"stages": []string{
+					"specification",
+					"parse",
+					"normalize",
+					"resolve",
+					"neir",
+					"validate",
+					"policy",
+					"context",
+					"execution",
+					"artifacts",
+					"evidence",
+				},
 			}
 
 			if len(languages) > 0 {

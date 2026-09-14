@@ -1,7 +1,11 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package observability
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -119,7 +123,7 @@ func (e *OTLPHTTPExporter) ExportSpans(spans []*Span) error {
 	}
 
 	url := e.endpoint + "/v1/traces"
-	httpReq, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+	httpReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}

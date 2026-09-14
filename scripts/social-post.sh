@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2024-2026 NAEOS Foundation
+# SPDX-License-Identifier: Apache-2.0
+
 # Post today's (or a given date's) content-calendar entries to community channels.
 #
 # Channels: discord (bot), slack (chat.postMessage), linkedin (Posts API via linkdin-post.sh)

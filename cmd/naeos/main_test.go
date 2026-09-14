@@ -1,7 +1,11 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,6 +13,8 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+
+	"github.com/NAEOS-foundation/naeos/internal/agent"
 )
 
 func TestInitCreatesConfigFile(t *testing.T) {
@@ -26,6 +32,71 @@ func TestInitCreatesConfigFile(t *testing.T) {
 	}
 	if len(data) == 0 {
 		t.Fatal("expected generated config file to contain content")
+	}
+}
+
+func TestRunOutputIncludesControlPlaneContext(t *testing.T) {
+	dir := t.TempDir()
+	outputPath := filepath.Join(dir, "run.json")
+
+	spec := "project: demo-control-plane\nmodules:\n  - name: api\n    path: ./internal/api\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+
+	if err := run([]string{"run", "--input", spec, "--output", "json", "--output-file", outputPath}); err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read run output file: %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatalf("unmarshal run output: %v", err)
+	}
+
+	if _, ok := payload["context"]; !ok {
+		t.Fatal("expected run JSON output to include a context bundle")
+	}
+	if _, ok := payload["validation"]; !ok {
+		t.Fatal("expected run JSON output to include validation status")
+	}
+	if _, ok := payload["policy"]; !ok {
+		t.Fatal("expected run JSON output to include policy status")
+	}
+	if _, ok := payload["stages"]; !ok {
+		t.Fatal("expected run JSON output to include ordered pipeline stages")
+	}
+	if _, ok := payload["run_id"]; !ok {
+		t.Fatal("expected run JSON output to include an explicit run_id")
+	}
+	if _, ok := payload["specification_hash"]; !ok {
+		t.Fatal("expected run JSON output to include a specification_hash")
+	}
+	if _, ok := payload["neir_hash"]; !ok {
+		t.Fatal("expected run JSON output to include a neir_hash")
+	}
+}
+
+func TestRunRejectsInvalidPolicyConfiguration(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	specPath := filepath.Join(dir, "spec.yaml")
+
+	if err := os.WriteFile(specPath, []byte("project: invalid-policy-demo\nmodules:\n  - name: api\n    path: ./internal/api\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"), 0o644); err != nil {
+		t.Fatalf("write spec: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, []byte("pipeline:\n  name: demo\n  mode: development\n  verbose: true\n  output_dir: ./out\n  policies:\n    - rule_id: failing-rule\n      condition: exists:nonexistent_key\n      enabled: true\n"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	err := run([]string{"run", "--config", configPath, "--input-file", specPath, "--output", "json"})
+	if err == nil {
+		t.Fatal("expected invalid policy configuration to be rejected")
+	}
+	if !strings.Contains(err.Error(), "policy evaluation failed") {
+		t.Fatalf("expected policy evaluation failure, got %q", err)
 	}
 }
 
@@ -103,6 +174,134 @@ func TestScaffoldCreatesStarterFiles(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "http.NewServeMux") || !strings.Contains(string(data), "ListenAndServe") || !strings.Contains(string(data), "/health") || !strings.Contains(string(data), "/api/v1") || !strings.Contains(string(data), "/api/v1/resources") {
 		t.Fatalf("expected scaffold main entrypoint to start a runnable HTTP server with health and versioned resource endpoints, got %q", string(data))
+	}
+}
+
+func TestAgentCreateAppendActionAndGetSession(t *testing.T) {
+	dir := t.TempDir()
+	storePath := filepath.Join(dir, "agent-store.json")
+
+	if err := run([]string{"agent", "create", "--store-path", storePath, "--agent-id", "demo-agent", "--project", "demo-project"}); err != nil {
+		t.Fatalf("run agent create returned error: %v", err)
+	}
+
+	store, err := loadAgentStore(storePath)
+	if err != nil {
+		t.Fatalf("load agent store: %v", err)
+	}
+	if len(store.ListSessions()) != 1 {
+		t.Fatal("expected exactly one session to be stored")
+	}
+
+	sessionID := store.ListSessions()[0].ID
+	if err := run([]string{"agent", "append-action", "--store-path", storePath, "--session-id", sessionID, "--type", "tool", "--target", "shell", "--agent-id", "demo-agent", "--reason", "validate fix", "--decision", "allow", "--parameters", `{"cmd":"echo ok"}`}); err != nil {
+		t.Fatalf("run agent append-action returned error: %v", err)
+	}
+
+	store, err = loadAgentStore(storePath)
+	if err != nil {
+		t.Fatalf("reload agent store: %v", err)
+	}
+	session, ok := store.GetSession(sessionID)
+	if !ok {
+		t.Fatal("expected session to persist after append action")
+	}
+	if len(session.Actions) != 1 {
+		t.Fatalf("expected one stored action, got %d", len(session.Actions))
+	}
+	if session.Actions[0].Target != "shell" {
+		t.Fatalf("expected appended action target to be shell, got %q", session.Actions[0].Target)
+	}
+	if session.Actions[0].Parameters["cmd"] != "echo ok" {
+		t.Fatalf("expected appended action parameters to persist, got %#v", session.Actions[0].Parameters)
+	}
+}
+
+func TestAgentStoreListsActionsAndDeletesSession(t *testing.T) {
+	dir := t.TempDir()
+	storePath := filepath.Join(dir, "agent-store.json")
+	store := agent.NewStore(storePath)
+
+	if err := store.Load(); err != nil {
+		t.Fatalf("load agent store: %v", err)
+	}
+
+	session, err := store.CreateSession(agent.Session{AgentID: "cleanup-agent", Project: "demo-project", Status: "active"})
+	if err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	if _, err := store.AppendAction(session.ID, agent.Action{Type: "tool", Target: "shell", Decision: "ALLOW"}); err != nil {
+		t.Fatalf("append action: %v", err)
+	}
+	if err := store.Save(); err != nil {
+		t.Fatalf("save session store: %v", err)
+	}
+
+	actions := store.ListActions()
+	if len(actions) != 1 {
+		t.Fatalf("expected one action in store, got %d", len(actions))
+	}
+	if actions[0].Target != "shell" {
+		t.Fatalf("expected listed action target shell, got %q", actions[0].Target)
+	}
+
+	if err := store.DeleteSession(session.ID); err != nil {
+		t.Fatalf("delete session: %v", err)
+	}
+	if _, ok := store.GetSession(session.ID); ok {
+		t.Fatal("expected deleted session to be removed")
+	}
+	if len(store.ListSessions()) != 0 {
+		t.Fatalf("expected zero sessions after deletion, got %d", len(store.ListSessions()))
+	}
+}
+
+func TestRuntimeExecPersistsActionToSession(t *testing.T) {
+	dir := t.TempDir()
+	storePath := filepath.Join(dir, "agent-store.json")
+
+	store := agent.NewStore(storePath)
+	if err := store.Load(); err != nil {
+		t.Fatalf("load agent store before create: %v", err)
+	}
+	if _, err := store.CreateSession(agent.Session{AgentID: "runtime-agent", Project: "demo-project", Status: "active"}); err != nil {
+		t.Fatalf("create session for runtime test: %v", err)
+	}
+	if err := store.Save(); err != nil {
+		t.Fatalf("save session for runtime test: %v", err)
+	}
+
+	session, ok := store.GetSession(store.ListSessions()[0].ID)
+	if !ok {
+		t.Fatal("expected session to exist after create")
+	}
+
+	if err := run([]string{"runtime", "exec", "--tool", "shell", "--action", "run", "--resource", "scripts/deploy.sh", "--environment", "production", "--actor", "ci-bot", "--session-id", session.ID, "--store-path", storePath}); err != nil {
+		t.Fatalf("run runtime exec returned error: %v", err)
+	}
+
+	store, err := loadAgentStore(storePath)
+	if err != nil {
+		t.Fatalf("reload agent store after runtime exec: %v", err)
+	}
+	session, ok = store.GetSession(session.ID)
+	if !ok {
+		t.Fatal("expected session to still exist after runtime exec")
+	}
+	if len(session.Actions) != 1 {
+		t.Fatalf("expected one stored action, got %d", len(session.Actions))
+	}
+	if session.Actions[0].Type != "run" {
+		t.Fatalf("expected action type run, got %q", session.Actions[0].Type)
+	}
+	if session.Actions[0].Target != "scripts/deploy.sh" {
+		t.Fatalf("expected action target scripts/deploy.sh, got %q", session.Actions[0].Target)
+	}
+	if session.Actions[0].Decision != "DENY" {
+		t.Fatalf("expected runtime exec to persist a DENY decision when no policy is registered, got %q", session.Actions[0].Decision)
+	}
+	if session.Actions[0].Parameters["tool"] != "shell" {
+		t.Fatalf("expected persisted parameter tool=shell, got %#v", session.Actions[0].Parameters)
 	}
 }
 
@@ -278,6 +477,32 @@ func executeCommand(root *cobra.Command, args ...string) (string, error) {
 	root.SilenceUsage = true
 	_, err := root.ExecuteC()
 	return buf.String(), err
+}
+
+func TestVerifyCommandUsesPipelineAndJSONOutput(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(configPath, []byte("pipeline:\n  name: demo\n  mode: development\n  verbose: true\n  output_dir: ./out\n"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	root := NewRootCommand()
+	output, err := executeCommand(root,
+		"verify",
+		"--config", configPath,
+		"--input", "project: verify-demo\nmodules:\n  - name: api\n    path: ./internal/api\n",
+		"--output-format", "json",
+	)
+	if err != nil {
+		t.Fatalf("execute verify failed: %v", err)
+	}
+
+	if !strings.Contains(output, `"status": "valid"`) {
+		t.Fatalf("expected verify json output with valid status, got %q", output)
+	}
+	if !strings.Contains(output, `"project": "verify-demo"`) {
+		t.Fatalf("expected verify json output to include project name, got %q", output)
+	}
 }
 
 func TestValidateCobraJSONOutput(t *testing.T) {

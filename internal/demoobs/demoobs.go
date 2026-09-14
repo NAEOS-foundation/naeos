@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 // Package demoobs wires the investor demo control plane into the NAEOS
 // observability stack so that live audit events and HTTP request traces can
 // be exported to external collectors (SIEM, OTLP-compatible backends).

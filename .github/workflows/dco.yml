@@ -1,0 +1,55 @@
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: Sign-off check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Verify Signed-off-by on all commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+            if ! git rev-parse --verify -q "$base" >/dev/null 2>&1; then
+              base="$(git rev-list --max-parents=0 --first-parent HEAD)"
+            fi
+            merge_base="$(git merge-base "$base" "$head")"
+            range="$merge_base..$head"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+            if [ "$base" = "0000000000000000000000000000000000000000" ] || ! git rev-parse --verify -q "$base" >/dev/null 2>&1; then
+              base="$(git rev-list --max-parents=0 --first-parent HEAD)"
+            fi
+            merge_base="$(git merge-base "$base" "$head" 2>/dev/null || echo "$base")"
+            range="$merge_base..$head"
+          fi
+          bad=0
+          for hash in $(git rev-list "$range"); do
+            if ! git log -1 --format=%B "$hash" | grep -q '^Signed-off-by:'; then
+              echo "::error::commit $hash is missing a Signed-off-by trailer"
+              bad=1
+            fi
+          done
+          if [ "$bad" -eq 1 ]; then
+            echo
+            echo "Every commit must include a 'Signed-off-by: Name <email>' trailer."
+            echo "This certifies compliance with the Developer Certificate of Origin."
+            echo "Fix with: git commit --amend -s  (or use 'git commit -s' for new commits)."
+            exit 1
+          fi
+          echo "All commits carry a Signed-off-by trailer."

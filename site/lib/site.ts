@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 export const LANGUAGES = ["en", "id"] as const;
 export type Lang = (typeof LANGUAGES)[number];
 
@@ -17,7 +20,7 @@ export const SITE = {
   repo: "https://github.com/NAEOS-foundation/naeos",
   repoOwner: "NAEOS-foundation",
   repoName: "naeos",
-  version: "3.4.0",
+  version: "3.5.0",
   accentColor: "#08d6ff",
   twitter: "https://twitter.com/naeos_dev",
   twitterHandle: "@naeos_dev",

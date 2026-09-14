@@ -1,4 +1,7 @@
 "use client";
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,11 +38,8 @@ const DOCS_DROPDOWN = [
 const MAIN_LINKS = [
   ["blog", "nav_blog"],
   ["plugins", "nav_plugins"],
-  ["templates", null],
-  ["schemaregistry", null],
-  ["showcase", "nav_showcase"],
-  ["cookbook", "nav_cookbook"],
-  ["download", "nav_download"],
+  ["investor-deck", "nav_investor_deck"],
+  ["launch-announcement", "nav_launch_announcement"],
   ["community", "nav_community"],
 ] as const;
 
@@ -158,19 +158,9 @@ export default function Header({ lang }: Props) {
   );
 }
 
-const MOBILE_SUB_DOCS = [
-  ["docs/getting-started", "footer_getting_started", true],
-  ["docs/installation", "footer_installation", true],
-  ["docs/architecture", "footer_architecture", true],
-  ["docs/cli-reference", "footer_cli_reference", true],
+const MOBILE_LINKS = [
+  ["features", "nav_features", false],
+  ["docs", "nav_docs", false],
+  ...MAIN_LINKS.map(([seg, key]) => [seg, key, false] as const),
 ] as const;
-
-const MOBILE_LINKS = (
-  [
-    ["features", "nav_features"],
-    ["docs", "nav_docs"],
-    ...MOBILE_SUB_DOCS,
-    ...MAIN_LINKS,
-  ] as const
-).map(([seg, key, indent]) => [seg, key ?? null, Boolean(indent)] as const);
 

@@ -16,7 +16,7 @@ Thank you for your interest in contributing to NAEOS!
 
 ### Prerequisites
 
-- Go 1.25 or later
+- Go 1.26.6 or later
 - Git
 - golangci-lint (required — runs in CI and blocks PRs)
 
@@ -267,6 +267,53 @@ go run ./cmd/naeos/ docsgen
 git add docs/cli/
 git commit -m "docs: update CLI reference"
 ```
+
+## License
+
+NAEOS is released under the [Apache License 2.0](LICENSE). Unless you state
+otherwise, any contribution you intentionally submit for inclusion in the work
+is licensed to NAEOS under the same terms (inbound = outbound), consistent with
+Section 5 of the Apache License. Do not submit code you do not have the right
+to contribute.
+
+## Developer Certificate of Origin (DCO)
+
+Every commit must include a `Signed-off-by` trailer:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+Use `git commit -s` to add it automatically. By signing off, you certify that,
+per the [Developer Certificate of Origin](https://developercertificate.org/):
+
+1. You authored the contribution, or received it from a prior contributor who
+   authored it, and it does not incorporate unlicensed third-party material.
+2. You have the right to submit it for inclusion in this project.
+
+The DCO check (`.github/workflows/dco.yml`) verifies every commit in a pull
+request. If you contribute on behalf of an employer, client, or other party,
+make sure that party has granted you the right to contribute under the
+Apache License 2.0. NAEOS Foundation may require a Contributor License
+Agreement (CLA) for commercial or corporate contributions, especially ahead of
+the NAEOS Cloud / Enterprise products.
+
+## AI-Assisted Contributions
+
+AI-assisted and agent-generated contributions are welcome. You remain
+responsible for the rights to every line you submit, whether written by hand or
+produced by a tool, and for keeping secrets and third-party material out of the
+repository. See the [AI-assisted contribution provenance
+policy](docs/ai-provenance.md) for the full guidance.
+
+## Security
+
+Never commit secrets: API keys, tokens, passwords, private keys, cloud
+credentials, `.env` files, or personal/customer data — even in tests or
+examples. Review your diff for accidental secrets before pushing; if a secret
+is found in history, rotate it and contact the maintainers. Prefer
+[`.env.example`](.env.example) with placeholder values for any documented
+configuration.
 
 ## Pull Request Process
 

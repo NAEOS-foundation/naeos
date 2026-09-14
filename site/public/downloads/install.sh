@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright 2024-2026 NAEOS Foundation
+# SPDX-License-Identifier: Apache-2.0
+
 # NAEOS installer
 # Usage: curl -fsSL https://naeos.dev/install.sh | sh
 set -e

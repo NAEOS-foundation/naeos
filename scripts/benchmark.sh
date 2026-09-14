@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright 2024-2026 NAEOS Foundation
+# SPDX-License-Identifier: Apache-2.0
+
 # Run benchmarks and compare against baseline
 set -euo pipefail
 

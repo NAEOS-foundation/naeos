@@ -1,0 +1,12 @@
+pipeline:
+  name: demo-app
+  mode: development
+  verbose: true
+  output_dir: ./generated
+  language:
+    - go
+    - typescript
+  policies:
+    - rule_id: failing-rule
+      condition: exists:nonexistent_key
+      enabled: true
