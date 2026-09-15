@@ -111,7 +111,7 @@ jobs:
 
       - name: Commit status data
         if: steps.changes.outputs.changed == 'true'
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d
         with:
           commit_message: "status: refresh live status metrics"
           file_pattern: site/data/status.json
