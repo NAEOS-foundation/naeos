@@ -29,6 +29,10 @@ NAEOS is a declarative engineering platform that transforms software specificati
 
 Unlike a project generator, NAEOS maintains an engineering model throughout the lifecycle: it parses specifications, builds **NEIR** (NAEOS Engineering Intermediate Representation), validates dependencies and policies, orchestrates execution, generates artifacts, and compiles context for AI development tools.
 
+## Start here
+
+New to NAEOS? Start with [START-HERE.md](START-HERE.md) for the fastest path from discovery to first experiment and contribution.
+
 ## Contents
 
 - [Vision](#vision)
