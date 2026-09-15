@@ -209,7 +209,7 @@ jobs:
 
       - name: Create release blog post PR
         if: steps.blog.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
         with:
           token: ${{ github.token }}
           commit-message: "blog: add ${{ github.ref_name }} release post"
