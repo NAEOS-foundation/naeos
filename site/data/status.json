@@ -1,11 +1,12 @@
 {
   "updatedAt": "2026-09-17T11:30:26Z",
+  "updatedAt": "2026-09-17T15:21:27Z",
   "source": "live",
   "github": {
-    "forks": 0,
-    "openIssues": 4,
-    "stars": 1,
-    "version": "{\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest/releases/releases#get-the-latest-release\",\"status\":\"404\"}unknown",
+    "forks": 6,
+    "openIssues": 6,
+    "stars": 12,
+    "version": "3.5.0",
     "contributors": 10
   },
   "services": [
@@ -17,6 +18,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 611
+      "latencyMs": 812
     },
     {
       "id": "docs",
@@ -26,6 +28,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 493
+      "latencyMs": 897
     },
     {
       "id": "registry",
@@ -35,6 +38,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 858
+      "latencyMs": 240
     },
     {
       "id": "realtime",
@@ -44,6 +48,7 @@
       "kind": "ws",
       "status": "operational",
       "latencyMs": 24
+      "latencyMs": 159
     }
   ]
 }
