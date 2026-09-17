@@ -1,10 +1,9 @@
 {
-  "updatedAt": "2026-09-17T11:30:26Z",
-  "updatedAt": "2026-09-17T15:21:27Z",
+  "updatedAt": "2026-09-17T19:07:21Z",
   "source": "live",
   "github": {
     "forks": 6,
-    "openIssues": 6,
+    "openIssues": 5,
     "stars": 12,
     "version": "3.5.0",
     "contributors": 10
@@ -17,8 +16,7 @@
       "target": "https://naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 611
-      "latencyMs": 812
+      "latencyMs": 1052
     },
     {
       "id": "docs",
@@ -27,8 +25,7 @@
       "target": "https://docs.naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 493
-      "latencyMs": 897
+      "latencyMs": 711
     },
     {
       "id": "registry",
@@ -37,8 +34,7 @@
       "target": "https://registry.naeos.dev",
       "kind": "http",
       "status": "operational",
-      "latencyMs": 858
-      "latencyMs": 240
+      "latencyMs": 268
     },
     {
       "id": "realtime",
@@ -47,8 +43,7 @@
       "target": "https://ws.naeos.dev/ws",
       "kind": "ws",
       "status": "operational",
-      "latencyMs": 24
-      "latencyMs": 159
+      "latencyMs": 118
     }
   ]
 }
