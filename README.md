@@ -160,10 +160,21 @@ go build -o naeos ./cmd/naeos
 See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
 location and optional AI compiler usage.
 
+### Try the 5-Minute Killer Demo
+
+The **NAEOS Todo API** demo demonstrates the complete specification-first engineering pipeline: specification → NEIR → validation → artifacts → traceability.
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/todo-api/run-demo.sh
+```
+
+See [`examples/todo-api/README.md`](examples/todo-api/README.md) for details.
+
 ## Demo
 
-<p align="center">
-  <a href="https://youtu.be/C9QDlUqqaaI">
+ <p align="center">
+   <a href="https://youtu.be/C9QDlUqqaaI">
     <img src="https://img.youtube.com/vi/C9QDlUqqaaI/maxresdefault.jpg"
          alt="Watch the NAEOS demo on YouTube"
          width="80%" />

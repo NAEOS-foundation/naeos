@@ -1,0 +1,32 @@
+project: todo-api-invalid
+
+modules:
+  - name: todo
+    path: ./todo
+    description: Todo management module
+  - name: todo
+    path: ./todo
+    description: Duplicate module name - this should fail validation
+  - name: user
+    path: ./user
+    description: User management module
+
+services:
+  - name: api-gateway
+    kind: http
+    port: 8080
+    description: Todo API gateway
+    endpoints:
+      - method: POST
+        path: /todos
+        action: createTodo
+      - method: GET
+        path: /todos
+        action: listTodos
+
+architecture:
+  pattern: hexagonal
+
+generation:
+  languages:
+    - go
