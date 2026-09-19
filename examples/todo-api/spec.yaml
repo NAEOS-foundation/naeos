@@ -1,0 +1,69 @@
+project: todo-api
+
+modules:
+  - name: user
+    path: ./user
+    description: User management module for authentication and profile
+  - name: todo
+    path: ./todo
+    description: Todo management module with CRUD operations
+    dependencies:
+      - user
+
+services:
+  - name: api-gateway
+    kind: http
+    port: 8080
+    description: Todo API gateway exposing CRUD endpoints
+    endpoints:
+      - method: POST
+        path: /todos
+        action: createTodo
+      - method: GET
+        path: /todos
+        action: listTodos
+      - method: GET
+        path: /todos/:id
+        action: getTodo
+      - method: PUT
+        path: /todos/:id
+        action: updateTodo
+      - method: DELETE
+        path: /todos/:id
+        action: deleteTodo
+      - method: POST
+        path: /users
+        action: createUser
+      - method: GET
+        path: /users
+        action: listUsers
+      - method: GET
+        path: /users/:id
+        action: getUser
+      - method: PUT
+        path: /users/:id
+        action: updateUser
+      - method: DELETE
+        path: /users/:id
+        action: deleteUser
+
+architecture:
+  pattern: hexagonal
+  description: Hexagonal architecture with clean separation of domain and infrastructure
+
+deployment:
+  strategy: blue-green
+  environments:
+    - development
+    - staging
+    - production
+
+testing:
+  strategy: unit
+  coverage: "85%"
+
+generation:
+  languages:
+    - go
+  output_dir: ./generated
+  module_dir: ./internal

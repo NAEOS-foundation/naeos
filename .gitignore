@@ -81,3 +81,8 @@ site/.next/
 site/.vercel/
 site/.open-next/
 site/tsconfig.tsbuildinfo
+# Generated output
+examples/demo-cli/generated/
+examples/todo-api/generated/
+examples/todo-api/.run/
+generated/

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Idempotency support for message queue** — `internal/messagequeue`: `IdempotencyStore` interface with `InMemoryIdempotencyStore` implementation, `IdempotencyKey` field on `Message`, `NewIdempotentMessage()` constructor, `WithIdempotencyStore()` queue option, `ErrDuplicateMessage` error, `DedupSkipped`/`IdempotencyHits`/`IdempotencyMisses` stats, TTL-based automatic cleanup. Foundation for v3.6.0 durable job queue and worker pipeline.
+
 ## [3.5.0] - 2026-09-13
 
 ### Added

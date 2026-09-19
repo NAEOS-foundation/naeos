@@ -10,34 +10,116 @@ import (
 	"time"
 )
 
+// IdempotencyStore provides deduplication for message processing.
+type IdempotencyStore interface {
+	// Dedup checks if a message with the given idempotency key has already been processed.
+	// If the key exists, the message is a duplicate and should be skipped.
+	// The key is registered for the specified duration.
+	Dedup(key string, ttl time.Duration) (isDuplicate bool, err error)
+	// Cleanup removes expired entries from the store.
+	Cleanup()
+}
+
+// InMemoryIdempotencyStore is a thread-safe in-memory implementation of IdempotencyStore.
+type InMemoryIdempotencyStore struct {
+	mu      sync.RWMutex
+	entries map[string]time.Time
+	ttl     time.Duration
+}
+
+type idempotencyEntry struct {
+	key       string
+	processedAt time.Time
+}
+
+// NewInMemoryIdempotencyStore creates a new in-memory idempotency store with the given default TTL.
+func NewInMemoryIdempotencyStore(defaultTTL time.Duration) *InMemoryIdempotencyStore {
+	if defaultTTL <= 0 {
+		defaultTTL = 5 * time.Minute
+	}
+	return &InMemoryIdempotencyStore{
+		entries: make(map[string]time.Time),
+		ttl:     defaultTTL,
+	}
+}
+
+// Dedup checks if the key has already been processed. If not, registers it.
+func (s *InMemoryIdempotencyStore) Dedup(key string, ttl time.Duration) (isDuplicate bool, err error) {
+	if key == "" {
+		return false, nil
+	}
+	if ttl <= 0 {
+		ttl = s.ttl
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.entries[key]; exists {
+		return true, nil
+	}
+
+	s.entries[key] = time.Now().Add(ttl)
+	return false, nil
+}
+
+// Cleanup removes expired entries from the store.
+func (s *InMemoryIdempotencyStore) Cleanup() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	now := time.Now()
+	for key, expiry := range s.entries {
+		if now.After(expiry) {
+			delete(s.entries, key)
+		}
+	}
+}
+
+// IdempotencyStats tracks idempotency-related metrics.
+type IdempotencyStats struct {
+	DedupHits   int64
+	DedupMisses int64
+	TotalKeys   int64
+}
+
 type Message struct {
-	ID         string
-	Topic      string
-	Payload    any
-	Timestamp  time.Time
-	Retries    int
-	MaxRetries int
+	ID               string
+	IdempotencyKey   string
+	Topic            string
+	Payload          any
+	Timestamp        time.Time
+	Retries          int
+	MaxRetries       int
+	Processed        bool
+	ProcessedAt      time.Time
 }
 
 type MessageHandler func(msg *Message) error
 
 type Queue struct {
-	name     string
-	messages chan *Message
-	handler  MessageHandler
-	running  bool
-	mu       sync.RWMutex
-	stats    QueueStats
-	dead     []*Message
-	maxDead  int
-	metrics  *QueueMetrics
+	name            string
+	messages        chan *Message
+	handler         MessageHandler
+	running         bool
+	mu              sync.RWMutex
+	stats           QueueStats
+	dead            []*Message
+	maxDead         int
+	metrics         *QueueMetrics
+	idempotencyStore IdempotencyStore
+	idempotencyTTL  time.Duration
+	idempotencyStats IdempotencyStats
 }
 
 type QueueStats struct {
-	Published    int64
-	Consumed     int64
-	Failed       int64
-	DeadLettered int64
+	Published       int64
+	Consumed        int64
+	Failed          int64
+	DeadLettered    int64
+	DedupSkipped    int64
+	IdempotencyHits int64
+	IdempotencyMisses int64
 }
 
 type QueueMetrics struct {
@@ -50,17 +132,47 @@ type QueueMetrics struct {
 
 func NewQueue(name string, capacity int) *Queue {
 	return &Queue{
-		name:     name,
-		messages: make(chan *Message, capacity),
-		maxDead:  100,
-		metrics:  &QueueMetrics{},
+		name:            name,
+		messages:        make(chan *Message, capacity),
+		maxDead:        100,
+		metrics:        &QueueMetrics{},
+		idempotencyTTL:  5 * time.Minute,
 	}
+}
+
+// WithIdempotencyStore configures the queue with an idempotency store for deduplication.
+func (q *Queue) WithIdempotencyStore(store IdempotencyStore, ttl time.Duration) *Queue {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.idempotencyStore = store
+	if ttl > 0 {
+		q.idempotencyTTL = ttl
+	}
+	return q
 }
 
 func (q *Queue) Publish(msg *Message) error {
 	msg.Timestamp = time.Now()
 	if msg.MaxRetries == 0 {
 		msg.MaxRetries = 3
+	}
+
+	// Check idempotency before publishing
+	if msg.IdempotencyKey != "" && q.idempotencyStore != nil {
+		isDuplicate, err := q.idempotencyStore.Dedup(msg.IdempotencyKey, q.idempotencyTTL)
+		if err != nil {
+			return err
+		}
+		if isDuplicate {
+			q.mu.Lock()
+			q.stats.DedupSkipped++
+			q.stats.IdempotencyHits++
+			q.mu.Unlock()
+			return ErrDuplicateMessage
+		}
+		q.mu.Lock()
+		q.stats.IdempotencyMisses++
+		q.mu.Unlock()
 	}
 
 	select {
@@ -82,6 +194,29 @@ func (q *Queue) Subscribe(handler MessageHandler) {
 }
 
 func (q *Queue) consume() {
+	// Start periodic cleanup for idempotency store
+	var cleanupDone chan struct{}
+	if q.idempotencyStore != nil {
+		cleanupDone = make(chan struct{})
+		go func() {
+			ticker := time.NewTicker(q.idempotencyTTL)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-cleanupDone:
+					return
+				case <-ticker.C:
+					q.idempotencyStore.Cleanup()
+				}
+			}
+		}()
+	}
+	defer func() {
+		if cleanupDone != nil {
+			close(cleanupDone)
+		}
+	}()
+
 	for msg := range q.messages {
 		q.mu.RLock()
 		running := q.running
@@ -90,6 +225,13 @@ func (q *Queue) consume() {
 
 		if !running {
 			return
+		}
+
+		// Check if message was already processed (idempotency check on consume)
+		if msg.Processed {
+			atomic.AddInt64(&q.stats.DedupSkipped, 1)
+			atomic.AddInt64(&q.stats.IdempotencyHits, 1)
+			continue
 		}
 
 		start := time.Now()
@@ -103,7 +245,10 @@ func (q *Queue) consume() {
 			}
 			atomic.AddInt64(&q.stats.Failed, 1)
 		} else {
+			msg.Processed = true
+			msg.ProcessedAt = time.Now()
 			atomic.AddInt64(&q.stats.Consumed, 1)
+			atomic.AddInt64(&q.stats.IdempotencyMisses, 1)
 		}
 
 		elapsed := time.Since(start).Milliseconds()
@@ -154,11 +299,16 @@ func (q *Queue) Name() string {
 }
 
 func (q *Queue) Stats() QueueStats {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
 	return QueueStats{
-		Published:    atomic.LoadInt64(&q.stats.Published),
-		Consumed:     atomic.LoadInt64(&q.stats.Consumed),
-		Failed:       atomic.LoadInt64(&q.stats.Failed),
-		DeadLettered: atomic.LoadInt64(&q.stats.DeadLettered),
+		Published:         atomic.LoadInt64(&q.stats.Published),
+		Consumed:          atomic.LoadInt64(&q.stats.Consumed),
+		Failed:            atomic.LoadInt64(&q.stats.Failed),
+		DeadLettered:      atomic.LoadInt64(&q.stats.DeadLettered),
+		DedupSkipped:      atomic.LoadInt64(&q.stats.DedupSkipped),
+		IdempotencyHits:   atomic.LoadInt64(&q.stats.IdempotencyHits),
+		IdempotencyMisses: atomic.LoadInt64(&q.stats.IdempotencyMisses),
 	}
 }
 
@@ -170,6 +320,16 @@ func (q *Queue) Metrics() QueueMetrics {
 		AvgLatencyMs: q.metrics.AvgLatencyMs,
 		TotalLatency: q.metrics.TotalLatency,
 		LatencyCount: q.metrics.LatencyCount,
+	}
+}
+
+func (q *Queue) IdempotencyStats() IdempotencyStats {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+	return IdempotencyStats{
+		DedupHits:   atomic.LoadInt64(&q.stats.IdempotencyHits),
+		DedupMisses: atomic.LoadInt64(&q.stats.IdempotencyMisses),
+		TotalKeys:   atomic.LoadInt64(&q.stats.DedupSkipped),
 	}
 }
 
@@ -312,8 +472,9 @@ func (b *Broker) Stop() {
 }
 
 var (
-	ErrQueueFull     = &QueueError{"queue is full"}
-	ErrTopicNotFound = &QueueError{"topic not found"}
+	ErrQueueFull          = &QueueError{"queue is full"}
+	ErrTopicNotFound      = &QueueError{"topic not found"}
+	ErrDuplicateMessage   = &QueueError{"duplicate message: idempotency key already processed"}
 )
 
 type QueueError struct {
@@ -326,11 +487,23 @@ func (e *QueueError) Error() string {
 
 func NewMessage(topic string, payload any) *Message {
 	return &Message{
-		ID:         generateID(),
-		Topic:      topic,
-		Payload:    payload,
-		Timestamp:  time.Now(),
-		MaxRetries: 3,
+		ID:           generateID(),
+		Topic:        topic,
+		Payload:      payload,
+		Timestamp:    time.Now(),
+		MaxRetries:   3,
+	}
+}
+
+// NewIdempotentMessage creates a new message with an idempotency key for deduplication.
+func NewIdempotentMessage(topic string, payload any, idempotencyKey string) *Message {
+	return &Message{
+		ID:               generateID(),
+		IdempotencyKey:   idempotencyKey,
+		Topic:            topic,
+		Payload:          payload,
+		Timestamp:        time.Now(),
+		MaxRetries:       3,
 	}
 }
 
