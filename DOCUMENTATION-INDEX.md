@@ -7,6 +7,9 @@ This document serves as the master index for navigating the NAEOS repository.
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines.
 - [MARKETING-STRATEGY.md](MARKETING-STRATEGY.md) — evidence-based marketing strategy, content calendar, funnel, and experiment backlog.
+- [PARTNER-PROGRAM.md](PARTNER-PROGRAM.md) — zero-cash technical partner program and collaboration lifecycle.
+- [PARTNER-REQUESTS.md](PARTNER-REQUESTS.md) — scoped partner requests and pilot starting points.
+- [PARTNERS.md](PARTNERS.md) — current partner directory and open opportunities.
 - [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English).
 - [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia).
 
@@ -106,6 +109,11 @@ This document serves as the master index for navigating the NAEOS repository.
 - [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE/) — issue templates (bug, feature, documentation, plugin/profile, marketing experiment).
 - [.github/DISCUSSION_TEMPLATE/](.github/DISCUSSION_TEMPLATE/) — structured GitHub Discussions forms (ideas, Q&A, show-and-tell).
 - [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) — pull request template.
+
+### 7.2 Partner program
+- [docs/partners/](docs/partners/) — partner briefs, outreach, fit assessment, pilots, policy, ecosystem model, and case-study template.
+- [.github/ISSUE_TEMPLATE/partner-interest.yml](.github/ISSUE_TEMPLATE/partner-interest.yml) — partner interest form.
+- [.github/ISSUE_TEMPLATE/partner-pilot.yml](.github/ISSUE_TEMPLATE/partner-pilot.yml) — scoped pilot form.
 
 ## 8. Modular documentation structure
 - [docs/README.md](docs/README.md) — NAEOS documentation structure map.

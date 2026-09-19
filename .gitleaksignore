@@ -1,0 +1,5 @@
+# Gitleaks ignore list for NAEOS.
+# Both entries are verified false positives (placeholders/fixtures, no real credentials).
+# See policy/NAEOS-POL-003.md secrets hygiene policy.
+internal/security/security_test.go:generic-api-key:204
+tools/discord-bot/config.example.env:generic-api-key:12

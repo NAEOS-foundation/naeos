@@ -1,5 +1,6 @@
 {
   "updatedAt": "2026-09-19T18:44:59Z",
+  "updatedAt": "2026-09-19T19:02:04Z",
   "source": "live",
   "github": {
     "forks": 0,
@@ -17,6 +18,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 648
+      "latencyMs": 591
     },
     {
       "id": "docs",
@@ -26,6 +28,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 768
+      "latencyMs": 592
     },
     {
       "id": "registry",
@@ -35,6 +38,7 @@
       "kind": "http",
       "status": "operational",
       "latencyMs": 720
+      "latencyMs": 879
     },
     {
       "id": "realtime",
@@ -44,6 +48,7 @@
       "kind": "ws",
       "status": "operational",
       "latencyMs": 86
+      "latencyMs": 24
     }
   ]
 }

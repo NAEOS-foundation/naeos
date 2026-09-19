@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"gopkg.in/yaml.v3"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
 // File holds pipeline configuration loaded from disk.

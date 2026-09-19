@@ -1,0 +1,83 @@
+name: Partner Interest
+description: Propose a technical, research, community, or pilot partnership.
+title: "[PARTNER] "
+labels:
+  - ecosystem
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for technical collaboration, not fundraising. Contributions are optional, subject to eligibility and approval, and mutually agreed.
+  - type: input
+    id: organization
+    attributes:
+      label: Organization
+      description: Organization or community name.
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact
+      description: Public contact or preferred private follow-up route. Do not include secrets.
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_type
+    attributes:
+      label: Partner type
+      options:
+        - Technology
+        - Cloud
+        - AI
+        - Academic
+        - Community
+        - Pilot
+        - Strategic
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_contribution
+    attributes:
+      label: Proposed contribution
+      description: What could be contributed, if eligible and approved?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_use_case
+    attributes:
+      label: Proposed use case
+      description: Describe the narrow technical problem or pilot.
+    validations:
+      required: true
+  - type: input
+    id: technical_area
+    attributes:
+      label: Technical area
+      description: For example NEIR, validation, generation, AI, plugins, cloud, testing, or documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_outcome
+    attributes:
+      label: Expected outcome
+      description: Define a measurable integration, research, community, or pilot result.
+    validations:
+      required: true
+  - type: input
+    id: preferred_timeline
+    attributes:
+      label: Preferred timeline
+      description: Include a proposed two-to-four-week pilot window where practical.
+    validations:
+      required: true
+  - type: dropdown
+    id: public_or_private_collaboration
+    attributes:
+      label: Public or private collaboration
+      options:
+        - Public discussion
+        - Private discussion first
+        - Not sure
+    validations:
+      required: true

@@ -1,6 +1,7 @@
 {
   "name": "naeos-ws-worker",
   "private": true,
+  "license": "Apache-2.0",
   "version": "3.5.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -8,8 +9,8 @@
     "dev": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260903.0",
-    "typescript": "^5.6.3",
-    "wrangler": "^4.0.0"
+    "@cloudflare/workers-types": "^5.20260911.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.131.1"
   }
 }
