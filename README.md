@@ -372,6 +372,10 @@ docs/               # Documentation (57 NES specs)
 - [CHANGELOG.md](CHANGELOG.md) — version history
 - [docs/](docs/) — 57 NES specification documents (NES-000 to NES-054, including Kernel API and NEIR Model references)
 
+### Partner With NAEOS
+
+NAEOS is open to technology, cloud/infrastructure, AI, academic, developer-community, pilot, and strategic ecosystem collaboration. Start with the [NAEOS Partner Program](PARTNER-PROGRAM.md) and [PARTNER-REQUESTS.md](PARTNER-REQUESTS.md). Contributions are optional, subject to eligibility and approval; no funding, credits, or commercial outcome is assumed.
+
 ## Roadmap
 
 ### Completed
@@ -406,6 +410,7 @@ Contributions, documentation improvements, issue reports, and new integrations a
 - [Discussions](https://github.com/NAEOS-foundation/naeos/discussions) — ask questions, share ideas, and show what you built.
 - [Discord](https://discord.gg/naeos) — real-time discussion with the community and maintainers.
 - [Discussions guide](docs/community/discussions.md) — categories, norms, and how conversations become contributions.
+- [Partner Program](PARTNER-PROGRAM.md) — technical partnership paths, pilot requests, and contribution rules.
 
 ## Governance
 
