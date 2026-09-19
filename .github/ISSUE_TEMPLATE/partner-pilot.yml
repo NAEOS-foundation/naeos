@@ -1,0 +1,54 @@
+name: Partner Pilot
+description: Propose a scoped NAEOS partner pilot with acceptance criteria.
+title: "[PILOT] "
+labels:
+  - ecosystem
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this after an initial technical discussion. Do not include credentials, private infrastructure details, or confidential partner information.
+  - type: input
+    id: partner
+    attributes:
+      label: Partner
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+    validations:
+      required: true
+  - type: textarea
+    id: integration
+    attributes:
+      label: Proposed integration
+    validations:
+      required: true
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Partner contribution
+      description: State what is proposed and what remains subject to eligibility or approval.
+    validations:
+      required: true
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables
+    validations:
+      required: true
+  - type: input
+    id: timeline
+    attributes:
+      label: Timeline
+      description: Keep the initial pilot approximately two to four weeks.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Technical acceptance criteria
+    validations:
+      required: true

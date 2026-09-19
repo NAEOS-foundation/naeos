@@ -8,6 +8,7 @@ self-contained Go module demonstrating a specific plugin SDK pattern.
 | [`hello/`](hello/) | Canonical minimal plugin: `BasePlugin`, action dispatch, JSON-over-stdio entry point |
 | [`spec-lint/`](spec-lint/) | Consuming pipeline input (spec text) and returning a structured report |
 | [`artifact-stats/`](artifact-stats/) | Processing batched inputs (artifact files) and aggregating results |
+| [`trivy-config/`](trivy-config/) | Native integration that returns structured Trivy configuration findings |
 
 ## Requirements
 
@@ -53,3 +54,7 @@ tests, Makefile, WASM build, and CI workflow:
 ```bash
 naeos plugin init my-plugin --author "You" --desc "My first plugin"
 ```
+
+The `trivy-config` example is a native Go plugin because it invokes the
+external `trivy` executable. It is a partner-pilot reference, not a WASM
+plugin, and requires Trivy on `PATH`.
