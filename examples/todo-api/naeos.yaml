@@ -1,0 +1,8 @@
+pipeline:
+  name: todo-api-demo
+  mode: development
+  verbose: true
+  output_dir: ./generated
+  language:
+    - go
+  target: linux

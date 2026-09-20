@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package controlplane
 
 import (
@@ -34,7 +37,6 @@ type Ledger struct {
 	events               []LedgerEvent
 	nextID               int
 	persistencePath      string
-	persistenceMu        sync.Mutex
 	lastPersistenceError error
 }
 

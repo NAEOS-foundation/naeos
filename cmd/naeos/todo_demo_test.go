@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 	"github.com/NAEOS-foundation/naeos/internal/specification/normalizer"
+	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
 
 func TestValidTodoSpecParsing(t *testing.T) {

@@ -27,11 +27,6 @@ type InMemoryIdempotencyStore struct {
 	ttl     time.Duration
 }
 
-type idempotencyEntry struct {
-	key       string
-	processedAt time.Time
-}
-
 // NewInMemoryIdempotencyStore creates a new in-memory idempotency store with the given default TTL.
 func NewInMemoryIdempotencyStore(defaultTTL time.Duration) *InMemoryIdempotencyStore {
 	if defaultTTL <= 0 {
@@ -84,41 +79,40 @@ type IdempotencyStats struct {
 }
 
 type Message struct {
-	ID               string
-	IdempotencyKey   string
-	Topic            string
-	Payload          any
-	Timestamp        time.Time
-	Retries          int
-	MaxRetries       int
-	Processed        bool
-	ProcessedAt      time.Time
+	ID             string
+	IdempotencyKey string
+	Topic          string
+	Payload        any
+	Timestamp      time.Time
+	Retries        int
+	MaxRetries     int
+	Processed      bool
+	ProcessedAt    time.Time
 }
 
 type MessageHandler func(msg *Message) error
 
 type Queue struct {
-	name            string
-	messages        chan *Message
-	handler         MessageHandler
-	running         bool
-	mu              sync.RWMutex
-	stats           QueueStats
-	dead            []*Message
-	maxDead         int
-	metrics         *QueueMetrics
+	name             string
+	messages         chan *Message
+	handler          MessageHandler
+	running          bool
+	mu               sync.RWMutex
+	stats            QueueStats
+	dead             []*Message
+	maxDead          int
+	metrics          *QueueMetrics
 	idempotencyStore IdempotencyStore
-	idempotencyTTL  time.Duration
-	idempotencyStats IdempotencyStats
+	idempotencyTTL   time.Duration
 }
 
 type QueueStats struct {
-	Published       int64
-	Consumed        int64
-	Failed          int64
-	DeadLettered    int64
-	DedupSkipped    int64
-	IdempotencyHits int64
+	Published         int64
+	Consumed          int64
+	Failed            int64
+	DeadLettered      int64
+	DedupSkipped      int64
+	IdempotencyHits   int64
 	IdempotencyMisses int64
 }
 
@@ -132,11 +126,11 @@ type QueueMetrics struct {
 
 func NewQueue(name string, capacity int) *Queue {
 	return &Queue{
-		name:            name,
-		messages:        make(chan *Message, capacity),
+		name:           name,
+		messages:       make(chan *Message, capacity),
 		maxDead:        100,
 		metrics:        &QueueMetrics{},
-		idempotencyTTL:  5 * time.Minute,
+		idempotencyTTL: 5 * time.Minute,
 	}
 }
 
@@ -472,9 +466,9 @@ func (b *Broker) Stop() {
 }
 
 var (
-	ErrQueueFull          = &QueueError{"queue is full"}
-	ErrTopicNotFound      = &QueueError{"topic not found"}
-	ErrDuplicateMessage   = &QueueError{"duplicate message: idempotency key already processed"}
+	ErrQueueFull        = &QueueError{"queue is full"}
+	ErrTopicNotFound    = &QueueError{"topic not found"}
+	ErrDuplicateMessage = &QueueError{"duplicate message: idempotency key already processed"}
 )
 
 type QueueError struct {
@@ -487,23 +481,23 @@ func (e *QueueError) Error() string {
 
 func NewMessage(topic string, payload any) *Message {
 	return &Message{
-		ID:           generateID(),
-		Topic:        topic,
-		Payload:      payload,
-		Timestamp:    time.Now(),
-		MaxRetries:   3,
+		ID:         generateID(),
+		Topic:      topic,
+		Payload:    payload,
+		Timestamp:  time.Now(),
+		MaxRetries: 3,
 	}
 }
 
 // NewIdempotentMessage creates a new message with an idempotency key for deduplication.
 func NewIdempotentMessage(topic string, payload any, idempotencyKey string) *Message {
 	return &Message{
-		ID:               generateID(),
-		IdempotencyKey:   idempotencyKey,
-		Topic:            topic,
-		Payload:          payload,
-		Timestamp:        time.Now(),
-		MaxRetries:       3,
+		ID:             generateID(),
+		IdempotencyKey: idempotencyKey,
+		Topic:          topic,
+		Payload:        payload,
+		Timestamp:      time.Now(),
+		MaxRetries:     3,
 	}
 }
 

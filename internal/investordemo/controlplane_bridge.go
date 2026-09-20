@@ -1,3 +1,6 @@
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 package investordemo
 
 import (
@@ -97,14 +100,6 @@ func toControlPlaneCapabilities(values []Capability) []controlplane.Capability {
 	out := make([]controlplane.Capability, 0, len(values))
 	for _, value := range values {
 		out = append(out, controlplane.Capability(value))
-	}
-	return out
-}
-
-func toDemoCapabilities(values []controlplane.Capability) []Capability {
-	out := make([]Capability, 0, len(values))
-	for _, value := range values {
-		out = append(out, Capability(value))
 	}
 	return out
 }
