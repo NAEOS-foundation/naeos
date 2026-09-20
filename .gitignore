@@ -48,6 +48,7 @@ cmd/naeos/out/
 # Local test spec files
 naeos.yaml
 naeos.yml
+!examples/todo-api/naeos.yaml
 
 # SQLite database files
 *.db
