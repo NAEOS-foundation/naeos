@@ -12,8 +12,8 @@ func TestString(t *testing.T) {
 	if v == "" {
 		t.Error("expected non-empty version string")
 	}
-	if v != "3.5.0" {
-		t.Errorf("expected version 3.5.0, got %s", v)
+	if v != "3.6.0" {
+		t.Errorf("expected version 3.6.0, got %s", v)
 	}
 }
 
@@ -30,7 +30,7 @@ func TestFullWithCommit(t *testing.T) {
 	defer func() { GitCommit = saved }()
 
 	full := Full()
-	expected := "3.5.0 (abc123)"
+	expected := "3.6.0 (abc123)"
 	if full != expected {
 		t.Errorf("expected %s, got %s", expected, full)
 	}

@@ -443,4 +443,4 @@ Foundation. The Apache License grants no trademark rights; see
 
 ## Status
 
-**Active development** — The latest documented release is v3.5.0, which brings observability (OTLP tracing, SLOs, SIEM export) and the investor demo control plane. See the [release history](CHANGELOG.md) for details.
+**Active development** — The latest documented release is v3.6.0, which adds the unified control plane (authorization, approvals, tamper-evident evidence) and the investor demo API. See the [release history](CHANGELOG.md) for details.

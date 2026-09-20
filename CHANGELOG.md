@@ -7,8 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-09-21
+
 ### Added
-- **Idempotency support for message queue** — `internal/messagequeue`: `IdempotencyStore` interface with `InMemoryIdempotencyStore` implementation, `IdempotencyKey` field on `Message`, `NewIdempotentMessage()` constructor, `WithIdempotencyStore()` queue option, `ErrDuplicateMessage` error, `DedupSkipped`/`IdempotencyHits`/`IdempotencyMisses` stats, TTL-based automatic cleanup. Foundation for v3.6.0 durable job queue and worker pipeline.
+- **Message queue idempotency** — `internal/messagequeue`: `IdempotencyStore` interface with `InMemoryIdempotencyStore` implementation, `IdempotencyKey` field on `Message`, `NewIdempotentMessage()` constructor, `WithIdempotencyStore()` queue option, `ErrDuplicateMessage` error, `DedupSkipped`/`IdempotencyHits`/`IdempotencyMisses` stats, TTL-based automatic cleanup. Foundation for the durable job queue and worker pipeline.
+- **Unified control plane** — `internal/controlplane`: reusable authorization, approval, and evidence flows. `PolicyStore` + `Evaluator` (deny/allow/require-approval decisions with context), `DecisionGateway` binding execution to canonical decisions, `Ledger` (tamper-evident decision/execution records with evidence filters), `ApprovalStore`, and `SessionVerifier`. Fully covered by tests (approval, ledger, evaluator, gateway, verifier).
+- **Investor demo API + dashboard integration** — `internal/investordemo/api_server.go` exposes authorization, approval, evidence, and verification flows over HTTP; the demo dashboard wires approval/evidence controls and the execution gate into the reusable control-plane bridge (`controlplane_bridge.go`).
+- **Hardened approval + evidence flows** — `internal/investordemo` execution gate now resolves approvals and evidence against the canonical control plane (fail-closed), with secure canonical evidence execution binding execution to approved decisions and tamper-evident ledger persistence.
+- **Controls governance review** — `internal/governance/review`: reviewer that flags TODO/placeholder artifacts, license/package-declaration checks, and returns structured review results (approved/rejected/pending/changes-requested).
+- **Agent session store** — `internal/agent`: persistent session/action store (create/list/get/append actions, delete, JSON persistence).
+- **API database attachment** — `naeos api` now attaches a database when `NAEOS_DB_DRIVER`/`NAEOS_DB_DATABASE` are set (sqlite/postgres/mysql/mariadb), creating the `pipeline_runs` table and persisting run records; `NAEOS_ENCRYPTION_KEY` + `NAEOS_API_ADMIN_USER` seed an admin RBAC user for JWT-protected routes. Covered by `TestAttachDatabase*` in `cmd/naeos/api_db_test.go`.
+- **Supply-chain hardening** — dependabot for Go + npm, SHA-pinned GitHub Actions, gitleaks scan (OSS binary), NOTICE + SBOM shipped in release archives, SPDX header enforcement, DCO enforcement workflow.
+- **Investor pitch deck** — exposed for viewing and download on the site (EN/ID).
+- **Version bump** — 3.5.0 → 3.6.0.
+
+### Fixed
+- SPDX header check now excludes generated output directories.
+- golangci-lint findings from main drift resolved.
 
 ## [3.5.0] - 2026-09-13
 

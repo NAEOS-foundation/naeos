@@ -3,7 +3,7 @@
 
 interface Env {}
 
-const VERSION = "3.5.0";
+const VERSION = "3.6.0";
 
 const COMMANDS: Record<string, string> = {
 	help: "Available commands: help, version, status, ping",

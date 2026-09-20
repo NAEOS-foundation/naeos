@@ -2,7 +2,7 @@
   "name": "naeos-ws-worker",
   "private": true,
   "license": "Apache-2.0",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "deploy": "wrangler deploy",

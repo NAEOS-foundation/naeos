@@ -14,7 +14,7 @@ aliases: ["/whitepaper/"]
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Platform Version** | v3.5.0 (repository state) |
+| **Platform Version** | v3.6.0 (repository state) |
 
 ---
 
@@ -413,6 +413,7 @@ Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**
 - **v3.2.0** — Operations release: production server daemon (`naeos serve`) with TLS, graceful shutdown, and systemd integration; policy registry + control plane, runtime execution gateway, immutable evidence store, independent verification, MCP resources/prompts/completions/ping
 - **v3.3.0** — Supply-chain release: SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
 - **v3.5.0** — Observability & control-plane release: OTLP tracing, SLO alerting, SIEM export (CEF/NDJSON), and the investor demo control plane
+- **v3.6.0** — Unified control plane release: reusable authorization, approvals, and tamper-evident evidence across the investor demo, coupled with supply-chain hardening (gitleaks, NOTICE/SBOM in releases, DCO enforcement)
 - **v3.4.0** — Deployment release: Helm chart scaffolding, air-gapped bundles, config providers (env/file/K8s secret/Vault)
 
 ### Platform health metrics (current)
@@ -472,4 +473,4 @@ Under Apache License 2.0, with a vendor-neutral architecture and a growing ecosy
 
 *NAEOS Foundation — "Engineering With Discipline"*
 
-*This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.5.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*
+*This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.6.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*
