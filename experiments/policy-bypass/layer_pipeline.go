@@ -33,7 +33,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 		return Result{Layer: LayerPipeline, Scenario: "policy context integrity: security claim not evaluated", Attack: "-", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeError, Evidence: "pipeline init error", Risk: Critical}
 	}
 
-	compliantSpec := "project: bypass-lab\nmodules:\n  - name: core\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+	compliantSpec := "project: bypass-lab\nmodules:\n  - name: core\n    path: ./internal/core\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
 	res, err := p.Run(compliantSpec)
 	if err != nil {
 		return Result{
