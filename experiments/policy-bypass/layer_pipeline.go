@@ -20,9 +20,8 @@ func pipelineScenarios() []Result {
 	}
 }
 
-// scnPipelineCtxCannotInspectSpec demonstrates that runPolicyEval builds its
-// context from only {project, modules, services}, so policies targeting other
-// spec keys (security, deployment, testing, ...) always see a missing key.
+// scnPipelineCtxCannotInspectSpec verifies that policy evaluation receives the
+// canonical top-level NEIR context, including domains such as security.
 func scnPipelineCtxCannotInspectSpec() Result {
 	p, err := pipeline.New(pipeline.Config{
 		Name: "bypass-lab",
@@ -34,7 +33,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 		return Result{Layer: LayerPipeline, Scenario: "policy context integrity: security claim not evaluated", Attack: "-", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeError, Evidence: "pipeline init error", Risk: Critical}
 	}
 
-	compliantSpec := "project: bypass-lab\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+	compliantSpec := "project: bypass-lab\nmodules:\n  - name: core\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
 	res, err := p.Run(compliantSpec)
 	if err != nil {
 		return Result{
@@ -66,7 +65,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 		}
 	}
 
-	nonCompliantSpec := "project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+	nonCompliantSpec := "project: bypass-lab\nmodules:\n  - name: core\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
 	_, err = p.Run(nonCompliantSpec)
 	if err == nil {
 		return Result{
