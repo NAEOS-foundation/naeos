@@ -70,10 +70,6 @@ func expectedOutcome(scenario string) Outcome {
 	// v1 adversarial scenarios are expected to be denied unless they
 	// explicitly test a semantic gap where the correct classification is
 	// NOT_EVALUATED.
-	if strings.Contains(scenario, "policy context integrity") ||
-		strings.Contains(scenario, "pipeline ctx cannot inspect spec") {
-		return OutcomeNotEvaluated
-	}
 	return OutcomeDeny
 }
 
@@ -85,10 +81,6 @@ func observedOutcome(r Result) Outcome {
 	}
 	if r.Bypassed {
 		return OutcomeAllow
-	}
-	if strings.Contains(r.Scenario, "policy context integrity") ||
-		strings.Contains(r.Scenario, "pipeline ctx cannot inspect spec") {
-		return OutcomeNotEvaluated
 	}
 	return OutcomeDeny
 }
