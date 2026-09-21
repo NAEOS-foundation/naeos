@@ -157,6 +157,8 @@ type Result struct {
 	GovernanceMode       string
 	GovernanceStatus     string
 	EffectivePolicyCount int
+	PolicyContextVersion string
+	PolicyContextDigest  string
 }
 
 func WithCache(cache ParseCache) func(*Config) {
@@ -851,13 +853,34 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		result.GovernanceStatus = "invalid-context"
 		return fmt.Errorf("policy context construction failed: %w", err)
 	}
-	p.logVerbose("evaluating %d policy rules against policy context %s", result.EffectivePolicyCount, policyContext.Version)
-	results, err := p.evaluator.EvaluateRules(p.policies, policyContext.Values)
+	if err := policyContext.Validate(); err != nil {
+		result.GovernanceStatus = "invalid-context"
+		return fmt.Errorf("policy context validation failed: %w", err)
+	}
+	contextDigest, err := policyContext.Digest()
+	if err != nil {
+		result.GovernanceStatus = "invalid-context"
+		return fmt.Errorf("policy context digest failed: %w", err)
+	}
+	result.PolicyContextVersion = policyContext.Version
+	result.PolicyContextDigest = contextDigest
+	p.logVerbose("evaluating %d policy rules against policy context %s digest %s", result.EffectivePolicyCount, policyContext.Version, contextDigest)
+	contextEvaluator, ok := p.evaluator.(policy.ContextEvaluator)
+	if !ok {
+		result.GovernanceStatus = "invalid-context"
+		return fmt.Errorf("policy evaluator does not support versioned policy context")
+	}
+	results, err := contextEvaluator.EvaluateRulesContext(policyContext, p.policies)
 	if err != nil {
 		return fmt.Errorf("policy evaluation failed: %w", err)
 	}
 	result.PolicyResults = results
 	result.GovernanceStatus = "evaluated"
+	_ = p.emitKernelEvent("governance.policy_context", map[string]any{
+		"version": result.PolicyContextVersion,
+		"digest":  result.PolicyContextDigest,
+		"effective_policy_count": result.EffectivePolicyCount,
+	})
 	for _, res := range results {
 		if !res.Passed {
 			return fmt.Errorf("policy evaluation failed: rule %s: %s", res.RuleID, res.Message)
