@@ -21,7 +21,7 @@ func TestBuilderExtractsSecurityContext(t *testing.T) {
 			},
 			"encryption": map[string]any{
 				"in_transit": true,
-				"algorithm": "AES-256",
+				"algorithm":  "AES-256",
 			},
 			"attributes": map[string]any{"classification": "confidential"},
 		},

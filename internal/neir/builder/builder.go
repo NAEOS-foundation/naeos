@@ -17,8 +17,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/metadata"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
-	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
