@@ -42,7 +42,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 		// silently no-oped; either way the spec-derived claim is unproven.
 		return Result{
 			Layer:    LayerPipeline,
-			Scenario: "pipeline ctx cannot inspect spec (over-blocks)",
+			Scenario: "policy context integrity: security claim not evaluated",
 			Attack:   "runPolicyEval hard-codes ctx={project,modules,services}; policies on other spec keys never see their input",
 			Bypassed: true,
 			Evidence: "run succeeded on spec with security.tls despite must-have-tls policy; ctx key was never supplied",
@@ -57,7 +57,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	// policies, cf. disabled/no-policy scenarios).
 	return Result{
 		Layer:    LayerPipeline,
-		Scenario: "pipeline ctx cannot inspect spec (over-blocks)",
+		Scenario: "policy context integrity: security claim not evaluated",
 		Attack:   "runPolicyEval hard-codes ctx={project,modules,services}; policies on other spec keys never see their input: compliant specs are wrongly blocked and non-compliant specs can't be detected",
 		Bypassed: false,
 		Evidence: fmt.Sprintf("spec with security.tls=1.3 still blocked: %v", err),
