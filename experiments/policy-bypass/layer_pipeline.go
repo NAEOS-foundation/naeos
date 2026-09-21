@@ -105,20 +105,20 @@ func scnPipelineNoPoliciesNoChecks() Result {
 	_, err = p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err == nil {
 		return Result{
-			Layer: LayerPipeline,
+			Layer:    LayerPipeline,
 			Scenario: "no configured policies => no checks",
-			Attack: "governed execution with zero effective policies",
+			Attack:   "governed execution with zero effective policies",
 			Bypassed: true,
 			Evidence: "run succeeded despite RequireGovernance=true and zero effective policies",
-			Risk: High,
+			Risk:     High,
 		}
 	}
 	return Result{
-		Layer: LayerPipeline,
+		Layer:    LayerPipeline,
 		Scenario: "no configured policies => no checks",
-		Attack: "governed execution must fail closed when no effective policy set exists",
+		Attack:   "governed execution must fail closed when no effective policy set exists",
 		Bypassed: false,
 		Evidence: fmt.Sprintf("execution blocked with explicit governance configuration error: %v", err),
-		Risk: High,
+		Risk:     High,
 	}
 }

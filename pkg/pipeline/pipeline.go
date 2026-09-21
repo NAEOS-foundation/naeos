@@ -50,39 +50,39 @@ type ParseCache interface {
 }
 
 type Config struct {
-	Name         string
-	Mode         string
-	Verbose      bool
-	DryRun       bool
-	OutputDir    string
-	Languages    []string
-	Parallel     *bool
-	Profiling    bool
-	Parser       parser.Parser
-	Normalizer   normalizer.Normalizer
-	Resolver     resolver.Resolver
-	Builder      builder.Builder
-	Validator    validator.Validator
-	Scheduler    scheduler.Scheduler
-	Generator    engine.GeneratorEngine
-	Renderer     renderers.Renderer
-	Graph        *graph.PlannerGraph
-	Registry     *registry.Registry
-	Evaluator    policy.Evaluator
-	Reviewer     review.Reviewer
-	Kernel       *kernel.Kernel
-	Policies     []policy.Rule
+	Name       string
+	Mode       string
+	Verbose    bool
+	DryRun     bool
+	OutputDir  string
+	Languages  []string
+	Parallel   *bool
+	Profiling  bool
+	Parser     parser.Parser
+	Normalizer normalizer.Normalizer
+	Resolver   resolver.Resolver
+	Builder    builder.Builder
+	Validator  validator.Validator
+	Scheduler  scheduler.Scheduler
+	Generator  engine.GeneratorEngine
+	Renderer   renderers.Renderer
+	Graph      *graph.PlannerGraph
+	Registry   *registry.Registry
+	Evaluator  policy.Evaluator
+	Reviewer   review.Reviewer
+	Kernel     *kernel.Kernel
+	Policies   []policy.Rule
 	// RequireGovernance makes an execution fail closed when no effective policy set is configured.
 	// Policy-free execution remains available only when this explicit guard is disabled.
 	RequireGovernance bool
-	Hooks        *Hooks
-	Observer     PipelineObserver
-	Cache        ParseCache
-	StageCache   *StageCache
-	LazyBuild    bool
-	Profile      *profiling.PipelineProfile
-	MemProfile   *profiling.MemProfiler
-	SchemaSource string
+	Hooks             *Hooks
+	Observer          PipelineObserver
+	Cache             ParseCache
+	StageCache        *StageCache
+	LazyBuild         bool
+	Profile           *profiling.PipelineProfile
+	MemProfile        *profiling.MemProfiler
+	SchemaSource      string
 }
 
 type HookFunc func(ctx *HookContext) error
@@ -103,37 +103,37 @@ type Hooks struct {
 }
 
 type Pipeline struct {
-	name           string
-	parser         parser.Parser
-	normalizer     normalizer.Normalizer
-	resolver       resolver.Resolver
-	builder        builder.Builder
-	validator      validator.Validator
-	scheduler      scheduler.Scheduler
-	generator      engine.GeneratorEngine
-	renderer       renderers.Renderer
-	graph          *graph.PlannerGraph
-	registry       *registry.Registry
-	evaluator      policy.Evaluator
-	reviewer       review.Reviewer
-	kernel         *kernel.Kernel
-	policies       []policy.Rule
+	name              string
+	parser            parser.Parser
+	normalizer        normalizer.Normalizer
+	resolver          resolver.Resolver
+	builder           builder.Builder
+	validator         validator.Validator
+	scheduler         scheduler.Scheduler
+	generator         engine.GeneratorEngine
+	renderer          renderers.Renderer
+	graph             *graph.PlannerGraph
+	registry          *registry.Registry
+	evaluator         policy.Evaluator
+	reviewer          review.Reviewer
+	kernel            *kernel.Kernel
+	policies          []policy.Rule
 	requireGovernance bool
-	outputDirValue string
-	languages      []string
-	verbose        bool
-	dryRun         bool
-	parallel       bool
-	profiling      bool
-	profile        *profiling.PipelineProfile
-	hooks          *Hooks
-	cache          ParseCache
-	stageCache     *StageCache
-	lazyBuild      bool
-	observer       PipelineObserver
-	neirResolved   any
-	memProfile     *profiling.MemProfiler
-	schemaSource   string
+	outputDirValue    string
+	languages         []string
+	verbose           bool
+	dryRun            bool
+	parallel          bool
+	profiling         bool
+	profile           *profiling.PipelineProfile
+	hooks             *Hooks
+	cache             ParseCache
+	stageCache        *StageCache
+	lazyBuild         bool
+	observer          PipelineObserver
+	neirResolved      any
+	memProfile        *profiling.MemProfiler
+	schemaSource      string
 }
 
 type PipelineObserver interface {
@@ -144,18 +144,18 @@ type PipelineObserver interface {
 }
 
 type Result struct {
-	RunID             string
-	Source            string
-	SpecificationHash string
-	NEIRHash          string
-	NEIR              *model.NEIR
-	Artifacts         []engine.Artifact
-	Tasks             []scheduler.Task
-	Graph             *graph.PlannerGraph
-	Reviews           []*review.ReviewResult
-	PolicyResults     []policy.EvaluationResult
-	GovernanceMode    string
-	GovernanceStatus  string
+	RunID                string
+	Source               string
+	SpecificationHash    string
+	NEIRHash             string
+	NEIR                 *model.NEIR
+	Artifacts            []engine.Artifact
+	Tasks                []scheduler.Task
+	Graph                *graph.PlannerGraph
+	Reviews              []*review.ReviewResult
+	PolicyResults        []policy.EvaluationResult
+	GovernanceMode       string
+	GovernanceStatus     string
 	EffectivePolicyCount int
 }
 
@@ -189,12 +189,12 @@ func ConfigFromFile(path string) (Config, error) {
 		return Config{}, err
 	}
 	return Config{
-		Name:      fileCfg.Pipeline.Name,
-		Mode:      fileCfg.Pipeline.Mode,
-		Verbose:   fileCfg.Pipeline.Verbose,
-		OutputDir: fileCfg.Pipeline.OutputDir,
-		Languages: fileCfg.Pipeline.Language,
-		Policies:  fileCfg.Pipeline.Policies,
+		Name:              fileCfg.Pipeline.Name,
+		Mode:              fileCfg.Pipeline.Mode,
+		Verbose:           fileCfg.Pipeline.Verbose,
+		OutputDir:         fileCfg.Pipeline.OutputDir,
+		Languages:         fileCfg.Pipeline.Language,
+		Policies:          fileCfg.Pipeline.Policies,
 		RequireGovernance: strings.EqualFold(fileCfg.Pipeline.Mode, "governed"),
 	}, nil
 }
@@ -210,30 +210,30 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		profile = profiling.NewProfile()
 	}
 	p := &Pipeline{
-		name:           cfg.Name,
-		parser:         cfg.Parser,
-		normalizer:     cfg.Normalizer,
-		resolver:       cfg.Resolver,
-		builder:        cfg.Builder,
-		validator:      cfg.Validator,
-		scheduler:      cfg.Scheduler,
-		generator:      cfg.Generator,
-		renderer:       cfg.Renderer,
-		graph:          cfg.Graph,
-		registry:       cfg.Registry,
-		evaluator:      cfg.Evaluator,
-		reviewer:       cfg.Reviewer,
-		kernel:         cfg.Kernel,
-		policies:       cfg.Policies,
+		name:              cfg.Name,
+		parser:            cfg.Parser,
+		normalizer:        cfg.Normalizer,
+		resolver:          cfg.Resolver,
+		builder:           cfg.Builder,
+		validator:         cfg.Validator,
+		scheduler:         cfg.Scheduler,
+		generator:         cfg.Generator,
+		renderer:          cfg.Renderer,
+		graph:             cfg.Graph,
+		registry:          cfg.Registry,
+		evaluator:         cfg.Evaluator,
+		reviewer:          cfg.Reviewer,
+		kernel:            cfg.Kernel,
+		policies:          cfg.Policies,
 		requireGovernance: cfg.RequireGovernance,
-		outputDirValue: cfg.OutputDir,
-		languages:      cfg.Languages,
-		verbose:        cfg.Verbose,
-		dryRun:         cfg.DryRun,
-		parallel:       parallel,
-		profiling:      profilingEnabled,
-		profile:        profile,
-		hooks:          cfg.Hooks,
+		outputDirValue:    cfg.OutputDir,
+		languages:         cfg.Languages,
+		verbose:           cfg.Verbose,
+		dryRun:            cfg.DryRun,
+		parallel:          parallel,
+		profiling:         profilingEnabled,
+		profile:           profile,
+		hooks:             cfg.Hooks,
 	}
 
 	if p.parser == nil {

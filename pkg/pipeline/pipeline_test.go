@@ -928,7 +928,6 @@ func TestPipelineSchemaSourceNotSet(t *testing.T) {
 	}
 }
 
-
 func TestPipelineGovernedModeFailsClosedWithoutEffectivePolicies(t *testing.T) {
 	p, err := New(Config{Mode: "governed", RequireGovernance: true})
 	if err != nil {
