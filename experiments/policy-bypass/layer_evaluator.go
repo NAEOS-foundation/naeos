@@ -28,12 +28,12 @@ func scnNaNBeatsNumericGt() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"modules": "NaN"})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "NaN bypasses gt threshold", Attack: "numeric grammar via ParseFloat(NaN)", Bypassed: false, Evidence: "error during eval", Risk: High}
+		return Result{Layer: LayerEvaluator, Scenario: "NaN bypasses gt threshold", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, Evidence: "error during eval", Risk: High}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "NaN bypasses gt threshold",
-		Attack:   "agent supplies ctx value 'NaN'; evaluator converts with ParseFloat (NaN, nil error) so 'NaN <= 1' is false and the rule passes",
+		Attack:   "agent supplies ctx value 'NaN'; evaluator must reject non-finite operands before applying the threshold comparison",
 		Bypassed: len(res) == 1 && res[0].Passed,
 		Evidence: fmt.Sprintf("rule %q with modules=NaN -> Passed=%v msg=%q", "modules-min", res[0].Passed, res[0].Message),
 		Risk:     High,
@@ -105,12 +105,12 @@ func scnInfSatisfiesLt() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"replicas": "-Inf"})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "Inf bypasses lt bound", Attack: "ParseFloat('-Inf') ok; '-Inf' >= 4 is false -> passes", Bypassed: false, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerEvaluator, Scenario: "Inf bypasses lt bound", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, Evidence: "eval error", Risk: High}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "Inf bypasses lt bound",
-		Attack:   "special float values (+/-Inf, Inf) parse cleanly and dodge numeric comparisons in gt/lt/gte/lte",
+		Attack:   "special float values (+/-Inf, Inf) must be rejected rather than compared as ordinary numeric operands",
 		Bypassed: len(res) == 1 && res[0].Passed,
 		Evidence: fmt.Sprintf("ctx {replicas: '-Inf'} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
 		Risk:     High,
