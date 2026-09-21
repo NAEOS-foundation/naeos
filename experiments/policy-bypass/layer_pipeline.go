@@ -36,6 +36,19 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	}
 	spec := "project: bypass-lab\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
 	_, err = p.Run(spec)
+	if err == nil {
+		// The policy engine saw a key it cannot receive from this pipeline.
+		// Either enforcement changed (ctx now carries security) or the rule
+		// silently no-oped; either way the spec-derived claim is unproven.
+		return Result{
+			Layer:    LayerPipeline,
+			Scenario: "pipeline ctx cannot inspect spec (over-blocks)",
+			Attack:   "runPolicyEval hard-codes ctx={project,modules,services}; policies on other spec keys never see their input",
+			Bypassed: true,
+			Evidence: "run succeeded on spec with security.tls despite must-have-tls policy; ctx key was never supplied",
+			Risk:     High,
+		}
+	}
 
 	// Over-blocking: a spec that DOES declare security.tls is still rejected,
 	// because the policy engine never sees the "security" key at all. This is
