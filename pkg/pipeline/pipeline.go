@@ -877,8 +877,8 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 	result.PolicyResults = results
 	result.GovernanceStatus = "evaluated"
 	_ = p.emitKernelEvent("governance.policy_context", map[string]any{
-		"version": result.PolicyContextVersion,
-		"digest":  result.PolicyContextDigest,
+		"version":                result.PolicyContextVersion,
+		"digest":                 result.PolicyContextDigest,
 		"effective_policy_count": result.EffectivePolicyCount,
 	})
 	for _, res := range results {

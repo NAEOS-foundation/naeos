@@ -77,7 +77,7 @@ func TestPolicyContextDigestDeterministic(t *testing.T) {
 	ctx := PolicyContext{
 		Version: PolicyContextVersion,
 		Values: map[string]any{
-			"project": "naeos",
+			"project":  "naeos",
 			"security": map[string]any{"tls": "1.3"},
 		},
 	}
