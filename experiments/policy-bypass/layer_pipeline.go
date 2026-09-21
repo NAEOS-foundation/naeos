@@ -98,20 +98,27 @@ func scnPipelineDisabledRuleSkipped() Result {
 }
 
 func scnPipelineNoPoliciesNoChecks() Result {
-	p, err := pipeline.New(pipeline.Config{Name: "bypass-lab"})
+	p, err := pipeline.New(pipeline.Config{Name: "bypass-lab", Mode: "governed", RequireGovernance: true})
 	if err != nil {
 		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, Evidence: "init error", Risk: High}
 	}
-	res, err := p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
-	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, Evidence: fmt.Sprintf("run failed: %v", err), Risk: High}
+	_, err = p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
+	if err == nil {
+		return Result{
+			Layer: LayerPipeline,
+			Scenario: "no configured policies => no checks",
+			Attack: "governed execution with zero effective policies",
+			Bypassed: true,
+			Evidence: "run succeeded despite RequireGovernance=true and zero effective policies",
+			Risk: High,
+		}
 	}
 	return Result{
-		Layer:    LayerPipeline,
+		Layer: LayerPipeline,
 		Scenario: "no configured policies => no checks",
-		Attack:   "runPolicyEval returns early when policies are empty (pipeline.go:812); an empty config silent-enables bypass of all policy evaluation",
-		Bypassed: len(res.PolicyResults) == 0,
-		Evidence: "run OK with 0 policy results; nothing evaluated or reported",
-		Risk:     High,
+		Attack: "governed execution must fail closed when no effective policy set exists",
+		Bypassed: false,
+		Evidence: fmt.Sprintf("execution blocked with explicit governance configuration error: %v", err),
+		Risk: High,
 	}
 }
