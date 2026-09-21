@@ -29,10 +29,10 @@ func scnToDoObfuscation() Result {
 	for _, variant := range []string{"to-do", "T0D0", "to do"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+": fix this\n", []string{"no-todo", "has-license-header"})
 		if err != nil {
-			buf.WriteString(fmt.Sprintf("%s:error ", variant))
+			fmt.Fprintf(&buf, "%s:error ", variant)
 			continue
 		}
-		buf.WriteString(fmt.Sprintf("%s=%s ", variant, r.Status))
+		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
 	}
 	evaded := control.Status != review.StatusApproved &&
 		!strings.Contains(buf.String(), "changes_requested")
@@ -53,10 +53,10 @@ func scnPlaceholderObfuscation() Result {
 	for _, variant := range []string{"replace-me", "change.me", "CHANGE ME", "REPLACE-ME"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+" with value\n", []string{"no-placeholder", "has-license-header"})
 		if err != nil {
-			buf.WriteString(fmt.Sprintf("%s:error ", variant))
+			fmt.Fprintf(&buf, "%s:error ", variant)
 			continue
 		}
-		buf.WriteString(fmt.Sprintf("%s=%s ", variant, r.Status))
+		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
 	}
 	evaded := control.Status != review.StatusApproved &&
 		!strings.Contains(strings.ToLower(buf.String()), "changes_requested")

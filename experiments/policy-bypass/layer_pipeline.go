@@ -98,7 +98,7 @@ func scnPipelineNoPoliciesNoChecks() Result {
 		Scenario: "no configured policies => no checks",
 		Attack:   "runPolicyEval returns early when policies are empty (pipeline.go:812); an empty config silent-enables bypass of all policy evaluation",
 		Bypassed: len(res.PolicyResults) == 0,
-		Evidence: fmt.Sprintf("run OK with 0 policy results; nothing evaluated or reported"),
+		Evidence: "run OK with 0 policy results; nothing evaluated or reported",
 		Risk:     High,
 	}
 }
