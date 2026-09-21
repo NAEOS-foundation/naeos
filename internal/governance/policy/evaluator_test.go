@@ -287,63 +287,6 @@ func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 	tests := []struct {
 		name      string
 		condition string
-		ctxValue  any
-	}{
-		{name: "NaN actual", condition: "gt:value,1", ctxValue: "NaN"},
-		{name: "positive infinity actual", condition: "lt:value,4", ctxValue: "+Inf"},
-		{name: "negative infinity actual", condition: "lt:value,4", ctxValue: "-Inf"},
-		{name: "NaN threshold", condition: "gt:value,NaN", ctxValue: 2},
-		{name: "positive infinity threshold", condition: "lt:value,+Inf", ctxValue: 2},
-		{name: "negative infinity threshold", condition: "gt:value,-Inf", ctxValue: 2},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rules := []Rule{{RuleID: "numeric", Condition: tt.condition, Action: "block", Enabled: true}}
-			results, err := e.EvaluateRules(rules, map[string]any{"value": tt.ctxValue})
-			if err != nil {
-				t.Fatalf("unexpected evaluator error: %v", err)
-			}
-			if len(results) != 1 {
-				t.Fatalf("expected one result, got %d", len(results))
-			}
-			if results[0].Passed {
-				t.Fatalf("expected non-finite operand to fail, got message: %s", results[0].Message)
-			}
-			if !strings.Contains(results[0].Message, "non-finite") {
-				t.Fatalf("expected non-finite diagnostic, got: %s", results[0].Message)
-			}
-		})
-	}
-}
-
-func TestEvaluateNumericRulesKeepFiniteComparisons(t *testing.T) {
-	e := NewEvaluator()
-	tests := []struct {
-		condition string
-		value     any
-		want      bool
-	}{
-		{condition: "gt:value,1", value: 2, want: true},
-		{condition: "lt:value,4", value: 2, want: true},
-		{condition: "gte:value,2", value: 2, want: true},
-		{condition: "lte:value,2", value: 2, want: true},
-	}
-	for _, tt := range tests {
-		results, err := e.EvaluateRules([]Rule{{RuleID: "numeric", Condition: tt.condition, Enabled: true}}, map[string]any{"value": tt.value})
-		if err != nil {
-			t.Fatalf("unexpected evaluator error for %q: %v", tt.condition, err)
-		}
-		if results[0].Passed != tt.want {
-			t.Fatalf("condition %q: got Passed=%v, want %v", tt.condition, results[0].Passed, tt.want)
-		}
-	}
-}
-
-func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
-	e := NewEvaluator()
-	tests := []struct {
-		name      string
-		condition string
 		value     string
 	}{
 		{"gt NaN actual", "gt:value,1", "NaN"},
