@@ -26,15 +26,19 @@ func writeReport(results []Result) error {
 		"No live LLM is used; each scenario simulates what an AI agent with " +
 		"normal repository write access can achieve.\n\n")
 
-	var passed, blocked int
+	var failures, bypasses, notEvaluated int
 	for _, r := range results {
-		if r.Bypassed {
-			passed++
-		} else {
-			blocked++
+		if r.Verdict == VerdictFail {
+			failures++
+		}
+		if r.ObservedOutcome == OutcomeAllow {
+			bypasses++
+		}
+		if r.ObservedOutcome == OutcomeNotEvaluated {
+			notEvaluated++
 		}
 	}
-	fmt.Fprintf(&b, "## Result: %d bypassed / %d blocked\n\n", passed, blocked)
+	fmt.Fprintf(&b, "## Oracle result: %d failures / %d bypasses / %d not-evaluated\\n\\n", failures, bypasses, notEvaluated)
 
 	byLayer := map[Layer][]Result{}
 	for _, r := range results {
@@ -48,11 +52,11 @@ func writeReport(results []Result) error {
 			continue
 		}
 		fmt.Fprintf(&b, "### %s\n\n", l)
-		b.WriteString("| Scenario | Attack | Evidence | Bypassed | Risk |\n")
-		b.WriteString("|---|---|---|---|---|\n")
+		b.WriteString("| Scenario | Attack | Evidence | Expected | Observed | Verdict | Risk |\n")
+		b.WriteString("|---|---|---|---|---|---|---|\n")
 		for _, r := range rs {
-			fmt.Fprintf(&b, "| %s | %s | %s | %t | %s |\n",
-				r.Scenario, r.Attack, r.Evidence, r.Bypassed, r.Risk)
+			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\\n",
+				r.Scenario, r.Attack, r.Evidence, r.ExpectedOutcome, r.ObservedOutcome, r.Verdict, r.Risk)
 		}
 		b.WriteString("\n")
 	}
