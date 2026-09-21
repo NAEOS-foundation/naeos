@@ -32,9 +32,9 @@ NAEOS is built around that question. It treats the specification as the source o
 
 ## 3. Try it in 5 minutes
 
-The most direct, verified onboarding path in this repository is the CLI demo in [examples/demo-cli/README.md](examples/demo-cli/README.md) and its script at [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh).
+The most direct, verified onboarding path in this repository is the canonical CLI demo in [examples/demo-cli/README.md](examples/demo-cli/README.md) and its script at [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh).
 
-From the repository root:
+This is the repository’s single supported first-run flow:
 
 ```bash
 go build -o naeos ./cmd/naeos
@@ -42,12 +42,14 @@ go build -o naeos ./cmd/naeos
 ```
 
 What to expect:
-- the spec is validated
+- the specification is validated
+- NEIR is materialized and inspected
+- policy evaluation is exercised, including deterministic rejection of invalid configuration
 - an AI context bundle is generated
-- an invalid policy configuration is rejected deterministically
 - a valid run produces generated artifacts in [examples/demo-cli/.run](examples/demo-cli/.run)
+- run metadata records traceability (`run_id`, `specification_hash`, `neir_hash`)
 
-This is the best first check because it demonstrates the actual workflow without requiring the full architecture first.
+This is the best first check because it demonstrates the real NAEOS control-plane workflow without requiring the full architecture first.
 
 If you want to go one step further with the AI compiler:
 

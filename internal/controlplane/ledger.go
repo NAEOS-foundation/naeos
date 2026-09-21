@@ -34,7 +34,6 @@ type Ledger struct {
 	events               []LedgerEvent
 	nextID               int
 	persistencePath      string
-	persistenceMu        sync.Mutex
 	lastPersistenceError error
 }
 

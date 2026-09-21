@@ -5,7 +5,19 @@ This document serves as the master index for navigating the NAEOS repository.
 ## 1. Core documents
 - [README.md](README.md) — project summary and main entry point.
 - [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide.
+- [START-HERE.md](START-HERE.md) — fastest path for new contributors and first-time users.
+- [examples/demo-cli/README.md](examples/demo-cli/README.md) — canonical repository demo and the recommended first-run workflow.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines.
+
+### Canonical workflow
+Use the demo in [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh) as the default developer path:
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/demo-cli/run-demo.sh
+```
+
+This flow demonstrates: specification → NEIR → validation → policy → AI context → generation → artifacts/evidence traceability.
 - [MARKETING-STRATEGY.md](MARKETING-STRATEGY.md) — evidence-based marketing strategy, content calendar, funnel, and experiment backlog.
 - [PARTNER-PROGRAM.md](PARTNER-PROGRAM.md) — zero-cash technical partner program and collaboration lifecycle.
 - [PARTNER-REQUESTS.md](PARTNER-REQUESTS.md) — scoped partner requests and pilot starting points.
@@ -112,6 +124,7 @@ This document serves as the master index for navigating the NAEOS repository.
 
 ### 7.2 Partner program
 - [docs/partners/](docs/partners/) — partner briefs, outreach, fit assessment, pilots, policy, ecosystem model, and case-study template.
+- [docs/partners/PROSPECT-LIST.md](docs/partners/PROSPECT-LIST.md) — technical prospect list with evidence and qualification status.
 - [.github/ISSUE_TEMPLATE/partner-interest.yml](.github/ISSUE_TEMPLATE/partner-interest.yml) — partner interest form.
 - [.github/ISSUE_TEMPLATE/partner-pilot.yml](.github/ISSUE_TEMPLATE/partner-pilot.yml) — scoped pilot form.
 

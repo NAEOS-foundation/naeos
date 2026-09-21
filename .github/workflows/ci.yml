@@ -56,6 +56,24 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+  canonical-demo:
+    name: Canonical CLI Demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build CLI
+        run: go build -o naeos ./cmd/naeos
+      - name: Run canonical demo
+        run: |
+          output_dir="$(mktemp -d)"
+          NAEOS_BIN="$PWD/naeos" \
+          NAEOS_DEMO_OUTPUT_DIR="$output_dir" \
+            ./examples/demo-cli/run-demo.sh
+
   bench-gate:
     name: Benchmark Gate
     runs-on: ubuntu-latest
