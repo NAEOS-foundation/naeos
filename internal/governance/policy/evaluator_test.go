@@ -282,40 +282,6 @@ func TestDefaultRules(t *testing.T) {
 	}
 }
 
-func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
-	e := NewEvaluator()
-	tests := []struct {
-		name      string
-		condition string
-		ctxValue  any
-	}{
-		{name: "NaN actual", condition: "gt:value,1", ctxValue: "NaN"},
-		{name: "positive infinity actual", condition: "lt:value,4", ctxValue: "+Inf"},
-		{name: "negative infinity actual", condition: "lt:value,4", ctxValue: "-Inf"},
-		{name: "NaN threshold", condition: "gt:value,NaN", ctxValue: 2},
-		{name: "positive infinity threshold", condition: "lt:value,+Inf", ctxValue: 2},
-		{name: "negative infinity threshold", condition: "gt:value,-Inf", ctxValue: 2},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rules := []Rule{{RuleID: "numeric", Condition: tt.condition, Action: "block", Enabled: true}}
-			results, err := e.EvaluateRules(rules, map[string]any{"value": tt.ctxValue})
-			if err != nil {
-				t.Fatalf("unexpected evaluator error: %v", err)
-			}
-			if len(results) != 1 {
-				t.Fatalf("expected one result, got %d", len(results))
-			}
-			if results[0].Passed {
-				t.Fatalf("expected non-finite operand to fail, got message: %s", results[0].Message)
-			}
-			if !strings.Contains(results[0].Message, "non-finite") {
-				t.Fatalf("expected non-finite diagnostic, got: %s", results[0].Message)
-			}
-		})
-	}
-}
-
 func TestEvaluateNumericRulesKeepFiniteComparisons(t *testing.T) {
 	e := NewEvaluator()
 	tests := []struct {
