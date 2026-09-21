@@ -1,7 +1,7 @@
 # NAEOS Adversarial Governance Experiment v1
 
-Status: Specification / baseline definition
-Scope: Audit-only. No core remediation is included in v1.
+Status: H1 implemented; H2 implementation in progress
+Scope: Deterministic adversarial hardening with regression tests.
 
 ## 1. Objective
 
@@ -64,15 +64,15 @@ Evidence to capture:
 Scenario: no configured policies => no checks
 Layer: pipeline / governance configuration
 
-Current behavior:
-A pipeline with no configured policies can complete successfully with zero policy results.
+Current baseline:
+A pipeline with no configured policies can complete successfully with zero policy results when governance is not explicitly required.
 
 Security / governance invariant:
 > A consequential execution MUST NOT be indistinguishable from a governed execution when no effective policy set was evaluated.
 
 Expected behavior:
-If policy enforcement is required for the execution mode, an empty policy set MUST either fail closed, or produce an explicit GOVERNANCE_UNCONFIGURED / equivalent state that prevents the run from being represented as fully governed.
-If an intentionally policy-free mode exists, that mode must be explicit and auditable rather than implicit.
+When governance is explicitly required (`RequireGovernance=true` or equivalent governed configuration), an empty effective policy set MUST fail closed and emit an explicit `governance.unconfigured` state.
+If an intentionally policy-free mode exists, that mode must be explicit and auditable rather than implicit; NAEOS now records `ungoverned` / `intentionally-disabled` state for that path.
 
 Acceptance criteria:
 1. The existing scenario no longer reports a silent bypass.

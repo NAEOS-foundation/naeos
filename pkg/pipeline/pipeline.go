@@ -72,6 +72,9 @@ type Config struct {
 	Reviewer     review.Reviewer
 	Kernel       *kernel.Kernel
 	Policies     []policy.Rule
+	// RequireGovernance makes an execution fail closed when no effective policy set is configured.
+	// Policy-free execution remains available only when this explicit guard is disabled.
+	RequireGovernance bool
 	Hooks        *Hooks
 	Observer     PipelineObserver
 	Cache        ParseCache
@@ -115,6 +118,7 @@ type Pipeline struct {
 	reviewer       review.Reviewer
 	kernel         *kernel.Kernel
 	policies       []policy.Rule
+	requireGovernance bool
 	outputDirValue string
 	languages      []string
 	verbose        bool
@@ -150,6 +154,9 @@ type Result struct {
 	Graph             *graph.PlannerGraph
 	Reviews           []*review.ReviewResult
 	PolicyResults     []policy.EvaluationResult
+	GovernanceMode    string
+	GovernanceStatus  string
+	EffectivePolicyCount int
 }
 
 func WithCache(cache ParseCache) func(*Config) {
@@ -188,6 +195,7 @@ func ConfigFromFile(path string) (Config, error) {
 		OutputDir: fileCfg.Pipeline.OutputDir,
 		Languages: fileCfg.Pipeline.Language,
 		Policies:  fileCfg.Pipeline.Policies,
+		RequireGovernance: strings.EqualFold(fileCfg.Pipeline.Mode, "governed"),
 	}, nil
 }
 
@@ -217,6 +225,7 @@ func New(cfg Config) (*Pipeline, error) { //nolint:gocritic // Public API, value
 		reviewer:       cfg.Reviewer,
 		kernel:         cfg.Kernel,
 		policies:       cfg.Policies,
+		requireGovernance: cfg.RequireGovernance,
 		outputDirValue: cfg.OutputDir,
 		languages:      cfg.Languages,
 		verbose:        cfg.Verbose,
@@ -810,11 +819,36 @@ func (p *Pipeline) fetchSchema() (map[string]any, error) {
 }
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
-	if len(p.policies) == 0 {
-		result.PolicyResults = nil
-		return nil
+	result.EffectivePolicyCount = 0
+	for _, rule := range p.policies {
+		if rule.Enabled {
+			result.EffectivePolicyCount++
+		}
 	}
-	p.logVerbose("evaluating %d policy rules", len(p.policies))
+
+	if p.requireGovernance {
+		result.GovernanceMode = "governed"
+		if result.EffectivePolicyCount == 0 {
+			result.GovernanceStatus = "unconfigured"
+			result.PolicyResults = nil
+			_ = p.emitKernelEvent("governance.unconfigured", map[string]any{
+				"mode": "governed", "effective_policy_count": 0, "status": "blocked",
+			})
+			return fmt.Errorf("governance configuration required: no effective policies configured")
+		}
+	} else if result.EffectivePolicyCount == 0 {
+		result.GovernanceMode = "ungoverned"
+		result.GovernanceStatus = "intentionally-disabled"
+		result.PolicyResults = nil
+		_ = p.emitKernelEvent("governance.disabled", map[string]any{
+			"mode": "ungoverned", "effective_policy_count": 0, "status": "intentionally-disabled",
+		})
+		return nil
+	} else {
+		result.GovernanceMode = "governed"
+		result.GovernanceStatus = "evaluating"
+	}
+	p.logVerbose("evaluating %d policy rules", result.EffectivePolicyCount)
 	ctx := map[string]any{
 		"project":  result.NEIR.Project.Name,
 		"modules":  len(result.NEIR.Modules),
@@ -825,6 +859,10 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		return fmt.Errorf("policy evaluation failed: %w", err)
 	}
 	result.PolicyResults = results
+	result.GovernanceStatus = "evaluated"
+	_ = p.emitKernelEvent("governance.evaluated", map[string]any{
+		"mode": "governed", "effective_policy_count": result.EffectivePolicyCount, "status": "evaluated",
+	})
 	for _, res := range results {
 		if !res.Passed {
 			return fmt.Errorf("policy evaluation failed: rule %s: %s", res.RuleID, res.Message)

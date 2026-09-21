@@ -927,3 +927,43 @@ func TestPipelineSchemaSourceNotSet(t *testing.T) {
 		t.Fatal("expected non-nil result")
 	}
 }
+
+
+func TestPipelineGovernedModeFailsClosedWithoutEffectivePolicies(t *testing.T) {
+	p, err := New(Config{Mode: "governed", RequireGovernance: true})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Run("project: governed-empty\nmodules:\n  - name: core\n    path: ./core")
+	if err == nil {
+		t.Fatal("expected governed pipeline with no effective policies to fail closed")
+	}
+	if !strings.Contains(err.Error(), "no effective policies configured") {
+		t.Fatalf("expected explicit governance configuration error, got: %v", err)
+	}
+	if result != nil {
+		t.Fatalf("expected nil result on blocked governed run, got %#v", result)
+	}
+}
+
+func TestPipelineGovernanceEvidenceDistinguishesPolicyFreeExecution(t *testing.T) {
+	p, err := New(Config{})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Run("project: ungoverned\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.GovernanceMode != "ungoverned" {
+		t.Fatalf("expected ungoverned mode, got %q", result.GovernanceMode)
+	}
+	if result.GovernanceStatus != "intentionally-disabled" {
+		t.Fatalf("expected intentionally-disabled status, got %q", result.GovernanceStatus)
+	}
+	if result.EffectivePolicyCount != 0 {
+		t.Fatalf("expected zero effective policies, got %d", result.EffectivePolicyCount)
+	}
+}
