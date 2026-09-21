@@ -1,0 +1,33 @@
+name: Policy Bypass Experiment
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Generate bypass report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run bypass harness
+        run: go run ./experiments/policy-bypass
+      - name: Show report
+        run: cat experiments/policy-bypass/reports/EXPERIMENT-REPORT.md
+      - name: Upload report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: policy-bypass-report
+          path: experiments/policy-bypass/reports/EXPERIMENT-REPORT.md
+          if-no-files-found: error
+          retention-days: 30

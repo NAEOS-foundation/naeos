@@ -87,3 +87,7 @@ examples/demo-cli/generated/
 examples/todo-api/generated/
 examples/todo-api/.run/
 generated/
+
+# Policy bypass experiment artifacts
+experiments/policy-bypass/policy-bypass
+experiments/policy-bypass/reports/
