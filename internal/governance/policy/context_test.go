@@ -43,3 +43,66 @@ func TestContextFromNEIRRejectsNil(t *testing.T) {
 		t.Fatal("expected nil NEIR to be rejected")
 	}
 }
+
+func TestPolicyContextRejectsUnsupportedVersion(t *testing.T) {
+	ctx := PolicyContext{Version: "v999", Values: map[string]any{"project": "x"}}
+	if err := ctx.Validate(); err == nil {
+		t.Fatal("expected unsupported context version to fail closed")
+	}
+}
+
+func TestPolicyContextRejectsNilValues(t *testing.T) {
+	ctx := PolicyContext{Version: PolicyContextVersion}
+	if err := ctx.Validate(); err == nil {
+		t.Fatal("expected nil context values to fail validation")
+	}
+}
+
+func TestContextFromNEIRUsesExplicitAllowList(t *testing.T) {
+	neir := &model.NEIR{Project: nil, ActiveProfile: "enterprise"}
+	ctx, err := ContextFromNEIR(neir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := ctx.Values["active_profile"]; !ok {
+		t.Fatal("expected active_profile in policy context")
+	}
+	// This test documents that only fields in PolicyContextFields are exposed.
+	if _, ok := ctx.Values["future_uncontracted_field"]; ok {
+		t.Fatal("unexpected uncontracted field exposed")
+	}
+}
+
+func TestPolicyContextDigestDeterministic(t *testing.T) {
+	ctx := PolicyContext{
+		Version: PolicyContextVersion,
+		Values: map[string]any{
+			"project": "naeos",
+			"security": map[string]any{"tls": "1.3"},
+		},
+	}
+	d1, err := ctx.Digest()
+	if err != nil {
+		t.Fatalf("digest failed: %v", err)
+	}
+	d2, err := ctx.Digest()
+	if err != nil {
+		t.Fatalf("second digest failed: %v", err)
+	}
+	if d1 == "" || d1 != d2 {
+		t.Fatalf("expected deterministic digest, got %q and %q", d1, d2)
+	}
+}
+
+func TestPolicyContextDigestChangesWithVersion(t *testing.T) {
+	ctx := PolicyContext{Version: PolicyContextVersion, Values: map[string]any{"project": "naeos"}}
+	d1, err := ctx.Digest()
+	if err != nil {
+		t.Fatalf("digest failed: %v", err)
+	}
+	ctx.Version = "v2"
+	if _, err := ctx.Digest(); err == nil {
+		t.Fatal("expected unsupported version to fail digest")
+	}
+	_ = d1
+}

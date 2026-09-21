@@ -966,3 +966,58 @@ func TestPipelineGovernanceEvidenceDistinguishesPolicyFreeExecution(t *testing.T
 		t.Fatalf("expected zero effective policies, got %d", result.EffectivePolicyCount)
 	}
 }
+
+func TestPipelineRecordsPolicyContextEvidence(t *testing.T) {
+	p, err := New(Config{
+		Policies: []policy.Rule{
+			{RuleID: "project-required", Condition: "exists:project", Action: "block", Enabled: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	result, err := p.Run("project: context-evidence\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if result.PolicyContextVersion != policy.PolicyContextVersion {
+		t.Fatalf("expected policy context version %q, got %q", policy.PolicyContextVersion, result.PolicyContextVersion)
+	}
+	if result.PolicyContextDigest == "" {
+		t.Fatal("expected policy context digest to be recorded")
+	}
+	if result.GovernanceStatus != "evaluated" {
+		t.Fatalf("expected evaluated governance status, got %q", result.GovernanceStatus)
+	}
+}
+
+func TestPipelineFailsClosedForEvaluatorWithoutVersionedContext(t *testing.T) {
+	p, err := New(Config{
+		Policies: []policy.Rule{
+			{RuleID: "project-required", Condition: "exists:project", Action: "block", Enabled: true},
+		},
+		Evaluator: legacyEvaluatorForContextTest{},
+	})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+
+	_, err = p.Run("project: legacy-evaluator\nmodules:\n  - name: core\n    path: ./core")
+	if err == nil {
+		t.Fatal("expected pipeline to fail closed for legacy evaluator")
+	}
+	if !strings.Contains(err.Error(), "versioned policy context") {
+		t.Fatalf("expected versioned context boundary error, got: %v", err)
+	}
+}
+
+type legacyEvaluatorForContextTest struct{}
+
+func (legacyEvaluatorForContextTest) Evaluate(ctx map[string]any) error {
+	return nil
+}
+
+func (legacyEvaluatorForContextTest) EvaluateRules(rules []policy.Rule, ctx map[string]any) ([]policy.EvaluationResult, error) {
+	return []policy.EvaluationResult{{Passed: true}}, nil
+}
