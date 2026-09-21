@@ -40,7 +40,7 @@ func scnToDoObfuscation() Result {
 		Layer:    LayerReviewer,
 		Scenario: "TODO obfuscation evades no-todo",
 		Attack:   "no-todo uses Contains(lower(content), \"todo\"); 'to-do', 'T0D0', 'to do' retain a real TODO meaning yet pass approval",
-		Bypassed: evaded,
+		Bypassed: evaded, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("control=%s; evasions: %s", control.Status, strings.TrimSpace(buf.String())),
 		Risk:     Medium,
 	}
@@ -64,7 +64,7 @@ func scnPlaceholderObfuscation() Result {
 		Layer:    LayerReviewer,
 		Scenario: "placeholder obfuscation evades no-placeholder",
 		Attack:   "no-placeholder only matches the literal lowercased set {placeholder, changeme, replace_me}; 'replace-me', 'change.me', 'CHANGE ME' are undetected",
-		Bypassed: evaded,
+		Bypassed: evaded, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("control=%s; evasions: %s", control.Status, strings.TrimSpace(buf.String())),
 		Risk:     Medium,
 	}
@@ -74,13 +74,13 @@ func scnLicenseHeaderKeywordSpoof() Result {
 	rv := review.NewReviewer()
 	r, err := rv.ReviewArtifact("main.go", "// Licensed under a fake MIT note\npackage main\nfunc main(){}\n", []string{"has-license-header", "no-todo", "no-placeholder"})
 	if err != nil {
-		return Result{Layer: LayerReviewer, Scenario: "license header keyword spoof", Attack: "-", Bypassed: false, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerReviewer, Scenario: "license header keyword spoof", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "license header keyword spoof",
 		Attack:   "has-license-header is satisfied by any of license/apache/mit/copyright within the first 20 lines; a fabricated marker passes",
-		Bypassed: r.Status == review.StatusApproved,
+		Bypassed: r.Status == review.StatusApproved, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("content without real header -> status=%s", r.Status),
 		Risk:     Low,
 	}
