@@ -282,7 +282,6 @@ func TestDefaultRules(t *testing.T) {
 	}
 }
 
-
 func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 	e := NewEvaluator()
 	tests := []struct {
