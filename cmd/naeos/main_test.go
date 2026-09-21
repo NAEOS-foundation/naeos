@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -75,6 +77,84 @@ func TestRunOutputIncludesControlPlaneContext(t *testing.T) {
 	}
 	if _, ok := payload["neir_hash"]; !ok {
 		t.Fatal("expected run JSON output to include a neir_hash")
+	}
+}
+
+func TestRunTextOutputIncludesPipelineStagesAndTraceMetadata(t *testing.T) {
+	dir := t.TempDir()
+	outputPath := filepath.Join(dir, "run.txt")
+	spec := "project: demo-stage-output\nmodules:\n  - name: api\n    path: ./internal/api\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+
+	if err := run([]string{"run", "--input", spec, "--output-file", outputPath}); err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read run text output: %v", err)
+	}
+	text := string(data)
+
+	for _, want := range []string{"[1/8] Specification", "[2/8] NEIR", "[3/8] Validation", "[4/8] Policy", "[5/8] AI Context", "[6/8] AI Compilation", "[7/8] Artifacts", "[8/8] Evidence"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected text output to include %q, got %q", want, text)
+		}
+	}
+	if !strings.Contains(text, "run_id") || !strings.Contains(text, "specification_hash") || !strings.Contains(text, "neir_hash") {
+		t.Fatalf("expected text output to include trace metadata, got %q", text)
+	}
+}
+
+func TestCanonicalDemoScriptRunsEndToEnd(t *testing.T) {
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to resolve current test file path")
+	}
+	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", ".."))
+	tempDir := t.TempDir()
+	binPath := filepath.Join(tempDir, "naeos")
+
+	build := exec.Command("go", "build", "-o", binPath, "./cmd/naeos")
+	build.Dir = repoRoot
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build naeos for demo test failed: %v\n%s", err, out)
+	}
+
+	outputDir := filepath.Join(tempDir, "demo-output")
+	demoScript := filepath.Join(repoRoot, "examples", "demo-cli", "run-demo.sh")
+	cmd := exec.Command("bash", demoScript)
+	cmd.Dir = repoRoot
+	cmd.Env = append(os.Environ(),
+		"NAEOS_BIN="+binPath,
+		"NAEOS_DEMO_OUTPUT_DIR="+outputDir,
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("canonical demo script failed: %v\n%s", err, out)
+	}
+
+	for _, path := range []string{
+		filepath.Join(outputDir, "context.md"),
+		filepath.Join(outputDir, "context.json"),
+		filepath.Join(outputDir, "run.json"),
+		filepath.Join(outputDir, "summary.md"),
+		filepath.Join(outputDir, "generated", "README.md"),
+		filepath.Join(outputDir, "generated", "go.mod"),
+		filepath.Join(outputDir, "generated", "package.json"),
+	} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected demo artifact %q to exist: %v", path, err)
+		}
+	}
+
+	payload, err := os.ReadFile(filepath.Join(outputDir, "run.json"))
+	if err != nil {
+		t.Fatalf("read run metadata: %v", err)
+	}
+	text := string(payload)
+	for _, key := range []string{"run_id", "specification_hash", "neir_hash", "validation", "policy", "context"} {
+		if !strings.Contains(text, key) {
+			t.Fatalf("expected run metadata to include %q in %s", key, text)
+		}
 	}
 }
 

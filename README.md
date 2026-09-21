@@ -33,6 +33,15 @@ Unlike a project generator, NAEOS maintains an engineering model throughout the 
 
 New to NAEOS? Start with [START-HERE.md](START-HERE.md) for the fastest path from discovery to first experiment and contribution.
 
+The canonical developer workflow in this repository is the CLI control-plane demo:
+
+```bash
+go build -o naeos ./cmd/naeos
+./examples/demo-cli/run-demo.sh
+```
+
+Use this as the single supported onboarding path unless you are intentionally testing a different feature. It demonstrates the full flow: specification → NEIR → validation → policy → AI context → generation → artifact + evidence traceability.
+
 ## Contents
 
 - [Vision](#vision)

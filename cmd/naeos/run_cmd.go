@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -103,6 +104,17 @@ Example:
 				})
 			}
 
+			pipelineStages := []string{
+				"[1/8] Specification",
+				"[2/8] NEIR",
+				"[3/8] Validation",
+				"[4/8] Policy",
+				"[5/8] AI Context",
+				"[6/8] AI Compilation",
+				"[7/8] Artifacts",
+				"[8/8] Evidence",
+			}
+
 			payload := map[string]any{
 				"pipeline":           cfg.Name,
 				"mode":               cfg.Mode,
@@ -164,7 +176,19 @@ Example:
 			}
 
 			rendered, err := renderOutput(payload, outputFormat, func() []byte {
-				return []byte(fmt.Sprintf("pipeline=%s mode=%s verbose=%t output_dir=%s\nartifacts=%d tasks=%d\n", result.NEIR.Project, cfg.Mode, cfg.Verbose, cfg.OutputDir, len(result.Artifacts), len(result.Tasks)))
+				var out strings.Builder
+				fmt.Fprintf(&out, "pipeline=%s mode=%s verbose=%t output_dir=%s\n", projectName, cfg.Mode, cfg.Verbose, cfg.OutputDir)
+				out.WriteString("\n")
+				for _, stage := range pipelineStages {
+					out.WriteString(stage)
+					out.WriteString("\n")
+				}
+				out.WriteString("\n")
+				fmt.Fprintf(&out, "run_id=%s\n", result.RunID)
+				fmt.Fprintf(&out, "specification_hash=%s\n", result.SpecificationHash)
+				fmt.Fprintf(&out, "neir_hash=%s\n", result.NEIRHash)
+				fmt.Fprintf(&out, "artifacts=%d tasks=%d\n", len(result.Artifacts), len(result.Tasks))
+				return []byte(out.String())
 			})
 			if err != nil {
 				return err
