@@ -18,6 +18,8 @@ Status values: backlog | in-progress | blocked | done
 | Landing page CTA alignment (Try NAEOS / Explore GitHub / Read the Architecture) | Convert visitors to first run | All | Website | M | High | Design review | backlog | Founder | Quick Start completion |
 | Fix stale production claims (AI adapters, docs) | Prevent credibility damage | All | Website/GitHub | S | High | Content audit | backlog | Founder | No unverified claims in README/docs |
 | CI green on main (Go 1.26 toolchain resolved from go.mod) | Keep release pipeline reliable | OSS/contributors | GitHub | S | High | None | done | Core | All CI jobs pass |
+| Hardening content run (09-23..10-22, plan in 30-day-plan-hardening.md) | Turn policy-bypass experiment + fixes into public trust and contribution funnel | OSS/enterprise | LI/X/GH/DW/HN/MD | M | High | Findings report | backlog | Founder | Issue engagement, PRs from good-first-issues |
+| Day 1 (09-23): publish experiment findings (@145–#152, PR #154) | Open the audit story credibly | All | LI/X/RD | S | High | Report + issues | backlog | Founder | Shares + technical comments |
 
 ## P1 — High
 
@@ -30,6 +32,7 @@ Status values: backlog | in-progress | blocked | done
 | Social scheduler hardening (retry/backoff, duplicate prevention, post log, concurrency guard, calendar thru Sep 30) | Make scheduled posting reliable and idempotent | Community + founders | CI/brand | S | Medium | Scheduler v1 | done | Founder | No duplicate/failed silent posts |
 | NEIR architecture article series | Educate on central engineering model | Software architects | Dev.to/Medium/HN | M | Medium | Architecture docs | backlog | Founder | Article reads, referrals |
 | Governance + audit trail stories | Build enterprise trust | Regulated/enterprise | LinkedIn | M | Medium | Product features | backlog | Founder | Enterprise inquiries |
+| Good-first-issue contributor campaign (evaluator/reviewer heuristics) | Convert findings into first-time contributor PRs | OSS developers | GitHub/Discord | S | Medium | Issues labeled | backlog | Founder | First-time contributor PRs |
 
 ## P2 — Medium
 

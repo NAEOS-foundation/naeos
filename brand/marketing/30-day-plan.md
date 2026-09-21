@@ -51,7 +51,7 @@ Build Anywhere").
 | DAY | OBJECTIVE | CONTENT | CHANNEL | FORMAT | HOOK | CTA | ASSET REQUIRED | EXPECTED SIGNAL | FOLLOW-UP ACTION |
 |---|---|---|---|---|---|---|---|---|---|
 | 15 | Education | Parser → Normalizer → Resolver → NEIR (end-to-end) | MD/DW | Architecture deep dive | "Perjalanan spec hingga menjadi sistem" | Baca peta arsitektur | `ARCHITECTURE-OVERVIEW.md` | Reads, queries | Buat diagram SVG versi kasual |
-| 16 | Integration | Memetakan NAEOS ke GitHub Copilot, Cursor, Claude Code, Gemini CLI, Codex, OpenCode (verified adapters) | DW/HN | Technical comparison | "Satu spec, 6 tool AI, satu konteks" | Lihat adapter yang ada | AI adapters list | Experiments | Co-marketing with tool communities |
+| 16 | Integration | Memetakan NAEOS ke GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, Windsurf, OpenCode (7 verified adapters) | DW/HN | Technical comparison | "Satu spec, 7 tool AI, satu konteks" | Lihat adapter yang ada | AI adapters list | Experiments | Co-marketing with tool communities |
 | 17 | Activation | Mencoba `naeos ai compile` untuk context tool | GH/Discussions | Tutorial | "Compile konteks AI untuk tool yang Anda pakai" | Bagikan output Anda | `naeos ai compile` example | User experiments | Kumpulkan contoh nyata |
 | 18 | Awareness | "AI coding tools hanya mengoptimalkan codegen. NAEOS strukturkan sistem di sekitarnya" | X | Thread | "Bukan pengganti Copilot, tapi sistem yang menyatukannya" | Pahami perbedaannya | LI template | Engagement | Siapkan article "NAEOS vs scaffolding tools" (ada di site/blog) |
 | 19 | Governance | SBOM, verification, deployment controls | LI | Article | "Rantai pasok software butuh verifikasi" | Lihat evidence/sign tooling | SBOM assets | Enterprise DM | Schedule enterprise demo |

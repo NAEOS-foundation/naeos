@@ -50,3 +50,27 @@ Tentukan sekali. Bangun di mana saja.
 
 CTA:
 Lihat repo dan buka dokumentasi arsitektur.
+
+## Template 4 — “Kami menguji guardrail kami sendiri” (cerita governance/security)
+
+Hook:
+Kami menjalankan harness adversarial terhadap governance NAEOS sendiri, secara terbuka.
+
+Body:
+Kami menguji lapisan enforcement — evaluasi policy, control plane, review
+artifact, pembuatan prompt, dan gate pipeline — dengan cara yang sama seperti
+penyerang. Temuan dipublikasikan sebagai issue terbuka, dan bypass kritis
+ditutup sebelum distribusi.
+
+Ini bersumber pada repositori: `experiments/policy-bypass/` (17 skenario),
+laporan temuan yang dihasilkan CI, serta issue yang melacak pekerjaan tersisa.
+
+Membangun platform governance berarti membuktikan bahwa ia bisa ditembus —
+berulang kali, dan secara terbuka.
+
+CTA:
+Lihat pemindaian dan temuannya: github.com/NAEOS-foundation/naeos
+
+Catatan:
+- Setiap angka (skenario, temuan, adapter) harus dibaca dari laporan terkini
+  sebelum diposting — jangan pakai angka lama yang sudah usang.
