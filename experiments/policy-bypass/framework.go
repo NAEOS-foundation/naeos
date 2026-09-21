@@ -34,12 +34,12 @@ const (
 type Outcome string
 
 const (
-	OutcomeAllow             Outcome = "ALLOW"
-	OutcomeDeny              Outcome = "DENY"
-	OutcomeRequireApproval   Outcome = "REQUIRE_APPROVAL"
-	OutcomeError             Outcome = "ERROR"
+	OutcomeAllow           Outcome = "ALLOW"
+	OutcomeDeny            Outcome = "DENY"
+	OutcomeRequireApproval Outcome = "REQUIRE_APPROVAL"
+	OutcomeError           Outcome = "ERROR"
 	OutcomeGovernanceInvalid Outcome = "GOVERNANCE_INVALID"
-	OutcomeNotEvaluated      Outcome = "NOT_EVALUATED"
+	OutcomeNotEvaluated    Outcome = "NOT_EVALUATED"
 )
 
 type Verdict string
@@ -57,8 +57,8 @@ type Result struct {
 	ExpectedOutcome Outcome
 	ObservedOutcome Outcome
 	Verdict         Verdict
-	Evidence        string
-	Risk            Risk
+	Evidence         string
+	Risk             Risk
 }
 
 func (r Result) String() string {
@@ -70,10 +70,6 @@ func expectedOutcome(scenario string) Outcome {
 	// v1 adversarial scenarios are expected to be denied unless they
 	// explicitly test a semantic gap where the correct classification is
 	// NOT_EVALUATED.
-	if strings.Contains(scenario, "policy context integrity") ||
-		strings.Contains(scenario, "pipeline ctx cannot inspect spec") {
-		return OutcomeNotEvaluated
-	}
 	return OutcomeDeny
 }
 
@@ -86,16 +82,15 @@ func observedOutcome(r Result) Outcome {
 	if r.Bypassed {
 		return OutcomeAllow
 	}
-	if strings.Contains(r.Scenario, "policy context integrity") ||
-		strings.Contains(r.Scenario, "pipeline ctx cannot inspect spec") {
-		return OutcomeNotEvaluated
-	}
 	return OutcomeDeny
 }
 
 func normalizeResult(r Result) Result {
-	r.ExpectedOutcome = expectedOutcome(r.Scenario)
-	r.ObservedOutcome = observedOutcome(r)
+	if r.ExpectedOutcome == "" {
+		r.ExpectedOutcome = expectedOutcome(r.Scenario)
+	}
+	if r.ObservedOutcome == "" {
+		r.ObservedOutcome = observedOutcome(r)
 	r.Bypassed = r.ObservedOutcome == OutcomeAllow
 	if r.ObservedOutcome == r.ExpectedOutcome {
 		r.Verdict = VerdictPass
