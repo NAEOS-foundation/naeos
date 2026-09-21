@@ -98,7 +98,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 		},
 	})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
 	}
 	res, err := p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err != nil {
@@ -123,7 +123,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 func scnPipelineNoPoliciesNoChecks() Result {
 	p, err := pipeline.New(pipeline.Config{Name: "bypass-lab", Mode: "governed", RequireGovernance: true})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
 	}
 	_, err = p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err == nil {
