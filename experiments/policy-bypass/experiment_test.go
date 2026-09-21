@@ -17,28 +17,24 @@ import (
 func TestPolicyBypassLandscape(t *testing.T) {
 	results := runAll()
 
-	wantBypassed := []string{
-		"NaN bypasses gt threshold",
-		"empty condition always passes",
-		"exists: passes on nil value",
-		"whitespace satisfies not_empty",
-		"Inf bypasses lt bound",
-		"fail-open allows unmatched request",
-		"TODO obfuscation evades no-todo",
-		"placeholder obfuscation evades no-placeholder",
-		"license header keyword spoof",
-		"prompt override dir neutralizes policy",
-		"disabled rule silently skipped",
+	// These are the currently reproduced governance findings. The oracle
+	// expectation is the security invariant (DENY); a known ALLOW is therefore
+	// an explicit finding, not a test success.
+	wantFindings := map[string]bool{
+		"empty condition always passes":              true,
+		"exists: passes on nil value":               true,
+		"whitespace satisfies not_empty":            true,
+		"fail-closed denies unmatched request":      true,
+		"TODO obfuscation evades no-todo":            true,
+		"placeholder obfuscation evades no-placeholder": true,
+		"license header keyword spoof":              true,
+		"disabled rule silently skipped":            true,
 	}
 
-	got := map[string]bool{}
-	layers := map[Layer]int{}
-	bypassByLayer := map[Layer]int{}
+	gotFailures := map[string]bool{}
 	for _, r := range results {
-		got[r.Scenario] = r.Bypassed
-		layers[r.Layer]++
-		if r.Bypassed {
-			bypassByLayer[r.Layer]++
+		if r.Verdict == VerdictFail {
+			gotFailures[r.Scenario] = true
 		}
 	}
 
@@ -46,32 +42,53 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		t.Errorf("expected 17 scenarios, got %d", len(results))
 	}
 	for _, l := range []Layer{LayerEvaluator, LayerControl, LayerReviewer, LayerPrompt, LayerPipeline} {
-		if layers[l] == 0 {
+		found := false
+		for _, r := range results {
+			if r.Layer == l {
+				found = true
+				break
+			}
+		}
+		if !found {
 			t.Errorf("layer %s has no scenarios", l)
 		}
 	}
-	if got["no configured policies => no checks"] {
-		t.Errorf("expected scenario %q to be BLOCKED after H2 hardening", "no configured policies => no checks")
+
+	for name := range wantFindings {
+		if !gotFailures[name] {
+			t.Errorf("expected known finding %q to remain reproduced; if hardened, update the finding baseline", name)
+		}
+	}
+	for name := range gotFailures {
+		if !wantFindings[name] {
+			t.Errorf("unexpected oracle failure %q; inspect the scenario and update the experiment explicitly", name)
+		}
 	}
 
-	for _, name := range wantBypassed {
-		if name == "prompt override dir neutralizes policy" || name == "NaN bypasses gt threshold" || name == "Inf bypasses lt bound" {
-			if got[name] {
-				t.Errorf("expected scenario %q to be BLOCKED after hardening", name)
-			}
-			continue
-		}
-		if !got[name] {
-			t.Errorf("expected scenario %q to be BYPASSED (current finding); if hardened, update this list explicitly", name)
-		}
-	}
-	// No scenario should report a bypass for a generic error path.
 	for _, r := range results {
-		if r.Bypassed && strings.Contains(r.Evidence, "error") {
-			t.Errorf("scenario %q flagged bypassed with error evidence: %s", r.Scenario, r.Evidence)
+		if r.Scenario == "NaN bypasses gt threshold" || r.Scenario == "Inf bypasses lt bound" {
+			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
+				t.Errorf("H3 regression: %q observed=%s verdict=%s evidence=%s",
+					r.Scenario, r.ObservedOutcome, r.Verdict, r.Evidence)
+			}
+		}
+		if r.Scenario == "prompt override dir neutralizes policy" && r.ObservedOutcome != OutcomeDeny {
+			t.Errorf("H1 regression: prompt override must not produce ALLOW; observed=%s", r.ObservedOutcome)
+		}
+		if r.Scenario == "no configured policies => no checks" && r.ObservedOutcome != OutcomeDeny {
+			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
+		}
+		if strings.Contains(r.Scenario, "policy context integrity") ||
+			strings.Contains(r.Scenario, "pipeline ctx cannot inspect spec") {
+			if r.ObservedOutcome != OutcomeNotEvaluated {
+				t.Errorf("H4 preparation: expected NOT_EVALUATED for policy context integrity, got=%s", r.ObservedOutcome)
+			}
+		}
+		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
+			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
 		}
 	}
-	t.Logf("bypasses by layer: %v", bypassByLayer)
+	t.Logf("known findings: %v", gotFailures)
 }
 
 // TestPolicyBypassReport verifies the markdown report renders with every
