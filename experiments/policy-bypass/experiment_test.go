@@ -29,7 +29,6 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"license header keyword spoof",
 		"prompt override dir neutralizes policy",
 		"disabled rule silently skipped",
-		"no configured policies => no checks",
 	}
 
 	got := map[string]bool{}
@@ -51,6 +50,10 @@ func TestPolicyBypassLandscape(t *testing.T) {
 			t.Errorf("layer %s has no scenarios", l)
 		}
 	}
+	if got["no configured policies => no checks"] {
+		t.Errorf("expected scenario %q to be BLOCKED after H2 hardening", "no configured policies => no checks")
+	}
+
 	for _, name := range wantBypassed {
 		if name == "prompt override dir neutralizes policy" {
 			if got[name] {
