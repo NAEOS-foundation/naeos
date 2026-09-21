@@ -34,12 +34,12 @@ const (
 type Outcome string
 
 const (
-	OutcomeAllow           Outcome = "ALLOW"
-	OutcomeDeny            Outcome = "DENY"
-	OutcomeRequireApproval Outcome = "REQUIRE_APPROVAL"
-	OutcomeError           Outcome = "ERROR"
+	OutcomeAllow             Outcome = "ALLOW"
+	OutcomeDeny              Outcome = "DENY"
+	OutcomeRequireApproval   Outcome = "REQUIRE_APPROVAL"
+	OutcomeError             Outcome = "ERROR"
 	OutcomeGovernanceInvalid Outcome = "GOVERNANCE_INVALID"
-	OutcomeNotEvaluated    Outcome = "NOT_EVALUATED"
+	OutcomeNotEvaluated      Outcome = "NOT_EVALUATED"
 )
 
 type Verdict string
@@ -57,8 +57,8 @@ type Result struct {
 	ExpectedOutcome Outcome
 	ObservedOutcome Outcome
 	Verdict         Verdict
-	Evidence         string
-	Risk             Risk
+	Evidence        string
+	Risk            Risk
 }
 
 func (r Result) String() string {
