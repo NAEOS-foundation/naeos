@@ -846,12 +846,13 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		result.GovernanceStatus = "evaluating"
 	}
 	p.logVerbose("evaluating %d policy rules", result.EffectivePolicyCount)
-	ctx := map[string]any{
-		"project":  result.NEIR.Project.Name,
-		"modules":  len(result.NEIR.Modules),
-		"services": len(result.NEIR.Services),
+	policyContext, err := policy.ContextFromNEIR(result.NEIR)
+	if err != nil {
+		result.GovernanceStatus = "invalid-context"
+		return fmt.Errorf("policy context construction failed: %w", err)
 	}
-	results, err := p.evaluator.EvaluateRules(p.policies, ctx)
+	p.logVerbose("evaluating %d policy rules against policy context %s", result.EffectivePolicyCount, policyContext.Version)
+	results, err := p.evaluator.EvaluateRules(p.policies, policyContext.Values)
 	if err != nil {
 		return fmt.Errorf("policy evaluation failed: %w", err)
 	}
