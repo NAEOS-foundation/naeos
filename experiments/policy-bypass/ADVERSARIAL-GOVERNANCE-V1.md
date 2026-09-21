@@ -1,6 +1,6 @@
 # NAEOS Adversarial Governance Experiment v1
 
-Status: H1/H2/H3 hardened; H4 prepared for v2
+Status: H1/H2/H3/H4 hardened
 Scope: Deterministic adversarial hardening with regression tests.
 
 ## 1. Objective
@@ -192,7 +192,7 @@ H4 acceptance criteria:
 4. The experiment records `NOT_EVALUATED` when a policy cannot inspect the field it claims to govern.
 5. A regression test covers both compliant and non-compliant values for the governed field.
 
-H4 is prepared but intentionally not remediated in this change set.
+H4 is remediated in this change set. The pipeline now evaluates policy rules against a versioned top-level NEIR policy context. Regression coverage verifies that `security` is visible and that missing security is denied by an `exists:security` rule.
 
 ## 9. Relationship to the existing harness
 
