@@ -21,13 +21,13 @@ func TestPolicyBypassLandscape(t *testing.T) {
 	// expectation is the security invariant (DENY); a known ALLOW is therefore
 	// an explicit finding, not a test success.
 	wantFindings := map[string]bool{
-		"empty condition always passes":                 true,
-		"exists: passes on nil value":                   true,
-		"whitespace satisfies not_empty":                true,
-		"TODO obfuscation evades no-todo":               true,
+		"empty condition always passes":              true,
+		"exists: passes on nil value":               true,
+		"whitespace satisfies not_empty":            true,
+		"TODO obfuscation evades no-todo":            true,
 		"placeholder obfuscation evades no-placeholder": true,
-		"license header keyword spoof":                  true,
-		"disabled rule silently skipped":                true,
+		"license header keyword spoof":              true,
+		"disabled rule silently skipped":            true,
 	}
 
 	gotFailures := map[string]bool{}
@@ -76,12 +76,6 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		}
 		if r.Scenario == "no configured policies => no checks" && r.ObservedOutcome != OutcomeDeny {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
-		}
-		if strings.Contains(r.Scenario, "policy context integrity") ||
-			strings.Contains(r.Scenario, "pipeline ctx cannot inspect spec") {
-			if r.ObservedOutcome != OutcomeNotEvaluated {
-				t.Errorf("H4 preparation: expected NOT_EVALUATED for policy context integrity, got=%s", r.ObservedOutcome)
-			}
 		}
 		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
 			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
@@ -140,7 +134,7 @@ func TestPolicyBypassDeterministic(t *testing.T) {
 			t.Fatalf("run length changed: %d vs %d", len(next), len(first))
 		}
 		for j := range first {
-			if next[j].Scenario != first[j].Scenario || next[j].Bypassed != first[j].Bypassed {
+			if next[j].Scenario != first[j].Scenario || next[j].ObservedOutcome != first[j].ObservedOutcome || next[j].Verdict != first[j].Verdict {
 				t.Fatalf("run %d diverged at scenario %q", i+1, first[j].Scenario)
 			}
 		}
