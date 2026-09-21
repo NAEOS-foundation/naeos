@@ -55,9 +55,9 @@ func TestPolicyBypassLandscape(t *testing.T) {
 	}
 
 	for _, name := range wantBypassed {
-		if name == "prompt override dir neutralizes policy" {
+		if name == "prompt override dir neutralizes policy" || name == "NaN bypasses gt threshold" || name == "Inf bypasses lt bound" {
 			if got[name] {
-				t.Errorf("expected scenario %q to be BLOCKED after H1 hardening", name)
+				t.Errorf("expected scenario %q to be BLOCKED after hardening", name)
 			}
 			continue
 		}
