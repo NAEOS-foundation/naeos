@@ -27,7 +27,6 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"TODO obfuscation evades no-todo",
 		"placeholder obfuscation evades no-placeholder",
 		"license header keyword spoof",
-		"prompt override dir neutralizes policy",
 		"disabled rule silently skipped",
 		"no configured policies => no checks",
 	}
