@@ -15,9 +15,6 @@ import (
 
 const PolicyContextVersion = "v1"
 
-// policyContextFields is the immutable-in-package, explicit policy-visible
-// surface. New NEIR fields MUST NOT become policy-visible implicitly; they
-// must be added here as part of an intentional policy-context contract change.
 var policyContextFields = [...]string{
 	"ai", "apis", "architecture", "components", "deployment",
 	"documentation", "domain", "generation", "infrastructure", "inherits",
@@ -40,22 +37,30 @@ func (c PolicyContext) Validate() error {
 	return nil
 }
 
-func (c PolicyContext) Digest() (string, error) {
-	if err := c.Validate(); err != nil {
-		return "", err
-	}
+func policyContextDigestPayload(version string, fields []string, values map[string]any) ([]byte, error) {
 	payload := struct {
 		Version string         `json:"version"`
 		Fields  []string       `json:"fields"`
 		Values  map[string]any `json:"values"`
 	}{
-		Version: c.Version,
-		Fields:  PolicyContextFieldNames(),
-		Values:  c.Values,
+		Version: version,
+		Fields:  fields,
+		Values:  values,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return "", fmt.Errorf("marshal policy context digest payload: %w", err)
+		return nil, fmt.Errorf("marshal policy context digest payload: %w", err)
+	}
+	return data, nil
+}
+
+func (c PolicyContext) Digest() (string, error) {
+	if err := c.Validate(); err != nil {
+		return "", err
+	}
+	data, err := policyContextDigestPayload(c.Version, PolicyContextFieldNames(), c.Values)
+	if err != nil {
+		return "", err
 	}
 	h := sha256.Sum256(data)
 	return hex.EncodeToString(h[:]), nil
@@ -73,7 +78,6 @@ func ContextFromNEIR(neir *model.NEIR) (PolicyContext, error) {
 	if err := json.Unmarshal(data, &allValues); err != nil {
 		return PolicyContext{}, fmt.Errorf("decode NEIR policy context: %w", err)
 	}
-
 	values := make(map[string]any, len(policyContextFields))
 	for _, field := range policyContextFields {
 		if value, ok := allValues[field]; ok {
