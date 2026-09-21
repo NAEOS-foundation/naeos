@@ -37,13 +37,13 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	res, err := p.Run(compliantSpec)
 	if err != nil {
 		return Result{
-			Layer: LayerPipeline,
-			Scenario: "policy context integrity: security claim not evaluated",
-			Attack: "policy targets top-level security; evaluator context must contain the canonical NEIR security field",
+			Layer:           LayerPipeline,
+			Scenario:        "policy context integrity: security claim not evaluated",
+			Attack:          "policy targets top-level security; evaluator context must contain the canonical NEIR security field",
 			ExpectedOutcome: OutcomeAllow,
 			ObservedOutcome: OutcomeDeny,
-			Evidence: fmt.Sprintf("compliant spec with security.tls=1.3 was blocked: %v", err),
-			Risk: High,
+			Evidence:        fmt.Sprintf("compliant spec with security.tls=1.3 was blocked: %v", err),
+			Risk:            High,
 		}
 	}
 
@@ -55,13 +55,13 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	}
 	if !fired {
 		return Result{
-			Layer: LayerPipeline,
-			Scenario: "policy context integrity: security claim not evaluated",
-			Attack: "policy context must expose security to the evaluator",
+			Layer:           LayerPipeline,
+			Scenario:        "policy context integrity: security claim not evaluated",
+			Attack:          "policy context must expose security to the evaluator",
 			ExpectedOutcome: OutcomeAllow,
 			ObservedOutcome: OutcomeNotEvaluated,
-			Evidence: "run succeeded but must-have-tls did not evaluate against security",
-			Risk: Critical,
+			Evidence:        "run succeeded but must-have-tls did not evaluate against security",
+			Risk:            Critical,
 		}
 	}
 
@@ -69,24 +69,24 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	_, err = p.Run(nonCompliantSpec)
 	if err == nil {
 		return Result{
-			Layer: LayerPipeline,
-			Scenario: "policy context integrity: security claim not evaluated",
-			Attack: "policy context must distinguish missing security from a compliant security object",
+			Layer:           LayerPipeline,
+			Scenario:        "policy context integrity: security claim not evaluated",
+			Attack:          "policy context must distinguish missing security from a compliant security object",
 			ExpectedOutcome: OutcomeDeny,
 			ObservedOutcome: OutcomeAllow,
-			Evidence: "non-compliant spec without security passed must-have-tls",
-			Risk: Critical,
+			Evidence:        "non-compliant spec without security passed must-have-tls",
+			Risk:            Critical,
 		}
 	}
 
 	return Result{
-		Layer: LayerPipeline,
-		Scenario: "policy context integrity: security claim not evaluated",
-		Attack: "policy context must expose and evaluate security consistently for compliant and non-compliant specs",
+		Layer:           LayerPipeline,
+		Scenario:        "policy context integrity: security claim not evaluated",
+		Attack:          "policy context must expose and evaluate security consistently for compliant and non-compliant specs",
 		ExpectedOutcome: OutcomeDeny,
 		ObservedOutcome: OutcomeDeny,
-		Evidence: "security policy passed on compliant spec and denied spec without security",
-		Risk: High,
+		Evidence:        "security policy passed on compliant spec and denied spec without security",
+		Risk:            High,
 	}
 }
 
