@@ -21,6 +21,19 @@ func controlScenarios() []Result {
 	}
 }
 
+func decisionOutcome(decision control.Decision) Outcome {
+	switch decision {
+	case control.DecisionAllow:
+		return OutcomeAllow
+	case control.DecisionRequireApproval:
+		return OutcomeRequireApproval
+	case control.DecisionDeny:
+		return OutcomeDeny
+	default:
+		return OutcomeError
+	}
+}
+
 func buildPlane(broadPermissive bool) *control.ControlPlane {
 	reg := policy.NewRegistry()
 	_ = reg.Register(&policy.Policy{
@@ -82,7 +95,7 @@ func scnScopeSpoofViaResource() Result {
 		Layer:    LayerControl,
 		Scenario: "scope spoof via resource label",
 		Attack:   "Request resource 'deployment' instead of 'deploy' to dodge the prod policy; control plane has no fuzzy/alias matching",
-		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: OutcomeAllow,
+		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: decisionOutcome(rec.Decision),
 		Evidence: fmt.Sprintf("resource='deployment' -> decision=%s; rule did not match so default fail-closed applied", rec.Decision),
 		Risk:     Medium,
 	}
@@ -126,8 +139,8 @@ func scnStrictestWins() Result {
 		Layer:    LayerControl,
 		Scenario: "rule aggregation keeps strictest decision",
 		Attack:   "Register a broad ALLOW policy and hope it beats the specific prod policy; DENY/REQUIRE_APPROVAL aggregation is sticky",
-		Bypassed: false, ObservedOutcome: OutcomeDeny,
-		Evidence: fmt.Sprintf("policy mismatch between deny-wins ranking; decision=%s (expected non-ALLOW)", rec.Decision),
+		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: decisionOutcome(rec.Decision),
+		Evidence: fmt.Sprintf("specific production policy decision retained over catch-all allow: decision=%s", rec.Decision),
 		Risk:     Low,
 	}
 }
