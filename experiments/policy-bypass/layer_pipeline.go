@@ -98,11 +98,11 @@ func scnPipelineDisabledRuleSkipped() Result {
 		},
 	})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "-", Bypassed: false, Evidence: "init error", Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
 	}
 	res, err := p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "Enabled:false should not change pipeline success", Bypassed: false, Evidence: fmt.Sprintf("run failed: %v", err), Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "Enabled:false should not change pipeline success", Bypassed: false, ObservedOutcome: OutcomeDeny, Evidence: fmt.Sprintf("run failed: %v", err), Risk: High}
 	}
 	fired := false
 	for _, pr := range res.PolicyResults {
@@ -114,7 +114,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 		Layer:    LayerPipeline,
 		Scenario: "disabled rule silently skipped",
 		Attack:   "EvaluateRules skips Enable=false rules in silence (evaluator.go:56); an agent or CI task that can toggle Enabled to false removes a guard with zero logging",
-		Bypassed: !fired,
+		Bypassed: !fired, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("run OK; disabled rule fired=%v (no warning emitted)", fired),
 		Risk:     High,
 	}
@@ -123,7 +123,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 func scnPipelineNoPoliciesNoChecks() Result {
 	p, err := pipeline.New(pipeline.Config{Name: "bypass-lab", Mode: "governed", RequireGovernance: true})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, Evidence: "init error", Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "no configured policies => no checks", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
 	}
 	_, err = p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err == nil {
@@ -131,7 +131,7 @@ func scnPipelineNoPoliciesNoChecks() Result {
 			Layer:    LayerPipeline,
 			Scenario: "no configured policies => no checks",
 			Attack:   "governed execution with zero effective policies",
-			Bypassed: true,
+			Bypassed: true, ObservedOutcome: OutcomeAllow,
 			Evidence: "run succeeded despite RequireGovernance=true and zero effective policies",
 			Risk:     High,
 		}
@@ -140,7 +140,7 @@ func scnPipelineNoPoliciesNoChecks() Result {
 		Layer:    LayerPipeline,
 		Scenario: "no configured policies => no checks",
 		Attack:   "governed execution must fail closed when no effective policy set exists",
-		Bypassed: false,
+		Bypassed: false, ObservedOutcome: OutcomeDeny,
 		Evidence: fmt.Sprintf("execution blocked with explicit governance configuration error: %v", err),
 		Risk:     High,
 	}
