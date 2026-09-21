@@ -52,7 +52,7 @@ func scnFailClosedDenyOnNoPolicy() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "fail-closed denies unmatched request", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerControl, Scenario: "fail-closed denies unmatched request", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	// A non-ALLOW decision here is the defense working; report the decision.
 	return Result{
@@ -76,7 +76,7 @@ func scnScopeSpoofViaResource() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "scope spoof via resource label", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerControl, Scenario: "scope spoof via resource label", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerControl,
@@ -98,7 +98,7 @@ func scnFailOpenAllowsAnything() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "fail-open allows unmatched", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Critical}
+		return Result{Layer: LayerControl, Scenario: "fail-open allows unmatched", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Critical}
 	}
 	return Result{
 		Layer:    LayerControl,
@@ -119,7 +119,7 @@ func scnStrictestWins() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "strictest decision wins", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerControl, Scenario: "strictest decision wins", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	// Catch-all ALLOW must not weaken the specific REQUIRE_APPROVAL policy.
 	return Result{
