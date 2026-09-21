@@ -26,6 +26,7 @@ func scnToDoObfuscation() Result {
 	// Baseline: the canonical TODO marker is caught by the no-todo rule.
 	control, _ := rv.ReviewArtifact("main.go", okHeader+"// TODO: fix this\n", []string{"no-todo", "has-license-header"})
 	var buf strings.Builder
+	variantApproved := false
 	for _, variant := range []string{"to-do", "T0D0", "to do"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+": fix this\n", []string{"no-todo", "has-license-header"})
 		if err != nil {
@@ -33,9 +34,11 @@ func scnToDoObfuscation() Result {
 			continue
 		}
 		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
+		if r.Status == review.StatusApproved {
+			variantApproved = true
+		}
 	}
-	evaded := control.Status != review.StatusApproved &&
-		!strings.Contains(buf.String(), "changes_requested")
+	evaded := control.Status != review.StatusApproved && variantApproved
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "TODO obfuscation evades no-todo",
@@ -50,6 +53,7 @@ func scnPlaceholderObfuscation() Result {
 	rv := review.NewReviewer()
 	control, _ := rv.ReviewArtifact("main.go", okHeader+"// REPLACE_ME with value\n", []string{"no-placeholder", "has-license-header"})
 	var buf strings.Builder
+	variantApproved := false
 	for _, variant := range []string{"replace-me", "change.me", "CHANGE ME", "REPLACE-ME"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+" with value\n", []string{"no-placeholder", "has-license-header"})
 		if err != nil {
@@ -57,9 +61,11 @@ func scnPlaceholderObfuscation() Result {
 			continue
 		}
 		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
+		if r.Status == review.StatusApproved {
+			variantApproved = true
+		}
 	}
-	evaded := control.Status != review.StatusApproved &&
-		!strings.Contains(strings.ToLower(buf.String()), "changes_requested")
+	evaded := control.Status != review.StatusApproved && variantApproved
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "placeholder obfuscation evades no-placeholder",
