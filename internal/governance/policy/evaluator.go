@@ -160,8 +160,8 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 					thresholdStr := strings.TrimSpace(subParts[1])
 					if actual, exists := ctx[key]; exists {
 						actualStr := fmt.Sprintf("%v", actual)
-						actualNum, err1 := strconv.ParseFloat(actualStr, 64)
-						thresholdNum, err2 := strconv.ParseFloat(thresholdStr, 64)
+						actualNum, err1 := parseFiniteFloat(actualStr)
+						thresholdNum, err2 := parseFiniteFloat(thresholdStr)
 						if err1 == nil && err2 == nil {
 							if actualNum >= thresholdNum {
 								passed = false
@@ -171,7 +171,7 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 							}
 						} else {
 							passed = false
-							message = fmt.Sprintf("cannot compare non-numeric values: %s=%s", key, actualStr)
+							message = fmt.Sprintf("cannot compare non-finite or non-numeric values: %s=%s", key, actualStr)
 						}
 					} else {
 						passed = false
@@ -185,8 +185,8 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 					thresholdStr := strings.TrimSpace(subParts[1])
 					if actual, exists := ctx[key]; exists {
 						actualStr := fmt.Sprintf("%v", actual)
-						actualNum, err1 := strconv.ParseFloat(actualStr, 64)
-						thresholdNum, err2 := strconv.ParseFloat(thresholdStr, 64)
+						actualNum, err1 := parseFiniteFloat(actualStr)
+						thresholdNum, err2 := parseFiniteFloat(thresholdStr)
 						if err1 == nil && err2 == nil {
 							if actualNum < thresholdNum {
 								passed = false
@@ -196,7 +196,7 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 							}
 						} else {
 							passed = false
-							message = fmt.Sprintf("cannot compare non-numeric values: %s=%s", key, actualStr)
+							message = fmt.Sprintf("cannot compare non-finite or non-numeric values: %s=%s", key, actualStr)
 						}
 					} else {
 						passed = false
@@ -210,8 +210,8 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 					thresholdStr := strings.TrimSpace(subParts[1])
 					if actual, exists := ctx[key]; exists {
 						actualStr := fmt.Sprintf("%v", actual)
-						actualNum, err1 := strconv.ParseFloat(actualStr, 64)
-						thresholdNum, err2 := strconv.ParseFloat(thresholdStr, 64)
+						actualNum, err1 := parseFiniteFloat(actualStr)
+						thresholdNum, err2 := parseFiniteFloat(thresholdStr)
 						if err1 == nil && err2 == nil {
 							if actualNum > thresholdNum {
 								passed = false
@@ -221,7 +221,7 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 							}
 						} else {
 							passed = false
-							message = fmt.Sprintf("cannot compare non-numeric values: %s=%s", key, actualStr)
+							message = fmt.Sprintf("cannot compare non-finite or non-numeric values: %s=%s", key, actualStr)
 						}
 					} else {
 						passed = false
