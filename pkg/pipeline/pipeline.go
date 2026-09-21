@@ -831,12 +831,18 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		if result.EffectivePolicyCount == 0 {
 			result.GovernanceStatus = "unconfigured"
 			result.PolicyResults = nil
+			_ = p.emitKernelEvent("governance.unconfigured", map[string]any{
+				"mode": "governed", "effective_policy_count": 0, "status": "blocked",
+			})
 			return fmt.Errorf("governance configuration required: no effective policies configured")
 		}
 	} else if result.EffectivePolicyCount == 0 {
 		result.GovernanceMode = "ungoverned"
 		result.GovernanceStatus = "intentionally-disabled"
 		result.PolicyResults = nil
+		_ = p.emitKernelEvent("governance.disabled", map[string]any{
+			"mode": "ungoverned", "effective_policy_count": 0, "status": "intentionally-disabled",
+		})
 		return nil
 	} else {
 		result.GovernanceMode = "governed"
@@ -854,6 +860,9 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 	}
 	result.PolicyResults = results
 	result.GovernanceStatus = "evaluated"
+	_ = p.emitKernelEvent("governance.evaluated", map[string]any{
+		"mode": "governed", "effective_policy_count": result.EffectivePolicyCount, "status": "evaluated",
+	})
 	for _, res := range results {
 		if !res.Passed {
 			return fmt.Errorf("policy evaluation failed: rule %s: %s", res.RuleID, res.Message)
