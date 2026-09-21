@@ -57,7 +57,7 @@ type Result struct {
 	ExpectedOutcome Outcome
 	ObservedOutcome Outcome
 	Verdict         Verdict
-	Evidence         string
+	Evidence        string
 	Risk             Risk
 }
 
@@ -91,6 +91,7 @@ func normalizeResult(r Result) Result {
 	}
 	if r.ObservedOutcome == "" {
 		r.ObservedOutcome = observedOutcome(r)
+	}
 	r.Bypassed = r.ObservedOutcome == OutcomeAllow
 	if r.ObservedOutcome == r.ExpectedOutcome {
 		r.Verdict = VerdictPass
