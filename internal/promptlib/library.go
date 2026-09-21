@@ -137,6 +137,10 @@ func (l *Library) loadOverrides() error {
 				errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrInternal, "%s: parse compiler template", path))
 				continue
 			}
+			if err := l.validateCompilerOverride(t, path); err != nil {
+				errs = append(errs, err)
+				continue
+			}
 			l.compilerTpls[t.Name] = t
 		default:
 			errs = append(errs, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("%s: unknown kind %q", path, meta.Kind)))
@@ -147,6 +151,67 @@ func (l *Library) loadOverrides() error {
 		return errs
 	}
 	return nil
+}
+
+// policyMarkerWords are words that signal governance guidance inside
+// instruction and rules templates. Overrides of built-in compiler templates
+// must preserve every marker word present in the built-in file so an
+// agent-writable override directory cannot silently neutralize policy.
+var policyMarkerWords = []string{"guideline", "policy", "instruction", "rule"}
+
+// policyMarkers returns the marker words present in a template.
+func policyMarkers(tmpl string) []string {
+	lower := strings.ToLower(tmpl)
+	var out []string
+	for _, w := range policyMarkerWords {
+		if strings.Contains(lower, w) {
+			out = append(out, w)
+		}
+	}
+	return out
+}
+
+// validateCompilerOverride rejects overrides of existing (built-in) compiler
+// templates that silently change the set of emitted files or strip governance
+// guidance. This closes the CRITICAL bypass where a .naeos/prompts override
+// replaced AGENTS.md with content that drops all policy guidance.
+func (l *Library) validateCompilerOverride(ov *CompilerTemplate, src string) error {
+	existing, ok := l.compilerTpls[ov.Name]
+	if !ok {
+		return nil
+	}
+
+	var errs errList
+	for _, bf := range existing.Files {
+		ovf, ok := findFileByPath(ov.Files, bf.Path)
+		if !ok {
+			errs = append(errs, naeoserr.New(naeoserr.ErrValidation,
+				fmt.Sprintf("%s: override of compiler template %q drops file %q", src, ov.Name, bf.Path)))
+			continue
+		}
+		if bf.Kind != "instructions" && bf.Kind != "rules" {
+			continue
+		}
+		for _, m := range policyMarkers(bf.Template) {
+			if !strings.Contains(strings.ToLower(ovf.Template), m) {
+				errs = append(errs, naeoserr.New(naeoserr.ErrValidation,
+					fmt.Sprintf("%s: override of compiler template %q file %q drops policy marker %q", src, ov.Name, bf.Path, m)))
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return errs
+	}
+	return nil
+}
+
+func findFileByPath(files []FileSpec, path string) (FileSpec, bool) {
+	for _, f := range files {
+		if f.Path == path {
+			return f, true
+		}
+	}
+	return FileSpec{}, false
 }
 
 // GetLLMPrompt returns the named LLM prompt and true, or nil and false if not found.
