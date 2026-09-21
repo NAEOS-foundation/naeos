@@ -74,7 +74,7 @@ func scnLicenseHeaderKeywordSpoof() Result {
 	rv := review.NewReviewer()
 	r, err := rv.ReviewArtifact("main.go", "// Licensed under a fake MIT note\npackage main\nfunc main(){}\n", []string{"has-license-header", "no-todo", "no-placeholder"})
 	if err != nil {
-		return Result{Layer: LayerReviewer, Scenario: "license header keyword spoof", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeDeny, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerReviewer, Scenario: "license header keyword spoof", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerReviewer,
