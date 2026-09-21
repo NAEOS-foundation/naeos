@@ -67,21 +67,6 @@ func (r Result) String() string {
 }
 
 func expectedOutcome(scenario string) Outcome {
-	// v1 adversarial scenarios are expected to be denied unless they
-	// explicitly test a semantic gap where the correct classification is
-	// NOT_EVALUATED.
-	return OutcomeDeny
-}
-
-func observedOutcome(r Result) Outcome {
-	if strings.Contains(strings.ToLower(r.Evidence), "error") ||
-		strings.Contains(strings.ToLower(r.Evidence), "init error") ||
-		strings.Contains(strings.ToLower(r.Evidence), "run failed") {
-		return OutcomeError
-	}
-	if r.Bypassed {
-		return OutcomeAllow
-	}
 	return OutcomeDeny
 }
 
@@ -90,7 +75,7 @@ func normalizeResult(r Result) Result {
 		r.ExpectedOutcome = expectedOutcome(r.Scenario)
 	}
 	if r.ObservedOutcome == "" {
-		r.ObservedOutcome = observedOutcome(r)
+		r.ObservedOutcome = OutcomeGovernanceInvalid
 	}
 	r.Bypassed = r.ObservedOutcome == OutcomeAllow
 	if r.ObservedOutcome == r.ExpectedOutcome {

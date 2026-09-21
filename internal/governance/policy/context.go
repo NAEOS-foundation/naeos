@@ -15,10 +15,10 @@ import (
 
 const PolicyContextVersion = "v1"
 
-// PolicyContextFields is the explicit, versioned policy-visible surface.
-// New NEIR fields MUST NOT become policy-visible implicitly; they must be
-// added here as part of an intentional policy-context contract change.
-var PolicyContextFields = []string{
+// policyContextFields is the immutable-in-package, explicit policy-visible
+// surface. New NEIR fields MUST NOT become policy-visible implicitly; they
+// must be added here as part of an intentional policy-context contract change.
+var policyContextFields = [...]string{
 	"ai", "apis", "architecture", "components", "deployment",
 	"documentation", "domain", "generation", "infrastructure", "inherits",
 	"metadata", "modules", "project", "security", "services", "storage",
@@ -46,8 +46,13 @@ func (c PolicyContext) Digest() (string, error) {
 	}
 	payload := struct {
 		Version string         `json:"version"`
+		Fields  []string       `json:"fields"`
 		Values  map[string]any `json:"values"`
-	}{Version: c.Version, Values: c.Values}
+	}{
+		Version: c.Version,
+		Fields:  PolicyContextFieldNames(),
+		Values:  c.Values,
+	}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return "", fmt.Errorf("marshal policy context digest payload: %w", err)
@@ -69,8 +74,8 @@ func ContextFromNEIR(neir *model.NEIR) (PolicyContext, error) {
 		return PolicyContext{}, fmt.Errorf("decode NEIR policy context: %w", err)
 	}
 
-	values := make(map[string]any, len(PolicyContextFields))
-	for _, field := range PolicyContextFields {
+	values := make(map[string]any, len(policyContextFields))
+	for _, field := range policyContextFields {
 		if value, ok := allValues[field]; ok {
 			values[field] = value
 		}
@@ -79,7 +84,7 @@ func ContextFromNEIR(neir *model.NEIR) (PolicyContext, error) {
 }
 
 func PolicyContextFieldNames() []string {
-	fields := append([]string(nil), PolicyContextFields...)
+	fields := append([]string(nil), policyContextFields[:]...)
 	sort.Strings(fields)
 	return fields
 }

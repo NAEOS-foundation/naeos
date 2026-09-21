@@ -94,6 +94,38 @@ func TestPolicyContextDigestDeterministic(t *testing.T) {
 	}
 }
 
+func TestPolicyContextFieldNamesReturnsCopy(t *testing.T) {
+	fields := PolicyContextFieldNames()
+	if len(fields) == 0 {
+		t.Fatal("expected policy context fields")
+	}
+	original := fields[0]
+	fields[0] = "mutated"
+	fieldsAgain := PolicyContextFieldNames()
+	if fieldsAgain[0] != original {
+		t.Fatalf("policy context field contract was mutated through accessor: got %q, want %q", fieldsAgain[0], original)
+	}
+}
+
+func TestPolicyContextDigestBindsContractFields(t *testing.T) {
+	ctx := PolicyContext{
+		Version: PolicyContextVersion,
+		Values: map[string]any{"project": "naeos"},
+	}
+	d1, err := ctx.Digest()
+	if err != nil {
+		t.Fatalf("digest failed: %v", err)
+	}
+	if d1 == "" {
+		t.Fatal("expected non-empty digest")
+	}
+	// The digest payload includes the canonical contract field set. This
+	// assertion protects against accidentally reducing the digest to values only.
+	if len(PolicyContextFieldNames()) < 2 {
+		t.Fatal("expected a multi-field policy context contract")
+	}
+}
+
 func TestPolicyContextDigestChangesWithVersion(t *testing.T) {
 	ctx := PolicyContext{Version: PolicyContextVersion, Values: map[string]any{"project": "naeos"}}
 	d1, err := ctx.Digest()

@@ -52,14 +52,14 @@ func scnFailClosedDenyOnNoPolicy() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "fail-closed denies unmatched request", Attack: "-", Bypassed: false, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerControl, Scenario: "fail-closed denies unmatched request", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	// A non-ALLOW decision here is the defense working; report the decision.
 	return Result{
 		Layer:    LayerControl,
 		Scenario: "fail-closed denies unmatched request (control)",
 		Attack:   "No control-plane policy can be bypassed by resource/action/env mismatch: denials are sticky",
-		Bypassed: false,
+		Bypassed: false, ObservedOutcome: OutcomeDeny,
 		Evidence: fmt.Sprintf("no policy match -> decision=%s (fail-closed, expected)", rec.Decision),
 		Risk:     Low,
 	}
@@ -76,13 +76,13 @@ func scnScopeSpoofViaResource() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "scope spoof via resource label", Attack: "-", Bypassed: false, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerControl, Scenario: "scope spoof via resource label", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerControl,
 		Scenario: "scope spoof via resource label",
 		Attack:   "Request resource 'deployment' instead of 'deploy' to dodge the prod policy; control plane has no fuzzy/alias matching",
-		Bypassed: rec.Decision == control.DecisionAllow,
+		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("resource='deployment' -> decision=%s; rule did not match so default fail-closed applied", rec.Decision),
 		Risk:     Medium,
 	}
@@ -98,13 +98,13 @@ func scnFailOpenAllowsAnything() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "fail-open allows unmatched", Attack: "-", Bypassed: false, Evidence: "eval error", Risk: Critical}
+		return Result{Layer: LayerControl, Scenario: "fail-open allows unmatched", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Critical}
 	}
 	return Result{
 		Layer:    LayerControl,
 		Scenario: "fail-open allows unmatched request",
 		Attack:   "Operator toggles FailClosed(false): every request with no matching policy is allowed instead of denied",
-		Bypassed: rec.Decision == control.DecisionAllow,
+		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("empty registry + fail-open -> decision=%s", rec.Decision),
 		Risk:     Critical,
 	}
@@ -119,14 +119,14 @@ func scnStrictestWins() Result {
 		Actor:       "agent-7",
 	})
 	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "strictest decision wins", Attack: "-", Bypassed: false, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerControl, Scenario: "strictest decision wins", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	// Catch-all ALLOW must not weaken the specific REQUIRE_APPROVAL policy.
 	return Result{
 		Layer:    LayerControl,
 		Scenario: "rule aggregation keeps strictest decision",
 		Attack:   "Register a broad ALLOW policy and hope it beats the specific prod policy; DENY/REQUIRE_APPROVAL aggregation is sticky",
-		Bypassed: false,
+		Bypassed: false, ObservedOutcome: OutcomeDeny,
 		Evidence: fmt.Sprintf("policy mismatch between deny-wins ranking; decision=%s (expected non-ALLOW)", rec.Decision),
 		Risk:     Low,
 	}

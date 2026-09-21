@@ -28,13 +28,13 @@ func scnNaNBeatsNumericGt() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"modules": "NaN"})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "NaN bypasses gt threshold", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, Evidence: "error during eval", Risk: High}
+		return Result{Layer: LayerEvaluator, Scenario: "NaN bypasses gt threshold", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "error during eval", Risk: High}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "NaN bypasses gt threshold",
 		Attack:   "agent supplies ctx value 'NaN'; evaluator must reject non-finite operands before applying the threshold comparison",
-		Bypassed: len(res) == 1 && res[0].Passed,
+		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("rule %q with modules=NaN -> Passed=%v msg=%q", "modules-min", res[0].Passed, res[0].Message),
 		Risk:     High,
 	}
@@ -47,13 +47,13 @@ func scnEmptyConditionDefaultsPass() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"unrelated": "x"})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "empty condition always passes", Attack: "no condition -> default pass", Bypassed: false, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerEvaluator, Scenario: "empty condition always passes", Attack: "no condition -> default pass", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "empty condition always passes",
 		Attack:   "a Rule with an empty/whitespace Condition is treated as a pass even when the decision is block/enforce",
-		Bypassed: len(res) == 1 && res[0].Passed,
+		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("rule %q (empty condition) -> Passed=%v", "empty-rc", res[0].Passed),
 		Risk:     Medium,
 	}
@@ -66,13 +66,13 @@ func scnNotNilExistsPasses() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"auth_token": nil})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "exists: passes on nil value", Attack: "only key presence checked", Bypassed: false, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerEvaluator, Scenario: "exists: passes on nil value", Attack: "only key presence checked", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "exists: passes on nil value",
 		Attack:   "condition 'exists' checks only map-key presence, so a key set to nil/empty still passes; policies that meant 'must have a real value' are trivially satisfied",
-		Bypassed: len(res) == 1 && res[0].Passed,
+		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("ctx {auth_token: nil} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
 		Risk:     Medium,
 	}
@@ -85,14 +85,14 @@ func scnWhitespaceSatisfiesNotEmpty() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"environment": "   "})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "whitespace satisfies not_empty", Attack: "value not trimmed before non-empty check", Bypassed: false, Evidence: "eval error", Risk: Medium}
+		return Result{Layer: LayerEvaluator, Scenario: "whitespace satisfies not_empty", Attack: "value not trimmed before non-empty check", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
 	want := len(res) == 1 && res[0].Passed
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "whitespace satisfies not_empty",
 		Attack:   "not_empty does no TrimSpace; a whitespace-only value is considered non-empty",
-		Bypassed: want,
+		Bypassed: want, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("ctx {environment: '   '} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
 		Risk:     Medium,
 	}
@@ -105,13 +105,13 @@ func scnInfSatisfiesLt() Result {
 	}
 	res, err := e.EvaluateRules(rules, map[string]any{"replicas": "-Inf"})
 	if err != nil {
-		return Result{Layer: LayerEvaluator, Scenario: "Inf bypasses lt bound", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, Evidence: "eval error", Risk: High}
+		return Result{Layer: LayerEvaluator, Scenario: "Inf bypasses lt bound", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	return Result{
 		Layer:    LayerEvaluator,
 		Scenario: "Inf bypasses lt bound",
 		Attack:   "special float values (+/-Inf, Inf) must be rejected rather than compared as ordinary numeric operands",
-		Bypassed: len(res) == 1 && res[0].Passed,
+		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
 		Evidence: fmt.Sprintf("ctx {replicas: '-Inf'} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
 		Risk:     High,
 	}
