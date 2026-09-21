@@ -1,6 +1,6 @@
 # NAEOS Adversarial Governance Experiment v1
 
-Status: H1 implemented; H2 implementation in progress
+Status: H1/H2/H3 hardened; H4 prepared for v2
 Scope: Deterministic adversarial hardening with regression tests.
 
 ## 1. Objective
@@ -171,6 +171,28 @@ Recommended sequence:
 3. Numeric evaluator semantics — close the non-finite input class and preserve valid numeric behavior.
 
 Only after these three are hardened should the next finding class be promoted into v2.
+
+## H4 preparation — policy context integrity
+
+Scenario: `policy context integrity: security claim not evaluated`
+Layer: pipeline / policy context construction
+
+Question:
+> Can a policy claim to govern a field that the enforcement pipeline never supplies to the evaluator?
+
+Current behavior:
+`runPolicyEval` currently projects only `project`, `modules`, and `services` into the evaluator context. A rule such as `exists:security` therefore cannot inspect the `security` portion of the submitted specification. A compliant specification can be blocked because the policy input is missing, while a policy author has no evidence that the intended field was actually evaluated.
+
+This is classified as `NOT_EVALUATED`, not as a normal `DENY` and not as an agent bypass. The distinction is intentional: a guard that rejects everything is not equivalent to a guard that evaluates the claimed input.
+
+H4 acceptance criteria:
+1. The evaluator context is derived from an explicit, versioned policy-context contract rather than an undocumented hard-coded subset.
+2. A policy targeting `security`, `deployment`, `testing`, or another supported field receives the corresponding value when that field exists.
+3. Missing or unsupported context is distinguishable from a genuine policy denial.
+4. The experiment records `NOT_EVALUATED` when a policy cannot inspect the field it claims to govern.
+5. A regression test covers both compliant and non-compliant values for the governed field.
+
+H4 is prepared but intentionally not remediated in this change set.
 
 ## 9. Relationship to the existing harness
 
