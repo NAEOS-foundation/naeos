@@ -18,6 +18,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/project"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
+	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
@@ -102,6 +103,12 @@ func (b DefaultBuilder) build(resolved any) (*model.NEIR, error) {
 					neir.Services = append(neir.Services, extractService(s))
 				}
 			}
+		}
+	}
+
+	if rawSecurity, exists := resolvedSpec.Context["security"]; exists {
+		if securityMap, ok := rawSecurity.(map[string]any); ok {
+			neir.Security = extractSecurity(securityMap)
 		}
 	}
 
@@ -197,6 +204,94 @@ func extractService(s map[string]any) service.Service {
 		}
 	}
 	return svc
+}
+
+func extractSecurity(m map[string]any) *security.Security {
+	sec := &security.Security{}
+
+	if auth, ok := m["authentication"].(map[string]any); ok {
+		sec.Authentication = &security.Authentication{}
+		if method, ok := auth["method"].(string); ok {
+			sec.Authentication.Method = method
+		}
+		if provider, ok := auth["provider"].(string); ok {
+			sec.Authentication.Provider = provider
+		}
+	}
+
+	if authz, ok := m["authorization"].(map[string]any); ok {
+		sec.Authorization = &security.Authorization{}
+		if model, ok := authz["model"].(string); ok {
+			sec.Authorization.Model = model
+		}
+		if roles, ok := authz["roles"].([]any); ok {
+			for _, role := range roles {
+				if value, ok := role.(string); ok {
+					sec.Authorization.Roles = append(sec.Authorization.Roles, value)
+				}
+			}
+		}
+	}
+
+	if encryption, ok := m["encryption"].(map[string]any); ok {
+		sec.Encryption = &security.Encryption{}
+		if inTransit, ok := encryption["in_transit"].(bool); ok {
+			sec.Encryption.InTransit = inTransit
+		}
+		if atRest, ok := encryption["at_rest"].(bool); ok {
+			sec.Encryption.AtRest = atRest
+		}
+		if algorithm, ok := encryption["algorithm"].(string); ok {
+			sec.Encryption.Algorithm = algorithm
+		}
+	}
+
+	if secrets, ok := m["secrets"].([]any); ok {
+		for _, raw := range secrets {
+			if secretMap, ok := raw.(map[string]any); ok {
+				item := security.Secret{}
+				if name, ok := secretMap["name"].(string); ok {
+					item.Name = name
+				}
+				if kind, ok := secretMap["kind"].(string); ok {
+					item.Kind = kind
+				}
+				sec.Secrets = append(sec.Secrets, item)
+			}
+		}
+	}
+
+	if attributes, ok := m["attributes"].(map[string]any); ok {
+		sec.Attributes = make(map[string]string, len(attributes))
+		for key, value := range attributes {
+			sec.Attributes[key] = fmt.Sprint(value)
+		}
+	}
+
+	// Preserve scalar security claims that are not represented by the typed
+	// NEIR security model (for example a legacy "tls" claim) rather than
+	// silently dropping them during NEIR construction.
+	if sec.Attributes == nil {
+		sec.Attributes = make(map[string]string)
+	}
+	for key, value := range m {
+		switch key {
+		case "authentication", "authorization", "encryption", "secrets", "attributes":
+			continue
+		default:
+			switch value.(type) {
+			case map[string]any, []any:
+				continue
+			default:
+				sec.Attributes[key] = fmt.Sprint(value)
+			}
+		}
+	}
+
+	if len(sec.Attributes) == 0 {
+		sec.Attributes = nil
+	}
+	return sec
 }
 
 func extractArchitecture(m map[string]any) *architecture.Architecture {
