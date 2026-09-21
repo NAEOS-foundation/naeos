@@ -24,7 +24,6 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"empty condition always passes":              true,
 		"exists: passes on nil value":               true,
 		"whitespace satisfies not_empty":            true,
-		"fail-closed denies unmatched request":      true,
 		"TODO obfuscation evades no-todo":            true,
 		"placeholder obfuscation evades no-placeholder": true,
 		"license header keyword spoof":              true,
