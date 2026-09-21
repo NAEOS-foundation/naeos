@@ -27,46 +27,70 @@ func scnPipelineCtxCannotInspectSpec() Result {
 	p, err := pipeline.New(pipeline.Config{
 		Name: "bypass-lab",
 		Policies: []policy.Rule{
-			// Author intent: the spec must declare TLS.
 			{RuleID: "must-have-tls", Condition: "exists:security", Action: "block", Enabled: true},
 		},
 	})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "pipeline ctx cannot inspect spec", Attack: "-", Bypassed: false, Evidence: "pipeline init error", Risk: Critical}
+		return Result{Layer: LayerPipeline, Scenario: "policy context integrity: security claim not evaluated", Attack: "-", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeError, Evidence: "pipeline init error", Risk: Critical}
 	}
-	spec := "project: bypass-lab\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
-	_, err = p.Run(spec)
-	if err == nil {
-		// The policy engine saw a key it cannot receive from this pipeline.
-		// Either enforcement changed (ctx now carries security) or the rule
-		// silently no-oped; either way the spec-derived claim is unproven.
+
+	compliantSpec := "project: bypass-lab\nsecurity:\n  tls: 1.3\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+	res, err := p.Run(compliantSpec)
+	if err != nil {
 		return Result{
-			Layer:    LayerPipeline,
+			Layer: LayerPipeline,
 			Scenario: "policy context integrity: security claim not evaluated",
-			Attack:   "runPolicyEval hard-codes ctx={project,modules,services}; policies on other spec keys never see their input",
-			Bypassed: true,
-			Evidence: "run succeeded on spec with security.tls despite must-have-tls policy; ctx key was never supplied",
-			Risk:     High,
+			Attack: "policy targets top-level security; evaluator context must contain the canonical NEIR security field",
+			ExpectedOutcome: OutcomeAllow,
+			ObservedOutcome: OutcomeDeny,
+			Evidence: fmt.Sprintf("compliant spec with security.tls=1.3 was blocked: %v", err),
+			Risk: High,
 		}
 	}
 
-	// Over-blocking: a spec that DOES declare security.tls is still rejected,
-	// because the policy engine never sees the "security" key at all. This is
-	// misfired enforcement, not an agent win; verdict stays blocked but the
-	// risk is the guard is unusable/lenient in practice (agents disable such
-	// policies, cf. disabled/no-policy scenarios).
+	fired := false
+	for _, pr := range res.PolicyResults {
+		if pr.RuleID == "must-have-tls" && pr.Passed {
+			fired = true
+		}
+	}
+	if !fired {
+		return Result{
+			Layer: LayerPipeline,
+			Scenario: "policy context integrity: security claim not evaluated",
+			Attack: "policy context must expose security to the evaluator",
+			ExpectedOutcome: OutcomeAllow,
+			ObservedOutcome: OutcomeNotEvaluated,
+			Evidence: "run succeeded but must-have-tls did not evaluate against security",
+			Risk: Critical,
+		}
+	}
+
+	nonCompliantSpec := "project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n"
+	_, err = p.Run(nonCompliantSpec)
+	if err == nil {
+		return Result{
+			Layer: LayerPipeline,
+			Scenario: "policy context integrity: security claim not evaluated",
+			Attack: "policy context must distinguish missing security from a compliant security object",
+			ExpectedOutcome: OutcomeDeny,
+			ObservedOutcome: OutcomeAllow,
+			Evidence: "non-compliant spec without security passed must-have-tls",
+			Risk: Critical,
+		}
+	}
+
 	return Result{
-		Layer:    LayerPipeline,
+		Layer: LayerPipeline,
 		Scenario: "policy context integrity: security claim not evaluated",
-		Attack:   "runPolicyEval hard-codes ctx={project,modules,services}; policies on other spec keys never see their input: compliant specs are wrongly blocked and non-compliant specs can't be detected",
-		Bypassed: false,
-		Evidence: fmt.Sprintf("spec with security.tls=1.3 still blocked: %v", err),
-		Risk:     High,
+		Attack: "policy context must expose and evaluate security consistently for compliant and non-compliant specs",
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: OutcomeDeny,
+		Evidence: "security policy passed on compliant spec and denied spec without security",
+		Risk: High,
 	}
 }
 
-// scnPipelineDisabledRuleSkipped shows that a policy rule can be silently
-// turned off via Enabled:false with no event, no warning, no trace.
 func scnPipelineDisabledRuleSkipped() Result {
 	p, err := pipeline.New(pipeline.Config{
 		Name: "bypass-lab",
