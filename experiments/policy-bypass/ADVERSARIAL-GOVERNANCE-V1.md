@@ -182,3 +182,9 @@ The v1 baseline is therefore:
 > Instruction Integrity + Governance Configuration + Policy Semantics
 
 rather than a claim that only three weaknesses exist.
+
+## H3 hardening — non-finite numeric semantics
+
+The policy evaluator now rejects non-finite numeric operands (`NaN`, `+Inf`, and `-Inf`) before applying `gt`, `lt`, `gte`, or `lte` comparisons. This closes the reproduced bypass where IEEE-754 comparison semantics could make a non-finite value satisfy a finite bound.
+
+The scope is deliberately narrow: valid finite numeric comparisons remain unchanged, and this hardening does not imply that unrelated evaluator or governance findings are resolved.
