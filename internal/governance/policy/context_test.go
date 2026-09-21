@@ -4,6 +4,7 @@
 package policy
 
 import (
+	"crypto/sha256"
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/neir/model"
