@@ -55,7 +55,7 @@ func writeReport(results []Result) error {
 		b.WriteString("| Scenario | Attack | Evidence | Expected | Observed | Verdict | Risk |\n")
 		b.WriteString("|---|---|---|---|---|---|---|\n")
 		for _, r := range rs {
-			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\\n",
+			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\n",
 				r.Scenario, r.Attack, r.Evidence, r.ExpectedOutcome, r.ObservedOutcome, r.Verdict, r.Risk)
 		}
 		b.WriteString("\n")
