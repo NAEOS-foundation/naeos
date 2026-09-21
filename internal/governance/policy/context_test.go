@@ -110,7 +110,7 @@ func TestPolicyContextFieldNamesReturnsCopy(t *testing.T) {
 func TestPolicyContextDigestBindsContractFields(t *testing.T) {
 	ctx := PolicyContext{
 		Version: PolicyContextVersion,
-		Values: map[string]any{"project": "naeos"},
+		Values:  map[string]any{"project": "naeos"},
 	}
 	d1, err := ctx.Digest()
 	if err != nil {
