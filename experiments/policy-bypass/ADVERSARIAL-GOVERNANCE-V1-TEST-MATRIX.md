@@ -5,7 +5,7 @@ Purpose: machine-readable acceptance matrix for the three v1 architectural findi
 | ID | Finding | Baseline scenario(s) | Required invariant | Hardened outcome |
 |---|---|---|---|---|
 | AGV1-01 | Instruction Layer Is Not an Enforcement Boundary | prompt override dir neutralizes policy | Mutable instruction artifacts cannot silently become the policy authority | Override detected/rejected or execution remains governed by an external deterministic policy boundary |
-| AGV1-02 | Empty Governance Configuration Silently Disables Enforcement | no configured policies => no checks | A run with zero effective policies cannot be represented as fully governed | Explicit unconfigured/disabled state or fail-closed behavior with machine-readable evidence |
+| AGV1-02 | Empty Governance Configuration Silently Disables Enforcement | no configured policies => no checks | A governed run with zero effective policies cannot execute as if governed | Governed mode blocks; `governance.unconfigured` telemetry records the blocked state; policy-free mode is explicitly `ungoverned` |
 | AGV1-03 | Policy Evaluator Accepts Non-Finite Numeric Values | NaN bypasses gt threshold; Inf bypasses lt bound | Non-finite operands cannot silently satisfy finite numeric constraints | Explicit rejection/error or documented deterministic semantics; valid finite comparisons unchanged |
 
 ## Verification protocol
