@@ -94,8 +94,11 @@ func observedOutcome(r Result) Outcome {
 }
 
 func normalizeResult(r Result) Result {
-	r.ExpectedOutcome = expectedOutcome(r.Scenario)
-	r.ObservedOutcome = observedOutcome(r)
+	if r.ExpectedOutcome == "" {
+		r.ExpectedOutcome = expectedOutcome(r.Scenario)
+	}
+	if r.ObservedOutcome == "" {
+		r.ObservedOutcome = observedOutcome(r)
 	r.Bypassed = r.ObservedOutcome == OutcomeAllow
 	if r.ObservedOutcome == r.ExpectedOutcome {
 		r.Verdict = VerdictPass
