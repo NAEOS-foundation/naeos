@@ -70,6 +70,20 @@ func expectedOutcome(scenario string) Outcome {
 	return OutcomeDeny
 }
 
+func isKnownOutcome(outcome Outcome) bool {
+	switch outcome {
+	case OutcomeAllow, OutcomeDeny, OutcomeRequireApproval, OutcomeError,
+		OutcomeGovernanceInvalid, OutcomeNotEvaluated:
+		return true
+	default:
+		return false
+	}
+}
+
+// normalizeResult is the single integrity boundary for scenario results.
+// Scenario authors cannot make the oracle pass by supplying a contradictory
+// Bypassed flag: bypass state is derived exclusively from ObservedOutcome.
+// Malformed expected/observed outcomes fail closed as GOVERNANCE_INVALID.
 func normalizeResult(r Result) Result {
 	if r.ExpectedOutcome == "" {
 		r.ExpectedOutcome = expectedOutcome(r.Scenario)
@@ -77,7 +91,20 @@ func normalizeResult(r Result) Result {
 	if r.ObservedOutcome == "" {
 		r.ObservedOutcome = OutcomeGovernanceInvalid
 	}
+
+	if !isKnownOutcome(r.ExpectedOutcome) || !isKnownOutcome(r.ObservedOutcome) {
+		r.ObservedOutcome = OutcomeGovernanceInvalid
+		r.Verdict = VerdictFail
+		r.Bypassed = false
+		return r
+	}
+
 	r.Bypassed = r.ObservedOutcome == OutcomeAllow
+	if r.ObservedOutcome == OutcomeGovernanceInvalid {
+		r.Verdict = VerdictFail
+		return r
+	}
+
 	if r.ObservedOutcome == r.ExpectedOutcome {
 		r.Verdict = VerdictPass
 	} else {

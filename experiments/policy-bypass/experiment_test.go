@@ -126,6 +126,51 @@ func TestPolicyBypassScenarioNamesUnique(t *testing.T) {
 
 // TestPolicyBypassDeterministic ensures the harness is a stable oracle:
 // re-running produces identical bypass decisions.
+func TestPolicyBypassOracleIntegrity(t *testing.T) {
+	allow := normalizeResult(Result{
+		Scenario:        "oracle allow derivation",
+		ExpectedOutcome: OutcomeAllow,
+		ObservedOutcome: OutcomeAllow,
+		Bypassed:        false, // must be ignored
+	})
+	if !allow.Bypassed || allow.Verdict != VerdictPass {
+		t.Fatalf("ALLOW must derive bypass=true and PASS: bypassed=%v verdict=%s", allow.Bypassed, allow.Verdict)
+	}
+
+	deny := normalizeResult(Result{
+		Scenario:        "oracle deny derivation",
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: OutcomeDeny,
+		Bypassed:        true, // must be ignored
+	})
+	if deny.Bypassed || deny.Verdict != VerdictPass {
+		t.Fatalf("DENY must derive bypass=false and PASS: bypassed=%v verdict=%s", deny.Bypassed, deny.Verdict)
+	}
+
+	invalidObserved := normalizeResult(Result{
+		Scenario:        "oracle invalid observed outcome",
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: Outcome("MADE_UP"),
+		Bypassed:        true,
+	})
+	if invalidObserved.ObservedOutcome != OutcomeGovernanceInvalid || invalidObserved.Bypassed || invalidObserved.Verdict != VerdictFail {
+		t.Fatalf("invalid observed outcome must fail closed: observed=%s bypassed=%v verdict=%s",
+			invalidObserved.ObservedOutcome, invalidObserved.Bypassed, invalidObserved.Verdict)
+	}
+
+	invalidExpected := normalizeResult(Result{
+		Scenario:        "oracle invalid expected outcome",
+		ExpectedOutcome: Outcome("MADE_UP"),
+		ObservedOutcome: OutcomeDeny,
+	})
+	if invalidExpected.ObservedOutcome != OutcomeGovernanceInvalid || invalidExpected.Bypassed || invalidExpected.Verdict != VerdictFail {
+		t.Fatalf("invalid expected outcome must fail closed: observed=%s bypassed=%v verdict=%s",
+			invalidExpected.ObservedOutcome, invalidExpected.Bypassed, invalidExpected.Verdict)
+	}
+}
+
+// TestPolicyBypassDeterministic ensures the harness is a stable oracle:
+// re-running produces identical bypass decisions.
 func TestPolicyBypassDeterministic(t *testing.T) {
 	first := runAll()
 	for i := 0; i < 3; i++ {

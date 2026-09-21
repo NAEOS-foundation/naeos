@@ -92,7 +92,11 @@ files:
 	lib, err := promptlib.New(promptlib.WithOverridesDir(dir))
 	if err != nil {
 		blocked := strings.Contains(err.Error(), "cannot override protected compiler template")
-		return Result{Layer: LayerPrompt, Scenario: "prompt override dir neutralizes policy", Attack: "replace protected compiler template", Bypassed: !blocked, ObservedOutcome: OutcomeAllow, Evidence: fmt.Sprintf("protected override rejected=%v; error=%q", blocked, err.Error()), Risk: Critical}
+		observed := OutcomeAllow
+		if blocked {
+			observed = OutcomeDeny
+		}
+		return Result{Layer: LayerPrompt, Scenario: "prompt override dir neutralizes policy", Attack: "replace protected compiler template", Bypassed: !blocked, ObservedOutcome: observed, Evidence: fmt.Sprintf("protected override rejected=%v; error=%q", blocked, err.Error()), Risk: Critical}
 	}
 	files, err := lib.RenderCompiler("opencode", sampleNEIR())
 	if err != nil {

@@ -26,6 +26,7 @@ func scnToDoObfuscation() Result {
 	// Baseline: the canonical TODO marker is caught by the no-todo rule.
 	control, _ := rv.ReviewArtifact("main.go", okHeader+"// TODO: fix this\n", []string{"no-todo", "has-license-header"})
 	var buf strings.Builder
+	variantApproved := false
 	for _, variant := range []string{"to-do", "T0D0", "to do"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+": fix this\n", []string{"no-todo", "has-license-header"})
 		if err != nil {
@@ -33,9 +34,11 @@ func scnToDoObfuscation() Result {
 			continue
 		}
 		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
+		if r.Status == review.StatusApproved {
+			variantApproved = true
+		}
 	}
-	evaded := control.Status != review.StatusApproved &&
-		!strings.Contains(buf.String(), "changes_requested")
+	evaded := control.Status != review.StatusApproved && variantApproved
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "TODO obfuscation evades no-todo",
@@ -50,6 +53,7 @@ func scnPlaceholderObfuscation() Result {
 	rv := review.NewReviewer()
 	control, _ := rv.ReviewArtifact("main.go", okHeader+"// REPLACE_ME with value\n", []string{"no-placeholder", "has-license-header"})
 	var buf strings.Builder
+	variantApproved := false
 	for _, variant := range []string{"replace-me", "change.me", "CHANGE ME", "REPLACE-ME"} {
 		r, err := rv.ReviewArtifact("main.go", okHeader+"// "+variant+" with value\n", []string{"no-placeholder", "has-license-header"})
 		if err != nil {
@@ -57,15 +61,21 @@ func scnPlaceholderObfuscation() Result {
 			continue
 		}
 		fmt.Fprintf(&buf, "%s=%s ", variant, r.Status)
+		if r.Status == review.StatusApproved {
+			variantApproved = true
+		}
 	}
-	evaded := control.Status != review.StatusApproved &&
-		!strings.Contains(strings.ToLower(buf.String()), "changes_requested")
+	evaded := control.Status != review.StatusApproved && variantApproved
+	observed := OutcomeDeny
+	if evaded {
+		observed = OutcomeAllow
+	}
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "placeholder obfuscation evades no-placeholder",
 		Attack:   "no-placeholder only matches the literal lowercased set {placeholder, changeme, replace_me}; 'replace-me', 'change.me', 'CHANGE ME' are undetected",
-		Bypassed: evaded, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("control=%s; evasions: %s", control.Status, strings.TrimSpace(buf.String())),
+		Bypassed: evaded, ObservedOutcome: observed,
+		Evidence: fmt.Sprintf("control=%s; variantApproved=%v; evaded=%v; variants: %s", control.Status, variantApproved, evaded, strings.TrimSpace(buf.String())),
 		Risk:     Medium,
 	}
 }
@@ -76,12 +86,17 @@ func scnLicenseHeaderKeywordSpoof() Result {
 	if err != nil {
 		return Result{Layer: LayerReviewer, Scenario: "license header keyword spoof", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Medium}
 	}
+	approved := r.Status == review.StatusApproved
+	observed := OutcomeDeny
+	if approved {
+		observed = OutcomeAllow
+	}
 	return Result{
 		Layer:    LayerReviewer,
 		Scenario: "license header keyword spoof",
 		Attack:   "has-license-header is satisfied by any of license/apache/mit/copyright within the first 20 lines; a fabricated marker passes",
-		Bypassed: r.Status == review.StatusApproved, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("content without real header -> status=%s", r.Status),
+		Bypassed: approved, ObservedOutcome: observed,
+		Evidence: fmt.Sprintf("content without real header -> status=%s approved=%v", r.Status, approved),
 		Risk:     Low,
 	}
 }
