@@ -27,6 +27,7 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"TODO obfuscation evades no-todo",
 		"placeholder obfuscation evades no-placeholder",
 		"license header keyword spoof",
+		"prompt override dir neutralizes policy",
 		"disabled rule silently skipped",
 		"no configured policies => no checks",
 	}
@@ -51,6 +52,12 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		}
 	}
 	for _, name := range wantBypassed {
+		if name == "prompt override dir neutralizes policy" {
+			if got[name] {
+				t.Errorf("expected scenario %q to be BLOCKED after H1 hardening", name)
+			}
+			continue
+		}
 		if !got[name] {
 			t.Errorf("expected scenario %q to be BYPASSED (current finding); if hardened, update this list explicitly", name)
 		}
