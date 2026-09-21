@@ -108,21 +108,30 @@ func TestPolicyContextFieldNamesReturnsCopy(t *testing.T) {
 }
 
 func TestPolicyContextDigestBindsContractFields(t *testing.T) {
-	ctx := PolicyContext{
-		Version: PolicyContextVersion,
-		Values: map[string]any{"project": "naeos"},
+	values := map[string]any{"project": "naeos"}
+
+	payload1, err := policyContextDigestPayload(PolicyContextVersion, []string{"project", "security"}, values)
+	if err != nil {
+		t.Fatalf("first digest payload failed: %v", err)
 	}
-	d1, err := ctx.Digest()
+	payload2, err := policyContextDigestPayload(PolicyContextVersion, []string{"project", "security", "testing"}, values)
+	if err != nil {
+		t.Fatalf("second digest payload failed: %v", err)
+	}
+
+	sum1 := sha256.Sum256(payload1)
+	sum2 := sha256.Sum256(payload2)
+	if sum1 == sum2 {
+		t.Fatal("expected policy context digest to change when contract fields change")
+	}
+
+	ctx := PolicyContext{Version: PolicyContextVersion, Values: values}
+	digest, err := ctx.Digest()
 	if err != nil {
 		t.Fatalf("digest failed: %v", err)
 	}
-	if d1 == "" {
+	if digest == "" {
 		t.Fatal("expected non-empty digest")
-	}
-	// The digest payload includes the canonical contract field set. This
-	// assertion protects against accidentally reducing the digest to values only.
-	if len(PolicyContextFieldNames()) < 2 {
-		t.Fatal("expected a multi-field policy context contract")
 	}
 }
 
