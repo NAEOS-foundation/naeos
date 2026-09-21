@@ -39,7 +39,7 @@ jobs:
             range="$merge_base..$head"
           fi
           bad=0
-          for hash in $(git rev-list "$range"); do
+          for hash in $(git rev-list --no-merges "$range"); do
             if ! git log -1 --format=%B "$hash" | grep -q '^Signed-off-by:'; then
               echo "::error::commit $hash is missing a Signed-off-by trailer"
               bad=1
