@@ -137,6 +137,13 @@ func (l *Library) loadOverrides() error {
 				errs = append(errs, naeoserr.Wrapf(err, naeoserr.ErrInternal, "%s: parse compiler template", path))
 				continue
 			}
+			// Built-in compiler templates are governance-sensitive instruction
+			// boundaries. A repository-writable override must not silently replace
+			// them, because that would make policy guidance mutable by the agent.
+			if _, protected := builtinCompilerTemplates[t.Name]; protected {
+				errs = append(errs, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("%s: cannot override protected compiler template %q", path, t.Name)))
+				continue
+			}
 			l.compilerTpls[t.Name] = t
 		default:
 			errs = append(errs, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("%s: unknown kind %q", path, meta.Kind)))
