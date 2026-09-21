@@ -7,7 +7,7 @@ Purpose: machine-readable acceptance matrix for the three v1 architectural findi
 | AGV1-01 | Instruction Layer Is Not an Enforcement Boundary | prompt override dir neutralizes policy | Mutable instruction artifacts cannot silently become the policy authority | Override detected/rejected or execution remains governed by an external deterministic policy boundary |
 | AGV1-02 | Empty Governance Configuration Silently Disables Enforcement | no configured policies => no checks | A governed run with zero effective policies cannot execute as if governed | Governed mode blocks; `governance.unconfigured` telemetry records the blocked state; policy-free mode is explicitly `ungoverned` |
 | AGV1-03 | Policy Evaluator Accepts Non-Finite Numeric Values | NaN bypasses gt threshold; Inf bypasses lt bound | Non-finite operands cannot silently satisfy finite numeric constraints | `NaN`, `+Inf`, and `-Inf` are rejected before numeric comparison; finite comparisons remain unchanged |
-| AGV1-04 | Policy Context Integrity | policy context integrity: security claim not evaluated | A policy must receive the data it claims to govern, or the run must be classified as not evaluated | H4 is explicitly `NOT_EVALUATED` until a versioned policy-context contract and regression tests are implemented |
+| AGV1-04 | Policy Context Integrity | policy context integrity: security claim not evaluated | A policy must receive the data it claims to govern, or the run must be classified as not evaluated | H4 is remediated by a versioned policy-context contract; regression tests verify governed fields are evaluated and missing governed fields are denied |
 
 ## Verification protocol
 
