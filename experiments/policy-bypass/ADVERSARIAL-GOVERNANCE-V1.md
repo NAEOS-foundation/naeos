@@ -1,6 +1,6 @@
 # NAEOS Adversarial Governance Experiment v1
 
-Status: H1/H2/H3 hardened; H4 final verification pending
+Status: H1/H2/H3 hardened; post-hardening evidence recorded; H4 policy context verification pending
 Scope: Deterministic adversarial hardening with regression tests.
 
 ## 1. Objective
