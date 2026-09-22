@@ -33,3 +33,7 @@ go run ./experiments/evidence-durable-receipt-v5-6
 V5.6 establishes a repository-level durable receipt and recovery contract. It does not claim process isolation, remote attestation, distributed consensus, immutable storage, or externally trusted telemetry.
 
 Pipeline integration remains a separate boundary: production callers must persist and verify the receipt before treating durable completion as established.
+
+## Change-signoff discipline
+
+All subsequent changes to this experiment and its supporting implementation must carry a valid Developer Certificate of Origin `Signed-off-by:` trailer.
