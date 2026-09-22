@@ -60,6 +60,7 @@ func baseContract() *investordemo.HandoffContract {
 		ContractVersion:        "1.0",
 		CanonicalVersion:       "1",
 		Initiator:              agentA,
+		Recipient:              agentB,
 		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []investordemo.Capability{"repository.read", "repository.write"},
 		PolicyID:               "POLICY-HANDOFF",
