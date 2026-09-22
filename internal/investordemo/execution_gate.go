@@ -180,6 +180,28 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 				"downstream_requested": contract.DownstreamHandoff.RequestedCapability,
 			})
 		}
+
+		// A downstream handoff must not mint a broader capability grant merely by
+		// listing additional capabilities in its own authorization set. Every
+		// downstream capability must already be authorized by the parent handoff.
+		for _, downstreamCap := range contract.DownstreamHandoff.AuthorizedCapabilities {
+			allowedByParent := false
+			for _, parentCap := range contract.AuthorizedCapabilities {
+				if downstreamCap == parentCap {
+					allowedByParent = true
+					break
+				}
+			}
+			if !allowedByParent {
+				result.Errors = append(result.Errors, fmt.Sprintf("Downstream handoff expands authority with capability %s", downstreamCap))
+				result.CapabilityWideningDetected = true
+				result.Valid = false
+				hv.recordAuditEvent("CAPABILITY_ESCALATION_DETECTED", contract.Initiator, map[string]interface{}{
+					"parent_authorized":     contract.AuthorizedCapabilities,
+					"downstream_capability": downstreamCap,
+				})
+			}
+		}
 	}
 
 	// Check provenance.
