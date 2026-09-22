@@ -591,6 +591,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ContractVersion:        "1.0",
 		CanonicalVersion:       "1",
 		Initiator:              "agent-secondary-02",
+		Recipient:              "agent-tertiary-03",
 		RequestedCapability:    "credential.rotate",
 		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
 		PolicyID:               "POLICY-017",
