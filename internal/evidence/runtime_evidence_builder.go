@@ -37,6 +37,12 @@ func (b *RuntimeEvidenceBuilder) Build(runID, kind string, sequence int, stage, 
 	if observed == nil {
 		return fmt.Errorf("runtime event %s is not present in ledger", runtimeEvent.ID)
 	}
+	if observed.RunID != runtimeEvent.RunID ||
+		observed.Name != runtimeEvent.Name ||
+		observed.PayloadDigest != runtimeEvent.PayloadDigest ||
+		observed.Sequence != runtimeEvent.Sequence {
+		return fmt.Errorf("runtime event %s reference does not match ledger event", runtimeEvent.ID)
+	}
 	if observed.RunID != runID || observed.Sequence != sequence || observed.Name != event || observed.PayloadDigest == "" {
 		return fmt.Errorf("runtime event %s does not match requested evidence binding", runtimeEvent.ID)
 	}
@@ -58,16 +64,16 @@ func (b *RuntimeEvidenceBuilder) Build(runID, kind string, sequence int, stage, 
 		Decision: control.DecisionAllow,
 		ExecutionStatus: "observed",
 		Metadata: map[string]any{
-			"run_id":              runID,
-			"run_binding":         RunBindingDigest(runID),
-			"kind":                kind,
-			"sequence":            sequence,
+			"run_id":               runID,
+			"run_binding":          RunBindingDigest(runID),
+			"kind":                 kind,
+			"sequence":             sequence,
 			"previous_evidence_id": previousID,
-			"provenance_stage":    stage,
-			"provenance_event":    event,
-			"payload_digest":      observed.PayloadDigest,
-			"provenance_digest":   ProvenanceDigest(stage, event, observed.PayloadDigest),
-			"runtime_event_id":    observed.ID,
+			"provenance_stage":     stage,
+			"provenance_event":     event,
+			"payload_digest":       observed.PayloadDigest,
+			"provenance_digest":    ProvenanceDigest(stage, event, observed.PayloadDigest),
+			"runtime_event_id":     observed.ID,
 		},
 	})
 	return err
