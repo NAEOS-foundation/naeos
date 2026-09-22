@@ -38,3 +38,5 @@ The experiment emits JSON containing each scenario, expected invariant, observed
 ## Claim discipline
 
 This experiment demonstrates behavior of the current NAEOS handoff validator under these deterministic inputs. It is not a production penetration test and does not establish that all handoff implementations are secure.
+
+CI validation: this experiment is exercised by the repository test/lint pipeline and is expected to remain deterministic and network-free.
