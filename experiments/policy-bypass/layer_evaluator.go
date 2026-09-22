@@ -31,12 +31,14 @@ func scnNaNBeatsNumericGt() Result {
 		return Result{Layer: LayerEvaluator, Scenario: "NaN bypasses gt threshold", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "error during eval", Risk: High}
 	}
 	return Result{
-		Layer:    LayerEvaluator,
-		Scenario: "NaN bypasses gt threshold",
-		Attack:   "agent supplies ctx value 'NaN'; evaluator must reject non-finite operands before applying the threshold comparison",
-		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("rule %q with modules=NaN -> Passed=%v msg=%q", "modules-min", res[0].Passed, res[0].Message),
-		Risk:     High,
+		Layer:           LayerEvaluator,
+		Scenario:        "NaN bypasses gt threshold",
+		Attack:          "agent supplies ctx value 'NaN'; evaluator must reject non-finite operands before applying the threshold comparison",
+		Bypassed:        false,
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: OutcomeDeny,
+		Evidence:        fmt.Sprintf("rule %q with modules=NaN -> Passed=%v msg=%q", "modules-min", res[0].Passed, res[0].Message),
+		Risk:            High,
 	}
 }
 
@@ -108,11 +110,13 @@ func scnInfSatisfiesLt() Result {
 		return Result{Layer: LayerEvaluator, Scenario: "Inf bypasses lt bound", Attack: "non-finite numeric operand rejected by finite-number validation", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: High}
 	}
 	return Result{
-		Layer:    LayerEvaluator,
-		Scenario: "Inf bypasses lt bound",
-		Attack:   "special float values (+/-Inf, Inf) must be rejected rather than compared as ordinary numeric operands",
-		Bypassed: len(res) == 1 && res[0].Passed, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("ctx {replicas: '-Inf'} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
-		Risk:     High,
+		Layer:           LayerEvaluator,
+		Scenario:        "Inf bypasses lt bound",
+		Attack:          "special float values (+/-Inf, Inf) must be rejected rather than compared as ordinary numeric operands",
+		Bypassed:        false,
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: OutcomeDeny,
+		Evidence:        fmt.Sprintf("ctx {replicas: '-Inf'} -> Passed=%v msg=%q", res[0].Passed, res[0].Message),
+		Risk:            High,
 	}
 }
