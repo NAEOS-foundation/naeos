@@ -107,7 +107,7 @@ func (v gatewayVerifier) Verify(rec evidence.EvidenceRecord) (verification.Verif
 		res.Status = verification.StatusFailed
 		res.Message = "side effect was observed outside the execution gateway"
 		res.Checks = append(res.Checks, verification.CheckResult{
-			Name: "out-of-band-side-effect",
+			Name:   "out-of-band-side-effect",
 			Passed: false,
 			Detail: "evidence explicitly records an out-of-band side effect",
 		})
