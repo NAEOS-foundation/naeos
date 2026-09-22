@@ -108,3 +108,14 @@ Run it with:
     go run ./experiments/evidence-runtime-event-binding-v5-2
 
 Attack Matrix: [v5.2](attack-matrix/ATTACK-MATRIX-V5-2.md)
+
+
+## Evidence Runtime Event Ledger v5.3
+
+[Evidence Runtime Event Ledger v5.3](evidence-runtime-event-ledger-v5-3/README.md) separates runtime observation from evidence construction through an append-only runtime event ledger and a read-only evidence builder. It blocks missing, cross-run, and late runtime events at the completion boundary.
+
+Run it with:
+
+    go run ./experiments/evidence-runtime-event-ledger-v5-3
+
+Attack Matrix: [v5.3](attack-matrix/ATTACK-MATRIX-V5-3.md)
