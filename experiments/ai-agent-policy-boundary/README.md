@@ -65,3 +65,30 @@ The experiment is considered valid only when all four scenario assertions pass:
 
 CI should execute this experiment as a regression test whenever the governance, runtime, evidence, or verification boundaries change.
 
+
+
+## Read the output as a boundary trace
+
+Each scenario reports:
+
+`Intent -> Decision -> Gateway State -> Observed Side Effect -> Verification`
+
+For example:
+
+```text
+ALLOW
+intent=write filesystem on flagship
+decision=allow
+gateway=completed
+side_effect=true
+verification=verified
+```
+
+The important invariant is not simply the decision. It is the relationship between the decision and the independently observed consequence.
+
+### Challenge
+
+Try to modify the experiment so a `DENY` or `REQUIRE_APPROVAL` action still changes the filesystem while the experiment reports success.
+
+If that can be done without causing the independent verification to fail, the boundary has a verification gap.
+
