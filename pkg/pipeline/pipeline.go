@@ -679,7 +679,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profileStageStart("policy_eval")
 		policyErr := p.runPolicyEval(result)
 		if policyErr == nil {
-			if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
 				return nil, fmt.Errorf("record policy decision evidence: %w", err)
 			}
 		}
@@ -735,16 +735,16 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if writeErr != nil {
 			return nil, writeErr
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 			return nil, fmt.Errorf("record execution evidence: %w", err)
 		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
-		if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record verification evidence: %w", err)
 		}
 		runtimeObserver.Seal()
