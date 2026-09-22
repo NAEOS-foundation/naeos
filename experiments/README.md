@@ -56,3 +56,10 @@ Run it with:
 ```bash
 go run ./experiments/handoff-governance
 ```
+
+
+## Attack Matrix v1
+
+[Attack Matrix v1](attack-matrix/ATTACK-MATRIX-V1.md) consolidates the current deterministic adversarial coverage across instruction integrity, governance configuration, policy context/evaluator semantics, runtime enforcement, evidence integrity, and agent handoffs. It identifies covered boundaries and explicitly tracks gaps for future experiments.
+
+The matrix is a coverage map, not a vulnerability count or production penetration-test result.
