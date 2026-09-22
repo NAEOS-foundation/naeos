@@ -635,29 +635,15 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()},
 	}
 	firstContract.Signature = as.setup.HandoffValidator.SignContract(firstContract)
-	_ = as.setup.HandoffValidator.ValidateHandoff(firstContract)
-	replayContract := &HandoffContract{
-		ContractVersion:        "1.0",
-		CanonicalVersion:       "1",
-		Initiator:              agentID,
-		RequestedCapability:    "repository.write",
-		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
-		PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
-		Payload:                map[string]interface{}{},
-		PolicyID:               "POLICY-017",
-		PolicyVersion:          17,
-		Provenance:             map[string]interface{}{"source": agentID},
-		CreatedAt:              time.Now(),
-		ExpiresAt:              time.Now().Add(1 * time.Hour),
-		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()},
-	}
-	replayContract.Signature = as.setup.HandoffValidator.SignContract(replayContract)
-	replayResult := as.setup.HandoffValidator.ValidateHandoff(replayContract)
+	firstValidation := as.setup.HandoffValidator.ValidateHandoff(firstContract)
+	// A replay is the exact previously accepted signed contract, not a newly signed equivalent.
+	replayResult := as.setup.HandoffValidator.ValidateHandoff(firstContract)
 	steps = append(steps, DemoStep{
 		Step: 8, Name: "Replay Attack", Description: "Agent replays a previously valid handoff contract",
-		Action: "REPLAY: same nonce reused", Result: "REPLAY REJECTED", Blocked: !replayResult.Valid,
+		Action: "REPLAY: same signed contract and nonce reused", Result: "REPLAY REJECTED", Blocked: !replayResult.Valid,
 		Details: map[string]interface{}{
-			"replay_detected": replayResult.ReplayDetected,
+			"first_validation_valid": firstValidation.Valid,
+			"replay_detected":        replayResult.ReplayDetected,
 		},
 	})
 
