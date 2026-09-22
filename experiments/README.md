@@ -75,3 +75,14 @@ Reusable lifecycle enforcement gate for AM-18 evidence completeness.
 
 - Experiment: `evidence-completion-enforcement-v3`
 - Attack Matrix: `attack-matrix/ATTACK-MATRIX-V3.md`
+
+
+## Evidence Integrity & Run Binding v5
+
+[Evidence Integrity & Run Binding v5](evidence-integrity-run-binding-v5/README.md) hardens the completion boundary with explicit run binding, mixed-run rejection, duplicate-contract rejection, predecessor identity, and backing hash-chain verification.
+
+Run it with:
+
+    go run ./experiments/evidence-integrity-run-binding-v5
+
+Attack Matrix: [v5](attack-matrix/ATTACK-MATRIX-V5.md)

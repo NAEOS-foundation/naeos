@@ -804,12 +804,19 @@ func (p *Pipeline) memSnapshot(label string) {
 var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
 func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int) error {
+	previousID := ""
+	if latest := store.Latest(); latest != nil {
+		previousID = latest.ID
+	}
 	_, err := store.Append(evidence.EvidenceRecord{
 		ID:    fmt.Sprintf("%s-%s", runID, kind),
 		Actor: "pipeline", Resource: "pipeline", Action: "run",
 		Environment: "runtime", PolicyID: "pipeline-lifecycle", PolicyVersion: "1.0.0",
 		Decision: control.DecisionAllow, ExecutionStatus: "recorded",
-		Metadata: map[string]any{"run_id": runID, "kind": kind, "sequence": sequence},
+		Metadata: map[string]any{
+			"run_id": runID, "run_binding": evidence.RunBindingDigest(runID),
+			"kind": kind, "sequence": sequence, "previous_evidence_id": previousID,
+		},
 	})
 	return err
 }

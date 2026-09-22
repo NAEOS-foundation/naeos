@@ -29,6 +29,7 @@ func completionStore(specs []struct {
 			ExecutionStatus: "recorded",
 			Metadata: map[string]any{
 				"run_id":               spec.run,
+				"run_binding":          RunBindingDigest(spec.run),
 				"kind":                 spec.kind,
 				"sequence":             spec.seq,
 				"previous_evidence_id": previousID,
@@ -131,5 +132,62 @@ func TestValidateCompletionRejectsNilStoreAndEmptyRunID(t *testing.T) {
 	}
 	if result := ValidateCompletion(NewStore(), "", completionKinds); result.Complete {
 		t.Fatal("empty run identity must not complete a run")
+	}
+}
+
+
+func TestValidateCompletionRejectsDuplicateRequiredKinds(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1},
+	})
+	result := ValidateCompletion(store, "run-1", []string{"intent", "intent"})
+	if result.Complete {
+		t.Fatal("duplicate required kinds must block completion")
+	}
+}
+
+func TestValidateCompletionRejectsMixedRunEvidence(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1},
+		{"decision", "run-1", 2},
+		{"intent", "run-2", 1},
+		{"execution", "run-1", 3},
+		{"observation", "run-1", 4},
+		{"verification", "run-1", 5},
+	})
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("interleaved evidence from another run must block completion")
+	}
+}
+
+func TestValidateCompletionRejectsRunBindingTampering(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1},
+		{"decision", "run-1", 2},
+		{"execution", "run-1", 3},
+		{"observation", "run-1", 4},
+		{"verification", "run-1", 5},
+	})
+	records := store.records
+	records[2].Metadata["run_binding"] = RunBindingDigest("other-run")
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("tampered run binding must block completion")
+	}
+}
+
+func TestValidateCompletionRejectsTamperedEvidenceChain(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1},
+		{"decision", "run-1", 2},
+		{"execution", "run-1", 3},
+		{"observation", "run-1", 4},
+		{"verification", "run-1", 5},
+	})
+	store.records[2].ExecutionStatus = "tampered"
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("tampered evidence content must block completion")
 	}
 }

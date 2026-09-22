@@ -113,6 +113,12 @@ func (s *EvidenceStore) Verify() (int, error) {
 	return -1, nil
 }
 
+// RunBindingDigest returns a deterministic digest that binds evidence to a specific run identity.
+func RunBindingDigest(runID string) string {
+	h := sha256.Sum256([]byte("naeos:evidence:run-binding:v1:" + runID))
+	return fmt.Sprintf("%x", h)
+}
+
 // Len returns the number of evidence records.
 func (s *EvidenceStore) Len() int {
 	s.mu.RLock()
