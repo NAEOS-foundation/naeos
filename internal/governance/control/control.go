@@ -243,6 +243,22 @@ func (c *ControlPlane) record(rec DecisionRecord) {
 	c.decisions = append(c.decisions, rec)
 }
 
+// ValidateDecision re-evaluates a decision immediately before execution and
+// rejects it if the active policy identity, version, rule, or decision changed.
+func (c *ControlPlane) ValidateDecision(req Request, issued DecisionRecord) (DecisionRecord, error) {
+	current, err := c.Evaluate(req)
+	if err != nil {
+		return DecisionRecord{}, err
+	}
+	if current.PolicyID != issued.PolicyID ||
+		current.PolicyVersion != issued.PolicyVersion ||
+		current.RuleID != issued.RuleID ||
+		current.Decision != issued.Decision {
+		return current, naeoserr.New(naeoserr.ErrConflict, "authorization invalidated by policy mutation")
+	}
+	return current, nil
+}
+
 // ListDecisions returns the decision records issued by this plane so far.
 func (c *ControlPlane) ListDecisions() []DecisionRecord {
 	c.mu.Lock()
