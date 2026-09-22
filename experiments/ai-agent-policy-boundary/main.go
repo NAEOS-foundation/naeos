@@ -103,6 +103,16 @@ func (v gatewayVerifier) Verify(rec evidence.EvidenceRecord) (verification.Verif
 			break
 		}
 	}
+	if rec.ExecutionStatus == "bypassed" {
+		res.Status = verification.StatusFailed
+		res.Message = "side effect was observed outside the execution gateway"
+		res.Checks = append(res.Checks, verification.CheckResult{
+			Name: "out-of-band-side-effect",
+			Passed: false,
+			Detail: "evidence explicitly records an out-of-band side effect",
+		})
+		return res, nil
+	}
 	expectedAuthorized := rec.Decision == control.DecisionAllow && rec.ExecutionStatus == "completed"
 	match := authorizedExecution == expectedAuthorized
 	res.Checks = append(res.Checks, verification.CheckResult{Name: "authorized-execution", Passed: match, Detail: fmt.Sprintf("expected_authorized=%v gateway_authorized_execution=%v", expectedAuthorized, authorizedExecution)})
