@@ -14,26 +14,26 @@ import (
 // evidence construction on separate trust boundaries.
 type RuntimeEvidenceBuilder struct {
 	store  *EvidenceStore
-	ledger *RuntimeEventLedger
+	observer RuntimeEventObserver
 }
 
 // NewRuntimeEvidenceBuilder creates a builder bound to one evidence store and
 // one independent runtime event ledger.
-func NewRuntimeEvidenceBuilder(store *EvidenceStore, ledger *RuntimeEventLedger) *RuntimeEvidenceBuilder {
-	return &RuntimeEvidenceBuilder{store: store, ledger: ledger}
+func NewRuntimeEvidenceBuilder(store *EvidenceStore, observer RuntimeEventObserver) *RuntimeEvidenceBuilder {
+	return &RuntimeEvidenceBuilder{store: store, observer: observer}
 }
 
 // Build appends evidence only for an event that already exists in the ledger.
 // The event ID and payload digest are copied from the ledger, never supplied by
 // the evidence caller.
 func (b *RuntimeEvidenceBuilder) Build(runID, kind string, sequence int, stage, event string, runtimeEvent RuntimeEvent) error {
-	if b == nil || b.store == nil || b.ledger == nil {
+	if b == nil || b.store == nil || b.observer == nil {
 		return fmt.Errorf("runtime evidence builder requires evidence store and runtime event ledger")
 	}
 	if runID == "" || kind == "" || sequence <= 0 {
 		return fmt.Errorf("runtime evidence requires run_id, kind, and positive sequence")
 	}
-	observed := b.ledger.ByID(runtimeEvent.ID)
+	observed := b.observer.ByID(runtimeEvent.ID)
 	if observed == nil {
 		return fmt.Errorf("runtime event %s is not present in ledger", runtimeEvent.ID)
 	}
@@ -46,7 +46,7 @@ func (b *RuntimeEvidenceBuilder) Build(runID, kind string, sequence int, stage, 
 	if observed.RunID != runID || observed.Sequence != sequence || observed.Name != event || observed.PayloadDigest == "" {
 		return fmt.Errorf("runtime event %s does not match requested evidence binding", runtimeEvent.ID)
 	}
-	if err := b.ledger.Verify(); err != nil {
+	if err := b.observer.Verify(); err != nil {
 		return fmt.Errorf("runtime event ledger verification failed: %w", err)
 	}
 	previousID := ""
