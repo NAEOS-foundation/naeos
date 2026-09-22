@@ -576,6 +576,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ContractVersion:        "1.0",
 		CanonicalVersion:       "1",
 		Initiator:              agentID,
+		Recipient:             "agent-secondary-02",
 		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
 		PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
@@ -602,6 +603,8 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ReplayProtection:       ReplayProtection{Nonce: generateNonce(), Timestamp: time.Now()},
 	}
 	parentContract.DownstreamHandoff = downstreamContract
+	downstreamContract.Signature = as.setup.HandoffValidator.SignContract(downstreamContract)
+	parentContract.Signature = as.setup.HandoffValidator.SignContract(parentContract)
 	handoffResult := as.setup.HandoffValidator.ValidateHandoff(parentContract)
 	steps = append(steps, DemoStep{
 		Step: 7, Name: "Capability Escalation", Description: "Agent A hands off to Agent B requesting credential.rotate",
@@ -619,6 +622,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ContractVersion:        "1.0",
 		CanonicalVersion:       "1",
 		Initiator:              agentID,
+		Recipient:             "agent-secondary-02",
 		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
 		PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
@@ -630,6 +634,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ExpiresAt:              time.Now().Add(1 * time.Hour),
 		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()},
 	}
+	firstContract.Signature = as.setup.HandoffValidator.SignContract(firstContract)
 	_ = as.setup.HandoffValidator.ValidateHandoff(firstContract)
 	replayContract := &HandoffContract{
 		ContractVersion:        "1.0",
@@ -646,6 +651,7 @@ func (as *APIServer) handleInvestorDemo(w http.ResponseWriter, r *http.Request) 
 		ExpiresAt:              time.Now().Add(1 * time.Hour),
 		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()},
 	}
+	replayContract.Signature = as.setup.HandoffValidator.SignContract(replayContract)
 	replayResult := as.setup.HandoffValidator.ValidateHandoff(replayContract)
 	steps = append(steps, DemoStep{
 		Step: 8, Name: "Replay Attack", Description: "Agent replays a previously valid handoff contract",

@@ -329,14 +329,6 @@ func (hv *HandoffValidator) isReplayedNonce(nonce string) bool {
 	return exists
 }
 
-// recordNonce records a nonce as seen.
-func (hv *HandoffValidator) recordNonce(nonce string) {
-	hv.mu.Lock()
-	defer hv.mu.Unlock()
-
-	hv.seenNonces[nonce] = time.Now()
-}
-
 // consumeNonce atomically checks and records a nonce.
 func (hv *HandoffValidator) consumeNonce(nonce string) bool {
 	hv.mu.Lock()
