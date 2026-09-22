@@ -63,3 +63,7 @@ go run ./experiments/handoff-governance
 [Attack Matrix v1](attack-matrix/ATTACK-MATRIX-V1.md) consolidates the current deterministic adversarial coverage across instruction integrity, governance configuration, policy context/evaluator semantics, runtime enforcement, evidence integrity, and agent handoffs. It identifies covered boundaries and explicitly tracks gaps for future experiments.
 
 The matrix is a coverage map, not a vulnerability count or production penetration-test result.
+
+## Attack Matrix v2
+
+[Attack Matrix v2](attack-matrix/ATTACK-MATRIX-V2.md) promotes AM-18 into a deterministic evidence-completeness experiment. It verifies that required evidence cannot be missing, logically reordered, or detached from the consequential run identity while still being treated as VERIFIED.
