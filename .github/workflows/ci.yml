@@ -20,6 +20,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
@@ -173,6 +177,42 @@ jobs:
           SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
         run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
 
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - lint
+      - test
+      - canonical-demo
+      - governance-lifecycle
+      - level3-evidence
+      - ai-agent-policy-boundary
+      - bench-gate
+      - vulncheck
+      - coverage
+      - supabase-integration
+      - fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs passed
+        env:
+          LINT: ${{ needs.lint.result }}
+          TEST: ${{ needs.test.result }}
+          CANONICAL_DEMO: ${{ needs['canonical-demo'].result }}
+          GOVERNANCE: ${{ needs['governance-lifecycle'].result }}
+          LEVEL3: ${{ needs['level3-evidence'].result }}
+          POLICY: ${{ needs['ai-agent-policy-boundary'].result }}
+          BENCH: ${{ needs['bench-gate'].result }}
+          VULNCHECK: ${{ needs.vulncheck.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+          SUPABASE: ${{ needs['supabase-integration'].result }}
+          FUZZ: ${{ needs.fuzz.result }}
+        run: |
+          set -euo pipefail
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$SUPABASE" "$FUZZ"; do
+            test "$result" = "success"
+          done
+          echo "All required CI jobs passed."
   fuzz:
     name: Fuzz
     runs-on: ubuntu-latest
