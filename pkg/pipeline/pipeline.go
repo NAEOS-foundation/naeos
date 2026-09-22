@@ -634,9 +634,9 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
 	runEvidence := evidence.NewStore()
-	runtimeLedger := evidence.NewRuntimeEventLedger()
-	evidenceBuilder := evidence.NewRuntimeEvidenceBuilder(runEvidence, runtimeLedger)
-	if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
+	runtimeObserver := evidence.NewIndependentRuntimeObserver()
+	evidenceBuilder := evidence.NewRuntimeEvidenceBuilder(runEvidence, runtimeObserver)
+	if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
 		return nil, fmt.Errorf("record run intent evidence: %w", err)
 	}
 	if p.observer != nil {
@@ -747,8 +747,8 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err := appendRunEvidence(evidenceBuilder, runtimeLedger, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record verification evidence: %w", err)
 		}
-		runtimeLedger.Seal()
-		if err := validateRunCompletion(runEvidence, runtimeLedger, pipelineID); err != nil {
+		runtimeObserver.Seal()
+		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID); err != nil {
 			return nil, err
 		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
@@ -805,11 +805,11 @@ func (p *Pipeline) memSnapshot(label string) {
 
 var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
-func appendRunEvidence(builder *evidence.RuntimeEvidenceBuilder, producer evidence.RuntimeEventProducer, runID, kind string, sequence int, stage, event, payloadDigest string) error {
-	if builder == nil || producer == nil {
+func appendRunEvidence(builder *evidence.RuntimeEvidenceBuilder, observer *evidence.IndependentRuntimeObserver, runID, kind string, sequence int, stage, event, payloadDigest string) error {
+	if builder == nil || observer == nil {
 		return fmt.Errorf("runtime evidence builder and producer are required")
 	}
-	runtimeEvent, err := producer.Publish(runID, event, payloadDigest, sequence)
+	runtimeEvent, err := observer.Observe(runID, event, payloadDigest, sequence)
 	if err != nil {
 		return err
 	}
