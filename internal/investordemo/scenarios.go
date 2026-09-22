@@ -280,6 +280,8 @@ func RunScenario4_CapabilityEscalationViaHandoff(setup *DemoSetup) *ScenarioResu
 	}
 
 	parentContract.DownstreamHandoff = downstreamContract
+	downstreamContract.Signature = setup.HandoffValidator.SignContract(downstreamContract)
+	parentContract.Signature = setup.HandoffValidator.SignContract(parentContract)
 
 	validation := setup.HandoffValidator.ValidateHandoff(parentContract)
 	scenario.HandoffValidation = validation
@@ -318,6 +320,7 @@ func RunScenario5_ReplayAttack(setup *DemoSetup) *ScenarioResult {
 	}
 
 	// First execution - should pass
+	firstContract.Signature = setup.HandoffValidator.SignContract(firstContract)
 	validation1 := setup.HandoffValidator.ValidateHandoff(firstContract)
 	scenario.Passed = !validation1.ReplayDetected
 
@@ -338,6 +341,7 @@ func RunScenario5_ReplayAttack(setup *DemoSetup) *ScenarioResult {
 		ExpiresAt:              time.Now().Add(1 * time.Hour),
 		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()}, // SAME NONCE
 	}
+	replayContract.Signature = setup.HandoffValidator.SignContract(replayContract)
 
 	validation2 := setup.HandoffValidator.ValidateHandoff(replayContract)
 	scenario.HandoffValidation = validation2
