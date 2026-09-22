@@ -902,6 +902,7 @@ func (p *Pipeline) fetchSchema() (map[string]any, error) {
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
 	result.EffectivePolicyCount = 0
+	result.PolicyContextDigest = policyDecisionDigest("pending", 0, "", nil)
 	for _, rule := range p.policies {
 		if rule.Enabled {
 			result.EffectivePolicyCount++
@@ -913,6 +914,7 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		if result.EffectivePolicyCount == 0 {
 			result.GovernanceStatus = "unconfigured"
 			result.PolicyResults = nil
+			result.PolicyContextDigest = policyDecisionDigest(result.GovernanceStatus, result.EffectivePolicyCount, result.GovernanceMode, nil)
 			_ = p.emitKernelEvent("governance.unconfigured", map[string]any{
 				"mode": "governed", "effective_policy_count": 0, "status": "blocked",
 			})
@@ -922,6 +924,7 @@ func (p *Pipeline) runPolicyEval(result *Result) error {
 		result.GovernanceMode = "ungoverned"
 		result.GovernanceStatus = "intentionally-disabled"
 		result.PolicyResults = nil
+		result.PolicyContextDigest = policyDecisionDigest(result.GovernanceStatus, result.EffectivePolicyCount, result.GovernanceMode, nil)
 		return nil
 	} else {
 		result.GovernanceMode = "governed"
@@ -975,6 +978,16 @@ type taskList struct {
 
 type artifactList struct {
 	Artifacts []engine.Artifact `json:"artifacts"`
+}
+
+func policyDecisionDigest(status string, effectivePolicyCount int, mode string, results []policy.EvaluationResult) string {
+	data, _ := json.Marshal(map[string]any{
+		"status": status,
+		"effective_policy_count": effectivePolicyCount,
+		"mode": mode,
+		"results": results,
+	})
+	return evidence.ComputeArtifactHash(data)
 }
 
 func specHash(input string) string {
