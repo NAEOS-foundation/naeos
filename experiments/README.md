@@ -67,3 +67,11 @@ The matrix is a coverage map, not a vulnerability count or production penetratio
 ## Attack Matrix v2
 
 [Attack Matrix v2](attack-matrix/ATTACK-MATRIX-V2.md) promotes AM-18 into a deterministic evidence-completeness experiment. It verifies that required evidence cannot be missing, logically reordered, or detached from the consequential run identity while still being treated as VERIFIED.
+
+
+## Evidence Completion Enforcement v3
+
+Reusable lifecycle enforcement gate for AM-18 evidence completeness.
+
+- Experiment: `evidence-completion-enforcement-v3`
+- Attack Matrix: `attack-matrix/ATTACK-MATRIX-V3.md`
