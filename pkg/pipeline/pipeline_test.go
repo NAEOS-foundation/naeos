@@ -966,6 +966,9 @@ func TestPipelineGovernanceEvidenceDistinguishesPolicyFreeExecution(t *testing.T
 	if result.EffectivePolicyCount != 0 {
 		t.Fatalf("expected zero effective policies, got %d", result.EffectivePolicyCount)
 	}
+	if result.PolicyContextDigest == "" {
+		t.Fatal("expected policy decision payload digest to be recorded for policy-free execution")
+	}
 }
 
 func TestPipelineRecordsPolicyContextEvidence(t *testing.T) {
