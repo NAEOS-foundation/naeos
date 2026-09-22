@@ -13,9 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NAEOS-foundation/naeos/internal/evidence"
 	"github.com/NAEOS-foundation/naeos/internal/generation/adapters"
 	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/generation/renderers"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
 	"github.com/NAEOS-foundation/naeos/internal/neir/builder"
@@ -632,6 +634,10 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
+	runEvidence := evidence.NewStore()
+	if err := appendRunEvidence(runEvidence, pipelineID, "intent", 1); err != nil {
+		return nil, fmt.Errorf("record run intent evidence: %w", err)
+	}
 	if p.observer != nil {
 		p.observer.OnPipelineStart(pipelineID)
 	}
@@ -671,6 +677,11 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 		p.profileStageStart("policy_eval")
 		policyErr := p.runPolicyEval(result)
+		if policyErr == nil {
+			if err := appendRunEvidence(runEvidence, pipelineID, "decision", 2); err != nil {
+				return nil, fmt.Errorf("record policy decision evidence: %w", err)
+			}
+		}
 		p.profileStageEnd("policy_eval", policyErr)
 		p.memSnapshot("policy_eval")
 		if policyErr != nil {
@@ -723,9 +734,21 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if writeErr != nil {
 			return nil, writeErr
 		}
+		if err := appendRunEvidence(runEvidence, pipelineID, "execution", 3); err != nil {
+			return nil, fmt.Errorf("record execution evidence: %w", err)
+		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
+		if err := appendRunEvidence(runEvidence, pipelineID, "observation", 4); err != nil {
+			return nil, fmt.Errorf("record observation evidence: %w", err)
+		}
+		if err := appendRunEvidence(runEvidence, pipelineID, "verification", 5); err != nil {
+			return nil, fmt.Errorf("record verification evidence: %w", err)
+		}
+		if err := validateRunCompletion(runEvidence, pipelineID); err != nil {
+			return nil, err
+		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
 		if err := p.emitKernelEvent("pipeline.run", map[string]any{
 			"artifacts":   len(artifacts),
@@ -776,6 +799,27 @@ func (p *Pipeline) memSnapshot(label string) {
 	if p.memProfile != nil {
 		p.memProfile.Snapshot(label)
 	}
+}
+
+var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
+
+func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int) error {
+	_, err := store.Append(evidence.EvidenceRecord{
+		ID: fmt.Sprintf("%s-%s", runID, kind),
+		Actor: "pipeline", Resource: "pipeline", Action: "run",
+		Environment: "runtime", PolicyID: "pipeline-lifecycle", PolicyVersion: "1.0.0",
+		Decision: control.DecisionAllow, ExecutionStatus: "recorded",
+		Metadata: map[string]any{"run_id": runID, "kind": kind, "sequence": sequence},
+	})
+	return err
+}
+
+func validateRunCompletion(store *evidence.EvidenceStore, runID string) error {
+	completion := evidence.ValidateCompletion(store, runID, requiredRunEvidenceKinds)
+	if !completion.Complete {
+		return fmt.Errorf("run completion blocked: incomplete evidence contract: %v", completion.Missing)
+	}
+	return nil
 }
 
 func (p *Pipeline) runValidate(input string) (*Result, error) {
