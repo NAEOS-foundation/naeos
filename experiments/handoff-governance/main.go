@@ -19,50 +19,54 @@ const (
 )
 
 type scenarioResult struct {
-	Name string `json:"name"`
-	Expected string `json:"expected"`
-	Observed string `json:"observed"`
-	Passed bool `json:"passed"`
-	Checks []string `json:"checks"`
-	Errors []string `json:"errors,omitempty"`
+	Name     string   `json:"name"`
+	Expected string   `json:"expected"`
+	Observed string   `json:"observed"`
+	Passed   bool     `json:"passed"`
+	Checks   []string `json:"checks"`
+	Errors   []string `json:"errors,omitempty"`
 }
 
 func main() {
 	results := run()
 	passed := 0
 	for _, r := range results {
-		if r.Passed { passed++ }
+		if r.Passed {
+			passed++
+		}
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(struct {
-		Experiment string `json:"experiment"`
-		Thesis string `json:"thesis"`
-		Results []scenarioResult `json:"results"`
-		Summary string `json:"summary"`
+		Experiment string           `json:"experiment"`
+		Thesis     string           `json:"thesis"`
+		Results    []scenarioResult `json:"results"`
+		Summary    string           `json:"summary"`
 	}{
 		Experiment: "NAEOS Agent Handoff Governance v1",
-		Thesis: "A handoff transfers context, not authority.",
-		Results: results,
-		Summary: fmt.Sprintf("%d/%d scenarios passed", passed, len(results)),
+		Thesis:     "A handoff transfers context, not authority.",
+		Results:    results,
+		Summary:    fmt.Sprintf("%d/%d scenarios passed", passed, len(results)),
 	})
-	if passed != len(results) { os.Exit(2) }
+	if passed != len(results) {
+		os.Exit(2)
+	}
 }
 
 func baseContract() *investordemo.HandoffContract {
 	now := time.Now().UTC()
 	return &investordemo.HandoffContract{
-		ContractVersion: "1.0",
-		CanonicalVersion: "1",
-		Initiator: agentA,
-		RequestedCapability: "repository.write",
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              agentA,
+		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []investordemo.Capability{"repository.read", "repository.write"},
-		PolicyID: "POLICY-HANDOFF",
-		PolicyVersion: 1,
-		Provenance: map[string]interface{}{"source": agentA, "destination": agentB},
-		CreatedAt: now,
-		ExpiresAt: now.Add(10 * time.Minute),
-		ReplayProtection: investordemo.ReplayProtection{Nonce: "handoff-v1-001", Timestamp: now},
+		PolicyID:               "POLICY-HANDOFF",
+		PolicyVersion:          1,
+		Provenance:             map[string]interface{}{"source": agentA, "destination": agentB},
+		CreatedAt:              now,
+		ExpiresAt:              now.Add(10 * time.Minute),
+		ReplayProtection:       investordemo.ReplayProtection{Nonce: "handoff-v1-001", Timestamp: now},
 	}
 }
 
