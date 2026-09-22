@@ -71,7 +71,7 @@ It tests the chain `agent intent → policy decision → execution → observati
 
 ## 5. Understand the architecture
 
-The repository’s conceptual architecture is summarized in [README.md](README.md), [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md), and [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md).
+The repository’s conceptual architecture is summarized in [README.md](README.md) and [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md). For normative authority and conflict resolution, use [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md).
 
 The short version is:
 
@@ -87,10 +87,10 @@ Validate → Policy → AI context
 Generate artifacts and engineering outputs
 ```
 
-If you want the authoritative references, read:
+If you want the authoritative references, use [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) first, then:
 
-- [README.md](README.md)
-- [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md)
+- [NAEOS-NRA-001](Reference%20Architecture/NAEOS-NRA-001.md)
+- [NAEOS-MTS-001](NAEOS-MTS-001.md)
 - [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md)
 - [docs/NES-023-NEIR.md](docs/NES-023-NEIR.md)
 - [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
