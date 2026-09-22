@@ -397,7 +397,7 @@ func run() ([]scenarioResult, error) {
 			"independent verifier refused to verify the tampered store",
 		},
 		EvidenceID:      evidenceRecord.ID,
-		Verification:    verification.StatusFailed.String(),
+		Verification:    string(verification.StatusFailed),
 		FailureDetected: evidenceTamperDetected,
 	})
 
