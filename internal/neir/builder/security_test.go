@@ -50,5 +50,5 @@ func TestBuilderExtractsSecurityContext(t *testing.T) {
 		t.Fatalf("expected encryption algorithm, got %q", neir.Security.Encryption.Algorithm)
 	}
 
-	var _ *security.Security = neir.Security
+	var _ = neir.Security
 }
