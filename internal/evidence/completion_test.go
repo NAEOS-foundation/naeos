@@ -135,9 +135,11 @@ func TestValidateCompletionRejectsNilStoreAndEmptyRunID(t *testing.T) {
 	}
 }
 
-
 func TestValidateCompletionRejectsDuplicateRequiredKinds(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1},
 	})
 	result := ValidateCompletion(store, "run-1", []string{"intent", "intent"})
@@ -147,7 +149,10 @@ func TestValidateCompletionRejectsDuplicateRequiredKinds(t *testing.T) {
 }
 
 func TestValidateCompletionRejectsMixedRunEvidence(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1},
 		{"decision", "run-1", 2},
 		{"intent", "run-2", 1},
@@ -162,7 +167,10 @@ func TestValidateCompletionRejectsMixedRunEvidence(t *testing.T) {
 }
 
 func TestValidateCompletionRejectsRunBindingTampering(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1},
 		{"decision", "run-1", 2},
 		{"execution", "run-1", 3},
@@ -178,7 +186,10 @@ func TestValidateCompletionRejectsRunBindingTampering(t *testing.T) {
 }
 
 func TestValidateCompletionRejectsTamperedEvidenceChain(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1},
 		{"decision", "run-1", 2},
 		{"execution", "run-1", 3},

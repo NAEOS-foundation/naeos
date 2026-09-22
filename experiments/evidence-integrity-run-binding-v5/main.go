@@ -13,7 +13,7 @@ var required = []string{"intent", "decision", "execution", "observation", "verif
 
 func appendEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int, previousID string) error {
 	_, err := store.Append(evidence.EvidenceRecord{
-		ID: fmt.Sprintf("%s-%s", runID, kind),
+		ID:    fmt.Sprintf("%s-%s", runID, kind),
 		Actor: "experiment", Resource: "run", Action: kind,
 		Environment: "test", PolicyID: "v5", PolicyVersion: "1.0.0",
 		Decision: control.DecisionAllow, ExecutionStatus: "recorded",
@@ -38,14 +38,16 @@ func completeRun(store *evidence.EvidenceStore, runID string) error {
 
 func main() {
 	type scenario struct {
-		Name string
+		Name     string
 		Complete bool
 		Expected bool
 	}
 	results := []scenario{}
 
 	store := evidence.NewStore()
-	if err := completeRun(store, "run-complete"); err != nil { panic(err) }
+	if err := completeRun(store, "run-complete"); err != nil {
+		panic(err)
+	}
 	results = append(results, scenario{"complete-run", evidence.ValidateCompletion(store, "run-complete", required).Complete, true})
 
 	interleaved := evidence.NewStore()
@@ -70,6 +72,8 @@ func main() {
 	encoded, _ := json.MarshalIndent(results, "", "  ")
 	fmt.Println(string(encoded))
 	for _, result := range results {
-		if result.Complete != result.Expected { os.Exit(1) }
+		if result.Complete != result.Expected {
+			os.Exit(1)
+		}
 	}
 }
