@@ -22,3 +22,4 @@ go run ./experiments/evidence-runtime-observer-v5-4
 ```
 
 This is a deterministic repository experiment. V5.4 establishes a logical observer boundary; the observer and ledger are still in-process. It does not claim an externally trusted telemetry service or process-isolated observer.
+
