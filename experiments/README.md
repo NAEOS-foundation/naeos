@@ -86,3 +86,14 @@ Run it with:
     go run ./experiments/evidence-integrity-run-binding-v5
 
 Attack Matrix: [v5](attack-matrix/ATTACK-MATRIX-V5.md)
+
+
+## Evidence Runtime Provenance v5.1
+
+[Evidence Runtime Provenance v5.1](evidence-runtime-provenance-v5-1/README.md) binds completion evidence to the expected runtime stage/event and a deterministic provenance digest derived from the observed payload digest.
+
+Run it with:
+
+    go run ./experiments/evidence-runtime-provenance-v5-1
+
+Attack Matrix: [v5.1](attack-matrix/ATTACK-MATRIX-V5-1.md)
