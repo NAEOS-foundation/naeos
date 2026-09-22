@@ -165,6 +165,7 @@ func TestHandoffValidator_ValidContract(t *testing.T) {
 		ReplayProtection:       ReplayProtection{Nonce: generateNonce(), Timestamp: time.Now()},
 	}
 
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
 	result := setup.HandoffValidator.ValidateHandoff(contract)
 	if !result.Valid {
 		t.Errorf("Expected valid contract, got errors: %v", result.Errors)
@@ -228,6 +229,7 @@ func TestHandoffValidator_ReplayDetection(t *testing.T) {
 	}
 
 	// First validation should pass
+	contract1.Signature = setup.HandoffValidator.SignContract(contract1)
 	result1 := setup.HandoffValidator.ValidateHandoff(contract1)
 	if !result1.Valid {
 		t.Errorf("Expected first contract to be valid")
@@ -251,6 +253,7 @@ func TestHandoffValidator_ReplayDetection(t *testing.T) {
 		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()}, // SAME NONCE
 	}
 
+	contract2.Signature = setup.HandoffValidator.SignContract(contract2)
 	result2 := setup.HandoffValidator.ValidateHandoff(contract2)
 	if result2.Valid {
 		t.Errorf("Expected replay contract to be invalid")
