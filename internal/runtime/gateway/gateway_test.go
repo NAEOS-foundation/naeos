@@ -350,6 +350,7 @@ func TestGatewayContextInjection(t *testing.T) {
 	gw := New(cp, sb)
 
 	gw.Authorize(ToolRequest{
+		Capability:  "deploy.execute",
 		Tool:        "deploy",
 		Action:      "run",
 		Resource:    "app",
@@ -358,6 +359,9 @@ func TestGatewayContextInjection(t *testing.T) {
 		Context:     map[string]any{"version": "2.0.0"},
 	})
 
+	if captured.Capability != "deploy.execute" {
+		t.Fatalf("expected capability deploy.execute, got %s", captured.Capability)
+	}
 	if captured.Resource != "app" {
 		t.Fatalf("expected resource app, got %s", captured.Resource)
 	}
@@ -509,6 +513,44 @@ func TestGatewayPolicyMutationInvalidatesAuthorization(t *testing.T) {
 	}
 	if len(gw.History()) != 1 {
 		t.Fatalf("expected one recorded invalidated execution attempt, got %d", len(gw.History()))
+	}
+}
+
+func TestAuthorizationBindsCapability(t *testing.T) {
+	reg := policy.NewRegistry()
+	if err := reg.Register(&policy.Policy{
+		ID:      "filesystem",
+		Name:    "Filesystem Policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{},
+		Default: policy.DecisionAllow,
+		Active:  true,
+	}); err != nil {
+		t.Fatalf("register policy: %v", err)
+	}
+
+	cp := control.New(reg)
+	issued, err := cp.Evaluate(control.Request{
+		Capability: "filesystem.read",
+		Resource:   "filesystem",
+		Action:     "read",
+	})
+	if err != nil {
+		t.Fatalf("initial authorization failed: %v", err)
+	}
+	if issued.Decision != control.DecisionAllow {
+		t.Fatalf("expected initial read capability to be allowed, got %s", issued.Decision)
+	}
+
+	// Reusing the read authorization for a broader write capability must fail
+	// even when the same policy would independently allow a fresh request.
+	_, err = cp.ValidateDecision(control.Request{
+		Capability: "filesystem.write",
+		Resource:   "filesystem",
+		Action:     "write",
+	}, issued)
+	if err == nil {
+		t.Fatal("expected capability escalation to invalidate the original authorization")
 	}
 }
 
