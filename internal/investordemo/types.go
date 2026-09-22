@@ -84,6 +84,7 @@ type HandoffContract struct {
 	ContractVersion        string                 `json:"contract_version"`
 	CanonicalVersion       string                 `json:"canonicalization_version"`
 	Initiator              string                 `json:"initiator"` // agent-id or component-id
+	Recipient              string                 `json:"recipient"` // authorized downstream recipient identity
 	RequestedCapability    Capability             `json:"requested_capability"`
 	AuthorizedCapabilities []Capability           `json:"authorized_capabilities"`
 	PayloadDigest          string                 `json:"payload_digest"`
