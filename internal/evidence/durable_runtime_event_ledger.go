@@ -148,7 +148,6 @@ func (l *DurableRuntimeEventLedger) appendLocked(event RuntimeEvent) error {
 	}
 	defer file.Close()
 	if _, err := file.Write(append(line, byte(10))); err != nil {
-')); err != nil {
 		return fmt.Errorf("append durable runtime ledger: %w", err)
 	}
 	if err := file.Sync(); err != nil {
@@ -176,7 +175,6 @@ func splitLines(data []byte) [][]byte {
 	start := 0
 	for i, b := range data {
 		if b == byte(10) {
-' {
 			if i > start {
 				lines = append(lines, data[start:i])
 			}
