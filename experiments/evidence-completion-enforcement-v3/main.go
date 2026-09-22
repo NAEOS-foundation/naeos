@@ -17,11 +17,11 @@ import (
 var requiredKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
 type scenarioResult struct {
-	Name string json:"name"
-	Expected string json:"expected"
-	Observed string json:"observed"
-	Passed bool json:"passed"
-	Checks []string json:"checks"
+	Name string
+	Expected string
+	Observed string
+	Passed bool
+	Checks []string
 }
 
 func main() {
@@ -47,9 +47,9 @@ func main() {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(struct {
-		Experiment string json:"experiment"
-		Invariant string json:"invariant"
-		Results []scenarioResult json:"results"
+		Experiment string
+		Invariant string
+		Results []scenarioResult
 	}{
 		Experiment: "NAEOS Evidence Completion Enforcement v3",
 		Invariant: "RUN COMPLETE is allowed only when required evidence is complete, ordered, linked, and bound to the run identity.",
