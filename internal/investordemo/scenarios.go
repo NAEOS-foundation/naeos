@@ -324,26 +324,8 @@ func RunScenario5_ReplayAttack(setup *DemoSetup) *ScenarioResult {
 	validation1 := setup.HandoffValidator.ValidateHandoff(firstContract)
 	scenario.Passed = !validation1.ReplayDetected
 
-	// Attempt replay with the same nonce
-	replayContract := &HandoffContract{
-		ContractVersion:        "1.0",
-		CanonicalVersion:       "1",
-		Initiator:              "agent-payment-01",
-		Recipient:              "agent-secondary-02",
-		RequestedCapability:    "repository.write",
-		AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
-		PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
-		Payload:                map[string]interface{}{},
-		PolicyID:               "POLICY-017",
-		PolicyVersion:          17,
-		Provenance:             map[string]interface{}{"source": "agent-payment-01"},
-		CreatedAt:              time.Now(),
-		ExpiresAt:              time.Now().Add(1 * time.Hour),
-		ReplayProtection:       ReplayProtection{Nonce: nonce, Timestamp: time.Now()}, // SAME NONCE
-	}
-	replayContract.Signature = setup.HandoffValidator.SignContract(replayContract)
-
-	validation2 := setup.HandoffValidator.ValidateHandoff(replayContract)
+	// Attempt replay with the exact previously accepted signed contract.
+	validation2 := setup.HandoffValidator.ValidateHandoff(firstContract)
 	scenario.HandoffValidation = validation2
 	scenario.ActualResult = "BLOCK"
 	scenario.Passed = scenario.Passed && validation2.ReplayDetected && !validation2.Valid
