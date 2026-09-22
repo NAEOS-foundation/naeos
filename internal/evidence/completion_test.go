@@ -32,6 +32,10 @@ func completionStore(specs []struct {
 				"run_binding":          RunBindingDigest(spec.run),
 				"kind":                 spec.kind,
 				"sequence":             spec.seq,
+				"provenance_stage":    testProvenance(spec.kind)[0],
+				"provenance_event":    testProvenance(spec.kind)[1],
+				"payload_digest":      "payload-" + spec.kind,
+				"provenance_digest":   ProvenanceDigest(testProvenance(spec.kind)[0], testProvenance(spec.kind)[1], "payload-"+spec.kind),
 				"previous_evidence_id": previousID,
 			},
 		})
@@ -44,6 +48,24 @@ func completionStore(specs []struct {
 		}
 	}
 	return store
+}
+
+
+func testProvenance(kind string) [2]string {
+	switch kind {
+	case "intent":
+		return [2]string{"run", "pipeline.start"}
+	case "decision":
+		return [2]string{"policy_eval", "pipeline.policy_decision"}
+	case "execution":
+		return [2]string{"write_artifacts", "pipeline.execution"}
+	case "observation":
+		return [2]string{"observation", "pipeline.observation"}
+	case "verification":
+		return [2]string{"completion", "pipeline.verification"}
+	default:
+		return [2]string{"unknown", "unknown"}
+	}
 }
 
 var completionKinds = []string{"intent", "decision", "execution", "observation", "verification"}
@@ -200,5 +222,37 @@ func TestValidateCompletionRejectsTamperedEvidenceChain(t *testing.T) {
 	result := ValidateCompletion(store, "run-1", completionKinds)
 	if result.Complete {
 		t.Fatal("tampered evidence content must block completion")
+	}
+}
+
+func TestValidateCompletionRejectsMissingRuntimeProvenance(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
+		{"observation", "run-1", 4}, {"verification", "run-1", 5},
+	})
+	store.records[2].Metadata["provenance_event"] = ""
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("missing runtime provenance must block completion")
+	}
+}
+
+func TestProvenanceDigestChangesWithPayload(t *testing.T) {
+	a := ProvenanceDigest("policy_eval", "pipeline.policy_decision", "digest-a")
+	b := ProvenanceDigest("policy_eval", "pipeline.policy_decision", "digest-b")
+	if a == b {
+		t.Fatal("provenance digest must change when payload digest changes")
+	}
+}
+
+func TestValidateCompletionRejectsProvenanceDigestMismatch(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
+		{"observation", "run-1", 4}, {"verification", "run-1", 5},
+	})
+	store.records[1].Metadata["payload_digest"] = "tampered-payload"
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("provenance digest mismatch must block completion")
 	}
 }
