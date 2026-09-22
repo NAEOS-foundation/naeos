@@ -259,7 +259,6 @@ func ValidateCompletionWithRuntimeEvents(store *EvidenceStore, runtimeEvents *Ru
 	return result
 }
 
-
 // ValidateCompletionWithRuntimeLedger enforces the V5.3 trust boundary: the
 // completion contract must bind evidence to events already recorded by the
 // independent runtime event ledger.
@@ -291,7 +290,7 @@ func ValidateCompletionWithRuntimeLedger(store *EvidenceStore, ledger *RuntimeEv
 	}
 	result := ValidateCompletionWithRuntimeEvents(store, eventStore, runID, requiredKinds)
 	result.Checks = append(result.Checks, CompletionCheck{
-		Name: "independent-runtime-ledger",
+		Name:   "independent-runtime-ledger",
 		Passed: result.Complete,
 		Detail: "completion evidence is derived from an event ledger with no evidence append capability",
 	})
