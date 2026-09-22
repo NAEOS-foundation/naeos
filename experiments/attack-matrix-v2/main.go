@@ -47,9 +47,9 @@ func (v completenessVerifier) Name() string { return "evidence-completeness" }
 
 func (v completenessVerifier) Verify(rec evidence.EvidenceRecord) (verification.VerificationResult, error) {
 	result := verification.VerificationResult{
-		Status:    verification.StatusVerified,
-		Target:    rec.ID,
-		Checks:    nil,
+		Status: verification.StatusVerified,
+		Target: rec.ID,
+		Checks: nil,
 	}
 
 	records := v.store.Records()
