@@ -64,6 +64,7 @@ func (hv *HandoffValidator) buildSigningPayload(contract *HandoffContract) strin
 	parts = append(parts, fmt.Sprintf("version:%s", contract.ContractVersion))
 	parts = append(parts, fmt.Sprintf("canonical:%s", contract.CanonicalVersion))
 	parts = append(parts, fmt.Sprintf("initiator:%s", contract.Initiator))
+	parts = append(parts, fmt.Sprintf("created:%s", contract.CreatedAt.UTC().Format(time.RFC3339Nano)))
 	parts = append(parts, fmt.Sprintf("recipient:%s", contract.Recipient))
 	parts = append(parts, fmt.Sprintf("requested:%s", contract.RequestedCapability))
 	parts = append(parts, fmt.Sprintf("policy:%s:%d", contract.PolicyID, contract.PolicyVersion))
@@ -112,8 +113,12 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 		result.Valid = false
 	}
 
-	// Verify HMAC-SHA256 signature
-	if contract.Signature != "" {
+	// Verify HMAC-SHA256 signature. A handoff without a signature is never trusted.
+	if contract.Signature == "" {
+		result.Errors = append(result.Errors, "Contract signature is missing")
+		result.Valid = false
+		hv.recordAuditEvent("CONTRACT_SIGNATURE_MISSING", contract.Initiator, map[string]interface{}{})
+	} else {
 		if !hv.VerifyContractSignature(contract) {
 			result.Errors = append(result.Errors, "Contract signature verification failed - contract may have been tampered with")
 			result.Valid = false
@@ -130,16 +135,20 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 		result.Valid = false
 	}
 
-	// Check replay protection - detect if this nonce has been seen before
-	if hv.isReplayedNonce(contract.ReplayProtection.Nonce) {
+	// Replay protection is checked before any state is consumed. The nonce is only
+	// atomically consumed after every validation succeeds, preventing malformed or
+	// unauthorized contracts from poisoning the replay ledger.
+	if contract.ReplayProtection.Nonce == "" {
+		result.Errors = append(result.Errors, "Replay protection nonce is missing")
+		result.ReplayDetected = true
+		result.Valid = false
+	} else if hv.isReplayedNonce(contract.ReplayProtection.Nonce) {
 		result.Errors = append(result.Errors, fmt.Sprintf("Replay attack detected: nonce %s has been seen before", contract.ReplayProtection.Nonce))
 		result.ReplayDetected = true
 		result.Valid = false
 		hv.recordAuditEvent("REPLAY_ATTACK_DETECTED", contract.Initiator, map[string]interface{}{
 			"nonce": contract.ReplayProtection.Nonce,
 		})
-	} else {
-		hv.recordNonce(contract.ReplayProtection.Nonce)
 	}
 
 	// Validate payload digest
@@ -150,6 +159,12 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 			result.PayloadTampered = true
 			result.Valid = false
 		}
+	}
+
+	// CreatedAt is part of the signed contract and must be present and sane.
+	if contract.CreatedAt.IsZero() {
+		result.Errors = append(result.Errors, "Contract creation timestamp is missing")
+		result.Valid = false
 	}
 
 	// Check for capability widening
@@ -170,6 +185,31 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 
 	// Check for downstream capability escalation
 	if contract.DownstreamHandoff != nil {
+		// Every delegated contract is independently authenticated and validated.
+		// Parent signing alone is insufficient: the downstream component must not
+		// receive an unauthenticated nested authority object.
+		if contract.DownstreamHandoff.Signature == "" || !hv.VerifyContractSignature(contract.DownstreamHandoff) {
+			result.Errors = append(result.Errors, "Downstream handoff signature verification failed")
+			result.Valid = false
+		}
+		if contract.DownstreamHandoff.ContractVersion != contract.ContractVersion || contract.DownstreamHandoff.CanonicalVersion != contract.CanonicalVersion {
+			result.Errors = append(result.Errors, "Downstream handoff version mismatch")
+			result.Valid = false
+		}
+		if contract.DownstreamHandoff.CreatedAt.IsZero() {
+			result.Errors = append(result.Errors, "Downstream handoff creation timestamp is missing")
+			result.Valid = false
+		}
+		if contract.DownstreamHandoff.ExpiresAt.After(contract.ExpiresAt) {
+			result.Errors = append(result.Errors, "Downstream handoff outlives parent authorization")
+			result.Valid = false
+		}
+		if contract.DownstreamHandoff.Payload != nil && calculatePayloadDigest(contract.DownstreamHandoff.Payload) != contract.DownstreamHandoff.PayloadDigest {
+			result.Errors = append(result.Errors, "Downstream handoff payload digest mismatch")
+			result.PayloadTampered = true
+			result.Valid = false
+		}
+
 		// The downstream handoff cannot request a capability that was not in the parent handoff
 		hasCapability := false
 		for _, cap := range contract.AuthorizedCapabilities {
@@ -241,6 +281,14 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 		})
 	}
 
+	// Consume the nonce only after the complete contract has passed validation.
+	// This operation is atomic so concurrent validation cannot authorize the same nonce twice.
+	if result.Valid && !hv.consumeNonce(contract.ReplayProtection.Nonce) {
+		result.Errors = append(result.Errors, fmt.Sprintf("Replay attack detected: nonce %s was concurrently consumed", contract.ReplayProtection.Nonce))
+		result.ReplayDetected = true
+		result.Valid = false
+	}
+
 	// Record validation event
 	hv.recordAuditEvent("HANDOFF_VALIDATION", contract.Initiator, map[string]interface{}{
 		"valid":            result.Valid,
@@ -277,6 +325,17 @@ func (hv *HandoffValidator) recordNonce(nonce string) {
 	defer hv.mu.Unlock()
 
 	hv.seenNonces[nonce] = time.Now()
+}
+
+// consumeNonce atomically checks and records a nonce.
+func (hv *HandoffValidator) consumeNonce(nonce string) bool {
+	hv.mu.Lock()
+	defer hv.mu.Unlock()
+	if _, exists := hv.seenNonces[nonce]; exists {
+		return false
+	}
+	hv.seenNonces[nonce] = time.Now()
+	return true
 }
 
 // Reset clears the nonce ledger. Used when the demo is reset.
