@@ -816,7 +816,7 @@ func appendRunEvidence(store *evidence.EvidenceStore, runtimeEvents *evidence.Ru
 	if latest := store.Latest(); latest != nil {
 		previousID = latest.ID
 	}
-	_, err := store.Append(evidence.EvidenceRecord{
+	_, err = store.Append(evidence.EvidenceRecord{
 		ID:    fmt.Sprintf("%s-%s", runID, kind),
 		Actor: "pipeline", Resource: "pipeline", Action: "run",
 		Environment: "runtime", PolicyID: "pipeline-lifecycle", PolicyVersion: "1.0.0",
