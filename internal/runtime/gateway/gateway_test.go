@@ -532,3 +532,62 @@ func TestGatewayFullIntegration(t *testing.T) {
 		t.Fatalf("expected completed, got %s", result.Status)
 	}
 }
+
+
+type rotatingControlPlane struct {
+	decisions []control.Decision
+	calls     int
+}
+
+func (c *rotatingControlPlane) Evaluate(req control.Request) (control.DecisionRecord, error) {
+	decision := c.decisions[c.calls]
+	c.calls++
+	return control.DecisionRecord{
+		Request:       req,
+		Decision:      decision,
+		PolicyID:      "rotating-policy",
+		PolicyVersion: fmt.Sprintf("1.0.%d", c.calls),
+		RuleID:        "fresh-decision",
+		Reasons:       []string{"decision evaluated at authorization time"},
+	}, nil
+}
+
+func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
+	cp := &rotatingControlPlane{decisions: []control.Decision{
+		control.DecisionAllow,
+		control.DecisionDeny,
+	}}
+	sb := &stubSandbox{output: "side effect"}
+	gw := New(cp, sb)
+
+	first, err := gw.Authorize(ToolRequest{
+		Tool: "filesystem",
+		Action: "write",
+	})
+	if err != nil {
+		t.Fatalf("first authorization failed: %v", err)
+	}
+	if first.Decision != control.DecisionAllow || first.Status != "completed" {
+		t.Fatalf("expected first request to complete under ALLOW, got decision=%s status=%s", first.Decision, first.Status)
+	}
+
+	// A previously returned ALLOW must not be reusable as authority for a
+	// subsequent request. The gateway has no API that accepts a stale
+	// DecisionRecord; it must consult the control plane again.
+	second, err := gw.Authorize(ToolRequest{
+		Tool: "filesystem",
+		Action: "write",
+	})
+	if err != nil {
+		t.Fatalf("second authorization failed unexpectedly: %v", err)
+	}
+	if second.Decision != control.DecisionDeny {
+		t.Fatalf("expected fresh authorization to return DENY, got %s", second.Decision)
+	}
+	if second.Status != "denied" {
+		t.Fatalf("expected replay attempt to be denied before execution, got %s", second.Status)
+	}
+	if cp.calls != 2 {
+		t.Fatalf("expected control plane to be evaluated twice, got %d calls", cp.calls)
+	}
+}
