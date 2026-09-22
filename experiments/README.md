@@ -119,3 +119,14 @@ Run it with:
     go run ./experiments/evidence-runtime-event-ledger-v5-3
 
 Attack Matrix: [v5.3](attack-matrix/ATTACK-MATRIX-V5-3.md)
+
+
+## Independent Runtime Observer v5.4
+
+[Independent Runtime Observer v5.4](evidence-runtime-observer-v5-4/README.md) introduces an explicit read-only observer boundary between runtime execution and evidence construction. The observer owns event publication while evidence construction can only consume already-observed events.
+
+Run it with:
+
+    go run ./experiments/evidence-runtime-observer-v5-4
+
+Attack Matrix: [v5.4](attack-matrix/ATTACK-MATRIX-V5-4.md)
