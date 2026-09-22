@@ -67,6 +67,18 @@ func TestValidateCompletionWithRuntimeEventsBlocksMissingEvent(t *testing.T) {
 	}
 }
 
+func TestValidateCompletionWithRuntimeEventsBlocksEventTypeMismatch(t *testing.T) {
+	store := NewStore()
+	events := NewRuntimeEventStore()
+	appendTestLifecycleEvidence(t, store, events, "run-type")
+	event := store.ByID("run-type-execution")
+	event.Metadata["provenance_event"] = "pipeline.wrong"
+	result := ValidateCompletionWithRuntimeEvents(store, events, "run-type", []string{"intent", "decision", "execution", "observation", "verification"})
+	if result.Complete {
+		t.Fatal("expected event type mismatch to block completion")
+	}
+}
+
 func TestValidateCompletionWithRuntimeEventsBlocksPayloadMismatch(t *testing.T) {
 	store := NewStore()
 	events := NewRuntimeEventStore()
