@@ -43,7 +43,8 @@ func TestHandoffRejectsDownstreamAuthorizedCapabilityWidening(t *testing.T) {
 		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-downstream-child", Timestamp: time.Now().UTC()},
 	}
 	parent.DownstreamHandoff.PayloadDigest = calculatePayloadDigest(parent.DownstreamHandoff.Payload)
-	setup.HandoffValidator.SignContract(parent)
+	parent.DownstreamHandoff.Signature = setup.HandoffValidator.SignContract(parent.DownstreamHandoff)
+	parent.Signature = setup.HandoffValidator.SignContract(parent)
 
 	validation := setup.HandoffValidator.ValidateHandoff(parent)
 	if validation.Valid {
@@ -118,5 +119,90 @@ func TestHandoffRejectsRecipientMismatch(t *testing.T) {
 	validation := setup.HandoffValidator.ValidateHandoff(parent)
 	if validation.Valid || !validation.ProvenanceMismatch {
 		t.Fatal("expected recipient mismatch to be rejected")
+	}
+}
+
+
+func TestHandoffRejectsMissingSignature(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-01",
+		Recipient:              "agent-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-01", "destination": "agent-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-missing-signature", Timestamp: time.Now().UTC()},
+	}
+	contract.PayloadDigest = calculatePayloadDigest(contract.Payload)
+	validation := setup.HandoffValidator.ValidateHandoff(contract)
+	if validation.Valid {
+		t.Fatal("expected unsigned handoff to be rejected")
+	}
+}
+
+func TestInvalidHandoffDoesNotConsumeReplayNonce(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-01",
+		Recipient:              "agent-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-01", "destination": "agent-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-invalid-no-poison", Timestamp: time.Now().UTC()},
+	}
+	contract.PayloadDigest = calculatePayloadDigest(contract.Payload)
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
+	contract.Payload["tampered"] = true
+
+	invalid := setup.HandoffValidator.ValidateHandoff(contract)
+	if invalid.Valid {
+		t.Fatal("expected tampered handoff to be rejected")
+	}
+
+	delete(contract.Payload, "tampered")
+	contract.PayloadDigest = calculatePayloadDigest(contract.Payload)
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
+	valid := setup.HandoffValidator.ValidateHandoff(contract)
+	if !valid.Valid {
+		t.Fatalf("expected corrected handoff to validate, got errors: %v", valid.Errors)
+	}
+}
+
+func TestCreatedAtMutationInvalidatesSignature(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-01",
+		Recipient:              "agent-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-01", "destination": "agent-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-created-at-binding", Timestamp: time.Now().UTC()},
+	}
+	contract.PayloadDigest = calculatePayloadDigest(contract.Payload)
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
+	contract.CreatedAt = contract.CreatedAt.Add(time.Minute)
+	if setup.HandoffValidator.VerifyContractSignature(contract) {
+		t.Fatal("expected CreatedAt mutation to invalidate signature")
 	}
 }
