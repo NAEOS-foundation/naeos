@@ -11,7 +11,7 @@ NAEOS follows the current release line for security support. The versions below 
 | 3.4.x | :warning: Legacy / upgrade recommended |
 | < 3.4.x | :x: Not supported |
 
-The current repository release is **3.6.0**. Security support is maintained against the current release line unless a release-specific advisory states otherwise.
+The current NAEOS release is **3.6.0**. Security support is maintained against the current release line unless a release-specific advisory states otherwise.
 
 ## Reporting a Vulnerability
 
