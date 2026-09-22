@@ -27,6 +27,10 @@ const (
 // Request describes a single authorization decision request issued by an
 // agent or process.
 type Request struct {
+	// Capability identifies the exact capability being requested. It is part
+	// of the authorization identity so a decision for one capability cannot
+	// be reused for a broader capability.
+	Capability   string
 	Resource    string
 	Action      string
 	Environment string
@@ -250,7 +254,12 @@ func (c *ControlPlane) ValidateDecision(req Request, issued DecisionRecord) (Dec
 	if err != nil {
 		return DecisionRecord{}, err
 	}
-	if current.PolicyID != issued.PolicyID ||
+	if current.Request.Capability != issued.Request.Capability ||
+		current.Request.Resource != issued.Request.Resource ||
+		current.Request.Action != issued.Request.Action ||
+		current.Request.Environment != issued.Request.Environment ||
+		current.Request.Actor != issued.Request.Actor ||
+		current.PolicyID != issued.PolicyID ||
 		current.PolicyVersion != issued.PolicyVersion ||
 		current.RuleID != issued.RuleID ||
 		current.Decision != issued.Decision {
