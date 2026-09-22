@@ -6,7 +6,6 @@ package builder
 import (
 	"testing"
 
-	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
