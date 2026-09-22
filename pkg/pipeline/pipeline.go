@@ -635,7 +635,7 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
 	runEvidence := evidence.NewStore()
-	if err := appendRunEvidence(runEvidence, pipelineID, "intent", 1); err != nil {
+	if err := appendRunEvidence(runEvidence, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
 		return nil, fmt.Errorf("record run intent evidence: %w", err)
 	}
 	if p.observer != nil {
@@ -678,7 +678,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profileStageStart("policy_eval")
 		policyErr := p.runPolicyEval(result)
 		if policyErr == nil {
-			if err := appendRunEvidence(runEvidence, pipelineID, "decision", 2); err != nil {
+			if err := appendRunEvidence(runEvidence, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
 				return nil, fmt.Errorf("record policy decision evidence: %w", err)
 			}
 		}
@@ -734,16 +734,16 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if writeErr != nil {
 			return nil, writeErr
 		}
-		if err := appendRunEvidence(runEvidence, pipelineID, "execution", 3); err != nil {
+		if err := appendRunEvidence(runEvidence, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 			return nil, fmt.Errorf("record execution evidence: %w", err)
 		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
-		if err := appendRunEvidence(runEvidence, pipelineID, "observation", 4); err != nil {
+		if err := appendRunEvidence(runEvidence, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(runEvidence, pipelineID, "verification", 5); err != nil {
+		if err := appendRunEvidence(runEvidence, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record verification evidence: %w", err)
 		}
 		if err := validateRunCompletion(runEvidence, pipelineID); err != nil {
@@ -803,7 +803,7 @@ func (p *Pipeline) memSnapshot(label string) {
 
 var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
-func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int) error {
+func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int, stage, event, payloadDigest string) error {
 	previousID := ""
 	if latest := store.Latest(); latest != nil {
 		previousID = latest.ID
@@ -816,9 +816,30 @@ func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequen
 		Metadata: map[string]any{
 			"run_id": runID, "run_binding": evidence.RunBindingDigest(runID),
 			"kind": kind, "sequence": sequence, "previous_evidence_id": previousID,
+			"provenance_stage": stage, "provenance_event": event,
+			"payload_digest": payloadDigest,
+			"provenance_digest": evidence.ProvenanceDigest(stage, event, payloadDigest),
 		},
 	})
 	return err
+}
+
+
+func artifactDigest(artifacts []engine.Artifact) string {
+	data, _ := json.Marshal(artifacts)
+	return evidence.ComputeArtifactHash(data)
+}
+
+func observationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, reviews []*review.ReviewResult) string {
+	data, _ := json.Marshal(map[string]int{"tasks": len(tasks), "artifacts": len(artifacts), "reviews": len(reviews)})
+	return evidence.ComputeArtifactHash(data)
+}
+
+func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, reviews []*review.ReviewResult) string {
+	data, _ := json.Marshal(map[string]any{
+		"tasks": len(tasks), "artifacts": len(artifacts), "reviews": len(reviews), "verification": "completion-boundary",
+	})
+	return evidence.ComputeArtifactHash(data)
 }
 
 func validateRunCompletion(store *evidence.EvidenceStore, runID string) error {
