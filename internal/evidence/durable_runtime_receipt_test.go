@@ -59,7 +59,7 @@ func TestDurableRuntimeReceiptRejectsLedgerMutation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ledger.Publish("run-1", "pipeline.policy_decision", "payload-2", 2); err == nil {
+	if _, err := ledger.Publish("run-1", "pipeline.policy_decision", "payload-2", 2); err == nil {
 		t.Fatal("expected sealed ledger to reject mutation")
 	}
 	if err := VerifyDurableRuntimeReceipt(receipt, ledger, "run-1"); err != nil {
