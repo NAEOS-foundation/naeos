@@ -375,7 +375,7 @@ func run() ([]scenarioResult, error) {
 	tamperObserver := observer{root: tamperRoot}
 	tamperObserved, tamperExists, err := tamperObserver.Observe()
 	if err != nil || !tamperExists {
-		return nil, fmt.Errorf("tamper scenario initial observation failed: %v", err)
+		return nil, fmt.Errorf("tamper scenario initial observation failed: %w", err)
 	}
 	tamperRecord, err := appendEvidence(tamperControl, tamperResult, tamperObserved, tamperObserver)
 	if err != nil {
