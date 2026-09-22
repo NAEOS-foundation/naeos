@@ -635,7 +635,8 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
 	runEvidence := evidence.NewStore()
-	if err := appendRunEvidence(runEvidence, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
+	runtimeEvents := evidence.NewRuntimeEventStore()
+	if err := appendRunEvidence(runEvidence, runtimeEvents, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
 		return nil, fmt.Errorf("record run intent evidence: %w", err)
 	}
 	if p.observer != nil {
@@ -678,7 +679,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profileStageStart("policy_eval")
 		policyErr := p.runPolicyEval(result)
 		if policyErr == nil {
-			if err := appendRunEvidence(runEvidence, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
+			if err := appendRunEvidence(runEvidence, runtimeEvents, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
 				return nil, fmt.Errorf("record policy decision evidence: %w", err)
 			}
 		}
@@ -734,19 +735,19 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if writeErr != nil {
 			return nil, writeErr
 		}
-		if err := appendRunEvidence(runEvidence, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+		if err := appendRunEvidence(runEvidence, runtimeEvents, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 			return nil, fmt.Errorf("record execution evidence: %w", err)
 		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
-		if err := appendRunEvidence(runEvidence, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(runEvidence, runtimeEvents, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(runEvidence, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(runEvidence, runtimeEvents, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record verification evidence: %w", err)
 		}
-		if err := validateRunCompletion(runEvidence, pipelineID); err != nil {
+		if err := validateRunCompletion(runEvidence, runtimeEvents, pipelineID); err != nil {
 			return nil, err
 		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
@@ -803,7 +804,14 @@ func (p *Pipeline) memSnapshot(label string) {
 
 var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
-func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int, stage, event, payloadDigest string) error {
+func appendRunEvidence(store *evidence.EvidenceStore, runtimeEvents *evidence.RuntimeEventStore, runID, kind string, sequence int, stage, event, payloadDigest string) error {
+	if runtimeEvents == nil {
+		return fmt.Errorf("runtime event store is nil")
+	}
+	runtimeEvent, err := runtimeEvents.Append(runID, event, payloadDigest, sequence)
+	if err != nil {
+		return err
+	}
 	previousID := ""
 	if latest := store.Latest(); latest != nil {
 		previousID = latest.ID
@@ -819,6 +827,7 @@ func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequen
 			"provenance_stage": stage, "provenance_event": event,
 			"payload_digest":    payloadDigest,
 			"provenance_digest": evidence.ProvenanceDigest(stage, event, payloadDigest),
+			"runtime_event_id":  runtimeEvent.ID,
 		},
 	})
 	return err
@@ -841,8 +850,8 @@ func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, rev
 	return evidence.ComputeArtifactHash(data)
 }
 
-func validateRunCompletion(store *evidence.EvidenceStore, runID string) error {
-	completion := evidence.ValidateCompletion(store, runID, requiredRunEvidenceKinds)
+func validateRunCompletion(store *evidence.EvidenceStore, runtimeEvents *evidence.RuntimeEventStore, runID string) error {
+	completion := evidence.ValidateCompletionWithRuntimeEvents(store, runtimeEvents, runID, requiredRunEvidenceKinds)
 	if !completion.Complete {
 		return fmt.Errorf("run completion blocked: incomplete evidence contract: %v", completion.Missing)
 	}

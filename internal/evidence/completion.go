@@ -187,3 +187,75 @@ func findEvidenceIndex(records []EvidenceRecord, id string) int {
 	}
 	return -1
 }
+
+
+// ValidateCompletionWithRuntimeEvents extends the completion boundary by
+// requiring every evidence record to bind to an independently recorded runtime
+// event. The event must exist, belong to the same run, match the expected event
+// type and payload digest, and preserve the lifecycle sequence.
+func ValidateCompletionWithRuntimeEvents(store *EvidenceStore, runtimeEvents *RuntimeEventStore, runID string, requiredKinds []string) CompletionResult {
+	result := ValidateCompletion(store, runID, requiredKinds)
+	if !result.Complete {
+		return result
+	}
+	if runtimeEvents == nil {
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-events-present", Passed: false, Detail: "runtime event store is nil"})
+		return result
+	}
+	if err := runtimeEvents.Verify(); err != nil {
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-events-intact", Passed: false, Detail: err.Error()})
+		return result
+	}
+
+	events := runtimeEvents.Records()
+	if len(events) != len(requiredKinds) {
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-event-count-exact", Passed: false, Detail: fmt.Sprintf("observed=%d required=%d", len(events), len(requiredKinds))})
+		return result
+	}
+
+	expectedNames := map[string]string{
+		"intent":       "pipeline.start",
+		"decision":     "pipeline.policy_decision",
+		"execution":    "pipeline.execution",
+		"observation":  "pipeline.observation",
+		"verification": "pipeline.verification",
+	}
+	kindBySequence := make(map[int]string, len(requiredKinds))
+	for i, kind := range requiredKinds {
+		kindBySequence[i+1] = kind
+	}
+
+	eventBindingOK := true
+	for i, event := range events {
+		expectedKind := kindBySequence[event.Sequence]
+		expectedName := expectedNames[expectedKind]
+		if event.RunID != runID || expectedKind == "" || event.Name != expectedName || event.Sequence != i+1 {
+			eventBindingOK = false
+			continue
+		}
+		records := store.Records()
+		var matched *EvidenceRecord
+		for j := range records {
+			record := records[j]
+			if metadataInt(record, "sequence") == event.Sequence && metadataString(record, "run_id") == runID {
+				copy := record
+				matched = &copy
+				break
+			}
+		}
+		if matched == nil || metadataString(*matched, "runtime_event_id") != event.ID || metadataString(*matched, "payload_digest") != event.PayloadDigest {
+			eventBindingOK = false
+		}
+	}
+
+	result.Checks = append(result.Checks, CompletionCheck{
+		Name: "runtime-event-evidence-binding",
+		Passed: eventBindingOK,
+		Detail: "each lifecycle evidence record references the exact observed runtime event and payload digest",
+	})
+	result.Complete = result.Complete && eventBindingOK
+	return result
+}

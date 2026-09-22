@@ -97,3 +97,14 @@ Run it with:
     go run ./experiments/evidence-runtime-provenance-v5-1
 
 Attack Matrix: [v5.1](attack-matrix/ATTACK-MATRIX-V5-1.md)
+
+
+## Evidence Runtime Event Binding v5.2
+
+[Evidence Runtime Event Binding v5.2](evidence-runtime-event-binding-v5-2/README.md) requires each lifecycle evidence record to reference an observed runtime event with matching run identity, event type, sequence, and payload digest. It explicitly blocks missing events, cross-run events, payload mismatch, and events after the completion boundary.
+
+Run it with:
+
+    go run ./experiments/evidence-runtime-event-binding-v5-2
+
+Attack Matrix: [v5.2](attack-matrix/ATTACK-MATRIX-V5-2.md)
