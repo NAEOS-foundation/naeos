@@ -74,6 +74,18 @@ jobs:
           NAEOS_DEMO_OUTPUT_DIR="$output_dir" \
             ./examples/demo-cli/run-demo.sh
 
+  governance-lifecycle:
+    name: Governance Lifecycle Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run governance lifecycle experiment
+        run: go run ./experiments/governance-lifecycle
+
   bench-gate:
     name: Benchmark Gate
     runs-on: ubuntu-latest

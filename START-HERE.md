@@ -59,7 +59,17 @@ naeos ai compile --input-file examples/demo-cli/spec.yaml --target opencode
 
 The default demo intentionally does not require an LLM API key.
 
-## 4. Understand the architecture
+## 4. Run the governance experiment
+
+After the five-minute CLI demo, run the flagship governance lifecycle experiment:
+
+```bash
+go run ./experiments/governance-lifecycle
+```
+
+It tests the chain `agent intent → policy decision → execution → observation → evidence → independent verification` and deliberately treats an agent's claim as different from observed evidence. See [experiments/governance-lifecycle/README.md](experiments/governance-lifecycle/README.md).
+
+## 5. Understand the architecture
 
 The repository’s conceptual architecture is summarized in [README.md](README.md), [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md), and [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md).
 
@@ -85,7 +95,7 @@ If you want the authoritative references, read:
 - [docs/NES-023-NEIR.md](docs/NES-023-NEIR.md)
 - [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
 
-## 5. Pick your path
+## 6. Pick your path
 
 ### I want to understand NAEOS
 
@@ -143,7 +153,7 @@ Good first documentation work includes clarifying the onboarding path, fixing br
 
 Look at the pipeline and compiler docs, the demo, and the AI context generation flow. The best concrete starting point is the local demo plus the compiler references in [README.md](README.md) and [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md).
 
-## 6. Start with a small contribution
+## 7. Start with a small contribution
 
 The easiest successful contribution is not “build a large feature.” It is “improve one small, concrete thing that makes the project easier to understand or use.”
 
@@ -180,7 +190,7 @@ These are real areas of the repository and are appropriate once the basics are u
 
 The contributor ladder in [docs/community/contributor-ladder.md](docs/community/contributor-ladder.md) is the best guide for how these contributions fit together.
 
-## 7. Challenge NAEOS
+## 8. Challenge NAEOS
 
 A healthy NAEOS contribution is not just “add more features.” It is also challenging the assumptions the project currently makes.
 
@@ -197,7 +207,7 @@ This is not anti-project work. It is exactly the kind of work that makes a gover
 
 If you see a gap, ask: “What assumption does NAEOS currently make that may not hold in the real world?”
 
-## 8. Good first issues
+## 9. Good first issues
 
 The repository includes issue templates and contributor guidance, but this snapshot does not include a curated in-repo list of issue numbers for a “good first issue” campaign. The repository does include templates for:
 
@@ -211,7 +221,7 @@ See [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) and the community guidance 
 
 A good first contribution usually starts by picking one problem you can actually reproduce or one section that feels unclear to a first-time reader.
 
-## 9. Contribution workflow
+## 10. Contribution workflow
 
 The simplest accurate contribution flow is:
 
@@ -223,7 +233,7 @@ The simplest accurate contribution flow is:
 
 This repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The intent here is to make the first step feel approachable.
 
-## 10. Documentation map
+## 11. Documentation map
 
 | I want to... | Read... |
 |---|---|
@@ -236,7 +246,7 @@ This repository already defines the engineering workflow in [CONTRIBUTING.md](CO
 | See the roadmap | [ROADMAP.md](ROADMAP.md) |
 | Join discussion | [docs/community/discussions.md](docs/community/discussions.md) |
 
-## 11. Join the discussion
+## 12. Join the discussion
 
 If you have a technical question, a design idea, or a project you built with NAEOS, use GitHub Discussions and the issue templates rather than silently watching. The repository already defines the community structure in [docs/community/discussions.md](docs/community/discussions.md).
 
@@ -249,7 +259,7 @@ A strong first discussion usually contains:
 
 This is more useful than a vague “this seems broken” note.
 
-## 12. The NAEOS principle
+## 13. The NAEOS principle
 
 NAEOS should not merely make AI agents more capable. It should make their actions more understandable, governable, verifiable, and trustworthy.
 
