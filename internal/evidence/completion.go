@@ -69,7 +69,9 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 
 	for _, record := range runRecords {
 		kind := metadataString(record, "kind")
-		present[kind] = true
+		if kind != "" {
+			present[kind] = true
+		}
 
 		sequence := metadataInt(record, "sequence")
 		if sequence != previousSequence+1 {
@@ -77,16 +79,22 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 		}
 		previousSequence = sequence
 
-		if sequence > 1 && metadataString(record, "previous_evidence_id") == "" {
-			linksOK = false
+		if sequence > 1 {
+			previousID := metadataString(record, "previous_evidence_id")
+			if previousID == "" {
+				linksOK = false
+			} else if recordIndex := findEvidenceIndex(runRecords, record.ID); recordIndex <= 0 || runRecords[recordIndex-1].ID != previousID {
+				linksOK = false
+			}
 		}
 	}
 
 	for _, kind := range requiredKinds {
 		if !present[kind] {
 			result.Missing = append(result.Missing, kind)
+		} else {
+			result.Observed = append(result.Observed, kind)
 		}
-		result.Observed = append(result.Observed, kind)
 	}
 
 	requiredOK := len(result.Missing) == 0
@@ -141,4 +149,14 @@ func metadataInt(rec EvidenceRecord, key string) int {
 	default:
 		return 0
 	}
+}
+
+
+func findEvidenceIndex(records []EvidenceRecord, id string) int {
+	for i, record := range records {
+		if record.ID == id {
+			return i
+		}
+	}
+	return -1
 }
