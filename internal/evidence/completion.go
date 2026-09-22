@@ -278,9 +278,18 @@ func ValidateCompletionWithRuntimeLedger(store *EvidenceStore, ledger *RuntimeEv
 	}
 	events := ledger.Records()
 	eventStore := NewRuntimeEventStore()
+	if len(events) != len(requiredKinds) {
+		result := ValidateCompletion(store, runID, requiredKinds)
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-ledger-event-count-exact", Passed: false, Detail: fmt.Sprintf("observed=%d required=%d", len(events), len(requiredKinds))})
+		return result
+	}
 	for _, event := range events {
 		if event.RunID != runID {
-			continue
+			result := ValidateCompletion(store, runID, requiredKinds)
+			result.Complete = false
+			result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-ledger-run-binding", Passed: false, Detail: fmt.Sprintf("event %s belongs to run %s", event.ID, event.RunID)})
+			return result
 		}
 		if _, err := eventStore.Append(event.RunID, event.Name, event.PayloadDigest, event.Sequence); err != nil {
 			result := ValidateCompletion(store, runID, requiredKinds)
