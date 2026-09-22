@@ -17,6 +17,9 @@ import (
 // specific tool or resource. Every request must pass through the execution
 // gateway before reaching the runtime.
 type ToolRequest struct {
+	// Capability is the normalized capability requested by the agent.
+	// It is authorization-bound and must not be widened downstream.
+	Capability   string
 	Tool        string
 	Action      string
 	Resource    string
@@ -168,6 +171,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 
 	// Evaluate against the control plane.
 	rec, err := g.controlPlane.Evaluate(control.Request{
+		Capability:  req.Capability,
 		Resource:    resource,
 		Action:      action,
 		Environment: req.Environment,
@@ -227,6 +231,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	// initial authorization decision and the externally observable side effect.
 	if revalidator, ok := g.controlPlane.(DecisionRevalidator); ok {
 		current, err := revalidator.ValidateDecision(control.Request{
+			Capability:  req.Capability,
 			Resource:    resource,
 			Action:      action,
 			Environment: req.Environment,
