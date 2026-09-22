@@ -158,7 +158,7 @@ The example above demonstrates the core workflow: define a specification, run va
 
 ### Requirements
 
-- Go 1.25 or later
+- Go 1.26.6 or later
 - Git
 
 ### Run the local CLI demo
@@ -381,6 +381,37 @@ pkg/
   plugin/           # Plugin system
 docs/               # Documentation (57 NES specs)
 ```
+
+## Architecture authority
+
+NAEOS has two complementary architectural views:
+
+- **Engineering model:** specification → NEIR → validation → policy → AI context → generation.
+- **AI Engineering control plane:** agent intent → policy decision → authorized execution → observation → evidence → independent verification.
+
+The authoritative normative hierarchy is:
+
+```text
+Constitution
+    ↓
+Reference Architecture
+    ↓
+Master Technical Specification
+    ↓
+Engineering Specifications / ADRs
+    ↓
+Implementation
+    ↓
+Experiments
+```
+
+Public guides such as README, START-HERE, and GETTING-STARTED explain and navigate the system; they do not override normative specifications.
+
+For the reference architecture, see [NAEOS-NRA-001](Reference%20Architecture/NAEOS-NRA-001.md). For the core technical contracts, see [NAEOS-MTS-001](NAEOS-MTS-001.md). For deterministic governance/evidence validation, see [experiments/](experiments/).
+
+### Release vs. experiment versions
+
+NAEOS software releases and experiment-series versions are different identifiers. For example, **NAEOS 3.6.0** is a software release, while **Evidence V5.6** identifies an engineering experiment milestone. They should not be interpreted as the same version sequence.
 
 ## Documentation
 
