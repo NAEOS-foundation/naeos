@@ -533,6 +533,7 @@ func TestGatewayFullIntegration(t *testing.T) {
 	}
 }
 
+
 type rotatingControlPlane struct {
 	decisions []control.Decision
 	calls     int
@@ -560,7 +561,7 @@ func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
 	gw := New(cp, sb)
 
 	first, err := gw.Authorize(ToolRequest{
-		Tool:   "filesystem",
+		Tool: "filesystem",
 		Action: "write",
 	})
 	if err != nil {
@@ -574,7 +575,7 @@ func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
 	// subsequent request. The gateway has no API that accepts a stale
 	// DecisionRecord; it must consult the control plane again.
 	second, err := gw.Authorize(ToolRequest{
-		Tool:   "filesystem",
+		Tool: "filesystem",
 		Action: "write",
 	})
 	if err != nil {
