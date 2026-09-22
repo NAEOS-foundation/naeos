@@ -65,7 +65,7 @@ func main() {
 	if record := tampered.ByID("run-tampered-execution"); record != nil {
 		record.ExecutionStatus = "tampered"
 	}
-	results = append(results, scenario{"tampered-evidence", evidence.ValidateCompletion(tampered, "run-tampered", required).Complete, false}
+	results = append(results, scenario{"tampered-evidence", evidence.ValidateCompletion(tampered, "run-tampered", required).Complete, false})
 
 	encoded, _ := json.MarshalIndent(results, "", "  ")
 	fmt.Println(string(encoded))
