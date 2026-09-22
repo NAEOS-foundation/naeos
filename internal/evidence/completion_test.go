@@ -32,10 +32,10 @@ func completionStore(specs []struct {
 				"run_binding":          RunBindingDigest(spec.run),
 				"kind":                 spec.kind,
 				"sequence":             spec.seq,
-				"provenance_stage":    testProvenance(spec.kind)[0],
-				"provenance_event":    testProvenance(spec.kind)[1],
-				"payload_digest":      "payload-" + spec.kind,
-				"provenance_digest":   ProvenanceDigest(testProvenance(spec.kind)[0], testProvenance(spec.kind)[1], "payload-"+spec.kind),
+				"provenance_stage":     testProvenance(spec.kind)[0],
+				"provenance_event":     testProvenance(spec.kind)[1],
+				"payload_digest":       "payload-" + spec.kind,
+				"provenance_digest":    ProvenanceDigest(testProvenance(spec.kind)[0], testProvenance(spec.kind)[1], "payload-"+spec.kind),
 				"previous_evidence_id": previousID,
 			},
 		})
@@ -49,7 +49,6 @@ func completionStore(specs []struct {
 	}
 	return store
 }
-
 
 func testProvenance(kind string) [2]string {
 	switch kind {
@@ -226,7 +225,10 @@ func TestValidateCompletionRejectsTamperedEvidenceChain(t *testing.T) {
 }
 
 func TestValidateCompletionRejectsMissingRuntimeProvenance(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
 		{"observation", "run-1", 4}, {"verification", "run-1", 5},
 	})
@@ -246,7 +248,10 @@ func TestProvenanceDigestChangesWithPayload(t *testing.T) {
 }
 
 func TestValidateCompletionRejectsProvenanceDigestMismatch(t *testing.T) {
-	store := completionStore([]struct{ kind, run string; seq int }{
+	store := completionStore([]struct {
+		kind, run string
+		seq       int
+	}{
 		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
 		{"observation", "run-1", 4}, {"verification", "run-1", 5},
 	})

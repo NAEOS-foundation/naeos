@@ -817,13 +817,12 @@ func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequen
 			"run_id": runID, "run_binding": evidence.RunBindingDigest(runID),
 			"kind": kind, "sequence": sequence, "previous_evidence_id": previousID,
 			"provenance_stage": stage, "provenance_event": event,
-			"payload_digest": payloadDigest,
+			"payload_digest":    payloadDigest,
 			"provenance_digest": evidence.ProvenanceDigest(stage, event, payloadDigest),
 		},
 	})
 	return err
 }
-
 
 func artifactDigest(artifacts []engine.Artifact) string {
 	data, _ := json.Marshal(artifacts)

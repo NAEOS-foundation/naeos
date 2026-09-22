@@ -86,10 +86,10 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 	previousSequence := 0
 	expectedBinding := RunBindingDigest(runID)
 	expectedProvenance := map[string][2]string{
-		"intent": {"run", "pipeline.start"},
-		"decision": {"policy_eval", "pipeline.policy_decision"},
-		"execution": {"write_artifacts", "pipeline.execution"},
-		"observation": {"observation", "pipeline.observation"},
+		"intent":       {"run", "pipeline.start"},
+		"decision":     {"policy_eval", "pipeline.policy_decision"},
+		"execution":    {"write_artifacts", "pipeline.execution"},
+		"observation":  {"observation", "pipeline.observation"},
 		"verification": {"completion", "pipeline.verification"},
 	}
 	for _, record := range runRecords {
