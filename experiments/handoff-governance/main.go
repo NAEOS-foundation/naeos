@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Command handoff-governance tests the NAEOS handoff authorization boundary.
+// Keep this executable independent of network services and LLM output.
 package main
 
 import (
