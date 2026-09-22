@@ -54,39 +54,38 @@ func TestHandoffRejectsDownstreamAuthorizedCapabilityWidening(t *testing.T) {
 	}
 }
 
-
 func TestHandoffRejectsDownstreamMutationAfterParentSigning(t *testing.T) {
 	setup := SetupDemoEnvironment()
 	parent := &HandoffContract{
-		ContractVersion: "1.0",
-		CanonicalVersion: "1",
-		Initiator: "agent-payment-01",
-		Recipient: "agent-secondary-02",
-		RequestedCapability: "repository.write",
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-payment-01",
+		Recipient:              "agent-secondary-02",
+		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []Capability{"repository.write"},
-		Payload: map[string]interface{}{},
-		PolicyID: "POLICY-017",
-		PolicyVersion: 17,
-		Provenance: map[string]interface{}{"source": "agent-payment-01", "destination": "agent-secondary-02"},
-		CreatedAt: time.Now().UTC(),
-		ExpiresAt: time.Now().UTC().Add(time.Hour),
-		ReplayProtection: ReplayProtection{Nonce: "abv1-10-nested-signature-binding", Timestamp: time.Now().UTC()},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-payment-01", "destination": "agent-secondary-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-nested-signature-binding", Timestamp: time.Now().UTC()},
 	}
 	parent.PayloadDigest = calculatePayloadDigest(parent.Payload)
 	parent.DownstreamHandoff = &HandoffContract{
-		ContractVersion: "1.0",
-		CanonicalVersion: "1",
-		Initiator: "agent-secondary-02",
-		Recipient: "agent-tertiary-03",
-		RequestedCapability: "repository.write",
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-secondary-02",
+		Recipient:              "agent-tertiary-03",
+		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []Capability{"repository.write"},
-		Payload: map[string]interface{}{},
-		PolicyID: "POLICY-017",
-		PolicyVersion: 17,
-		Provenance: map[string]interface{}{"source": "agent-secondary-02", "destination": "agent-tertiary-03"},
-		CreatedAt: time.Now().UTC(),
-		ExpiresAt: time.Now().UTC().Add(time.Hour),
-		ReplayProtection: ReplayProtection{Nonce: "abv1-10-nested-child", Timestamp: time.Now().UTC()},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-secondary-02", "destination": "agent-tertiary-03"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-nested-child", Timestamp: time.Now().UTC()},
 	}
 	parent.DownstreamHandoff.PayloadDigest = calculatePayloadDigest(parent.DownstreamHandoff.Payload)
 	parent.Signature = setup.HandoffValidator.SignContract(parent)
@@ -100,19 +99,19 @@ func TestHandoffRejectsDownstreamMutationAfterParentSigning(t *testing.T) {
 func TestHandoffRejectsRecipientMismatch(t *testing.T) {
 	setup := SetupDemoEnvironment()
 	parent := &HandoffContract{
-		ContractVersion: "1.0",
-		CanonicalVersion: "1",
-		Initiator: "agent-payment-01",
-		Recipient: "agent-secondary-02",
-		RequestedCapability: "repository.write",
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-payment-01",
+		Recipient:              "agent-secondary-02",
+		RequestedCapability:    "repository.write",
 		AuthorizedCapabilities: []Capability{"repository.write"},
-		Payload: map[string]interface{}{},
-		PolicyID: "POLICY-017",
-		PolicyVersion: 17,
-		Provenance: map[string]interface{}{"source": "agent-payment-01", "destination": "agent-other-99"},
-		CreatedAt: time.Now().UTC(),
-		ExpiresAt: time.Now().UTC().Add(time.Hour),
-		ReplayProtection: ReplayProtection{Nonce: "abv1-10-recipient-mismatch", Timestamp: time.Now().UTC()},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-payment-01", "destination": "agent-other-99"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-recipient-mismatch", Timestamp: time.Now().UTC()},
 	}
 	parent.PayloadDigest = calculatePayloadDigest(parent.Payload)
 	parent.Signature = setup.HandoffValidator.SignContract(parent)

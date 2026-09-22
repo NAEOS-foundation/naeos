@@ -554,7 +554,7 @@ func TestHandoffValidator_SignedContract(t *testing.T) {
 			ContractVersion:        "1.0",
 			CanonicalVersion:       "1",
 			Initiator:              "agent-payment-01",
-		Recipient:              "agent-secondary-02",
+			Recipient:              "agent-secondary-02",
 			RequestedCapability:    "repository.write",
 			AuthorizedCapabilities: []Capability{"repository.read", "repository.write", "test.execute"},
 			PayloadDigest:          calculatePayloadDigest(map[string]interface{}{}),
