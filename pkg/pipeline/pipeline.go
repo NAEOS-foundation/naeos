@@ -982,10 +982,10 @@ type artifactList struct {
 
 func policyDecisionDigest(status string, effectivePolicyCount int, mode string, results []policy.EvaluationResult) string {
 	data, _ := json.Marshal(map[string]any{
-		"status": status,
+		"status":                 status,
 		"effective_policy_count": effectivePolicyCount,
-		"mode": mode,
-		"results": results,
+		"mode":                   mode,
+		"results":                results,
 	})
 	return evidence.ComputeArtifactHash(data)
 }
