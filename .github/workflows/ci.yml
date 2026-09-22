@@ -29,6 +29,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      # Lint includes gofmt enforcement through golangci-lint.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa
         with:
