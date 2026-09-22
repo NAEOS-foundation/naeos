@@ -1,5 +1,7 @@
 # Getting Started
 
+> For the authoritative document hierarchy and conflict-resolution rules, read [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) first.
+
 This document helps you get started with the NAEOS repository quickly and understand the project's main direction.
 
 ## 1. Understand the repository's purpose
