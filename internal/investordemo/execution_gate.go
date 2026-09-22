@@ -64,11 +64,19 @@ func (hv *HandoffValidator) buildSigningPayload(contract *HandoffContract) strin
 	parts = append(parts, fmt.Sprintf("version:%s", contract.ContractVersion))
 	parts = append(parts, fmt.Sprintf("canonical:%s", contract.CanonicalVersion))
 	parts = append(parts, fmt.Sprintf("initiator:%s", contract.Initiator))
+	parts = append(parts, fmt.Sprintf("recipient:%s", contract.Recipient))
 	parts = append(parts, fmt.Sprintf("requested:%s", contract.RequestedCapability))
 	parts = append(parts, fmt.Sprintf("policy:%s:%d", contract.PolicyID, contract.PolicyVersion))
 	parts = append(parts, fmt.Sprintf("digest:%s", contract.PayloadDigest))
 	parts = append(parts, fmt.Sprintf("nonce:%s", contract.ReplayProtection.Nonce))
 	parts = append(parts, fmt.Sprintf("expires:%s", contract.ExpiresAt.UTC().Format(time.RFC3339)))
+
+	// Bind the complete downstream contract into the parent signature. The nested
+	// signature itself is excluded because the parent binds its canonical fields.
+	// This prevents post-signing mutation of downstream authority.
+	if contract.DownstreamHandoff != nil {
+		parts = append(parts, "downstream:"+hv.buildSigningPayload(contract.DownstreamHandoff))
+	}
 
 	// Sort authorized capabilities for deterministic output
 	caps := make([]string, len(contract.AuthorizedCapabilities))
@@ -202,6 +210,18 @@ func (hv *HandoffValidator) ValidateHandoff(contract *HandoffContract) *HandoffV
 				})
 			}
 		}
+	}
+
+	// Recipient identity is an explicit authorization boundary.
+	if contract.Recipient == "" {
+		result.Errors = append(result.Errors, "Contract recipient is missing")
+		result.ProvenanceMismatch = true
+		result.Valid = false
+	} else if destination, ok := contract.Provenance["destination"]; ok && destination != contract.Recipient {
+		result.Errors = append(result.Errors, "Recipient mismatch: provenance destination does not match recipient")
+		result.ProvenanceMismatch = true
+		result.Valid = false
+		hv.recordAuditEvent("RECIPIENT_MISMATCH_DETECTED", contract.Initiator, map[string]interface{}{"recipient": contract.Recipient, "destination": destination})
 	}
 
 	// Check provenance.
