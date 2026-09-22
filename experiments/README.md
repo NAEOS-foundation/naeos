@@ -30,3 +30,13 @@ Each experiment should:
 4. record expected versus observed behavior;
 5. preserve failures as regression scenarios;
 6. distinguish a characterization result from a production security claim.
+
+## Agent handoff governance experiment
+
+[Agent Handoff Governance v1](handoff-governance/README.md) tests whether a handoff can widen authority across agents or components. It covers capability widening, downstream escalation, replay, payload integrity, provenance, protocol/canonicalization versioning, expiration, and signature tampering.
+
+Run it with:
+
+```bash
+go run ./experiments/handoff-governance
+```
