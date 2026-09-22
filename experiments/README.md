@@ -130,3 +130,10 @@ Run it with:
     go run ./experiments/evidence-runtime-observer-v5-4
 
 Attack Matrix: [v5.4](attack-matrix/ATTACK-MATRIX-V5-4.md)
+
+
+## Durable Runtime Event Ledger v5.5
+
+[Durable Runtime Event Ledger v5.5](evidence-durable-runtime-ledger-v5-5/README.md) adds durable append-only local persistence and integrity verification for runtime events.
+
+Attack Matrix: [v5.5](attack-matrix/ATTACK-MATRIX-V5-5.md)
