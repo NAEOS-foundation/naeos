@@ -206,7 +206,6 @@ func TestCreatedAtMutationInvalidatesSignature(t *testing.T) {
 	}
 }
 
-
 func TestHandoffValidatorCopiesSigningKey(t *testing.T) {
 	setup := SetupDemoEnvironment()
 	key := []byte("test-signing-key")
