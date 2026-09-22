@@ -356,7 +356,52 @@ func run() ([]scenarioResult, error) {
 		FailureDetected: lieVerification.Status == verification.StatusFailed,
 	})
 
-	// 5. TAMPER: capture an observed artifact, mutate it, then verify again.
+	// 5. EVIDENCE TAMPER: mutate a stored evidence record after append.
+	// The public ByID API intentionally exposes the stored record pointer here
+	// so the experiment can model an in-process evidence tampering event.
+	evidenceStore := evidence.NewStore()
+	evidenceRecord, err := evidenceStore.Append(evidence.EvidenceRecord{
+		Actor: actor, Resource: resource, Action: action, Environment: environment,
+		PolicyID: "level3-evidence-tamper", PolicyVersion: "1.0.0",
+		Decision: control.DecisionAllow, ExecutionStatus: "completed",
+		ArtifactName: fileName, ArtifactHash: evidence.ComputeArtifactHash([]byte("authorized change\n")),
+	})
+	if err != nil {
+		return nil, err
+	}
+	storedEvidence := evidenceStore.ByID(evidenceRecord.ID)
+	if storedEvidence == nil {
+		return nil, fmt.Errorf("evidence tamper scenario could not retrieve stored record")
+	}
+	storedEvidence.ExecutionStatus = "bypassed"
+	evidenceChainIdx, evidenceChainErr := evidenceStore.Verify()
+	evidenceVerification := verification.NewChain(
+		verification.Contract{
+			Name: "level3-evidence-tamper-v1", Version: "1.0.0",
+			Description: "Evidence integrity must fail when a stored record is modified after append.",
+			Requirements: []string{"evidence chain integrity"},
+		},
+		verification.NewEvidenceChainVerifier(evidenceStore),
+	)
+	_, verifierErr := evidenceVerification.VerifyEvidence(evidenceStore)
+	evidenceTamperDetected := evidenceChainErr != nil && evidenceChainIdx == 0 && verifierErr != nil
+	results = append(results, scenarioResult{
+		Name:     "05-evidence-tampering-detected",
+		Expected: "POST-APPEND EVIDENCE MUTATION MUST FAIL CHAIN VERIFICATION",
+		Observed: fmt.Sprintf("store_verify_index=%d store_verify_error=%v verifier_error=%v", evidenceChainIdx, evidenceChainErr != nil, verifierErr != nil),
+		Passed:   evidenceTamperDetected,
+		Checks: []string{
+			"evidence record was appended with a valid hash",
+			"stored evidence was mutated after append",
+			"evidence chain verification detected the hash mismatch",
+			"independent verifier refused to verify the tampered store",
+		},
+		EvidenceID:      evidenceRecord.ID,
+		Verification:    string(verification.StatusFailed),
+		FailureDetected: evidenceTamperDetected,
+	})
+
+	// 6. ARTIFACT TAMPER: capture an observed artifact, mutate it, then verify again.
 	tamperRoot, err := os.MkdirTemp(root, "tamper-*")
 	if err != nil {
 		return nil, err
@@ -389,7 +434,7 @@ func run() ([]scenarioResult, error) {
 		return nil, err
 	}
 	results = append(results, scenarioResult{
-		Name:     "05-tamper-after-observation",
+		Name:     "06-tamper-after-observation",
 		Expected: "POST-OBSERVATION MUTATION MUST FAIL VERIFICATION",
 		Observed: fmt.Sprintf("verification=%s", tamperVerification.Status),
 		Passed:   tamperVerification.Status == verification.StatusFailed,

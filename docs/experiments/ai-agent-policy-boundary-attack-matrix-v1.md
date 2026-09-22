@@ -27,7 +27,7 @@ The test suite must answer one question:
 | ABV1-02 | DENY write | Policy denies filesystem write | No gateway execution and no side effect | **IMPLEMENTED** |
 | ABV1-03 | Approval required | Policy requires approval | No side effect without an explicit approval path | **IMPLEMENTED** |
 | ABV1-04 | Direct filesystem bypass | Agent writes outside gateway | Side effect may occur, but verification must fail | **IMPLEMENTED** |
-| ABV1-05 | Evidence tampering | Evidence record is modified after execution | Evidence-chain verification must fail | **NEXT** |
+| ABV1-05 | Evidence tampering | Evidence record is modified after append | Evidence-chain verification must fail | **IMPLEMENTED** |
 | ABV1-06 | Artifact tampering | Observed artifact changes after evidence capture | Artifact/observation verification must fail | **NEXT** |
 | ABV1-07 | Authorization replay | Previously authorized decision is reused for a new action | Authorization must be bound to the specific request/execution context | **GAP TO TEST** |
 | ABV1-08 | Policy mutation | Policy changes between decision and execution | Final execution boundary must use the authorized policy/version or fail closed | **GAP TO TEST** |
