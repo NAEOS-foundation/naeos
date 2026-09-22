@@ -32,7 +32,7 @@ The test suite must answer one question:
 | ABV1-07 | Authorization replay | Previously authorized decision is reused for a new action | Authorization must be bound to the specific request/execution context | **IMPLEMENTED** |
 | ABV1-08 | Policy mutation | Policy changes between decision and execution | Final execution boundary must use the authorized policy/version or fail closed | **IMPLEMENTED** |
 | ABV1-09 | Capability escalation | Agent requests capability beyond authorized scope | Requested capability must not expand authorized capability | **IMPLEMENTED** |
-| ABV1-10 | Handoff escalation | Agent A transfers work to Agent B with broader capability | Downstream capability must remain within the authorized handoff contract | **NEXT** |
+| ABV1-10 | Handoff escalation | Agent A transfers work to Agent B with broader capability | Downstream capability must remain within the authorized handoff contract | **IMPLEMENTED** |
 
 ## Verification dimensions
 
