@@ -3,7 +3,10 @@
 
 package evidence
 
-import "fmt"
+import (
+	"crypto/sha256"
+	"fmt"
+)
 
 // CompletionResult describes whether a consequential run has satisfied its
 // evidence completion contract.
@@ -23,10 +26,17 @@ type CompletionCheck struct {
 	Detail string
 }
 
+// ProvenanceDigest returns a deterministic digest for the runtime provenance
+// attached to one evidence record.
+func ProvenanceDigest(stage, event string, payloadDigest string) string {
+	h := sha256.Sum256([]byte(fmt.Sprintf("naeos:evidence:provenance:v1:%s:%s:%s", stage, event, payloadDigest)))
+	return fmt.Sprintf("%x", h)
+}
+
 // ValidateCompletion is the controllable lifecycle boundary for consequential
 // runs. Evidence is accepted only when required kinds are unique, the backing
 // chain is intact, run records are contiguous, each record is bound to the
-// requested run, and predecessor identity is exact.
+// requested run, predecessor identity is exact, and runtime provenance is valid.
 func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []string) CompletionResult {
 	result := CompletionResult{RunID: runID, Required: append([]string(nil), requiredKinds...)}
 	if store == nil {
@@ -72,9 +82,16 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 	}
 
 	present := make(map[string]bool, len(runRecords))
-	sequenceOK, linksOK, bindingOK := true, true, true
+	sequenceOK, linksOK, bindingOK, provenanceOK := true, true, true, true
 	previousSequence := 0
 	expectedBinding := RunBindingDigest(runID)
+	expectedProvenance := map[string][2]string{
+		"intent": {"run", "pipeline.start"},
+		"decision": {"policy_eval", "pipeline.policy_decision"},
+		"execution": {"write_artifacts", "pipeline.execution"},
+		"observation": {"observation", "pipeline.observation"},
+		"verification": {"completion", "pipeline.verification"},
+	}
 	for _, record := range runRecords {
 		kind := metadataString(record, "kind")
 		if kind != "" {
@@ -84,6 +101,13 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 			bindingOK = false
 		}
 		sequence := metadataInt(record, "sequence")
+		provenanceStage := metadataString(record, "provenance_stage")
+		provenanceEvent := metadataString(record, "provenance_event")
+		payloadDigest := metadataString(record, "payload_digest")
+		provenanceDigest := metadataString(record, "provenance_digest")
+		if expected, ok := expectedProvenance[kind]; !ok || provenanceStage != expected[0] || provenanceEvent != expected[1] || payloadDigest == "" || provenanceDigest != ProvenanceDigest(provenanceStage, provenanceEvent, payloadDigest) {
+			provenanceOK = false
+		}
 		if sequence != previousSequence+1 {
 			sequenceOK = false
 		}
@@ -112,8 +136,9 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 		CompletionCheck{Name: "evidence-sequence-contiguous", Passed: sequenceOK, Detail: fmt.Sprintf("sequence_ok=%v", sequenceOK)},
 		CompletionCheck{Name: "evidence-links-present", Passed: linksOK, Detail: "each non-root record identifies its exact predecessor"},
 		CompletionCheck{Name: "run-binding-valid", Passed: bindingOK, Detail: "each record carries the deterministic run binding digest"},
+		CompletionCheck{Name: "runtime-provenance-valid", Passed: provenanceOK, Detail: "each record is bound to an expected runtime stage/event and payload digest"},
 	)
-	result.Complete = requiredOK && countOK && sequenceOK && linksOK && bindingOK
+	result.Complete = requiredOK && countOK && sequenceOK && linksOK && bindingOK && provenanceOK
 	return result
 }
 
