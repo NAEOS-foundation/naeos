@@ -10,7 +10,7 @@ import (
 
 type scenario struct {
 	Name string `json:"name"`
-	Pass bool `json:"pass"`
+	Pass bool   `json:"pass"`
 }
 
 var required = []string{"intent", "decision", "execution", "observation", "verification"}

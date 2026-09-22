@@ -14,12 +14,12 @@ import (
 // The event identity, run identity, event name, sequence, and payload digest
 // are immutable for the lifetime of the in-memory store.
 type RuntimeEvent struct {
-	ID           string
-	RunID        string
-	Name         string
+	ID            string
+	RunID         string
+	Name          string
 	PayloadDigest string
-	Sequence     int
-	Timestamp    time.Time
+	Sequence      int
+	Timestamp     time.Time
 }
 
 // RuntimeEventStore records the runtime observations used by the completion

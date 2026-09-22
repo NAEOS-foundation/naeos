@@ -188,7 +188,6 @@ func findEvidenceIndex(records []EvidenceRecord, id string) int {
 	return -1
 }
 
-
 // ValidateCompletionWithRuntimeEvents extends the completion boundary by
 // requiring every evidence record to bind to an independently recorded runtime
 // event. The event must exist, belong to the same run, match the expected event
@@ -252,7 +251,7 @@ func ValidateCompletionWithRuntimeEvents(store *EvidenceStore, runtimeEvents *Ru
 	}
 
 	result.Checks = append(result.Checks, CompletionCheck{
-		Name: "runtime-event-evidence-binding",
+		Name:   "runtime-event-evidence-binding",
 		Passed: eventBindingOK,
 		Detail: "each lifecycle evidence record references the exact observed runtime event and payload digest",
 	})

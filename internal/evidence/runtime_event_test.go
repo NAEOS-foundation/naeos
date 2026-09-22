@@ -23,16 +23,16 @@ func appendTestLifecycleEvidence(t *testing.T, store *EvidenceStore, events *Run
 			t.Fatal(err)
 		}
 		metadata := map[string]any{
-			"run_id": runID,
-			"run_binding": RunBindingDigest(runID),
-			"kind": item.kind,
-			"sequence": i + 1,
+			"run_id":               runID,
+			"run_binding":          RunBindingDigest(runID),
+			"kind":                 item.kind,
+			"sequence":             i + 1,
 			"previous_evidence_id": previous,
-			"provenance_stage": item.stage,
-			"provenance_event": item.name,
-			"payload_digest": item.payload,
-			"provenance_digest": ProvenanceDigest(item.stage, item.name, item.payload),
-			"runtime_event_id": event.ID,
+			"provenance_stage":     item.stage,
+			"provenance_event":     item.name,
+			"payload_digest":       item.payload,
+			"provenance_digest":    ProvenanceDigest(item.stage, item.name, item.payload),
+			"runtime_event_id":     event.ID,
 		}
 		record, err := store.Append(EvidenceRecord{ID: runID + "-" + item.kind, Metadata: metadata})
 		if err != nil {
