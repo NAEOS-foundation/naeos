@@ -443,6 +443,74 @@ func TestGatewayHistoryConcurrent(t *testing.T) {
 	}
 }
 
+type mutatingControlPlane struct {
+	inner   *control.ControlPlane
+	registry *policy.Registry
+	mutated  bool
+}
+
+func (m *mutatingControlPlane) Evaluate(req control.Request) (control.DecisionRecord, error) {
+	rec, err := m.inner.Evaluate(req)
+	if err != nil {
+		return rec, err
+	}
+	if !m.mutated {
+		m.mutated = true
+		if err := m.registry.Register(&policy.Policy{
+			ID:      "deploy",
+			Name:    "Deploy Policy",
+			Version: "2.0.0",
+			Scope:   policy.Scope{},
+			Default: policy.DecisionDeny,
+			Active:  true,
+		}); err != nil {
+			return control.DecisionRecord{}, err
+		}
+	}
+	return rec, nil
+}
+
+func (m *mutatingControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	return m.inner.ValidateDecision(req, issued)
+}
+
+func TestGatewayPolicyMutationInvalidatesAuthorization(t *testing.T) {
+	reg := policy.NewRegistry()
+	if err := reg.Register(&policy.Policy{
+		ID:      "deploy",
+		Name:    "Deploy Policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{},
+		Default: policy.DecisionAllow,
+		Active:  true,
+	}); err != nil {
+		t.Fatalf("register initial policy: %v", err)
+	}
+
+	cp := &mutatingControlPlane{
+		inner:    control.New(reg),
+		registry: reg,
+	}
+	sb := &stubSandbox{output: "MUST NOT EXECUTE"}
+	gw := New(cp, sb)
+
+	result, err := gw.Authorize(ToolRequest{
+		Tool:   "deploy",
+		Action: "run",
+	})
+	if err != nil {
+		t.Fatalf("unexpected authorization error: %v", err)
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected policy mutation to invalidate authorization, got %s", result.Status)
+	}
+	if result.Decision != control.DecisionAllow {
+		t.Fatalf("expected original decision to remain observable in audit result, got %s", result.Decision)
+	}
+	if len(gw.History()) != 1 {
+		t.Fatalf("expected one recorded invalidated execution attempt, got %d", len(gw.History()))
+	}
+}
 // Ensure the full integration path with real policy/control works.
 func TestGatewayFullIntegration(t *testing.T) {
 	reg := policy.NewRegistry()
