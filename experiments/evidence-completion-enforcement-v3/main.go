@@ -17,11 +17,11 @@ import (
 var requiredKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
 type scenarioResult struct {
-	Name string
+	Name     string
 	Expected string
 	Observed string
-	Passed bool
-	Checks []string
+	Passed   bool
+	Checks   []string
 }
 
 func main() {
@@ -48,22 +48,27 @@ func main() {
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(struct {
 		Experiment string
-		Invariant string
-		Results []scenarioResult
+		Invariant  string
+		Results    []scenarioResult
 	}{
 		Experiment: "NAEOS Evidence Completion Enforcement v3",
-		Invariant: "RUN COMPLETE is allowed only when required evidence is complete, ordered, linked, and bound to the run identity.",
-		Results: results,
+		Invariant:  "RUN COMPLETE is allowed only when required evidence is complete, ordered, linked, and bound to the run identity.",
+		Results:    results,
 	}); err != nil {
 		fmt.Fprintln(os.Stderr, "encode:", err)
 		os.Exit(1)
 	}
 	for _, result := range results {
-		if !result.Passed { os.Exit(2) }
+		if !result.Passed {
+			os.Exit(2)
+		}
 	}
 }
 
-type eventSpec struct { kind, run string; seq int }
+type eventSpec struct {
+	kind, run string
+	seq       int
+}
 
 func runScenario(name string, store *evidence.EvidenceStore, expectedComplete bool) scenarioResult {
 	result := evidence.ValidateCompletion(store, "run-1", requiredKinds)
@@ -74,7 +79,7 @@ func runScenario(name string, store *evidence.EvidenceStore, expectedComplete bo
 	return scenarioResult{
 		Name: name, Expected: fmt.Sprintf("complete=%t", expectedComplete),
 		Observed: fmt.Sprintf("complete=%t", result.Complete),
-		Passed: result.Complete == expectedComplete, Checks: checks,
+		Passed:   result.Complete == expectedComplete, Checks: checks,
 	}
 }
 
@@ -92,7 +97,9 @@ func buildStore(specs []eventSpec) *evidence.EvidenceStore {
 				"previous_evidence_id": previousID,
 			},
 		})
-		if err != nil { panic(err) }
+		if err != nil {
+			panic(err)
+		}
 		previousID = rec.ID
 	}
 	return store
