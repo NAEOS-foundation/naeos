@@ -12,7 +12,6 @@ import (
 
 func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
-	ledger := evidence.NewRuntimeEventLedger()
 	observer := evidence.NewIndependentRuntimeObserver()
 	builder := evidence.NewRuntimeEvidenceBuilder(store, observer)
 	if err := appendRunEvidence(builder, observer, "run-test", "intent", 1, "run", "pipeline.start", "payload-intent"); err != nil {
@@ -27,8 +26,8 @@ func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 
 func TestValidateRunCompletionAllowsCompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
-	ledger := evidence.NewRuntimeEventLedger()
-	builder := evidence.NewRuntimeEvidenceBuilder(store, ledger)
+	observer := evidence.NewIndependentRuntimeObserver()
+	builder := evidence.NewRuntimeEvidenceBuilder(store, observer)
 	stages := [][2]string{
 		{"run", "pipeline.start"},
 		{"policy_eval", "pipeline.policy_decision"},
@@ -37,11 +36,11 @@ func TestValidateRunCompletionAllowsCompleteEvidence(t *testing.T) {
 		{"completion", "pipeline.verification"},
 	}
 	for i, kind := range requiredRunEvidenceKinds {
-		if err := appendRunEvidence(builder, ledger, "run-test", kind, i+1, stages[i][0], stages[i][1], "payload"); err != nil {
+		if err := appendRunEvidence(builder, observer, "run-test", kind, i+1, stages[i][0], stages[i][1], "payload"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := validateRunCompletion(store, ledger, "run-test"); err != nil {
+	if err := validateRunCompletion(store, observer.Ledger(), "run-test"); err != nil {
 		t.Fatalf("expected complete evidence to allow completion: %v", err)
 	}
 }
