@@ -209,9 +209,11 @@ jobs:
           FUZZ: ${{ needs.fuzz.result }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$SUPABASE" "$FUZZ"; do
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ"; do
             test "$result" = "success"
           done
+          # Supabase integration is intentionally skipped on develop pushes and manual runs.
+          test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
           echo "All required CI jobs passed."
   fuzz:
     name: Fuzz
