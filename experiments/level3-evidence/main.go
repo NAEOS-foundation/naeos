@@ -378,7 +378,7 @@ func run() ([]scenarioResult, error) {
 	evidenceVerification := verification.NewChain(
 		verification.Contract{
 			Name: "level3-evidence-tamper-v1", Version: "1.0.0",
-			Description: "Evidence integrity must fail when a stored record is modified after append.",
+			Description:  "Evidence integrity must fail when a stored record is modified after append.",
 			Requirements: []string{"evidence chain integrity"},
 		},
 		verification.NewEvidenceChainVerifier(evidenceStore),
