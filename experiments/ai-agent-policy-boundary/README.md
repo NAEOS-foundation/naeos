@@ -53,3 +53,15 @@ The question is:
 > Can NAEOS independently establish what the agent requested, what policy authorized, what the gateway executed, what actually happened, and whether the evidence still verifies?
 
 That is the AI Agent Policy Boundary.
+
+## Validation contract
+
+The experiment is considered valid only when all four scenario assertions pass:
+
+1. ALLOW produces an observed, independently verified side effect.
+2. DENY produces no side effect.
+3. REQUIRE_APPROVAL produces no side effect without an approval path.
+4. DIRECT BYPASS produces an observed side effect but fails independent verification.
+
+CI should execute this experiment as a regression test whenever the governance, runtime, evidence, or verification boundaries change.
+
