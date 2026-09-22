@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -252,7 +253,61 @@ func runScenario(name string, decision policy.Decision, persist bool, bypass boo
 	}, nil
 }
 
+func printDemo(results []scenarioResult, passed int) {
+	fmt.Println("NAEOS AI AGENT POLICY BOUNDARY")
+	fmt.Println("================================")
+	fmt.Println("Agent intent is not authorization. Side effects are independently observed.")
+	fmt.Println()
+
+	for i, r := range results {
+		fmt.Printf("[%d] %s\\n", i+1, r.Name)
+		fmt.Printf("    Intent        : %s\\n", r.Intent)
+		fmt.Printf("    Policy        : %s\\n", r.Decision)
+		fmt.Printf("    Gateway       : %s\\n", r.GatewayState)
+		fmt.Printf("    Side Effect   : %s\\n", observedLabel(r.ObservedSideEffect))
+		fmt.Printf("    Verification  : %s\\n", r.Verification)
+		fmt.Printf("    Assertion     : %s\\n", assertionLabel(r.Passed))
+		fmt.Println()
+	}
+
+	fmt.Println("--------------------------------")
+	fmt.Printf("%d/%d boundary assertions passed\\n", passed, len(results))
+	fmt.Println("================================")
+}
+
+func observedLabel(observed bool) string {
+	if observed {
+		return "OBSERVED"
+	}
+	return "NOT OBSERVED"
+}
+
+func assertionLabel(passed bool) string {
+	if passed {
+		return "PASS"
+	}
+	return "FAIL"
+}
+
+func printJSON(results []scenarioResult, passed int) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(struct {
+		Experiment string
+		Thesis     string
+		Results    []scenarioResult
+		Summary    string
+	}{
+		Experiment: "NAEOS AI Agent Policy Boundary v1",
+		Thesis:     "An AI agent may propose an action, but authorization and proof of side effect remain outside the agent.",
+		Results:    results, Summary: fmt.Sprintf("%d/%d expected scenario assertions passed", passed, len(results)),
+	})
+}
+
 func main() {
+	jsonOutput := flag.Bool("json", false, "emit machine-readable JSON instead of the demo view")
+	flag.Parse()
+
 	scenarios := []struct {
 		name     string
 		decision policy.Decision
@@ -279,18 +334,16 @@ func main() {
 			passed++
 		}
 	}
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	_ = enc.Encode(struct {
-		Experiment string
-		Thesis     string
-		Results    []scenarioResult
-		Summary    string
-	}{
-		Experiment: "NAEOS AI Agent Policy Boundary v1",
-		Thesis:     "An AI agent may propose an action, but authorization and proof of side effect remain outside the agent.",
-		Results:    results, Summary: fmt.Sprintf("%d/%d expected scenario assertions passed", passed, len(results)),
-	})
+
+	if *jsonOutput {
+		if err := printJSON(results, passed); err != nil {
+			fmt.Fprintln(os.Stderr, "output error:", err)
+			os.Exit(1)
+		}
+	} else {
+		printDemo(results, passed)
+	}
+
 	for _, r := range results {
 		if !r.Passed {
 			os.Exit(2)
