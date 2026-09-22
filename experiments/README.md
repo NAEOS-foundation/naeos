@@ -57,7 +57,6 @@ Run it with:
 go run ./experiments/handoff-governance
 ```
 
-
 ## Attack Matrix v1
 
 [Attack Matrix v1](attack-matrix/ATTACK-MATRIX-V1.md) consolidates the current deterministic adversarial coverage across instruction integrity, governance configuration, policy context/evaluator semantics, runtime enforcement, evidence integrity, and agent handoffs. It identifies covered boundaries and explicitly tracks gaps for future experiments.
@@ -68,14 +67,12 @@ The matrix is a coverage map, not a vulnerability count or production penetratio
 
 [Attack Matrix v2](attack-matrix/ATTACK-MATRIX-V2.md) promotes AM-18 into a deterministic evidence-completeness experiment. It verifies that required evidence cannot be missing, logically reordered, or detached from the consequential run identity while still being treated as VERIFIED.
 
-
 ## Evidence Completion Enforcement v3
 
 Reusable lifecycle enforcement gate for AM-18 evidence completeness.
 
 - Experiment: `evidence-completion-enforcement-v3`
 - Attack Matrix: `attack-matrix/ATTACK-MATRIX-V3.md`
-
 
 ## Evidence Integrity & Run Binding v5
 
@@ -87,7 +84,6 @@ Run it with:
 
 Attack Matrix: [v5](attack-matrix/ATTACK-MATRIX-V5.md)
 
-
 ## Evidence Runtime Provenance v5.1
 
 [Evidence Runtime Provenance v5.1](evidence-runtime-provenance-v5-1/README.md) binds completion evidence to the expected runtime stage/event and a deterministic provenance digest derived from the observed payload digest.
@@ -97,7 +93,6 @@ Run it with:
     go run ./experiments/evidence-runtime-provenance-v5-1
 
 Attack Matrix: [v5.1](attack-matrix/ATTACK-MATRIX-V5-1.md)
-
 
 ## Evidence Runtime Event Binding v5.2
 
@@ -109,7 +104,6 @@ Run it with:
 
 Attack Matrix: [v5.2](attack-matrix/ATTACK-MATRIX-V5-2.md)
 
-
 ## Evidence Runtime Event Ledger v5.3
 
 [Evidence Runtime Event Ledger v5.3](evidence-runtime-event-ledger-v5-3/README.md) separates runtime observation from evidence construction through an append-only runtime event ledger and a read-only evidence builder. It blocks missing, cross-run, and late runtime events at the completion boundary.
@@ -119,7 +113,6 @@ Run it with:
     go run ./experiments/evidence-runtime-event-ledger-v5-3
 
 Attack Matrix: [v5.3](attack-matrix/ATTACK-MATRIX-V5-3.md)
-
 
 ## Independent Runtime Observer v5.4
 
@@ -131,9 +124,18 @@ Run it with:
 
 Attack Matrix: [v5.4](attack-matrix/ATTACK-MATRIX-V5-4.md)
 
-
 ## Durable Runtime Event Ledger v5.5
 
 [Durable Runtime Event Ledger v5.5](evidence-durable-runtime-ledger-v5-5/README.md) adds durable append-only local persistence and integrity verification for runtime events.
 
 Attack Matrix: [v5.5](attack-matrix/ATTACK-MATRIX-V5-5.md)
+
+## Durable Runtime Receipt & Recovery v5.6
+
+[Durable Runtime Receipt & Recovery v5.6](evidence-durable-receipt-v5-6/README.md) introduces an explicit durable receipt that binds a sealed runtime ledger to run identity, event boundaries, and a canonical ledger digest. It verifies the receipt after ledger reload and blocks foreign-run or tampered receipts.
+
+Run it with:
+
+    go run ./experiments/evidence-durable-receipt-v5-6
+
+Attack Matrix: [v5.6](attack-matrix/ATTACK-MATRIX-V5-6.md)
