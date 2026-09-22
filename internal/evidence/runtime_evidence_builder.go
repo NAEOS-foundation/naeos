@@ -13,7 +13,7 @@ import (
 // It has no capability to publish runtime events, which keeps observation and
 // evidence construction on separate trust boundaries.
 type RuntimeEvidenceBuilder struct {
-	store  *EvidenceStore
+	store    *EvidenceStore
 	observer RuntimeEventObserver
 }
 
