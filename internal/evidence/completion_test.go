@@ -32,6 +32,10 @@ func completionStore(specs []struct {
 				"run_binding":          RunBindingDigest(spec.run),
 				"kind":                 spec.kind,
 				"sequence":             spec.seq,
+				"provenance_stage":    testProvenance(spec.kind)[0],
+				"provenance_event":    testProvenance(spec.kind)[1],
+				"payload_digest":      "payload-" + spec.kind,
+				"provenance_digest":   ProvenanceDigest(testProvenance(spec.kind)[0], testProvenance(spec.kind)[1], "payload-"+spec.kind),
 				"previous_evidence_id": previousID,
 			},
 		})
@@ -44,6 +48,24 @@ func completionStore(specs []struct {
 		}
 	}
 	return store
+}
+
+
+func testProvenance(kind string) [2]string {
+	switch kind {
+	case "intent":
+		return [2]string{"run", "pipeline.start"}
+	case "decision":
+		return [2]string{"policy_eval", "pipeline.policy_decision"}
+	case "execution":
+		return [2]string{"write_artifacts", "pipeline.execution"}
+	case "observation":
+		return [2]string{"observation", "pipeline.observation"}
+	case "verification":
+		return [2]string{"completion", "pipeline.verification"}
+	default:
+		return [2]string{"unknown", "unknown"}
+	}
 }
 
 var completionKinds = []string{"intent", "decision", "execution", "observation", "verification"}
