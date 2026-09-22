@@ -375,7 +375,7 @@ func run() ([]scenarioResult, error) {
 	tamperObserver := observer{root: tamperRoot}
 	tamperObserved, tamperExists, err := tamperObserver.Observe()
 	if err != nil || !tamperExists {
-		return nil, fmt.Errorf("tamper scenario initial observation failed: %v", err)
+		return nil, fmt.Errorf("tamper scenario initial observation failed: %w", err)
 	}
 	tamperRecord, err := appendEvidence(tamperControl, tamperResult, tamperObserved, tamperObserver)
 	if err != nil {
@@ -443,7 +443,7 @@ func appendEvidence(cp *control.ControlPlane, result gateway.ExecutionResult, ob
 	}
 
 	store := evidence.NewStore()
-	seed := result.Decision + ":" + result.Status + ":" + rec.ArtifactHash + ":" + result.Output
+	seed := string(result.Decision) + ":" + result.Status + ":" + rec.ArtifactHash + ":" + result.Output
 	rec.ID = "level3-" + evidence.ComputeArtifactHash([]byte(seed))[:16]
 	saved, err := store.Append(rec)
 	if err != nil {
