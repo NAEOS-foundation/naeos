@@ -1,395 +1,185 @@
-<div align="center">
+# NAEOS
 
-<h1>NAEOS</h1>
+**Nusantara Engineering & Architecture Operating System**
 
-<p><strong>Nusantara Engineering &amp; Architecture Operating System</strong></p>
-
-<p>
-  <em>Specify once. Build anywhere.</em>
-</p>
+> **The Engineering Control Plane for AI Coding Agents.**
+>
+> Build software with AI agents under explicit **architecture, policy, execution, evidence, and verification** controls.
 
 <p>
-  <a href="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml">
-    <img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status">
-  </a>
-  <a href="https://go.dev">
-    <img src="https://img.shields.io/badge/go-1.26.6+-00ADD8?logo=go&logoColor=white" alt="Go version">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 license">
-  </a>
-  <a href="https://github.com/NAEOS-foundation/naeos/releases">
-    <img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release">
-  </a>
+  <a href="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml"><img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://img.shields.io/badge/go-1.26.6+-00ADD8"><img src="https://img.shields.io/badge/go-1.26.6+-00ADD8?logo=go&logoColor=white" alt="Go 1.26.6+"></a>
+  <a href="https://github.com/NAEOS-foundation/naeos/releases"><img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
 </p>
 
-</div>
+NAEOS is an open-source engineering framework for building production software with AI coding agents. It provides the engineering layer between **what a team intends**, **what an agent proposes**, **what is authorized to execute**, and **what can be independently verified afterward**.
 
-NAEOS is a declarative engineering platform that transforms software specifications into validated, extensible engineering workflows. It provides a consistent model for defining, generating, governing, and evolving software systems.
+It is not another AI coding assistant. NAEOS is the control plane around the agent.
 
-Unlike a project generator, NAEOS maintains an engineering model throughout the lifecycle: it parses specifications, builds **NEIR** (NAEOS Engineering Intermediate Representation), validates dependencies and policies, orchestrates execution, generates artifacts, and compiles context for AI development tools.
+## Why NAEOS?
 
-## Start here
+AI coding agents can generate code quickly. Production engineering still requires explicit answers to harder questions:
 
-New to NAEOS? Start with [START-HERE.md](START-HERE.md) for the fastest path from discovery to first experiment and contribution.
+- What architecture is the agent operating within?
+- Which actions are allowed?
+- Who or what authorizes an external side effect?
+- What actually happened during execution?
+- What evidence proves the result?
+- Can another system independently verify the claim?
+- Can the same engineering intent be carried across different AI agents?
 
-The canonical developer workflow in this repository is the CLI control-plane demo:
+NAEOS treats these as engineering-system concerns rather than prompt-writing concerns.
 
-```bash
-go build -o naeos ./cmd/naeos
-./examples/demo-cli/run-demo.sh
+## The model
+
+Without an engineering control plane:
+
+```text
+Prompt → AI Agent → Code / Action → ?
 ```
 
-Use this as the single supported onboarding path unless you are intentionally testing a different feature. It demonstrates the full flow: specification → NEIR → validation → policy → AI context → generation → artifact + evidence traceability.
-
-## Contents
-
-- [Vision](#vision)
-- [How NAEOS works](#how-naeos-works)
-- [Quick start](#quick-start)
-- [Demo](#demo)
-- [Capabilities](#capabilities)
-- [Architecture](#architecture)
-- [Core components](#core-components)
-- [CLI commands](#cli-commands)
-- [Repository structure](#repository-structure)
-- [Documentation](#documentation)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Vision
-
-NAEOS aims to help developers and organizations describe a system once, then build, validate, and evolve it across languages, frameworks, and platforms through an open-source engineering platform.
-
-## How NAEOS works
+With NAEOS:
 
 ```text
 Specification
-     │
-     ▼
-Parse → Normalize → Resolve → Build NEIR → Validate
-                                             │
-                                             ▼
-                                  Schedule → Generate
-                                             │
-                                             ▼
-                           AI context · Governance · Artifacts
+      ↓
+NEIR
+      ↓
+Validation + Policy
+      ↓
+Agent Context / Intent
+      ↓
+Authorized Execution
+      ↓
+Observation → Evidence
+      ↓
+Independent Verification
 ```
 
-The specification is the source of truth. NAEOS turns it into a structured engineering model that can be consumed by validation, generation, governance, documentation, and AI tooling.
+Two architectural views describe the same system:
 
-## AI Engineering Control Plane
-
-NAEOS now exposes a coherent control-plane workflow around the existing pipeline:
+**Engineering model**
 
 ```text
-Specification
-  ↓
-Parse → Normalize → Resolve → Build NEIR
-  ↓
-Validate → Policy → AI Context
-  ↓
-Execution / Generation
-  ↓
-Artifacts → Evidence / Audit
+Specification → NEIR → Validation → Policy → AI Context → Generation
 ```
 
-The `naeos run` command is the primary demonstration path. In JSON mode it returns explicit engineering-run metadata such as `run_id`, `specification_hash`, and `neir_hash`, so a developer can trace the exact specification, derived NEIR, validation state, policy evaluation, generated context, and produced artifacts.
+**AI Engineering control plane**
 
-## Project guides
+```text
+Agent Intent → Policy Decision → Authorized Execution
+            → Observation → Evidence → Independent Verification
+```
 
-- [Marketing strategy](MARKETING-STRATEGY.md) — evidence-based positioning, content calendar, funnel, and experiments.
-- [Marketing experiment template](.github/ISSUE_TEMPLATE/marketing_experiment.md) — record campaign hypotheses, metrics, results, and learnings.
-- [Marketing assets](brand/marketing/) — posts, scripts, video demo, and backlog for social campaigns.
+The first describes how engineering knowledge moves through NAEOS. The second describes how agent actions are controlled and made auditable.
 
-## Social posting scripts
+## Core concepts
 
-Scripts in `scripts/` publish announcement content to community channels. Credentials (tokens) live in the gitignored `.env`; never commit them.
+| Concept | Role |
+|---|---|
+| **Specification** | Declares system intent and engineering requirements |
+| **NEIR** | Canonical engineering representation derived from specifications |
+| **Policy** | Determines which proposed actions are permitted |
+| **Runtime** | Executes only within the authorized boundary |
+| **Evidence** | Records observable results and integrity-relevant metadata |
+| **Verification** | Independently checks claims about outputs or side effects |
+| **Handoffs** | Carries explicit contracts between agents, tools, and execution boundaries |
+| **AI Compiler** | Translates engineering context into agent-specific instructions |
+| **Extensions** | Adds profiles, plugins, adapters, and integrations without changing the core model |
 
-| Script | Purpose | Env vars | Example |
-|---|---|---|---|
-| [`scripts/linkdin-post.sh`](scripts/linkdin-post.sh) | Post to the personal LinkedIn feed (Posts API, public) | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_URN` | `./scripts/linkdin-post.sh --file brand/marketing/linkedin-post-cli-demo.md` |
-| [`scripts/social-post.sh`](scripts/social-post.sh) | Post today's `brand/marketing/content-calendar.json` entry to Discord/Slack/LinkedIn | `DISCORD_TOKEN`, `DISCORD_ANNOUNCE_CHANNEL`, `NAEOS_SLACK_TOKEN`, `NAEOS_SLACK_ANNOUNCE_CHANNEL`, `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_URN` | `./scripts/social-post.sh --dry-run --date 2026-09-10` |
+## See it run
 
-The content calendar lives at [`brand/marketing/content-calendar.json`](brand/marketing/content-calendar.json) (date → platforms → message per channel). The [`social-post.yml`](.github/workflows/social-post.yml) workflow runs it automatically at 07:30 UTC daily; the required values are supplied as GitHub repository secrets (`DISCORD_TOKEN`, `DISCORD_ANNOUNCE_CHANNEL`, `NAEOS_SLACK_TOKEN`, `NAEOS_SLACK_ANNOUNCE_CHANNEL`, `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_URN`).
-
-All scripts support `--dry-run` to preview the payload without publishing. `social-post.sh` also guards against duplicate posts (retries failed sends up to 3 times, logs every post to `.social-post.log`, and skips dates/platforms already sent), plus `--show-log` / `--reset-log` for inspecting or clearing that log.
-
-## Quick start
+The fastest way to understand NAEOS is the CLI control-plane demo:
 
 ```bash
-# Clone and build
 git clone https://github.com/NAEOS-foundation/naeos.git
 cd naeos
-go build ./cmd/naeos/
 
-# Create a specification
-cat > spec.yaml << 'EOF'
-project: my-app
-modules:
-  - name: auth
-    path: ./auth
-  - name: api
-    path: ./api
-    dependencies: [auth]
-services:
-  - name: gateway
-    kind: http
-    port: 8080
-architecture:
-  pattern: hexagonal
-generation:
-  languages: [go, typescript]
-EOF
-
-# Initialize configuration and run the pipeline
-naeos init
-naeos run --input-file spec.yaml
-
-# Generate AI context
-naeos context --input-file spec.yaml
-
-# Compile instructions for an AI tool
-naeos ai compile --input-file spec.yaml --target opencode
-```
-
-The example above demonstrates the core workflow: define a specification, run validation and orchestration, generate an AI context bundle, and compile instructions for a target AI tool.
-
-### Requirements
-
-- Go 1.26.6 or later
-- Git
-
-### Run the local CLI demo
-
-Run the complete local demo (validate → context → generate):
-
-```bash
 go build -o naeos ./cmd/naeos
 ./examples/demo-cli/run-demo.sh
 ```
 
-See [`examples/demo-cli/README.md`](examples/demo-cli/README.md) for output
-location and optional AI compiler usage.
+The demo exercises the specification-first pipeline and produces traceable run metadata.
 
-### Try the 5-Minute Killer Demo
-
-The **NAEOS Todo API** demo demonstrates the complete specification-first engineering pipeline: specification → NEIR → validation → artifacts → traceability.
+For the Todo API demonstration:
 
 ```bash
 go build -o naeos ./cmd/naeos
 ./examples/todo-api/run-demo.sh
 ```
 
-See [`examples/todo-api/README.md`](examples/todo-api/README.md) for details.
+See [START-HERE.md](START-HERE.md) for the supported onboarding path.
 
-## Demo
+## A concrete run
 
- <p align="center">
-   <a href="https://youtu.be/C9QDlUqqaaI">
-    <img src="https://img.youtube.com/vi/C9QDlUqqaaI/maxresdefault.jpg"
-         alt="Watch the NAEOS demo on YouTube"
-         width="80%" />
-  </a>
-</p>
-
-- [Watch the NAEOS demo on YouTube](https://youtu.be/C9QDlUqqaaI)
-
-- English terminal demo — [`naeos-terminal-demo-en.mp4`](brand/marketing/naeos-terminal-demo-en.mp4)
-- Indonesian terminal demo — [`naeos-terminal-demo-id.mp4`](brand/marketing/naeos-terminal-demo-id.mp4)
-- 30-second cuts — [`naeos-demo-30s.mp4`](brand/marketing/naeos-demo-30s.mp4) and [`naeos-demo-en-30s.mp4`](brand/marketing/naeos-demo-en-30s.mp4)
-
-The poster and local videos are available in [`brand/marketing/`](brand/marketing/).
-
-## Capabilities
-
-### Core Pipeline
-- **Parser** — YAML/JSON specification parsing with variable interpolation
-- **Normalizer** — data normalization
-- **Resolver** — cross-reference resolution
-- **NEIR Builder** — unified project model
-- **Validator** — comprehensive validation (circular deps, port conflicts, module boundaries)
-- **Scheduler** — DAG-based task scheduling
-- **Generator** — multi-language code generation (Go, TypeScript, Python, Java, Rust)
-
-### Spec Language v2
-- `${var}` — variable interpolation
-- `$env{VAR}` — environment variable resolution
-- `$ref{path}` — cross-reference resolution
-- `$include{file}` — multi-file spec composition
-- `$fn{name(args)}` — custom functions (upper, lower, slug, default, len, coalesce)
-- `$if{condition}` / `$endif` — conditional sections
-- Schema versioning with auto-check (minimum v0.1.0)
-
-### AI Integration
-- **Compiler** — transform NEIR into AI instruction sets
-- **7 Output Adapters**:
-  - GitHub Copilot — `.github/copilot-instructions.md`
-  - Claude Code — `CLAUDE.md`
-  - Cursor — `.cursorrules`
-  - Gemini CLI — `.gemini/CONFIG.md`
-  - Codex — `AGENTS.md`
-  - OpenCode — `AGENTS.md`
-  - Windsurf — `.windsurfrules`
-- **MCP Server** — Model Context Protocol for AI agent integration
-- **Context Bundles** — LLM-optimized project summaries
-
-### Marketplace
-- **Profile Marketplace** — publish, search, download industry profiles
-- **Plugin Marketplace** — install, uninstall, search plugins
-- **6 Built-in Profiles**: SaaS, AI Agent, FinTech, Healthcare, Education, Government
-
-### Governance
-- **Policy Evaluator** — 9 operators, 5 default rules
-- **Artifact Review** — governance rules
-- **Audit Trail** — traceability
-
-### Developer tools
-- **200+ CLI Commands** — run, validate, compile, context, test, docgen, mcp, marketplace, serve, sign, helm, sbom, airgap, evidence, verify, policy, control, etc.
-- **Watch Mode** — hot-reload pipeline on spec changes
-- **Diff Engine** — compare specs with colorized output
-- **Migration Engine** — schema version transforms (v0.1→v0.2→v0.3)
-- **Testing Framework** — multi-language test runner
-- **Documentation Generator** — auto-generate API/module docs
-- **Benchmarks & Fuzz Testing** — performance and robustness
-- **Docker** — multi-stage Dockerfile
-
-## Architecture
+The `naeos run` path exposes structured engineering-run metadata, including identifiers such as:
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│                    NAEOS Architecture                     │
-├─────────────┬──────────────┬──────────────┬─────────────┤
-│    Input    │  Core Layer  │  Generation  │   Output    │
-├─────────────┼──────────────┼──────────────┼─────────────┤
-│  Spec YAML  │   Parser     │   Generator  │  Code Files │
-│  CLI cmds   │   Normalizer │   Adapters   │  Configs    │
-│  Profiles   │   Resolver   │   Renderers  │  Docs       │
-│  Context    │   Validator  │   Compiler   │  AI Context │
-│             │   Scheduler  │   Profiles   │  Artifacts  │
-│             │   Kernel     │              │             │
-│             │   Policy     │              │             │
-│             │   Review     │              │             │
-└─────────────┴──────────────┴──────────────┴─────────────┘
+run_id
+specification_hash
+neir_hash
+validation_state
+policy_evaluation
+generated_context
+artifacts
+evidence
 ```
 
-## Core components
+The goal is not merely to generate code. The goal is to preserve enough engineering context and evidence to understand **what was intended, what was authorized, what happened, and what can be verified**.
 
-### Kernel
-The kernel provides the runtime foundation:
-- Service Registry
-- Event Bus (pub/sub)
-- Telemetry Collection
-- Lifecycle Management
+## AI coding agents
 
-### Specification
-Specifications use NAEOS Specification Language v2 as the single source of truth.
+NAEOS is designed to remain vendor-neutral at the engineering layer.
 
-### NEIR
-NAEOS Engineering Intermediate Representation is the central engineering model representing the entire system. NEIR encompasses project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, and metadata.
+NAEOS targets Go **1.26.6 or later** and can produce agent-specific instruction/context artifacts for tools such as:
 
-### Compiler
-The compiler transforms NEIR into AI instruction sets for 7 target tools.
+- GitHub Copilot
+- Claude Code
+- OpenAI Codex
+- Cursor
+- Gemini CLI
+- OpenCode
+- Windsurf
 
-### Marketplace
-A marketplace for profiles, plugins, and templates that can be published, searched, and installed.
+The engineering model remains upstream of the individual agent. Changing agents should not require rebuilding the project's engineering rules from scratch.
 
-## CLI Commands
+## Evidence and verification
 
-| Command | Description |
-|---------|-------------|
-| `naeos run` | Execute full pipeline |
-| `naeos validate` | Validate specification |
-| `naeos compile` | Compile to AI instruction sets |
-| `naeos context` | Generate AI context bundle |
-| `naeos test` | Run tests for generated code |
-| `naeos docgen` | Generate documentation |
-| `naeos mcp` | Start MCP server |
-| `naeos marketplace` | Browse marketplace |
-| `naeos profile` | Manage industry profiles |
-| `naeos artifacts` | Manage artifact store |
-| `naeos migrate` | Schema migration |
-| `naeos doctor` | System health check |
-| `naeos diff` | Compare specifications |
-| `naeos watch` | Watch for changes |
-| `naeos init` | Initialize config |
-| `naeos create` | Create project |
-| `naeos scaffold` | Generate scaffold |
-| `naeos export` | Export artifacts |
-| `naeos audit` | Audit specification |
-| `naeos kernel` | Inspect kernel |
-| `naeos plugin` | Manage plugins |
-| `naeos template` | Manage templates |
-| `naeos workspace` | Manage workspace |
-| `naeos rollback` | Rollback changes |
-| `naeos repair` | Repair specification |
-| `naeos status` | Pipeline status |
-| `naeos ai` | AI assistance |
-| `naeos docs` | Documentation |
-| `naeos lock` | Lock dependencies |
-| `naeos version` | Version info |
-| `naeos completion` | Shell completion |
+NAEOS includes engineering experiments and implementation paths around:
 
-## Repository Structure
+- policy boundaries and authorization
+- durable audit/evidence records
+- tamper detection
+- handoff contracts
+- independent verification
+- artifact signing and verification
+- SBOM generation
+- security and vulnerability checks
+- benchmark and fuzz gates
 
-```text
-cmd/naeos/           # CLI commands (200+ commands)
-internal/
-  specification/     # Parser, normalizer, resolver
-  neir/             # NEIR model and builder
-  compiler/         # AI instruction compiler
-  context/          # Context bundle generator
-  generation/       # Code generation
-  governance/       # Policy and review
-  artifacts/        # Artifact store
-  profiles/         # Industry profiles
-  marketplace/      # Profile & plugin marketplace
-  migration/        # Schema migration
-  mcp/              # MCP server
-  testrunner/       # Test framework
-  docgen/           # Documentation generator
-  diff/             # Diff engine
-  watch/            # File watcher
-  security/         # Security rules
-  knowledge/        # Knowledge graph
-  database/         # Database layer (PostgreSQL, MySQL, SQLite)
-  websocket/        # WebSocket real-time communication
-  eventsourcing/    # Event sourcing and aggregate snapshots
-  distributed/      # Distributed task execution
-  configreload/     # Configuration hot-reload
-  configprovider/   # Config providers (env, file, K8s secret, Vault)
-  pipelinecache/    # Pipeline result caching
-  pipelinemiddleware/ # Composable pipeline middleware
-  audit/            # Audit logging layer
-  hcl/              # HCL configuration parser
-  profiledetect/    # Automatic language/framework detection
-  ai/               # AI service and LLM integration
-  pluginsdk/        # Plugin SDK with WASM runtime
-  serve/            # Production server daemon
-  sbom/             # SBOM generation (CycloneDX)
-  signing/          # Artifact signing (Ed25519)
-  verification/     # Independent verification
-  evidence/         # Immutable evidence store
-  helm/             # Helm chart scaffolding
-  airgap/           # Air-gapped bundles
-  runtime/          # Runtime execution gateway
-pkg/
-  pipeline/         # Main pipeline
-  kernel/           # System kernel
-  config/           # Configuration
-  plugin/           # Plugin system
-docs/               # Documentation (57 NES specs)
-```
+These experiments are evidence of specific mechanisms and behaviors. They should not be interpreted as blanket proof of every production property.
+
+See [experiments/](experiments/) for the current experiment suite, including the **Evidence V5.6** milestone.
+
+## Trust model
+
+NAEOS is built around explicit boundaries:
+
+1. **Intent is not authorization.**
+2. **Policy decisions are distinct from runtime execution.**
+3. **Observations are distinct from claims.**
+4. **Evidence should outlive an agent's conversational memory.**
+5. **Verification should not depend solely on the component making the claim.**
+6. **Untrusted handoff input must not silently become downstream authority.**
+7. **Controllable boundaries must be revalidated before consequential external actions.**
+8. **Version and contract mismatches should fail closed where required by the governing specification.**
+
+These are engineering principles, not guarantees that every integration is automatically safe.
 
 ## Architecture authority
 
-NAEOS has two complementary architectural views:
-
-- **Engineering model:** specification → NEIR → validation → policy → AI context → generation.
-- **AI Engineering control plane:** agent intent → policy decision → authorized execution → observation → evidence → independent verification.
-
-The authoritative normative hierarchy is:
+NAEOS uses a normative documentation hierarchy:
 
 ```text
 Constitution
@@ -407,80 +197,101 @@ Experiments
 
 Public guides such as README, START-HERE, and GETTING-STARTED explain and navigate the system; they do not override normative specifications.
 
-For the reference architecture, see [NAEOS-NRA-001](Reference%20Architecture/NAEOS-NRA-001.md). For the core technical contracts, see [NAEOS-MTS-001](NAEOS-MTS-001.md). For deterministic governance/evidence validation, see [experiments/](experiments/).
+Start with [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md), then review:
 
-### Release vs. experiment versions
+- [NAEOS Reference Architecture](Reference%20Architecture/NAEOS-NRA-001.md)
+- [NAEOS Master Technical Specification](NAEOS-MTS-001.md)
+- [NAEOS Specification](specification/NAEOS-SPEC-001.md)
+- [NEIR](docs/NES-023-NEIR.md)
+- [CLI Reference](docs/NES-028-CLI-Reference.md)
 
-NAEOS software releases and experiment-series versions are different identifiers. For example, **NAEOS 3.6.0** is a software release, while **Evidence V5.6** identifies an engineering experiment milestone. They should not be interpreted as the same version sequence.
+**Architecture Drives Engineering.**
+
+## Repository map
+
+```text
+naeos/
+├── cmd/naeos/          # CLI
+├── internal/
+│   ├── specification/  # parsing, normalization, resolution
+│   ├── neir/           # engineering representation
+│   ├── compiler/       # AI instruction compilation
+│   ├── governance/     # policy and governance
+│   ├── runtime/        # execution gateway
+│   ├── evidence/       # evidence storage
+│   ├── verification/   # independent verification
+│   ├── audit/          # audit trail
+│   ├── signing/        # artifact signing
+│   ├── pluginsdk/      # plugin SDK
+│   └── ...             # supporting subsystems
+├── pkg/                 # public Go packages
+├── docs/                # engineering specifications
+├── experiments/         # executable engineering experiments
+├── constitution/        # project constitution
+├── governance/          # governance material
+└── examples/            # runnable examples
+```
+
+## Current release
+
+**NAEOS 3.6.0** is the current documented software release.
+
+NAEOS software releases and experiment milestones use different version sequences. For example, **NAEOS 3.6.0** is a software release, while **Evidence V5.6** identifies an engineering experiment milestone.
+
+For release history and changes, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Documentation
 
-- [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English)
-- [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia)
+- [START-HERE.md](START-HERE.md) — onboarding and first contribution path
+- [GETTING-STARTED.md](GETTING-STARTED.md) — developer setup
+- [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) — normative documentation model
+- [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — English whitepaper
+- [WHITEPAPER.md](WHITEPAPER.md) — Bahasa Indonesia whitepaper
 - [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — document index
-- [GETTING-STARTED.md](GETTING-STARTED.md) — onboarding guide
-- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guidelines
-- [CHANGELOG.md](CHANGELOG.md) — version history
-- [docs/](docs/) — 57 NES specification documents (NES-000 to NES-054, including Kernel API and NEIR Model references)
-
-### Partner With NAEOS
-
-NAEOS is open to technology, cloud/infrastructure, AI, academic, developer-community, pilot, and strategic ecosystem collaboration. Start with the [NAEOS Partner Program](PARTNER-PROGRAM.md) and [PARTNER-REQUESTS.md](PARTNER-REQUESTS.md). Contributions are optional, subject to eligibility and approval; no funding, credits, or commercial outcome is assumed.
-
-## Roadmap
-
-### Completed
-- [x] v0.1.0 — Foundation (parser, NEIR, pipeline, CLI)
-- [x] v0.2.0 — Compiler Foundation (6 adapters, artifact store, profiles)
-- [x] v0.3.0 — Core Specification (Spec v2, validation, context bundles)
-- [x] v0.4.0 — MCP Server, migration engine, marketplace, benchmarks
-- [x] v1.0.0 — Stable release (test coverage, security hardening, 200+ commands)
-- [x] v1.1.0 — Critical fixes (WebSocket races, interface{}→any, godoc, OpenAPI)
-- [x] v1.2.0 — Database layer (PostgreSQL/MySQL/SQLite, retry, logging, health checks)
-- [x] v1.3.0 — Quality, Correctness & Production Readiness (code gen fixes, security audit, CLI --output json/yaml)
-- [x] v1.3.1 — Code Quality & Lint Compliance (999 issues resolved, 22 unused symbols removed)
-- [x] v1.4.0 — Prompt Library & Platform Improvements (YAML templates, observability dashboard, workflow manager)
-- [x] v1.5.0 — Production Hardening (HTTP timeouts, context propagation, error logging, SSE fixes, test fixes)
-- [x] v2.1.0 — RBAC, multi-tenant workspaces, schema registry API, industry profiles, compliance export
-- [x] v2.2.0 — Supabase backend integration, lint zero-failure, fuzz testing, coverage-gated CI
-- [x] v3.0.0 — Pipeline profiling, stage caching, schema-based validation, NEIR-aware LSP server, official plugin examples
-- [x] v3.1.0 — Pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns, WASM plugin hardening
-- [x] v3.2.0 — Production server daemon (`naeos serve`), TLS, graceful shutdown, systemd integration
-- [x] v3.3.0 — SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
-- [x] v3.4.0 — Helm chart scaffolding, air-gapped bundles, config providers
-
-For upcoming work, see [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) and [ROADMAP.md](ROADMAP.md).
+- [docs/](docs/) — NAEOS engineering specifications
+- [CHANGELOG.md](CHANGELOG.md) — release history
 
 ## Contributing
 
-Contributions, documentation improvements, issue reports, and new integrations are welcome. Start with the [contribution guidelines](CONTRIBUTING.md), then review the [getting started guide](GETTING-STARTED.md) and open an issue or pull request.
+NAEOS is built in the open. Contributions are welcome across the engineering stack:
 
-## Community & Support
+| Track | Examples |
+|---|---|
+| **Policy** | authorization, governance, policy evaluation |
+| **Runtime** | execution boundaries, lifecycle, runtime controls |
+| **Evidence** | audit, receipts, integrity, evidence storage |
+| **Handoffs** | agent/tool contracts and boundary revalidation |
+| **Verification** | independent checks and trust mechanisms |
+| **Plugins** | SDK, adapters, profiles, extensions |
+| **Experiments** | reproducible engineering experiments and benchmarks |
+| **Documentation** | specifications, architecture, guides |
 
-- [Contributor ladder](docs/community/contributor-ladder.md) — the nine stages from Observer to Ecosystem partner.
-- [Discussions](https://github.com/NAEOS-foundation/naeos/discussions) — ask questions, share ideas, and show what you built.
-- [Discord](https://discord.gg/naeos) — real-time discussion with the community and maintainers.
-- [Discussions guide](docs/community/discussions.md) — categories, norms, and how conversations become contributions.
-- [Partner Program](PARTNER-PROGRAM.md) — technical partnership paths, pilot requests, and contribution rules.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), then start with [START-HERE.md](START-HERE.md).
 
-## Governance
+## Community and partnerships
 
-- [Open-core boundary](docs/open-core.md) — how open-source NAEOS Core relates to future NAEOS Cloud / Enterprise offerings.
-- [AI-assisted provenance policy](docs/ai-provenance.md) — guidance for commits written or generated with AI tools.
-- [Engineering Constitution](constitution/) and [governance](governance/) — how the project governs itself.
+- [GitHub Discussions](https://github.com/NAEOS-foundation/naeos/discussions) — technical discussion and ideas
+- [Discord](https://discord.gg/naeos) — community discussion
+- [NAEOS Partner Program](PARTNER-PROGRAM.md) — technology, infrastructure, AI, academic, community, pilot, and strategic collaboration
+
+## Security and governance
+
+- [SECURITY.md](SECURITY.md) — supported release lines and security reporting
+- [Engineering Constitution](constitution/) — project-level engineering principles
+- [Governance](governance/) — project governance material
+- [AI-assisted provenance policy](docs/ai-provenance.md) — guidance for AI-assisted contributions
+- [Open-core boundary](docs/open-core.md) — relationship between NAEOS Core and future offerings
 
 ## License
 
-NAEOS is released under the [Apache License 2.0](LICENSE). See the
-[NOTICE](NOTICE) for attribution and branding information. Contributions are
-accepted under the
-[Developer Certificate of Origin](https://developercertificate.org/)
-(see [CONTRIBUTING.md](CONTRIBUTING.md#developer-certificate-of-origin-dco)).
+NAEOS is released under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution and branding information.
 
-The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS
-Foundation. The Apache License grants no trademark rights; see
-[NOTICE](NOTICE) for the current branding and trademark policy.
+Contributions are accepted under the [Developer Certificate of Origin](https://developercertificate.org/) as described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Status
+The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS Foundation. The Apache License grants no trademark rights; see [NOTICE](NOTICE) for the current branding and trademark policy.
 
-**Active development** — The latest documented release is v3.6.0, which adds the unified control plane (authorization, approvals, tamper-evident evidence) and the investor demo API. See the [release history](CHANGELOG.md) for details.
+---
+
+**Active development · NAEOS 3.6.0**
+
+**Architecture Drives Engineering.**

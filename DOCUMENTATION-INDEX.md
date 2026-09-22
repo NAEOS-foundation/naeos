@@ -124,7 +124,7 @@ This flow demonstrates: specification → NEIR → validation → policy → AI 
 
 ### 7.2 Partner program
 - [docs/partners/](docs/partners/) — partner briefs, outreach, fit assessment, pilots, policy, ecosystem model, and case-study template.
-- [docs/partners/PROSPECT-LIST.md](docs/partners/PROSPECT-LIST.md) — technical prospect list with evidence and qualification status.
+- [NAEOS-PARTNER-TARGET-LIST-v1.0.md](NAEOS-PARTNER-TARGET-LIST-v1.0.md) — technical prospect list with evidence and qualification status.
 - [.github/ISSUE_TEMPLATE/partner-interest.yml](.github/ISSUE_TEMPLATE/partner-interest.yml) — partner interest form.
 - [.github/ISSUE_TEMPLATE/partner-pilot.yml](.github/ISSUE_TEMPLATE/partner-pilot.yml) — scoped pilot form.
 
