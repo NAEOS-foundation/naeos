@@ -5,9 +5,10 @@
 set -euo pipefail
 
 # Benchmark regression gate.
-# Runs the core pipeline benchmarks and compares the per-benchmark median
-# ns/op against the stored baseline. Fails (exit 1) if any benchmark
-# regresses by more than the configured relative threshold.
+# Runs the core pipeline benchmarks repeatedly and compares the per-benchmark median
+# ns/op against the stored baseline. Fails (exit 1) if any benchmark regresses
+# by more than the configured relative threshold, or if a benchmark disappears
+# from the current run. New benchmarks also require an explicit baseline update.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BENCH_DIR="${ROOT}/bench"
@@ -15,6 +16,7 @@ BASELINE="${BENCH_DIR}/baseline.txt"
 OUT="${BENCH_DIR}/current.txt"
 BENCH_RE="BenchmarkPipeline(Run|Validate|New)\$"
 THRESHOLD="${THRESHOLD:-0.35}"
+COUNT="${COUNT:-5}"
 
 mkdir -p "${BENCH_DIR}"
 
