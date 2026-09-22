@@ -30,7 +30,7 @@ type Request struct {
 	// Capability identifies the exact capability being requested. It is part
 	// of the authorization identity so a decision for one capability cannot
 	// be reused for a broader capability.
-	Capability   string
+	Capability  string
 	Resource    string
 	Action      string
 	Environment string

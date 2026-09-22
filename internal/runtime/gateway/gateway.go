@@ -19,7 +19,7 @@ import (
 type ToolRequest struct {
 	// Capability is the normalized capability requested by the agent.
 	// It is authorization-bound and must not be widened downstream.
-	Capability   string
+	Capability  string
 	Tool        string
 	Action      string
 	Resource    string
