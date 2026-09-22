@@ -258,3 +258,42 @@ func ValidateCompletionWithRuntimeEvents(store *EvidenceStore, runtimeEvents *Ru
 	result.Complete = result.Complete && eventBindingOK
 	return result
 }
+
+
+// ValidateCompletionWithRuntimeLedger enforces the V5.3 trust boundary: the
+// completion contract must bind evidence to events already recorded by the
+// independent runtime event ledger.
+func ValidateCompletionWithRuntimeLedger(store *EvidenceStore, ledger *RuntimeEventLedger, runID string, requiredKinds []string) CompletionResult {
+	if ledger == nil {
+		result := ValidateCompletion(store, runID, requiredKinds)
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-ledger-present", Passed: false, Detail: "runtime event ledger is nil"})
+		return result
+	}
+	if err := ledger.Verify(); err != nil {
+		result := ValidateCompletion(store, runID, requiredKinds)
+		result.Complete = false
+		result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-ledger-intact", Passed: false, Detail: err.Error()})
+		return result
+	}
+	events := ledger.Records()
+	eventStore := NewRuntimeEventStore()
+	for _, event := range events {
+		if event.RunID != runID {
+			continue
+		}
+		if _, err := eventStore.Append(event.RunID, event.Name, event.PayloadDigest, event.Sequence); err != nil {
+			result := ValidateCompletion(store, runID, requiredKinds)
+			result.Complete = false
+			result.Checks = append(result.Checks, CompletionCheck{Name: "runtime-ledger-rebuild", Passed: false, Detail: err.Error()})
+			return result
+		}
+	}
+	result := ValidateCompletionWithRuntimeEvents(store, eventStore, runID, requiredKinds)
+	result.Checks = append(result.Checks, CompletionCheck{
+		Name: "independent-runtime-ledger",
+		Passed: result.Complete,
+		Detail: "completion evidence is derived from an event ledger with no evidence append capability",
+	})
+	return result
+}
