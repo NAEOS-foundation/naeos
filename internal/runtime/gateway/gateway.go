@@ -71,6 +71,13 @@ type ControlPlane interface {
 	Evaluate(req control.Request) (control.DecisionRecord, error)
 }
 
+// DecisionRevalidator is an optional second-phase authorization check.
+// Production control planes should implement it so policy changes between
+// authorization and execution invalidate the original decision.
+type DecisionRevalidator interface {
+	ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error)
+}
+
 // Option configures an ExecutionGateway.
 type Option func(*ExecutionGateway)
 
@@ -213,6 +220,31 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		result.Duration = time.Since(start)
 		g.record(result)
 		return result, nil
+	}
+
+	// Revalidate immediately before execution when the control plane supports
+	// a second-phase check. This closes the policy-mutation window between the
+	// initial authorization decision and the externally observable side effect.
+	if revalidator, ok := g.controlPlane.(DecisionRevalidator); ok {
+		current, err := revalidator.ValidateDecision(control.Request{
+			Resource:    resource,
+			Action:      action,
+			Environment: req.Environment,
+			Actor:       req.Actor,
+			Context:     req.Context,
+		}, rec)
+		if err != nil {
+			result.Status = "denied"
+			result.Output = "authorization invalidated before execution"
+			result.Duration = time.Since(start)
+			g.record(result)
+			return result, nil
+		}
+		rec = current
+		result.Decision = current.Decision
+		result.PolicyID = current.PolicyID
+		result.RuleID = current.RuleID
+		result.Reasons = current.Reasons
 	}
 
 	// Execute inside the sandbox.
