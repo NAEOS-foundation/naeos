@@ -35,9 +35,9 @@ jobs:
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
-          grep -Eq "NAEOS[^[:alnum:]]+${version//./\\.}" SECURITY.md
+          grep -Fq "NAEOS $version" SECURITY.md
           go_version="$(awk '$1 == "go" {print $2; exit}' go.mod)
-          grep -Eq "Go ${go_version//./\.}([+]| or later)" README.md
+          grep -Fq "Go $go_version or later" README.md || grep -Fq "go-${go_version}+" README.md
 
       - name: Check Markdown local links
         shell: bash
