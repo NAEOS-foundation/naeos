@@ -27,6 +27,7 @@ const (
 
 type scenarioResult struct {
 	Name               string
+	Intent             string
 	Expected           string
 	Observed           string
 	Passed             bool
@@ -236,7 +237,7 @@ func runScenario(name string, decision policy.Decision, persist bool, bypass boo
 	}
 
 	return scenarioResult{
-		Name: name, Expected: expected,
+		Name: name, Intent: fmt.Sprintf("%s %s on %s", action, resource, environment), Expected: expected,
 		Observed: fmt.Sprintf("decision=%s gateway=%s side_effect=%v verification=%s", result.Decision, result.Status, exists, ver.Status),
 		Passed:   passed, Decision: string(result.Decision), GatewayState: result.Status,
 		ObservedSideEffect: exists, Verification: string(ver.Status),
