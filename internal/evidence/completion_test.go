@@ -202,3 +202,23 @@ func TestValidateCompletionRejectsTamperedEvidenceChain(t *testing.T) {
 		t.Fatal("tampered evidence content must block completion")
 	}
 }
+
+func TestValidateCompletionRejectsMissingRuntimeProvenance(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
+		{"observation", "run-1", 4}, {"verification", "run-1", 5},
+	})
+	store.records[2].Metadata["provenance_event"] = ""
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("missing runtime provenance must block completion")
+	}
+}
+
+func TestProvenanceDigestChangesWithPayload(t *testing.T) {
+	a := ProvenanceDigest("policy_eval", "pipeline.policy_decision", "digest-a")
+	b := ProvenanceDigest("policy_eval", "pipeline.policy_decision", "digest-b")
+	if a == b {
+		t.Fatal("provenance digest must change when payload digest changes")
+	}
+}
