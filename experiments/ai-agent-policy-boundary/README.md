@@ -14,6 +14,10 @@ It does not introduce a second policy engine, runtime gateway, evidence store, o
 
 Exit code 0 means all expected scenario assertions passed.
 
+The default output is a compact demo view. Use `--json` when you need machine-readable evidence for automation or auditing:
+
+    go run ./experiments/ai-agent-policy-boundary --json
+
 ## Scenarios
 
 | Scenario | Expected proof |
@@ -76,12 +80,27 @@ Each scenario reports:
 For example:
 
 ```text
-ALLOW
-intent=write filesystem on flagship
-decision=allow
-gateway=completed
-side_effect=true
-verification=verified
+NAEOS AI AGENT POLICY BOUNDARY
+================================
+[1] ALLOW
+    Intent        : write filesystem on flagship
+    Policy        : allow
+    Gateway       : completed
+    Side Effect   : OBSERVED
+    Verification  : verified
+    Assertion     : PASS
+
+[4] DIRECT_BYPASS
+    Intent        : write filesystem on flagship
+    Policy        : deny
+    Gateway       : bypassed
+    Side Effect   : OBSERVED
+    Verification  : failed
+    Assertion     : PASS
+
+--------------------------------
+4/4 boundary assertions passed
+================================
 ```
 
 The important invariant is not simply the decision. It is the relationship between the decision and the independently observed consequence.
