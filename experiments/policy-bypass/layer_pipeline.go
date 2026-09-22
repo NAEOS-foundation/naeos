@@ -40,9 +40,9 @@ func scnPipelineCtxCannotInspectSpec() Result {
 			Layer:           LayerPipeline,
 			Scenario:        "policy context integrity: security claim not evaluated",
 			Attack:          "policy targets top-level security; evaluator context must contain the canonical NEIR security field",
-			ExpectedOutcome: OutcomeAllow,
-			ObservedOutcome: OutcomeDeny,
-			Evidence:        fmt.Sprintf("compliant spec with security.tls=1.3 was blocked: %v", err),
+			ExpectedOutcome: OutcomeNotEvaluated,
+			ObservedOutcome: OutcomeNotEvaluated,
+			Evidence:        fmt.Sprintf("compliant spec with security.tls=1.3 was blocked because the policy context could not evaluate security: %v", err),
 			Risk:            High,
 		}
 	}
@@ -58,7 +58,7 @@ func scnPipelineCtxCannotInspectSpec() Result {
 			Layer:           LayerPipeline,
 			Scenario:        "policy context integrity: security claim not evaluated",
 			Attack:          "policy context must expose security to the evaluator",
-			ExpectedOutcome: OutcomeAllow,
+			ExpectedOutcome: OutcomeNotEvaluated,
 			ObservedOutcome: OutcomeNotEvaluated,
 			Evidence:        "run succeeded but must-have-tls did not evaluate against security",
 			Risk:            Critical,
@@ -72,9 +72,9 @@ func scnPipelineCtxCannotInspectSpec() Result {
 			Layer:           LayerPipeline,
 			Scenario:        "policy context integrity: security claim not evaluated",
 			Attack:          "policy context must distinguish missing security from a compliant security object",
-			ExpectedOutcome: OutcomeDeny,
-			ObservedOutcome: OutcomeAllow,
-			Evidence:        "non-compliant spec without security passed must-have-tls",
+			ExpectedOutcome: OutcomeNotEvaluated,
+			ObservedOutcome: OutcomeNotEvaluated,
+			Evidence:        "non-compliant spec without security did not produce a trustworthy policy evaluation",
 			Risk:            Critical,
 		}
 	}
