@@ -444,7 +444,7 @@ func TestGatewayHistoryConcurrent(t *testing.T) {
 }
 
 type mutatingControlPlane struct {
-	inner   *control.ControlPlane
+	inner    *control.ControlPlane
 	registry *policy.Registry
 	mutated  bool
 }
@@ -511,6 +511,7 @@ func TestGatewayPolicyMutationInvalidatesAuthorization(t *testing.T) {
 		t.Fatalf("expected one recorded invalidated execution attempt, got %d", len(gw.History()))
 	}
 }
+
 // Ensure the full integration path with real policy/control works.
 func TestGatewayFullIntegration(t *testing.T) {
 	reg := policy.NewRegistry()
