@@ -244,3 +244,15 @@ func TestProvenanceDigestChangesWithPayload(t *testing.T) {
 		t.Fatal("provenance digest must change when payload digest changes")
 	}
 }
+
+func TestValidateCompletionRejectsProvenanceDigestMismatch(t *testing.T) {
+	store := completionStore([]struct{ kind, run string; seq int }{
+		{"intent", "run-1", 1}, {"decision", "run-1", 2}, {"execution", "run-1", 3},
+		{"observation", "run-1", 4}, {"verification", "run-1", 5},
+	})
+	store.records[1].Metadata["payload_digest"] = "tampered-payload"
+	result := ValidateCompletion(store, "run-1", completionKinds)
+	if result.Complete {
+		t.Fatal("provenance digest mismatch must block completion")
+	}
+}
