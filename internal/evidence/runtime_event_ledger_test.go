@@ -58,3 +58,36 @@ func TestRuntimeEvidenceBuilderRejectsEventPayloadMismatch(t *testing.T) {
 		t.Fatal("expected mutated event reference to be rejected")
 	}
 }
+
+func TestCompletionRejectsMixedRunLedger(t *testing.T) {
+	store := NewStore()
+	ledger := NewRuntimeEventLedger()
+	builder := NewRuntimeEvidenceBuilder(store, ledger)
+	for i, item := range []struct {
+		kind  string
+		stage string
+		event string
+		runID string
+	}{
+		{"intent", "run", "pipeline.start", "run-1"},
+		{"decision", "policy_eval", "pipeline.policy_decision", "run-2"},
+		{"execution", "write_artifacts", "pipeline.execution", "run-1"},
+		{"observation", "observation", "pipeline.observation", "run-1"},
+		{"verification", "completion", "pipeline.verification", "run-1"},
+	} {
+		event, err := ledger.Publish(item.runID, item.event, "payload", i+1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if item.runID == "run-1" {
+			if err := builder.Build("run-1", item.kind, i+1, item.stage, item.event, event); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	ledger.Seal()
+	result := ValidateCompletionWithRuntimeLedger(store, ledger, "run-1", []string{"intent", "decision", "execution", "observation", "verification"})
+	if result.Complete {
+		t.Fatal("expected mixed-run runtime ledger to block completion")
+	}
+}

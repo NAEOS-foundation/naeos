@@ -3,9 +3,11 @@
 
 package evidence
 
-import "fmt"
+import (
+	"fmt"
 
-import "github.com/NAEOS-foundation/naeos/internal/governance/control"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
+)
 
 // RuntimeEvidenceBuilder converts already-observed ledger events into evidence.
 // It has no capability to publish runtime events, which keeps observation and
@@ -34,6 +36,12 @@ func (b *RuntimeEvidenceBuilder) Build(runID, kind string, sequence int, stage, 
 	observed := b.ledger.ByID(runtimeEvent.ID)
 	if observed == nil {
 		return fmt.Errorf("runtime event %s is not present in ledger", runtimeEvent.ID)
+	}
+	if observed.RunID != runtimeEvent.RunID ||
+		observed.Name != runtimeEvent.Name ||
+		observed.PayloadDigest != runtimeEvent.PayloadDigest ||
+		observed.Sequence != runtimeEvent.Sequence {
+		return fmt.Errorf("runtime event %s reference does not match ledger event", runtimeEvent.ID)
 	}
 	if observed.RunID != runID || observed.Sequence != sequence || observed.Name != event || observed.PayloadDigest == "" {
 		return fmt.Errorf("runtime event %s does not match requested evidence binding", runtimeEvent.ID)
