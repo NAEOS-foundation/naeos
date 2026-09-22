@@ -19,6 +19,11 @@ This matrix is deliberately evidence-first. A document or diagram is not counted
 | Handoff provenance is explicit | Handoff validator provenance check | Agent Handoff Governance v1 | Missing/mismatched source fails closed | Handoff Governance job |
 | Handoff protocol/canonicalization versions are trust boundaries | Handoff validator version checks | Agent Handoff Governance v1 | Unsupported versions are rejected | Handoff Governance job |
 | Handoff replay is detectable | Handoff validator nonce ledger | Agent Handoff Governance v1 | Second use of same nonce is rejected | Handoff Governance job |
+| Real execution creates an independently observable side effect | `internal/runtime/gateway` + local filesystem sandbox | Level-3 Evidence v1: ALLOW | Real file write observed independently of executor return value | Level-3 Evidence job |
+| DENY is tested against the side effect, not only the policy result | `internal/runtime/gateway` + control plane | Level-3 Evidence v1: DENY | Gateway denies, sandbox is not invoked, observer confirms absence | Level-3 Evidence job |
+| An out-of-band side effect is not equivalent to authorization | Gateway history + evidence + independent observation | Level-3 Evidence v1: direct bypass | Side effect observed with no authorized gateway execution; verification fails | Level-3 Evidence job |
+| Execution claims are not observation evidence | Gateway execution result + independent observer/verifier | Level-3 Evidence v1: execution/observation separation | Completion claim with absent effect is preserved as verification failure | Level-3 Evidence job |
+| Artifact mutation after observation is detectable | `internal/evidence` + `internal/verification` | Level-3 Evidence v1: tamper | Re-read digest mismatch causes verification failure | Level-3 Evidence job |
 
 ## Interpretation
 
@@ -28,8 +33,6 @@ Three evidence levels should remain separate:
 2. **Experiment evidence** — a multi-step or adversarial scenario exercises a real component.
 3. **Production evidence** — deployment-level observation from an actual external side effect.
 
-NAEOS currently has strong deterministic evidence at levels 1 and 2 for the claims above. That should not be described as equivalent to production security validation.
+Level-3 evidence is now represented by a controlled local filesystem side effect and an independent re-read of the resulting artifact. This is stronger than simulated execution, but it remains **controlled experiment evidence**, not production security validation.
 
-## Next evidence gap
-
-The largest remaining gap is level-3 evidence: a real adapter/tool execution where NAEOS records the requested action, authorization, actual side effect, and independent observation without trusting the agent's self-report.
+Production evidence still requires a deployment-level external side effect and an observation boundary outside the test process.
