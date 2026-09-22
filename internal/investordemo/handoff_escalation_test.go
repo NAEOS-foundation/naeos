@@ -122,7 +122,6 @@ func TestHandoffRejectsRecipientMismatch(t *testing.T) {
 	}
 }
 
-
 func TestHandoffRejectsMissingSignature(t *testing.T) {
 	setup := SetupDemoEnvironment()
 	contract := &HandoffContract{
