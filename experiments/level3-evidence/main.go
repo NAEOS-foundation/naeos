@@ -195,7 +195,7 @@ func run() ([]scenarioResult, error) {
 		return nil, err
 	}
 	results = append(results, scenarioResult{
-		Name: "01-allow-real-side-effect",
+		Name:     "01-allow-real-side-effect",
 		Expected: "ALLOW + completed + observed + VERIFIED",
 		Observed: fmt.Sprintf("%s + %s + observed + %s", allowResult.Decision, allowResult.Status, allowVerification.Status),
 		Passed: allowResult.Decision == control.DecisionAllow &&
@@ -208,7 +208,7 @@ func run() ([]scenarioResult, error) {
 			"evidence recorded the observed artifact digest",
 			"independent verification passed",
 		},
-		EvidenceID: allowRecord.ID,
+		EvidenceID:   allowRecord.ID,
 		Verification: string(allowVerification.Status),
 	})
 
@@ -242,7 +242,7 @@ func run() ([]scenarioResult, error) {
 		return nil, err
 	}
 	results = append(results, scenarioResult{
-		Name: "02-deny-no-side-effect",
+		Name:     "02-deny-no-side-effect",
 		Expected: "DENY + no execution + no observed side effect + VERIFIED",
 		Observed: fmt.Sprintf("%s + %s + no side effect + %s", denyResult.Decision, denyResult.Status, denyVerification.Status),
 		Passed: denyResult.Decision == control.DecisionDeny &&
@@ -255,7 +255,7 @@ func run() ([]scenarioResult, error) {
 			"evidence recorded the denial",
 			"independent verification passed",
 		},
-		EvidenceID: denyRecord.ID,
+		EvidenceID:   denyRecord.ID,
 		Verification: string(denyVerification.Status),
 	})
 
@@ -296,18 +296,18 @@ func run() ([]scenarioResult, error) {
 	}
 	bypassDetected := bypassExists && len(bypassHistory) == 0 && bypassVerification.Status == verification.StatusFailed
 	results = append(results, scenarioResult{
-		Name: "03-direct-bypass-detected",
+		Name:     "03-direct-bypass-detected",
 		Expected: "OUT-OF-BAND SIDE EFFECT MUST FAIL GOVERNANCE VERIFICATION",
 		Observed: fmt.Sprintf("side effect=%v gateway_history=%d verification=%s", bypassExists, len(bypassHistory), bypassVerification.Status),
-		Passed: bypassDetected,
+		Passed:   bypassDetected,
 		Checks: []string{
 			"side effect was produced without gateway execution",
 			"gateway history contains no authorized execution",
 			"independent observer saw the out-of-band effect",
 			"verification failed instead of treating DENY as proof of prevention",
 		},
-		EvidenceID: bypassRecord.ID,
-		Verification: string(bypassVerification.Status),
+		EvidenceID:      bypassRecord.ID,
+		Verification:    string(bypassVerification.Status),
 		FailureDetected: bypassVerification.Status == verification.StatusFailed,
 	})
 
@@ -341,18 +341,18 @@ func run() ([]scenarioResult, error) {
 		return nil, err
 	}
 	results = append(results, scenarioResult{
-		Name: "04-execution-observation-separation",
+		Name:     "04-execution-observation-separation",
 		Expected: "EXECUTION CLAIM MUST NOT OVERRIDE INDEPENDENT OBSERVATION",
 		Observed: fmt.Sprintf("execution=%s observed=%v verification=%s", lieResult.Status, lieExists, lieVerification.Status),
-		Passed: lieResult.Status == "completed" && !lieExists && lieVerification.Status == verification.StatusFailed,
+		Passed:   lieResult.Status == "completed" && !lieExists && lieVerification.Status == verification.StatusFailed,
 		Checks: []string{
 			"gateway execution result reported completion",
 			"observer independently checked the filesystem",
 			"observer found no side effect",
 			"verification preserved the mismatch as a failure",
 		},
-		EvidenceID: lieRecord.ID,
-		Verification: string(lieVerification.Status),
+		EvidenceID:      lieRecord.ID,
+		Verification:    string(lieVerification.Status),
 		FailureDetected: lieVerification.Status == verification.StatusFailed,
 	})
 
@@ -389,17 +389,17 @@ func run() ([]scenarioResult, error) {
 		return nil, err
 	}
 	results = append(results, scenarioResult{
-		Name: "05-tamper-after-observation",
+		Name:     "05-tamper-after-observation",
 		Expected: "POST-OBSERVATION MUTATION MUST FAIL VERIFICATION",
 		Observed: fmt.Sprintf("verification=%s", tamperVerification.Status),
-		Passed: tamperVerification.Status == verification.StatusFailed,
+		Passed:   tamperVerification.Status == verification.StatusFailed,
 		Checks: []string{
 			"artifact was observed and hashed",
 			"artifact was mutated after evidence capture",
 			"independent verification detected digest mismatch",
 		},
-		EvidenceID: tamperRecord.ID,
-		Verification: string(tamperVerification.Status),
+		EvidenceID:      tamperRecord.ID,
+		Verification:    string(tamperVerification.Status),
 		FailureDetected: tamperVerification.Status == verification.StatusFailed,
 	})
 
@@ -411,7 +411,7 @@ func newGateway(decision policy.Decision, sandbox gateway.Sandbox) (*gateway.Exe
 	_ = reg.Register(&policy.Policy{
 		ID: "level3-" + string(decision), Name: "Level 3 " + string(decision),
 		Version: "1.0.0",
-		Scope: policy.Scope{Resource: resource, Action: action, Environment: environment},
+		Scope:   policy.Scope{Resource: resource, Action: action, Environment: environment},
 		Default: decision, Active: true,
 	})
 	cp := control.New(reg, control.FailClosed(true))
@@ -432,8 +432,8 @@ func appendEvidence(cp *control.ControlPlane, result gateway.ExecutionResult, ob
 		ArtifactName: fileName, ExecutionStatus: result.Status,
 		ExecutionOutput: result.Output, ExecutionDurationMs: result.Duration.Milliseconds(),
 		Metadata: map[string]any{
-			"observation_exists": observed != nil,
-			"observation_path": filepath.Join(obs.root, fileName),
+			"observation_exists":     observed != nil,
+			"observation_path":       filepath.Join(obs.root, fileName),
 			"gateway_decision_count": len(decisions),
 		},
 	}
@@ -458,7 +458,7 @@ func appendEvidence(cp *control.ControlPlane, result gateway.ExecutionResult, ob
 func verify(rec evidence.EvidenceRecord, obs observer) (verification.VerificationResult, error) {
 	contract := verification.Contract{
 		Name: "level3-evidence-v1", Version: "1.0.0",
-		Description: "The observed side effect must match the independently re-read artifact.",
+		Description:  "The observed side effect must match the independently re-read artifact.",
 		Requirements: []string{"evidence integrity", "side-effect observation"},
 	}
 	store := evidence.NewStore()
