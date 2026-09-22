@@ -443,7 +443,7 @@ func appendEvidence(cp *control.ControlPlane, result gateway.ExecutionResult, ob
 	}
 
 	store := evidence.NewStore()
-	seed := result.Decision + ":" + result.Status + ":" + rec.ArtifactHash + ":" + result.Output
+	seed := string(result.Decision) + ":" + result.Status + ":" + rec.ArtifactHash + ":" + result.Output
 	rec.ID = "level3-" + evidence.ComputeArtifactHash([]byte(seed))[:16]
 	saved, err := store.Append(rec)
 	if err != nil {
