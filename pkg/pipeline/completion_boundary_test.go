@@ -26,7 +26,8 @@ func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 
 func TestValidateRunCompletionAllowsCompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
-	events := evidence.NewRuntimeEventStore()
+	ledger := evidence.NewRuntimeEventLedger()
+	builder := evidence.NewRuntimeEvidenceBuilder(store, ledger)
 	stages := [][2]string{
 		{"run", "pipeline.start"},
 		{"policy_eval", "pipeline.policy_decision"},
@@ -35,11 +36,11 @@ func TestValidateRunCompletionAllowsCompleteEvidence(t *testing.T) {
 		{"completion", "pipeline.verification"},
 	}
 	for i, kind := range requiredRunEvidenceKinds {
-		if err := appendRunEvidence(store, events, "run-test", kind, i+1, stages[i][0], stages[i][1], "payload"); err != nil {
+		if err := appendRunEvidence(builder, ledger, "run-test", kind, i+1, stages[i][0], stages[i][1], "payload"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := validateRunCompletion(store, events, "run-test"); err != nil {
+	if err := validateRunCompletion(store, ledger, "run-test"); err != nil {
 		t.Fatalf("expected complete evidence to allow completion: %v", err)
 	}
 }
