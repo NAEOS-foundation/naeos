@@ -350,6 +350,7 @@ func TestGatewayContextInjection(t *testing.T) {
 	gw := New(cp, sb)
 
 	gw.Authorize(ToolRequest{
+		Capability:  "deploy.execute",
 		Tool:        "deploy",
 		Action:      "run",
 		Resource:    "app",
@@ -358,6 +359,9 @@ func TestGatewayContextInjection(t *testing.T) {
 		Context:     map[string]any{"version": "2.0.0"},
 	})
 
+	if captured.Capability != "deploy.execute" {
+		t.Fatalf("expected capability deploy.execute, got %s", captured.Capability)
+	}
 	if captured.Resource != "app" {
 		t.Fatalf("expected resource app, got %s", captured.Resource)
 	}
