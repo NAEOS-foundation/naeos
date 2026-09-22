@@ -136,11 +136,13 @@ func scnStrictestWins() Result {
 	}
 	// Catch-all ALLOW must not weaken the specific REQUIRE_APPROVAL policy.
 	return Result{
-		Layer:    LayerControl,
-		Scenario: "rule aggregation keeps strictest decision",
-		Attack:   "Register a broad ALLOW policy and hope it beats the specific prod policy; DENY/REQUIRE_APPROVAL aggregation is sticky",
-		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: decisionOutcome(rec.Decision),
-		Evidence: fmt.Sprintf("specific production policy decision retained over catch-all allow: decision=%s", rec.Decision),
-		Risk:     Low,
+		Layer:           LayerControl,
+		Scenario:        "rule aggregation keeps strictest decision",
+		Attack:          "Register a broad ALLOW policy and hope it beats the specific prod policy; DENY/REQUIRE_APPROVAL aggregation is sticky",
+		Bypassed:        rec.Decision == control.DecisionAllow,
+		ExpectedOutcome: OutcomeRequireApproval,
+		ObservedOutcome: decisionOutcome(rec.Decision),
+		Evidence:        fmt.Sprintf("specific production policy decision retained over catch-all allow: decision=%s", rec.Decision),
+		Risk:            Low,
 	}
 }
