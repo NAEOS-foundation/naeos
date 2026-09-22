@@ -3,9 +3,11 @@
 
 package evidence
 
-import "fmt"
+import (
+	"fmt"
 
-import "github.com/NAEOS-foundation/naeos/internal/governance/control"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
+)
 
 // RuntimeEvidenceBuilder converts already-observed ledger events into evidence.
 // It has no capability to publish runtime events, which keeps observation and
