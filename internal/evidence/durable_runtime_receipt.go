@@ -127,7 +127,7 @@ func WriteDurableRuntimeReceipt(path string, receipt DurableRuntimeReceipt) erro
 		return fmt.Errorf("create durable runtime receipt directory: %w", err)
 	}
 	tmp := filepath.Clean(path) + ".tmp"
-	if err := os.WriteFile(tmp, append(data, '\n'), 0o640); err != nil {
+	if err := os.WriteFile(tmp, append(data, '\n'), 0o600); err != nil {
 		return fmt.Errorf("write durable runtime receipt: %w", err)
 	}
 	if err := os.Rename(tmp, filepath.Clean(path)); err != nil {
