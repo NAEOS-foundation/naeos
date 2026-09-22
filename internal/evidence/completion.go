@@ -151,7 +151,6 @@ func metadataInt(rec EvidenceRecord, key string) int {
 	}
 }
 
-
 func findEvidenceIndex(records []EvidenceRecord, id string) int {
 	for i, record := range records {
 		if record.ID == id {

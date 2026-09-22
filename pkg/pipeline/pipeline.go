@@ -805,7 +805,7 @@ var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "obse
 
 func appendRunEvidence(store *evidence.EvidenceStore, runID, kind string, sequence int) error {
 	_, err := store.Append(evidence.EvidenceRecord{
-		ID: fmt.Sprintf("%s-%s", runID, kind),
+		ID:    fmt.Sprintf("%s-%s", runID, kind),
 		Actor: "pipeline", Resource: "pipeline", Action: "run",
 		Environment: "runtime", PolicyID: "pipeline-lifecycle", PolicyVersion: "1.0.0",
 		Decision: control.DecisionAllow, ExecutionStatus: "recorded",
