@@ -13,7 +13,7 @@
     <img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status">
   </a>
   <a href="https://go.dev">
-    <img src="https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white" alt="Go version">
+    <img src="https://img.shields.io/badge/go-1.26.6+-00ADD8?logo=go&logoColor=white" alt="Go version">
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0 license">
