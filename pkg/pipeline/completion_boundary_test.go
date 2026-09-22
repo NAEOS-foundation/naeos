@@ -13,8 +13,9 @@ import (
 func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
 	ledger := evidence.NewRuntimeEventLedger()
-	builder := evidence.NewRuntimeEvidenceBuilder(store, ledger)
-	if err := appendRunEvidence(builder, ledger, "run-test", "intent", 1, "run", "pipeline.start", "payload-intent"); err != nil {
+	observer := evidence.NewIndependentRuntimeObserver()
+	builder := evidence.NewRuntimeEvidenceBuilder(store, observer)
+	if err := appendRunEvidence(builder, observer, "run-test", "intent", 1, "run", "pipeline.start", "payload-intent"); err != nil {
 		t.Fatal(err)
 	}
 	if err := validateRunCompletion(store, ledger, "run-test"); err == nil {
