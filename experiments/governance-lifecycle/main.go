@@ -5,7 +5,8 @@
 // intent -> authorization -> execution -> observation -> evidence -> independent verification.
 //
 // Run with:
-//   go run ./experiments/governance-lifecycle
+//
+//	go run ./experiments/governance-lifecycle
 //
 // This is a deterministic experiment harness. It uses real NAEOS governance,
 // evidence, and verification components; execution and observation are
@@ -126,12 +127,12 @@ func main() {
 func run() ([]lifecycleResult, string, error) {
 	reg := policy.NewRegistry()
 	if err := reg.Register(&policy.Policy{
-		ID:       policyID,
-		Name:     "Lifecycle Demo Allow",
-		Version:  "1.0.0",
-		Scope:    policy.Scope{Resource: resource, Action: action, Environment: env},
-		Default:  policy.DecisionAllow,
-		Active:   true,
+		ID:      policyID,
+		Name:    "Lifecycle Demo Allow",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: resource, Action: action, Environment: env},
+		Default: policy.DecisionAllow,
+		Active:  true,
 	}); err != nil {
 		return nil, "", err
 	}
@@ -140,9 +141,9 @@ func run() ([]lifecycleResult, string, error) {
 	store := evidence.NewStore()
 	src := &artifactSource{content: map[string][]byte{}}
 	contract := verification.Contract{
-		Name:        "governance-lifecycle-v1",
-		Version:     "1.0.0",
-		Description: "Authorization must bind to the action, execution must be observable, evidence must be tamper-evident, and verification must be independent.",
+		Name:         "governance-lifecycle-v1",
+		Version:      "1.0.0",
+		Description:  "Authorization must bind to the action, execution must be observable, evidence must be tamper-evident, and verification must be independent.",
 		Requirements: []string{"policy decision", "execution observation", "evidence integrity", "artifact binding", "policy freshness"},
 	}
 
@@ -165,20 +166,20 @@ func run() ([]lifecycleResult, string, error) {
 	rec, err := store.Append(evidence.EvidenceRecord{
 		ID:              "lifecycle-allow",
 		Actor:           "agent/demo",
-		Resource:       resource,
-		Action:         action,
-		Environment:    env,
-		PolicyID:       decision.PolicyID,
-		PolicyVersion:  decision.PolicyVersion,
-		RuleID:         decision.RuleID,
-		Decision:       decision.Decision,
+		Resource:        resource,
+		Action:          action,
+		Environment:     env,
+		PolicyID:        decision.PolicyID,
+		PolicyVersion:   decision.PolicyVersion,
+		RuleID:          decision.RuleID,
+		Decision:        decision.Decision,
 		DecisionReasons: decision.Reasons,
-		ArtifactName:   artifactName,
-		ArtifactHash:   hash,
-		ArtifactSize:   len(content),
+		ArtifactName:    artifactName,
+		ArtifactHash:    hash,
+		ArtifactSize:    len(content),
 		ExecutionStatus: "executed",
 		ExecutionOutput: "repository write completed",
-		Metadata: map[string]any{"intent": intent, "observed": observed},
+		Metadata:        map[string]any{"intent": intent, "observed": observed},
 	})
 	if err != nil {
 		return nil, "", err
@@ -193,11 +194,11 @@ func run() ([]lifecycleResult, string, error) {
 		return nil, "", err
 	}
 	results = append(results, lifecycleResult{
-		Name: "01-complete-lifecycle",
-		Expected: "ALLOW + executed + observed + VERIFIED",
-		Observed: fmt.Sprintf("%s + executed + observed + %s", decision.Decision, vres.Status),
-		Passed: decision.Decision == control.DecisionAllow && observed && vres.Status == verification.StatusVerified,
-		Checks: []string{"agent intent captured", "policy decision recorded", "artifact hashed", "execution recorded", "observation recorded", "independent verification passed"},
+		Name:       "01-complete-lifecycle",
+		Expected:   "ALLOW + executed + observed + VERIFIED",
+		Observed:   fmt.Sprintf("%s + executed + observed + %s", decision.Decision, vres.Status),
+		Passed:     decision.Decision == control.DecisionAllow && observed && vres.Status == verification.StatusVerified,
+		Checks:     []string{"agent intent captured", "policy decision recorded", "artifact hashed", "execution recorded", "observation recorded", "independent verification passed"},
 		EvidenceID: rec.ID, VerifyState: string(vres.Status),
 	})
 
@@ -215,11 +216,11 @@ func run() ([]lifecycleResult, string, error) {
 	}
 	falseClaimDetected := !falseObserved
 	results = append(results, lifecycleResult{
-		Name: "02-agent-claim-vs-observation",
-		Expected: "execution claim must not equal observed side effect",
-		Observed: "agent claimed success; observation=false",
-		Passed: falseClaimDetected,
-		Checks: []string{"execution claim recorded", "independent observation contradicts claim", "claim is not accepted as proof"},
+		Name:       "02-agent-claim-vs-observation",
+		Expected:   "execution claim must not equal observed side effect",
+		Observed:   "agent claimed success; observation=false",
+		Passed:     falseClaimDetected,
+		Checks:     []string{"execution claim recorded", "independent observation contradicts claim", "claim is not accepted as proof"},
 		EvidenceID: rec2.ID,
 	})
 
@@ -251,11 +252,11 @@ func run() ([]lifecycleResult, string, error) {
 		return nil, "", err
 	}
 	results = append(results, lifecycleResult{
-		Name: "03-artifact-mutated-after-approval",
-		Expected: "VERIFICATION FAILED",
-		Observed: string(tamperRes.Status),
-		Passed: tamperRes.Status == verification.StatusFailed,
-		Checks: []string{"approval binds exact artifact hash", "live artifact re-hashed", "post-approval mutation detected"},
+		Name:       "03-artifact-mutated-after-approval",
+		Expected:   "VERIFICATION FAILED",
+		Observed:   string(tamperRes.Status),
+		Passed:     tamperRes.Status == verification.StatusFailed,
+		Checks:     []string{"approval binds exact artifact hash", "live artifact re-hashed", "post-approval mutation detected"},
 		EvidenceID: rec3.ID, VerifyState: string(tamperRes.Status),
 	})
 
@@ -268,7 +269,7 @@ func run() ([]lifecycleResult, string, error) {
 	}
 	if err := reg.Register(&policy.Policy{
 		ID: policyID, Name: "Lifecycle Demo Deny", Version: "2.0.0",
-		Scope: policy.Scope{Resource: resource, Action: action, Environment: env},
+		Scope:   policy.Scope{Resource: resource, Action: action, Environment: env},
 		Default: policy.DecisionDeny, Active: true,
 	}); err != nil {
 		return nil, "", err
@@ -292,11 +293,11 @@ func run() ([]lifecycleResult, string, error) {
 		return nil, "", err
 	}
 	results = append(results, lifecycleResult{
-		Name: "04-stale-authorization-replay",
-		Expected: "OLD AUTHORIZATION REJECTED AFTER POLICY CHANGE",
-		Observed: fmt.Sprintf("stored=%s/current=%s/verification=%s", oldDecision.PolicyVersion, currentDecision.PolicyVersion, replayRes.Status),
-		Passed: oldDecision.PolicyVersion == "1.0.0" && currentDecision.PolicyVersion == "2.0.0" && replayRes.Status == verification.StatusFailed && currentDecision.Decision == control.DecisionDeny,
-		Checks: []string{"old authorization recorded with policy v1", "policy v2 becomes active", "current evaluation denies", "independent freshness verification rejects replay"},
+		Name:       "04-stale-authorization-replay",
+		Expected:   "OLD AUTHORIZATION REJECTED AFTER POLICY CHANGE",
+		Observed:   fmt.Sprintf("stored=%s/current=%s/verification=%s", oldDecision.PolicyVersion, currentDecision.PolicyVersion, replayRes.Status),
+		Passed:     oldDecision.PolicyVersion == "1.0.0" && currentDecision.PolicyVersion == "2.0.0" && replayRes.Status == verification.StatusFailed && currentDecision.Decision == control.DecisionDeny,
+		Checks:     []string{"old authorization recorded with policy v1", "policy v2 becomes active", "current evaluation denies", "independent freshness verification rejects replay"},
 		EvidenceID: replayRec.ID, VerifyState: string(replayRes.Status),
 	})
 
