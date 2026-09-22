@@ -12,11 +12,12 @@ import (
 
 func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
-	events := evidence.NewRuntimeEventStore()
-	if err := appendRunEvidence(store, events, "run-test", "intent", 1, "run", "pipeline.start", "payload-intent"); err != nil {
+	ledger := evidence.NewRuntimeEventLedger()
+	builder := evidence.NewRuntimeEvidenceBuilder(store, ledger)
+	if err := appendRunEvidence(builder, ledger, "run-test", "intent", 1, "run", "pipeline.start", "payload-intent"); err != nil {
 		t.Fatal(err)
 	}
-	if err := validateRunCompletion(store, events, "run-test"); err == nil {
+	if err := validateRunCompletion(store, ledger, "run-test"); err == nil {
 		t.Fatal("expected incomplete evidence to block completion")
 	} else if !strings.Contains(err.Error(), "run completion blocked") {
 		t.Fatalf("unexpected completion error: %v", err)
