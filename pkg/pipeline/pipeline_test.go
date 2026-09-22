@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
