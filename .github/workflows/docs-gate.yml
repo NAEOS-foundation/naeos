@@ -1,0 +1,69 @@
+name: Documentation Gate
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['**.md', 'docs/**', 'constitution/**', 'governance/**', 'policy/**', 'Reference Architecture/**', 'specification/**', '.github/workflows/docs-gate.yml']
+  pull_request:
+    branches: [main]
+    paths: ['**.md', 'docs/**', 'constitution/**', 'governance/**', 'policy/**', 'Reference Architecture/**', 'specification/**', '.github/workflows/docs-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-gate:
+    name: Documentation Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check required public documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            README.md START-HERE.md CONTRIBUTING.md SECURITY.md DOCUMENTATION-AUTHORITY.md
+            'Reference Architecture/NAEOS-NRA-001.md' NAEOS-MTS-001.md
+          )
+          for file in "${required[@]}"; do test -f "$file" || { echo "Missing required document: $file"; exit 1; }; done
+
+      - name: Check release and toolchain consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          grep -q "NAEOS $version" SECURITY.md
+          go_version="$(awk '$1 == "go" {print $2; exit}' go.mod)
+          grep -Eq "Go ${go_version//./\.}([+]| or later)" README.md
+
+      - name: Check Markdown local links
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re, sys
+          root = pathlib.Path('.')
+          pattern = re.compile(r'\[[^\]]+\]\(([^)#]+)(?:#[^)]+)?\)')
+          failures = []
+          for path in root.rglob('*.md'):
+              if '.git' in path.parts: continue
+              for target in pattern.findall(path.read_text(encoding='utf-8')):
+                  if '://' in target or target.startswith('mailto:'): continue
+                  candidate = (path.parent / target.replace('%20', ' ')).resolve()
+                  try: candidate.relative_to(root.resolve())
+                  except ValueError: failures.append(f'{path}: link escapes repository: {target}'); continue
+                  if not candidate.exists(): failures.append(f'{path}: missing target: {target}')
+          if failures: print('\n'.join(failures)); sys.exit(1)
+          print('Markdown local-link check passed.')
+          PY
+
+      - name: Check normative terminology
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'NAEOS-NRA-001' DOCUMENTATION-AUTHORITY.md
+          grep -q 'NAEOS-MTS-001' DOCUMENTATION-AUTHORITY.md
+          grep -q 'Evidence V5.6' README.md
