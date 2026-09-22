@@ -22,9 +22,74 @@ type RuntimeEvent struct {
 	Timestamp     time.Time
 }
 
-// RuntimeEventStore records the runtime observations used by the completion
-// boundary. It is deliberately separate from EvidenceStore so an evidence
-// record cannot manufacture an event reference during validation.
+// RuntimeEventProducer is the lifecycle-facing capability for publishing
+// runtime observations. Evidence builders consume the ledger separately.
+type RuntimeEventProducer interface {
+	Publish(runID, name, payloadDigest string, sequence int) (RuntimeEvent, error)
+}
+
+// RuntimeEventLedger is the append-only runtime observation boundary.
+// Producers publish events here; evidence code cannot create event identities.
+type RuntimeEventLedger struct {
+	store  *RuntimeEventStore
+	mu     sync.RWMutex
+	sealed bool
+}
+
+// NewRuntimeEventLedger creates an independent runtime event ledger.
+func NewRuntimeEventLedger() *RuntimeEventLedger {
+	return &RuntimeEventLedger{store: NewRuntimeEventStore()}
+}
+
+// Publish records an event before any evidence record can reference it.
+func (l *RuntimeEventLedger) Publish(runID, name, payloadDigest string, sequence int) (RuntimeEvent, error) {
+	if l == nil {
+		return RuntimeEvent{}, fmt.Errorf("runtime event ledger is nil")
+	}
+	l.mu.RLock()
+	sealed := l.sealed
+	l.mu.RUnlock()
+	if sealed {
+		return RuntimeEvent{}, fmt.Errorf("runtime event ledger is sealed")
+	}
+	return l.store.Append(runID, name, payloadDigest, sequence)
+}
+
+// Seal closes the observation window. Events published after the boundary are rejected.
+func (l *RuntimeEventLedger) Seal() {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	l.sealed = true
+	l.mu.Unlock()
+}
+
+// Records returns the ledger snapshot in append order.
+func (l *RuntimeEventLedger) Records() []RuntimeEvent {
+	if l == nil || l.store == nil {
+		return nil
+	}
+	return l.store.Records()
+}
+
+// Verify validates all event identities in the ledger.
+func (l *RuntimeEventLedger) Verify() error {
+	if l == nil || l.store == nil {
+		return fmt.Errorf("runtime event ledger is nil")
+	}
+	return l.store.Verify()
+}
+
+// ByID resolves an event without granting append access.
+func (l *RuntimeEventLedger) ByID(id string) *RuntimeEvent {
+	if l == nil || l.store == nil {
+		return nil
+	}
+	return l.store.ByID(id)
+}
+
+// RuntimeEventStore is the backing immutable event record store.
 type RuntimeEventStore struct {
 	mu     sync.RWMutex
 	events []RuntimeEvent
