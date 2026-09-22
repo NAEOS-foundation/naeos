@@ -30,13 +30,23 @@ type HandoffValidator struct {
 	mu           sync.RWMutex
 }
 
-// NewHandoffValidator creates a new handoff validator.
+// NewHandoffValidator creates a demo handoff validator with the legacy demo key.
+// Production deployments should use NewHandoffValidatorWithSigningKey with a
+// key sourced from a secure secret/attestation provider.
 func NewHandoffValidator(auditLedger *AuditLedger, policyEngine *PolicyEngine, grantStore *GrantStore) *HandoffValidator {
+	return NewHandoffValidatorWithSigningKey(auditLedger, policyEngine, grantStore, []byte("naeos-demo-signing-key-change-in-production"))
+}
+
+// NewHandoffValidatorWithSigningKey creates a handoff validator with an explicit
+// signing key. The key is copied so callers cannot mutate validator state through
+// the input slice after construction.
+func NewHandoffValidatorWithSigningKey(auditLedger *AuditLedger, policyEngine *PolicyEngine, grantStore *GrantStore, signingKey []byte) *HandoffValidator {
+	keyCopy := append([]byte(nil), signingKey...)
 	return &HandoffValidator{
 		auditLedger:  auditLedger,
 		policyEngine: policyEngine,
 		grantStore:   grantStore,
-		signingKey:   []byte("naeos-demo-signing-key-change-in-production"),
+		signingKey:   keyCopy,
 		seenNonces:   make(map[string]time.Time),
 	}
 }

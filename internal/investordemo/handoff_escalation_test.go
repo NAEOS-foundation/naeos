@@ -205,3 +205,32 @@ func TestCreatedAtMutationInvalidatesSignature(t *testing.T) {
 		t.Fatal("expected CreatedAt mutation to invalidate signature")
 	}
 }
+
+
+func TestHandoffValidatorCopiesSigningKey(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	key := []byte("test-signing-key")
+	validator := NewHandoffValidatorWithSigningKey(setup.AuditLedger, setup.PolicyEngine, setup.GrantStore, key)
+	key[0] ^= 0xff
+
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-01",
+		Recipient:              "agent-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                map[string]interface{}{},
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-01", "destination": "agent-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: "abv1-10-signing-key-copy", Timestamp: time.Now().UTC()},
+	}
+	contract.PayloadDigest = calculatePayloadDigest(contract.Payload)
+	contract.Signature = validator.SignContract(contract)
+	if !validator.VerifyContractSignature(contract) {
+		t.Fatal("expected validator to retain an immutable copy of the signing key")
+	}
+}
