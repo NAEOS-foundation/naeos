@@ -512,6 +512,44 @@ func TestGatewayPolicyMutationInvalidatesAuthorization(t *testing.T) {
 	}
 }
 
+func TestAuthorizationBindsCapability(t *testing.T) {
+	reg := policy.NewRegistry()
+	if err := reg.Register(&policy.Policy{
+		ID:      "filesystem",
+		Name:    "Filesystem Policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{},
+		Default: policy.DecisionAllow,
+		Active:  true,
+	}); err != nil {
+		t.Fatalf("register policy: %v", err)
+	}
+
+	cp := control.New(reg)
+	issued, err := cp.Evaluate(control.Request{
+		Capability: "filesystem.read",
+		Resource:   "filesystem",
+		Action:     "read",
+	})
+	if err != nil {
+		t.Fatalf("initial authorization failed: %v", err)
+	}
+	if issued.Decision != control.DecisionAllow {
+		t.Fatalf("expected initial read capability to be allowed, got %s", issued.Decision)
+	}
+
+	// Reusing the read authorization for a broader write capability must fail
+	// even when the same policy would independently allow a fresh request.
+	_, err = cp.ValidateDecision(control.Request{
+		Capability: "filesystem.write",
+		Resource:   "filesystem",
+		Action:     "write",
+	}, issued)
+	if err == nil {
+		t.Fatal("expected capability escalation to invalidate the original authorization")
+	}
+}
+
 // Ensure the full integration path with real policy/control works.
 func TestGatewayFullIntegration(t *testing.T) {
 	reg := policy.NewRegistry()
