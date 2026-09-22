@@ -27,6 +27,8 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"TODO obfuscation evades no-todo":               true,
 		"placeholder obfuscation evades no-placeholder": true,
 		"license header keyword spoof":                  true,
+		"fail-open allows unmatched request":           true,
+		"AGENTS.md guidance is advisory, not binding":  true,
 		"disabled rule silently skipped":                true,
 	}
 
