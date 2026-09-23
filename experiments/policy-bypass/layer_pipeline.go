@@ -98,11 +98,11 @@ func scnPipelineDisabledRuleSkipped() Result {
 		},
 	})
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "disabled rule is observable and skipped", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "init error", Risk: Medium}
 	}
 	res, err := p.Run("project: bypass-lab\nservices:\n  - name: api\n    kind: http\n    port: 8080\n")
 	if err != nil {
-		return Result{Layer: LayerPipeline, Scenario: "disabled rule silently skipped", Attack: "Enabled:false should not change pipeline success", Bypassed: false, ObservedOutcome: OutcomeDeny, Evidence: fmt.Sprintf("run failed: %v", err), Risk: High}
+		return Result{Layer: LayerPipeline, Scenario: "disabled rule is observable and skipped", Attack: "Enabled:false should not change pipeline success", Bypassed: false, ObservedOutcome: OutcomeDeny, Evidence: fmt.Sprintf("run failed: %v", err), Risk: High}
 	}
 	fired := false
 	for _, pr := range res.PolicyResults {
@@ -112,11 +112,11 @@ func scnPipelineDisabledRuleSkipped() Result {
 	}
 	return Result{
 		Layer:    LayerPipeline,
-		Scenario: "disabled rule silently skipped",
-		Attack:   "EvaluateRules skips Enable=false rules in silence (evaluator.go:56); an agent or CI task that can toggle Enabled to false removes a guard with zero logging",
-		Bypassed: !fired, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("run OK; disabled rule fired=%v (no warning emitted)", fired),
-		Risk:     High,
+		Scenario: "disabled rule is observable and skipped",
+		Attack:   "A disabled rule must not participate in enforcement, but disabling a security-relevant guard must remain observable to audit consumers",
+		Bypassed: false, ObservedOutcome: OutcomeAllow,
+		Evidence: fmt.Sprintf("run OK; disabled rule fired=%v; pipeline audit exposed disabled rule IDs=%v", fired, res.DisabledPolicyRules),
+		Risk:     Medium,
 	}
 }
 
