@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/lib/site";
+import { SITE } from "@/lib/site";
 
 export function openSearch() {
   window.dispatchEvent(new CustomEvent("open-search"));
@@ -45,7 +46,15 @@ const MAIN_LINKS = [
 
 function label(t: (key: string) => string, seg: string, key: string | null): string {
   if (key) return t(key);
-  return seg === "templates" ? "Templates" : "Schema Registry";
+  const labels: Record<string, string> = {
+    features: "Product",
+    "docs/architecture": "Architecture",
+    "docs/getting-started": "Developers",
+    plugins: "Ecosystem",
+    blog: "Resources",
+    templates: "Templates",
+  };
+  return labels[seg] ?? "Schema Registry";
 }
 
 interface Props {
@@ -88,25 +97,22 @@ export default function Header({ lang }: Props) {
           <span className="logo-text">NAEOS</span>
         </Link>
         <nav className="site-nav" role="navigation" aria-label="Main navigation">
-          <Link href={`${base}/features`} className="nav-link" {...(isActive(`${base}/features`) ? { "aria-current": "page" as const } : {})}>
-            {t("nav_features")}
-          </Link>
+          <Link href={`${base}/features`} className="nav-link" {...(isActive(`${base}/features`) ? { "aria-current": "page" as const } : {})}>Product</Link>
+          <Link href={`${base}/docs/architecture`} className="nav-link" {...(isActive(`${base}/docs/architecture`) ? { "aria-current": "page" as const } : {})}>Architecture</Link>
+          <Link href={`${base}/docs/getting-started`} className="nav-link" {...(isActive(`${base}/docs/getting-started`) ? { "aria-current": "page" as const } : {})}>Developers</Link>
+          <Link href={`${base}/plugins`} className="nav-link" {...(isActive(`${base}/plugins`) ? { "aria-current": "page" as const } : {})}>Ecosystem</Link>
           <div className="nav-dropdown">
-            <Link href={`${base}/docs`} className="nav-link" {...(isActive(`${base}/docs`) ? { "aria-current": "page" as const } : {})}>
-              {t("nav_docs")}
+            <Link href={`${base}/blog`} className="nav-link" {...(isActive(`${base}/blog`) ? { "aria-current": "page" as const } : {})}>
+              Resources
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginLeft: 2, verticalAlign: "middle" }} aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
             </Link>
             <div className="nav-dropdown-content">
-              {DOCS_DROPDOWN.map(([path, key]) => (
-                <Link key={path} href={`${base}/${path}`} className="nav-dropdown-link">{t(key)}</Link>
-              ))}
+              <Link href={`${base}/blog`} className="nav-dropdown-link">Blog</Link>
+              <Link href={`${base}/docs`} className="nav-dropdown-link">{t("nav_docs")}</Link>
+              <Link href={`${base}/investor-deck`} className="nav-dropdown-link">{t("nav_investor_deck")}</Link>
+              <Link href={`${base}/community`} className="nav-dropdown-link">{t("nav_community")}</Link>
             </div>
           </div>
-          {MAIN_LINKS.map(([seg, key]) => (
-            <Link key={seg} href={`${base}/${seg}`} className="nav-link" {...(isActive(`${base}/${seg}`) ? { "aria-current": "page" as const } : {})}>
-              {label(t, seg, key)}
-            </Link>
-          ))}
         </nav>
         <div className="header-actions">
           <button className="search-toggle" onClick={() => openSearch()} aria-label={t("nav_search")}>
@@ -120,6 +126,7 @@ export default function Header({ lang }: Props) {
             <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
             <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
           </div>
+          <a href={SITE.repo} className="nav-link header-github" target="_blank" rel="noopener">GitHub</a>
           <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta" data-umami-event="header-get-started">{t("cta_get_started")}</Link>
           <button
             className="mobile-menu-btn"
@@ -159,8 +166,11 @@ export default function Header({ lang }: Props) {
 }
 
 const MOBILE_LINKS = [
-  ["features", "nav_features", false],
-  ["docs", "nav_docs", false],
-  ...MAIN_LINKS.map(([seg, key]) => [seg, key, false] as const),
+  ["features", null, false],
+  ["docs/architecture", null, false],
+  ["docs/getting-started", null, false],
+  ["plugins", null, false],
+  ["blog", null, false],
+  ["community", "nav_community", false],
 ] as const;
 
