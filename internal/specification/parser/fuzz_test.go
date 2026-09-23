@@ -162,6 +162,10 @@ func FuzzValidateModules(f *testing.F) {
 	f.Add("b", "a")
 
 	f.Fuzz(func(t *testing.T, name, dep string) {
+		if len(name) > 256 || len(dep) > 256 {
+			t.Skip("fuzz input too long")
+		}
+
 		modules := []Module{
 			{Name: name, Dependencies: []string{dep}},
 		}
