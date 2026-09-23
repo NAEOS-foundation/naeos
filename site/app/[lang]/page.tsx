@@ -3,7 +3,6 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import HeroEffects from "@/components/home/HeroEffects";
 import ControlPlaneHero from "@/components/home/ControlPlaneHero";
 import Playground from "@/components/home/Playground";
 import CopyButton from "@/components/home/CopyButton";
@@ -43,10 +42,6 @@ export async function generateMetadata(props: {
   const { lang: raw } = await props.params;
   const lang = (LANGUAGES as readonly string[]).includes(raw) ? (raw as Lang) : DEFAULT_LANG;
   return pageMetadata(getPage("/", lang), lang);
-}
-
-function Html({ children }: { children: string }) {
-  return <span dangerouslySetInnerHTML={{ __html: children }} />;
 }
 
 export default async function HomePage(props: {
