@@ -73,7 +73,7 @@ func TestDisabledPolicyRulesAreAuditable(t *testing.T) {
 		t.Fatalf("pipeline construction failed: %v", err)
 	}
 
-	result, err := p.Run("project: audit-disabled-policy\nmodules:\n  - name: core\n")
+	result, err := p.Run("project: audit-disabled-policy\nmodules:\n  - name: core\n    path: ./core\n")
 	if err != nil {
 		t.Fatalf("pipeline run failed: %v", err)
 	}
