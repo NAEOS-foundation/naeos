@@ -99,7 +99,20 @@ export default function Header({ lang }: Props) {
         <nav className="site-nav" role="navigation" aria-label="Main navigation">
           <Link href={`${base}/features`} className="nav-link" {...(isActive(`${base}/features`) ? { "aria-current": "page" as const } : {})}>Product</Link>
           <Link href={`${base}/docs/architecture`} className="nav-link" {...(isActive(`${base}/docs/architecture`) ? { "aria-current": "page" as const } : {})}>Architecture</Link>
-          <Link href={`${base}/docs/getting-started`} className="nav-link" {...(isActive(`${base}/docs/getting-started`) ? { "aria-current": "page" as const } : {})}>Developers</Link>
+          <div className="nav-dropdown">
+            <Link href={`${base}/docs/getting-started`} className="nav-link" {...(isActive(`${base}/docs`) ? { "aria-current": "page" as const } : {})}>
+              Developers
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginLeft: 2, verticalAlign: "middle" }} aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
+            </Link>
+            <div className="nav-dropdown-content">
+              <Link href={`${base}/docs/getting-started`} className="nav-dropdown-link">{t("footer_getting_started")}</Link>
+              <Link href={`${base}/docs/installation`} className="nav-dropdown-link">{t("footer_installation")}</Link>
+              <Link href={`${base}/docs/architecture`} className="nav-dropdown-link">{t("footer_architecture")}</Link>
+              <Link href={`${base}/docs/cli-reference`} className="nav-dropdown-link">{t("footer_cli_reference")}</Link>
+              <Link href={`${base}/docs/spec-language`} className="nav-dropdown-link">{t("nav_spec_language")}</Link>
+              <Link href={`${base}/docs/ai-compiler`} className="nav-dropdown-link">{t("nav_ai_compiler")}</Link>
+            </div>
+          </div>
           <Link href={`${base}/plugins`} className="nav-link" {...(isActive(`${base}/plugins`) ? { "aria-current": "page" as const } : {})}>Ecosystem</Link>
           <div className="nav-dropdown">
             <Link href={`${base}/blog`} className="nav-link" {...(isActive(`${base}/blog`) ? { "aria-current": "page" as const } : {})}>
