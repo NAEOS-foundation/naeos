@@ -5,7 +5,7 @@ description: Detailed installation instructions for NAEOS on all platforms.
 
 ## Go Install (Recommended)
 
-Requires Go 1.25+:
+Requires Go 1.26.6+:
 
 ```bash
 go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest

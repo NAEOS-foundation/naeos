@@ -6,7 +6,7 @@ description: Petunjuk instalasi terperinci untuk NAEOS di semua platform.
 
 ## Go Install (Direkomendasikan)
 
-Membutuhkan Go 1.25+:
+Membutuhkan Go 1.26.6+:
 
 ```bash
 go install github.com/NAEOS-foundation/naeos/cmd/naeos@latest

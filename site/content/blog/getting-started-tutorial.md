@@ -12,7 +12,7 @@ In this tutorial you'll build a simple microservices project with a Go API gatew
 
 ## Prerequisites
 
-- [Go 1.25+](https://go.dev/dl/)
+- [Go 1.26.6+](https://go.dev/dl/)
 - A terminal
 
 Install NAEOS:

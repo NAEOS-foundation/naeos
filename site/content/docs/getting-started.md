@@ -5,7 +5,7 @@ description: Install NAEOS and run your first pipeline in minutes.
 
 ## Prerequisites
 
-- Go 1.25+ (for `go install` method)
+- Go 1.26.6+ (for `go install` method)
 - A terminal with basic command-line knowledge
 
 ## Installation

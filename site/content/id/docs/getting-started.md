@@ -6,7 +6,7 @@ description: Pasang NAEOS dan jalankan pipeline pertama Anda dalam hitungan meni
 
 ## Prasyarat
 
-- Go 1.25+ (untuk metode `go install`)
+- Go 1.26.6+ (untuk metode `go install`)
 - Terminal dengan pengetahuan dasar command-line
 
 ## Instalasi
