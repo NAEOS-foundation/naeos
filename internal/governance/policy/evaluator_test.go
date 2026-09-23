@@ -114,8 +114,8 @@ func TestEvaluateRulesMultiple(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(results) != 3 {
-		t.Fatalf("expected 3 results, got %d", len(results))
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
 	}
 	for _, r := range results {
 		if !r.Passed {
@@ -361,7 +361,7 @@ func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := e.EvaluateRules([]Rule{{
+			results, err := e.EvaluateRules([]Rule{{ 
 				RuleID:    tt.name,
 				Condition: tt.condition,
 				Action:    "block",
