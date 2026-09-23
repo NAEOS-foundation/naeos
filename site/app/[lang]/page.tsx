@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HeroEffects from "@/components/home/HeroEffects";
+import ControlPlaneHero from "@/components/home/ControlPlaneHero";
 import Playground from "@/components/home/Playground";
 import CopyButton from "@/components/home/CopyButton";
 import { CountUpNumber, GithubStats } from "@/components/home/HomeEffects";
@@ -267,6 +268,8 @@ export default async function HomePage(props: {
           </div>
         </div>
       </section>
+
+      <ControlPlaneHero base={base} lang={lang} />
 
       {/* Announcement */}
       <div className="announcement-bar">
