@@ -133,6 +133,44 @@ func TestEvaluateRulesNilContext(t *testing.T) {
 	}
 }
 
+func TestEvaluateRulesRejectsEmptyCondition(t *testing.T) {
+	e := NewEvaluator()
+	_, err := e.EvaluateRules([]Rule{{RuleID: "empty", Condition: "   ", Action: "block", Enabled: true}}, map[string]any{"key": "value"})
+	if err == nil || !strings.Contains(err.Error(), "empty condition") {
+		t.Fatalf("expected empty condition to fail validation, got %v", err)
+	}
+}
+
+func TestEvaluateExistsRuleRejectsNilAndBlankValues(t *testing.T) {
+	e := NewEvaluator()
+	rule := Rule{RuleID: "exists", Condition: "exists:name", Enabled: true}
+
+	for _, value := range []any{nil, "", "   "} {
+		results, err := e.EvaluateRules([]Rule{rule}, map[string]any{"name": value})
+		if err != nil {
+			t.Fatalf("unexpected evaluator error for %#v: %v", value, err)
+		}
+		if results[0].Passed {
+			t.Fatalf("exists must fail for %#v", value)
+		}
+	}
+}
+
+func TestEvaluateNotEmptyRuleRejectsNilAndWhitespace(t *testing.T) {
+	e := NewEvaluator()
+	rule := Rule{RuleID: "not-empty", Condition: "not_empty:name", Enabled: true}
+
+	for _, value := range []any{nil, "", "   "} {
+		results, err := e.EvaluateRules([]Rule{rule}, map[string]any{"name": value})
+		if err != nil {
+			t.Fatalf("unexpected evaluator error for %#v: %v", value, err)
+		}
+		if results[0].Passed {
+			t.Fatalf("not_empty must fail for %#v", value)
+		}
+	}
+}
+
 func TestEvaluateExistsRule(t *testing.T) {
 	e := NewEvaluator()
 	rules := []Rule{
