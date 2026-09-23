@@ -125,8 +125,10 @@ func scnPipelineDisabledRuleSkipped() Result {
 		Layer:    LayerPipeline,
 		Scenario: "disabled rule is observable and skipped",
 		Attack:   "A disabled rule must not participate in enforcement, but disabling a security-relevant guard must remain observable to audit consumers",
-		Bypassed: false, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("run OK; disabled rule fired=%v; pipeline audit exposed disabled rule IDs=%v", fired, res.DisabledPolicyRules),
+		ExpectedOutcome: OutcomeAllow,
+		Bypassed:        false,
+		ObservedOutcome: OutcomeAllow,
+		Evidence:        fmt.Sprintf("run OK; disabled rule fired=%v; pipeline audit exposed disabled rule IDs=%v", fired, res.DisabledPolicyRules),
 		Risk:     Medium,
 	}
 }
