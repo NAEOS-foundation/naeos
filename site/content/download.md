@@ -60,7 +60,7 @@ description: Install NAEOS and start engineering your next project.
 
 ### Install via Go
 
-Requires Go 1.25+.
+Requires Go 1.26.6+.
 
 <div class="code-block">
     <div class="code-block-header"><span>bash</span><button class="copy-btn" aria-label="Copy code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button></div>
