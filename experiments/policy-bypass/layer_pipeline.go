@@ -125,6 +125,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 		Layer:           LayerPipeline,
 		Scenario:        "disabled rule is observable and skipped",
 		Attack:          "A disabled rule must not participate in enforcement, but disabling a security-relevant guard must remain observable to audit consumers",
+		// ALLOW is intentional: the disabled rule is excluded from enforcement but must remain auditable.
 		ExpectedOutcome: OutcomeAllow,
 		Bypassed:        false,
 		ObservedOutcome: OutcomeAllow,
