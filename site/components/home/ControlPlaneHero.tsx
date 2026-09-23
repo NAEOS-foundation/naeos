@@ -13,32 +13,41 @@ const labels = {
     eyebrow: "OPEN-SOURCE ENGINEERING CONTROL PLANE",
     title: "Control how AI builds software.",
     subtitle:
-      "NAEOS turns engineering intent into a governed, traceable execution pipeline — from specification to AI agents, artifacts, and evidence.",
+      "NAEOS turns engineering intent into a governed, traceable execution system — from specification and NEIR to policy, agents, execution, and evidence.",
     primary: "Explore the control plane",
     secondary: "Get started",
-    caption: "Intent → Model → Policy → Agent → Execution → Evidence",
-    problem: "AI can generate code. The engineering system still needs control.",
-    problemBody:
-      "Keep your AI coding tools. Add a deterministic layer for specification, policy, context, execution, and auditability.",
-    stages: ["Specification", "NEIR", "Policy", "AI Context", "Agent", "Execution", "Evidence"],
+    caption: "Specification → NEIR → Policy → AI Context → Agent → Execution → Evidence",
+    stages: [
+      ["Specification", "human intent"],
+      ["Policy", "constraints"],
+      ["AI Context", "bounded context"],
+      ["Agent", "execution"],
+      ["Execution", "verified change"],
+      ["Evidence", "audit trail"],
+    ],
   },
   id: {
     eyebrow: "OPEN-SOURCE ENGINEERING CONTROL PLANE",
     title: "Kendalikan bagaimana AI membangun software.",
     subtitle:
-      "NAEOS mengubah intent engineering menjadi pipeline eksekusi yang teratur dan dapat dilacak — dari spesifikasi hingga agent AI, artifact, dan evidence.",
+      "NAEOS mengubah intent engineering menjadi sistem eksekusi yang teratur dan dapat dilacak — dari specification dan NEIR hingga policy, agent, execution, dan evidence.",
     primary: "Lihat control plane",
     secondary: "Mulai sekarang",
-    caption: "Intent → Model → Policy → Agent → Execution → Evidence",
-    problem: "AI dapat menghasilkan kode. Sistem engineering tetap membutuhkan kontrol.",
-    problemBody:
-      "Tetap gunakan AI coding tools Anda. Tambahkan lapisan deterministik untuk specification, policy, context, execution, dan auditability.",
-    stages: ["Specification", "NEIR", "Policy", "AI Context", "Agent", "Execution", "Evidence"],
+    caption: "Specification → NEIR → Policy → AI Context → Agent → Execution → Evidence",
+    stages: [
+      ["Specification", "human intent"],
+      ["Policy", "constraints"],
+      ["AI Context", "bounded context"],
+      ["Agent", "execution"],
+      ["Execution", "verified change"],
+      ["Evidence", "audit trail"],
+    ],
   },
 } as const;
 
 export default function ControlPlaneHero({ base, lang }: Props) {
   const copy = labels[lang];
+
   return (
     <section className="control-plane-hero" aria-labelledby="control-plane-title">
       <div className="control-plane-grid" aria-hidden="true" />
@@ -48,7 +57,7 @@ export default function ControlPlaneHero({ base, lang }: Props) {
             <span className="control-plane-status" />
             {copy.eyebrow}
           </div>
-          <h2 id="control-plane-title">{copy.title}</h2>
+          <h1 id="control-plane-title">{copy.title}</h1>
           <p className="control-plane-subtitle">{copy.subtitle}</p>
           <div className="control-plane-actions">
             <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg">
@@ -68,31 +77,48 @@ export default function ControlPlaneHero({ base, lang }: Props) {
               <code>naeos / control-plane</code>
               <b>TRACEABLE</b>
             </div>
-            <div className="control-plane-flow">
-              {copy.stages.map((stage, index) => (
-                <div className="control-plane-node-wrap" key={stage}>
-                  <div className={`control-plane-node ${index === 1 ? "is-core" : ""}`}>
-                    <span className="control-plane-index">{String(index + 1).padStart(2, "0")}</span>
-                    <strong>{stage}</strong>
-                    <small>{index === 0 ? "human intent" : index === 1 ? "canonical model" : index === 2 ? "decision" : index === 6 ? "audit trail" : "execution layer"}</small>
-                  </div>
-                  {index < copy.stages.length - 1 && <span className="control-plane-connector" aria-hidden="true">→</span>}
+
+            <div className="control-plane-graph">
+              <div className="control-plane-inputs">
+                <div className="control-plane-node control-plane-node-input">
+                  <span className="control-plane-index">01</span>
+                  <strong>{copy.stages[0][0]}</strong>
+                  <small>{copy.stages[0][1]}</small>
                 </div>
-              ))}
+              </div>
+
+              <div className="control-plane-core">
+                <span className="control-plane-core-label">CANONICAL ENGINEERING MODEL</span>
+                <div className="control-plane-neir">
+                  <span className="control-plane-neir-mark">NEIR</span>
+                  <strong>Normalized Engineering Intermediate Representation</strong>
+                  <small>One machine-readable model connects intent, constraints, context, execution, and evidence.</small>
+                </div>
+                <div className="control-plane-policy">
+                  <span>POLICY</span>
+                  <i>validated</i>
+                </div>
+              </div>
+
+              <div className="control-plane-outputs">
+                {copy.stages.slice(1).map(([stage, detail], index) => (
+                  <div className="control-plane-node-wrap" key={stage}>
+                    <span className="control-plane-connector" aria-hidden="true">→</span>
+                    <div className="control-plane-node">
+                      <span className="control-plane-index">{String(index + 2).padStart(2, "0")}</span>
+                      <strong>{stage}</strong>
+                      <small>{detail}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
             <div className="control-plane-evidence">
               <span className="evidence-dot" />
-              <span>{copy.problem}</span>
+              <span>Specification-linked trace across policy decisions, agent actions, execution results, and artifacts.</span>
               <em>evidence</em>
             </div>
-          </div>
-        </div>
-
-        <div className="control-plane-problem">
-          <div className="control-plane-problem-mark">01</div>
-          <div>
-            <h3>{copy.problem}</h3>
-            <p>{copy.problemBody}</p>
           </div>
         </div>
       </div>
