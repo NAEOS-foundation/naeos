@@ -83,6 +83,7 @@ export default function Footer({ lang, tagline }: FooterProps) {
               <a href={`${SITE.repo}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noopener">{t("footer_contribute")}</a>
               <a href={`${SITE.repo}/discussions`} target="_blank" rel="noopener">{t("footer_discussions")}</a>
               <a href={`${SITE.repo}/issues`} target="_blank" rel="noopener">{t("footer_issues")}</a>
+              <a href={SITE.slack} target="_blank" rel="noopener">Slack Community</a>
               <a href={`${base}/blog/index.xml`}>{t("footer_rss")}</a>
             </div>
           </div>
