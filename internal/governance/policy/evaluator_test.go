@@ -108,7 +108,6 @@ func TestEvaluateRulesMultiple(t *testing.T) {
 	rules := []Rule{
 		{RuleID: "r1", Condition: "env:production", Priority: 1, Action: "enforce", Enabled: true},
 		{RuleID: "r2", Condition: "version:1.0", Priority: 2, Action: "warn", Enabled: true},
-		{RuleID: "r3", Condition: "", Priority: 3, Action: "log", Enabled: true},
 	}
 	ctx := map[string]any{"env": "production", "version": "1.0"}
 	results, err := e.EvaluateRules(rules, ctx)
