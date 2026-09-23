@@ -223,6 +223,27 @@ A good first contribution usually starts by picking one problem you can actually
 
 ## 10. Contribution workflow
 
+The repository now has a curated set of concrete contributor starting points. Pick one based on the kind of work you want to do:
+
+- [#209 — Improve policy evaluator edge-case coverage](https://github.com/NAEOS-foundation/naeos/issues/209) — focused tests for NaN/Inf, empty conditions, nil, and whitespace behavior.
+- [#210 — Add audit evidence for disabled policy rules](https://github.com/NAEOS-foundation/naeos/issues/210) — make disabled policy rules observable instead of silently bypassed.
+- [#211 — Document the NAEOS contribution workflow](https://github.com/NAEOS-foundation/naeos/issues/211) — improve the path from repository orientation to a first Issue/PR.
+- [#212 — Strengthen experiment evidence format](https://github.com/NAEOS-foundation/naeos/issues/212) — establish a consistent, independently inspectable evidence structure.
+- [#213 — Review plugin registry contributor path](https://github.com/NAEOS-foundation/naeos/issues/213) — verify the smallest end-to-end plugin contribution path.
+
+These are intentionally scoped so a new contributor can inspect the relevant code or documentation before writing a large change. If none fits, use the issue templates to propose a concrete problem or documentation gap.
+
+The simplest accurate contribution flow is:
+
+1. Clone the repository and read [CONTRIBUTING.md](CONTRIBUTING.md).
+2. Pick a concrete issue, question, or documentation gap.
+3. Make a small change with a clear explanation.
+4. Run the relevant tests or validation commands.
+5. Open a pull request and explain what changed and why.
+
+This repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The intent here is to make the first step feel approachable.
+
+
 The simplest accurate contribution flow is:
 
 1. Clone the repository and read [CONTRIBUTING.md](CONTRIBUTING.md).
