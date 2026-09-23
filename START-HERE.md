@@ -41,6 +41,8 @@ go build -o naeos ./cmd/naeos
 ./examples/demo-cli/run-demo.sh
 ```
 
+The formal [NAEOS Golden Path](docs/GOLDEN-PATH.md) defines the acceptance criteria and evidence map for this same flow.
+
 What to expect:
 - the specification is validated
 - NEIR is materialized and inspected
@@ -111,6 +113,7 @@ Start with:
 Use:
 
 - [GETTING-STARTED.md](GETTING-STARTED.md)
+- [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md)
 - [examples/demo-cli/README.md](examples/demo-cli/README.md)
 - [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
 
@@ -246,7 +249,7 @@ This repository already defines the engineering workflow in [CONTRIBUTING.md](CO
 | I want to... | Read... |
 |---|---|
 | Understand the project | [README.md](README.md), [GETTING-STARTED.md](GETTING-STARTED.md), [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) |
-| Run the CLI | [GETTING-STARTED.md](GETTING-STARTED.md), [examples/demo-cli/README.md](examples/demo-cli/README.md), [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md) |
+| Run the CLI | [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md), [GETTING-STARTED.md](GETTING-STARTED.md), [examples/demo-cli/README.md](examples/demo-cli/README.md), [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md) |
 | Understand the architecture | [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md), [docs/NES-023-NEIR.md](docs/NES-023-NEIR.md), [docs/NES-026-Pipeline.md](docs/NES-026-Pipeline.md) |
 | Understand governance | [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md), [governance/NAEOS-GOV-001.md](governance/NAEOS-GOV-001.md) |
 | Understand policy | [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) |
