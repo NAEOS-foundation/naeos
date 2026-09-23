@@ -110,6 +110,17 @@ func scnPipelineDisabledRuleSkipped() Result {
 			fired = true
 		}
 	}
+	if len(res.DisabledPolicyRules) != 1 || res.DisabledPolicyRules[0] != "block-nonprod" {
+		return Result{
+			Layer:           LayerPipeline,
+			Scenario:        "disabled rule is observable and skipped",
+			Attack:          "disabled policy metadata must remain observable to audit consumers",
+			Bypassed:        true,
+			ObservedOutcome: OutcomeAllow,
+			Evidence:        fmt.Sprintf("run OK but disabled rule audit metadata was missing or incorrect: %v", res.DisabledPolicyRules),
+			Risk:            High,
+		}
+	}
 	return Result{
 		Layer:    LayerPipeline,
 		Scenario: "disabled rule is observable and skipped",
