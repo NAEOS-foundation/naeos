@@ -106,6 +106,8 @@ The demo exercises the specification-first pipeline and produces traceable run m
 
 **Reference Demo & Evidence Story:** [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md) turns the same run into an independent reviewer checklist, traceability narrative, and partner-pilot evidence format.
 
+**External Validation:** [docs/EXTERNAL-VALIDATION.md](docs/EXTERNAL-VALIDATION.md) provides a reproducible third-party runbook and evaluation record.
+
 For the Todo API demonstration:
 
 ```bash
