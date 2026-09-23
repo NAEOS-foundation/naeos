@@ -361,7 +361,7 @@ func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := e.EvaluateRules([]Rule{{ 
+			results, err := e.EvaluateRules([]Rule{{
 				RuleID:    tt.name,
 				Condition: tt.condition,
 				Action:    "block",
