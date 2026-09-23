@@ -121,6 +121,7 @@ func scnPipelineDisabledRuleSkipped() Result {
 			Risk:            High,
 		}
 	}
+	// This scenario intentionally expects ALLOW because disabled rules are non-enforcing but auditable.
 	return Result{
 		Layer:    LayerPipeline,
 		Scenario: "disabled rule is observable and skipped",
