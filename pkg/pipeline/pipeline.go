@@ -157,7 +157,7 @@ type Result struct {
 	PolicyResults        []policy.EvaluationResult
 	GovernanceMode       string
 	GovernanceStatus     string
-	EffectivePolicyCount  int
+	EffectivePolicyCount int
 	DisabledPolicyRules  []string
 	PolicyContextVersion string
 	PolicyContextDigest  string
