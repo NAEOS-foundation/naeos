@@ -157,7 +157,8 @@ type Result struct {
 	PolicyResults        []policy.EvaluationResult
 	GovernanceMode       string
 	GovernanceStatus     string
-	EffectivePolicyCount int
+	EffectivePolicyCount  int
+	DisabledPolicyRules  []string
 	PolicyContextVersion string
 	PolicyContextDigest  string
 }
@@ -885,10 +886,25 @@ func (p *Pipeline) fetchSchema() (map[string]any, error) {
 
 func (p *Pipeline) runPolicyEval(result *Result) error {
 	result.EffectivePolicyCount = 0
+	result.DisabledPolicyRules = nil
 	result.PolicyContextDigest = policyDecisionDigest("pending", 0, "", nil)
 	for _, rule := range p.policies {
 		if rule.Enabled {
 			result.EffectivePolicyCount++
+			continue
+		}
+		if rule.RuleID != "" {
+			result.DisabledPolicyRules = append(result.DisabledPolicyRules, rule.RuleID)
+		}
+	}
+	if len(result.DisabledPolicyRules) > 0 {
+		if err := p.emitKernelEvent("governance.policy_disabled", map[string]any{
+			"count":     len(result.DisabledPolicyRules),
+			"rule_ids":  append([]string(nil), result.DisabledPolicyRules...),
+			"status":    "observed",
+			"run_scope": "policy_evaluation",
+		}); err != nil {
+			return fmt.Errorf("record disabled policy observation: %w", err)
 		}
 	}
 
