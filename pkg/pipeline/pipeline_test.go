@@ -61,6 +61,34 @@ func (stubParser) Parse(input string) (*parser.SpecDocument, error) {
 	return &parser.SpecDocument{Raw: "injected:" + input}, nil
 }
 
+func TestDisabledPolicyRulesAreAuditable(t *testing.T) {
+	p, err := New(Config{
+		Name: "audit-disabled-policy",
+		Policies: []policy.Rule{
+			{RuleID: "disabled-guard", Condition: "exists:project", Action: "block", Enabled: false},
+			{RuleID: "active-guard", Condition: "exists:project", Action: "block", Enabled: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("pipeline construction failed: %v", err)
+	}
+
+	result, err := p.Run("project: audit-disabled-policy\nmodules:\n  - name: core\n")
+	if err != nil {
+		t.Fatalf("pipeline run failed: %v", err)
+	}
+
+	if result.EffectivePolicyCount != 1 {
+		t.Fatalf("expected one effective policy, got %d", result.EffectivePolicyCount)
+	}
+	if len(result.DisabledPolicyRules) != 1 || result.DisabledPolicyRules[0] != "disabled-guard" {
+		t.Fatalf("expected disabled rule to remain auditable, got %#v", result.DisabledPolicyRules)
+	}
+	if len(result.PolicyResults) != 1 || result.PolicyResults[0].RuleID != "active-guard" {
+		t.Fatalf("disabled rule must not participate in evaluation results: %#v", result.PolicyResults)
+	}
+}
+
 func TestPipelineRunProducesResult(t *testing.T) {
 	p, err := New(Config{})
 	if err != nil {
