@@ -104,7 +104,7 @@ func (p *MyPlugin) Execute(action string, params map[string]any) (any, error) {
 
 ### Prerequisites
 
-- Go 1.25+ (for native plugins)
+- Go 1.26.6+ (for native plugins)
 - TinyGo 0.35+ (for WASM plugins)
 - NAEOS CLI installed
 
