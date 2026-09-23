@@ -268,6 +268,23 @@ NAEOS is built in the open. Contributions are welcome across the engineering sta
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), then start with [START-HERE.md](START-HERE.md).
 
+## Slack + GitHub community
+
+NAEOS uses Slack for real-time engineering coordination and GitHub as the durable engineering source of truth.
+
+- [NAEOS Slack Community](https://naeos.slack.com) — real-time engineering discussion
+- [GitHub repository](https://github.com/NAEOS-foundation/naeos) — source code, issues, pull requests, and evidence
+
+For workspace administrators, install the official [GitHub integration for Slack](https://slack.com/apps/A01BP7R4KNY-github), then subscribe the relevant channels to repository activity. The integration supports GitHub notifications, issue and pull-request collaboration, rich link previews, and GitHub actions from Slack. See [GitHub's Slack integration documentation](https://docs.github.com/en/integrations/how-tos/slack).
+
+Recommended operating model:
+
+```text
+Slack coordinates → GitHub records → CI verifies → Evidence closes the loop
+```
+
+For public community acquisition, use the workspace's Slack shared-invite URL rather than the workspace home URL. Keep that invite URL configurable in the website deployment so it can be rotated without changing repository code.
+
 ## Community and partnerships
 
 - [GitHub Discussions](https://github.com/NAEOS-foundation/naeos/discussions) — technical discussion and ideas
