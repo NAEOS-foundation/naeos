@@ -102,6 +102,8 @@ go build -o naeos ./cmd/naeos
 
 The demo exercises the specification-first pipeline and produces traceable run metadata.
 
+**Golden Path:** [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md) defines the reproducible five-minute flow, acceptance criteria, and evidence map used for technical evaluation and regression testing.
+
 For the Todo API demonstration:
 
 ```bash
