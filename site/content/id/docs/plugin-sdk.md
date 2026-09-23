@@ -46,7 +46,7 @@ type MyPlugin struct {
 
 ### Prasyarat
 
-- Go 1.25+ (untuk plugin native)
+- Go 1.26.6+ (untuk plugin native)
 - TinyGo 0.35+ (untuk plugin WASM)
 
 ### Plugin Native (Go)
