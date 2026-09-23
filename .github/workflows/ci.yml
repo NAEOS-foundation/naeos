@@ -10,11 +10,6 @@ on:
       - '.github/workflows/website.yml'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - 'site/**'
-      - 'docs/**'
-      - '**.md'
-      - '.github/workflows/website.yml'
   workflow_dispatch:
 
 permissions:
