@@ -44,7 +44,7 @@ Three things happened after we committed to this thesis:
 
 ## Where We Are Now
 
-The current repository state is **v3.4.0** and includes:
+The current repository state is **v3.6.0** and includes:
 
 - **5 languages** — Go, TypeScript, Python, Java, Rust — from one specification
 - **7 AI platforms** — instruction sets compiled from the NEIR model
