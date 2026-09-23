@@ -43,12 +43,14 @@ go build -o naeos ./cmd/naeos
 
 The formal [NAEOS Golden Path](docs/GOLDEN-PATH.md) defines the acceptance criteria and evidence map for this same flow.
 
+For an external technical evaluation, use the [Reference Demo & Evidence Story](docs/REFERENCE-DEMO.md). It turns the same run into an independent reviewer checklist and traceability narrative.
+
 What to expect:
 - the specification is validated
 - NEIR is materialized and inspected
 - policy evaluation is exercised, including deterministic rejection of invalid configuration
 - an AI context bundle is generated
-- a valid run produces generated artifacts in [examples/demo-cli/.run](examples/demo-cli/.run)
+- a valid run produces generated artifacts
 - run metadata records traceability (`run_id`, `specification_hash`, `neir_hash`)
 
 This is the best first check because it demonstrates the real NAEOS control-plane workflow without requiring the full architecture first.
@@ -114,6 +116,7 @@ Use:
 
 - [GETTING-STARTED.md](GETTING-STARTED.md)
 - [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md)
+- [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md)
 - [examples/demo-cli/README.md](examples/demo-cli/README.md)
 - [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
 
@@ -249,7 +252,7 @@ This repository already defines the engineering workflow in [CONTRIBUTING.md](CO
 | I want to... | Read... |
 |---|---|
 | Understand the project | [README.md](README.md), [GETTING-STARTED.md](GETTING-STARTED.md), [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) |
-| Run the CLI | [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md), [GETTING-STARTED.md](GETTING-STARTED.md), [examples/demo-cli/README.md](examples/demo-cli/README.md), [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md) |
+| Run the CLI | [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md), [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md), [GETTING-STARTED.md](GETTING-STARTED.md), [examples/demo-cli/README.md](examples/demo-cli/README.md), [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md) |
 | Understand the architecture | [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md), [docs/NES-023-NEIR.md](docs/NES-023-NEIR.md), [docs/NES-026-Pipeline.md](docs/NES-026-Pipeline.md) |
 | Understand governance | [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md), [governance/NAEOS-GOV-001.md](governance/NAEOS-GOV-001.md) |
 | Understand policy | [policy/NAEOS-POL-001.md](policy/NAEOS-POL-001.md) |
