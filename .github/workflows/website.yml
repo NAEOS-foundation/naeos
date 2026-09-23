@@ -76,7 +76,8 @@ jobs:
             echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
           fi
       - name: Deploy to Cloudflare Workers
-        if: github.ref == 'refs/heads/main'
+        # Production deploys run only from the protected main branch.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
