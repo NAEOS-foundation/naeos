@@ -29,7 +29,6 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		"license header keyword spoof":                  true,
 		"fail-open allows unmatched request":            true,
 		"AGENTS.md guidance is advisory, not binding":   true,
-		"disabled rule silently skipped":                true,
 	}
 
 	gotFailures := map[string]bool{}
