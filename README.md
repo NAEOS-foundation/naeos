@@ -9,8 +9,8 @@
 <p>
   <a href="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml"><img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="https://img.shields.io/badge/go-1.26.6+-00ADD8"><img src="https://img.shields.io/badge/go-1.26.6+-00ADD8?logo=go&logoColor=white" alt="Go 1.26.6+"></a>
-  <a href="https://github.com/NAEOS-foundation/naeos/releases"><img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
+  <a href="https://img.shields.io/github/v/release/NAEOS-foundation/naeos"><img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release"></a>
+  <a href="https://github.com/NAEOS-foundation/naeos/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
 </p>
 
 NAEOS is an open-source engineering framework for building production software with AI coding agents. It provides the engineering layer between **what a team intends**, **what an agent proposes**, **what is authorized to execute**, and **what can be independently verified afterward**.
@@ -103,6 +103,8 @@ go build -o naeos ./cmd/naeos
 The demo exercises the specification-first pipeline and produces traceable run metadata.
 
 **Golden Path:** [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md) defines the reproducible five-minute flow, acceptance criteria, and evidence map used for technical evaluation and regression testing.
+
+**Reference Demo & Evidence Story:** [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md) turns the same run into an independent reviewer checklist, traceability narrative, and partner-pilot evidence format.
 
 For the Todo API demonstration:
 
