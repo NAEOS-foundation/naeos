@@ -44,7 +44,7 @@ Tiga hal terjadi setelah kami berkomitmen pada tesis ini:
 
 ## Di Mana Kami Sekarang
 
-Status repositori saat ini adalah **v3.4.0** dan mencakup:
+Status repositori saat ini adalah **v3.6.0** dan mencakup:
 
 - **5 bahasa** — Go, TypeScript, Python, Java, Rust — dari satu spesifikasi
 - **7 platform AI** — set instruksi yang dikompilasi dari model NEIR
