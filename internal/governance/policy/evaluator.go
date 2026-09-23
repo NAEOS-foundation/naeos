@@ -57,6 +57,9 @@ func (DefaultEvaluator) EvaluateRules(rules []Rule, ctx map[string]any) ([]Evalu
 		if !rule.Enabled {
 			continue
 		}
+		if strings.TrimSpace(rule.Condition) == "" {
+			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("rule %q has empty condition", rule.RuleID))
+		}
 		result := evaluateRule(rule, ctx)
 		results = append(results, result)
 	}
@@ -91,16 +94,16 @@ func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
 
 			switch op {
 			case "exists":
-				if _, exists := ctx[args]; !exists {
+				if actual, exists := ctx[args]; !exists || actual == nil || strings.TrimSpace(fmt.Sprintf("%v", actual)) == "" {
 					passed = false
-					message = fmt.Sprintf("key %s not found in context", args)
+					message = fmt.Sprintf("key %s is absent from context", args)
 				} else {
 					message = fmt.Sprintf("key %s exists in context", args)
 				}
 			case "not_empty":
 				if actual, exists := ctx[args]; exists {
 					actualStr := fmt.Sprintf("%v", actual)
-					if actualStr == "" {
+					if actual == nil || strings.TrimSpace(actualStr) == "" {
 						passed = false
 						message = fmt.Sprintf("key %s is empty", args)
 					} else {
