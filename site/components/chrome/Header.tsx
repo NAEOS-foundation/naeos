@@ -46,7 +46,15 @@ const MAIN_LINKS = [
 
 function label(t: (key: string) => string, seg: string, key: string | null): string {
   if (key) return t(key);
-  return seg === "templates" ? "Templates" : "Schema Registry";
+  const labels: Record<string, string> = {
+    features: "Product",
+    "docs/architecture": "Architecture",
+    "docs/getting-started": "Developers",
+    plugins: "Ecosystem",
+    blog: "Resources",
+    templates: "Templates",
+  };
+  return labels[seg] ?? "Schema Registry";
 }
 
 interface Props {
