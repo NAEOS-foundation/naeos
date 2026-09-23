@@ -27,36 +27,6 @@ export function toggleTheme() {
   window.setTimeout(() => document.body.classList.remove("theme-transitioning"), 400);
 }
 
-const DOCS_DROPDOWN = [
-  ["docs/getting-started", "footer_getting_started"],
-  ["docs/installation", "footer_installation"],
-  ["docs/architecture", "footer_architecture"],
-  ["docs/cli-reference", "footer_cli_reference"],
-  ["docs/spec-language", "nav_spec_language"],
-  ["docs/ai-compiler", "nav_ai_compiler"],
-] as const;
-
-const MAIN_LINKS = [
-  ["blog", "nav_blog"],
-  ["plugins", "nav_plugins"],
-  ["investor-deck", "nav_investor_deck"],
-  ["launch-announcement", "nav_launch_announcement"],
-  ["community", "nav_community"],
-] as const;
-
-function label(t: (key: string) => string, seg: string, key: string | null): string {
-  if (key) return t(key);
-  const labels: Record<string, string> = {
-    features: "Product",
-    "docs/architecture": "Architecture",
-    "docs/getting-started": "Developers",
-    plugins: "Ecosystem",
-    blog: "Resources",
-    templates: "Templates",
-  };
-  return labels[seg] ?? "Schema Registry";
-}
-
 interface Props {
   lang: Lang;
 }
