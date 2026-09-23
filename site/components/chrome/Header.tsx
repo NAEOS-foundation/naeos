@@ -27,6 +27,19 @@ export function toggleTheme() {
   window.setTimeout(() => document.body.classList.remove("theme-transitioning"), 400);
 }
 
+function label(t: (key: string) => string, seg: string, key: string | null): string {
+  if (key) return t(key);
+  const labels: Record<string, string> = {
+    features: "Product",
+    "docs/architecture": "Architecture",
+    "docs/getting-started": "Developers",
+    plugins: "Ecosystem",
+    blog: "Resources",
+    templates: "Templates",
+  };
+  return labels[seg] ?? "Schema Registry";
+}
+
 interface Props {
   lang: Lang;
 }
