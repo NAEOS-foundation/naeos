@@ -198,6 +198,9 @@ export default async function HomePage(props: {
             <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-github">
               {t("cta_view_on_github")}
             </a>
+            <a href={SITE.slack} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-slack-community">
+              {lang === "id" ? "Gabung Komunitas Slack" : "Join Slack Community"}
+            </a>
           </div>
 
           <div className="hero-visual">

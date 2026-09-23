@@ -25,6 +25,7 @@ export const SITE = {
   twitter: "https://twitter.com/naeos_dev",
   twitterHandle: "@naeos_dev",
   discord: "https://discord.com/invite/WnUWmm7XMv",
+  slack: "https://join.slack.com/t/naeos/shared_invite/zt-4audirbp0-piCfWuubxo8wDh_XGpkxAQ",
   stats: { cli: 200, languages: 5, ai_platforms: 7, specs: 57 },
   websocketUrl: "wss://ws.naeos.dev/ws",
   umamiWebsiteId: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "",
