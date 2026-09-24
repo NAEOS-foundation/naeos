@@ -52,7 +52,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_naeos_message_outbox_idempotency
 	WHERE idempotency_key <> '';
 `
 	if _, err := s.db.ExecContext(ctx, query); err != nil {
-		return nil, fmt.Errorf("messagequeue: migrate outbox: %w", err)
+		return fmt.Errorf("messagequeue: migrate outbox: %w", err)
 	}
 	return nil
 }
