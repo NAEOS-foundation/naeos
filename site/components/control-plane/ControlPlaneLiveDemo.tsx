@@ -4,6 +4,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import styles from "./ControlPlaneLiveDemo.module.css";
 
 type DecisionResponse = {
   status?: string;
@@ -78,8 +79,8 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   }
 
   return (
-    <div className="control-plane-live">
-      <div className="control-plane-live-header">
+    <div className={styles.controlPlaneLive}>
+      <div className={styles.liveHeader}>
         <div>
           <div className="eyebrow">LIVE POLICY EVALUATION</div>
           <h3>{id ? "Uji decision dari Control Plane yang sebenarnya." : "Evaluate against the real Control Plane."}</h3>
@@ -89,17 +90,17 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
               : "This demo evaluates an authorization request only. No side effect is executed."}
           </p>
         </div>
-        <span className={endpoint ? "live-status connected" : "live-status"}>
-          {endpoint ? (id ? "ENDPOINT READY" : "ENDPOINT READY") : (id ? "BELUM TERHUBUNG" : "NOT CONNECTED")}
+        <span className={endpoint ? `${styles.liveStatus} ${styles.connected}` : styles.liveStatus}>
+          {endpoint ? "ENDPOINT READY" : (id ? "BELUM TERHUBUNG" : "NOT CONNECTED")}
         </span>
       </div>
 
       <label>
-        <span>{id ? "Control Plane endpoint" : "Control Plane endpoint"}</span>
+        <span>Control Plane endpoint</span>
         <input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} placeholder="http://localhost:8080" />
       </label>
 
-      <div className="control-plane-live-fields">
+      <div className={styles.fields}>
         <label>
           <span>Agent</span>
           <input value={agentId} onChange={(event) => setAgentId(event.target.value)} />
@@ -115,16 +116,16 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
       </div>
 
       <button type="button" className="btn btn-primary btn-lg" onClick={evaluate} disabled={loading}>
-        {loading ? (id ? "Mengevaluasi…" : "Evaluating…") : (id ? "Evaluate Request" : "Evaluate Request")}
+        {loading ? (id ? "Mengevaluasi…" : "Evaluating…") : "Evaluate Request"}
       </button>
 
-      {error && <div className="control-plane-live-error" role="alert">{error}</div>}
+      {error && <div className={styles.error} role="alert">{error}</div>}
 
       {result && (
-        <div className="control-plane-live-result" aria-live="polite">
+        <div className={styles.result} aria-live="polite">
           <div>
             <span className="decision-label">DECISION</span>
-            <strong className={result.status === "ALLOW" ? "decision-allow" : "decision-deny"}>{result.status ?? "UNKNOWN"}</strong>
+            <strong className={result.status === "ALLOW" ? styles.decisionAllow : styles.decisionDeny}>{result.status ?? "UNKNOWN"}</strong>
           </div>
           <dl>
             <div><dt>decision_id</dt><dd>{result.decision_id || "—"}</dd></div>
@@ -135,7 +136,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
         </div>
       )}
 
-      <small className="control-plane-live-endpoint">
+      <small className={styles.endpoint}>
         {id ? "Endpoint aktif: " : "Active endpoint: "}{endpointLabel}
       </small>
     </div>
