@@ -1,0 +1,94 @@
+name: External Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'examples/demo-cli/**'
+      - 'cmd/naeos/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/external-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  first-external-validation:
+    name: First External Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Record evaluation environment
+        run: |
+          set -euo pipefail
+          echo "commit_sha=$(git rev-parse HEAD)" | tee validation-environment.txt
+          echo "go_version=$(go version)" | tee -a validation-environment.txt
+          echo "start_time_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a validation-environment.txt
+      - name: Build CLI
+        run: go build -o naeos ./cmd/naeos
+      - name: Run canonical Golden Path
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/naeos-demo
+          NAEOS_BIN="$PWD/naeos" NAEOS_DEMO_OUTPUT_DIR=/tmp/naeos-demo ./examples/demo-cli/run-demo.sh
+      - name: Verify and record evidence
+        run: |
+          set -euo pipefail
+          test -f /tmp/naeos-demo/spec.yaml
+          test -f /tmp/naeos-demo/inspect.json
+          test -f /tmp/naeos-demo/validate.json
+          test -f /tmp/naeos-demo/invalid-policy.log
+          grep -q 'policy evaluation failed' /tmp/naeos-demo/invalid-policy.log
+          test -f /tmp/naeos-demo/context.md
+          test -f /tmp/naeos-demo/context.json
+          test -f /tmp/naeos-demo/run.json
+          test -f /tmp/naeos-demo/generated/README.md
+          test -f /tmp/naeos-demo/generated/go.mod
+          test -f /tmp/naeos-demo/generated/package.json
+          test -f /tmp/naeos-demo/summary.md
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/naeos-demo/run.json')
+          data=json.loads(p.read_text())
+          required=['run_id','specification_hash','neir_hash','validation','policy','context','audit','stages']
+          missing=[k for k in required if k not in data]
+          if missing: raise SystemExit(f'missing required run metadata: {missing}')
+          if not all(data.get(k) for k in ('run_id','specification_hash','neir_hash')):
+              raise SystemExit('traceability anchors must be non-empty')
+          Path('/tmp/naeos-demo/external-validation-record.txt').write_text(
+              '\n'.join([
+                  'NAEOS External Validation',
+                  f'commit_sha={__import__("subprocess").check_output(["git","rev-parse","HEAD"], text=True).strip()}',
+                  f'go_version={__import__("subprocess").check_output(["go","version"], text=True).strip()}',
+                  f'run_id={data["run_id"]}',
+                  f'specification_hash={data["specification_hash"]}',
+                  f'neir_hash={data["neir_hash"]}',
+                  f'generated_artifact_count={len(list((Path("/tmp/naeos-demo/generated")).rglob("*")))}',
+                  'invalid_policy_rejection=observed',
+                  'result=REPRODUCED',
+                  'deviations=None',
+              ]) + '\n'
+          )
+          print(Path('/tmp/naeos-demo/external-validation-record.txt').read_text())
+          print('Evidence files:')
+          for p in sorted(Path('/tmp/naeos-demo').rglob('*')):
+              if p.is_file(): print(p)
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: naeos-external-validation-evidence
+          path: /tmp/naeos-demo
+          if-no-files-found: error
+          retention-days: 30
