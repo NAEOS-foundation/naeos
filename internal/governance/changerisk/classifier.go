@@ -51,16 +51,16 @@ type Request struct {
 }
 
 type Result struct {
-	SchemaVersion    string        `json:"schema_version"`
-	ChangeSurface    ChangeSurface `json:"change_surface"`
-	Criticality      Criticality   `json:"criticality"`
+	SchemaVersion    string         `json:"schema_version"`
+	ChangeSurface    ChangeSurface  `json:"change_surface"`
+	Criticality      Criticality    `json:"criticality"`
 	Risk             Risk           `json:"risk"`
-	Domains          []Domain      `json:"domains"`
-	ChangedFiles     int           `json:"changed_files"`
-	Additions        int           `json:"additions"`
-	Deletions        int           `json:"deletions"`
-	RequiredGates    []string      `json:"required_gates"`
-	EvidenceRequired bool          `json:"evidence_required"`
+	Domains          []Domain       `json:"domains"`
+	ChangedFiles     int            `json:"changed_files"`
+	Additions        int            `json:"additions"`
+	Deletions        int            `json:"deletions"`
+	RequiredGates    []string       `json:"required_gates"`
+	EvidenceRequired bool           `json:"evidence_required"`
 	Decision         Decision       `json:"decision"`
 }
 
