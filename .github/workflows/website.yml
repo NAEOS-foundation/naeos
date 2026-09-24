@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe502e
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: '22'
       - name: Install dependencies
@@ -68,7 +68,8 @@ jobs:
             ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           fi
           if [ -n "$ID" ]; then
-            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]'               < wrangler.jsonc > wrangler.jsonc.tmp
+            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]' \
+              < wrangler.jsonc > wrangler.jsonc.tmp
             mv wrangler.jsonc.tmp wrangler.jsonc
             echo "Newsletter KV namespace bound: $ID"
           else
