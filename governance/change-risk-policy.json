@@ -1,0 +1,32 @@
+{
+  "policy_id": "change-risk-governance",
+  "policy_version": "1.0.0",
+  "schema_version": "1.0.0",
+  "purpose": "Classify repository changes by change surface, architectural criticality, and verification evidence before merge.",
+  "principle": "change surface x architectural criticality x verification evidence",
+  "critical_domains": ["policy", "security", "audit_evidence", "runtime", "deployment_ci", "architecture", "verification"],
+  "risk_matrix": [
+    {"criticality": "low", "risk": "low", "required_gates": ["ci"], "decision": "allow"},
+    {"criticality": "medium", "risk": "medium", "required_gates": ["ci", "governance"], "decision": "allow"},
+    {"criticality": "high", "risk": "high", "required_gates": ["ci", "governance", "human_review", "security"], "decision": "require_review"},
+    {"criticality": "critical", "risk": "critical", "required_gates": ["benchmark", "ci", "governance", "human_review", "security"], "decision": "require_review"},
+    {"criticality": "unknown", "risk": "unknown", "required_gates": ["ci", "governance", "human_review", "security"], "decision": "deny"}
+  ],
+  "change_surface_rules": {
+    "docs_only": "low",
+    "tests_only": "low",
+    "configuration_only": "medium",
+    "code_only": "medium",
+    "mixed": "medium"
+  },
+  "size_overrides": [
+    {"total_changed_lines_gte": 500, "minimum_criticality": "high"},
+    {"total_changed_lines_gte": 1000, "minimum_criticality": "critical"}
+  ],
+  "overrides": [
+    {"condition": "change touches a critical architectural domain", "minimum_criticality": "high"},
+    {"condition": "required verification evidence is unavailable", "decision": "deny"},
+    {"condition": "change impact cannot be classified", "decision": "deny"}
+  ],
+  "governance_flow": ["change_proposal", "risk_classification", "verification", "human_review_if_required", "merge", "post_merge_verification"]
+}
