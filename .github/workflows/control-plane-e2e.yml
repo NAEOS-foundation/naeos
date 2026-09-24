@@ -30,14 +30,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Build NAEOS control-plane demo
+        run: go build -o /tmp/naeos-demo ./cmd/naeos
+
       - name: Start NAEOS control-plane demo
         run: |
-          go run ./cmd/naeos demo --addr :9091 > /tmp/naeos-demo.log 2>&1 &
+          /tmp/naeos-demo demo --addr :9091 > /tmp/naeos-demo.log 2>&1 &
           echo $! > /tmp/naeos-demo.pid
 
       - name: Wait for health endpoint
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:9091/api/health >/tmp/health.json; then
               cat /tmp/health.json
               exit 0
