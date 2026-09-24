@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE_SHA="${BASE_SHA:-${GITHUB_BASE_SHA:-${GITHUB_EVENT_BEFORE:-}}}"
 HEAD_SHA="${HEAD_SHA:-HEAD}"
-OUTPUT="${NAEOS_CHANGE_RISK_OUTPUT:-${ROOT}/change-risk-evidence.json}"
+OUTPUT="${NAEOS_CHANGE_RISK_OUTPUT:-change-risk-evidence.json}"
 
 cd "${ROOT}"
 
