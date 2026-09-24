@@ -133,7 +133,7 @@
   "home_use_case_serverless_desc": "Describe event sources and function chains. Generate deployable Python and TypeScript handlers with IAM policies, event mappings, and framework configuration included.",
   "home_use_case_ai_title": "AI-Native Development",
   "home_use_case_ai_desc": "Compile your architecture into AI instruction sets. Your coding assistants start with full context — module structure, dependencies, API contracts — without copying READMEs into every prompt.",
-  "home_ai_platforms_badge": "6 AI Platforms",
+  "home_ai_platforms_badge": "7 AI Platforms",
   "home_use_case_governance_title": "Enterprise Governance",
   "home_use_case_governance_desc": "Prevent architecture drift across teams. RBAC, audit trails, and a policy engine with 7 operators catch violations during generation — not after deployment.",
   "home_governance_badge": "Governance",

@@ -132,7 +132,7 @@
   "home_use_case_serverless_desc": "Jelaskan sumber event dan rantai fungsi. Hasilkan handler Python dan TypeScript yang siap deploy dengan kebijakan IAM, pemetaan event, dan konfigurasi framework.",
   "home_use_case_ai_title": "Pengembangan AI-Native",
   "home_use_case_ai_desc": "Kompilasi arsitektur Anda menjadi set instruksi AI. Asisten pemrograman Anda mulai dengan konteks penuh — struktur modul, dependensi, kontrak API — tanpa menyalin README ke setiap prompt.",
-  "home_ai_platforms_badge": "6 Platform AI",
+  "home_ai_platforms_badge": "7 Platform AI",
   "home_use_case_governance_title": "Tata Kelola Enterprise",
   "home_use_case_governance_desc": "Cegah penyimpangan arsitektur di seluruh tim. RBAC, jejak audit, dan mesin kebijakan dengan 7 operator mendeteksi pelanggaran saat generasi — bukan setelah deployment.",
   "home_governance_badge": "Tata Kelola",
