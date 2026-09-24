@@ -1,0 +1,15 @@
+{
+  "record_version":"1.0.0",
+  "record_id":"pdr-example-001",
+  "policy_id":"change-risk-governance",
+  "policy_version":"1.0.0",
+  "schema_version":"1.0.0",
+  "decision_id":"change-risk-example-001",
+  "run_id":"run-example-001",
+  "change_classification":{"risk":"medium","criticality":"medium","decision":"allow"},
+  "required_gates":["ci","governance"],
+  "evidence":[{"evidence_id":"ev-example-001","digest":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","kind":"governance"}],
+  "outcome":"allow",
+  "verification":{"status":"passed","evidence_digest":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+  "created_at":"2026-09-25T00:00:00Z"
+}
