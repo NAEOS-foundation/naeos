@@ -150,7 +150,7 @@
   "home_playground_languages": "Languages",
   "home_playground_project": "Project",
   "home_playground_generation": "Generation",
-  "home_playground_unnamed": "unnamed",
+  "home_playground_unnamed": "(unnamed)",
   "home_playground_invalid_yaml": "Invalid YAML",
   "home_proof_title": "Built in the open",
   "home_proof_desc": "Explore the repository evidence behind the NAEOS workflow.",
@@ -218,9 +218,6 @@
   "home_supported_subtitle": "5 languages + 7 AI platforms — one unified engineering system.",
   "home_supported_languages_heading": "Languages",
   "home_supported_ai_heading": "AI Platforms",
-  "home_playground_project": "Project",
-  "home_playground_generation": "Generation",
-  "home_playground_unnamed": "(unnamed)",
   "home_playground_not_specified": "not specified",
   "home_playground_ai_bundle": "AI Context Bundle",
   "home_playground_system_overview": "System Overview",
@@ -242,5 +239,6 @@
   "home_playground_ai_ctx": "AI Context",
   "home_playground_copied": "Copied!",
   "home_playground_copy": "Copy",
-  "copy_copied": "Copied!"
+  "copy_copied": "Copied!",
+  "nav_control_plane": "Control Plane"
 }
