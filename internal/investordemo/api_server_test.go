@@ -52,12 +52,70 @@ func TestAPIHealth(t *testing.T) {
 
 func TestAPIOptionsPreflight(t *testing.T) {
 	as, _ := newTestAPI(t)
-	rec := doJSON(t, as, http.MethodOptions, "/api/health", "")
+	req := httptest.NewRequest(http.MethodOptions, "/api/health", nil)
+	req.Header.Set("Origin", "https://naeos.dev")
+	rec := httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200 for OPTIONS, got %d", rec.Code)
 	}
-	if rec.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Errorf("expected CORS allow origin *")
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://naeos.dev" {
+		t.Errorf("expected CORS allow origin https://naeos.dev, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+}
+}
+
+
+
+func TestAPIControlPlaneSecurity(t *testing.T) {
+	as, _ := newTestAPI(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden origin, got %d", rec.Code)
+	}
+
+	as.security.token = "test-token"
+	req = httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://naeos.dev")
+	rec = httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected unauthorized without bearer token, got %d", rec.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://naeos.dev")
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec = httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected authorized request to pass, got %d", rec.Code)
+	}
+
+	as.security.token = ""
+	as.security.limit = 1
+	as.security.window = time.Hour
+	first := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+	if first.Code != http.StatusOK {
+		t.Fatalf("expected first request to pass, got %d", first.Code)
+	}
+	second := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+	if second.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected rate limit 429, got %d", second.Code)
 	}
 }
 
