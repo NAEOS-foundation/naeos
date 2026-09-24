@@ -77,8 +77,8 @@ export default async function HomePage(
             }}
           >
             {id
-              ? "NAEOS memberi engineering team control plane untuk workflow AI yang tervalidasi, governed, executable, dan dapat dibuktikan."
-              : "NAEOS gives engineering teams a control plane for validated, governed, executable and provable AI workflows."}
+              ? "NAEOS adalah control plane engineering open-source untuk software development berbasis AI — menghubungkan intent, specification, policy, agent, execution, dan evidence yang dapat diverifikasi."
+              : "NAEOS is an open-source engineering control plane for AI-native software development — connecting intent, specifications, policy, agents, execution, and verifiable evidence."}
           </p>
           <div
             style={{
@@ -220,6 +220,35 @@ export default async function HomePage(
                   : "NAEOS sits between the engineering system and AI agents, adding structure and boundaries at every stage."}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="problem-grid">
+            <div className="problem-card">
+              <span className="problem-tag problem-tag-green">{id ? "Bukti" : "Proof"}</span>
+              <h2 style={{ marginTop: ".75rem" }}>
+                {id ? "Authorization dipisahkan dari execution." : "Authorization is separated from execution."}
+              </h2>
+              <p>
+                {id
+                  ? "Aksi production dapat diusulkan agent, dievaluasi policy, diblok sebelum side effect, lalu dihubungkan ke evidence."
+                  : "A production action can be proposed by an agent, evaluated by policy, blocked before side effect, and linked to evidence."}
+              </p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-tag">{id ? "Contoh" : "Example"}</span>
+              <pre style={{ marginTop: "1rem", overflowX: "auto" }}>
+                <code>{"request: agent.prod.delete_database\npolicy: production-safety/v2\ndecision: DENY\nexecution: blocked\nevidence: decision_id → receipt"}</code>
+              </pre>
+            </div>
+          </div>
+          <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+            <Link href={base + "/control-plane"} className="btn btn-secondary">
+              {id ? "Buka live demo control plane" : "Open the live control-plane demo"}
+            </Link>
           </div>
         </div>
       </section>
