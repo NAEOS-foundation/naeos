@@ -1,8 +1,6 @@
 name: Status Data
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -109,9 +107,8 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit status data
+      - name: Report generated status data
         if: steps.changes.outputs.changed == 'true'
-        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d
-        with:
-          commit_message: "status: refresh live status metrics"
-          file_pattern: site/data/status.json
+        run: |
+          echo "Status data changed, but main is protected. Live telemetry migration is tracked in #239."
+          git diff -- site/data/status.json
