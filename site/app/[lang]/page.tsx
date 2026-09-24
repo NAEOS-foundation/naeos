@@ -188,18 +188,19 @@ export default async function HomePage(props: {
           </div>
           <h1 className="hero-title"><Html>{t("hero_title")}</Html></h1>
           <p className="hero-subtitle">{t("hero_subtitle")}</p>
+          <div className="hero-positioning">
+            <span className="hero-positioning-line">{t("hero_positioning_line1")}</span>
+            <span className="hero-positioning-line">{t("hero_positioning_line2")}</span>
+          </div>
           <div className="hero-actions">
             <Link href={`${base}/docs/getting-started`} className="btn btn-primary btn-lg" data-umami-event="hero-get-started">
               {t("cta_get_started")}
             </Link>
-            <Link href={`${base}/investor-deck`} className="btn btn-secondary btn-lg" data-umami-event="hero-investor-deck">
-              {t("cta_investor_deck")}
+            <Link href={`${base}/docs/architecture`} className="btn btn-secondary btn-lg" data-umami-event="hero-architecture">
+              {t("cta_architecture")}
             </Link>
             <a href={SITE.repo} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-github">
               {t("cta_view_on_github")}
-            </a>
-            <a href={SITE.slack} className="btn btn-secondary btn-lg" target="_blank" rel="noopener" data-umami-event="hero-slack-community">
-              {lang === "id" ? "Gabung Komunitas Slack" : "Join Slack Community"}
             </a>
           </div>
 
