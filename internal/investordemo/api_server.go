@@ -28,8 +28,8 @@ type APIServer struct {
 // NewAPIServer creates a new API server for the demo.
 func NewAPIServer(setup *DemoSetup) *APIServer {
 	server := &APIServer{
-		setup:    setup,
-		mux:      http.NewServeMux(),
+		setup: setup,
+		mux:   http.NewServeMux(),
 		security: newControlPlaneSecurity(
 			os.Getenv("NAEOS_CONTROLPLANE_ALLOWED_ORIGINS"),
 			os.Getenv("NAEOS_CONTROLPLANE_API_TOKEN"),
