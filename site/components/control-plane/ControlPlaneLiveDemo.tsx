@@ -25,8 +25,8 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   const id = lang === "id";
   const configuredEndpoint = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ?? "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
-  const [agentId, setAgentId] = useState("agent-demo");
-  const [capability, setCapability] = useState("database.delete");
+  const [agentId, setAgentId] = useState("agent-payment-01");
+  const [capability, setCapability] = useState("production.deploy");
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
   const [result, setResult] = useState<DecisionResponse | null>(null);
   const [error, setError] = useState("");
