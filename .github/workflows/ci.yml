@@ -212,6 +212,32 @@ jobs:
           name: change-risk-evidence
           path: change-risk-evidence.json
 
+  pdr-validation:
+    name: Policy Decision Record Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate PDR fixture
+        run: bash scripts/validate-policy-decision-record.sh governance/examples/policy-decision-record.json
+      - name: Verify fail-closed missing evidence
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence = []' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted missing evidence" >&2
+            exit 1
+          fi
+      - name: Verify fail-closed malformed digest
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence[0].digest = "invalid"' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted malformed evidence digest" >&2
+            exit 1
+          fi
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -229,6 +255,7 @@ jobs:
       - fuzz
       - dependency-risk-gate
       - change-risk-gate
+      - pdr-validation
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -246,9 +273,10 @@ jobs:
           FUZZ: ${{ needs.fuzz.result }}
           DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
           CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
+          PDR: ${{ needs['pdr-validation'].result }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK"; do
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
