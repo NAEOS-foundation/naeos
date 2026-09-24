@@ -1616,3 +1616,44 @@ pre:hover .copy-hover-btn, .copy-hover-btn:focus-visible { opacity: 1; }
 [data-theme="light"] .problem-tag-red { background: rgba(255,68,68,0.08); }
 [data-theme="light"] .section-pipeline { background: var(--color-bg-elevated); }
 [data-theme="light"] .cta-band { border-color: var(--color-border); }
+
+
+/* Phase 2 — Control Plane experience */
+.control-plane-page { max-width: 1180px; margin: 0 auto; padding: 4rem 1.5rem 7rem; }
+.control-plane-hero { text-align: center; padding: 4rem 0 5rem; }
+.control-plane-hero h1 { font-size: clamp(2.8rem, 7vw, 5.5rem); line-height: 1.02; letter-spacing: -0.04em; margin: 1rem auto 1.5rem; max-width: 950px; }
+.control-plane-hero p { max-width: 760px; margin: 0 auto 2rem; color: var(--color-text-muted); font-size: var(--font-size-lg); line-height: 1.75; }
+.control-plane-actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.control-plane-flow, .control-plane-demo, .control-plane-principles { padding: 5rem 0; border-top: 1px solid var(--color-border); }
+.control-plane-page .section-heading { text-align: center; margin-bottom: 2.5rem; }
+.control-plane-page .section-heading h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin: .75rem 0; }
+.control-plane-page .section-heading p { color: var(--color-text-muted); }
+.control-plane-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .75rem; }
+.control-plane-step { position: relative; min-height: 210px; padding: 1.25rem; border: 1px solid var(--color-border); background: var(--color-bg-surface); border-radius: var(--radius-sm); }
+.control-plane-step-id { font-family: var(--font-mono); color: var(--color-accent); font-size: .75rem; }
+.control-plane-step h3 { margin: 2.5rem 0 .6rem; font-size: 1rem; }
+.control-plane-step p { color: var(--color-text-muted); font-size: .85rem; line-height: 1.6; }
+.control-plane-arrow { position: absolute; right: -.7rem; top: 50%; z-index: 2; color: var(--color-accent); background: var(--color-bg); padding: .1rem .25rem; }
+.control-plane-demo-grid { display: grid; grid-template-columns: 1fr .7fr 1fr; gap: 1rem; align-items: stretch; }
+.control-plane-terminal, .control-plane-decision { border: 1px solid var(--color-border); background: var(--color-bg-elevated); border-radius: var(--radius-sm); padding: 1.25rem; }
+.terminal-label, .decision-label { display: block; font: 500 .72rem var(--font-mono); letter-spacing: .12em; color: var(--color-text-dim); margin-bottom: 1rem; }
+.control-plane-terminal code { font: 500 .85rem var(--font-mono); color: var(--color-accent); }
+.control-plane-terminal pre { margin-top: 1rem; overflow-x: auto; font: .78rem/1.7 var(--font-mono); color: var(--color-text-muted); }
+.control-plane-decision { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.control-plane-decision strong { font: 700 2.4rem var(--font-mono); letter-spacing: .08em; }
+.control-plane-decision p { color: var(--color-text-muted); font-size: .85rem; line-height: 1.6; }
+.control-plane-principles { display: grid; grid-template-columns: .8fr 1.2fr; gap: 4rem; }
+.principle-list { display: grid; gap: .75rem; }
+.principle-list div { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--color-border); }
+.principle-list strong { font: 500 .75rem var(--font-mono); color: var(--color-accent); }
+.principle-list span { color: var(--color-text-muted); line-height: 1.6; }
+@media (max-width: 900px) {
+  .control-plane-grid { grid-template-columns: repeat(2, 1fr); }
+  .control-plane-arrow { display: none; }
+  .control-plane-demo-grid, .control-plane-principles { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .control-plane-page { padding-inline: 1rem; }
+  .control-plane-grid { grid-template-columns: 1fr; }
+  .control-plane-hero { padding-top: 2rem; }
+}
