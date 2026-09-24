@@ -6,7 +6,9 @@ package investordemo
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -18,8 +20,9 @@ import (
 // ============================================================================
 
 type APIServer struct {
-	setup *DemoSetup
-	mux   *http.ServeMux
+	setup    *DemoSetup
+	mux      *http.ServeMux
+	security *controlPlaneSecurity
 }
 
 // NewAPIServer creates a new API server for the demo.
@@ -27,6 +30,10 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server := &APIServer{
 		setup: setup,
 		mux:   http.NewServeMux(),
+		security: newControlPlaneSecurity(
+			os.Getenv("NAEOS_CONTROLPLANE_ALLOWED_ORIGINS"),
+			os.Getenv("NAEOS_CONTROLPLANE_API_TOKEN"),
+		),
 	}
 
 	// Register endpoints
@@ -54,13 +61,34 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 
 // ServeHTTP implements the http.Handler interface.
 func (as *APIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	origin := r.Header.Get("Origin")
+	corsOrigin := as.security.corsOrigin(origin)
+	if origin != "" && corsOrigin == "" {
+		http.Error(w, "origin not allowed", http.StatusForbidden)
+		return
+	}
+	if corsOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+		w.Header().Set("Vary", "Origin")
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if r.Method == http.MethodOptions {
+		if r.URL.Path == "/api/control-plane/decision" && !as.security.authorize(r) {
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(w, "authentication required", http.StatusUnauthorized)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		return
+	}
+
+	if r.URL.Path == "/api/control-plane/decision" && r.Method == http.MethodPost {
+		if !as.security.protectDecision(w, r) {
+			return
+		}
 	}
 
 	as.mux.ServeHTTP(w, r)
@@ -239,15 +267,20 @@ func (as *APIServer) handleControlPlaneDecision(w http.ResponseWriter, r *http.R
 	var req struct {
 		AgentID      string `json:"agent_id"`
 		Capability   string `json:"capability"`
-		PolicyID     string `json:"policy_id,omitempty"`
 		ArtifactHash string `json:"artifact_hash,omitempty"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 8<<10))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
 		return
 	}
 	if req.AgentID == "" || req.Capability == "" {
 		http.Error(w, "agent_id and capability are required", http.StatusBadRequest)
+		return
+	}
+	if len(req.AgentID) > 128 || len(req.Capability) > 256 || len(req.ArtifactHash) > 256 {
+		http.Error(w, "request field exceeds maximum length", http.StatusBadRequest)
 		return
 	}
 
@@ -261,10 +294,7 @@ func (as *APIServer) handleControlPlaneDecision(w http.ResponseWriter, r *http.R
 		})
 		return
 	}
-	policyID := req.PolicyID
-	if policyID == "" {
-		policyID = grant.PolicyID
-	}
+	policyID := grant.PolicyID
 	policy, err := as.setup.PolicyStore.GetPolicy(policyID)
 	if err != nil {
 		writeJSON(w, map[string]interface{}{
@@ -290,16 +320,17 @@ func (as *APIServer) handleControlPlaneDecision(w http.ResponseWriter, r *http.R
 	})
 
 	writeJSON(w, map[string]interface{}{
-		"status":         string(decision.Status),
-		"decision_id":    decision.DecisionID,
-		"request_id":     decision.RequestID,
-		"allowed":        decision.Status == controlplane.DecisionAllow,
-		"needs_approval": decision.Status == controlplane.DecisionPending,
-		"reason":         string(decision.Reason),
-		"message":        decision.Message,
-		"policy_id":      decision.PolicyID,
-		"policy_version": decision.PolicyVersion,
-		"requested":      string(decision.Requested),
+		"status":            string(decision.Status),
+		"decision_id":       decision.DecisionID,
+		"request_id":        decision.RequestID,
+		"allowed":           decision.Status == controlplane.DecisionAllow,
+		"needs_approval":    decision.Status == controlplane.DecisionPending,
+		"reason":            string(decision.Reason),
+		"message":           decision.Message,
+		"policy_id":         decision.PolicyID,
+		"policy_version":    decision.PolicyVersion,
+		"requested":         string(decision.Requested),
+		"evidence_endpoint": "/api/control-plane/evidence?decision_id=" + decision.DecisionID,
 	})
 }
 
