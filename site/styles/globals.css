@@ -450,6 +450,31 @@ h4 { font-size: var(--font-size-base); }
 .hero-title .accent { color: var(--color-accent); }
 .hero-subtitle { font-size: var(--font-size-lg); color: var(--color-text-muted); max-width: 600px; margin: 0 auto 2rem; line-height: 1.7; }
 .hero-actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.hero-positioning {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.25rem auto 0;
+  max-width: 760px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-dim);
+}
+.hero-positioning-line {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+.hero-positioning-line::before {
+  content: "→";
+  color: var(--color-accent);
+  margin-right: 0.45rem;
+}
+
 .hero-terminal {
   margin: 3rem auto 0; max-width: 560px;
   background: var(--color-bg-elevated); border: 1px solid var(--color-border);
