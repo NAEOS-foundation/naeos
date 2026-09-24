@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 )
@@ -52,6 +54,10 @@ func run() error {
 	if requestPath == "" {
 		return errors.New("NAEOS_DEPENDENCY_RISK_REQUEST is required for dependency changes")
 	}
+	requestPath, err = safeRelativePath(requestPath)
+	if err != nil {
+		return fmt.Errorf("invalid request path: %w", err)
+	}
 	requestBytes, err := os.ReadFile(requestPath)
 	if err != nil {
 		return fmt.Errorf("read request: %w", err)
@@ -81,12 +87,16 @@ func run() error {
 	if out == "" {
 		out = "dependency-risk-evidence.json"
 	}
+	out, err = safeRelativePath(out)
+	if err != nil {
+		return fmt.Errorf("invalid output path: %w", err)
+	}
 	data, err := json.MarshalIndent(evidence, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode evidence: %w", err)
 	}
 	data = append(data, '\n')
-	if err := os.WriteFile(out, data, 0o644); err != nil {
+	if err := os.WriteFile(out, data, 0o600); err != nil {
 		return fmt.Errorf("write evidence: %w", err)
 	}
 	fmt.Printf("dependency risk: decision=%s risk=%s criticality=%s output=%s\n", result.Decision, result.Risk, result.Criticality, out)
@@ -94,4 +104,12 @@ func run() error {
 		return errors.New("dependency risk policy denied the change")
 	}
 	return nil
+}
+
+func safeRelativePath(value string) (string, error) {
+	clean := filepath.Clean(value)
+	if clean == "." || filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return "", errors.New("path must be relative and remain within the workspace")
+	}
+	return clean, nil
 }
