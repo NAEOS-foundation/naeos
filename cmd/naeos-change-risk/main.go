@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"context"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -125,7 +126,7 @@ func verifyCommit(ref string) error {
 }
 
 func gitOutput(args ...string) (string, error) {
-	cmd := exec.Command("git", args...) //nolint:gosec // refs are validated with git rev-parse before use
+	cmd := exec.CommandContext(context.Background(), "git", args...) //nolint:gosec // refs are validated with git rev-parse before use
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(output)))
