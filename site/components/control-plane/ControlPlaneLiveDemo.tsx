@@ -17,6 +17,7 @@ type DecisionResponse = {
   policy_id?: string;
   policy_version?: number;
   requested?: string;
+  evidence_endpoint?: string;
 };
 
 type Props = { lang: "en" | "id" };
@@ -132,6 +133,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
             <div><dt>policy</dt><dd>{result.policy_id ? `${result.policy_id} v${result.policy_version ?? "?"}` : "—"}</dd></div>
             <div><dt>reason</dt><dd>{result.reason || "—"}</dd></div>
             <div><dt>execution</dt><dd>{result.status === "ALLOW" ? "not executed" : "blocked"}</dd></div>
+            {result.evidence_endpoint && <div><dt>evidence</dt><dd><a href={endpoint.replace(/\/$/, "") + result.evidence_endpoint} target="_blank" rel="noreferrer">view ledger evidence</a></dd></div>}
           </dl>
         </div>
       )}
