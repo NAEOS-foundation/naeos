@@ -11,39 +11,59 @@ updates:
       - go
     commit-message:
       prefix: "deps"
+    groups:
+      go-patch-minor:
+        update-types:
+          - patch
+          - minor
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels:
       - dependencies
       - ci
     commit-message:
       prefix: "ci"
+    groups:
+      actions-patch-minor:
+        update-types:
+          - patch
+          - minor
 
   - package-ecosystem: npm
     directory: /site
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels:
       - dependencies
       - site
     commit-message:
       prefix: "deps(site)"
+    groups:
+      site-patch-minor:
+        update-types:
+          - patch
+          - minor
 
   - package-ecosystem: npm
     directory: /infra/ws-worker
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels:
       - dependencies
       - infra
     commit-message:
       prefix: "deps(worker)"
+    groups:
+      worker-patch-minor:
+        update-types:
+          - patch
+          - minor
