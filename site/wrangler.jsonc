@@ -23,5 +23,7 @@
       "service": "naeos"
     }
   ],
-  "kv_namespaces": []
+  "kv_namespaces": [],
+  "previews": {}
 }
+
