@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naeos.dev/schemas/policy-decision-record.schema.json",
+  "title": "NAEOS Policy Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_version","record_id","policy_id","policy_version","schema_version","decision_id","outcome","evidence"],
+  "properties": {
+    "record_version": {"type":"string","const":"1.0.0"},
+    "record_id": {"type":"string","minLength":1},
+    "policy_id": {"type":"string","minLength":1},
+    "policy_version": {"type":"string","minLength":1},
+    "schema_version": {"type":"string","minLength":1},
+    "decision_id": {"type":"string","minLength":1},
+    "run_id": {"type":"string"},
+    "change_classification": {
+      "type":"object",
+      "additionalProperties": false,
+      "required":["risk","criticality","decision"],
+      "properties":{
+        "risk":{"enum":["low","medium","high","critical","unknown"]},
+        "criticality":{"enum":["low","medium","high","critical","unknown"]},
+        "decision":{"enum":["allow","require_review","deny"]}
+      }
+    },
+    "required_gates":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "evidence":{
+      "type":"array","minItems":1,
+      "items":{
+        "type":"object","additionalProperties":false,
+        "required":["evidence_id","digest"],
+        "properties":{
+          "evidence_id":{"type":"string","minLength":1},
+          "digest":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+          "kind":{"type":"string"}
+        }
+      }
+    },
+    "outcome":{"enum":["allow","require_review","deny","verified"]},
+    "verification":{"type":"object","additionalProperties":false,"properties":{
+      "status":{"enum":["pending","passed","failed"]},
+      "evidence_digest":{"type":"string","pattern":"^[a-f0-9]{64}$"}
+    }},
+    "created_at":{"type":"string","format":"date-time"}
+  }
+}
