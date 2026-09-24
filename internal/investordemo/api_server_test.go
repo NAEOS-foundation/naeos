@@ -61,10 +61,8 @@ func TestAPIOptionsPreflight(t *testing.T) {
 	}
 	if rec.Header().Get("Access-Control-Allow-Origin") != "https://naeos.dev" {
 		t.Errorf("expected CORS allow origin https://naeos.dev, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
 }
-}
-
-
 
 func TestAPIControlPlaneSecurity(t *testing.T) {
 	as, _ := newTestAPI(t)
