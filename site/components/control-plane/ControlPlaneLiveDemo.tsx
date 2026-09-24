@@ -42,8 +42,8 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     if (!endpoint.trim()) {
       setError(
         id
-          ? "Konfigurasikan endpoint Control Plane terlebih dahulu. Untuk development, gunakan server demo NAEOS di http://localhost:8080."
-          : "Configure the Control Plane endpoint first. For development, use the NAEOS demo server at http://localhost:8080.",
+          ? "Konfigurasikan endpoint Control Plane terlebih dahulu. Untuk development, gunakan server demo NAEOS di http://localhost:9091."
+          : "Configure the Control Plane endpoint first. For development, use the NAEOS demo server at http://localhost:9091.",
       );
       setLoading(false);
       return;
@@ -97,7 +97,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
 
       <label>
         <span>Control Plane endpoint</span>
-        <input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} placeholder="http://localhost:8080" />
+        <input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} placeholder="http://localhost:9091" />
       </label>
 
       <div className={styles.fields}>
