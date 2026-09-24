@@ -12,7 +12,6 @@ const (
  Major VersionChange = "major"
  Unknown VersionChange = "unknown"
 )
-
 type Criticality string
 const (
  Low Criticality = "low"
@@ -20,7 +19,6 @@ const (
  High Criticality = "high"
  Critical Criticality = "critical"
 )
-
 type Risk string
 type Decision string
 const (
@@ -28,7 +26,6 @@ const (
  RequireReview Decision = "require_review"
  Deny Decision = "deny"
 )
-
 type Domain string
 const (
  Policy Domain = "policy"
@@ -39,7 +36,6 @@ const (
  General Domain = "general"
  UnknownDomain Domain = "unknown"
 )
-
 type Request struct {
  Ecosystem string
  Name string
@@ -47,7 +43,6 @@ type Request struct {
  Paths []string
  EvidenceAvailable bool
 }
-
 type Result struct {
  SchemaVersion string
  Dependency Request
@@ -65,7 +60,6 @@ func Classify(req Request) Result {
  criticality := criticalityFor(req, domains)
  gates, decision := gatesFor(criticality)
  risk := Risk(criticality)
-
  if !req.EvidenceAvailable || req.VersionChange == Unknown || criticality == Criticality("unknown") {
   decision = Deny
   risk = Risk("unknown")
@@ -79,18 +73,12 @@ func DomainsForPaths(paths []string) []Domain {
  seen := map[Domain]bool{}
  for _, p := range paths {
   switch {
-  case hasPrefix(p, ".github/"), hasPrefix(p, "scripts/"):
-   seen[DeploymentCI] = true
-  case hasPrefix(p, "internal/governance/"), hasPrefix(p, "governance/"), hasPrefix(p, "constitution/"):
-   seen[Policy] = true
-  case hasPrefix(p, "internal/security/"), hasPrefix(p, "security/"):
-   seen[Security] = true
-  case hasPrefix(p, "internal/audit/"), hasPrefix(p, "audit/"):
-   seen[AuditEvidence] = true
-  case hasPrefix(p, "runtime/"), hasPrefix(p, "internal/runtime/"), hasPrefix(p, "internal/agent/"):
-   seen[Runtime] = true
-  default:
-   seen[General] = true
+  case hasPrefix(p, ".github/"), hasPrefix(p, "scripts/"): seen[DeploymentCI] = true
+  case hasPrefix(p, "internal/governance/"), hasPrefix(p, "governance/"), hasPrefix(p, "constitution/"): seen[Policy] = true
+  case hasPrefix(p, "internal/security/"), hasPrefix(p, "security/"): seen[Security] = true
+  case hasPrefix(p, "internal/audit/"), hasPrefix(p, "audit/"): seen[AuditEvidence] = true
+  case hasPrefix(p, "runtime/"), hasPrefix(p, "internal/runtime/"), hasPrefix(p, "internal/agent/"): seen[Runtime] = true
+  default: seen[General] = true
   }
  }
  if len(seen) == 0 { return []Domain{UnknownDomain} }
@@ -103,6 +91,7 @@ func DomainsForPaths(paths []string) []Domain {
 func criticalityFor(req Request, domains []Domain) Criticality {
  if req.VersionChange == Unknown { return Criticality("unknown") }
  for _, d := range domains {
+  if d == UnknownDomain { return Criticality("unknown") }
   if d == Policy || d == Security || d == AuditEvidence || d == Runtime || d == DeploymentCI { return High }
  }
  switch req.VersionChange {
@@ -112,7 +101,6 @@ func criticalityFor(req Request, domains []Domain) Criticality {
  default: return Criticality("unknown")
  }
 }
-
 func gatesFor(c Criticality) ([]string, Decision) {
  switch c {
  case Low: return []string{"ci"}, Allow
@@ -122,7 +110,6 @@ func gatesFor(c Criticality) ([]string, Decision) {
  default: return []string{"ci", "governance", "human_review", "security"}, Deny
  }
 }
-
 func hasPrefix(v, prefix string) bool { return len(v) >= len(prefix) && v[:len(prefix)] == prefix }
 func contains(values []string, target string) bool {
  for _, v := range values { if v == target { return true } }
