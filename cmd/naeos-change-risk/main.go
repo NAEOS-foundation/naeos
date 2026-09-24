@@ -24,11 +24,11 @@ type policyFile struct {
 }
 
 type evidenceFile struct {
-	PolicyID      string                `json:"policy_id"`
-	PolicyVersion string                `json:"policy_version"`
-	BaseSHA       string                `json:"base_sha"`
-	HeadSHA       string                `json:"head_sha"`
-	Result        changerisk.Result     `json:"result"`
+	PolicyID      string   `json:"policy_id"`
+	PolicyVersion string   `json:"policy_version"`
+	BaseSHA       string   `json:"base_sha"`
+	HeadSHA       string   `json:"head_sha"`
+	Result        changerisk.Result `json:"result"`
 }
 
 func main() {
@@ -125,7 +125,7 @@ func verifyCommit(ref string) error {
 }
 
 func gitOutput(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
+	cmd := exec.Command("git", args...) //nolint:gosec // refs are validated with git rev-parse before use
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(output)))
