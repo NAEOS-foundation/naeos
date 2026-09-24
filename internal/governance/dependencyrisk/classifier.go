@@ -34,15 +34,13 @@ const (
 
 type Domain string
 
-const (
-	Policy         Domain = "policy"
-	Security       Domain = "security"
-	AuditEvidence  Domain = "audit_evidence"
-	Runtime        Domain = "runtime"
-	DeploymentCI   Domain = "deployment_ci"
-	General        Domain = "general"
-	UnknownDomain  Domain = "unknown"
-)
+const Policy Domain = "policy"
+const Security Domain = "security"
+const AuditEvidence Domain = "audit_evidence"
+const Runtime Domain = "runtime"
+const DeploymentCI Domain = "deployment_ci"
+const General Domain = "general"
+const UnknownDomain Domain = "unknown"
 
 type Request struct {
 	Ecosystem         string
