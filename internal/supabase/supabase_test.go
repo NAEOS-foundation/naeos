@@ -10,6 +10,10 @@ import (
 	"testing"
 )
 
+func onCI() bool {
+	return os.Getenv("GITHUB_ACTIONS") == "true"
+}
+
 func supabaseEnvConfig() *Config {
 	url := os.Getenv("SUPABASE_URL")
 	anonKey := os.Getenv("SUPABASE_ANON_KEY")
@@ -67,6 +71,9 @@ func TestIntegrationExecuteSQL(t *testing.T) {
 	result, err := client.ExecuteSQL("SELECT 1 as num")
 	if err != nil {
 		if strings.Contains(err.Error(), "401") {
+			if onCI() {
+				t.Fatalf("ExecuteSQL: SUPABASE_ACCESS_TOKEN rejected by the Management API on CI: %v", err)
+			}
 			t.Skipf("SUPABASE_ACCESS_TOKEN rejected by the Management API (expired/invalid): %v", err)
 		}
 		t.Fatalf("ExecuteSQL: %v", err)
@@ -91,6 +98,9 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 	result, err := client.SignUp(SignUpParams{Email: email, Password: password})
 	if err != nil {
 		if strings.Contains(err.Error(), "email_address_invalid") || strings.Contains(err.Error(), "rate_limit") {
+			if onCI() {
+				t.Fatalf("SignUp: %v", err)
+			}
 			t.Skipf("Supabase auth policy rejected test email (likely restricted domains or rate limit): %v", err)
 		}
 		t.Fatalf("SignUp: %v", err)
@@ -127,8 +137,13 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 	}
 
 	privileged := *cfg
+	// Storage lifecycle (create/delete bucket, upload/download/delete object)
+	// requires service-role privileges, so the service role key is used as the
+	// Storage API apikey here. Do not reuse SUPABASE_ACCESS_TOKEN for this:
+	// it is a Management API credential, a distinct token type. When the
+	// apikey carries the service-role JWT, the Storage gateway authenticates
+	// through it and no Authorization header is required.
 	privileged.AnonKey = cfg.ServiceRoleKey
-	privileged.AccessToken = cfg.ServiceRoleKey
 	client := NewClient(&privileged)
 	tmpDir := t.TempDir()
 
