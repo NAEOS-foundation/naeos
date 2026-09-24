@@ -11,7 +11,7 @@ jobs:
   gofmt-autofix:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -24,32 +24,16 @@ jobs:
           go-version-file: go.mod
 
       - name: Check for unformatted files
-        id: check
         run: |
-          set -e
+          set -euo pipefail
           unformatted=$(gofmt -l . || true)
           if [ -z "$unformatted" ]; then
-            echo "formatted=true" >> $GITHUB_OUTPUT
             echo "No unformatted files found."
-          else
-            echo "formatted=false" >> $GITHUB_OUTPUT
-            echo "Unformatted files:"
-            echo "$unformatted"
+            exit 0
           fi
 
-      - name: Apply gofmt and commit (if needed)
-        if: steps.check.outputs.formatted == 'false'
-        run: |
-          set -e
-          # apply formatting
-          gofmt -w .
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: apply gofmt formatting" || echo "No changes to commit"
-
-      - name: Push changes
-        if: steps.check.outputs.formatted == 'false'
-        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          echo "Unformatted files:"
+          echo "$unformatted"
+          echo
+          echo "Run 'gofmt -w .' locally and commit the result."
+          exit 1

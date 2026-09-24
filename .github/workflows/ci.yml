@@ -172,6 +172,27 @@ jobs:
           SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
         run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
 
+  dependency-risk-gate:
+    name: Dependency Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate dependency risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash scripts/dependency-risk-gate.sh
+      - name: Upload dependency risk evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-risk-evidence
+          path: dependency-risk-evidence.json
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -187,6 +208,7 @@ jobs:
       - coverage
       - supabase-integration
       - fuzz
+      - dependency-risk-gate
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -202,9 +224,10 @@ jobs:
           COVERAGE: ${{ needs.coverage.result }}
           SUPABASE: ${{ needs['supabase-integration'].result }}
           FUZZ: ${{ needs.fuzz.result }}
+          DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ"; do
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK"; do
             test "$result" = "success"
           done
           # Supabase integration is intentionally skipped on develop pushes and manual runs.
