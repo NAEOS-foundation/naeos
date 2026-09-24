@@ -26,6 +26,9 @@ type controlPlaneSecurity struct {
 }
 
 func newControlPlaneSecurity(allowedOrigins string, token string) *controlPlaneSecurity {
+	if strings.TrimSpace(allowedOrigins) == "" {
+		allowedOrigins = "http://localhost:3000,http://localhost:3001,https://naeos.dev,https://www.naeos.dev"
+	}
 	origins := map[string]struct{}{}
 	for _, origin := range strings.Split(allowedOrigins, ",") {
 		origin = strings.TrimSpace(strings.TrimRight(origin, "/"))
