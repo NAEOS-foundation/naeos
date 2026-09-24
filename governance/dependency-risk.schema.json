@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naeos.dev/schemas/dependency-risk.schema.json",
+  "title": "NAEOS Dependency Risk Classification",
+  "type": "object",
+  "required": ["schema_version", "dependency", "criticality", "risk", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "dependency": {
+      "type": "object",
+      "required": ["ecosystem", "name", "version_change"],
+      "additionalProperties": false,
+      "properties": {
+        "ecosystem": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "version_change": { "type": "string", "enum": ["patch", "minor", "major", "unknown"] }
+      }
+    },
+    "criticality": { "type": "string", "enum": ["low", "medium", "high", "critical", "unknown"] },
+    "risk": { "type": "string", "enum": ["low", "medium", "high", "critical", "unknown"] },
+    "domains": {
+      "type": "array", "uniqueItems": true,
+      "items": { "type": "string", "enum": ["policy", "security", "audit_evidence", "runtime", "deployment_ci", "general"] }
+    },
+    "verification": {
+      "type": "object", "required": ["required_gates", "evidence_required"], "additionalProperties": false,
+      "properties": {
+        "required_gates": {
+          "type": "array", "uniqueItems": true,
+          "items": { "type": "string", "enum": ["ci", "security", "benchmark", "governance", "integration", "human_review"] }
+        },
+        "evidence_required": { "type": "boolean" }
+      }
+    },
+    "decision": { "type": "string", "enum": ["allow", "require_review", "deny"] }
+  }
+}
