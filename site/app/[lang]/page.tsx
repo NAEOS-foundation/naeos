@@ -22,13 +22,13 @@ export async function generateMetadata(
 }
 
 const stages = [
-  ["Specification", "Define engineering intent."],
-  ["NEIR", "Canonical engineering model."],
-  ["Policy", "Validate boundaries."],
-  ["AI Context", "Prepare relevant context."],
-  ["Agent", "Perform bounded work."],
-  ["Execution", "Run through engineering workflows."],
-  ["Evidence", "Trace results back to intent."],
+  ["Specification", "Define engineering intent.", "Tentukan intent engineering."],
+  ["NEIR", "Canonical engineering model.", "Model engineering canonical."],
+  ["Policy", "Validate boundaries.", "Validasi batasan."],
+  ["AI Context", "Prepare relevant context.", "Siapkan context yang relevan."],
+  ["Agent", "Perform bounded work.", "Jalankan pekerjaan dengan batasan."],
+  ["Execution", "Run through engineering workflows.", "Jalankan melalui workflow engineering."],
+  ["Evidence", "Trace results back to intent.", "Telusuri hasil kembali ke intent."],
 ] as const;
 
 export default async function HomePage(
@@ -40,6 +40,7 @@ export default async function HomePage(
     : DEFAULT_LANG;
   const base = lang === "en" ? "" : "/id";
   const id = lang === "id";
+  const stageDescriptions = stages.map(([, en, idDesc]) => (id ? idDesc : en));
 
   return (
     <>
@@ -165,7 +166,7 @@ export default async function HomePage(
                         fontSize: ".72rem",
                       }}
                     >
-                      {desc}
+                      {stageDescriptions[i]}
                     </span>
                   </div>
                   {i < stages.length - 1 && (
@@ -244,7 +245,7 @@ export default async function HomePage(
               <div className="how-card" key={title}>
                 <div className="how-step">{step}</div>
                 <h3>{title}</h3>
-                <p>Engineering state remains explicit and machine-readable.</p>
+                <p>{id ? "State engineering tetap eksplisit dan machine-readable." : "Engineering state remains explicit and machine-readable."}</p>
                 <pre style={{ marginTop: "1rem" }}>
                   <code>{code}</code>
                 </pre>
@@ -266,9 +267,9 @@ export default async function HomePage(
           </p>
           <div className="features-grid">
             {[
-              ["Policy", "Define what is allowed, required and forbidden."],
-              ["Context", "Give agents structured, relevant engineering context."],
-              ["Evidence", "Keep decisions, artifacts and results traceable."],
+              ["Policy", id ? "Tentukan apa yang diizinkan, diwajibkan, dan dilarang." : "Define what is allowed, required and forbidden."],
+              ["Context", id ? "Berikan context engineering yang terstruktur dan relevan kepada agent." : "Give agents structured, relevant engineering context."],
+              ["Evidence", id ? "Jaga agar keputusan, artifact, dan hasil tetap dapat ditelusuri." : "Keep decisions, artifacts and results traceable."],
             ].map(([title, desc]) => (
               <div className="feature-card" key={title}>
                 <h3>{title}</h3>
@@ -287,7 +288,7 @@ export default async function HomePage(
               : "NAEOS between your engineering stack and AI"}
           </h2>
           <p className="section-subtitle">
-            GitHub · CI/CD · repositories ↔ NAEOS ↔ Copilot · Claude · Codex · agents
+            {id ? "GitHub · CI/CD · repository ↔ NAEOS ↔ Copilot · Claude · Codex · agents" : "GitHub · CI/CD · repositories ↔ NAEOS ↔ Copilot · Claude · Codex · agents"}
           </p>
           <div
             className="card"
