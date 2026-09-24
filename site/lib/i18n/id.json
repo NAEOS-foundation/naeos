@@ -149,7 +149,7 @@
   "home_playground_languages": "Bahasa",
   "home_playground_project": "Proyek",
   "home_playground_generation": "Generasi",
-  "home_playground_unnamed": "tanpa nama",
+  "home_playground_unnamed": "(tanpa nama)",
   "home_playground_invalid_yaml": "YAML tidak valid",
   "home_proof_title": "Dibangun secara terbuka",
   "home_proof_desc": "Jelajahi evidence repository di balik workflow NAEOS.",
@@ -217,9 +217,6 @@
   "home_supported_subtitle": "5 bahasa + 7 platform AI — satu sistem rekayasa terpadu.",
   "home_supported_languages_heading": "Bahasa",
   "home_supported_ai_heading": "Platform AI",
-  "home_playground_project": "Proyek",
-  "home_playground_generation": "Generasi",
-  "home_playground_unnamed": "(tanpa nama)",
   "home_playground_not_specified": "tidak ditentukan",
   "home_playground_ai_bundle": "Bundel Konteks AI",
   "home_playground_system_overview": "Tinjauan Sistem",
@@ -241,5 +238,6 @@
   "home_playground_ai_ctx": "Konteks AI",
   "home_playground_copied": "Tersalin!",
   "home_playground_copy": "Salin",
-  "copy_copied": "Tersalin!"
+  "copy_copied": "Tersalin!",
+  "nav_control_plane": "Control Plane"
 }

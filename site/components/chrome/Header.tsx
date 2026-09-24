@@ -36,6 +36,7 @@ const DOCS_DROPDOWN = [
 ] as const;
 
 const MAIN_LINKS = [
+  ["control-plane", "nav_control_plane"],
   ["use-cases", "nav_use_cases"],
   ["blog", "nav_blog"],
   ["plugins", "nav_plugins"],
