@@ -28,8 +28,8 @@ type APIServer struct {
 // NewAPIServer creates a new API server for the demo.
 func NewAPIServer(setup *DemoSetup) *APIServer {
 	server := &APIServer{
-		setup: setup,
-		mux:   http.NewServeMux(),
+		setup:    setup,
+		mux:      http.NewServeMux(),
 		security: newControlPlaneSecurity(
 			os.Getenv("NAEOS_CONTROLPLANE_ALLOWED_ORIGINS"),
 			os.Getenv("NAEOS_CONTROLPLANE_API_TOKEN"),
@@ -320,16 +320,16 @@ func (as *APIServer) handleControlPlaneDecision(w http.ResponseWriter, r *http.R
 	})
 
 	writeJSON(w, map[string]interface{}{
-		"status":          string(decision.Status),
-		"decision_id":     decision.DecisionID,
-		"request_id":      decision.RequestID,
-		"allowed":         decision.Status == controlplane.DecisionAllow,
-		"needs_approval":  decision.Status == controlplane.DecisionPending,
-		"reason":          string(decision.Reason),
-		"message":         decision.Message,
-		"policy_id":       decision.PolicyID,
-		"policy_version":  decision.PolicyVersion,
-		"requested":       string(decision.Requested),
+		"status":            string(decision.Status),
+		"decision_id":       decision.DecisionID,
+		"request_id":        decision.RequestID,
+		"allowed":           decision.Status == controlplane.DecisionAllow,
+		"needs_approval":    decision.Status == controlplane.DecisionPending,
+		"reason":            string(decision.Reason),
+		"message":           decision.Message,
+		"policy_id":         decision.PolicyID,
+		"policy_version":    decision.PolicyVersion,
+		"requested":         string(decision.Requested),
 		"evidence_endpoint": "/api/control-plane/evidence?decision_id=" + decision.DecisionID,
 	})
 }
