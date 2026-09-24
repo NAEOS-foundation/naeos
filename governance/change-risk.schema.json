@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naeos.dev/schemas/change-risk.schema.json",
+  "title": "NAEOS Change Risk Classification",
+  "type": "object",
+  "required": ["schema_version", "change_surface", "criticality", "risk", "domains", "required_gates", "evidence_required", "decision"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "change_surface": {"enum": ["docs", "tests", "code", "configuration", "mixed", "unknown"]},
+    "criticality": {"enum": ["low", "medium", "high", "critical", "unknown"]},
+    "risk": {"enum": ["low", "medium", "high", "critical", "unknown"]},
+    "domains": {"type": "array", "items": {"enum": ["policy", "security", "audit_evidence", "runtime", "deployment_ci", "architecture", "verification", "general", "unknown"]}},
+    "required_gates": {"type": "array", "items": {"type": "string"}},
+    "evidence_required": {"type": "boolean"},
+    "decision": {"enum": ["allow", "require_review", "deny"]}
+  },
+  "additionalProperties": true
+}
