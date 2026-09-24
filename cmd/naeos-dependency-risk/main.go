@@ -58,7 +58,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("invalid request path: %w", err)
 	}
-	// The path is constrained by safeRelativePath before filesystem access.\n\trequestBytes, err := os.ReadFile(requestPath) //nolint:gosec // validated as workspace-relative above
+	// The path is constrained by safeRelativePath before filesystem access.
+	requestBytes, err := os.ReadFile(requestPath) //nolint:gosec // validated as workspace-relative above
 	if err != nil {
 		return fmt.Errorf("read request: %w", err)
 	}
@@ -96,7 +97,8 @@ func run() error {
 		return fmt.Errorf("encode evidence: %w", err)
 	}
 	data = append(data, '\n')
-	// The output path is constrained by safeRelativePath before filesystem access.\n\tif err := os.WriteFile(out, data, 0o600); err != nil { //nolint:gosec // validated as workspace-relative above
+	// The output path is constrained by safeRelativePath before filesystem access.
+	if err := os.WriteFile(out, data, 0o600); err != nil { //nolint:gosec // validated as workspace-relative above
 		return fmt.Errorf("write evidence: %w", err)
 	}
 	fmt.Printf("dependency risk: decision=%s risk=%s criticality=%s output=%s\n", result.Decision, result.Risk, result.Criticality, out)
