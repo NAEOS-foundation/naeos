@@ -45,6 +45,10 @@ cmd/naeos/out/
 .env
 .env.local
 
+# Local API token / local backups (never commit)
+.naeos-api.token
+naeos.bak*
+
 # Local test spec files
 naeos.yaml
 naeos.yml
