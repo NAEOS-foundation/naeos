@@ -29,7 +29,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      # Lint includes gofmt enforcement through golangci-lint.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa
         with:
@@ -71,9 +70,7 @@ jobs:
       - name: Run canonical demo
         run: |
           output_dir="$(mktemp -d)"
-          NAEOS_BIN="$PWD/naeos" \
-          NAEOS_DEMO_OUTPUT_DIR="$output_dir" \
-            ./examples/demo-cli/run-demo.sh
+          NAEOS_BIN="$PWD/naeos"           NAEOS_DEMO_OUTPUT_DIR="$output_dir"             ./examples/demo-cli/run-demo.sh
 
   governance-lifecycle:
     name: Governance Lifecycle Experiment
@@ -193,6 +190,28 @@ jobs:
           name: dependency-risk-evidence
           path: dependency-risk-evidence.json
 
+  change-risk-gate:
+    name: Change Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate change risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: bash scripts/change-risk-gate.sh
+      - name: Upload change risk evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: change-risk-evidence
+          path: change-risk-evidence.json
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -209,6 +228,7 @@ jobs:
       - supabase-integration
       - fuzz
       - dependency-risk-gate
+      - change-risk-gate
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -225,14 +245,15 @@ jobs:
           SUPABASE: ${{ needs['supabase-integration'].result }}
           FUZZ: ${{ needs.fuzz.result }}
           DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
+          CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK"; do
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK"; do
             test "$result" = "success"
           done
-          # Supabase integration is intentionally skipped on develop pushes and manual runs.
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
           echo "All required CI jobs passed."
+
   fuzz:
     name: Fuzz
     runs-on: ubuntu-latest
