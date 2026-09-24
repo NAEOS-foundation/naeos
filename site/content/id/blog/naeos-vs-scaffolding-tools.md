@@ -52,7 +52,7 @@ Perbedaannya bukan pada output-nya — tapi pada **sumber kebenarannya**. Templa
 |-----------|-------|---------------|--------|-------------|-------|--------|
 | Spesifikasi deklaratif (YAML/JSON) | **Ya** | Sebagian | Sebagian | Sebagian | Tidak | Tidak |
 | Generasi multi-bahasa (5) | **Ya** | Apa pun (template Anda) | Apa pun | API saja | Tidak | Per-generator |
-| Generasi konteks AI (6 platform) | **Ya** | — | — | — | — | — |
+| Generasi konteks AI (7 platform) | **Ya** | — | — | — | — | — |
 | Mesin pipeline (DAG 11 stage) | **Ya** | — | — | — | — | — |
 | Governance bawaan (RBAC + audit) | **Ya** | — | — | — | — | — |
 | Sistem plugin WASM | **Ya** | Jinja saja | Jinja saja | — | Snippet JS | Generator JS |
