@@ -135,8 +135,8 @@ LIMIT $1
 
 	type claimed struct {
 		id, key, topic, payload string
-		created                     time.Time
-		retries, maxRetries        int
+		created                 time.Time
+		retries, maxRetries     int
 	}
 	var messages []claimed
 	for rows.Next() {
