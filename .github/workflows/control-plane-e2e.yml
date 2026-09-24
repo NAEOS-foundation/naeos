@@ -1,0 +1,101 @@
+name: Control Plane E2E Proof
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "internal/controlplane/**"
+      - "internal/investordemo/**"
+      - "cmd/naeos/**"
+      - ".github/workflows/control-plane-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  control-plane-e2e:
+    name: Live engine ALLOW/DENY/evidence proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build NAEOS control-plane demo
+        run: go build -o /tmp/naeos-demo ./cmd/naeos
+
+      - name: Start NAEOS control-plane demo
+        run: |
+          /tmp/naeos-demo demo --addr :9091 > /tmp/naeos-demo.log 2>&1 &
+          echo $! > /tmp/naeos-demo.pid
+
+      - name: Wait for health endpoint
+        run: |
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:9091/api/health >/tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/naeos-demo.log
+          exit 1
+
+      - name: Prove deterministic ALLOW
+        run: |
+          curl --fail --silent             -H "Content-Type: application/json"             -X POST             http://127.0.0.1:9091/api/control-plane/decision             -d '{"agent_id":"agent-payment-01","capability":"repository.read"}'             > /tmp/allow.json
+          cat /tmp/allow.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/allow.json"))
+          assert d["status"] == "ALLOW", d
+          assert d["allowed"] is True, d
+          assert d.get("decision_id"), d
+          assert d.get("evidence_endpoint"), d
+          PY
+
+      - name: Prove deterministic DENY
+        run: |
+          curl --fail --silent             -H "Content-Type: application/json"             -X POST             http://127.0.0.1:9091/api/control-plane/decision             -d '{"agent_id":"agent-payment-01","capability":"credential.rotate"}'             > /tmp/deny.json
+          cat /tmp/deny.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/deny.json"))
+          assert d["status"] == "DENY", d
+          assert d["allowed"] is False, d
+          assert d.get("decision_id"), d
+          assert d.get("evidence_endpoint"), d
+          PY
+
+      - name: Prove evidence receipt
+        run: |
+          curl --fail --silent             http://127.0.0.1:9091/api/control-plane/evidence             > /tmp/evidence.json
+          cat /tmp/evidence.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/evidence.json"))
+          assert d["total"] >= 2, d
+          events=d["events"]
+          statuses={e.get("decision") or e.get("status") for e in events}
+          assert "ALLOW" in statuses, statuses
+          assert "DENY" in statuses, statuses
+          PY
+
+      - name: Stop demo server
+        if: always()
+        run: |
+          if [ -f /tmp/naeos-demo.pid ]; then
+            kill "$(cat /tmp/naeos-demo.pid)" || true
+          fi
+          if [ -f /tmp/naeos-demo.log ]; then
+            tail -n 100 /tmp/naeos-demo.log
+          fi
