@@ -105,6 +105,7 @@ func TestAPIControlPlaneSecurity(t *testing.T) {
 	}
 
 	as.security.token = ""
+	as.security.hits = make(map[string][]time.Time)
 	as.security.limit = 1
 	as.security.window = time.Hour
 	first := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
