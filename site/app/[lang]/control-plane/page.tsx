@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
+import ControlPlaneLiveDemo from "@/components/control-plane/ControlPlaneLiveDemo";
 
 export function generateStaticParams() {
   return LANGUAGES.map((lang) => ({ lang }));
@@ -109,6 +110,19 @@ export default async function ControlPlanePage(props: { params: Promise<{ lang: 
             <pre>{'decision: DENY\npolicy: production-safety/v2\nexecution: blocked\nobservation: recorded'}</pre>
           </div>
         </div>
+      </section>
+
+      <section className="control-plane-live-section" aria-labelledby="control-plane-live-title">
+        <div className="section-heading">
+          <div className="eyebrow">LIVE PROOF</div>
+          <h2 id="control-plane-live-title">{id ? "Sekarang evaluasi request melalui engine." : "Now evaluate a request through the engine."}</h2>
+          <p>
+            {id
+              ? "Hubungkan halaman ini ke API demo NAEOS untuk melihat decision ID, policy, reason, dan status secara langsung."
+              : "Connect this page to the NAEOS demo API to see the decision ID, policy, reason, and status directly from the engine."}
+          </p>
+        </div>
+        <ControlPlaneLiveDemo lang={lang} />
       </section>
 
       <section className="control-plane-principles">
