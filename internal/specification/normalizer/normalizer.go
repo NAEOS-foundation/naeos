@@ -72,6 +72,14 @@ func (DefaultNormalizer) Normalize(doc any) (*NormalizedSpec, error) {
 		result["generation"] = normalizeGeneration(specDoc.Generation)
 	}
 
+	// Preserve policy-governed sections that are represented in the raw
+	// specification document but not yet modeled as typed parser fields.
+	if rawData, ok := specDoc.Data.(map[string]any); ok {
+		if securityContext, exists := rawData["security"]; exists {
+			result["security"] = securityContext
+		}
+	}
+
 	return &NormalizedSpec{Values: result}, nil
 }
 
