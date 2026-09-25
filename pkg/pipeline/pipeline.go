@@ -634,8 +634,13 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
+	durableLedgerPath, durableReceiptPath := durableRuntimePaths(p.outputDirValue, pipelineID)
+	durableLedger, err := evidence.NewDurableRuntimeEventLedger(durableLedgerPath)
+	if err != nil {
+		return nil, fmt.Errorf("initialize durable runtime ledger: %w", err)
+	}
 	runEvidence := evidence.NewStore()
-	runtimeObserver := evidence.NewIndependentRuntimeObserver()
+	runtimeObserver := evidence.NewIndependentRuntimeObserverWithDurableLedger(durableLedger)
 	evidenceBuilder := evidence.NewRuntimeEvidenceBuilder(runEvidence, runtimeObserver)
 	if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "intent", 1, "run", "pipeline.start", evidence.ComputeArtifactHash([]byte(input))); err != nil {
 		return nil, fmt.Errorf("record run intent evidence: %w", err)
@@ -749,7 +754,18 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			return nil, fmt.Errorf("record verification evidence: %w", err)
 		}
 		runtimeObserver.Seal()
-		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID); err != nil {
+		receipt, receiptErr := evidence.CreateDurableRuntimeReceipt(durableLedger, pipelineID, time.Now().UTC())
+		if receiptErr != nil {
+			return nil, fmt.Errorf("create durable runtime receipt: %w", receiptErr)
+		}
+		if receiptErr := evidence.WriteDurableRuntimeReceipt(durableReceiptPath, receipt); receiptErr != nil {
+			return nil, fmt.Errorf("persist durable runtime receipt: %w", receiptErr)
+		}
+		loadedReceipt, receiptErr := evidence.LoadDurableRuntimeReceipt(durableReceiptPath)
+		if receiptErr != nil {
+			return nil, fmt.Errorf("reload durable runtime receipt: %w", receiptErr)
+		}
+		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), durableLedger, loadedReceipt, pipelineID); err != nil {
 			return nil, err
 		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
@@ -834,7 +850,21 @@ func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, rev
 	return evidence.ComputeArtifactHash(data)
 }
 
-func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, runID string) error {
+func durableRuntimePaths(outputDir, runID string) (string, string) {
+	root := filepath.Join(outputDir, ".naeos", "runtime")
+	return filepath.Join(root, runID+".jsonl"), filepath.Join(root, runID+".receipt.json")
+}
+
+func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, durableLedger *evidence.DurableRuntimeEventLedger, receipt evidence.DurableRuntimeReceipt, runID string) error {
+	if durableLedger == nil {
+		return fmt.Errorf("run completion blocked: durable runtime ledger is required")
+	}
+	if err := durableLedger.Verify(); err != nil {
+		return fmt.Errorf("run completion blocked: durable runtime ledger verification failed: %w", err)
+	}
+	if err := evidence.VerifyDurableRuntimeReceipt(receipt, durableLedger, runID); err != nil {
+		return fmt.Errorf("run completion blocked: durable runtime receipt verification failed: %w", err)
+	}
 	completion := evidence.ValidateCompletionWithRuntimeLedger(store, runtimeLedger, runID, requiredRunEvidenceKinds)
 	if !completion.Complete {
 		return fmt.Errorf("run completion blocked: incomplete evidence contract: %v", completion.Missing)

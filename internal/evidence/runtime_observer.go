@@ -17,12 +17,22 @@ type RuntimeEventObserver interface {
 // IndependentRuntimeObserver is the lifecycle-facing observer. Runtime code
 // sends observations here; evidence construction cannot manufacture events.
 type IndependentRuntimeObserver struct {
-	ledger *RuntimeEventLedger
+	ledger        *RuntimeEventLedger
+	durableLedger *DurableRuntimeEventLedger
 }
 
 // NewIndependentRuntimeObserver creates a fresh observer with a private ledger.
 func NewIndependentRuntimeObserver() *IndependentRuntimeObserver {
 	return &IndependentRuntimeObserver{ledger: NewRuntimeEventLedger()}
+}
+
+// NewIndependentRuntimeObserverWithDurableLedger creates an observer whose
+// observations are durably persisted before evidence can reference them.
+func NewIndependentRuntimeObserverWithDurableLedger(durableLedger *DurableRuntimeEventLedger) *IndependentRuntimeObserver {
+	return &IndependentRuntimeObserver{
+		ledger:        NewRuntimeEventLedger(),
+		durableLedger: durableLedger,
+	}
 }
 
 // Observe records one runtime observation before it can be referenced by
@@ -31,6 +41,11 @@ func NewIndependentRuntimeObserver() *IndependentRuntimeObserver {
 func (o *IndependentRuntimeObserver) Observe(runID, name, payloadDigest string, sequence int) (RuntimeEvent, error) {
 	if o == nil || o.ledger == nil {
 		return RuntimeEvent{}, fmt.Errorf("runtime observer is nil")
+	}
+	if o.durableLedger != nil {
+		if _, err := o.durableLedger.Publish(runID, name, payloadDigest, sequence); err != nil {
+			return RuntimeEvent{}, err
+		}
 	}
 	return o.ledger.Publish(runID, name, payloadDigest, sequence)
 }
@@ -56,13 +71,26 @@ func (o *IndependentRuntimeObserver) Verify() error {
 	if o == nil || o.ledger == nil {
 		return fmt.Errorf("runtime observer is nil")
 	}
-	return o.ledger.Verify()
+	if err := o.ledger.Verify(); err != nil {
+		return err
+	}
+	if o.durableLedger != nil {
+		if err := o.durableLedger.Verify(); err != nil {
+			return fmt.Errorf("durable runtime ledger verification failed: %w", err)
+		}
+	}
+	return nil
 }
 
 // Seal closes the observation window.
 func (o *IndependentRuntimeObserver) Seal() {
-	if o != nil && o.ledger != nil {
-		o.ledger.Seal()
+	if o != nil {
+		if o.ledger != nil {
+			o.ledger.Seal()
+		}
+		if o.durableLedger != nil {
+			o.durableLedger.Seal()
+		}
 	}
 }
 
