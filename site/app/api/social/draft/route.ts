@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { NextResponse } from "next/server";
+import { evaluateSocialPolicy } from "./policy";
 
 const API = "https://api.github.com";
 const REPO = "NAEOS-foundation/naeos";
@@ -123,11 +124,8 @@ export async function GET() {
     const issues = rawIssues.filter(isActualIssue);
     const mergedPulls = closedPulls.filter((pull) => pull.merged_at).slice(0, 5);
     const signals = classify(issues, pulls, mergedPulls, runs, release);
-
-    // Only emit a social candidate for meaningful engineering signals.
-    const publishable = signals.some((signal) =>
-      ["release", "merged-pr", "bug", "ci-failure"].includes(signal),
-    );
+    const policy = evaluateSocialPolicy({ source: "github-live", signals });
+    const candidate = policy.decision === "review_required";
 
     const body = buildPost(issues, pulls, mergedPulls, runs, release);
 
@@ -135,8 +133,9 @@ export async function GET() {
       {
         source: "github-live",
         generatedAt: new Date().toISOString(),
-        publishable,
+        candidate,
         signals,
+        policy,
         sourceEvents: {
           latestCommit: commits[0]
             ? { sha: commits[0].sha, url: commits[0].html_url, message: commits[0].commit?.message }
@@ -164,8 +163,9 @@ export async function GET() {
       {
         source: "unavailable",
         generatedAt: new Date().toISOString(),
-        publishable: false,
+        candidate: false,
         signals: [],
+        policy: evaluateSocialPolicy({ source: "unavailable", signals: [] }),
         drafts: {},
       },
       { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } },
