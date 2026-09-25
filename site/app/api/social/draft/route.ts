@@ -15,6 +15,7 @@ type GitHubIssue = {
   title: string;
   html_url: string;
   labels?: Array<{ name?: string }>;
+  pull_request?: { url?: string };
 };
 
 type GitHubPull = GitHubIssue & {
@@ -51,6 +52,10 @@ async function github<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function isActualIssue(issue: GitHubIssue) {
+  return !issue.pull_request;
+}
+
 function isBug(issue: GitHubIssue) {
   return issue.labels?.some((label) => label.name?.toLowerCase() === "bug") ?? false;
 }
@@ -74,7 +79,6 @@ function classify(
 }
 
 function buildPost(
-  signals: string[],
   openIssues: GitHubIssue[],
   openPulls: GitHubPull[],
   mergedPulls: GitHubPull[],
@@ -107,7 +111,7 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const [issues, pulls, closedPulls, runs, commits, release] = await Promise.all([
+    const [rawIssues, pulls, closedPulls, runs, commits, release] = await Promise.all([
       github<GitHubIssue[]>(`/repos/${REPO}/issues?state=open&per_page=20`),
       github<GitHubPull[]>(`/repos/${REPO}/pulls?state=open&sort=updated&direction=desc&per_page=10`),
       github<GitHubPull[]>(`/repos/${REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=10`),
@@ -116,7 +120,8 @@ export async function GET() {
       github<GitHubRelease>(`/repos/${REPO}/releases/latest`).catch(() => undefined),
     ]);
 
-    const mergedPulls = closedPulls.filter((pull) => pull.merged_at);
+    const issues = rawIssues.filter(isActualIssue);
+    const mergedPulls = closedPulls.filter((pull) => pull.merged_at).slice(0, 5);
     const signals = classify(issues, pulls, mergedPulls, runs, release);
 
     // Only emit a social candidate for meaningful engineering signals.
