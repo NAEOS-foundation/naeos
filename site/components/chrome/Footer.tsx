@@ -51,8 +51,8 @@ export default function Footer({ lang, tagline }: FooterProps) {
                 <a href={SITE.instagram} target="_blank" rel="noopener" aria-label="Instagram @naeos_dev">
                   <InstagramIcon />
                 </a>
-                <a href={SITE.instagram} target="_blank" rel="noopener" aria-label="Instagram @naeos_dev">
-                  <InstagramIcon />
+                <a href={SITE.linkedin} target="_blank" rel="noopener" aria-label="LinkedIn NAEOS">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.5 8.5H3V21h3.5V8.5ZM4.75 3A2.05 2.05 0 1 0 4.75 7.1 2.05 2.05 0 0 0 4.75 3ZM21 13.8c0-3.77-2.01-5.52-4.69-5.52-2.16 0-3.12 1.19-3.66 2.03V8.5H9.15V21h3.5v-6.2c0-1.64.31-3.23 2.34-3.23 2 0 2.03 1.88 2.03 3.34V21H21v-7.2Z" /></svg>
                 </a>
                 <a href={SITE.twitter} target="_blank" rel="noopener" aria-label="Twitter / X">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
