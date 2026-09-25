@@ -37,6 +37,8 @@ jobs:
         run: npm install --ignore-scripts --legacy-peer-deps
       - name: Typecheck
         run: npm run typecheck
+      - name: Verify social policy gate
+        run: npm run test:policy
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
@@ -68,8 +70,7 @@ jobs:
             ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           fi
           if [ -n "$ID" ]; then
-            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]' \
-              < wrangler.jsonc > wrangler.jsonc.tmp
+            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]'               < wrangler.jsonc > wrangler.jsonc.tmp
             mv wrangler.jsonc.tmp wrangler.jsonc
             echo "Newsletter KV namespace bound: $ID"
           else
