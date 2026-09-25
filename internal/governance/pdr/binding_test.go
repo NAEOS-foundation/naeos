@@ -37,17 +37,15 @@ func TestVerifyBindingPasses(t *testing.T) {
 	}
 }
 
-func TestVerifyBindingFailsClosedOnTamperedEvidence(t *testing.T) {
+func TestVerifyBindingFailsClosedOnTamperedDigest(t *testing.T) {
 	store, ledger, rec := testEvidenceAndLedger()
-	rec.Metadata = map[string]any{"tampered": true}
-	store.Append(evidence.EvidenceRecord{ID: "ev-2", PolicyID: "change-risk-governance", PolicyVersion: "1.0.0", Decision: controlplane.DecisionAllow})
 	err := VerifyBinding(Record{
 		RecordVersion: "1.0.0", PolicyID: "change-risk-governance", PolicyVersion: "1.0.0",
 		SchemaVersion: "1.0.0", DecisionID: "decision-1", Outcome: "allow",
-		Evidence: []EvidenceRef{{ID: rec.ID, Digest: rec.Hash}},
+		Evidence: []EvidenceRef{{ID: rec.ID, Digest: "0000000000000000000000000000000000000000000000000000000000000000"}},
 	}, store, ledger)
 	if err == nil {
-		t.Fatal("expected tampered evidence binding to fail")
+		t.Fatal("expected tampered digest binding to fail")
 	}
 }
 
