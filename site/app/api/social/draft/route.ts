@@ -129,7 +129,7 @@ export async function GET() {
       ["release", "merged-pr", "bug", "ci-failure"].includes(signal),
     );
 
-    const body = buildPost(signals, issues, pulls, mergedPulls, runs, release);
+    const body = buildPost(issues, pulls, mergedPulls, runs, release);
 
     return NextResponse.json(
       {
