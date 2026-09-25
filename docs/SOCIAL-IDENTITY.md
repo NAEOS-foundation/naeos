@@ -37,6 +37,7 @@ Do not alternate between multiple product categories in the same profile.
 | GitHub | Source of truth, releases, issues, evidence, contribution | Active | https://github.com/NAEOS-foundation/naeos |
 | Website | Product/docs/onboarding hub | Active | https://naeos.dev |
 | LinkedIn | Official company engineering voice | Active | https://www.linkedin.com/company/naeos |
+| Instagram | Visual engineering storytelling and product awareness | Setup — handle confirmed | @naeos_dev |
 | X | Technical conversation and build-in-public | Not verified in this audit | Claim official handle before publishing |
 | YouTube | Demos and technical walkthroughs | Not verified in this audit | Create/claim official channel |
 | Reddit | Technical participation and discussion | Community strategy only | Use official identity only when account is verified |
@@ -65,7 +66,8 @@ NAEOS is an open-source engineering control plane for AI coding agents. It conne
 3. Use GitHub Discussions or the verified community invite for community calls-to-action.
 4. Do not publish unverified X, YouTube, Reddit, or Discord URLs as official accounts.
 5. Keep public handles consistent with NAEOS or NAEOS Foundation.
-6. Do not use personal/founder accounts as substitutes for official NAEOS ownership.
+6. Instagram handle: `@naeos_dev`; use `https://naeos.dev` as the profile website field.
+7. Do not use personal/founder accounts as substitutes for official NAEOS ownership.
 
 ## Content pillars
 
@@ -104,6 +106,7 @@ Prefer terminal, architecture diagrams, specifications, policy flows, code, diff
 - [x] Establish official channel roles.
 - [x] Record verified versus unverified public channels.
 - [ ] Synchronize LinkedIn profile description and website field.
+- [x] Record official Instagram handle: `@naeos_dev`.
 - [ ] Verify/claim official X handle.
 - [ ] Create/verify official YouTube channel.
 - [ ] Verify Discord invite ownership and destination.
