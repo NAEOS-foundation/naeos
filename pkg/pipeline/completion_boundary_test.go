@@ -5,8 +5,8 @@ package pipeline
 
 import (
 	"strings"
-	"time"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/evidence"
 )
@@ -31,7 +31,11 @@ func TestValidateRunCompletionBlocksIncompleteEvidence(t *testing.T) {
 
 func TestValidateRunCompletionAllowsCompleteEvidence(t *testing.T) {
 	store := evidence.NewStore()
-	observer := evidence.NewIndependentRuntimeObserver()
+	durableLedger, err := evidence.NewDurableRuntimeEventLedger(t.TempDir() + "/runtime.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	observer := evidence.NewIndependentRuntimeObserverWithDurableLedger(durableLedger)
 	builder := evidence.NewRuntimeEvidenceBuilder(store, observer)
 	stages := [][2]string{
 		{"run", "pipeline.start"},
