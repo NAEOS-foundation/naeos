@@ -37,6 +37,8 @@ jobs:
         run: npm install --ignore-scripts --legacy-peer-deps
       - name: Typecheck
         run: npm run typecheck
+      - name: Verify social policy gate
+        run: npm run test:policy
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
