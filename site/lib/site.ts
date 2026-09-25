@@ -26,6 +26,7 @@ export const SITE = {
   instagram: "https://www.instagram.com/naeos_dev/",
   instagramHandle: "@naeos_dev",
   twitterHandle: "@naeos_dev",
+  linkedin: "https://www.linkedin.com/company/naeos/",
   discord: "https://discord.com/invite/WnUWmm7XMv",
   slack: "https://join.slack.com/t/naeos/shared_invite/zt-4audirbp0-piCfWuubxo8wDh_XGpkxAQ",
   stats: { cli: 200, languages: 5, ai_platforms: 7, specs: 57 },
