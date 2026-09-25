@@ -634,7 +634,18 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
-	durableLedgerPath, durableReceiptPath := durableRuntimePaths(p.outputDirValue, pipelineID)
+	durableRoot := p.outputDirValue
+	var cleanupDurableRoot func()
+	if p.dryRun {
+		var tempErr error
+		durableRoot, tempErr = os.MkdirTemp("", "naeos-dry-run-runtime-*")
+		if tempErr != nil {
+			return nil, fmt.Errorf("initialize dry-run runtime storage: %w", tempErr)
+		}
+		cleanupDurableRoot = func() { _ = os.RemoveAll(durableRoot) }
+		defer cleanupDurableRoot()
+	}
+	durableLedgerPath, durableReceiptPath := durableRuntimePaths(durableRoot, pipelineID)
 	durableLedger, err := evidence.NewDurableRuntimeEventLedger(durableLedgerPath)
 	if err != nil {
 		return nil, fmt.Errorf("initialize durable runtime ledger: %w", err)
