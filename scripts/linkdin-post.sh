@@ -2,7 +2,7 @@
 # Copyright 2024-2026 NAEOS Foundation
 # SPDX-License-Identifier: Apache-2.0
 
-# Post a message to LinkedIn (member feed) via the LinkedIn Posts API.
+# Post a message to the NAEOS LinkedIn organization page via the LinkedIn Posts API.
 #
 # Requires in .env (gitignored):
 #   LINKEDIN_ACCESS_TOKEN=<token with w_member_social scope>
@@ -14,7 +14,7 @@
 #   linkdin-post.sh --file path/to/post.md    # read message from a file
 #   linkdin-post.sh --dry-run "message"       # validate message only, no post
 #
-# Uses LinkedIn-Version 202601 (the active version that returns HTTP 201).
+# Uses LinkedIn-Version 202602. Organization posting requires w_organization_social and an authorized organization role.
 # Posts are PUBLISHED with MAIN_FEED distribution and PUBLIC visibility.
 set -euo pipefail
 
