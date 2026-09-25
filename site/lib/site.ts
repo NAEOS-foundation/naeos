@@ -23,6 +23,8 @@ export const SITE = {
   version: "3.6.0",
   accentColor: "#08d6ff",
   twitter: "https://twitter.com/naeos_dev",
+  instagram: "https://www.instagram.com/naeos_dev/",
+  instagramHandle: "@naeos_dev",
   twitterHandle: "@naeos_dev",
   discord: "https://discord.com/invite/WnUWmm7XMv",
   slack: "https://join.slack.com/t/naeos/shared_invite/zt-4audirbp0-piCfWuubxo8wDh_XGpkxAQ",
