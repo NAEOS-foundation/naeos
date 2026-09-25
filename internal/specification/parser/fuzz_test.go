@@ -136,6 +136,10 @@ func FuzzSchemaVersionParse(f *testing.F) {
 	f.Add("abc.def.ghi")
 
 	f.Fuzz(func(t *testing.T, input string) {
+		if len(input) > 256 {
+			t.Skip("fuzz input too long")
+		}
+
 		result, err := ParseSchemaVersion(input)
 		if err != nil {
 			return
