@@ -36,7 +36,7 @@ export default function Footer({ lang, tagline }: FooterProps) {
           <div className="footer-grid">
             <div className="footer-col brand">
               <Link href={base === "" ? "/" : `${base}/`} className="logo">
-                <img className="logo-icon" src="/images/Logo.png" width={28} height={28} loading="lazy" alt="" aria-hidden="true" />
+                <img className="logo-icon" src="/images/logo-mark.svg" width={28} height={28} loading="eager" alt="" aria-hidden="true" />
                 <span className="logo-text">NAEOS</span>
               </Link>
               <p className="tagline">{tagline}</p>
