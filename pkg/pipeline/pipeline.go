@@ -1128,3 +1128,88 @@ func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
 	for _, artifact := range artifacts {
 		if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
 			return fmt.Errorf("invalid artifact path: %w", err)
+		}
+		artifactPath := filepath.Join(outputDir, artifact.Path)
+		if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
+			return fmt.Errorf("create artifact dir: %w", err)
+		}
+		if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
+			return fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+		}
+		if p.observer != nil {
+			p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
+		}
+	}
+	return nil
+}
+
+func (p *Pipeline) runNotify(pipelineID string, startTime time.Time, result *Result, err error) {
+	if p.observer == nil {
+		return
+	}
+	if err != nil {
+		p.observer.OnPipelineFailed(pipelineID, err.Error())
+		return
+	}
+	duration := time.Since(startTime).Round(time.Millisecond).String()
+	artifactCount := 0
+	if result != nil {
+		artifactCount = len(result.Artifacts)
+	}
+	p.observer.OnPipelineComplete(pipelineID, artifactCount, duration)
+}
+
+func (p *Pipeline) getHookFuncs() *Hooks {
+	if p.hooks == nil {
+		return &Hooks{}
+	}
+	return p.hooks
+}
+
+func (p *Pipeline) RegisteredKernelServices() []string {
+	if p.kernel == nil {
+		return nil
+	}
+	return p.kernel.RegisteredServices()
+}
+
+func (p *Pipeline) KernelMetrics() kernel.Metrics {
+	if p.kernel == nil {
+		return kernel.Metrics{}
+	}
+	return p.kernel.Metrics()
+}
+
+func (p *Pipeline) KernelTopics() []string {
+	if p.kernel == nil {
+		return nil
+	}
+	return p.kernel.Topics()
+}
+
+func (p *Pipeline) Publish(topic string, payload any) error {
+	if p.kernel == nil {
+		return fmt.Errorf("kernel not initialized")
+	}
+	p.kernel.Publish(topic, payload)
+	return nil
+}
+
+func (p *Pipeline) Subscribe(topic string, handler func(any)) error {
+	if p.kernel == nil {
+		return fmt.Errorf("kernel not initialized")
+	}
+	return p.kernel.Subscribe(topic, handler)
+}
+
+func (p *Pipeline) Registry() *registry.Registry {
+	return p.registry
+}
+
+func (p *Pipeline) Graph() *graph.PlannerGraph {
+	return p.graph
+}
+
+func (p *Pipeline) Renderer() renderers.Renderer {
+	return p.renderer
+}
