@@ -297,6 +297,10 @@ For public community acquisition, use the workspace's Slack shared-invite URL ra
 - [Discord](https://discord.gg/naeos) — community discussion
 - [NAEOS Partner Program](PARTNER-PROGRAM.md) — technology, infrastructure, AI, academic, community, pilot, and strategic collaboration
 
+## Social identity and distribution
+
+[Social Identity Source of Truth](docs/SOCIAL-IDENTITY.md) defines the canonical public positioning, channel roles, profile copy, visual rules, and verification status for NAEOS social distribution.
+
 ## Security and governance
 
 - [SECURITY.md](SECURITY.md) — supported release lines and security reporting
