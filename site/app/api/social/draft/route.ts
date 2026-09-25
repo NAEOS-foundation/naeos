@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { NextResponse } from "next/server";
+import { evaluateSocialPolicy } from "./policy";
 
 const API = "https://api.github.com";
 const REPO = "NAEOS-foundation/naeos";
@@ -130,6 +131,7 @@ export async function GET() {
     );
 
     const body = buildPost(issues, pulls, mergedPulls, runs, release);
+    const policy = evaluateSocialPolicy({ source: "github-live", signals });
 
     return NextResponse.json(
       {
@@ -137,6 +139,7 @@ export async function GET() {
         generatedAt: new Date().toISOString(),
         publishable,
         signals,
+        policy,
         sourceEvents: {
           latestCommit: commits[0]
             ? { sha: commits[0].sha, url: commits[0].html_url, message: commits[0].commit?.message }
