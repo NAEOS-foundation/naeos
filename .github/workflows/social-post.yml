@@ -42,7 +42,7 @@ jobs:
           NAEOS_SLACK_TOKEN: ${{ secrets.NAEOS_SLACK_TOKEN }}
           NAEOS_SLACK_ANNOUNCE_CHANNEL: ${{ secrets.NAEOS_SLACK_ANNOUNCE_CHANNEL }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
+          LINKEDIN_ORGANIZATION_URN: ${{ secrets.LINKEDIN_ORGANIZATION_URN }}
         run: |
           ARGS=()
           if [ -n "${{ inputs.date }}" ]; then ARGS+=(--date "${{ inputs.date }}"); fi
