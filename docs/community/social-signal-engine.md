@@ -14,7 +14,7 @@ The endpoint reads current GitHub state and returns:
 - recent workflow state
 - latest commit
 - latest release
-- publishable signal classification
+- candidate signal classification
 - LinkedIn and X draft copy
 
 It deliberately does **not** publish content or mutate the repository.
