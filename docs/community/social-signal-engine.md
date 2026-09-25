@@ -54,6 +54,37 @@ External receipt
 
 The current implementation stops at the draft boundary. A publisher integration must be connected separately.
 
+## Policy gate v1
+
+The draft endpoint now evaluates a separate social policy before returning the candidate:
+
+- `release`, `merged-pr`, `bug`, and `ci-failure` can produce a reviewable candidate.
+- A valid GitHub source is required.
+- The policy decision is `review_required`, not publish authorization.
+- `authorized` is always `false` in v1.
+- Unsupported or unavailable source state fails closed with `deny`.
+- The response records the policy version and decision reasons so proposal and authorization remain distinct.
+
+The effective boundary is:
+
+```
+GitHub state
+    ↓
+Signal classification
+    ↓
+Draft proposal
+    ↓
+Policy evaluation
+    ↓
+Human approval
+    ↓
+Publisher
+    ↓
+External receipt
+```
+
+No social network credentials, publisher calls, or automatic publication are introduced by this change.
+
 ## Why this is separate from Status
 
 Status answers: "What is the current engineering state?"
