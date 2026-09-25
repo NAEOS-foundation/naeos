@@ -67,3 +67,37 @@ Both can consume the same GitHub source of truth without creating commits on pro
 A future GitHub webhook can move this from request-time polling to event-driven processing. GitHub supports repository webhooks for issues, pull requests, releases, workflow-related events, and other repository activity.
 
 Webhook delivery should be authenticated, deduplicated using the GitHub delivery ID, and processed asynchronously before a social publication is considered.
+
+
+## Policy gate v1
+
+The draft endpoint evaluates a separate social policy before returning a candidate:
+
+- `release`, `merged-pr`, `bug`, and `ci-failure` can produce a reviewable candidate.
+- A valid GitHub source is required.
+- The response uses `candidate` to describe a reviewable proposal; it is not publication authorization.
+- The policy decision is `review_required`, not publish authorization.
+- `authorized` is always `false` in v1.
+- Unsupported or unavailable source state fails closed with `deny`.
+- The response records the policy version and decision reasons so proposal, authorization, execution, and evidence remain distinct.
+- Error responses also include the fail-closed policy decision.
+
+The effective boundary is:
+
+```
+GitHub state
+    ↓
+Signal classification
+    ↓
+Draft proposal
+    ↓
+Policy evaluation
+    ↓
+Human approval
+    ↓
+Publisher
+    ↓
+External receipt
+```
+
+No social network credentials, publisher calls, or automatic publication are introduced by this change.
