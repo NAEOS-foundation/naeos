@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/views/PageHeader";
 import PluginsGrid, { PluginPublishSteps } from "@/components/views/PluginsGrid";
 import TemplatesGrid from "@/components/views/TemplatesGrid";
 import StatusView from "@/components/views/StatusView";
+import AssessmentForm from "@/components/views/AssessmentForm";
 import {
   breadcrumbJsonLd,
   faqJsonLd,
@@ -32,7 +33,6 @@ import {
 import pluginData from "@/data/plugins.json";
 import templateData from "@/data/templates/registry.json";
 
-/** Rebuild the content-cache URL ("/id/blog" for id, unprefixed for en) from route params. */
 function cacheUrl(lang: string, slug?: string[]): string {
   const rest = (slug ?? []).join("/");
   return lang === DEFAULT_LANG ? `/${rest}` : `/${lang}/${rest}`;
@@ -155,6 +155,10 @@ export default async function ContentPage(props: {
         <JsonLd data={faqJsonLd(extractFaqItems(page.body))} />
       </>
     );
+  }
+
+  if (page.url === "/assessment") {
+    return <><GenericPageView page={page} /><div className="container" style={{ maxWidth: "760px", paddingBottom: "4rem" }}><AssessmentForm lang={lang} /></div><JsonLd data={breadcrumbJsonLd(crumbs)} /></>;
   }
 
   if (page.url === "/status") {
