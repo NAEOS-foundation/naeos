@@ -12,7 +12,7 @@ const base = {
   receiptId: "receipt-001",
   executedAt: "2026-09-26T09:00:00Z",
   authorization: {
-    contractVersion: "authorization-v1" as const,
+    contractVersion: "authorization-v1",
     authorized: true,
   },
   action: {
@@ -50,15 +50,11 @@ test("unauthorized action is rejected and cannot produce an external effect", ()
 test("unsupported authorization version fails closed", () => {
   const receipt = runPublisherDryRun({
     ...base,
-    authorization: {
-      contractVersion: "authorization-v1" as const,
-      authorized: true,
-    },
+    authorization: { contractVersion: "authorization-v0", authorized: true },
   });
 
-  // Runtime validation must not be bypassed by a malformed producer.
-  receipt.authorizationContractVersion = "authorization-v1";
-  assert.equal(receipt.status, "simulated");
+  assert.equal(receipt.status, "rejected");
+  assert.ok(receipt.reasons.includes("authorization-contract-version-unsupported"));
 });
 
 test("blank action bindings fail closed", () => {
