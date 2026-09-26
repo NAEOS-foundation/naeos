@@ -193,3 +193,44 @@ future external publisher
 A dry-run receipt is evidence of the NAEOS simulation boundary, not evidence that a social network accepted or published content. An external publisher must remain a later, separately authorized integration and must return its own provider receipt.
 
 No social credentials, network publishing calls, or automatic external publication are introduced by publisher-receipt-v1.
+
+
+## External publisher boundary v1
+
+P5 defines a provider-neutral handoff immediately before any future external publisher adapter.
+
+The `external-publisher-v1` contract requires:
+
+- an execution ID
+- an explicit provider identifier
+- `authorization-v1` with `authorized: true`
+- the same proposal, action, target, policy version, and decision ID bindings
+- a provider receipt that can later be verified independently of authorization
+
+The contract exposes an `ExternalPublisherAdapter` interface but does not instantiate or call an adapter. The preparation function always reports `externalEffect: false`; it is a boundary check, not publication authorization.
+
+A future runtime must revalidate authorization and all action bindings at the last controllable boundary immediately before invoking a provider. A provider response is observation evidence and never replaces the NAEOS policy or authorization decision.
+
+Provider receipt validation requires the expected provider, a non-empty provider receipt ID and observation timestamp, and a status other than `unknown`. This prevents an ambiguous provider response from being treated as execution evidence.
+
+The intended architecture is:
+
+```
+proposal
+   ↓
+policy decision
+   ↓
+human approval
+   ↓
+authorization-v1
+   ↓
+publisher-receipt-v1 dry-run
+   ↓
+external-publisher-v1 handoff
+   ↓
+future provider adapter
+   ↓
+provider receipt / observation
+```
+
+P5 does **not** add social credentials, provider HTTP calls, automatic publication, or a production provider adapter. Those remain a separate implementation and authorization decision.
