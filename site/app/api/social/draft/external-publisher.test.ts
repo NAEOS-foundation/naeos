@@ -6,6 +6,7 @@ import { test } from "node:test";
 
 // Node native TypeScript runner requires the explicit extension.
 // @ts-ignore TS5097: runtime resolution is handled by Node's strip-types loader.
+// @ts-ignore TS5097: runtime resolution is handled by Node's strip-types loader.
 import {
   isProviderReceiptValid,
   prepareExternalPublish,
