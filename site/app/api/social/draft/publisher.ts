@@ -15,7 +15,7 @@ export type PublisherAction = {
 };
 
 export type PublisherAuthorization = {
-  contractVersion: "authorization-v1";
+  contractVersion: string;
   authorized: boolean;
 };
 
@@ -74,7 +74,7 @@ export function runPublisherDryRun(input: PublisherDryRunRequest): PublisherDryR
     target: input.action.target,
     policyVersion: input.action.policyVersion,
     decisionId: input.action.decisionId,
-    authorizationContractVersion: input.authorization.contractVersion,
+    authorizationContractVersion: "authorization-v1",
     reasons,
   };
 }
