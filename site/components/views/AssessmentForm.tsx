@@ -1,5 +1,8 @@
 "use client";
 
+// Copyright 2024-2026 NAEOS Foundation
+// SPDX-License-Identifier: Apache-2.0
+
 import { FormEvent, useState } from "react";
 
 const API_BASE = (process.env.NEXT_PUBLIC_CRM_API_URL ?? "").replace(/\/$/, "");
