@@ -146,7 +146,7 @@ jobs:
       - name: Generate coverage
         run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic -timeout 300s ./...
       - name: Upload coverage
-        uses: codecov/codecov-action@e53489f4d376d79066609109e7a95a29eb3740b1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f
         with:
           files: ./coverage.out
           fail_ci_if_error: false
