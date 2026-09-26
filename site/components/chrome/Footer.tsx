@@ -41,6 +41,7 @@ export default function Footer({ lang, tagline }: FooterProps) {
         <div className="container">
           <div className="footer-grid">
             <div className="footer-col brand">
+              <img className="footer-brand-logo" src="/images/naeos-engineering-logo.webp" width={72} height={72} loading="eager" alt="NAEOS Engineering" style={{ width: "72px", height: "72px", borderRadius: "16px", marginBottom: "1rem" }} />
               <Link href={base === "" ? "/" : `${base}/`} className="logo">
                 <img className="logo-icon" src="/images/logo-mark.svg" width={28} height={28} loading="eager" alt="" aria-hidden="true" />
                 <span className="logo-text">NAEOS</span>
