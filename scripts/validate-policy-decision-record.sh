@@ -38,8 +38,7 @@ jq -e '
   ((.verification // {}) | if . == {} then true else
     (.status // "pending" | IN("pending","passed","failed")) and
     (if .status == "passed" then
-      (.evidence_digest | type == "string" and test("^[a-f0-9]{64}$")) and
-      (.evidence_digest as $digest | $digest as $d | $evidence_digests | true)
+      (.evidence_digest | type == "string" and test("^[a-f0-9]{64}$"))
     else true end)
   end)
 ' "$record" >/dev/null
