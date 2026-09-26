@@ -237,6 +237,8 @@ jobs:
             echo "validator accepted malformed evidence digest" >&2
             exit 1
           fi
+      - name: Run PDR validator regression tests
+        run: bash scripts/test-policy-decision-record.sh
 
   ci-gate:
     name: CI Gate
