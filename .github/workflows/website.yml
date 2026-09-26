@@ -43,6 +43,8 @@ jobs:
         run: node --test --experimental-strip-types app/api/social/draft/authorization.test.ts
       - name: Verify human approval boundary
         run: node --test --experimental-strip-types app/api/social/draft/human-approval.test.ts
+      - name: Verify publisher dry-run receipt
+        run: node --test --experimental-strip-types app/api/social/draft/publisher.test.ts
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
