@@ -47,6 +47,8 @@ Draft
       ↓
 Policy / human review
       ↓
+Authorization
+      ↓
 Social publisher
       ↓
 External receipt
@@ -81,22 +83,34 @@ The draft endpoint evaluates a separate social policy before returning a candida
 - The response records the policy version and decision reasons so proposal, authorization, execution, and evidence remain distinct.
 - Error responses also include the fail-closed policy decision.
 
-The effective boundary is:
+## Authorization contract v1
+
+Policy evaluation and authorization are separate contracts.
+
+The authorization contract requires all of the following before `authorized: true` can be returned:
+
+1. policy decision is `review_required`
+2. policy version matches the required policy version
+3. an explicit approval record exists
+4. approval identity, timestamp, and approval ID are present
+5. approval binds to the same proposal, action, target, and policy version
+
+Any missing or mismatched field fails closed with `deny`. The contract does not publish content and does not execute an external action.
+
+The contract is intentionally proposal-bound:
 
 ```
-GitHub state
-    ↓
-Signal classification
-    ↓
-Draft proposal
-    ↓
-Policy evaluation
-    ↓
-Human approval
-    ↓
-Publisher
-    ↓
-External receipt
+proposal
+   ↓
+policy decision
+   ↓
+explicit approval
+   ↓
+authorization contract
+   ↓
+authorized execution
 ```
+
+An authorization result is not evidence that execution happened. Execution and its external receipt remain separate stages for the subsequent decision-record and publisher work.
 
 No social network credentials, publisher calls, or automatic publication are introduced by this change.
