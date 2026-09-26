@@ -1,7 +1,9 @@
 // Copyright 2024-2026 NAEOS Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-import { evaluateHumanApproval } from "./human-approval";
+// Node native TypeScript runner requires the explicit extension.
+// @ts-ignore TS5097: runtime resolution is handled by Node's strip-types loader.
+import { evaluateHumanApproval } from './human-approval.ts';
 
 export type AuthorizationDecision = "authorized" | "deny";
 
