@@ -133,6 +133,8 @@ Before authorization can accept a social action, a human approval record must bi
 
 Missing or blank binding fields fail closed. A rejection is never accepted as approval.
 
+Authorization-v1 invokes the human-approval-v1 evaluator before returning `authorized: true`, then independently rechecks proposal, action, target, policy-version, and decision-ID bindings. This makes the human boundary an authorization prerequisite rather than documentation-only metadata.
+
 The boundary is:
 
 ```
