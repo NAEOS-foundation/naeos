@@ -38,6 +38,7 @@ const DOCS_DROPDOWN = [
 const MAIN_LINKS = [
   ["control-plane", "nav_control_plane"],
   ["use-cases", "nav_use_cases"],
+  ["enterprise", null],
   ["blog", "nav_blog"],
   ["plugins", "nav_plugins"],
   ["community", "nav_community"],
@@ -45,6 +46,7 @@ const MAIN_LINKS = [
 
 function label(t: (key: string) => string, seg: string, key: string | null): string {
   if (key) return t(key);
+  if (seg === "enterprise") return "Enterprise";
   return seg === "templates" ? "Templates" : "Schema Registry";
 }
 
