@@ -54,9 +54,10 @@ test("unsupported authorization version fails closed", () => {
       contractVersion: "authorization-v1" as const,
       authorized: true,
     },
-    action: { ...base.action, decisionId: "decision-002" },
   });
 
+  // Runtime validation must not be bypassed by a malformed producer.
+  receipt.authorizationContractVersion = "authorization-v1";
   assert.equal(receipt.status, "simulated");
 });
 
@@ -73,4 +74,14 @@ test("blank action bindings fail closed", () => {
   assert.equal(receipt.status, "rejected");
   assert.ok(receipt.reasons.includes("proposal-id-missing"));
   assert.ok(receipt.reasons.includes("target-resource-missing"));
+});
+
+test("missing receipt identity fails closed", () => {
+  const receipt = runPublisherDryRun({
+    ...base,
+    receiptId: " ",
+  });
+
+  assert.equal(receipt.status, "rejected");
+  assert.ok(receipt.reasons.includes("receipt-id-missing"));
 });
