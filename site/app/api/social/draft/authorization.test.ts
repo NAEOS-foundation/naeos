@@ -3,7 +3,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluateAuthorization } from "./authorization.ts";
+import { evaluateAuthorization } from "./authorization";
 
 const base = {
   proposalId: "proposal-1",
