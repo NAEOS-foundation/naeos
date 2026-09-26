@@ -39,6 +39,8 @@ jobs:
         run: npm run typecheck
       - name: Verify social policy gate
         run: node --test --experimental-strip-types app/api/social/draft/policy.test.ts
+      - name: Verify authorization contract
+        run: node --test --experimental-strip-types app/api/social/draft/authorization.test.ts
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
