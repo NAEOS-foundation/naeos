@@ -1,0 +1,25 @@
+name: PDR Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'governance/**'
+      - 'scripts/validate-policy-decision-record.sh'
+      - 'scripts/test-policy-decision-record.sh'
+      - '.github/workflows/pdr-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pdr-regression:
+    name: PDR Validator Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate PDR fixture
+        run: bash scripts/validate-policy-decision-record.sh governance/examples/policy-decision-record.json
+      - name: Run PDR validator regression tests
+        run: bash scripts/test-policy-decision-record.sh
