@@ -26,7 +26,7 @@ jq -e '
   (.schema_version == "1.0.0") and
   (.decision_id | type == "string" and length > 0) and
   (.evidence | type == "array" and length > 0) and
-  ([.evidence[].evidence_id] | all(type == "string" and length > 0) and (length == unique | length)) and
+  ([.evidence[].evidence_id] | all(type == "string" and length > 0) and (length == (unique | length))) and
   ([.evidence[].digest] | all(test("^[a-f0-9]{64}$"))) and
   ((.required_gates // []) | type == "array" and all(type == "string" and length > 0) and (length == unique | length)) and
   (.outcome | IN("allow","require_review","deny","verified")) and
