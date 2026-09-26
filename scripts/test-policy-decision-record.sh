@@ -32,6 +32,12 @@ run_expect_fail "$tmp/bad-digest.json"
 jq '.evidence[0].evidence_id = .evidence[0].evidence_id' "$record" > "$tmp/valid-id.json"
 bash "$validator" "$tmp/valid-id.json"
 
+jq '.required_gates = ["ci","ci"]' "$record" > "$tmp/duplicate-gates.json"
+run_expect_fail "$tmp/duplicate-gates.json"
+
+jq '.evidence += [.evidence[0]]' "$record" > "$tmp/duplicate-evidence.json"
+run_expect_fail "$tmp/duplicate-evidence.json"
+
 jq '.verification.evidence_digest = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"' "$record" > "$tmp/unbound-verification.json"
 run_expect_fail "$tmp/unbound-verification.json"
 
