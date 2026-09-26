@@ -61,6 +61,13 @@ Dokumen ini memetakan struktur dokumentasi NAEOS berdasarkan skema modular yang 
 - NES-053 WASM Plugin — WASM plugin sandboxed execution.
 - NES-054 Prompt Library — pustaka prompt untuk AI assistance.
 
+## Enterprise and go-to-market
+- [NAEOS Enterprise Overview](NAEOS-ENTERPRISE-OVERVIEW.md) — enterprise positioning, control model, evaluation path, and complementary architecture.
+- [AI Engineering Governance Assessment](AI-ENGINEERING-GOVERNANCE-ASSESSMENT.md) — structured discovery and architecture assessment for teams evaluating AI coding-agent governance.
+- [Pilot Readiness](PILOT-READINESS.md) — repeatable technical evaluation path for a design partner.
+- [Design Partner Program](DESIGN-PARTNER-PROGRAM.md) — design-partner engagement model.
+- [GTM 90-Day](GTM-90-DAY.md) — go-to-market execution framework.
+
 ## Dokumentasi pendukung
 - Kernel Architecture (NAEOS-KER-001) — arsitektur kernel.
 - Kernel Implementation (NAEOS-KER-002) — panduan implementasi kernel.
