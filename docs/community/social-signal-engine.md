@@ -158,3 +158,38 @@ receipt
 The current deployment may use one maintainer as the human approver. That is a real human review boundary, but it is not a multi-party approval system and it must not be represented as one.
 
 An agent or model may propose an approval payload, but the payload itself is not proof that the human performed the approval. An authenticated approval mechanism is a later hardening step.
+
+## Publisher dry-run and receipt v1
+
+The publisher boundary is now represented by a dry-run contract. It accepts an action only after authorization-v1 has returned authorized: true.
+
+The dry-run contract:
+
+- validates the authorization contract version at runtime
+- validates proposal, action, target, policy version, decision ID, receipt ID, and execution timestamp
+- fails closed when authorization or required bindings are missing or unsupported
+- never calls a social provider
+- returns externalEffect: false for both simulated and rejected outcomes
+- emits a publisher-receipt-v1 observation that distinguishes simulation from rejection
+
+The intended boundary is now:
+
+```
+proposal
+   ↓
+policy decision
+   ↓
+human approval
+   ↓
+authorization
+   ↓
+publisher dry-run
+   ↓
+receipt / observation
+   ↓
+future external publisher
+```
+
+A dry-run receipt is evidence of the NAEOS simulation boundary, not evidence that a social network accepted or published content. An external publisher must remain a later, separately authorized integration and must return its own provider receipt.
+
+No social credentials, network publishing calls, or automatic external publication are introduced by publisher-receipt-v1.
