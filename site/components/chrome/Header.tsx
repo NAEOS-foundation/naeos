@@ -2,27 +2,20 @@
 // Copyright 2024-2026 NAEOS Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import type { Lang } from "@/lib/site";
 
-export function openSearch() {
-  window.dispatchEvent(new CustomEvent("open-search"));
-}
+export function openSearch() { window.dispatchEvent(new CustomEvent("open-search")); }
 
 export function toggleTheme() {
   const el = document.documentElement;
   const next = el.getAttribute("data-theme") === "light" ? "dark" : "light";
   document.body.classList.add("theme-transitioning");
   el.setAttribute("data-theme", next);
-  try {
-    localStorage.setItem("theme", next);
-  } catch {
-    /* ignore */
-  }
+  try { localStorage.setItem("theme", next); } catch { /* ignore */ }
   window.setTimeout(() => document.body.classList.remove("theme-transitioning"), 400);
 }
 
@@ -38,6 +31,7 @@ const DOCS_DROPDOWN = [
 const MAIN_LINKS = [
   ["control-plane", "nav_control_plane"],
   ["use-cases", "nav_use_cases"],
+  ["enterprise", null],
   ["blog", "nav_blog"],
   ["plugins", "nav_plugins"],
   ["community", "nav_community"],
@@ -45,12 +39,11 @@ const MAIN_LINKS = [
 
 function label(t: (key: string) => string, seg: string, key: string | null): string {
   if (key) return t(key);
+  if (seg === "enterprise") return "Enterprise";
   return seg === "templates" ? "Templates" : "Schema Registry";
 }
 
-interface Props {
-  lang: Lang;
-}
+interface Props { lang: Lang; }
 
 export default function Header({ lang }: Props) {
   const pathname = usePathname();
@@ -59,23 +52,15 @@ export default function Header({ lang }: Props) {
   const base = lang === "en" ? "" : "/id";
 
   useEffect(() => setMenuOpen(false), [pathname]);
-
   useEffect(() => {
     if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-    };
+    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
   }, [menuOpen]);
 
-  const isActive = (href: string) =>
-    href !== "" && href !== "/" && (pathname === href || pathname.startsWith(`${href}/`));
-
+  const isActive = (href: string) => href !== "" && href !== "/" && (pathname === href || pathname.startsWith(`${href}/`));
   const langlessPath = pathname.replace(/^\/(?:en|id)(?=\/|$)/, "") || "/";
   const enHref = langlessPath;
   const idHref = `/id${langlessPath}`;
@@ -88,18 +73,14 @@ export default function Header({ lang }: Props) {
           <span className="logo-text">NAEOS</span>
         </Link>
         <nav className="site-nav" role="navigation" aria-label="Main navigation">
-          <Link href={`${base}/features`} className="nav-link" {...(isActive(`${base}/features`) ? { "aria-current": "page" as const } : {})}>
-            {t("nav_features")}
-          </Link>
+          <Link href={`${base}/features`} className="nav-link" {...(isActive(`${base}/features`) ? { "aria-current": "page" as const } : {})}>{t("nav_features")}</Link>
           <div className="nav-dropdown">
             <Link href={`${base}/docs`} className="nav-link" {...(isActive(`${base}/docs`) ? { "aria-current": "page" as const } : {})}>
               {t("nav_docs")}
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginLeft: 2, verticalAlign: "middle" }} aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
             </Link>
             <div className="nav-dropdown-content">
-              {DOCS_DROPDOWN.map(([path, key]) => (
-                <Link key={path} href={`${base}/${path}`} className="nav-dropdown-link">{t(key)}</Link>
-              ))}
+              {DOCS_DROPDOWN.map(([path, key]) => <Link key={path} href={`${base}/${path}`} className="nav-dropdown-link">{t(key)}</Link>)}
             </div>
           </div>
           {MAIN_LINKS.map(([seg, key]) => (
@@ -109,50 +90,19 @@ export default function Header({ lang }: Props) {
           ))}
         </nav>
         <div className="header-actions">
-          <button className="search-toggle" onClick={() => openSearch()} aria-label={t("nav_search")}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-          </button>
-          <button className="theme-toggle" onClick={() => toggleTheme()} aria-label={t("toggle_theme")}>
-            <svg className="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
-            <svg className="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-          </button>
-          <div className="lang-switcher">
-            <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
-            <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
-          </div>
+          <button className="search-toggle" onClick={() => openSearch()} aria-label={t("nav_search")}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg></button>
+          <button className="theme-toggle" onClick={() => toggleTheme()} aria-label={t("toggle_theme")}><svg className="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l-1.42-1.42" /></svg><svg className="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+          <div className="lang-switcher"><a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a><a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a></div>
           <Link href={`${base}/download`} className="btn btn-primary btn-sm header-cta" data-umami-event="header-get-started">{t("cta_get_started")}</Link>
-          <button
-            className="mobile-menu-btn"
-            aria-label={t("toggle_menu")}
-            aria-expanded={menuOpen}
-            aria-haspopup="true"
-            aria-controls="mobile-navigation"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span /><span /><span />
-          </button>
+          <button className="mobile-menu-btn" aria-label={t("toggle_menu")} aria-expanded={menuOpen} aria-haspopup="true" aria-controls="mobile-navigation" onClick={() => setMenuOpen((v) => !v)}><span /><span /><span /></button>
         </div>
       </div>
       <div id="mobile-navigation" className={`mobile-menu${menuOpen ? " open" : ""}`} role="navigation" aria-label="Mobile navigation" aria-hidden={!menuOpen}>
         {MOBILE_LINKS.map(([seg, key, indent]) => (
-          <Link
-            key={seg}
-            href={`${base}/${seg}`}
-            className="nav-link"
-            style={indent ? { paddingLeft: "2rem", fontSize: "var(--font-size-sm)" } : undefined}
-            {...(isActive(`${base}/${seg}`) && !indent ? { "aria-current": "page" as const } : {})}
-          >
-            {label(t, seg, key ?? null)}
-          </Link>
+          <Link key={seg} href={`${base}/${seg}`} className="nav-link" style={indent ? { paddingLeft: "2rem", fontSize: "var(--font-size-sm)" } : undefined} {...(isActive(`${base}/${seg}`) && !indent ? { "aria-current": "page" as const } : {})}>{label(t, seg, key ?? null)}</Link>
         ))}
-        <div className="lang-switcher mobile" style={{ padding: "0.75rem 1rem" }}>
-          <a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a>
-          <a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a>
-        </div>
-        <div className="mobile-menu-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => toggleTheme()} style={{ flex: 1 }}>{t("toggle_theme")}</button>
-          <button className="btn btn-secondary btn-sm" onClick={() => { setMenuOpen(false); openSearch(); }} style={{ flex: 1 }}>{t("nav_search")}</button>
-        </div>
+        <div className="lang-switcher mobile" style={{ padding: "0.75rem 1rem" }}><a href={enHref} className={`lang-link${lang === "en" ? " active" : ""}`} aria-label="English">EN</a><a href={idHref} className={`lang-link${lang === "id" ? " active" : ""}`} aria-label="Bahasa Indonesia">ID</a></div>
+        <div className="mobile-menu-actions"><button className="btn btn-secondary btn-sm" onClick={() => toggleTheme()} style={{ flex: 1 }}>{t("toggle_theme")}</button><button className="btn btn-secondary btn-sm" onClick={() => { setMenuOpen(false); openSearch(); }} style={{ flex: 1 }}>{t("nav_search")}</button></div>
       </div>
     </header>
   );
@@ -163,4 +113,3 @@ const MOBILE_LINKS = [
   ["docs", "nav_docs", false],
   ...MAIN_LINKS.map(([seg, key]) => [seg, key, false] as const),
 ] as const;
-
