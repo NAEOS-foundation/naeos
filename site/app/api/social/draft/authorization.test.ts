@@ -14,16 +14,20 @@ const base = {
   policyVersion: "social-v1",
   requiredPolicyVersion: "social-v1",
   policyDecision: "review_required" as const,
+  decisionId: "decision-1",
 };
 
 const approval = {
   approvalId: "approval-1",
-  approvedBy: "human-reviewer",
+  approverId: "human-reviewer",
+  approverIdentity: "human-reviewer",
+  decision: "approve" as const,
   approvedAt: "2026-09-26T00:00:00Z",
   proposalId: "proposal-1",
   action: "publish-social-draft",
   target: { system: "social", resource: "linkedin" },
   policyVersion: "social-v1",
+  decisionId: "decision-1",
 };
 
 test("reviewable proposal without approval remains unauthorized", () => {
@@ -34,7 +38,7 @@ test("reviewable proposal without approval remains unauthorized", () => {
   assert.ok(result.reasons.includes("approval-missing"));
 });
 
-test("explicit approval authorizes a matching proposal", () => {
+test("explicit human approval authorizes a matching proposal", () => {
   const result = evaluateAuthorization({ ...base, approval });
 
   assert.equal(result.decision, "authorized");
@@ -42,7 +46,7 @@ test("explicit approval authorizes a matching proposal", () => {
   assert.deepEqual(result.reasons, []);
 });
 
-test("policy deny fails closed even when an approval exists", () => {
+test("policy deny fails closed even when a human approval exists", () => {
   const result = evaluateAuthorization({
     ...base,
     policyDecision: "deny",
@@ -90,4 +94,40 @@ test("approval target and action must match the proposal", () => {
   assert.equal(result.authorized, false);
   assert.ok(result.reasons.includes("approval-action-mismatch"));
   assert.ok(result.reasons.includes("approval-target-mismatch"));
+});
+
+test("approval decision binding must match the policy decision", () => {
+  const result = evaluateAuthorization({
+    ...base,
+    decisionId: "decision-2",
+    approval,
+  });
+
+  assert.equal(result.decision, "deny");
+  assert.equal(result.authorized, false);
+  assert.ok(result.reasons.includes("approval-decision-mismatch"));
+});
+
+test("rejected human approval fails closed", () => {
+  const result = evaluateAuthorization({
+    ...base,
+    approval: { ...approval, decision: "reject" },
+  });
+
+  assert.equal(result.decision, "deny");
+  assert.equal(result.authorized, false);
+  assert.ok(result.reasons.includes("human-approval-invalid"));
+  assert.ok(result.reasons.includes("human-rejected"));
+});
+
+test("blank human identity fails closed", () => {
+  const result = evaluateAuthorization({
+    ...base,
+    approval: { ...approval, approverIdentity: " " },
+  });
+
+  assert.equal(result.decision, "deny");
+  assert.equal(result.authorized, false);
+  assert.ok(result.reasons.includes("human-approval-invalid"));
+  assert.ok(result.reasons.includes("approver-identity-missing"));
 });
