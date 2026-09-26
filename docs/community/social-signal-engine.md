@@ -114,3 +114,45 @@ authorized execution
 An authorization result is not evidence that execution happened. Execution and its external receipt remain separate stages for the subsequent decision-record and publisher work.
 
 No social network credentials, publisher calls, or automatic publication are introduced by this change.
+
+## Human approval boundary v1
+
+The human approval boundary is explicit and single-operator compatible. NAEOS does not assume multiple maintainers.
+
+Before authorization can accept a social action, a human approval record must bind:
+
+- approvalId
+- approverId and approverIdentity
+- explicit approve or reject decision
+- approval timestamp
+- proposal ID
+- action
+- target system/resource
+- policy version
+- policy decision ID
+
+Missing or blank binding fields fail closed. A rejection is never accepted as approval.
+
+The boundary is:
+
+```
+proposal
+   ↓
+policy decision
+   ↓
+explicit human approval
+   ↓
+authorization contract
+   ↓
+execution
+   ↓
+receipt
+```
+
+### Identity limitation
+
+`human-approval-v1` records approval provenance fields, but `authenticated` is explicitly `false`. The contract therefore does **not** claim cryptographic or platform-authenticated proof that a particular person performed the approval.
+
+The current deployment may use one maintainer as the human approver. That is a real human review boundary, but it is not a multi-party approval system and it must not be represented as one.
+
+An agent or model may propose an approval payload, but the payload itself is not proof that the human performed the approval. An authenticated approval mechanism is a later hardening step.
