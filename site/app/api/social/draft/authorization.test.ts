@@ -3,7 +3,9 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluateAuthorization } from "./authorization";
+// Node's native TypeScript runner requires the explicit .ts extension.
+// @ts-ignore TS5097: runtime resolution is handled by Node's strip-types loader.
+import { evaluateAuthorization } from "./authorization.ts";
 
 const base = {
   proposalId: "proposal-1",
