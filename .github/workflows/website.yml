@@ -49,6 +49,8 @@ jobs:
         run: node --test --experimental-strip-types app/api/social/draft/external-publisher.test.ts
       - name: Verify LinkedIn publisher adapter
         run: node --test --experimental-strip-types app/api/social/draft/linkedin-publisher.test.ts
+      - name: Verify LinkedIn runtime boundary
+        run: node --test --experimental-strip-types app/api/social/draft/linkedin-runtime.test.ts
       - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
