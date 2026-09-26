@@ -28,7 +28,7 @@ jq -e '
   (.evidence | type == "array" and length > 0) and
   ([.evidence[].evidence_id] | all(type == "string" and length > 0) and (length == (unique | length))) and
   ([.evidence[].digest] | all(test("^[a-f0-9]{64}$"))) and
-  ((.required_gates // []) | type == "array" and all(type == "string" and length > 0) and (length == unique | length)) and
+  ((.required_gates // []) | type == "array" and all(type == "string" and length > 0) and (length == (unique | length))) and
   (.outcome | IN("allow","require_review","deny","verified")) and
   ((.change_classification // {}) | if . == {} then true else
     (.risk | IN("low","medium","high","critical","unknown")) and
@@ -52,10 +52,7 @@ if jq -e 'has("created_at")' "$record" >/dev/null; then
 fi
 
 if jq -e 'has("verification") and (.verification.status == "passed")' "$record" >/dev/null; then
-  jq -e '
-    .verification.evidence_digest as $digest |
-    [.evidence[].digest] | index($digest) != null
-  ' "$record" >/dev/null
+  jq -e '.verification.evidence_digest as $digest | [.evidence[].digest] | index($digest) != null' "$record" >/dev/null
 fi
 
 if jq -e '.outcome == "verified"' "$record" >/dev/null; then
