@@ -1,5 +1,7 @@
 name: Website
 
+# Production deployment trigger: keep this workflow on main and deploy the live site.
+
 on:
   push:
     branches: [main]
