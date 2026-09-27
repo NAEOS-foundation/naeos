@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
   <title id="title">NAEOS — Nusantara AI Engineering Operating System</title>
-  <desc id="desc">Glossy cyan, blue and violet infinity N mark with the NAEOS wordmark.</desc>
-
+  <desc id="desc">Glossy infinity N ribbon mark in cyan, blue, violet and magenta with the NAEOS wordmark.</desc>
   <defs>
     <linearGradient id="ribbon" x1="0%" y1="20%" x2="100%" y2="80%">
       <stop offset="0%" stop-color="#22D3EE"/>
@@ -9,77 +8,78 @@
       <stop offset="72%" stop-color="#6366F1"/>
       <stop offset="100%" stop-color="#D946EF"/>
     </linearGradient>
-    <linearGradient id="ribbon-light" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#67E8F9"/>
-      <stop offset="45%" stop-color="#60A5FA"/>
-      <stop offset="100%" stop-color="#C084FC"/>
+    <linearGradient id="ribbon-hi" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5F3FC"/>
+      <stop offset="48%" stop-color="#93C5FD"/>
+      <stop offset="100%" stop-color="#E9D5FF"/>
     </linearGradient>
-    <linearGradient id="ribbon-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="ribbon-deep" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0891B2"/>
       <stop offset="52%" stop-color="#1D4ED8"/>
       <stop offset="100%" stop-color="#7E22CE"/>
     </linearGradient>
     <linearGradient id="wordmark" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#334155"/>
     </linearGradient>
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
       <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0F172A" flood-opacity=".20"/>
     </filter>
-    <filter id="soft-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="7"/>
-    </filter>
   </defs>
 
-  <!-- Infinity/N ribbon mark -->
-  <g transform="translate(28 38)" filter="url(#shadow)">
+  <!-- Infinity N: two continuous interlocking ribbons -->
+  <g transform="translate(36 42)" filter="url(#shadow)">
     <path d="M92 142
-             C92 76 150 43 204 43
-             C238 43 266 55 294 83
-             L406 195
-             C438 227 478 209 478 163
-             C478 117 438 99 406 131
-             L369 168"
-          fill="none" stroke="url(#ribbon-dark)" stroke-width="66"
-          stroke-linecap="round" stroke-linejoin="round"/>
+      C92 78 145 42 205 42
+      C241 42 270 56 298 84
+      L408 194
+      C441 227 484 207 484 162
+      C484 117 441 98 408 131
+      L369 170"
+      fill="none" stroke="url(#ribbon-deep)" stroke-width="68"
+      stroke-linecap="round" stroke-linejoin="round"/>
 
-    <path d="M478 142
-             C478 76 420 43 366 43
-             C332 43 304 55 276 83
-             L164 195
-             C132 227 92 209 92 163
-             C92 117 132 99 164 131
-             L201 168"
-          fill="none" stroke="url(#ribbon)" stroke-width="66"
-          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M484 142
+      C484 78 431 42 371 42
+      C335 42 306 56 278 84
+      L168 194
+      C135 227 92 207 92 162
+      C92 117 135 98 168 131
+      L207 170"
+      fill="none" stroke="url(#ribbon)" stroke-width="68"
+      stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- dimensional upper highlight -->
-    <path d="M105 126
-             C111 78 153 57 202 57
-             C231 57 255 67 280 92"
-          fill="none" stroke="url(#ribbon-light)" stroke-width="16"
-          stroke-linecap="round" opacity=".90"/>
+    <!-- glossy top planes -->
+    <path d="M105 125
+      C112 78 153 57 204 57
+      C235 57 258 67 283 92"
+      fill="none" stroke="url(#ribbon-hi)" stroke-width="17"
+      stroke-linecap="round" opacity=".92"/>
 
-    <path d="M465 126
-             C459 78 417 57 368 57
-             C339 57 315 67 290 92"
-          fill="none" stroke="url(#ribbon-light)" stroke-width="16"
-          stroke-linecap="round" opacity=".82"/>
+    <path d="M471 125
+      C464 78 423 57 372 57
+      C341 57 318 67 293 92"
+      fill="none" stroke="url(#ribbon-hi)" stroke-width="17"
+      stroke-linecap="round" opacity=".86"/>
 
-    <!-- crossing/shading accents -->
-    <path d="M271 111 L313 153" fill="none" stroke="#0B3AA4" stroke-width="18" stroke-linecap="round" opacity=".42"/>
-    <path d="M299 111 L341 153" fill="none" stroke="#7C3AED" stroke-width="12" stroke-linecap="round" opacity=".30"/>
+    <!-- crossing depth -->
+    <path d="M270 108 L318 156"
+      fill="none" stroke="#0B3AA4" stroke-width="22"
+      stroke-linecap="round" opacity=".48"/>
+    <path d="M296 108 L344 156"
+      fill="none" stroke="#8B5CF6" stroke-width="13"
+      stroke-linecap="round" opacity=".34"/>
   </g>
 
-  <!-- Wordmark -->
-  <g transform="translate(570 92)" fill="url(#wordmark)">
-    <text x="0" y="78"
+  <!-- NAEOS wordmark -->
+  <g transform="translate(585 91)" fill="url(#wordmark)">
+    <text x="0" y="82"
       font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-      font-size="92" font-weight="800" letter-spacing="7">NAEOS</text>
-    <text x="5" y="126"
+      font-size="96" font-weight="800" letter-spacing="7">NAEOS</text>
+    <text x="6" y="132"
       font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
       font-size="20" font-weight="700" letter-spacing="5">NUSANTARA AI ENGINEERING</text>
-    <text x="5" y="157"
+    <text x="6" y="163"
       font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
       font-size="20" font-weight="700" letter-spacing="5">OPERATING SYSTEM</text>
   </g>
