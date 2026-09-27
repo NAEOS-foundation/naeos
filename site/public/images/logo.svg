@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+  <title id="title">NAEOS — Nusantara AI Engineering Operating System</title>
+  <desc id="desc">Glossy infinity N ribbon mark in cyan, blue, violet and magenta with the NAEOS wordmark.</desc>
+  <defs>
+    <linearGradient id="ribbon" x1="0%" y1="20%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="38%" stop-color="#2563EB"/>
+      <stop offset="72%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#D946EF"/>
+    </linearGradient>
+    <linearGradient id="ribbon-hi" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5F3FC"/>
+      <stop offset="48%" stop-color="#93C5FD"/>
+      <stop offset="100%" stop-color="#E9D5FF"/>
+    </linearGradient>
+    <linearGradient id="ribbon-deep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0891B2"/>
+      <stop offset="52%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#7E22CE"/>
+    </linearGradient>
+    <linearGradient id="wordmark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0F172A" flood-opacity=".20"/>
+    </filter>
+  </defs>
+
+  <!-- Infinity N: two continuous interlocking ribbons -->
+  <g transform="translate(36 42)" filter="url(#shadow)">
+    <path d="M92 142
+      C92 78 145 42 205 42
+      C241 42 270 56 298 84
+      L408 194
+      C441 227 484 207 484 162
+      C484 117 441 98 408 131
+      L369 170"
+      fill="none" stroke="url(#ribbon-deep)" stroke-width="68"
+      stroke-linecap="round" stroke-linejoin="round"/>
+
+    <path d="M484 142
+      C484 78 431 42 371 42
+      C335 42 306 56 278 84
+      L168 194
+      C135 227 92 207 92 162
+      C92 117 135 98 168 131
+      L207 170"
+      fill="none" stroke="url(#ribbon)" stroke-width="68"
+      stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- glossy top planes -->
+    <path d="M105 125
+      C112 78 153 57 204 57
+      C235 57 258 67 283 92"
+      fill="none" stroke="url(#ribbon-hi)" stroke-width="17"
+      stroke-linecap="round" opacity=".92"/>
+
+    <path d="M471 125
+      C464 78 423 57 372 57
+      C341 57 318 67 293 92"
+      fill="none" stroke="url(#ribbon-hi)" stroke-width="17"
+      stroke-linecap="round" opacity=".86"/>
+
+    <!-- crossing depth -->
+    <path d="M270 108 L318 156"
+      fill="none" stroke="#0B3AA4" stroke-width="22"
+      stroke-linecap="round" opacity=".48"/>
+    <path d="M296 108 L344 156"
+      fill="none" stroke="#8B5CF6" stroke-width="13"
+      stroke-linecap="round" opacity=".34"/>
+  </g>
+
+  <!-- NAEOS wordmark -->
+  <g transform="translate(585 91)" fill="url(#wordmark)">
+    <text x="0" y="82"
+      font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="96" font-weight="800" letter-spacing="7">NAEOS</text>
+    <text x="6" y="132"
+      font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="20" font-weight="700" letter-spacing="5">NUSANTARA AI ENGINEERING</text>
+    <text x="6" y="163"
+      font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="20" font-weight="700" letter-spacing="5">OPERATING SYSTEM</text>
+  </g>
+</svg>
