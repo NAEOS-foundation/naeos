@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" role="img" aria-labelledby="title desc">
+  <title id="title">NAEOS — Nusantara AI Engineering Operating System</title>
+  <desc id="desc">NAEOS infinity N mark with wordmark.</desc>
+  <defs>
+    <linearGradient id="mark-gradient" x1="8%" y1="50%" x2="92%" y2="50%">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset=".52" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="mark-shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#020617" flood-opacity=".45"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(12 12) scale(.309)" filter="url(#mark-shadow)">
+    <rect width="700" height="700" rx="86" fill="#0B1220"/>
+    <g transform="translate(95 150)">
+      <path d="M110 210 C110 95 245 55 335 145 L505 315 C560 370 610 335 610 255 C610 175 560 140 505 195 L445 255"
+        fill="none" stroke="url(#mark-gradient)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M610 210 C610 95 475 55 385 145 L215 315 C160 370 110 335 110 255 C110 175 160 140 215 195 L275 255"
+        fill="none" stroke="url(#mark-gradient)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <g transform="translate(250 82)" fill="#0B1220">
+    <text x="0" y="62" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="72" font-weight="800" letter-spacing="5">NAEOS</text>
+    <text x="4" y="103" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="18" font-weight="650" letter-spacing="4">NUSANTARA AI ENGINEERING</text>
+    <text x="4" y="132" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      font-size="18" font-weight="650" letter-spacing="4">OPERATING SYSTEM</text>
+  </g>
+</svg>
