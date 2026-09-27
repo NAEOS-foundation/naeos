@@ -8,6 +8,12 @@ BASE_SHA="${BASE_SHA:-${GITHUB_BASE_SHA:-}}"
 REQUEST="${NAEOS_DEPENDENCY_RISK_REQUEST:-}"
 OUTPUT="${NAEOS_DEPENDENCY_RISK_OUTPUT:-${ROOT}/dependency-risk-evidence.json}"
 cd "${ROOT}"
+if [[ -z "${BASE_SHA}" ]]; then
+  # Manual workflow dispatches do not provide github.event.before. Use the
+  # immediate parent so the gate remains meaningful instead of failing solely
+  # because the workflow was started manually.
+  BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || true)"
+fi
 if [[ -z "${BASE_SHA}" ]]; then echo "BASE_SHA is required; dependency risk gate fails closed."; exit 1; fi
 mapfile -t changed < <(git diff --name-only "${BASE_SHA}"...HEAD)
 dependency_changed=()
