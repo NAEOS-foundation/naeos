@@ -8,7 +8,16 @@ BASE_SHA="${BASE_SHA:-${GITHUB_BASE_SHA:-}}"
 REQUEST="${NAEOS_DEPENDENCY_RISK_REQUEST:-}"
 OUTPUT="${NAEOS_DEPENDENCY_RISK_OUTPUT:-${ROOT}/dependency-risk-evidence.json}"
 cd "${ROOT}"
-if [[ -z "${BASE_SHA}" ]]; then echo "BASE_SHA is required; dependency risk gate fails closed."; exit 1; fi
+if [[ -z "${BASE_SHA}" ]]; then
+  # workflow_dispatch does not provide github.event.before. For a manual
+  # validation run, compare the checked-out commit with its first parent.
+  if BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null)"; then
+    echo "BASE_SHA was not supplied; using first parent ${BASE_SHA} for manual validation."
+  else
+    echo "BASE_SHA is required and HEAD has no parent; dependency risk gate fails closed."
+    exit 1
+  fi
+fi
 mapfile -t changed < <(git diff --name-only "${BASE_SHA}"...HEAD)
 dependency_changed=()
 for path in "${changed[@]}"; do
