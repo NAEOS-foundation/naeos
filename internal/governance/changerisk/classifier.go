@@ -71,6 +71,24 @@ type Result struct {
 func Classify(req Request) Result {
 	domains := DomainsForPaths(req.Paths)
 	surface := SurfaceForPaths(req.Paths)
+
+	// A zero-diff comparison is a valid no-op, not an unknown-risk change.
+	// Preserve fail-closed behavior for genuinely unknown or unsupported changes.
+	if len(req.Paths) == 0 && req.Additions == 0 && req.Deletions == 0 {
+		return Result{
+			SchemaVersion:    "1.0.0",
+			ChangeSurface:    Unknown,
+			Criticality:      Low,
+			Risk:             Risk("low"),
+			Domains:          []Domain{},
+			ChangedFiles:     0,
+			Additions:        0,
+			Deletions:        0,
+			RequiredGates:    []string{"ci"},
+			EvidenceRequired: true,
+			Decision:         Allow,
+		}
+	}
 	criticality := criticalityFor(req, surface, domains)
 
 	gates, decision := gatesFor(criticality)
