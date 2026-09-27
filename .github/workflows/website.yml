@@ -50,6 +50,8 @@ jobs:
       - name: Verify LinkedIn publisher adapter
         run: node --test --experimental-strip-types app/api/social/draft/linkedin-publisher.test.ts
       - name: Build
+        env:
+          NEXT_PUBLIC_CONTROL_PLANE_API_URL: https://naeos-control-plane-production.up.railway.app
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
