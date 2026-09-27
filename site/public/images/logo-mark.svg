@@ -1,14 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
-  <title id="title">NAEOS</title>
-  <desc id="desc">NAEOS infinity-N brand mark</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-labelledby="title desc">
+  <title id="title">NAEOS Infinity N</title>
+  <desc id="desc">NAEOS infinity N mark in a cyan to blue to violet gradient.</desc>
   <defs>
-    <linearGradient id="naeos-gradient" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g" x1="8%" y1="50%" x2="92%" y2="50%">
       <stop offset="0" stop-color="#22D3EE"/>
-      <stop offset=".5" stop-color="#3B82F6"/>
+      <stop offset=".52" stop-color="#3B82F6"/>
       <stop offset="1" stop-color="#8B5CF6"/>
     </linearGradient>
+    <filter id="s" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".5"/>
+    </filter>
   </defs>
-  <path d="M14 20c5-6 12-6 18 0l10 10c6 6 13 6 18 0" fill="none" stroke="url(#naeos-gradient)" stroke-width="7" stroke-linecap="round"/>
-  <path d="M14 44c5 6 12 6 18 0l10-10c6-6 13-6 18 0" fill="none" stroke="url(#naeos-gradient)" stroke-width="7" stroke-linecap="round"/>
-  <path d="M28 16v32" fill="none" stroke="url(#naeos-gradient)" stroke-width="7" stroke-linecap="round"/>
+  <rect width="700" height="700" rx="86" fill="#0B1220"/>
+  <g filter="url(#s)" transform="translate(95 150)">
+    <path d="M110 210 C110 95 245 55 335 145 L505 315 C560 370 610 335 610 255 C610 175 560 140 505 195 L445 255"
+      fill="none" stroke="url(#g)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M610 210 C610 95 475 55 385 145 L215 315 C160 370 110 335 110 255 C110 175 160 140 215 195 L275 255"
+      fill="none" stroke="url(#g)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
