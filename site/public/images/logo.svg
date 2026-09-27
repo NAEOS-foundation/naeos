@@ -9,12 +9,6 @@
       <stop offset="76%" stop-color="#6366F1"/>
       <stop offset="100%" stop-color="#D946EF"/>
     </linearGradient>
-    <linearGradient id="ribbon-side" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0891B2"/>
-      <stop offset="44%" stop-color="#1D4ED8"/>
-      <stop offset="78%" stop-color="#6D28D9"/>
-      <stop offset="100%" stop-color="#A21CAF"/>
-    </linearGradient>
     <linearGradient id="ribbon-gloss" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity=".78"/>
       <stop offset="38%" stop-color="#E0F2FE" stop-opacity=".42"/>
@@ -38,12 +32,9 @@
     </filter>
   </defs>
 
-  <!-- Soft reflected glow -->
   <ellipse cx="270" cy="335" rx="175" ry="22" fill="#2563EB" opacity=".12" filter="url(#glow)"/>
 
-  <!-- Dimensional interlocking infinity/N emblem -->
   <g transform="translate(55 35)" filter="url(#shadow)">
-    <!-- lower/deep ribbon body -->
     <path d="M108 181
       C108 94 181 45 252 45
       C294 45 331 61 365 95
@@ -54,7 +45,6 @@
       fill="none" stroke="url(#edge)" stroke-width="94"
       stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- main ribbon -->
     <path d="M548 181
       C548 94 475 45 404 45
       C362 45 325 61 291 95
@@ -65,7 +55,6 @@
       fill="none" stroke="url(#ribbon-main)" stroke-width="94"
       stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- raised glossy planes -->
     <path d="M124 154
       C130 93 182 67 248 67
       C284 67 315 78 344 107"
@@ -78,7 +67,6 @@
       fill="none" stroke="url(#ribbon-gloss)" stroke-width="25"
       stroke-linecap="round" opacity=".88"/>
 
-    <!-- inner edge shading creates folded-ribbon depth -->
     <path d="M283 111 L347 175"
       fill="none" stroke="#123EAB" stroke-width="30"
       stroke-linecap="round" opacity=".42"/>
@@ -86,7 +74,6 @@
       fill="none" stroke="#8B5CF6" stroke-width="17"
       stroke-linecap="round" opacity=".36"/>
 
-    <!-- sharp specular accents -->
     <path d="M145 105 C171 73 207 64 246 65"
       fill="none" stroke="#FFFFFF" stroke-width="7"
       stroke-linecap="round" opacity=".72"/>
@@ -95,7 +82,6 @@
       stroke-linecap="round" opacity=".64"/>
   </g>
 
-  <!-- NAEOS wordmark -->
   <g transform="translate(665 112)" fill="url(#wordmark)">
     <text x="0" y="92"
       font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
