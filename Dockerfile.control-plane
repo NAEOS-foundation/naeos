@@ -23,4 +23,4 @@ USER naeos
 
 HEALTHCHECK --interval=30s --timeout=5s CMD /usr/local/bin/naeos health || exit 1
 
-CMD ["/usr/local/bin/naeos", "demo", "--addr", ":8080"]
+CMD ["/bin/sh", "-c", "exec /usr/local/bin/naeos demo --addr :8080"]
