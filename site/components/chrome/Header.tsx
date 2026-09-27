@@ -86,7 +86,7 @@ export default function Header({ lang }: Props) {
     <header className="site-header" role="banner">
       <div className="container header-inner">
         <Link href={base === "" ? "/" : `${base}/`} className="logo" aria-label="NAEOS Home">
-          <img className="logo-icon" src="/images/logo-infinity-neon-navbar.svg" width={32} height={32} loading="eager" alt="" aria-hidden="true" />
+          <img className="logo-icon" src="/images/logo-infinity-header.svg" width={40} height={28} loading="eager" alt="" aria-hidden="true" />
           <span className="logo-text">NAEOS</span>
         </Link>
         <nav className="site-nav" role="navigation" aria-label="Main navigation">

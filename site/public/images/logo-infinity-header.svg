@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">NAEOS Infinity Mark</title>
+  <desc id="desc">NAEOS infinity mark with a cyan, blue and violet gradient.</desc>
+  <defs>
+    <linearGradient id="neon" x1="10%" y1="30%" x2="90%" y2="70%">
+      <stop offset="0" stop-color="#19DDF5"/>
+      <stop offset=".48" stop-color="#278BFF"/>
+      <stop offset="1" stop-color="#8A4DFF"/>
+    </linearGradient>
+    <linearGradient id="depth" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="#0A3BC5"/>
+      <stop offset="1" stop-color="#4327D2"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-30%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g fill="none" stroke="url(#neon)" stroke-width="72" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M120 225 C120 105 250 65 340 155 L620 435"/>
+    <path d="M680 225 C680 105 550 65 460 155 L180 435"/>
+  </g>
+  <path d="M340 155 L460 275" stroke="url(#depth)" stroke-width="72" stroke-linecap="round"/>
+  <path d="M460 155 L340 275" stroke="url(#neon)" stroke-width="72" stroke-linecap="round"/>
+</svg>
