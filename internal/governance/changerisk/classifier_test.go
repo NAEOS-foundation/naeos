@@ -41,16 +41,16 @@ func TestClassifyUnknownFailsClosed(t *testing.T) {
 	}
 }
 
-
 func TestClassifyZeroDiffAllowsNoOp(t *testing.T) {
 	r := Classify(Request{EvidenceAvailable: true})
 	if r.ChangeSurface != Unknown || r.Criticality != Low || r.Risk != Risk("low") || r.Decision != Allow {
 		t.Fatalf("expected deterministic no-op allow: %+v", r)
 	}
 	if len(r.RequiredGates) != 1 || r.RequiredGates[0] != "ci" {
-		t.Fatalf("unexpected no-op gates: %+v", r.RequiredGates)
+		t.Fatalf("unexpected no-op gates: %+v", r)
 	}
 }
+
 func TestClassifyMissingEvidenceFailsClosed(t *testing.T) {
 	r := Classify(Request{Paths: []string{"internal/foo/bar.go"}, EvidenceAvailable: false})
 	if r.Decision != Deny || r.Risk != Risk("unknown") {
