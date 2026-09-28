@@ -30,7 +30,13 @@ The engineering question is simple: should the old plan still run?
 
 NAEOS is built around that question. It treats the specification as the source of truth and evaluates validation and policy before generating artifacts.
 
-## 3. Try it in 5 minutes
+## 3. See the public control boundary
+
+Before running locally, you can inspect the public Control Plane at [naeos.dev/control-plane](https://naeos.dev/control-plane/). It evaluates authorization requests against the deployed NAEOS control-plane engine and is intentionally side-effect-free.
+
+Use it to understand the public control boundary first; then reproduce the engineering workflow locally with the Golden Path below.
+
+## 4. Try it in 5 minutes
 
 The most direct, verified onboarding path in this repository is the canonical CLI demo in [examples/demo-cli/README.md](examples/demo-cli/README.md) and its script at [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh).
 
@@ -63,7 +69,7 @@ naeos ai compile --input-file examples/demo-cli/spec.yaml --target opencode
 
 The default demo intentionally does not require an LLM API key.
 
-## 4. Run the governance experiment
+## 5. Run the governance experiment
 
 After the five-minute CLI demo, run the flagship governance lifecycle experiment:
 
@@ -73,7 +79,7 @@ go run ./experiments/governance-lifecycle
 
 It tests the chain `agent intent → policy decision → execution → observation → evidence → independent verification` and deliberately treats an agent's claim as different from observed evidence. See [experiments/governance-lifecycle/README.md](experiments/governance-lifecycle/README.md).
 
-## 5. Understand the architecture
+## 6. Understand the architecture
 
 The repository’s conceptual architecture is summarized in [README.md](README.md) and [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md). For normative authority and conflict resolution, use [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md).
 
@@ -99,7 +105,7 @@ If you want the authoritative references, use [DOCUMENTATION-AUTHORITY.md](DOCUM
 - [docs/NES-023-NEIR.md](docs/NES-023-NEIR.md)
 - [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
 
-## 6. Pick your path
+## 7. Pick your path
 
 ### I want to understand NAEOS
 
@@ -159,7 +165,7 @@ Good first documentation work includes clarifying the onboarding path, fixing br
 
 Look at the pipeline and compiler docs, the demo, and the AI context generation flow. The best concrete starting point is the local demo plus the compiler references in [README.md](README.md) and [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md).
 
-## 7. Start with a small contribution
+## 8. Start with a small contribution
 
 The easiest successful contribution is not “build a large feature.” It is “improve one small, concrete thing that makes the project easier to understand or use.”
 
@@ -196,7 +202,7 @@ These are real areas of the repository and are appropriate once the basics are u
 
 The contributor ladder in [docs/community/contributor-ladder.md](docs/community/contributor-ladder.md) is the best guide for how these contributions fit together.
 
-## 8. Challenge NAEOS
+## 9. Challenge NAEOS
 
 A healthy NAEOS contribution is not just “add more features.” It is also challenging the assumptions the project currently makes.
 
@@ -213,7 +219,7 @@ This is not anti-project work. It is exactly the kind of work that makes a gover
 
 If you see a gap, ask: “What assumption does NAEOS currently make that may not hold in the real world?”
 
-## 9. Good first issues
+## 10. Good first issues
 
 The repository has a curated set of concrete contributor starting points. Each issue is intentionally scoped so a new contributor can inspect the relevant code or documentation before writing a large change:
 
@@ -225,7 +231,7 @@ The repository has a curated set of concrete contributor starting points. Each i
 
 Use [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) for new bug reports, documentation work, feature requests, plugin contributions, or other concrete gaps.
 
-## 10. Contribution workflow
+## 11. Contribution workflow
 
 The repository now has a curated set of concrete contributor starting points. Pick one based on the kind of work you want to do:
 
@@ -247,7 +253,7 @@ The simplest accurate contribution flow is:
 
 This repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The intent here is to make the first step feel approachable.
 
-## 11. Documentation map
+## 12. Documentation map
 
 | I want to... | Read... |
 |---|---|
@@ -260,7 +266,7 @@ This repository already defines the engineering workflow in [CONTRIBUTING.md](CO
 | See the roadmap | [ROADMAP.md](ROADMAP.md) |
 | Join discussion | [docs/community/discussions.md](docs/community/discussions.md) |
 
-## 12. Join the discussion
+## 13. Join the discussion
 
 If you have a technical question, a design idea, or a project you built with NAEOS, use GitHub Discussions and the issue templates rather than silently watching. The repository already defines the community structure in [docs/community/discussions.md](docs/community/discussions.md).
 
@@ -273,7 +279,7 @@ A strong first discussion usually contains:
 
 This is more useful than a vague “this seems broken” note.
 
-## 13. The NAEOS principle
+## 14. The NAEOS principle
 
 NAEOS should not merely make AI agents more capable. It should make their actions more understandable, governable, verifiable, and trustworthy.
 
