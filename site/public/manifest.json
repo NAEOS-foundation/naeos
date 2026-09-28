@@ -7,7 +7,7 @@
   "background_color": "#0B1220",
   "theme_color": "#3B82F6",
   "icons": [
-    { "src": "/images/naeos-engineering-logo.webp", "sizes": "256x256", "type": "image/webp", "purpose": "any maskable" }
+    { "src": "/images/logo-infinity-header.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "categories": ["developer-tools", "productivity"],
   "lang": "en"
