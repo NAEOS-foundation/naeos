@@ -123,6 +123,50 @@ func scnFailOpenAllowsAnything() Result {
 	}
 }
 
+func scnEvaluatorErrorFailsClosed() Result {
+	reg := policy.NewRegistry()
+	_ = reg.Register(&policy.Policy{
+		ID:      "invalid-evaluator-policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "ship", Action: "run"},
+		Default: policy.DecisionAllow,
+		Active:  true,
+		Rules: []policy.PolicyRule{{
+			RuleID:    "invalid-condition",
+			Condition: "",
+			Decision:  policy.DecisionAllow,
+			Priority:  1,
+		}},
+	})
+	plane := control.New(reg, control.FailClosed(false))
+	rec, err := plane.Evaluate(control.Request{
+		Resource: "ship",
+		Action:   "run",
+		Actor:    "agent-7",
+	})
+	if err != nil {
+		return Result{
+			Layer:           LayerControl,
+			Scenario:        "evaluator error fails closed",
+			Attack:          "A malformed policy rule triggers evaluator failure while the policy default is ALLOW",
+			ExpectedOutcome: OutcomeDeny,
+			ObservedOutcome: OutcomeError,
+			Evidence:        fmt.Sprintf("unexpected control-plane error: %v", err),
+			Risk:            Critical,
+		}
+	}
+	return Result{
+		Layer:           LayerControl,
+		Scenario:        "evaluator error fails closed",
+		Attack:          "Malformed evaluator input must never fall through to an ALLOW policy default",
+		ExpectedOutcome: OutcomeDeny,
+		ObservedOutcome: decisionOutcome(rec.Decision),
+		Bypassed:        rec.Decision == control.DecisionAllow,
+		Evidence:        fmt.Sprintf("invalid rule condition -> decision=%s; reasons=%v", rec.Decision, rec.Reasons),
+		Risk:            Critical,
+	}
+}
+
 func scnStrictestWins() Result {
 	plane := buildPlane(true)
 	rec, err := plane.Evaluate(control.Request{
