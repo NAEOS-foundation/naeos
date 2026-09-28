@@ -197,7 +197,7 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 		}
 	}
 	sort.Strings(names)
-	base := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}
+	base := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}
 	if len(names) == 0 {
 		return base
 	}
@@ -253,19 +253,28 @@ func dependencyUsagePaths(name string) []string {
 }
 
 func requestRiskRank(req requestFile) int {
-	if !req.KnownDependency || req.VersionChange == "unknown" {
-		return 100
+	result := dependencyrisk.Classify(dependencyrisk.Request{
+		Ecosystem:         req.Ecosystem,
+		Name:              req.Name,
+		VersionChange:     dependencyrisk.VersionChange(req.VersionChange),
+		Paths:             req.Paths,
+		EvidenceAvailable: req.Evidence,
+		KnownDependency:   req.KnownDependency,
+	})
+
+	decisionRank := map[dependencyrisk.Decision]int{
+		dependencyrisk.Allow:         0,
+		dependencyrisk.RequireReview: 100,
+		dependencyrisk.Deny:          200,
 	}
-	switch req.VersionChange {
-	case "major":
-		return 30
-	case "minor":
-		return 20
-	case "patch":
-		return 10
-	default:
-		return 100
+	criticalityRank := map[dependencyrisk.Criticality]int{
+		dependencyrisk.Low:      0,
+		dependencyrisk.Medium:   10,
+		dependencyrisk.High:     20,
+		dependencyrisk.Critical: 30,
 	}
+
+	return decisionRank[result.Decision]*100 + criticalityRank[result.Criticality]
 }
 
 func versionChange(oldv, newv string) string {

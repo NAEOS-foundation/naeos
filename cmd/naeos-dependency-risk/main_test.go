@@ -44,3 +44,28 @@ func TestSelectHighestRiskRequestAllowsAllSafeChangesToRemainPatch(t *testing.T)
 		t.Fatalf("all-patch changes should remain patch: %+v", req)
 	}
 }
+
+func TestSelectHighestRiskRequestSelectsSecurityCriticalityOverGeneralPatch(t *testing.T) {
+	req := requestFile{
+		Ecosystem:       "go",
+		Name:            "general-patch",
+		VersionChange:   "patch",
+		Evidence:        true,
+		KnownDependency: true,
+	}
+	security := requestFile{
+		Ecosystem:       "go",
+		Name:            "security-patch",
+		VersionChange:   "patch",
+		Paths:           []string{"internal/security/token.go"},
+		Evidence:        true,
+		KnownDependency: true,
+	}
+	if requestRiskRank(security) <= requestRiskRank(req) {
+		t.Fatalf(
+			"security-critical patch must outrank general patch: security=%d general=%d",
+			requestRiskRank(security),
+			requestRiskRank(req),
+		)
+	}
+}
