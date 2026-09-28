@@ -24,13 +24,13 @@ const (
 )
 
 type verification struct {
-	RunID              string   \`json:"run_id"\`
-	Decision            string   \`json:"decision"\`
-	SideEffectExpected bool     \`json:"side_effect_expected"\`
-	SideEffectObserved bool     \`json:"side_effect_observed"\`
-	EvidenceRecorded   bool     \`json:"evidence_recorded"\`
-	Verification       string   \`json:"verification"\`
-	Issues             []string \`json:"issues,omitempty"\`
+	RunID              string   `json:"run_id"`
+	Decision            string   `json:"decision"`
+	SideEffectExpected bool     `json:"side_effect_expected"`
+	SideEffectObserved bool     `json:"side_effect_observed"`
+	EvidenceRecorded   bool     `json:"evidence_recorded"`
+	Verification       string   `json:"verification"`
+	Issues             []string `json:"issues,omitempty"`
 }
 
 func main() {
@@ -50,9 +50,9 @@ func main() {
 	deny := runDeny(gateway, verifier, outputDir)
 
 	result := struct {
-		Milestone string       \`json:"milestone"\`
-		Allow     verification \`json:"allow"\`
-		Deny      verification \`json:"deny"\`
+		Milestone string       `json:"milestone"`
+		Allow     verification `json:"allow"`
+		Deny      verification `json:"deny"`
 	}{
 		Milestone: "P1.6 public control-plane golden path",
 		Allow:     allow,
