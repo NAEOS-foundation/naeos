@@ -34,10 +34,7 @@ type verification struct {
 }
 
 func main() {
-	outputDir := os.Getenv("NAEOS_P16_OUTPUT_DIR")
-	if outputDir == "" {
-		outputDir = filepath.Join(os.TempDir(), "naeos-p1-6-golden-path")
-	}
+	outputDir := filepath.Join(os.TempDir(), "naeos-p1-6-golden-path")
 	if err := os.RemoveAll(outputDir); err != nil {
 		fatal(err)
 	}
@@ -63,7 +60,7 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(outputDir, "result.json"), data, 0o640); err != nil {
+	if err := os.WriteFile(filepath.Join(outputDir, "result.json"), data, 0o600); err != nil {
 		fatal(err)
 	}
 
@@ -152,7 +149,7 @@ func runAllow(gateway *controlplane.DecisionGateway, verifier *controlplane.Sess
 	_, executionEvidence := gateway.ExecuteDecision(req, decision)
 	sideEffect := filepath.Join(outputDir, "allow-side-effect.json")
 	payload := []byte("{\n  \"side_effect\": \"created\",\n  \"run_id\": \"" + allowRunID + "\"\n}\n")
-	if err := os.WriteFile(sideEffect, payload, 0o640); err != nil {
+	if err := os.WriteFile(sideEffect, payload, 0o600); err != nil {
 		return failVerification(allowRunID, "ALLOW", true, false, true, err.Error())
 	}
 	observed := fileExists(sideEffect)
