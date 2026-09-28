@@ -51,7 +51,7 @@ type Request struct {
 	VersionChange     VersionChange
 	Paths             []string
 	EvidenceAvailable bool
-	KnownDependency bool
+	KnownDependency    bool
 }
 
 type Result struct {
@@ -83,17 +83,43 @@ func Classify(req Request) Result {
 }
 
 func DomainsForDependency(name string, paths []string) []Domain {
-	seen:=map[Domain]bool{}; lower:=strings.ToLower(name)
-	switch { case strings.HasPrefix(lower,"golang.org/x/crypto"),strings.Contains(lower,"oauth"),strings.Contains(lower,"jwt"),strings.Contains(lower,"auth"): seen[Security]=true
-	case strings.HasPrefix(lower,"github.com/tetratelabs/wazero"),strings.Contains(lower,"runtime"),strings.Contains(lower,"grpc"),strings.Contains(lower,"nats"),strings.Contains(lower,"kafka"),strings.Contains(lower,"redis"): seen[Runtime]=true
-	default: seen[General]=true }
-	for _,p:=range paths { switch {case hasPrefix(p,".github/"),hasPrefix(p,"scripts/"):seen[DeploymentCI]=true;case hasPrefix(p,"internal/governance/"),hasPrefix(p,"governance/"),hasPrefix(p,"constitution/"):seen[Policy]=true;case hasPrefix(p,"internal/security/"),hasPrefix(p,"security/"):seen[Security]=true;case hasPrefix(p,"internal/audit/"),hasPrefix(p,"audit/"):seen[AuditEvidence]=true;case hasPrefix(p,"runtime/"),hasPrefix(p,"internal/runtime/"),hasPrefix(p,"internal/agent/"):seen[Runtime]=true}}
-	out:=make([]Domain,0,len(seen));for d:=range seen{out=append(out,d)};sort.Slice(out,func(i,j int)bool{return out[i]<out[j]});return out
+	seen := map[Domain]bool{}
+	lower := strings.ToLower(name)
+	switch {
+	case strings.HasPrefix(lower, "golang.org/x/crypto"), strings.Contains(lower, "oauth"), strings.Contains(lower, "jwt"), strings.Contains(lower, "auth"):
+		seen[Security] = true
+	case strings.HasPrefix(lower, "github.com/tetratelabs/wazero"), strings.Contains(lower, "runtime"), strings.Contains(lower, "grpc"), strings.Contains(lower, "nats"), strings.Contains(lower, "kafka"), strings.Contains(lower, "redis"):
+		seen[Runtime] = true
+	default:
+		seen[General] = true
+	}
+	for _, p := range paths {
+		switch {
+		case hasPrefix(p, ".github/"), hasPrefix(p, "scripts/"):
+			seen[DeploymentCI] = true
+		case hasPrefix(p, "internal/governance/"), hasPrefix(p, "governance/"), hasPrefix(p, "constitution/"):
+			seen[Policy] = true
+		case hasPrefix(p, "internal/security/"), hasPrefix(p, "security/"):
+			seen[Security] = true
+		case hasPrefix(p, "internal/audit/"), hasPrefix(p, "audit/"):
+			seen[AuditEvidence] = true
+		case hasPrefix(p, "runtime/"), hasPrefix(p, "internal/runtime/"), hasPrefix(p, "internal/agent/"):
+			seen[Runtime] = true
+		}
+	}
+	out := make([]Domain, 0, len(seen))
+	for d := range seen {
+		out = append(out, d)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
 }
 func DomainsForPaths(paths []string) []Domain { return DomainsForDependency("",paths) }
 
 func criticalityFor(req Request, domains []Domain) Criticality {
-	if !req.KnownDependency { return Criticality("unknown") }
+	if !req.KnownDependency {
+		return Criticality("unknown")
+	}
 	if req.VersionChange == Unknown {
 		return Criticality("unknown")
 	}

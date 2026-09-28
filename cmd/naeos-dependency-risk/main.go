@@ -119,4 +119,63 @@ func safeRelativePath(value string) (string, error) {
 	}
 	return clean, nil
 }
-\nvar requireLine = regexp.MustCompile("^[+-]\\s*([^\\s]+)\\s+v?([^\\s]+)")\nfunc deriveRequest() (requestFile,error) { base:=os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA"); if base=="" { return requestFile{},errors.New("NAEOS_DEPENDENCY_RISK_BASE_SHA is required") }; raw,err:=exec.Command("git","diff",base+"...HEAD","--","go.mod").Output(); if err!=nil{return requestFile{},fmt.Errorf("read dependency diff: %w",err)}; oldv,newv:=map[string]string{},map[string]string{}; sc:=bufio.NewScanner(strings.NewReader(string(raw))); for sc.Scan(){line:=sc.Text();if len(line)<2||(line[0]!='+'&&line[0]!='-')||strings.HasPrefix(line,"+++")||strings.HasPrefix(line,"---"){continue}; mm:=requireLine.FindStringSubmatch(line);if len(mm)!=3{continue};if line[0]=='-'{oldv[mm[1]]=mm[2]}else{newv[mm[1]]=mm[2]}}; names:=[]string{};for n:=range oldv{if _,ok:=newv[n];ok{names=append(names,n)}};sort.Strings(names);if len(names)==0{return requestFile{PolicyVersion:"1.0.0",SchemaVersion:"1.0.0",Ecosystem:"go",Name:"dependency-change",VersionChange:"unknown",Evidence:true,KnownDependency:false},nil};name:=names[0];return requestFile{PolicyVersion:"1.0.0",SchemaVersion:"1.0.0",Ecosystem:"go",Name:name,VersionChange:versionChange(oldv[name],newv[name]),Evidence:true,KnownDependency:true},nil}\nfunc versionChange(oldv,newv string)string{oldv="v"+strings.TrimPrefix(oldv,"v");newv="v"+strings.TrimPrefix(newv,"v");if !semver.IsValid(oldv)||!semver.IsValid(newv){return "unknown"};if semver.Major(oldv)!=semver.Major(newv){return "major"};if semver.Minor(oldv)!=semver.Minor(newv){return "minor"};if semver.Compare(oldv,newv)!=0{return "patch"};return "unknown"}\n
+
+var requireLine = regexp.MustCompile("^[+-]\\s*([^\\s]+)\\s+v?([^\\s]+)")
+
+func deriveRequest() (requestFile, error) {
+	base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
+	if base == "" {
+		return requestFile{}, errors.New("NAEOS_DEPENDENCY_RISK_BASE_SHA is required")
+	}
+	raw, err := exec.Command("git", "diff", base+"...HEAD", "--", "go.mod").Output()
+	if err != nil {
+		return requestFile{}, fmt.Errorf("read dependency diff: %w", err)
+	}
+	oldv, newv := map[string]string{}, map[string]string{}
+	sc := bufio.NewScanner(strings.NewReader(string(raw)))
+	for sc.Scan() {
+		line := sc.Text()
+		if len(line) < 2 || (line[0] != '+' && line[0] != '-') || strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---") {
+			continue
+		}
+		mm := requireLine.FindStringSubmatch(line)
+		if len(mm) != 3 {
+			continue
+		}
+		if line[0] == '-' {
+			oldv[mm[1]] = mm[2]
+		} else {
+			newv[mm[1]] = mm[2]
+		}
+	}
+	names := []string{}
+	for n := range oldv {
+		if _, ok := newv[n]; ok {
+			names = append(names, n)
+		}
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}, nil
+	}
+	name := names[0]
+	return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: name, VersionChange: versionChange(oldv[name], newv[name]), Evidence: true, KnownDependency: true}, nil
+}
+
+func versionChange(oldv, newv string) string {
+	oldv = "v" + strings.TrimPrefix(oldv, "v")
+	newv = "v" + strings.TrimPrefix(newv, "v")
+	if !semver.IsValid(oldv) || !semver.IsValid(newv) {
+		return "unknown"
+	}
+	if semver.Major(oldv) != semver.Major(newv) {
+		return "major"
+	}
+	if semver.Minor(oldv) != semver.Minor(newv) {
+		return "minor"
+	}
+	if semver.Compare(oldv, newv) != 0 {
+		return "patch"
+	}
+	return "unknown"
+}
