@@ -132,14 +132,14 @@ func safeRelativePath(value string) (string, error) {
 	return clean, nil
 }
 
-var requireLine = regexp.MustCompile("^[+-]\\s*([^\\s]+)\\s+v?([^\\s]+)")
+var requireLine = regexp.MustCompile(`^[+-]\s*([^\s]+)\s+v?([^\s]+)`)
 
 func deriveRequest() (requestFile, error) {
 	base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
 	if base == "" {
 		return requestFile{}, errors.New("NAEOS_DEPENDENCY_RISK_BASE_SHA is required")
 	}
-	raw, err := exec.Command("git", "diff", base+"...HEAD", "--", "go.mod").Output()
+	raw, err := exec.Command("git", "diff", base+"...HEAD", "--", "go.mod").Output() //nolint:gosec // BASE_SHA is supplied by the trusted CI workflow
 	if err != nil {
 		return requestFile{}, fmt.Errorf("read dependency diff: %w", err)
 	}

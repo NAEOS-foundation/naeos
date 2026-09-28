@@ -91,7 +91,9 @@ func DomainsForDependency(name string, paths []string) []Domain {
 	case strings.HasPrefix(lower, "github.com/tetratelabs/wazero"), strings.Contains(lower, "runtime"), strings.Contains(lower, "grpc"), strings.Contains(lower, "nats"), strings.Contains(lower, "kafka"), strings.Contains(lower, "redis"):
 		seen[Runtime] = true
 	default:
-		seen[General] = true
+		if name != "" {
+			seen[General] = true
+		}
 	}
 	for _, p := range paths {
 		switch {
