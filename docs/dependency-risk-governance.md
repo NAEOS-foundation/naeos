@@ -2,7 +2,7 @@
 
 **Document ID:** NAEOS-GOV-DEP-001  
 **Version:** 1.0.0  
-**Status:** Proposed  
+**Status:** Active  
 **Owner:** NAEOS Foundation
 
 ## Purpose
@@ -108,3 +108,4 @@ The next implementation should:
 4. connect risk classes to CI verification gates;
 5. test low, high-criticality, and unknown cases;
 6. preserve policy/schema versions in durable evidence.
+\n## Automatic classification\n\nFor Go dependency changes, the gate compares `go.mod` at `BASE_SHA` with the PR head and derives patch/minor/major changes automatically. Known existing dependencies are classified without requiring a manual request; newly introduced or otherwise unclassifiable dependencies fail closed. A manual `NAEOS_DEPENDENCY_RISK_REQUEST` remains available as an explicit override path.\n
