@@ -17,6 +17,7 @@ func controlScenarios() []Result {
 		scnFailClosedDenyOnNoPolicy(),
 		scnScopeSpoofViaResource(),
 		scnFailOpenAllowsAnything(),
+		scnEvaluatorErrorFailsClosed(),
 		scnStrictestWins(),
 	}
 }
