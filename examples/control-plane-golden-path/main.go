@@ -75,14 +75,14 @@ func newControlPlane() (*controlplane.DecisionGateway, *controlplane.SessionVeri
 	store := controlplane.NewPolicyStore()
 	now := time.Now().UTC()
 	policy := &controlplane.Policy{
-		ID:                    policyID,
-		Version:               policyVersion,
-		Status:                "active",
-		CreatedAt:             now,
-		UpdatedAt:             now,
-		AllowedCapabilities:   []controlplane.Capability{allowCapability},
-		DeniedCapabilities:    []controlplane.Capability{denyCapability},
-		RequiresExplicitAuth:  true,
+		ID:                   policyID,
+		Version:              policyVersion,
+		Status:               "active",
+		CreatedAt:            now,
+		UpdatedAt:            now,
+		AllowedCapabilities:  []controlplane.Capability{allowCapability},
+		DeniedCapabilities:   []controlplane.Capability{denyCapability},
+		RequiresExplicitAuth: true,
 	}
 	if err := store.Set(policy); err != nil {
 		fatal(err)
