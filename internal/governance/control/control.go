@@ -117,13 +117,24 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	// Aggregate over all matching policies. Deny always wins; approval outranks
 	// allow. Ties are broken by strictest decision regardless of policy order.
 	worstRec := DecisionRecord{Request: req, Deterministic: true, Timestamp: time.Now().UTC()}
+	var evalErrors []string
 
 	for _, pol := range policies {
-		outcome, rec := c.evaluatePolicy(pol, req)
+		outcome, rec, evalErr := c.evaluatePolicy(pol, req)
 		rec.Request = req
 		rec.Timestamp = time.Now().UTC()
 		rec.Deterministic = true
 		worstRec = stricter(worstRec, rec, outcome)
+		if evalErr != nil {
+			evalErrors = append(evalErrors, fmt.Sprintf("governance evaluator error: %v", evalErr))
+		}
+	}
+
+	if len(evalErrors) > 0 {
+		// Evaluator failure is itself a governance decision: never fall back
+		// to a policy default or allow execution after an evaluation error.
+		worstRec.Decision = DecisionDeny
+		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
 	}
 
 	c.record(worstRec)
@@ -135,7 +146,7 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 //   - any failing rule -> DENY
 //   - otherwise, if any rule or the policy default requires approval -> REQUIRE_APPROVAL
 //   - otherwise -> the policy default (ALLOW by default)
-func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord) {
+func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord, error) {
 	rec := DecisionRecord{
 		PolicyID:      pol.ID,
 		PolicyVersion: pol.Version,
@@ -168,7 +179,13 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 			Enabled:   true,
 		}}, ctx)
 		if err != nil {
-			continue
+			rec.Decision = DecisionDeny
+			rec.RuleID = r.RuleID
+			rec.Reasons = []string{
+				fmt.Sprintf("policy %s v%s matched", pol.ID, pol.Version),
+				fmt.Sprintf("rule %s evaluation error: %v", r.RuleID, err),
+			}
+			return DecisionDeny, rec, err
 		}
 		if len(er) == 0 {
 			continue
@@ -196,7 +213,7 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 			rec.Decision = DecisionDeny
 			rec.RuleID = s.ruleID
 			rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s failed: %s", s.ruleID, s.message))
-			return DecisionDeny, rec
+			return DecisionDeny, rec, nil
 		}
 	}
 
@@ -206,13 +223,13 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 		rec.RuleID = top.ruleID
 		rec.Decision = top.dec
 		rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s %s", top.ruleID, top.dec))
-		return top.dec, rec
+		return top.dec, rec, nil
 	}
 
 	// No rules: fall back to the policy default.
 	rec.Decision = pol.Default
 	rec.Reasons = append(rec.Reasons, fmt.Sprintf("no rules, policy default %s", pol.Default))
-	return pol.Default, rec
+	return pol.Default, rec, nil
 }
 
 // stricter returns the stricter of two decision records, taking the source
