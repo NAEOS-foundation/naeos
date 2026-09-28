@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/control"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 	"github.com/NAEOS-foundation/naeos/internal/evidence"
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
