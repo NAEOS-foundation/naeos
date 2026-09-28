@@ -45,7 +45,10 @@ export NAEOS_DEPENDENCY_RISK_OUTPUT="${OUTPUT}"
 if [[ -n "${REQUEST}" ]]; then
   export NAEOS_DEPENDENCY_RISK_REQUEST="${REQUEST}"
 elif printf '%s\n' "${dependency_changed[@]}" | grep -qx 'go.mod'; then
-  echo "No manual request supplied; deriving Go dependency risk from BASE_SHA."
+  echo "No manual request supplied; running Go verification before automatic classification."
+  go test ./...
+  export NAEOS_DEPENDENCY_RISK_EVIDENCE=true
+  echo "Go verification passed; deriving dependency risk from BASE_SHA with verified evidence."
 else
   echo "Automatic dependency-risk derivation currently supports go.mod only; manual request is required for other ecosystems/manifests."
   exit 1
