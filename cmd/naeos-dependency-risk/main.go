@@ -178,7 +178,7 @@ func deriveRequest() (requestFile, error) {
 	}
 	sort.Strings(names)
 	if len(names) == 0 {
-		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}, nil
+		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}, nil
 	}
 
 	return selectHighestRiskRequest(oldv, newv), nil
@@ -212,7 +212,7 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 			Ecosystem: "go",
 			Name: name,
 			Paths: dependencyUsagePaths(name),
-			Evidence: true,
+			Evidence: automaticEvidenceAvailable(),
 			KnownDependency: oldOK && newOK,
 		}
 		if oldOK && newOK {
@@ -227,6 +227,10 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 		}
 	}
 	return best
+}
+
+func automaticEvidenceAvailable() bool {
+	return strings.EqualFold(os.Getenv("NAEOS_DEPENDENCY_RISK_EVIDENCE"), "true")
 }
 
 func dependencyUsagePaths(name string) []string {
