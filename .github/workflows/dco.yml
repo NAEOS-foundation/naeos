@@ -40,6 +40,11 @@ jobs:
           fi
           bad=0
           for hash in $(git rev-list --no-merges "$range"); do
+            committer_email="$(git show -s --format=%ce "$hash")"
+            if [ "$committer_email" = "noreply@github.com" ]; then
+              echo "Skipping GitHub-generated commit $hash for push-event DCO validation"
+              continue
+            fi
             if ! git log -1 --format=%B "$hash" | grep -q '^Signed-off-by:'; then
               echo "::error::commit $hash is missing a Signed-off-by trailer"
               bad=1
@@ -47,9 +52,10 @@ jobs:
           done
           if [ "$bad" -eq 1 ]; then
             echo
-            echo "Every commit must include a 'Signed-off-by: Name <email>' trailer."
+            echo "Every contributor commit must include a 'Signed-off-by: Name <email>' trailer."
+            echo "GitHub-generated squash/merge commits are excluded from push-event revalidation."
             echo "This certifies compliance with the Developer Certificate of Origin."
             echo "Fix with: git commit --amend -s  (or use 'git commit -s' for new commits)."
             exit 1
           fi
-          echo "All commits carry a Signed-off-by trailer."
+          echo "All applicable commits carry a Signed-off-by trailer."
