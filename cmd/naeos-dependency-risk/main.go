@@ -181,7 +181,27 @@ func deriveRequest() (requestFile, error) {
 		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}, nil
 	}
 
-	best := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: names[0], VersionChange: "unknown", Evidence: true, KnownDependency: false}
+	return selectHighestRiskRequest(oldv, newv), nil
+}
+
+func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
+	names := make([]string, 0, len(oldv)+len(newv))
+	seen := make(map[string]struct{}, len(oldv)+len(newv))
+	for name := range oldv {
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	for name := range newv {
+		if _, ok := seen[name]; !ok {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	base := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}
+	if len(names) == 0 {
+		return base
+	}
+	best := base
 	bestRank := -1
 	for _, name := range names {
 		oldVersion, oldOK := oldv[name]
@@ -189,9 +209,9 @@ func deriveRequest() (requestFile, error) {
 		candidate := requestFile{
 			PolicyVersion: "1.0.0",
 			SchemaVersion: "1.0.0",
-			Ecosystem:     "go",
-			Name:          name,
-			Evidence:      true,
+			Ecosystem: "go",
+			Name: name,
+			Evidence: true,
 			KnownDependency: oldOK && newOK,
 		}
 		if oldOK && newOK {
@@ -205,7 +225,7 @@ func deriveRequest() (requestFile, error) {
 			bestRank = rank
 		}
 	}
-	return best, nil
+	return best
 }
 
 func requestRiskRank(req requestFile) int {
