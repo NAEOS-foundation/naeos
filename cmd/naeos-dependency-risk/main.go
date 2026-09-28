@@ -16,8 +16,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 	"golang.org/x/mod/semver"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 )
 
 type requestFile struct {
