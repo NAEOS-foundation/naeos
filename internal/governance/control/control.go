@@ -135,7 +135,7 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 //   - any failing rule -> DENY
 //   - otherwise, if any rule or the policy default requires approval -> REQUIRE_APPROVAL
 //   - otherwise -> the policy default (ALLOW by default)
-func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord) {
+func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord, error) {
 	rec := DecisionRecord{
 		PolicyID:      pol.ID,
 		PolicyVersion: pol.Version,
