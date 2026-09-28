@@ -8,6 +8,7 @@ Purpose: machine-readable acceptance matrix for the three v1 architectural findi
 | AGV1-02 | Empty Governance Configuration Silently Disables Enforcement | no configured policies => no checks | A governed run with zero effective policies cannot execute as if governed | Governed mode blocks; `governance.unconfigured` telemetry records the blocked state; policy-free mode is explicitly `ungoverned` |
 | AGV1-03 | Policy Evaluator Accepts Non-Finite Numeric Values | NaN bypasses gt threshold; Inf bypasses lt bound | Non-finite operands cannot silently satisfy finite numeric constraints | `NaN`, `+Inf`, and `-Inf` are rejected before numeric comparison; finite comparisons remain unchanged |
 | AGV1-04 | Policy Context Integrity | policy context integrity: security claim not evaluated | A policy must receive the data it claims to govern, or the run must be classified as not evaluated | H4 is remediated by a versioned policy-context contract; regression tests verify governed fields are evaluated and missing governed fields are denied |
+| AGV1-05 | ControlPlane Evaluator Failure | evaluator error fails closed | An evaluator failure cannot fall through to a permissive policy default | Evaluator failure produces deterministic `DENY` and is retained in decision evidence |
 
 ## Verification protocol
 
