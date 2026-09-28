@@ -7,12 +7,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"os/exec"
-	"regexp"
-	"sort"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
@@ -27,7 +27,7 @@ type requestFile struct {
 	VersionChange string   `json:"version_change"`
 	Paths         []string `json:"paths"`
 	Evidence      bool     `json:"evidence_available"`
-	KnownDependency bool `json:"known_dependency"`
+	KnownDependency bool     `json:"known_dependency"`
 }
 
 type policyFile struct {
