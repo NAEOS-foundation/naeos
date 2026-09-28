@@ -51,7 +51,7 @@ type Request struct {
 	VersionChange     VersionChange
 	Paths             []string
 	EvidenceAvailable bool
-	KnownDependency    bool
+	KnownDependency   bool
 }
 
 type Result struct {
@@ -114,7 +114,7 @@ func DomainsForDependency(name string, paths []string) []Domain {
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
 	return out
 }
-func DomainsForPaths(paths []string) []Domain { return DomainsForDependency("",paths) }
+func DomainsForPaths(paths []string) []Domain { return DomainsForDependency("", paths) }
 
 func criticalityFor(req Request, domains []Domain) Criticality {
 	if !req.KnownDependency {

@@ -20,13 +20,13 @@ import (
 )
 
 type requestFile struct {
-	PolicyVersion string   `json:"policy_version"`
-	SchemaVersion string   `json:"schema_version"`
-	Ecosystem     string   `json:"ecosystem"`
-	Name          string   `json:"name"`
-	VersionChange string   `json:"version_change"`
-	Paths         []string `json:"paths"`
-	Evidence      bool     `json:"evidence_available"`
+	PolicyVersion   string   `json:"policy_version"`
+	SchemaVersion   string   `json:"schema_version"`
+	Ecosystem       string   `json:"ecosystem"`
+	Name            string   `json:"name"`
+	VersionChange   string   `json:"version_change"`
+	Paths           []string `json:"paths"`
+	Evidence        bool     `json:"evidence_available"`
 	KnownDependency bool     `json:"known_dependency"`
 }
 
@@ -88,7 +88,7 @@ func run() error {
 		VersionChange:     dependencyrisk.VersionChange(req.VersionChange),
 		Paths:             req.Paths,
 		EvidenceAvailable: req.Evidence,
-		KnownDependency: req.KnownDependency,
+		KnownDependency:   req.KnownDependency,
 	})
 	evidence := struct {
 		PolicyID      string                `json:"policy_id"`
