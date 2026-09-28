@@ -16,14 +16,14 @@ func TestClassifyPatchGeneral(t *testing.T) {
 }
 
 func TestClassifyCriticalDomainRequiresReview(t *testing.T) {
-	r := Classify(Request{Ecosystem: "github-actions", Name: "actions/checkout", VersionChange: Patch, Paths: []string{".github/workflows/ci.yml"}, EvidenceAvailable: true})
+	r := Classify(Request{Ecosystem: "github-actions", Name: "actions/checkout", VersionChange: Patch, Paths: []string{".github/workflows/ci.yml"}, EvidenceAvailable: true, KnownDependency: true})
 	if r.Criticality != High || r.Risk != Risk("high") || r.Decision != RequireReview {
 		t.Fatalf("unexpected result: %+v", r)
 	}
 }
 
 func TestClassifyUnknownFailsClosed(t *testing.T) {
-	r := Classify(Request{Ecosystem: "npm", Name: "unknown", VersionChange: Unknown, Paths: nil, EvidenceAvailable: false, KnownDependency: false, KnownDependency: true})
+	r := Classify(Request{Ecosystem: "npm", Name: "unknown", VersionChange: Unknown, Paths: nil, EvidenceAvailable: false, KnownDependency: false})
 	if r.Decision != Deny || r.Risk != Risk("unknown") {
 		t.Fatalf("expected fail closed: %+v", r)
 	}
@@ -37,7 +37,7 @@ func TestClassifyUnmappedImpactFailsClosed(t *testing.T) {
 }
 
 func TestClassifyMissingEvidenceFailsClosed(t *testing.T) {
-	r := Classify(Request{Ecosystem: "go", Name: "example", VersionChange: Patch, Paths: []string{"internal/foo/bar.go"}, EvidenceAvailable: false})
+	r := Classify(Request{Ecosystem: "go", Name: "example", VersionChange: Patch, Paths: []string{"internal/foo/bar.go"}, EvidenceAvailable: false, KnownDependency: true})
 	if r.Decision != Deny {
 		t.Fatalf("expected deny without evidence: %+v", r)
 	}
