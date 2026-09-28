@@ -25,7 +25,7 @@ const (
 
 type verification struct {
 	RunID              string   `json:"run_id"`
-	Decision            string   `json:"decision"`
+	Decision           string   `json:"decision"`
 	SideEffectExpected bool     `json:"side_effect_expected"`
 	SideEffectObserved bool     `json:"side_effect_observed"`
 	EvidenceRecorded   bool     `json:"evidence_recorded"`
