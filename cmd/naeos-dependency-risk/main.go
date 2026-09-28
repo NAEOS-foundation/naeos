@@ -183,7 +183,7 @@ func versionChange(oldv, newv string) string {
 	if semver.Major(oldv) != semver.Major(newv) {
 		return "major"
 	}
-	if semver.Minor(oldv) != semver.Minor(newv) {
+	if semver.MajorMinor(oldv) != semver.MajorMinor(newv) {
 		return "minor"
 	}
 	if semver.Compare(oldv, newv) != 0 {
