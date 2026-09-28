@@ -211,6 +211,7 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 			SchemaVersion: "1.0.0",
 			Ecosystem: "go",
 			Name: name,
+			Paths: dependencyUsagePaths(name),
 			Evidence: true,
 			KnownDependency: oldOK && newOK,
 		}
@@ -226,6 +227,25 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 		}
 	}
 	return best
+}
+
+func dependencyUsagePaths(name string) []string {
+	if name == "" {
+		return nil
+	}
+	out, err := exec.CommandContext(context.Background(), "git", "grep", "-l", "--fixed-strings", """+name+""", "--", "*.go").Output() //nolint:gosec // dependency name is derived from go.mod
+	if err != nil {
+		return nil
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	paths := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if line != "" {
+			paths = append(paths, line)
+		}
+	}
+	sort.Strings(paths)
+	return paths
 }
 
 func requestRiskRank(req requestFile) int {
