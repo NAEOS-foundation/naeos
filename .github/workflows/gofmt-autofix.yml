@@ -35,6 +35,5 @@ jobs:
           echo "Unformatted files:"
           echo "$unformatted"
           echo
-          gofmt -w .
-          git diff --no-color -- cmd/naeos-dependency-risk/main.go
+          echo "Run 'gofmt -w .' locally and commit the result."
           exit 1
