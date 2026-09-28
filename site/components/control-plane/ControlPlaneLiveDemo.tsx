@@ -22,9 +22,14 @@ type DecisionResponse = {
 
 type Props = { lang: "en" | "id" };
 
+const PUBLIC_CONTROL_PLANE_ENDPOINT =
+  "https://naeos-control-plane-production.up.railway.app";
+
 export default function ControlPlaneLiveDemo({ lang }: Props) {
   const id = lang === "id";
-  const configuredEndpoint = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ?? "";
+  const configuredEndpoint =
+    process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
+    (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
   const [agentId, setAgentId] = useState("agent-payment-01");
   const [capability, setCapability] = useState("production.deploy");
