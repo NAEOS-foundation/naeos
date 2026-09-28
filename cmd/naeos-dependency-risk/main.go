@@ -5,20 +5,19 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"context"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
-	"golang.org/x/mod/semver"
-
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
+	"golang.org/x/mod/semver"
 )
 
 type requestFile struct {
