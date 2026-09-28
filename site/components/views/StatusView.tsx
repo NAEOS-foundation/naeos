@@ -1,8 +1,12 @@
 // Copyright 2024-2026 NAEOS Foundation
 // SPDX-License-Identifier: Apache-2.0
 
+"use client";
+
+import { useEffect, useState } from "react";
 import type { Lang } from "@/lib/site";
 import statusData from "@/data/status.json";
+import type { StatusPayload } from "@/app/api/status/status";
 
 export interface ServiceStatus {
   id: string;
@@ -14,14 +18,6 @@ export interface ServiceStatus {
   latencyMs: number;
 }
 
-export interface StatusPayload {
-  updatedAt: string;
-  source: "static" | "live";
-  github: { stars: number; forks: number; openIssues: number; version: string; contributors?: number };
-  services: ServiceStatus[];
-}
-
-const data = statusData as StatusPayload;
 
 const LABELS: Record<
   Lang,
@@ -78,8 +74,42 @@ const LABELS: Record<
   },
 };
 
+function isStatusPayload(value: unknown): value is StatusPayload {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Partial<StatusPayload>;
+  return (
+    (payload.source === "live" || payload.source === "static") &&
+    typeof payload.updatedAt === "string" &&
+    !!payload.github &&
+    typeof payload.github.stars === "number" &&
+    typeof payload.github.forks === "number" &&
+    typeof payload.github.openIssues === "number" &&
+    typeof payload.github.version === "string" &&
+    Array.isArray(payload.services)
+  );
+}
+
 export default function StatusView({ lang }: { lang: Lang }) {
   const t = LABELS[lang];
+  const [data, setData] = useState<StatusPayload>(statusData as StatusPayload);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/status/", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("status unavailable"))))
+      .then((payload: unknown) => {
+        if (!active || !isStatusPayload(payload)) return;
+        setData(payload);
+      })
+      .catch(() => {
+        // Keep the versioned static baseline when live telemetry is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const updated = data.updatedAt ? new Date(data.updatedAt) : null;
   const isLive = data.source === "live";
 
