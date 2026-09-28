@@ -76,8 +76,12 @@ func run() error {
 			return fmt.Errorf("parse request: %w", err)
 		}
 	}
-	if req.PolicyVersion == "" { req.PolicyVersion = policy.PolicyVersion }
-	if req.SchemaVersion == "" { req.SchemaVersion = policy.SchemaVersion }
+	if req.PolicyVersion == "" {
+		req.PolicyVersion = policy.PolicyVersion
+	}
+	if req.SchemaVersion == "" {
+		req.SchemaVersion = policy.SchemaVersion
+	}
 	if req.PolicyVersion != policy.PolicyVersion || req.SchemaVersion != policy.SchemaVersion {
 		return errors.New("request policy/schema version is unsupported")
 	}
