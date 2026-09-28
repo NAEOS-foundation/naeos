@@ -6,7 +6,7 @@ package dependencyrisk
 import "testing"
 
 func TestClassifyPatchGeneral(t *testing.T) {
-	r := Classify(Request{Ecosystem: "go", Name: "example", VersionChange: Patch, Paths: []string{"internal/foo/bar.go"}, EvidenceAvailable: true, KnownDependency: true, KnownDependency: true})
+	r := Classify(Request{Ecosystem: "go", Name: "example", VersionChange: Patch, Paths: []string{"internal/foo/bar.go"}, EvidenceAvailable: true, KnownDependency: true})
 	if r.Criticality != Low || r.Risk != Risk("low") || r.Decision != Allow {
 		t.Fatalf("unexpected result: %+v", r)
 	}
