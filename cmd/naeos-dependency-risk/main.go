@@ -237,7 +237,7 @@ func dependencyUsagePaths(name string) []string {
 	if name == "" {
 		return nil
 	}
-	out, err := exec.CommandContext(context.Background(), "git", "grep", "-l", "--fixed-strings", """+name+""", "--", "*.go").Output() //nolint:gosec // dependency name is derived from go.mod
+	out, err := exec.CommandContext(context.Background(), "git", "grep", "-l", "--fixed-strings", name, "--", "*.go").Output() //nolint:gosec // dependency name is derived from go.mod
 	if err != nil {
 		return nil
 	}
