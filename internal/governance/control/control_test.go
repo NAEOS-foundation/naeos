@@ -4,6 +4,8 @@
 package control
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
@@ -166,5 +168,43 @@ func TestListDecisions(t *testing.T) {
 	}
 	if got := c.ListDecisions(); len(got) != 2 {
 		t.Fatalf("expected 2 recorded decisions, got %d", len(got))
+	}
+}
+
+type errorEvaluator struct{}
+
+func (errorEvaluator) Evaluate(map[string]any) error {
+	return fmt.Errorf("synthetic evaluator failure")
+}
+
+func (errorEvaluator) EvaluateRules([]policy.Rule, map[string]any) ([]policy.EvaluationResult, error) {
+	return nil, fmt.Errorf("synthetic evaluator failure")
+}
+
+func TestEvaluateEvaluatorErrorFailsClosed(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "deploy-policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionAllow,
+		Rules: []policy.PolicyRule{
+			{RuleID: "must-evaluate", Condition: "exists:project", Decision: policy.DecisionAllow, Priority: 1},
+		},
+	}
+	c := newTestPlane(t, true, p)
+	c.evaluator = errorEvaluator{}
+
+	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Context: map[string]any{"project": "naeos"}})
+	if err != nil {
+		t.Fatalf("expected evaluator failure to become a recorded DENY, got error: %v", err)
+	}
+	if rec.Decision != DecisionDeny {
+		t.Fatalf("expected DENY on evaluator error, got %s", rec.Decision)
+	}
+	if rec.RuleID != "must-evaluate" {
+		t.Fatalf("expected failing rule attribution, got %s", rec.RuleID)
+	}
+	if len(rec.Reasons) < 2 || !strings.Contains(rec.Reasons[len(rec.Reasons)-1], "governance evaluator error") {
+		t.Fatalf("expected evaluator error in decision evidence, got %#v", rec.Reasons)
 	}
 }
