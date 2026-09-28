@@ -117,6 +117,7 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	// Aggregate over all matching policies. Deny always wins; approval outranks
 	// allow. Ties are broken by strictest decision regardless of policy order.
 	worstRec := DecisionRecord{Request: req, Deterministic: true, Timestamp: time.Now().UTC()}
+	var evalErrors []string
 
 	for _, pol := range policies {
 		outcome, rec, evalErr := c.evaluatePolicy(pol, req)
@@ -125,11 +126,15 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 		rec.Deterministic = true
 		worstRec = stricter(worstRec, rec, outcome)
 		if evalErr != nil {
-			// Evaluator failure is itself a governance decision: never fall back
-			// to a policy default or allow execution after an evaluation error.
-			worstRec.Decision = DecisionDeny
-			worstRec.Reasons = append(worstRec.Reasons, fmt.Sprintf("governance evaluator error: %v", evalErr))
+			evalErrors = append(evalErrors, fmt.Sprintf("governance evaluator error: %v", evalErr))
 		}
+	}
+
+	if len(evalErrors) > 0 {
+		// Evaluator failure is itself a governance decision: never fall back
+		// to a policy default or allow execution after an evaluation error.
+		worstRec.Decision = DecisionDeny
+		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
 	}
 
 	c.record(worstRec)
