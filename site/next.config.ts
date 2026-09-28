@@ -21,7 +21,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://api.github.com wss://ws.naeos.dev",
+      "connect-src 'self' https://api.github.com https://naeos-control-plane-production.up.railway.app wss://ws.naeos.dev",
       "frame-ancestors 'none'",
     ].join("; "),
   },
