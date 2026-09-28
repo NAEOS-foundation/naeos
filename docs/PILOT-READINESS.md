@@ -1,149 +1,126 @@
-# NAEOS Pilot Readiness
+# NAEOS Pilot Readiness Pack
 
-## Purpose
+This pack turns the Golden Path, Reference Demo, External Validation, and Human Validation flow into one repeatable engineering evaluation.
 
-This document turns the NAEOS Golden Path and Reference Demo into a repeatable engineering evaluation for an external design partner.
+## 1. Pilot objective
 
-The first pilot should test one narrow engineering workflow end-to-end. The goal is to observe reproducibility, traceability, policy behavior, generated artifacts, and operator experience — not to establish production readiness or customer adoption.
+Evaluate one narrow engineering workflow end to end:
 
-## Pilot flow
+> Can an external engineer take a declared engineering intent through NAEOS and independently inspect validation, policy enforcement, generated AI context, generated artifacts, and traceability evidence?
 
-Golden Path → Reference Demo → External Validation → Human Evaluation → Pilot Feedback → Evidence-backed backlog
+The first pilot uses the existing CLI Reference Demo. No new product feature or alternate execution path is required.
 
-## Recommended first use case
+## 2. Prerequisites
 
-**Specification-to-service generation with policy and evidence inspection.**
+- clean Git checkout;
+- Go version compatible with the repository's `go.mod`;
+- no LLM API key required for the default path;
+- isolated output directory;
+- evaluator outside the implementation work for the human-validation record.
 
-The evaluator starts from a declared service specification, runs the canonical NAEOS pipeline, verifies the derived NEIR and validation result, exercises the deliberately invalid policy case, inspects AI context and execution metadata, and reviews generated Go/TypeScript project artifacts.
+## 3. Canonical setup
 
-## Prerequisites
+~~~bash
+git clone https://github.com/NAEOS-foundation/naeos.git
+cd naeos
+git checkout <commit SHA>
 
-- Clean checkout of the repository.
-- Go version recorded from go.mod.
-- No LLM API key required for the canonical baseline.
-- Git available.
-- A clean temporary output directory.
+go version
+go build -o naeos ./cmd/naeos
+rm -rf /tmp/naeos-pilot
+NAEOS_DEMO_OUTPUT_DIR=/tmp/naeos-pilot ./examples/demo-cli/run-demo.sh
+~~~
 
-## Canonical execution
+Record the commit SHA before execution.
 
-    git clone https://github.com/NAEOS-foundation/naeos.git
-    cd naeos
-    git checkout <commit SHA>
-
-    go version
-    go build -o naeos ./cmd/naeos
-
-    rm -rf /tmp/naeos-pilot
-    NAEOS_BIN="$PWD/naeos" NAEOS_DEMO_OUTPUT_DIR=/tmp/naeos-pilot ./examples/demo-cli/run-demo.sh
-
-## Evidence to inspect
-
-- spec.yaml
-- inspect.json
-- validate.json
-- invalid-policy.log
-- context.md
-- context.json
-- run.json
-- generated/
-- summary.md
-
-The traceability contract requires run_id, specification_hash, neir_hash, validation metadata, policy metadata, context metadata, audit metadata, and stage metadata.
-
-## Pilot evidence contract
+## 4. Evidence contract
 
 | Field | Required |
 |---|---|
-| Repository + commit SHA | Yes |
-| Reviewer / organization | Yes |
-| UTC timestamp | Yes |
-| OS / architecture | Yes |
-| Go/toolchain version | Yes |
-| Scenario / specification | Yes |
-| Demo command | Yes |
-| Exit status | Yes |
-| run_id | Yes |
-| specification_hash | Yes |
-| neir_hash | Yes |
-| Invalid-policy rejection | Yes |
-| Generated artifact count | Yes |
-| Deviations | Yes |
-| Reviewer observations | Yes |
-| Next action | Yes |
+| Repository | yes |
+| Commit SHA | yes |
+| Evaluator/reviewer | yes |
+| Date/time UTC | yes |
+| Environment/toolchain | yes |
+| Scenario | yes |
+| Demo command | yes |
+| Execution result | yes |
+| run_id | when produced |
+| specification_hash | when produced |
+| neir_hash | when produced |
+| Generated artifact count | yes |
+| Policy observation | yes |
+| Deviations | yes, including explicit none |
+| Evaluator feedback | yes |
+| Next action | yes |
 
-## Evaluation questions
+The contract is additive: feedback is recorded in the evaluation record and does not require changing the machine-readable execution record.
 
-Record observations, not scores.
+## 5. Reference use case
 
-1. Can an engineer reproduce the workflow from a clean checkout without private context?
-2. Is the specification-to-NEIR transition understandable from the evidence?
-3. Is validation behavior inspectable?
-4. Is the invalid-policy rejection observable and unambiguous?
-5. Does run.json provide enough information to trace the execution?
-6. Are generated artifacts easy to locate and inspect?
-7. Which evidence artifacts are useful in a real engineering workflow?
-8. Where does the documented workflow differ from actual operator experience?
-9. What additional integration or workflow would make the pilot useful in the evaluator's environment?
-10. What should be changed before another engineer repeats the pilot?
+**Use case:** specification-driven project generation for a small engineering project.
 
-## Deviation handling
+**Input:** the checked-in Reference Demo specification.
 
-A deviation is not silently corrected. Record the expected behavior, observed behavior, exact command/input, environment, evidence artifact or log, whether it blocks the pilot, and proposed follow-up.
+**Observed chain:**
 
-## Determination
+~~~text
+Specification
+  -> NEIR
+  -> Validation
+  -> Policy rejection test
+  -> AI Context
+  -> Authorized Generation
+  -> Generated project artifacts
+  -> Traceable run evidence
+~~~
 
-- REPRODUCED — documented workflow completed and acceptance evidence was observed.
-- REPRODUCED WITH DEVIATION — workflow completed with documented deviations.
-- NOT REPRODUCED — required acceptance evidence could not be established.
+**Evaluation questions:**
 
-Do not convert a successful pilot into a production-readiness, compliance, security, scalability, or adoption claim.
+1. Can an engineer understand the declared intent without undocumented context?
+2. Can the derived NEIR be inspected and related back to that intent?
+3. Is validation observable before generation?
+4. Is the deliberately invalid policy configuration visibly rejected?
+5. Can an evaluator inspect the context supplied to an AI agent?
+6. Can generated artifacts be traced back to the run?
+7. Can another engineer reproduce the path from the recorded commit?
+8. Which step creates clarification or reproduction friction?
 
-## Feedback → v3.7.0 intake
+## 6. Acceptance rule
 
-A pilot observation becomes a v3.7.0 candidate only when:
-1. The observation is reproducible or clearly documented.
-2. It affects an identifiable engineering workflow.
-3. The proposed change has a defined acceptance criterion.
-4. The change does not duplicate an existing capability.
-5. The need is supported by external evaluation evidence or repeated internal evidence.
-6. The scope fits the v3.7.0 release train.
+A pilot run is **Reproduced as documented** only when required checks pass and no blocking deviation is present. Otherwise record **Not reproduced** and preserve the deviation.
 
-## Pilot record template
+Do not infer adoption, production readiness, compliance, security, or general correctness from a successful pilot run.
 
-NAEOS Pilot Evaluation
+## 7. Feedback intake
 
-repository=
-commit_sha=
-reviewer=
-organization=
-utc_timestamp=
-os_architecture=
-go_version=
+Convert externally observed feedback into engineering backlog only when it contains:
 
-scenario=
-demo_command=
-exit_status=
+- evaluator observation;
+- exact evaluation commit;
+- evidence or reproduction details;
+- impact on the pilot workflow;
+- proposed clarification or change;
+- whether the issue blocks reproduction.
 
-run_id=
-specification_hash=
-neir_hash=
-generated_artifact_count=
-invalid_policy_rejection=
+Assumptions without external observation remain hypotheses and should not be promoted into the v3.7.0 backlog solely because they are plausible.
 
-determination=
-deviations=
-observations=
-next_action=
+## 8. Validation documents
 
-## Related evidence
+- `docs/EXTERNAL-HUMAN-VALIDATION.md`: independent evaluator record.
+- `docs/EXTERNAL-VALIDATION.md`: automated/reproducible validation contract.
+- `docs/GOLDEN-PATH.md`: canonical execution and acceptance definition.
+- `docs/REFERENCE-DEMO.md`: evidence narrative and reviewer checklist.
 
-- docs/GOLDEN-PATH.md
-- docs/REFERENCE-DEMO.md
-- docs/EXTERNAL-VALIDATION.md
-- docs/EXTERNAL-HUMAN-VALIDATION.md
-- Issue #244 — first reproducibility record
-- Issue #247 — Pilot Readiness milestone
+## 9. Pilot output
 
-## Boundaries
+The minimum pilot package is:
 
-This pilot package does not establish customer adoption, production readiness, enterprise compliance, performance/scalability, security of every external AI provider or agent, arbitrary specification correctness, or safety of every consequential external action.
+1. exact commit SHA;
+2. completed human evaluation record;
+3. automated validation record, if available for that commit;
+4. referenced raw evidence;
+5. deviations and evaluator observations;
+6. next action.
+
+This package is an engineering evaluation record, not a customer-adoption or production-readiness claim.
