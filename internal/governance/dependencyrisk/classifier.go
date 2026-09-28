@@ -3,7 +3,10 @@
 
 package dependencyrisk
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 type VersionChange string
 
@@ -48,6 +51,7 @@ type Request struct {
 	VersionChange     VersionChange
 	Paths             []string
 	EvidenceAvailable bool
+	KnownDependency   bool
 }
 
 type Result struct {
@@ -63,11 +67,11 @@ type Result struct {
 
 // Classify is deterministic. Unknown impact or unavailable evidence fails closed.
 func Classify(req Request) Result {
-	domains := DomainsForPaths(req.Paths)
+	domains := DomainsForDependency(req.Name, req.Paths)
 	criticality := criticalityFor(req, domains)
 	gates, decision := gatesFor(criticality)
 	risk := Risk(criticality)
-	if !req.EvidenceAvailable || req.VersionChange == Unknown || criticality == Criticality("unknown") {
+	if !req.EvidenceAvailable || !req.KnownDependency || req.VersionChange == Unknown || criticality == Criticality("unknown") {
 		decision = Deny
 		risk = Risk("unknown")
 		if !contains(gates, "human_review") {
@@ -78,8 +82,19 @@ func Classify(req Request) Result {
 	return Result{"1.0.0", req, criticality, risk, domains, gates, true, decision}
 }
 
-func DomainsForPaths(paths []string) []Domain {
+func DomainsForDependency(name string, paths []string) []Domain {
 	seen := map[Domain]bool{}
+	lower := strings.ToLower(name)
+	switch {
+	case strings.HasPrefix(lower, "golang.org/x/crypto"), strings.Contains(lower, "oauth"), strings.Contains(lower, "jwt"), strings.Contains(lower, "auth"):
+		seen[Security] = true
+	case strings.HasPrefix(lower, "github.com/tetratelabs/wazero"), strings.Contains(lower, "runtime"), strings.Contains(lower, "grpc"), strings.Contains(lower, "nats"), strings.Contains(lower, "kafka"), strings.Contains(lower, "redis"):
+		seen[Runtime] = true
+	default:
+		if name != "" {
+			seen[General] = true
+		}
+	}
 	for _, p := range paths {
 		switch {
 		case hasPrefix(p, ".github/"), hasPrefix(p, "scripts/"):
@@ -92,12 +107,7 @@ func DomainsForPaths(paths []string) []Domain {
 			seen[AuditEvidence] = true
 		case hasPrefix(p, "runtime/"), hasPrefix(p, "internal/runtime/"), hasPrefix(p, "internal/agent/"):
 			seen[Runtime] = true
-		default:
-			seen[General] = true
 		}
-	}
-	if len(seen) == 0 {
-		return []Domain{UnknownDomain}
 	}
 	out := make([]Domain, 0, len(seen))
 	for d := range seen {
@@ -106,8 +116,12 @@ func DomainsForPaths(paths []string) []Domain {
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
 	return out
 }
+func DomainsForPaths(paths []string) []Domain { return DomainsForDependency("", paths) }
 
 func criticalityFor(req Request, domains []Domain) Criticality {
+	if !req.KnownDependency {
+		return Criticality("unknown")
+	}
 	if req.VersionChange == Unknown {
 		return Criticality("unknown")
 	}

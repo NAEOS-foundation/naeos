@@ -40,7 +40,17 @@ EOF
   echo "No dependency manifest changed; dependency risk gate passed."; exit 0
 fi
 echo "Dependency manifests changed:"; printf " - %s\n" "${dependency_changed[@]}"
-if [[ -z "${REQUEST}" ]]; then echo "NAEOS_DEPENDENCY_RISK_REQUEST is required for dependency changes; failing closed."; exit 1; fi
-export NAEOS_DEPENDENCY_RISK_REQUEST="${REQUEST}"
+export NAEOS_DEPENDENCY_RISK_BASE_SHA="${BASE_SHA}"
 export NAEOS_DEPENDENCY_RISK_OUTPUT="${OUTPUT}"
+if [[ -n "${REQUEST}" ]]; then
+  export NAEOS_DEPENDENCY_RISK_REQUEST="${REQUEST}"
+elif printf '%s\n' "${dependency_changed[@]}" | grep -qx 'go.mod'; then
+  echo "No manual request supplied; running Go verification before automatic classification."
+  go test ./...
+  export NAEOS_DEPENDENCY_RISK_EVIDENCE=true
+  echo "Go verification passed; deriving dependency risk from BASE_SHA with verified evidence."
+else
+  echo "Automatic dependency-risk derivation currently supports go.mod only; manual request is required for other ecosystems/manifests."
+  exit 1
+fi
 go run ./cmd/naeos-dependency-risk
