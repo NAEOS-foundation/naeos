@@ -60,13 +60,21 @@ func run() error {
 	var req requestFile
 	if requestPath == "" {
 		req, err = deriveRequest()
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 	} else {
 		requestPath, err = safeRelativePath(requestPath)
-		if err != nil { return fmt.Errorf("invalid request path: %w", err) }
+		if err != nil {
+			return fmt.Errorf("invalid request path: %w", err)
+		}
 		requestBytes, err := os.ReadFile(requestPath) //nolint:gosec // validated as workspace-relative above
-		if err != nil { return fmt.Errorf("read request: %w", err) }
-		if err := json.Unmarshal(requestBytes, &req); err != nil { return fmt.Errorf("parse request: %w", err) }
+		if err != nil {
+			return fmt.Errorf("read request: %w", err)
+		}
+		if err := json.Unmarshal(requestBytes, &req); err != nil {
+			return fmt.Errorf("parse request: %w", err)
+		}
 	}
 	if req.PolicyVersion == "" { req.PolicyVersion = policy.PolicyVersion }
 	if req.SchemaVersion == "" { req.SchemaVersion = policy.SchemaVersion }
