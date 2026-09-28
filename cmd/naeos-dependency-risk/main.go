@@ -162,18 +162,66 @@ func deriveRequest() (requestFile, error) {
 			newv[mm[1]] = mm[2]
 		}
 	}
-	names := []string{}
-	for n := range oldv {
-		if _, ok := newv[n]; ok {
-			names = append(names, n)
+
+	// Evaluate every dependency touched by the diff. A single permissive
+	// dependency must never mask a new, unknown, or higher-risk dependency.
+	names := make([]string, 0, len(oldv)+len(newv))
+	seen := make(map[string]struct{}, len(oldv)+len(newv))
+	for name := range oldv {
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	for name := range newv {
+		if _, ok := seen[name]; !ok {
+			names = append(names, name)
 		}
 	}
 	sort.Strings(names)
 	if len(names) == 0 {
 		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: true, KnownDependency: false}, nil
 	}
-	name := names[0]
-	return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: name, VersionChange: versionChange(oldv[name], newv[name]), Evidence: true, KnownDependency: true}, nil
+
+	best := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: names[0], VersionChange: "unknown", Evidence: true, KnownDependency: false}
+	bestRank := -1
+	for _, name := range names {
+		oldVersion, oldOK := oldv[name]
+		newVersion, newOK := newv[name]
+		candidate := requestFile{
+			PolicyVersion: "1.0.0",
+			SchemaVersion: "1.0.0",
+			Ecosystem:     "go",
+			Name:          name,
+			Evidence:      true,
+			KnownDependency: oldOK && newOK,
+		}
+		if oldOK && newOK {
+			candidate.VersionChange = versionChange(oldVersion, newVersion)
+		} else {
+			candidate.VersionChange = "unknown"
+		}
+		rank := requestRiskRank(candidate)
+		if rank > bestRank {
+			best = candidate
+			bestRank = rank
+		}
+	}
+	return best, nil
+}
+
+func requestRiskRank(req requestFile) int {
+	if !req.KnownDependency || req.VersionChange == "unknown" {
+		return 100
+	}
+	switch req.VersionChange {
+	case "major":
+		return 30
+	case "minor":
+		return 20
+	case "patch":
+		return 10
+	default:
+		return 100
+	}
 }
 
 func versionChange(oldv, newv string) string {
