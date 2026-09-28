@@ -207,9 +207,9 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 		oldVersion, oldOK := oldv[name]
 		newVersion, newOK := newv[name]
 		candidate := requestFile{
-			PolicyVersion: "1.0.0",
-			SchemaVersion: "1.0.0",
-			Ecosystem:     "go",
+			PolicyVersion:   "1.0.0",
+			SchemaVersion:   "1.0.0",
+			Ecosystem:       "go",
 			Name:            name,
 			Paths:           dependencyUsagePaths(name),
 			Evidence:        automaticEvidenceAvailable(),
