@@ -38,8 +38,8 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		}
 	}
 
-	if len(results) != 17 {
-		t.Errorf("expected 17 scenarios, got %d", len(results))
+	if len(results) != 18 {
+		t.Errorf("expected 18 scenarios, got %d", len(results))
 	}
 	for _, l := range []Layer{LayerEvaluator, LayerControl, LayerReviewer, LayerPrompt, LayerPipeline} {
 		found := false
@@ -77,6 +77,12 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		}
 		if r.Scenario == "no configured policies => no checks" && r.ObservedOutcome != OutcomeDeny {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
+		}
+		if r.Scenario == "evaluator error fails closed" {
+			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
+				t.Errorf("P1.2 regression: evaluator failure must become DENY: observed=%s verdict=%s evidence=%s",
+					r.ObservedOutcome, r.Verdict, r.Evidence)
+			}
 		}
 		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
 			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
