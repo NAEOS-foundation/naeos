@@ -9,14 +9,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"context"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
-	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 	"golang.org/x/mod/semver"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 )
 
 type requestFile struct {
@@ -139,7 +141,7 @@ func deriveRequest() (requestFile, error) {
 	if base == "" {
 		return requestFile{}, errors.New("NAEOS_DEPENDENCY_RISK_BASE_SHA is required")
 	}
-	raw, err := exec.Command("git", "diff", base+"...HEAD", "--", "go.mod").Output() //nolint:gosec // BASE_SHA is supplied by the trusted CI workflow
+	raw, err := exec.CommandContext(context.Background(), "git", "diff", base+"...HEAD", "--", "go.mod").Output() //nolint:gosec // BASE_SHA is supplied by the trusted CI workflow
 	if err != nil {
 		return requestFile{}, fmt.Errorf("read dependency diff: %w", err)
 	}
