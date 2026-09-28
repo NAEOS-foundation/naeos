@@ -10,7 +10,10 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
-var placeholdersLower = []string{"placeholder", "changeme", "replace_me"}
+var (
+	placeholdersNormalized = []string{"placeholder", "changeme", "replaceme"}
+	licenseIdentifiers     = []string{"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "MPL-2.0", "GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0-only", "GPL-3.0-or-later", "LGPL-2.1-only", "LGPL-2.1-or-later", "LGPL-3.0-only", "LGPL-3.0-or-later"}
+)
 
 type ReviewStatus string
 
@@ -113,14 +116,28 @@ func (DefaultReviewer) ReviewArtifact(name, content string, rules []string) (*Re
 	return result, nil
 }
 
+func normalizeReviewMarker(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		switch r {
+		case '0':
+			r = 'o'
+		}
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 func containsTODO(content string) bool {
-	return strings.Contains(strings.ToLower(content), "todo")
+	return strings.Contains(normalizeReviewMarker(content), "todo")
 }
 
 func containsPlaceholder(content string) bool {
-	lowerContent := strings.ToLower(content)
-	for _, p := range placeholdersLower {
-		if strings.Contains(lowerContent, p) {
+	normalized := normalizeReviewMarker(content)
+	for _, p := range placeholdersNormalized {
+		if strings.Contains(normalized, p) {
 			return true
 		}
 	}
@@ -138,13 +155,17 @@ func containsLicense(content string) bool {
 		maxLines = len(lines)
 	}
 
-	header := strings.Join(lines[:maxLines], "\n")
-	licenseMarkers := []string{"license", "apache", "mit", "copyright", "licensed under"}
-	lowerHeader := strings.ToLower(header)
-
-	for _, marker := range licenseMarkers {
-		if strings.Contains(lowerHeader, marker) {
-			return true
+	for _, line := range lines[:maxLines] {
+		line = strings.TrimSpace(line)
+		const prefix = "SPDX-License-Identifier:"
+		if !strings.HasPrefix(line, prefix) {
+			continue
+		}
+		identifier := strings.TrimSpace(strings.TrimPrefix(line, prefix))
+		for _, valid := range licenseIdentifiers {
+			if identifier == valid {
+				return true
+			}
 		}
 	}
 	return false
