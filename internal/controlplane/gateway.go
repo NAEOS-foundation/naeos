@@ -178,6 +178,36 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 			Reason: result.Reason,
 		})
 	}
+	policyID := canonical.Metadata["policy_id"]
+	authorizedPolicyVersion := canonical.Metadata["policy_version"]
+	activePolicy, err := g.Evaluator.ActivePolicy(policyID)
+	activeVersion := "unavailable"
+	if activePolicy != nil {
+		activeVersion = fmt.Sprintf("%d", activePolicy.Version)
+	}
+	if err != nil || activePolicy.Status != "active" || activeVersion != authorizedPolicyVersion {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedStalePolicy
+		result.Message = fmt.Sprintf("authorization is stale: authorized policy %s v%s is not the active policy", policyID, authorizedPolicyVersion)
+		return result, g.Ledger.Append(LedgerEvent{
+			Timestamp:    req.Timestamp,
+			RequestID:    req.RequestID,
+			DecisionID:   result.DecisionID,
+			ExecutionID:  controlPlaneID("EXEC"),
+			AgentID:      req.AgentID,
+			Capability:   req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash,
+			EventType:    "EXECUTION_BLOCKED",
+			Decision:     DecisionDeny,
+			Reason:       ReasonDeniedStalePolicy,
+			Metadata: map[string]string{
+				"policy_id":                 policyID,
+				"authorized_policy_version": authorizedPolicyVersion,
+				"active_policy_version":     activeVersion,
+			},
+		})
+	}
+
 	if g.Ledger.HasExecution(result.DecisionID) {
 		result.Status = DecisionDeny
 		result.Reason = ReasonDeniedByPolicy
