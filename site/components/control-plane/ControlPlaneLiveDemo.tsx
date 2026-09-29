@@ -32,7 +32,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
   const [agentId, setAgentId] = useState("agent-payment-01");
-  const [capability, setCapability] = useState("production.deploy");
+  const [capability, setCapability] = useState("repository.read");
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
   const [result, setResult] = useState<DecisionResponse | null>(null);
   const [error, setError] = useState("");
