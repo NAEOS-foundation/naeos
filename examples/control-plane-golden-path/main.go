@@ -97,14 +97,14 @@ func newControlPlane() (*controlplane.DecisionGateway, *controlplane.SessionVeri
 func grant() *controlplane.Grant {
 	now := time.Now().UTC()
 	return &controlplane.Grant{
-		GrantID:       "grant-golden-path",
-		AgentID:       agentID,
-		PolicyID:      policyID,
-		PolicyVersion: policyVersion,
-		Capabilities:  []controlplane.Capability{allowCapability},
-		CreatedAt:     now,
-		ExpiresAt:     now.Add(time.Hour),
-		Status:        "active",
+		GrantID:		"grant-golden-path",
+		AgentID:		agentID,
+		PolicyID:		policyID,
+		PolicyVersion:	policyVersion,
+		Capabilities:	[]controlplane.Capability{allowCapability, denyCapability},
+		CreatedAt:		now,
+		ExpiresAt:		now.Add(time.Hour),
+		Status:		"active",
 	}
 }
 
