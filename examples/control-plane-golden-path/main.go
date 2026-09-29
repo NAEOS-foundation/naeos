@@ -111,14 +111,14 @@ func grant() *controlplane.Grant {
 func policy() *controlplane.Policy {
 	now := time.Now().UTC()
 	return &controlplane.Policy{
-		ID:                    policyID,
-		Version:               policyVersion,
-		Status:                "active",
-		CreatedAt:             now,
-		UpdatedAt:             now,
-		AllowedCapabilities:   []controlplane.Capability{allowCapability},
-		DeniedCapabilities:    []controlplane.Capability{denyCapability},
-		RequiresExplicitAuth:  true,
+		ID:                   policyID,
+		Version:              policyVersion,
+		Status:               "active",
+		CreatedAt:            now,
+		UpdatedAt:            now,
+		AllowedCapabilities:  []controlplane.Capability{allowCapability},
+		DeniedCapabilities:   []controlplane.Capability{denyCapability},
+		RequiresExplicitAuth: true,
 	}
 }
 
