@@ -90,6 +90,16 @@ jobs:
           else
             echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
           fi
+      - name: Preview on Cloudflare Workers
+        # Every PR gets an isolated Worker Preview; production remains main-only.
+        if: github.event_name == 'pull_request'
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: preview
+
       - name: Deploy to Cloudflare Workers
         # Production deploys run only from the protected main branch.
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
