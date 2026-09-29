@@ -236,3 +236,130 @@ func TestDecisionGateway_BlocksStaleAuthorizationAfterPolicyChange(t *testing.T)
 		t.Fatalf("unexpected evidence sequence: %s -> %s", events[0].EventType, events[1].EventType)
 	}
 }
+
+func TestDecisionGateway_ExecuteAtomicRejectsStaleAuthorizationBeforeSideEffect(t *testing.T) {
+	store := NewPolicyStore()
+	now := time.Now().UTC()
+	policyV1 := &Policy{
+		ID: "POLICY-ATOMIC-STALE", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"}, CreatedAt: now, UpdatedAt: now,
+	}
+	policyV2 := &Policy{
+		ID: "POLICY-ATOMIC-STALE", Version: 2, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"}, CreatedAt: now.Add(time.Second), UpdatedAt: now.Add(time.Second),
+	}
+	if err := store.Set(policyV1); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-ATOMIC-STALE", AgentID: "agent-atomic-stale",
+		PolicyID: policyV1.ID, PolicyVersion: policyV1.Version,
+		Capabilities: []Capability{"repository.write"}, Status: "active",
+		CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-ATOMIC-STALE", AgentID: "agent-atomic-stale",
+		Action: Action{AgentID: "agent-atomic-stale", Capability: "repository.write", ArtifactHash: "sha256:atomic-stale"},
+		Grant:  grant, Policy: policyV1, Timestamp: now,
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected T0 ALLOW, got %s (%s)", authorized.Status, authorized.Reason)
+	}
+	if err := store.Set(policyV2); err != nil {
+		t.Fatal(err)
+	}
+
+	called := false
+	executed, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if executed.Status != DecisionDeny || executed.Reason != ReasonDeniedStalePolicy {
+		t.Fatalf("expected stale atomic authorization DENY, got %s (%s)", executed.Status, executed.Reason)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+	if called {
+		t.Fatal("stale authorization must be rejected before the side-effect callback")
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 2 || events[1].EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected authorization plus blocked execution evidence, got %#v", events)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicSerializesPolicyChangeWithSideEffect(t *testing.T) {
+	store := NewPolicyStore()
+	now := time.Now().UTC()
+	policyV1 := &Policy{
+		ID: "POLICY-ATOMIC", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"}, CreatedAt: now, UpdatedAt: now,
+	}
+	policyV2 := &Policy{
+		ID: "POLICY-ATOMIC", Version: 2, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"}, CreatedAt: now.Add(time.Second), UpdatedAt: now.Add(time.Second),
+	}
+	if err := store.Set(policyV1); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-ATOMIC", AgentID: "agent-atomic", PolicyID: policyV1.ID, PolicyVersion: 1,
+		Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-ATOMIC", AgentID: "agent-atomic",
+		Action: Action{AgentID: "agent-atomic", Capability: "repository.write", ArtifactHash: "sha256:atomic"},
+		Grant:  grant, Policy: policyV1, Timestamp: now,
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected T0 ALLOW, got %s (%s)", authorized.Status, authorized.Reason)
+	}
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	executionDone := make(chan DecisionResult, 1)
+	go func() {
+		result, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+			close(started)
+			<-release
+			return nil
+		})
+		executionDone <- result
+	}()
+	<-started
+
+	policyUpdateDone := make(chan error, 1)
+	go func() { policyUpdateDone <- store.Set(policyV2) }()
+	select {
+	case err := <-policyUpdateDone:
+		t.Fatalf("policy update committed before atomic side effect completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(release)
+	result := <-executionDone
+	if result.Status != DecisionAllow {
+		t.Fatalf("expected atomic execution ALLOW, got %s (%s)", result.Status, result.Message)
+	}
+	if err := <-policyUpdateDone; err != nil {
+		t.Fatal(err)
+	}
+	active, err := store.Active(policyV1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if active.Version != 2 {
+		t.Fatalf("expected policy v2 after commit, got v%d", active.Version)
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 2 || events[1].EventType != "EXECUTION_ALLOWED" {
+		t.Fatalf("expected authorization then execution evidence, got %#v", events)
+	}
+}

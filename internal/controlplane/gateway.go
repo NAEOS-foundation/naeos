@@ -277,6 +277,138 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 	})
 }
 
+// ExecuteAtomic revalidates the authorization and runs the side effect inside the
+// policy-store execution lock. Policy updates cannot commit until the side effect
+// callback returns, closing the in-process check-to-side-effect race.
+func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionResult, sideEffect func() error) (DecisionResult, LedgerEvent) {
+	if g == nil {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedStalePolicy
+		result.Message = "atomic execution boundary unavailable"
+		return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+	}
+	if g.Ledger == nil || g.Evaluator == nil || g.Evaluator.store == nil {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedStalePolicy
+		result.Message = "atomic execution boundary unavailable"
+		if g.Ledger == nil {
+			return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		}
+		return result, g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+		})
+	}
+	if sideEffect == nil {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedByPolicy
+		result.Message = "atomic execution callback is required"
+		return result, g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+		})
+	}
+	canonical, ok := g.Ledger.Decision(result.DecisionID)
+	if !ok || canonical.Decision != DecisionAllow || canonical.RequestID != result.RequestID ||
+		canonical.AgentID != req.AgentID || canonical.Capability != req.Action.Capability ||
+		canonical.ArtifactHash != req.Action.ArtifactHash {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedByPolicy
+		result.Message = "execution decision is not canonical or no longer allowed"
+		return result, g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+		})
+	}
+	policyID := canonical.Metadata["policy_id"]
+	var policyVersion int
+	if _, err := fmt.Sscanf(canonical.Metadata["policy_version"], "%d", &policyVersion); err != nil || policyVersion <= 0 {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedStalePolicy
+		result.Message = "authorization policy version is invalid"
+		return result, g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
+			Reason: result.Reason, Metadata: map[string]string{"policy_id": policyID, "authorized_policy_version": canonical.Metadata["policy_version"]},
+		})
+	}
+
+	var event LedgerEvent
+	err := g.Evaluator.store.WithExecutionLock(policyID, policyVersion, func(active *Policy) error {
+		if g.Ledger.HasExecution(result.DecisionID) {
+			result.Status = DecisionDeny
+			result.Reason = ReasonDeniedByPolicy
+			result.Message = "decision has already been executed"
+			event = g.Ledger.Append(LedgerEvent{
+				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+			})
+			return nil
+		}
+		if result.Status != DecisionAllow {
+			result.Status = DecisionDeny
+			result.Reason = ReasonDeniedByPolicy
+			result.Message = "authorization is not executable"
+			event = g.Ledger.Append(LedgerEvent{
+				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+			})
+			return nil
+		}
+		if req.ApprovalID != "" && g.Approvals != nil {
+			if _, consumeErr := g.Approvals.Consume(req.ApprovalID, req.Timestamp); consumeErr != nil {
+				result.Status = DecisionDeny
+				result.Reason = ReasonDeniedByPolicy
+				result.Message = fmt.Sprintf("approval could not be consumed: %v", consumeErr)
+				event = g.Ledger.Append(LedgerEvent{
+					Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+					ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+					ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+				})
+				return nil
+			}
+		}
+		if err := sideEffect(); err != nil {
+			result.Status = DecisionDeny
+			result.Reason = DecisionReason("execution_failed")
+			result.Message = err.Error()
+			event = g.Ledger.Append(LedgerEvent{
+				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+			})
+			return nil
+		}
+		result.Status = DecisionAllow
+		result.Reason = ReasonAllowed
+		event = g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_ALLOWED", Decision: DecisionAllow,
+			Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
+		})
+		return nil
+	})
+	if err != nil {
+		result.Status = DecisionDeny
+		result.Reason = ReasonDeniedStalePolicy
+		result.Message = fmt.Sprintf("atomic policy commit rejected: %v", err)
+		event = g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
+			Reason: result.Reason, Metadata: map[string]string{"policy_id": policyID, "authorized_policy_version": fmt.Sprintf("%d", policyVersion)},
+		})
+	}
+	return result, event
+}
+
 // String is a concise human-readable summary for the decision gateway.
 func (g *DecisionGateway) String() string {
 	if g == nil {
