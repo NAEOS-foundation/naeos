@@ -35,5 +35,10 @@ jobs:
           echo "Unformatted files:"
           echo "$unformatted"
           echo
+          echo "Canonical gofmt diff:"
+          while IFS= read -r file; do
+            gofmt -d "$file"
+          done <<< "$unformatted"
+          echo
           echo "Run 'gofmt -w .' locally and commit the result."
           exit 1

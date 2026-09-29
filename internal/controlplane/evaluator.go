@@ -81,6 +81,15 @@ func NewEvaluator(store ...*PolicyStore) *Evaluator {
 	return &Evaluator{store: s}
 }
 
+// ActivePolicy returns the currently active policy for a policy ID.
+// Execution-boundary freshness checks use this view rather than agent-held state.
+func (e *Evaluator) ActivePolicy(policyID string) (*Policy, error) {
+	if e == nil || e.store == nil {
+		return nil, fmt.Errorf("policy evaluator unavailable")
+	}
+	return e.store.Active(policyID)
+}
+
 // ErrPolicyNotFound indicates the policy does not exist.
 var ErrPolicyNotFound = fmt.Errorf("policy not found")
 
