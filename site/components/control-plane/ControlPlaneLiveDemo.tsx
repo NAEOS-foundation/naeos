@@ -25,6 +25,9 @@ type Props = { lang: "en" | "id" };
 const PUBLIC_CONTROL_PLANE_ENDPOINT =
   "https://naeos-control-plane-production.up.railway.app";
 
+const ALLOW_CAPABILITY = "repository.read";
+const DENY_CAPABILITY = "production.deploy";
+
 export default function ControlPlaneLiveDemo({ lang }: Props) {
   const id = lang === "id";
   const configuredEndpoint =
@@ -32,13 +35,19 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
   const [agentId, setAgentId] = useState("agent-payment-01");
-  const [capability, setCapability] = useState("repository.read");
+  const [capability, setCapability] = useState(ALLOW_CAPABILITY);
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
   const [result, setResult] = useState<DecisionResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const endpointLabel = useMemo(() => endpoint || (id ? "Belum dikonfigurasi" : "Not configured"), [endpoint, id]);
+
+  function selectScenario(nextCapability: string) {
+    setCapability(nextCapability);
+    setResult(null);
+    setError("");
+  }
 
   async function evaluate() {
     setLoading(true);
@@ -121,6 +130,28 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
         </label>
       </div>
 
+      <div className={styles.scenarios} aria-label={id ? "Skenario policy" : "Policy scenarios"}>
+        <span className={styles.scenarioLabel}>{id ? "Skenario" : "Scenarios"}</span>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => selectScenario(ALLOW_CAPABILITY)}
+          disabled={loading}
+          aria-pressed={capability === ALLOW_CAPABILITY}
+        >
+          {id ? "ALLOW · repository.read" : "ALLOW · repository.read"}
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => selectScenario(DENY_CAPABILITY)}
+          disabled={loading}
+          aria-pressed={capability === DENY_CAPABILITY}
+        >
+          {id ? "DENY · production.deploy" : "DENY · production.deploy"}
+        </button>
+      </div>
+
       <button type="button" className="btn btn-primary btn-lg" onClick={evaluate} disabled={loading}>
         {loading ? (id ? "Mengevaluasi…" : "Evaluating…") : "Evaluate Request"}
       </button>
@@ -138,7 +169,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
             <div><dt>policy</dt><dd>{result.policy_id ? `${result.policy_id} v${result.policy_version ?? "?"}` : "—"}</dd></div>
             <div><dt>reason</dt><dd>{result.reason || "—"}</dd></div>
             <div><dt>execution</dt><dd>{result.status === "ALLOW" ? "not executed" : "blocked"}</dd></div>
-            {result.evidence_endpoint && <div><dt>evidence</dt><dd><a href={endpoint.replace(/\/$/, "") + result.evidence_endpoint} target="_blank" rel="noreferrer">view ledger evidence</a></dd></div>}
+            {result.evidence_endpoint && <div><dt>evidence</dt><dd><a href={endpoint.replace(/\/$/, "") + result.evidence_endpoint} target="_blank" rel="noreferrer">view ledger evidence</a></dd>}
           </dl>
         </div>
       )}
