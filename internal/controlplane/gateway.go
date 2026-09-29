@@ -105,7 +105,24 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 		}
 	}
 	if g.Ledger != nil {
-		policyID := "unknown"
+		if g.Evaluator != nil && canonical.EventType == "AUTHORIZATION_DECISION" {
+		active, err := g.Evaluator.ActivePolicy(canonical.Metadata["policy_id"])
+		if err != nil || active.Version != result.PolicyVersion || active.Status != "active" {
+			result.Status = DecisionDeny
+			result.Reason = ReasonDeniedStalePolicy
+			result.Message = "authorization is stale because the active policy changed after authorization"
+			return result, g.Ledger.Append(LedgerEvent{
+				RequestID: req.RequestID, DecisionID: result.DecisionID,
+				AgentID: req.AgentID, Capability: req.Action.Capability,
+				ArtifactHash: req.Action.ArtifactHash,
+				EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
+				Reason: result.Reason,
+				Metadata: map[string]string{"policy_id": canonical.Metadata["policy_id"], "authorization_policy_version": fmt.Sprintf("%d", result.PolicyVersion)},
+			})
+		}
+	}
+
+	policyID := "unknown"
 		grantID := "unknown"
 		if req.Policy != nil {
 			policyID = req.Policy.ID
