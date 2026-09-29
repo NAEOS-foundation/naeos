@@ -80,7 +80,7 @@ func newControlPlane() (*controlplane.DecisionGateway, *controlplane.SessionVeri
 		Status:               "active",
 		CreatedAt:            now,
 		UpdatedAt:            now,
-		AllowedCapabilities:  []controlplane.Capability{allowCapability},
+		AllowedCapabilities: []controlplane.Capability{allowCapability, denyCapability},
 		DeniedCapabilities:   []controlplane.Capability{denyCapability},
 		RequiresExplicitAuth: true,
 	}
@@ -159,7 +159,8 @@ func runAllow(gateway *controlplane.DecisionGateway, verifier *controlplane.Sess
 		EventType: "SIDE_EFFECT_OBSERVED", Decision: controlplane.DecisionAllow,
 		Reason: controlplane.ReasonAllowed, Metadata: map[string]string{"observed": fmt.Sprint(observed)},
 	})
-	evidenceRecorded := len(gateway.Ledger.Query(map[string]string{"request_id": allowRunID})) >= 3
+	events := gateway.Ledger.Query(map[string]string{"request_id": allowRunID})
+	evidenceRecorded := len(events) >= 3 && hasEvent(events, "AUTHORIZATION_DECISION") && hasEvent(events, "EXECUTION_ALLOWED") && hasEvent(events, "SIDE_EFFECT_OBSERVED")
 	summary := verifier.VerifySession(agentID)
 	pass := observed && evidenceRecorded && summary.Result == "PASS"
 	fmt.Printf("side effect: %v | evidence: %v | verify: %s\n", observed, evidenceRecorded, summary.Result)

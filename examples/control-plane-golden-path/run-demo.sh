@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUTPUT_DIR="${NAEOS_P16_OUTPUT_DIR:-/tmp/naeos-p1-6-golden-path}"
-mkdir -p "$OUTPUT_DIR"
-NAEOS_P16_OUTPUT_DIR="$OUTPUT_DIR" go run ./examples/control-plane-golden-path
+OUTPUT_DIR="/tmp/naeos-p1-6-golden-path"
+rm -rf "$OUTPUT_DIR"
+go run ./examples/control-plane-golden-path
 
 echo
 echo "P1.6 output: $OUTPUT_DIR"
