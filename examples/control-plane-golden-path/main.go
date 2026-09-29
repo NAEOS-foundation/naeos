@@ -80,7 +80,7 @@ func newControlPlane() (*controlplane.DecisionGateway, *controlplane.SessionVeri
 		Status:               "active",
 		CreatedAt:            now,
 		UpdatedAt:            now,
-		AllowedCapabilities: []controlplane.Capability{allowCapability, denyCapability},
+		AllowedCapabilities:  []controlplane.Capability{allowCapability, denyCapability},
 		DeniedCapabilities:   []controlplane.Capability{denyCapability},
 		RequiresExplicitAuth: true,
 	}
