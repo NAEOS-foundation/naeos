@@ -108,7 +108,7 @@ func main() {
 		verification.Result == "PASS"
 
 	out := result{
-		RunID:                    requestID,
+		RunID:                   requestID,
 		AuthorizedPolicyVersion: initialPolicy,
 		CurrentPolicyVersion:    currentPolicy,
 		InitialDecision:         string(authorized.Status),
