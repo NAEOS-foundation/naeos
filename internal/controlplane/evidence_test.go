@@ -6,11 +6,15 @@ package controlplane
 import "testing"
 
 func TestEvidenceBundleReconstructsAllowedExecution(t *testing.T) {
-	evaluator := NewEvaluator()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-1", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	evaluator := NewEvaluator(store)
 	ledger := NewLedger()
 	gateway := NewDecisionGateway(evaluator, ledger)
 
-	policy := &Policy{ID: "POLICY-1", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
 	grant := &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "POLICY-1", PolicyVersion: 1, Capabilities: []Capability{"repository.read"}}
 	req := AuthorizeRequest{
 		RequestID: "REQ-1",
