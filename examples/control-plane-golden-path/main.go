@@ -135,10 +135,10 @@ func runAllow(gateway *controlplane.DecisionGateway, verifier *controlplane.Sess
 	req := controlplane.AuthorizeRequest{
 		RequestID: allowRunID,
 		AgentID:   agentID,
-		Action:     action,
-		Grant:      grant(),
-		Policy:     policy(),
-		Timestamp:  time.Now().UTC(),
+		Action:    action,
+		Grant:     grant(),
+		Policy:    policy(),
+		Timestamp: time.Now().UTC(),
 	}
 	decision := gateway.Authorize(req)
 	fmt.Printf("decision: %s (%s)\n", decision.Status, decision.Reason)
@@ -180,10 +180,10 @@ func runDeny(gateway *controlplane.DecisionGateway, verifier *controlplane.Sessi
 	req := controlplane.AuthorizeRequest{
 		RequestID: denyRunID,
 		AgentID:   agentID,
-		Action:     action,
-		Grant:      grant(),
-		Policy:     policy(),
-		Timestamp:  time.Now().UTC(),
+		Action:    action,
+		Grant:     grant(),
+		Policy:    policy(),
+		Timestamp: time.Now().UTC(),
 	}
 	decision := gateway.Authorize(req)
 	fmt.Printf("decision: %s (%s)\n", decision.Status, decision.Reason)
