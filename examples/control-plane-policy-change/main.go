@@ -24,7 +24,7 @@ const (
 )
 
 type result struct {
-	RunID                    string `json:"run_id"`
+	RunID                   string `json:"run_id"`
 	AuthorizedPolicyVersion int    `json:"authorized_policy_version"`
 	CurrentPolicyVersion    int    `json:"current_policy_version"`
 	InitialDecision         string `json:"initial_decision"`
