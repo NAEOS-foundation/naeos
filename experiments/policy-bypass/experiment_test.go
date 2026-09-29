@@ -21,14 +21,12 @@ func TestPolicyBypassLandscape(t *testing.T) {
 	// expectation is the security invariant (DENY); a known ALLOW is therefore
 	// an explicit finding, not a test success.
 	wantFindings := map[string]bool{
-		"empty condition always passes":                 true,
-		"exists: passes on nil value":                   true,
-		"whitespace satisfies not_empty":                true,
-		"TODO obfuscation evades no-todo":               true,
-		"placeholder obfuscation evades no-placeholder": true,
-		"license header keyword spoof":                  true,
-		"fail-open allows unmatched request":            true,
-		"AGENTS.md guidance is advisory, not binding":   true,
+		"empty condition always passes":               true,
+		"exists: passes on nil value":                 true,
+		"whitespace satisfies not_empty":              true,
+		"TODO obfuscation evades no-todo":             true,
+		"fail-open allows unmatched request":          true,
+		"AGENTS.md guidance is advisory, not binding": true,
 	}
 
 	gotFailures := map[string]bool{}
