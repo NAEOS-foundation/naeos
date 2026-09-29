@@ -57,10 +57,10 @@ func main() {
 	verifier := controlplane.NewSessionVerifier(ledger, evaluator)
 
 	action := controlplane.Action{
-		AgentID:     agentID,
-		Capability:  capability,
+		AgentID:      agentID,
+		Capability:   capability,
 		ArtifactHash: artifactHash,
-		Payload:     map[string]string{"operation": "create-demo-side-effect"},
+		Payload:      map[string]string{"operation": "create-demo-side-effect"},
 	}
 	grant := &controlplane.Grant{
 		GrantID:       "grant-p1-7",
@@ -142,13 +142,13 @@ func main() {
 
 func policy(updatedAt time.Time, version int) *controlplane.Policy {
 	return &controlplane.Policy{
-		ID:                  policyID,
-		Version:             version,
-		Status:              "active",
-		CreatedAt:           updatedAt,
-		UpdatedAt:           updatedAt,
-		AllowedCapabilities: []controlplane.Capability{capability},
-		RequiresExplicitAuth:  true,
+		ID:                   policyID,
+		Version:              version,
+		Status:               "active",
+		CreatedAt:            updatedAt,
+		UpdatedAt:            updatedAt,
+		AllowedCapabilities:  []controlplane.Capability{capability},
+		RequiresExplicitAuth: true,
 	}
 }
 
