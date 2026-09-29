@@ -14,7 +14,7 @@ func TestEvidenceBundleReconstructsAllowedExecution(t *testing.T) {
 	grant := &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "POLICY-1", PolicyVersion: 1, Capabilities: []Capability{"repository.read"}}
 	req := AuthorizeRequest{
 		RequestID: "REQ-1",
-		AgentID: "agent-1",
+		AgentID:   "agent-1",
 		Action: Action{Capability: "repository.read", ArtifactHash: "sha256:artifact"},
 		Grant: grant,
 		Policy: policy,
