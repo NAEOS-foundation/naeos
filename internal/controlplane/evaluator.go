@@ -282,6 +282,14 @@ func containsCapability(values []Capability, target Capability) bool {
 	return false
 }
 
+// ActivePolicy returns the currently active policy for a policy ID.
+func (e *Evaluator) ActivePolicy(policyID string) (*Policy, error) {
+	if e == nil || e.store == nil {
+		return nil, fmt.Errorf("policy evaluator unavailable")
+	}
+	return e.store.Active(policyID)
+}
+
 // EvaluateAction is a convenience wrapper that normalizes the request before evaluation.
 func (e *Evaluator) EvaluateAction(action Action, grant *Grant, policy *Policy, now time.Time) DecisionResult {
 	action = normalizeRequest(action)
