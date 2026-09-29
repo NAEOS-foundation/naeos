@@ -362,14 +362,23 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 	var resp struct {
-		Events []map[string]interface{} `json:"events"`
-		Total  int                      `json:"total"`
+		Events        []map[string]interface{}      `json:"events"`
+		Total         int                           `json:"total"`
+		Evidence      []controlplane.EvidenceBundle `json:"evidence"`
+		EvidenceTotal int                           `json:"evidence_total"`
+		Verified      bool                          `json:"verified"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
 	if resp.Total != 1 || len(resp.Events) != 1 {
 		t.Fatalf("expected one control-plane evidence event, got total=%d events=%d", resp.Total, len(resp.Events))
+	}
+	if resp.EvidenceTotal != 1 || len(resp.Evidence) != 1 {
+		t.Fatalf("expected one canonical evidence bundle, got total=%d bundles=%d", resp.EvidenceTotal, len(resp.Evidence))
+	}
+	if resp.Verified {
+		t.Fatal("expected authorization-only ALLOW bundle to remain unverified until execution evidence exists")
 	}
 
 	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/evidence", "")
@@ -384,7 +393,7 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if resp.Total != 1 || resp.Events[0]["agent_id"] != "agent-payment-01" {
+	if resp.Total != 1 || resp.Events[0]["agent_id"] != "agent-payment-01" || resp.EvidenceTotal != 1 {
 		t.Fatalf("unexpected filtered evidence: %+v", resp)
 	}
 }
