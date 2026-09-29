@@ -182,7 +182,46 @@ func TestReviewArtifactMissingLicenseHeader(t *testing.T) {
 
 func TestReviewArtifactHasLicenseHeader(t *testing.T) {
 	r := NewReviewer()
-	content := "// Copyright 2026 NAEOS Foundation\n// Licensed under the Apache License, Version 2.0 (the \"License\");\npackage main\n\nfunc main() {}"
+	content := "// Copyright 2026 NAEOS Foundation\n// SPDX-License-Identifier: Apache-2.0\npackage main\n\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"has-license-header"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusApproved {
+		t.Fatalf("expected approved status, got %s", result.Status)
+	}
+}
+
+func TestReviewArtifactNormalizesObfuscatedTODOAndPlaceholder(t *testing.T) {
+	r := NewReviewer()
+	content := "package main\n\n// to-do: implement\n// T0D0 later\n// replace-me and change.me\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"no-todo", "no-placeholder"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusChanges {
+		t.Fatalf("expected changes_requested status, got %s", result.Status)
+	}
+	if len(result.Comments) != 2 {
+		t.Fatalf("expected 2 comments, got %d", len(result.Comments))
+	}
+}
+
+func TestReviewArtifactRejectsFakeLicenseMarker(t *testing.T) {
+	r := NewReviewer()
+	content := "// Copyright 2026 NAEOS Foundation\n// This file mentions license and Apache but has no SPDX identifier\npackage main\n\nfunc main() {}"
+	result, err := r.ReviewArtifact("test.go", content, []string{"has-license-header"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != StatusChanges {
+		t.Fatalf("expected changes_requested status, got %s", result.Status)
+	}
+}
+
+func TestReviewArtifactAcceptsKnownSPDXLicenseIdentifier(t *testing.T) {
+	r := NewReviewer()
+	content := "// Copyright 2026 NAEOS Foundation\n// SPDX-License-Identifier: Apache-2.0\npackage main\n\nfunc main() {}"
 	result, err := r.ReviewArtifact("test.go", content, []string{"has-license-header"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
