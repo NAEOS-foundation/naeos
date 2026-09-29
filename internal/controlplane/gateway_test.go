@@ -167,3 +167,72 @@ func TestDecisionGateway_RequiresMatchingApprovalArtifactAndConsumesApproval(t *
 		t.Fatalf("expected consumed approval to deny reuse, got %s", reused.Status)
 	}
 }
+
+func TestDecisionGateway_BlocksStaleAuthorizationAfterPolicyChange(t *testing.T) {
+	store := NewPolicyStore()
+	now := time.Now().UTC()
+	policyV1 := &Policy{
+		ID:                  "POLICY-STALE",
+		Version:             1,
+		Status:              "active",
+		CreatedAt:           now,
+		UpdatedAt:           now,
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	policyV2 := &Policy{
+		ID:                  "POLICY-STALE",
+		Version:             2,
+		Status:              "active",
+		CreatedAt:           now.Add(time.Second),
+		UpdatedAt:           now.Add(time.Second),
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	if err := store.Set(policyV1); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID:       "GRANT-STALE",
+		AgentID:       "agent-stale",
+		PolicyID:      policyV1.ID,
+		PolicyVersion: policyV1.Version,
+		Capabilities:  []Capability{"repository.write"},
+		CreatedAt:     now,
+		ExpiresAt:     now.Add(time.Hour),
+		Status:        "active",
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-STALE",
+		AgentID:   "agent-stale",
+		Action: Action{
+			AgentID:     "agent-stale",
+			Capability:  "repository.write",
+			ArtifactHash: "sha256:stale",
+		},
+		Grant:     grant,
+		Policy:    policyV1,
+		Timestamp: now,
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected T0 ALLOW, got %s (%s)", authorized.Status, authorized.Reason)
+	}
+	if err := store.Set(policyV2); err != nil {
+		t.Fatal(err)
+	}
+	executed, event := gateway.ExecuteDecision(req, authorized)
+	if executed.Status != DecisionDeny || executed.Reason != ReasonDeniedStalePolicy {
+		t.Fatalf("expected stale authorization DENY, got %s (%s)", executed.Status, executed.Reason)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 2 {
+		t.Fatalf("expected authorization plus blocked execution evidence, got %d events", len(events))
+	}
+	if events[0].EventType != "AUTHORIZATION_DECISION" || events[1].EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("unexpected evidence sequence: %s -> %s", events[0].EventType, events[1].EventType)
+	}
+}
