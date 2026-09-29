@@ -378,9 +378,41 @@ func (as *APIServer) handleControlPlaneEvidence(w http.ResponseWriter, r *http.R
 		filters[key] = r.URL.Query().Get(key)
 	}
 	events := as.setup.ControlPlaneGateway.Ledger.Query(filters)
+
+	// Return both the raw correlation events and canonical verifier-facing bundles.
+	// A bundle is reconstructed from the canonical decision event so callers do not
+	// have to infer policy/execution bindings from individual ledger records.
+	bundles := make([]controlplane.EvidenceBundle, 0)
+	seen := make(map[string]struct{})
+	for _, event := range events {
+		if event.DecisionID == "" {
+			continue
+		}
+		if _, ok := seen[event.DecisionID]; ok {
+			continue
+		}
+		seen[event.DecisionID] = struct{}{}
+		bundle, err := as.setup.ControlPlaneGateway.Ledger.BuildEvidence(event.DecisionID)
+		if err != nil {
+			continue
+		}
+		bundle.Verification = controlplane.VerifyEvidence(bundle)
+		bundles = append(bundles, bundle)
+	}
+
+	verified := true
+	for _, bundle := range bundles {
+		if bundle.Verification.Result != "PASS" {
+			verified = false
+			break
+		}
+	}
 	response := map[string]interface{}{
-		"events": events,
-		"total":  len(events),
+		"events":         events,
+		"total":          len(events),
+		"evidence":       bundles,
+		"evidence_total": len(bundles),
+		"verified":       verified,
 	}
 	if err := as.setup.ControlPlaneGateway.Ledger.PersistenceError(); err != nil {
 		response["persistence_error"] = err.Error()
