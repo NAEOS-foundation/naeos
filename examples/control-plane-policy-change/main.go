@@ -148,7 +148,7 @@ func policy(updatedAt time.Time, version int) *controlplane.Policy {
 		CreatedAt:           updatedAt,
 		UpdatedAt:           updatedAt,
 		AllowedCapabilities: []controlplane.Capability{capability},
-		RequiresExplicitAuth:  true,
+		RequiresExplicitAuth: true,
 	}
 }
 
