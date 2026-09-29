@@ -75,6 +75,22 @@
   gap: 1rem;
 }
 
+.scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  margin: .25rem 0 1rem;
+}
+
+.scenarioLabel {
+  color: var(--color-text-dim);
+  font: 500 .72rem var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-right: .2rem;
+}
+
 .controlPlaneLive button:disabled {
   opacity: .55;
   cursor: wait;
