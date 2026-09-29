@@ -178,9 +178,9 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 			Reason: result.Reason,
 		})
 	}
-	policyID := canonical.Metadata["policy_id"]
+	stalePolicyID := canonical.Metadata["policy_id"]
 	authorizedPolicyVersion := canonical.Metadata["policy_version"]
-	activePolicy, err := g.Evaluator.ActivePolicy(policyID)
+	activePolicy, err := g.Evaluator.ActivePolicy(stalePolicyID)
 	activeVersion := "unavailable"
 	if activePolicy != nil {
 		activeVersion = fmt.Sprintf("%d", activePolicy.Version)
@@ -188,7 +188,7 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 	if err != nil || activePolicy.Status != "active" || activeVersion != authorizedPolicyVersion {
 		result.Status = DecisionDeny
 		result.Reason = ReasonDeniedStalePolicy
-		result.Message = fmt.Sprintf("authorization is stale: authorized policy %s v%s is not the active policy", policyID, authorizedPolicyVersion)
+		result.Message = fmt.Sprintf("authorization is stale: authorized policy %s v%s is not the active policy", stalePolicyID, authorizedPolicyVersion)
 		return result, g.Ledger.Append(LedgerEvent{
 			Timestamp:    req.Timestamp,
 			RequestID:    req.RequestID,
