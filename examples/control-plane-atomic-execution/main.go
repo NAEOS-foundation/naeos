@@ -14,31 +14,30 @@ import (
 )
 
 const (
-	agentID       = "agent-p1-7"
+	agentID       = "agent-p1-8"
 	capability    = "repository.write"
-	policyID      = "p1-7-policy"
-	requestID     = "P1.7-STALE-AUTH"
-	artifactHash  = "sha256:p1-7-artifact"
+	policyID      = "p1-8-policy"
+	requestID     = "P1.8-ATOMIC"
 	initialPolicy = 1
 	currentPolicy = 2
 )
 
 type result struct {
-	RunID                   string `json:"run_id"`
-	AuthorizedPolicyVersion int    `json:"authorized_policy_version"`
-	CurrentPolicyVersion    int    `json:"current_policy_version"`
-	InitialDecision         string `json:"initial_decision"`
-	ExecutionDecision       string `json:"execution_decision"`
-	SideEffectObserved      bool   `json:"side_effect_observed"`
-	AuthorizationEvidence   bool   `json:"authorization_evidence"`
-	BlockedEvidence         bool   `json:"blocked_evidence"`
-	StaleReasonObserved     bool   `json:"stale_reason_observed"`
-	Verification            string `json:"verification"`
+	RunID                   string
+	AuthorizedPolicyVersion int
+	CurrentPolicyVersion    int
+	InitialDecision         string
+	ExecutionDecision       string
+	SideEffectObserved      bool
+	ExecutionEvidence       bool
+	Verification            string
 }
 
 func main() {
-	outputDir := filepath.Join(os.TempDir(), "naeos-p1-7-policy-change")
-	_ = os.RemoveAll(outputDir)
+	outputDir := filepath.Join(os.TempDir(), "naeos-p1-8-atomic-execution")
+	if err := os.RemoveAll(outputDir); err != nil {
+		fatal(err)
+	}
 	if err := os.MkdirAll(outputDir, 0o750); err != nil {
 		fatal(err)
 	}
@@ -59,11 +58,11 @@ func main() {
 	action := controlplane.Action{
 		AgentID:      agentID,
 		Capability:   capability,
-		ArtifactHash: artifactHash,
-		Payload:      map[string]string{"operation": "create-demo-side-effect"},
+		ArtifactHash: "sha256:p1-8-artifact",
+		Payload:      map[string]string{"operation": "create-atomic-side-effect"},
 	}
 	grant := &controlplane.Grant{
-		GrantID:       "grant-p1-7",
+		GrantID:       "grant-p1-8",
 		AgentID:       agentID,
 		PolicyID:      policyID,
 		PolicyVersion: initialPolicy,
@@ -85,27 +84,27 @@ func main() {
 	if authorized.Status != controlplane.DecisionAllow {
 		fatalf("expected T0 ALLOW, got %s (%s)", authorized.Status, authorized.Reason)
 	}
+
+	sideEffect := filepath.Join(outputDir, "side-effect.json")
+	executed, evidence := gateway.ExecuteAtomic(req, authorized, func() error {
+		payload := []byte("{\n  \"milestone\": \"P1.8\",\n  \"policy_version\": 1\n}\n")
+		return os.WriteFile(sideEffect, payload, 0o600)
+	})
+	if executed.Status != controlplane.DecisionAllow {
+		fatalf("expected atomic execution ALLOW, got %s (%s)", executed.Status, executed.Reason)
+	}
+
+	observed := fileExists(sideEffect)
 	if err := store.Set(policyV2); err != nil {
 		fatal(err)
 	}
-
-	executed, executionEvidence := gateway.ExecuteDecision(req, authorized)
-	sideEffect := filepath.Join(outputDir, "side-effect.json")
-	observed := fileExists(sideEffect)
+	active, err := store.Active(policyID)
+	if err != nil {
+		fatal(err)
+	}
 	events := ledger.Query(map[string]string{"request_id": requestID})
-	authorizationEvidence := hasEvent(events, "AUTHORIZATION_DECISION")
-	blockedEvidence := hasEvent(events, "EXECUTION_BLOCKED")
-	staleReason := hasStaleReason(events)
-	verification := verifier.VerifySession(agentID)
-
-	pass := executed.Status == controlplane.DecisionDeny &&
-		executed.Reason == controlplane.ReasonDeniedStalePolicy &&
-		executionEvidence.EventType == "EXECUTION_BLOCKED" &&
-		!observed &&
-		authorizationEvidence &&
-		blockedEvidence &&
-		staleReason &&
-		verification.Result == "PASS"
+	executionEvidence := evidence.EventType == "EXECUTION_ALLOWED"
+	pass := observed && executionEvidence && len(events) == 2 && active.Version == currentPolicy && verifier.VerifySession(agentID).Result == "PASS"
 
 	out := result{
 		RunID:                   requestID,
@@ -114,9 +113,7 @@ func main() {
 		InitialDecision:         string(authorized.Status),
 		ExecutionDecision:       string(executed.Status),
 		SideEffectObserved:      observed,
-		AuthorizationEvidence:   authorizationEvidence,
-		BlockedEvidence:         blockedEvidence,
-		StaleReasonObserved:     staleReason,
+		ExecutionEvidence:       executionEvidence && len(events) == 2,
 		Verification:            boolStatus(pass),
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
@@ -126,14 +123,7 @@ func main() {
 	if err := os.WriteFile(filepath.Join(outputDir, "result.json"), data, 0o600); err != nil {
 		fatal(err)
 	}
-
-	fmt.Printf(
-		"P1.7 RESULT: initial=%s execution=%s reason=%s verification=%s\n",
-		authorized.Status,
-		executed.Status,
-		executed.Reason,
-		out.Verification,
-	)
+	fmt.Printf("P1.8 RESULT: initial=%s execution=%s verification=%s\n", authorized.Status, executed.Status, out.Verification)
 	fmt.Printf("Evidence: %s\n", filepath.Join(outputDir, "result.json"))
 	if !pass {
 		os.Exit(1)
@@ -150,24 +140,6 @@ func policy(updatedAt time.Time, version int) *controlplane.Policy {
 		AllowedCapabilities:  []controlplane.Capability{capability},
 		RequiresExplicitAuth: true,
 	}
-}
-
-func hasEvent(events []controlplane.LedgerEvent, eventType string) bool {
-	for _, event := range events {
-		if event.EventType == eventType {
-			return true
-		}
-	}
-	return false
-}
-
-func hasStaleReason(events []controlplane.LedgerEvent) bool {
-	for _, event := range events {
-		if event.EventType == "EXECUTION_BLOCKED" && event.Reason == controlplane.ReasonDeniedStalePolicy {
-			return true
-		}
-	}
-	return false
 }
 
 func fileExists(path string) bool {

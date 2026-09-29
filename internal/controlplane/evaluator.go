@@ -6,11 +6,13 @@ package controlplane
 import (
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 )
 
 // PolicyStore stores policy definitions by ID and version.
 type PolicyStore struct {
+	mu        sync.RWMutex
 	current   map[string]*Policy
 	byVersion map[string]map[int]*Policy
 }
@@ -34,6 +36,8 @@ func (ps *PolicyStore) Set(policy *Policy) error {
 	if policy.Version <= 0 {
 		return fmt.Errorf("policy version must be greater than zero")
 	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
 	ps.current[policy.ID] = policy
 	if _, ok := ps.byVersion[policy.ID]; !ok {
 		ps.byVersion[policy.ID] = make(map[int]*Policy)
@@ -44,6 +48,8 @@ func (ps *PolicyStore) Set(policy *Policy) error {
 
 // Active returns the active policy for the given policy ID.
 func (ps *PolicyStore) Active(policyID string) (*Policy, error) {
+	ps.mu.RLock()
+	defer ps.mu.RUnlock()
 	policy, ok := ps.current[policyID]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrPolicyNotFound, policyID)
@@ -56,6 +62,8 @@ func (ps *PolicyStore) Active(policyID string) (*Policy, error) {
 
 // Version returns a specific policy version.
 func (ps *PolicyStore) Version(policyID string, version int) (*Policy, error) {
+	ps.mu.RLock()
+	defer ps.mu.RUnlock()
 	byVersion, ok := ps.byVersion[policyID]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrPolicyNotFound, policyID)
@@ -65,6 +73,30 @@ func (ps *PolicyStore) Version(policyID string, version int) (*Policy, error) {
 		return nil, fmt.Errorf("%w: %s v%d", ErrPolicyVersionNotFound, policyID, version)
 	}
 	return policy, nil
+}
+
+// WithExecutionLock validates the active policy and executes fn while policy updates are excluded.
+// This provides the in-process atomic commit boundary used by ExecuteAtomic.
+func (ps *PolicyStore) WithExecutionLock(policyID string, version int, fn func(*Policy) error) error {
+	if ps == nil {
+		return fmt.Errorf("policy store unavailable")
+	}
+	if fn == nil {
+		return fmt.Errorf("execution callback is required")
+	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	policy, ok := ps.current[policyID]
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrPolicyNotFound, policyID)
+	}
+	if policy.Status != "active" {
+		return fmt.Errorf("%w: %s (status=%s)", ErrPolicyInactive, policyID, policy.Status)
+	}
+	if policy.Version != version {
+		return fmt.Errorf("%w: %s v%d is not active", ErrPolicyVersionNotFound, policyID, version)
+	}
+	return fn(policy)
 }
 
 // Evaluator evaluates a request against an active policy and grant.
