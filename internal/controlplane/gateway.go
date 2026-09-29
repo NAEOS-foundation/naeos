@@ -201,7 +201,7 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 			Decision:     DecisionDeny,
 			Reason:       ReasonDeniedStalePolicy,
 			Metadata: map[string]string{
-				"policy_id":                 policyID,
+				"policy_id":                 stalePolicyID,
 				"authorized_policy_version": authorizedPolicyVersion,
 				"active_policy_version":     activeVersion,
 			},
