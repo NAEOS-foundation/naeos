@@ -141,6 +141,38 @@ func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerificatio
 		ExecutionConsistent: true,
 		LedgerIntegrity: true,
 	}
+
+	if bundle.DecisionEvent.DecisionID != bundle.DecisionID ||
+		bundle.DecisionEvent.RequestID != bundle.RequestID ||
+		bundle.DecisionEvent.AgentID != bundle.AgentID ||
+		bundle.DecisionEvent.Capability != bundle.Capability ||
+		bundle.DecisionEvent.ArtifactHash != bundle.ArtifactHash {
+		v.DecisionConsistent = false
+		v.Issues = append(v.Issues, "decision evidence does not match bundle identity")
+	}
+
+	if bundle.ExecutionEvent != nil {
+		exec := bundle.ExecutionEvent
+		if exec.DecisionID != bundle.DecisionID || exec.RequestID != bundle.RequestID ||
+			exec.AgentID != bundle.AgentID || exec.Capability != bundle.Capability ||
+			exec.ArtifactHash != bundle.ArtifactHash || exec.ExecutionID != bundle.ExecutionID {
+			v.ExecutionConsistent = false
+			v.Issues = append(v.Issues, "execution evidence does not match bundle identity")
+		}
+		if bundle.Decision == DecisionAllow && exec.EventType != "EXECUTION_ALLOWED" {
+			v.ExecutionConsistent = false
+			v.Issues = append(v.Issues, "allowed decision lacks allowed execution evidence")
+		}
+	}
+	if bundle.Decision == DecisionAllow && bundle.ExecutionEvent == nil {
+		v.ExecutionConsistent = false
+		v.Issues = append(v.Issues, "allowed decision has no execution evidence")
+	}
+	if bundle.Decision == DecisionDeny && bundle.ExecutionEvent != nil && bundle.ExecutionEvent.EventType == "EXECUTION_ALLOWED" {
+		v.ExecutionConsistent = false
+		v.Issues = append(v.Issues, "denied decision has allowed execution evidence")
+	}
+
 	var previous string
 	for _, event := range l.Events() {
 		if event.PreviousHash != previous || event.EventHash != hashLedgerEvent(event) {
@@ -151,18 +183,6 @@ func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerificatio
 		previous = event.EventHash
 	}
 
-	check := bundle
-	check.Verification = EvidenceVerification{
-		Result: "PASS",
-		DecisionConsistent: true,
-		ExecutionConsistent: true,
-		LedgerIntegrity: v.LedgerIntegrity,
-	}
-	check.EvidenceDigest = ""
-	rechecked := VerifyEvidence(check)
-	v.DecisionConsistent = rechecked.DecisionConsistent
-	v.ExecutionConsistent = rechecked.ExecutionConsistent
-	v.Issues = append(v.Issues, rechecked.Issues...)
 	if !v.DecisionConsistent || !v.ExecutionConsistent || !v.LedgerIntegrity {
 		v.Result = "FAIL"
 	}
