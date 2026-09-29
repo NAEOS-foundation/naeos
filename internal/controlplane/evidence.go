@@ -12,22 +12,22 @@ import (
 
 // EvidenceBundle is a canonical, verifier-facing record for one authorization lifecycle.
 type EvidenceBundle struct {
-	SchemaVersion  string                `json:"schema_version"`
-	RequestID      string                `json:"request_id"`
-	DecisionID     string                `json:"decision_id"`
-	ExecutionID    string                `json:"execution_id,omitempty"`
-	AgentID        string                `json:"agent_id"`
-	Capability     Capability            `json:"capability"`
-	ArtifactHash   string                `json:"artifact_hash,omitempty"`
-	Decision       DecisionStatus        `json:"decision"`
-	Reason         DecisionReason        `json:"reason"`
-	PolicyID       string                `json:"policy_id,omitempty"`
-	PolicyVersion  string                `json:"policy_version,omitempty"`
-	GrantID        string                `json:"grant_id,omitempty"`
-	DecisionEvent  LedgerEvent           `json:"decision_event"`
-	ExecutionEvent *LedgerEvent          `json:"execution_event,omitempty"`
-	Verification   EvidenceVerification  `json:"verification"`
-	EvidenceDigest string                `json:"evidence_digest"`
+	SchemaVersion  string               `json:"schema_version"`
+	RequestID      string               `json:"request_id"`
+	DecisionID     string               `json:"decision_id"`
+	ExecutionID    string               `json:"execution_id,omitempty"`
+	AgentID        string               `json:"agent_id"`
+	Capability     Capability           `json:"capability"`
+	ArtifactHash   string               `json:"artifact_hash,omitempty"`
+	Decision       DecisionStatus       `json:"decision"`
+	Reason         DecisionReason       `json:"reason"`
+	PolicyID       string               `json:"policy_id,omitempty"`
+	PolicyVersion  string               `json:"policy_version,omitempty"`
+	GrantID        string               `json:"grant_id,omitempty"`
+	DecisionEvent  LedgerEvent          `json:"decision_event"`
+	ExecutionEvent *LedgerEvent         `json:"execution_event,omitempty"`
+	Verification   EvidenceVerification `json:"verification"`
+	EvidenceDigest string               `json:"evidence_digest"`
 }
 
 // EvidenceVerification describes deterministic checks over the evidence lifecycle.
@@ -51,16 +51,16 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 
 	bundle := EvidenceBundle{
 		SchemaVersion: "1.0",
-		RequestID: decision.RequestID,
-		DecisionID: decision.DecisionID,
-		AgentID: decision.AgentID,
-		Capability: decision.Capability,
-		ArtifactHash: decision.ArtifactHash,
-		Decision: decision.Decision,
-		Reason: decision.Reason,
-		PolicyID: decision.Metadata["policy_id"],
+		RequestID:     decision.RequestID,
+		DecisionID:    decision.DecisionID,
+		AgentID:       decision.AgentID,
+		Capability:    decision.Capability,
+		ArtifactHash:  decision.ArtifactHash,
+		Decision:      decision.Decision,
+		Reason:        decision.Reason,
+		PolicyID:      decision.Metadata["policy_id"],
 		PolicyVersion: decision.Metadata["policy_version"],
-		GrantID: decision.Metadata["grant_id"],
+		GrantID:       decision.Metadata["grant_id"],
 		DecisionEvent: decision,
 	}
 
@@ -86,10 +86,10 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 // VerifyEvidence independently validates a previously materialized bundle.
 func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	verification := EvidenceVerification{
-		Result: "PASS",
-		DecisionConsistent: true,
+		Result:              "PASS",
+		DecisionConsistent:  true,
 		ExecutionConsistent: true,
-		LedgerIntegrity: true,
+		LedgerIntegrity:     true,
 	}
 
 	if bundle.DecisionEvent.DecisionID != bundle.DecisionID ||
@@ -136,10 +136,10 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 
 func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerification {
 	v := EvidenceVerification{
-		Result: "PASS",
-		DecisionConsistent: true,
+		Result:              "PASS",
+		DecisionConsistent:  true,
 		ExecutionConsistent: true,
-		LedgerIntegrity: true,
+		LedgerIntegrity:     true,
 	}
 
 	if bundle.DecisionEvent.DecisionID != bundle.DecisionID ||
