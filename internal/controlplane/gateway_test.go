@@ -206,8 +206,8 @@ func TestDecisionGateway_BlocksStaleAuthorizationAfterPolicyChange(t *testing.T)
 		RequestID: "REQ-STALE",
 		AgentID:   "agent-stale",
 		Action: Action{
-			AgentID:     "agent-stale",
-			Capability:  "repository.write",
+			AgentID:      "agent-stale",
+			Capability:   "repository.write",
 			ArtifactHash: "sha256:stale",
 		},
 		Grant:     grant,
