@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE_SHA="${BASE_SHA:-${GITHUB_BASE_SHA:-}}"
 REQUEST="${NAEOS_DEPENDENCY_RISK_REQUEST:-}"
-OUTPUT="${NAEOS_DEPENDENCY_RISK_OUTPUT:-${ROOT}/dependency-risk-evidence.json}"
+OUTPUT="${NAEOS_DEPENDENCY_RISK_OUTPUT:-dependency-risk-evidence.json}"
 cd "${ROOT}"
 if [[ -z "${BASE_SHA}" ]]; then
   # workflow_dispatch does not provide github.event.before. For a manual
