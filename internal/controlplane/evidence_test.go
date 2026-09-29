@@ -3,7 +3,10 @@
 
 package controlplane
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestEvidenceBundleReconstructsAllowedExecution(t *testing.T) {
 	store := NewPolicyStore()
@@ -15,7 +18,15 @@ func TestEvidenceBundleReconstructsAllowedExecution(t *testing.T) {
 	ledger := NewLedger()
 	gateway := NewDecisionGateway(evaluator, ledger)
 
-	grant := &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "POLICY-1", PolicyVersion: 1, Capabilities: []Capability{"repository.read"}}
+	grant := &Grant{
+		GrantID:       "GRANT-1",
+		AgentID:       "agent-1",
+		PolicyID:      "POLICY-1",
+		PolicyVersion: 1,
+		Capabilities:  []Capability{"repository.read"},
+		Status:        "active",
+		ExpiresAt:     time.Now().UTC().Add(time.Hour),
+	}
 	req := AuthorizeRequest{
 		RequestID: "REQ-1",
 		AgentID:   "agent-1",
