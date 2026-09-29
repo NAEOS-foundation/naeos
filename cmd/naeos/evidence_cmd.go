@@ -32,6 +32,7 @@ func newEvidenceCommand() *cobra.Command {
 	cmd.AddCommand(newEvidenceLogCommand())
 	cmd.AddCommand(newEvidenceQueryCommand())
 	cmd.AddCommand(newEvidenceVerifyCommand())
+	cmd.AddCommand(newEvidenceVerifyBundleCommand())
 	cmd.AddCommand(newEvidenceSummaryCommand())
 	cmd.AddCommand(newEvidenceHashCommand())
 	return cmd
