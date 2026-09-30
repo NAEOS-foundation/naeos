@@ -16,15 +16,13 @@
 
 The project has already implemented substantial policy, control-plane, runtime,
 evidence, verification, observability, signing, SBOM, plugin, and production
-server capabilities. The next work should therefore prioritize **proof,
-reproducibility, adoption, and real-world evaluation** over adding unrelated
-surface area.
+server capabilities. The next work should therefore prioritize **reproducibility, adoption, and real-world evaluation** over adding unrelated surface area.
 
 ## Current execution track
 
 ### P1.6 — Public Control Plane
 
-**Status: IN PROGRESS**
+**Status: DONE**
 
 Goal: make the control-plane contract observable from a public browser surface
 without implying that a browser request executes a production side effect.
@@ -53,10 +51,10 @@ Acceptance:
 - [x] Side-effect-free public decision path
 - [x] Production deployment
 - [x] Website CSP permits the public control-plane endpoint
-- [ ] Browser-level ALLOW proof verified against production
-- [ ] Browser-level DENY proof verified against production
-- [ ] Public evidence walkthrough captured
-- [ ] P1.6 documentation and screenshots synchronized
+- [x] Browser-level ALLOW proof verified against production
+- [x] Browser-level DENY proof verified against production
+- [x] Public evidence walkthrough captured
+- [x] P1.6 documentation and screenshots synchronized
 
 Reference: docs/control-plane/live-proof.md
 
