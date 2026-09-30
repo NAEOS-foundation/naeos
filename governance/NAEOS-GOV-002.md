@@ -7,7 +7,7 @@ Category    : Governance
 Priority    : Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
