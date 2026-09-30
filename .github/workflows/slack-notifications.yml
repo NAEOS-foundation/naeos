@@ -1,0 +1,90 @@
+name: Slack Notifications
+# NAEOS Slack bridge test trigger
+# Triggered by PR synchronization for validation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, closed, reopened, ready_for_review, synchronize]
+  issues:
+    types: [opened, closed, reopened]
+  workflow_run:
+    workflows: ["CI", "Website"]
+    types: [completed]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Notify Slack
+    if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Slack payload
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          PR_ACTION: ${{ github.event.action }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          ISSUE_ACTION: ${{ github.event.action }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        run: |
+          set -euo pipefail
+
+          case "$EVENT_NAME" in
+            pull_request)
+              text="🔀 Pull request $PR_ACTION — $REPO
+          $PR_TITLE
+          $PR_URL
+          Actor: $ACTOR" ;;
+            issues)
+              text="📋 Issue $ISSUE_ACTION — $REPO
+          $ISSUE_TITLE
+          $ISSUE_URL
+          Actor: $ACTOR" ;;
+            workflow_run)
+              text="⚙️ Workflow completed — $WORKFLOW_NAME
+          Status: $WORKFLOW_CONCLUSION
+          $WORKFLOW_URL
+          Repository: $REPO" ;;
+            release)
+              if [ -n "$RELEASE_NAME" ]; then release_name="$RELEASE_NAME"; else release_name="$RELEASE_TAG"; fi
+              text="🚀 Release published — $REPO
+          $release_name
+          $RELEASE_URL" ;;
+            workflow_dispatch)
+              text="🧪 Slack notification workflow test — $REPO
+          Ref: $REF_NAME
+          Commit: $SHA
+          Actor: $ACTOR" ;;
+            *)
+              text="🔔 GitHub event: $EVENT_NAME — $REPO
+          Ref: $REF_NAME
+          Commit: $SHA" ;;
+          esac
+
+          jq -n --arg text "$text" '{text: $text}' > payload.json
+
+      - name: Send notification to Slack
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: payload.json
+          errors: true
