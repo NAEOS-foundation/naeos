@@ -7,7 +7,7 @@ Owner: NAEOS Foundation
 Priority: High
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
