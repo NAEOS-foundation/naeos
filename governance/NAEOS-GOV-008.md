@@ -196,7 +196,7 @@ Setiap dokumen wajib memiliki metadata berikut:
 version: 1.0.0
 status: Stable
 last_updated: 2026-07-09
-owner: NAEOS Foundation
+owner: NAEOS OSS
 review_cycle: 12 months
 14. Release Artifacts
 
