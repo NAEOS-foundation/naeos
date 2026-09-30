@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Document Version** | 1.0.0 |
-| **Status** | Public Draft |
+| **Status** | Stable |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
 | **Platform Version** | v3.6.0 (repository state) |
