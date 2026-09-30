@@ -6,7 +6,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-    types: [opened, closed, reopened, ready_for_review]
+    types: [opened, closed, reopened, ready_for_review, synchronize]
   issues:
     types: [opened, closed, reopened]
   workflow_run:
