@@ -4,7 +4,7 @@ Title: Versioning Policy
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Steward: NAEOS OSS
 Priority: Critical
 
 Motto:
