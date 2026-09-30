@@ -10,11 +10,11 @@ export const SITE = {
   baseUrl: "https://naeos.dev",
   title: {
     en: "NAEOS — AI Engineering Operating System",
-    id: "NAEOS — Sistem Operasi Rekayasa AI",
+    id: "NAEOS — Engineering Control Plane untuk AI Coding Agents",
   } as Record<Lang, string>,
   description: {
-    en: "The Engineering Control Plane for AI Coding Agents. Govern AI-assisted software engineering through explicit architecture, policy, authorized execution, evidence, and verification.",
-    id: "Lapisan kendali rekayasa untuk AI coding agents: arsitektur, kebijakan, eksekusi terotorisasi, bukti, dan verifikasi.",
+    en: "Open-source engineering control plane for AI coding agents: specification, policy, authorized execution, evidence, and independent verification.",
+    id: "Engineering control plane open-source untuk AI coding agents: specification, policy, authorized execution, evidence, dan independent verification.",
   } as Record<Lang, string>,
   copyright: "Copyright © 2025-2026 NAEOS contributors.",
   repo: "https://github.com/NAEOS-foundation/naeos",
