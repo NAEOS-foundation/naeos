@@ -31,7 +31,7 @@ The Vision answers the question:
 
 This document defines the official NAEOS vision.
 
-The Vision provides strategic guidance for architectural, technical, and community decisions across the NAEOS ecosystem.
+The Vision provides strategic guiandce for architectural, technical, and community decisions across the NAEOS ecosystem.
 
 2. Official Vision Statement
 
@@ -47,11 +47,11 @@ A world where software engineering is driven by specification, not improvisation
 
 3.1 Specification as Foundation
 
-Seluruh software engineering dimulai dari spesifikasi yang jelas, terstruktur, dan dapat diverifikasi.
+Seluruh software engineering dimulai from spesifikasi that jelas, terstruktur, and can diverifikasi.
 
-Specification bukan dokumentasi tambahan.
+Specification not dokumentasi tambahan.
 
-Specification adalah fondasi dari seluruh lifecycle engineering.
+Specification is fondasi from all lifecycle engineering.
 
 3.2 Human-AI Collaboration
 
