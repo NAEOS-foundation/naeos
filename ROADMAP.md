@@ -137,13 +137,18 @@ Targets:
 
 - [ ] Clear Developer / Contributor / Organization entry points
 - [ ] One copy-paste public demo path
-- [ ] Issue/discussion template for external validation reports
+- [x] Issue template for external validation reports
 - [ ] First cohort of technical evaluators
 - [ ] Capture reproducible deviations and failure modes
 - [ ] Convert repeated evaluator needs into engineering work
 
 Success should be measured by **reproducible usage and technical feedback**, not
 only traffic, followers, or impressions.
+
+The evaluator intake path is now explicit: run the Golden Path from a fixed commit,
+record the evidence anchors, report deviations, and open an `External Validation
+Report` issue. The first evaluator cohort remains an adoption outcome, not a
+self-reported milestone.
 
 ## Track 4 — Design Partner Pilot
 
