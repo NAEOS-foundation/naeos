@@ -2,7 +2,7 @@ Document ID : NAEOS-GOV-002
 Title       : Vision
 Version     : 1.0.0
 Status      : Stable
-Owner       : NAEOS Foundation
+Owner       : NAEOS OSS
 Category    : Governance
 Priority    : Critical
 
@@ -21,17 +21,17 @@ Referenced By:
 NAEOS Vision
 Executive Summary
 
-Vision NAEOS mendefinisikan arah jangka panjang dan kondisi akhir yang ingin dicapai oleh ekosistem NAEOS.
+The NAEOS Vision defines the long-term direction and desired future state of the NAEOS ecosystem.
 
-Vision menjawab pertanyaan:
+The Vision answers the question:
 
-"Ke mana NAEOS ingin pergi?"
+"Where is NAEOS going?"
 
 1. Purpose
 
-Dokumen ini mendefinisikan visi resmi NAEOS.
+This document defines the official NAEOS vision.
 
-Vision menjadi pedoman strategis bagi seluruh keputusan arsitektural, teknis, dan komunitas dalam ekosistem NAEOS.
+The Vision provides strategic guidance for architectural, technical, and community decisions across the NAEOS ecosystem.
 
 2. Official Vision Statement
 
@@ -41,7 +41,7 @@ A world where software engineering is driven by specification, not improvisation
 
 Indonesia
 
-Dunia di mana software engineering didorong oleh spesifikasi, bukan improvisasi — di mana manusia mendefinisikan intent dan AI mengeksekusi dengan presisi, yang dikelola oleh pengetahuan bersama dan standar yang konsisten.
+A world where software engineering is driven by specification, not improvisation — where humans define intent and AI executes with precision, governed by shared knowledge and consistent standards.
 
 3. Vision Pillars
 
@@ -55,100 +55,100 @@ Specification adalah fondasi dari seluruh lifecycle engineering.
 
 3.2 Human-AI Collaboration
 
-AI adalah mitra engineering, bukan pengganti engineer.
+AI is an engineering partner, not a replacement for engineers.
 
-Manusia memberikan intent, konteks, dan evaluasi.
+Humans provide intent, context, and evaluation.
 
-AI memberikan kecepatan, konsistensi, dan eksekusi.
+AI provides speed, consistency, and execution.
 
 3.3 Knowledge Preservation
 
-Engineering knowledge harus bertahan melewati perubahan tim, teknologi, dan waktu.
+Engineering knowledge must survive changes in teams, technology, and time.
 
-Setiap keputusan engineering harus dapat dilacak (traceable).
+Every engineering decision must be traceable.
 
-Setiap pengetahuan harus dapat digunakan ulang (reusable).
+Every piece of knowledge must be reusable.
 
 3.4 Consistent Quality
 
-Kualitas software harus terjamin melalui standar yang ditegakkan secara otomatis.
+Software quality must be enforced through automatically enforced standards.
 
-Validator dan governance memastikan konsistensi lintas proyek.
+Validators and governance ensure consistency across projects.
 
-Quality bukan tahap akhir, tetapi bagian dari setiap tahap.
+Quality is not a final stage; it is part of every stage.
 
 3.5 Open Ecosystem
 
-NAEOS harus terbuka dan interoperabel.
+NAEOS must be open and interoperable.
 
-Lintas bahasa pemrograman, lintas AI agent, lintas platform.
+Across programming languages, AI agents, and platforms.
 
-Ekosistem harus terbuka untuk kontribusi dan evolusi.
+The ecosystem must remain open to contribution and evolution.
 
 4. Current State vs Future State
 
 4.1 Current State
 
-Saat ini:
+Current state:
 
-software engineering dimulai dari prompt tanpa konteks,
-arsitektur berubah-ubah tanpa jejak,
-dokumentasi terpisah dari kode dan sering tertinggal,
-knowledge hilang ketika tim berubah,
-standar tidak konsisten antar proyek,
-AI coding tanpa governance menghasilkan teknis debt.
+software engineering starts from context-free prompts,
+architecture changes without traceability,
+documentation is separated from code and often falls behind,
+knowledge is lost when teams change,
+standards are inconsistent across projects,
+AI coding without governance produces technical debt.
 
 4.2 Future State
 
-Dengan NAEOS:
+With NAEOS:
 
-software engineering dimulai dari spesifikasi yang valid,
-arsitektur terdokumentasi dan terlacak,
-dokumentasi selalu sinkron dengan implementasi,
-knowledge tersimpan sebagai aset organisasi,
-standar diterapkan secara konsisten dan terotomasi,
-AI coding dikelola oleh governance yang ketat.
+software engineering starts from a valid specification,
+architecture is documented and traceable,
+documentation remains synchronized with implementation,
+knowledge is preserved as an organizational asset,
+standards are applied consistently and automatically,
+AI coding is governed by explicit controls.
 
 5. Success Indicators
 
-Vision NAEOS dianggap tercapai apabila:
+The NAEOS Vision is considered achieved when:
 
 5.1 Adoption
 
-Organisasi menggunakan spesifikasi NAEOS sebagai source of truth.
+Organizations use NAEOS specifications as their source of truth.
 
-AI agent mendukung format spesifikasi NAEOS secara natif.
+AI agents support the NAEOS specification format natively.
 
 5.2 Quality
 
-Laporan defect menurun signifikan pada proyek yang menggunakan NAEOS.
+Defect rates decline materially in projects using NAEOS.
 
-Dokumentasi selalu sinkron dengan kode.
+Documentation remains synchronized with code.
 
 5.3 Knowledge
 
-Engineering knowledge terakumulasi dan digunakan ulang secara efektif.
+Engineering knowledge accumulates and is reused effectively.
 
-Keputusan engineering dapat ditelusuri kembali ke spesifikasi.
+Engineering decisions can be traced back to specifications.
 
 6. Non-Goals
 
-Vision NAEOS TIDAK mencakup:
+The NAEOS Vision does NOT include:
 
-menggantikan engineer dengan AI,
-membangun LLM sendiri,
-menjadi vendor cloud atau platform,
-menggantikan bahasa pemrograman yang ada.
+replacing engineers with AI,
+building an LLM,
+becoming a cloud or platform vendor,
+replacing existing programming languages.
 
 7. Time Horizon
 
-Vision ini bersifat jangka panjang (5-10 tahun).
+This Vision is long-term (5–10 years).
 
-Implementasi bertahap melalui roadmap yang didefinisikan di NAEOS-GOV-007.
+Implementation is phased through the roadmap defined in NAEOS-GOV-007.
 
 8. Revision Policy
 
-Perubahan pada Vision hanya dapat dilakukan melalui RFC resmi dan persetujuan governance.
+Changes to the Vision may only be made through a formal RFC and governance approval.
 
 9. References
 
