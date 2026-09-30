@@ -1,6 +1,6 @@
 # NAEOS
 
-**Nusantara Engineering & Architecture Operating System**
+**Nusantara AI Engineering Operating System**
 
 > **The Engineering Control Plane for AI Coding Agents.**
 >
@@ -315,7 +315,7 @@ NAEOS is released under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) 
 
 Contributions are accepted under the [Developer Certificate of Origin](https://developercertificate.org/) as described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS Foundation. The Apache License grants no trademark rights; see [NOTICE](NOTICE) for the current branding and trademark policy.
+The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS OSS. The Apache License grants no trademark rights; see [NOTICE](NOTICE) for the current branding and trademark policy.
 
 ---
 
