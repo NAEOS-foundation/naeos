@@ -18,7 +18,7 @@ This is the bridge between reading about NAEOS and participating in the reposito
 
 ## 1. What is NAEOS?
 
-NAEOS helps teams keep architecture, implementation, and AI context aligned by using a software specification as the source of truth. Instead of letting documentation, prompts, and generated code drift apart, the system builds a shared engineering model and validates it before generating artifacts.
+NAEOS connects engineering intent, policy, authorized execution, and evidence around a shared engineering model. The repository's Golden Path makes that control flow reproducible and inspectable before generated artifacts are treated as evidence of the run.
 
 The practical question is simple: when an AI agent takes action, how do we know it is still operating against the current design, policy, and scope? NAEOS is built around that control problem.
 
@@ -78,13 +78,13 @@ Specification
 
 This proves the reproducible local control-plane path. It does **not** by itself prove production readiness, customer adoption, enterprise compliance, or the safety of every external agent integration.
 
-For the independent-verification capability, take the resulting evidence model to [P1.11 — Independent Verifier CLI](docs/control-plane/p1-11-independent-verifier-cli.md):
+For the independent-verification capability, see [P1.11 — Independent Verifier CLI](docs/control-plane/p1-11-independent-verifier-cli.md). It accepts a serialized canonical `EvidenceBundle` and verifies it independently:
 
 ```bash
 naeos evidence verify-bundle --input-file evidence.json
 ```
 
-P1.11 is intentionally read-only and verifies a serialized canonical `EvidenceBundle` without re-running policy or executing an action.
+P1.11 is intentionally read-only: it does not re-run policy, execute an action, or contact the control plane. Its input is a canonical `EvidenceBundle`, so it should be treated as a separate verification boundary rather than as a direct invocation on the Golden Path's `run.json`.
 
 If you want to go one step further with the AI compiler:
 
