@@ -3,9 +3,9 @@ title: "Whitepaper NAEOS"
 description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang mengubah spesifikasi menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Tentukan Sekali. Bangun di Mana Saja."
 ---
 
-**Nusantara Engineering & Architecture Operating System**
+**Nusantara AI Engineering Operating System**
 
-> *"Specify Once. Build Anywhere."*
+> *"Architecture Drives Engineering."*
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 
 NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas. NAEOS bukan sekadar *project generator* — ia adalah *engineering runtime* yang memahami spesifikasi, membangun model internal (NEIR), mengorkestrasi rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasinya sepanjang siklus hidup.
 
-Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan model engineering yang dapat dibagi untuk kode, dokumentasi, konfigurasi, dan konteks AI.
+Dengan semboyan **"Architecture Drives Engineering."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan model engineering yang dapat dibagi untuk kode, dokumentasi, konfigurasi, dan konteks AI.
 
 Status repositori saat ini mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart scaffolding, dan template kebijakan yang berorientasi pada kepatuhan SOC 2, HIPAA, dan GDPR.
 
@@ -473,6 +473,6 @@ Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus be
 
 ---
 
-*NAEOS Foundation — "Engineering With Discipline"*
+*NAEOS OSS — "Engineering With Discipline"*
 
 *Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.6.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
