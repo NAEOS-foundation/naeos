@@ -4,7 +4,7 @@
 - Title: Introduce a Standard ADR and RFC Process
 - Status: Draft
 - Date: 2026-07-09
-- Authors: NAEOS Foundation
+- Authors: NAEOS OSS
 - Related Documents: CONTRIBUTING.md, templates/ADR-template.md, templates/RFC-template.md
 
 ## Summary
