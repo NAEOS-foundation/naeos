@@ -47,7 +47,7 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 			if outputFmt == "json" {
 				payload := map[string]interface{}{
 					"verification": result,
-					"decision_id": bundle.DecisionID,
+					"decision_id":  bundle.DecisionID,
 				}
 				if bundle.ExecutionID != "" {
 					payload["execution_id"] = bundle.ExecutionID
