@@ -78,7 +78,7 @@ export default async function RootLayout({
   const tagline =
     lang === "id"
       ? "Tentukan Sekali. Bangun di Mana Saja."
-      : "Specify Once. Build Anywhere.";
+      : "Architecture Drives Engineering.";
 
   return (
     <html lang={lang} data-theme="dark" data-ws-url="disabled" suppressHydrationWarning>
