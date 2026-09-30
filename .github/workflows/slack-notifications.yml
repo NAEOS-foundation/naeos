@@ -1,4 +1,5 @@
 name: Slack Notifications
+# NAEOS Slack bridge test trigger
 
 on:
   push:
