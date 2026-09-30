@@ -1,8 +1,8 @@
 # Start Here
 
-You do not need to read the whole NAEOS architecture before you can understand the value. The shortest path is: understand the problem, run one example, and then decide whether to contribute.
+You do not need to read the whole NAEOS architecture before you can understand the value. The shortest path is: understand the control boundary, run one reproducible proof, inspect the evidence, and then decide whether to contribute.
 
-NAEOS is a platform for turning a system specification into a shared engineering model that can be validated, generated, and used by AI tools without drifting away from the actual design.
+NAEOS is an open-source engineering control plane for AI coding agents. It connects specification, policy, authorized execution, observation, evidence, and independent verification so agent actions can be inspected against explicit engineering intent.
 
 ## Coming from the NAEOS newsletter?
 
@@ -18,9 +18,9 @@ This is the bridge between reading about NAEOS and participating in the reposito
 
 ## 1. What is NAEOS?
 
-NAEOS helps teams keep architecture, implementation, and AI context aligned by using a software specification as the source of truth. Instead of letting documentation, prompts, and generated code drift apart, the system builds a shared engineering model and validates it before generating artifacts.
+NAEOS connects engineering intent, policy, authorized execution, and evidence around a shared engineering model. The repository's Golden Path makes that control flow reproducible and inspectable before generated artifacts are treated as evidence of the run.
 
-The practical question is simple: when an AI agent takes action, how do we know it is still operating against the current design, policy, and scope? NAEOS is built around that problem.
+The practical question is simple: when an AI agent takes action, how do we know it is still operating against the current design, policy, and scope? NAEOS is built around that control problem.
 
 ## 2. Why should I care?
 
@@ -36,7 +36,7 @@ Before running locally, you can inspect the public Control Plane at [naeos.dev/c
 
 Use it to understand the public control boundary first; then reproduce the engineering workflow locally with the Golden Path below.
 
-## 4. Try it in 5 minutes
+## 4. Try the Golden Path in 5 minutes
 
 The most direct, verified onboarding path in this repository is the canonical CLI demo in [examples/demo-cli/README.md](examples/demo-cli/README.md) and its script at [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh).
 
@@ -60,6 +60,31 @@ What to expect:
 - run metadata records traceability (`run_id`, `specification_hash`, `neir_hash`)
 
 This is the best first check because it demonstrates the real NAEOS control-plane workflow without requiring the full architecture first.
+
+### What you just proved
+
+A successful run gives you repository-backed evidence that:
+
+```text
+Specification
+  → NEIR
+  → Validation
+  → Policy rejection boundary
+  → AI context
+  → Authorized generation
+  → Artifacts
+  → Traceable run evidence
+```
+
+This proves the reproducible local control-plane path. It does **not** by itself prove production readiness, customer adoption, enterprise compliance, or the safety of every external agent integration.
+
+For the independent-verification capability, see [P1.11 — Independent Verifier CLI](docs/control-plane/p1-11-independent-verifier-cli.md). It accepts a serialized canonical `EvidenceBundle` and verifies it independently:
+
+```bash
+naeos evidence verify-bundle --input-file evidence.json
+```
+
+P1.11 is intentionally read-only: it does not re-run policy, execute an action, or contact the control plane. Its input is a canonical `EvidenceBundle`, so it should be treated as a separate verification boundary rather than as a direct invocation on the Golden Path's `run.json`.
 
 If you want to go one step further with the AI compiler:
 
@@ -233,17 +258,7 @@ Use [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) for new bug reports, docume
 
 ## 11. Contribution workflow
 
-The repository now has a curated set of concrete contributor starting points. Pick one based on the kind of work you want to do:
-
-- [#209 — Improve policy evaluator edge-case coverage](https://github.com/NAEOS-foundation/naeos/issues/209) — focused tests for NaN/Inf, empty conditions, nil, and whitespace behavior.
-- [#210 — Add audit evidence for disabled policy rules](https://github.com/NAEOS-foundation/naeos/issues/210) — make disabled policy rules observable instead of silently bypassed.
-- [#211 — Document the NAEOS contribution workflow](https://github.com/NAEOS-foundation/naeos/issues/211) — improve the path from repository orientation to a first Issue/PR.
-- [#212 — Strengthen experiment evidence format](https://github.com/NAEOS-foundation/naeos/issues/212) — establish a consistent, independently inspectable evidence structure.
-- [#213 — Review plugin registry contributor path](https://github.com/NAEOS-foundation/naeos/issues/213) — verify the smallest end-to-end plugin contribution path.
-
-These are intentionally scoped so a new contributor can inspect the relevant code or documentation before writing a large change. If none fits, use the issue templates to propose a concrete problem or documentation gap.
-
-The simplest accurate contribution flow is:
+The repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The simplest accurate contribution flow is:
 
 1. Clone the repository and read [CONTRIBUTING.md](CONTRIBUTING.md).
 2. Pick a concrete issue, question, or documentation gap.
@@ -251,7 +266,7 @@ The simplest accurate contribution flow is:
 4. Run the relevant tests or validation commands.
 5. Open a pull request and explain what changed and why.
 
-This repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The intent here is to make the first step feel approachable.
+Good first work includes clarifying onboarding, reproducing a limitation, improving an example, strengthening a test, or challenging a governance assumption. See [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) and [docs/community/contributor-ladder.md](docs/community/contributor-ladder.md).
 
 ## 12. Documentation map
 
