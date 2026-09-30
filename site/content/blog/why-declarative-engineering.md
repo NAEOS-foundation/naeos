@@ -93,4 +93,4 @@ The output isn't just files — it's a complete project structure with dependenc
 
 We're working on deeper integrations: LSP support for spec files, a VS Code extension with real-time validation, and tighter cloud deployment pipelines. The spec is becoming the interface for the entire software development lifecycle.
 
-Declarative engineering isn't a silver bullet. But for teams building multi-language, multi-service systems, it's a fundamentally better way to think about code generation. Specify once. Build anywhere.
+Declarative engineering isn't a silver bullet. But for teams building multi-language, multi-service systems, it's a fundamentally better way to think about code generation. Architecture Drives Engineering.
