@@ -1,6 +1,6 @@
 ---
-title: NAEOS — AI Engineering Operating System
-description: The Engineering Control Plane for AI Coding Agents. Govern AI-assisted software engineering through explicit architecture, policy, authorized execution, evidence, and verification.
+title: NAEOS — Engineering Control Plane for AI Coding Agents
+description: Open-source engineering control plane for AI coding agents. Connect specification, policy, authorized execution, evidence, and independent verification.
 ---
 
 <!-- Content is rendered via layouts/index.html -->
