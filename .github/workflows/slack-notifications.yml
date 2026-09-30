@@ -1,11 +1,8 @@
 name: Slack Notifications
-# NAEOS Slack bridge test trigger
-# Triggered by PR synchronization for validation
-
 on:
   pull_request:
     branches: [main]
-    types: [opened, closed, reopened, ready_for_review, synchronize]
+    types: [opened, closed, reopened, ready_for_review]
   issues:
     types: [opened, closed, reopened]
   workflow_run:
