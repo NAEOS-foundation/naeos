@@ -204,7 +204,7 @@ jobs:
       - name: Evaluate change risk
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash scripts/change-risk-gate.sh
       - name: Upload change risk evidence
         uses: actions/upload-artifact@v4
