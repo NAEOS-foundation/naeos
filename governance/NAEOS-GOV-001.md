@@ -280,14 +280,14 @@ Reference Platform
 
 NAEOS is successful when it can:
 
-menjadi sumber kebenaran engineering
-menghasilkan dokumentasi otomatis
-menghasilkan AI Instructions
-menghasilkan validator
-menghasilkan compiler
-menghasilkan website
-menghasilkan buku
-menghasilkan reference implementation
+become sumber kebenaran engineering
+produce dokumentasi otomatis
+produce AI Instructions
+produce validator
+produce compiler
+produce website
+produce buku
+produce reference implementation
 
 from the same specification.
 
