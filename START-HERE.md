@@ -49,7 +49,7 @@ go build -o naeos ./cmd/naeos
 
 The formal [NAEOS Golden Path](docs/GOLDEN-PATH.md) defines the acceptance criteria and evidence map for this same flow.
 
-For an external technical evaluation, start with the [External Evaluator Quickstart](docs/EXTERNAL-EVALUATOR-QUICKSTART.md), then use the [Reference Demo & Evidence Story](docs/REFERENCE-DEMO.md). It turns the same run into an independent reviewer checklist and traceability narrative. For a reproducible third-party review, use the [External Validation Runbook](docs/EXTERNAL-VALIDATION.md) to record the commit, environment, evidence anchors, acceptance results, and deviations.
+For an external technical evaluation, start with the [External Evaluator Quickstart](docs/EXTERNAL-EVALUATOR-QUICKSTART.md), then use the [Reference Demo & Evidence Story](docs/REFERENCE-DEMO.md) and the [External Evaluator Scorecard](docs/EXTERNAL-EVALUATOR-SCORECARD.md). It turns the same run into an independent reviewer checklist and traceability narrative. For a reproducible third-party review, use the [External Validation Runbook](docs/EXTERNAL-VALIDATION.md) and [Technical Pilot Definition](docs/PILOT-READINESS.md) to record the commit, environment, evidence anchors, acceptance results, deviations, and pilot boundary.
 
 What to expect:
 - the specification is validated
