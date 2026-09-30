@@ -3,8 +3,6 @@ name: Slack Notifications
 # Triggered by PR synchronization for validation
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
     branches: [main]
     types: [opened, closed, reopened, ready_for_review, synchronize]
@@ -23,7 +21,7 @@ permissions:
 jobs:
   notify:
     name: Notify Slack
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
     steps:
       - name: Build Slack payload
@@ -70,12 +68,6 @@ jobs:
               text="🚀 Release published — $REPO
           $release_name
           $RELEASE_URL" ;;
-            push)
-              text="📦 Push — $REPO
-          Branch: $REF_NAME
-          Commit: $SHA
-          $SERVER_URL/$REPO/commit/$SHA
-          Actor: $ACTOR" ;;
             workflow_dispatch)
               text="🧪 Slack notification workflow test — $REPO
           Ref: $REF_NAME
