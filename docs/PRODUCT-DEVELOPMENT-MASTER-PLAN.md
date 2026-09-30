@@ -234,3 +234,4 @@ When prioritizing a new feature, ask:
 If the feature cannot answer these questions clearly, defer it.
 
 **Product principle:** prove the control plane, validate it externally, then scale the ecosystem.
+
