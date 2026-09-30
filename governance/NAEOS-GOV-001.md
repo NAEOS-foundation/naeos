@@ -2,7 +2,7 @@ Document ID : NAEOS-GOV-001
 Title       : Project Charter
 Version     : 1.0.0
 Status      : Stable
-Owner       : NAEOS Foundation
+Owner       : NAEOS OSS
 Category    : Governance
 Priority    : Critical
 
@@ -11,42 +11,42 @@ Motto
 Architecture Drives Engineering.
 Executive Summary
 
-NAEOS (Nusantara AI Engineering Operating System) adalah sebuah Open AI Engineering Specification yang bertujuan menjadi standar terbuka untuk membangun perangkat lunak modern bersama AI.
+NAEOS (Nusantara AI Engineering Operating System) is an open AI Engineering Operating System designed to provide an open foundation for building modern software with AI.
 
-NAEOS mendefinisikan bagaimana pengetahuan engineering direpresentasikan, bagaimana spesifikasi ditulis, bagaimana AI menggunakannya, dan bagaimana tooling seperti compiler, validator, generator, dan runtime bekerja secara konsisten.
+NAEOS defines how engineering knowledge is represented, how specifications are authored, how AI consumes them, and how tooling such as compilers, validators, generators, and runtimes operate consistently.
 
-NAEOS bukan framework pemrograman.
+NAEOS is not a programming framework.
 
-NAEOS bukan AI Agent.
+NAEOS is not an AI agent.
 
-NAEOS bukan Prompt Library.
+NAEOS is not a prompt library.
 
-NAEOS adalah Engineering Specification.
+NAEOS is an engineering specification.
 
 1. Purpose
 
-Tujuan utama NAEOS adalah menyediakan fondasi engineering yang dapat digunakan oleh manusia maupun AI untuk membangun software enterprise secara konsisten.
+The primary purpose of NAEOS is to provide an engineering foundation that humans and AI can use to build enterprise software consistently.
 
-NAEOS memungkinkan organisasi memiliki:
+NAEOS enables organizations to maintain:
 
-satu sumber kebenaran (Single Source of Truth)
-engineering knowledge yang dapat digunakan ulang
-dokumentasi yang selalu sinkron
-standar lintas bahasa pemrograman
-interoperabilitas lintas AI coding agent
+one source of truth (Single Source of Truth)
+reusable engineering knowledge
+synchronized documentation
+standards across programming languages
+interoperability across AI coding agents
 2. Problem Statement
 
-Saat ini sebagian besar AI coding dimulai dengan prompt.
+Today, most AI coding starts with a prompt.
 
-Akibatnya:
+This results in:
 
-arsitektur berubah-ubah
-standar tidak konsisten
-dokumentasi tertinggal
-keputusan engineering tidak terlacak
-knowledge hilang ketika tim berubah
+architecture drift
+inconsistent standards
+outdated documentation
+untraceable engineering decisions
+knowledge loss when teams change
 
-NAEOS menyelesaikan masalah tersebut dengan pendekatan:
+NAEOS addresses these problems through the following approach:
 
 Knowledge
 
@@ -63,35 +63,35 @@ Automation
 Software
 3. Vision
 
-Menjadi spesifikasi engineering terbuka yang memungkinkan AI dan manusia membangun software enterprise secara konsisten di berbagai platform.
+Become an open engineering specification that enables humans and AI to build enterprise software consistently across platforms.
 
 4. Mission
 
-NAEOS memiliki lima misi utama.
+NAEOS has five primary missions.
 
 M1
 
-Mendefinisikan AI Engineering Specification.
+Define the AI Engineering Specification.
 
 M2
 
-Menyediakan Engineering Knowledge Model.
+Provide the Engineering Knowledge Model.
 
 M3
 
-Membangun Rule Engine yang dapat divalidasi.
+Build a verifiable Rule Engine.
 
 M4
 
-Menyediakan Compiler lintas AI.
+Provide a compiler across AI systems.
 
 M5
 
-Menyediakan Reference Implementation.
+Provide a reference implementation.
 
 5. Scope
 
-NAEOS mencakup:
+NAEOS covers:
 
 Governance
 
@@ -115,7 +115,7 @@ SDK
 
 Reference Platform
 
-NAEOS tidak mencakup:
+NAEOS does not cover:
 
 LLM Training
 
@@ -131,7 +131,7 @@ Vendor tertentu
 
 6. Core Philosophy
 
-NAEOS dibangun di atas prinsip berikut.
+NAEOS is built on the following principles.
 
 Think Before Build
 
@@ -148,7 +148,7 @@ Automate Where Possible
 Improve Continuously
 7. Engineering Model
 
-NAEOS menggunakan lifecycle berikut.
+NAEOS uses the following lifecycle.
 
 Understand
 
@@ -180,7 +180,7 @@ Improve
 
 Release
 
-AI tidak boleh langsung menghasilkan kode tanpa memahami konteks dan spesifikasi.
+AI must not generate code directly without understanding the context and specification.
 
 8. Core Principles
 Principle 1
@@ -217,7 +217,7 @@ Every decision should be reviewable.
 
 9. Architecture Layers
 
-NAEOS terdiri atas lima lapisan.
+NAEOS consists of five layers.
 
 Governance
 
@@ -278,7 +278,7 @@ Reference Platform
 
 11. Success Criteria
 
-NAEOS dianggap berhasil apabila mampu:
+NAEOS is successful when it can:
 
 menjadi sumber kebenaran engineering
 menghasilkan dokumentasi otomatis
@@ -289,7 +289,7 @@ menghasilkan website
 menghasilkan buku
 menghasilkan reference implementation
 
-dari specification yang sama.
+from the same specification.
 
 12. Official Motto
 
@@ -309,37 +309,37 @@ Consistency Before Velocity
 Quality Before Quantity
 14. Long-Term Vision
 
-NAEOS dirancang sebagai spesifikasi jangka panjang.
+NAEOS is designed as a long-term specification.
 
-Implementasi dapat berubah.
+Implementations may change.
 
-LLM dapat berubah.
+LLMs may change.
 
-Bahasa pemrograman dapat berubah.
+Programming languages may change.
 
-Vendor AI dapat berubah.
+AI vendors may change.
 
-Tetapi engineering knowledge harus tetap konsisten.
+But engineering knowledge must remain consistent.
 
 15. Conformance
 
-Sebuah proyek dapat disebut
+A project may be called
 
 NAEOS Conformant
 
-jika memenuhi seluruh aturan normatif pada specification yang berlaku.
+if it satisfies all normative rules in the applicable specification.
 
 16. Revision Policy
 
-Perubahan pada Charter hanya dapat dilakukan melalui RFC resmi dan persetujuan governance.
+Changes to the Charter may only be made through a formal RFC and governance approval.
 
 17. References
 
-Seluruh dokumen Governance.
+All Governance documents.
 
-Seluruh Core Specification.
+All Core Specification documents.
 
-Seluruh Constitution.
+All Constitution documents.
 
 18. Closing Statement
 
