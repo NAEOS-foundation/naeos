@@ -56,6 +56,27 @@ A Golden Path run is successful only when all of these are true:
 7. Expected generated project files exist.
 8. A summary is written under the isolated run directory.
 
+### What you just proved
+
+A successful run establishes this repository-backed control-plane sequence:
+
+```text
+Specification
+  → NEIR
+  → Validation
+  → Policy rejection boundary
+  → AI context
+  → Authorized generation
+  → Artifacts
+  → Traceable evidence
+```
+
+The evidence is inspectable from the isolated run directory; the result is not dependent on a screenshot or an agent's claim about what happened.
+
+The Golden Path does **not** itself claim production readiness, customer adoption, enterprise compliance, or safety of every external AI-agent integration.
+
+The independent-verification capability is documented separately in [P1.11 — Independent Verifier CLI](control-plane/p1-11-independent-verifier-cli.md). P1.11 verifies a serialized canonical `EvidenceBundle` without re-running policy or executing an action; it is a verification capability supporting the broader proof path, not an additional Golden Path stage.
+
 The repository CI executes the same demo script with an isolated temporary output directory, so the Golden Path is a regression gate rather than documentation-only. The CLI test suite also invokes the canonical script.
 
 ## Evidence map
@@ -90,3 +111,5 @@ Use this path as the baseline for:
 When a feature changes the control-plane stages or their contracts, update the Golden Path and its acceptance criteria in the same change.
 
 **Golden Path principle:** one engineering intent, one reproducible run, inspectable evidence from specification to generated artifact.
+
+**Proof boundary:** the Golden Path proves the local control-plane workflow; P1.11 provides an independent read-only verification boundary for canonical evidence.
