@@ -47,7 +47,7 @@ Manifesto become dasar budaya and decisions all ekosistem NAEOS.
 2. The NAEOS Declaration
 We Believe
 
-Kami percaya bahwa software terbaik not dimulai from kode.
+We percaya bahwa software terbaik not dimulai from kode.
 
 Software terbaik dimulai from pemahaman.
 
@@ -60,7 +60,7 @@ Sistem must produce nilai.
 3. The Manifesto
 1. Intent Over Implementation
 
-Kami menghargai:
+We menghargai:
 
 Purpose sebelum kode.
 
@@ -70,7 +70,7 @@ Tanpa intent that jelas, implementasi hanya produce kompleksitas.
 
 2. Specification Over Prompt
 
-Kami menghargai:
+We menghargai:
 
 Specification more tinggi fromon prompt.
 
@@ -84,7 +84,7 @@ Specification must bertahan.
 
 3. Knowledge Over Information
 
-Kami menghargai:
+We menghargai:
 
 Knowledge that terstruktur more bernilai fromon informasi that tersebar.
 
@@ -92,7 +92,7 @@ NAEOS mengubah pengalaman engineering become aset that can used kembali.
 
 4. Architecture Over Speed
 
-Kami menghargai:
+We menghargai:
 
 Arsitektur that benar sebelum implementasi cepat.
 
@@ -100,7 +100,7 @@ Kecepatan without arah produce technical debt.
 
 5. Quality By Design
 
-Kami menghargai:
+We menghargai:
 
 Kualitas that dirancang sejak awal.
 
@@ -110,7 +110,7 @@ Kualitas is foran from proses.
 
 6. Human Judgment With AI Capability
 
-Kami menghargai:
+We menghargai:
 
 Decisions manusia and kemampuan AI in bersamaan.
 
@@ -120,7 +120,7 @@ AI not menggantikan tanggung jawab engineering.
 
 7. Open Knowledge
 
-Kami menghargai:
+We menghargai:
 
 Pengetahuan that terbuka and can used bersama.
 
@@ -128,7 +128,7 @@ Engineering berkembang through berfor pengalaman.
 
 8. Automation With Responsibility
 
-Kami menghargai:
+We menghargai:
 
 Otomasi that memperkuat proses engineering.
 
@@ -140,7 +140,7 @@ Tetapi semua proses that can distandarkan must can divalidasi.
 Value 01
 Clarity
 
-Kami mencari kejelasan in:
+We mencari kejelasan in:
 
 objective,
 requirement,
@@ -149,7 +149,7 @@ decision.
 Value 02
 Consistency
 
-Kami maintain konsistensi through:
+We maintain konsistensi through:
 
 specification,
 standards,
@@ -157,7 +157,7 @@ validation.
 Value 03
 Simplicity
 
-Kami menghinfrom kompleksitas that not required.
+We menghinfrom kompleksitas that not required.
 
 Value 04
 Transparency
@@ -237,7 +237,7 @@ Improve
 
 NAEOS berjanji keon developer:
 
-Kami akan provide:
+We akan provide:
 
 standar that jelas,
 tooling terbuka,
