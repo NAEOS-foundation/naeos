@@ -9,7 +9,7 @@
 
 > AI coding agents can write software. The engineering system around them must become explicit, verifiable, and governable.
 
-NAEOS should be presented as an **AI Engineering Operating System / engineering layer around AI coding workflows**, while preserving the repository's current verified product description: specification-driven engineering, declarative models, NEIR, validation, generation, AI context, governance, and reusable profiles/plugins.
+NAEOS should be presented as an **AI Engineering Operating System / engineering control plane around AI coding workflows**, while preserving the repository's current verified product description: specification-driven engineering, declarative models, NEIR, validation, generation, AI context, governance, and reusable profiles/plugins.
 
 Do not claim that NAEOS replaces coding agents. Do not claim customer adoption, enterprise production deployment, compliance certification, benchmark superiority, or partnerships unless repository evidence exists.
 
