@@ -96,7 +96,7 @@
   <text x="200" y="330" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="32" font-weight="500" class="theme-aware-text-secondary" letter-spacing="-0.5">Architecture Drives Engineering.</text>
 
   <!-- Description -->
-  <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" class="theme-aware-text-muted">Declarative Platform Engineering System</text>
+  <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" class="theme-aware-text-muted">AI Engineering Operating System</text>
 
   <!-- Version badge -->
   <rect class="theme-aware-badge" x="200" y="400" width="160" height="36" rx="18" stroke-width="1"/>

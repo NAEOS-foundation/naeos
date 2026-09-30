@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -116,7 +116,7 @@ func (b *Bot) cmdHelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	for _, def := range b.cmds {
 		lines = append(lines, fmt.Sprintf("`/%s` — %s", def.command.Name, def.command.Description))
 	}
-	lines = append(lines, "", "Specify Once. Build Anywhere.")
+	lines = append(lines, "", "Architecture Drives Engineering.")
 	_ = respond(s, i, strings.Join(lines, "\n"))
 }
 
@@ -391,7 +391,7 @@ func (b *Bot) cmdConfig(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func (b *Bot) footer() *discordgo.MessageEmbedFooter {
 	return &discordgo.MessageEmbedFooter{
-		Text:    "NAEOS · Specify Once. Build Anywhere.",
+		Text:    "NAEOS · Architecture Drives Engineering.",
 		IconURL: "https://raw.githubusercontent.com/NAEOS-foundation/naeos/main/brand/logo-mark.svg",
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -33,7 +33,7 @@ func NewRootCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "naeos",
 		Short:         "NAEOS CLI - Declarative Engineering Runtime",
-		Long:          "NAEOS is a declarative engineering runtime for specification-driven project delivery.\n\nSpecify Once. Build Anywhere.",
+		Long:          "NAEOS is a declarative engineering runtime for specification-driven project delivery.\n\nArchitecture Drives Engineering.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {

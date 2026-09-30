@@ -2,7 +2,7 @@
 title: "NAEOS vs Alat Scaffolding: Mengapa Generasi Berbasis Template Tidak Cukup"
 description: "Perbandingan praktis NAEOS dengan Cookie Cutter, Copier, OpenAPI Gen, Hygen, dan Yeoman — dan mengapa generasi berbasis spesifikasi mengalahkan generasi berbasis template."
 date: 2026-08-18
-author: "NAEOS Foundation"
+author: "NAEOS OSS"
 categories: ["comparison"]
 ---
 

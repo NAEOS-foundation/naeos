@@ -35,7 +35,7 @@
   <text x="200" y="260" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="96" font-weight="800" fill="#ffffff" letter-spacing="-2">NAEOS</text>
   <rect x="200" y="280" width="120" height="4" rx="2" fill="url(#accent-grad)"/>
   <text x="200" y="330" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="32" font-weight="500" fill="#999999" letter-spacing="-0.5">Architecture Drives Engineering.</text>
-  <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" fill="#555555">Declarative Platform Engineering System</text>
+  <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" fill="#555555">AI Engineering Operating System</text>
   <rect x="200" y="400" width="160" height="36" rx="18" fill="#1a1a1a" stroke="#333333" stroke-width="1"/>
   <text x="280" y="424" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600" fill="#08d6ff" text-anchor="middle">v2.1.0</text>
   <circle cx="1050" cy="180" r="80" fill="none" stroke="#08d6ff" stroke-width="2" opacity="0.08"/>

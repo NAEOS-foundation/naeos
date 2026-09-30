@@ -12,7 +12,7 @@ Category: Core Specification
 
 Normative: true
 
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 
 Priority: Critical
 

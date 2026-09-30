@@ -3,7 +3,7 @@
 ## Status
 - Status: Draft
 - Version: 1.0
-- Owner: NAEOS Foundation
+- Owner: NAEOS OSS
 - Last Updated: 2026-07-10
 
 ---

@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -17,7 +17,7 @@ func TestGitHubStatus(t *testing.T) {
 		case "/repos/NAEOS-foundation/naeos":
 			_, _ = w.Write([]byte(`{
 				"html_url": "https://github.com/NAEOS-foundation/naeos",
-				"description": "Declarative engineering platform",
+				"description": "AI Engineering Operating System",
 				"stargazers_count": 42,
 				"forks_count": 7,
 				"open_issues_count": 3,
@@ -45,7 +45,7 @@ func TestGitHubStatus(t *testing.T) {
 	if st.License != "Apache-2.0" {
 		t.Fatalf("unexpected license: %q", st.License)
 	}
-	if st.Description != "Declarative engineering platform" {
+	if st.Description != "AI Engineering Operating System" {
 		t.Fatalf("unexpected description: %q", st.Description)
 	}
 }

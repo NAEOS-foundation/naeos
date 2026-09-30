@@ -3,7 +3,7 @@ Title: NAEOS Overview
 Version: 1.0.0
 Status: Stable
 Category: Core Specification
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: Critical
 
 Normative: Yes

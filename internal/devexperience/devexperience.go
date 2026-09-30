@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package devexperience
@@ -312,7 +312,7 @@ func (e *VSCodeExtension) GenerateReadme() string {
 	name := e.Name
 	return "# " + e.displayName() + " Support for VS Code\n\n" +
 		name + " extension for VS Code providing syntax highlighting, LSP integration,\n" +
-		"and commands for the NAEOS declarative engineering platform.\n\n" +
+		"and commands for the NAEOS AI Engineering Operating System.\n\n" +
 		"## Features\n\n" +
 		"- **Syntax highlighting** for `.naeos.yaml` and `.naeos.yml` files\n" +
 		"- **LSP integration** \u2014 real-time diagnostics, autocomplete, hover, go-to-definition\n" +

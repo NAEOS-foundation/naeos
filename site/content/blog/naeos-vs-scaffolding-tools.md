@@ -2,7 +2,7 @@
 title: "NAEOS vs. Scaffolding Tools: Why Template-Driven Generation Isn't Enough"
 description: "A practical comparison of NAEOS against Cookie Cutter, Copier, OpenAPI Gen, Hygen, and Yeoman — and why spec-driven generation beats template-driven generation."
 date: 2026-08-18
-author: "NAEOS Foundation"
+author: "NAEOS OSS"
 categories: ["comparison"]
 ---
 
