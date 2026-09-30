@@ -1,5 +1,6 @@
 name: Slack Notifications
 # NAEOS Slack bridge test trigger
+# Triggered by PR synchronization for validation
 
 on:
   push:
