@@ -6,7 +6,7 @@ NAEOS CLI - Declarative Engineering Runtime
 
 NAEOS is a declarative engineering runtime for specification-driven project delivery.
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 ### Options
 
