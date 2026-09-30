@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Metadata } from "next";
@@ -22,7 +22,7 @@ export const MAIN_ENTITY = {
       logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
       publisher: {
         "@type": "Organization",
-        name: "NAEOS Foundation",
+        name: "NAEOS OSS",
         url: SITE.baseUrl,
         logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
         sameAs: [
@@ -40,7 +40,7 @@ export const MAIN_ENTITY = {
       inLanguage: ["en", "id"],
       publisher: {
         "@type": "Organization",
-        name: "NAEOS Foundation",
+        name: "NAEOS OSS",
         url: SITE.baseUrl,
         logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
       },
@@ -69,7 +69,7 @@ export function breadcrumbJsonLd(crumbs: Crumb[]) {
 export function blogPostingJsonLd(
   page: Page,
   author: string,
-  publisherName = "NAEOS Foundation",
+  publisherName = "NAEOS OSS",
 ) {
   return {
     "@context": "https://schema.org",
@@ -150,7 +150,7 @@ export function pageMetadata(
   return {
     title,
     description,
-    authors: [{ name: "NAEOS Foundation" }],
+    authors: [{ name: "NAEOS OSS" }],
     robots: { index: true, follow: true },
     referrer: "strict-origin-when-cross-origin",
     alternates: {
