@@ -1,50 +1,63 @@
 ---
-title: About NAEOS OSS
-description: Learn about the mission, vision, and team behind NAEOS.
+title: About NAEOS
+description: NAEOS is an open-source engineering control plane for AI coding agents, built around governance, authorized execution, evidence, and verification.
 ---
 
-## Our Mission
+## What NAEOS is
 
-NAEOS (Nusantara AI Engineering Operating System) is an open-source AI Engineering Operating System that transforms YAML/JSON specifications into validated, multi-language software systems. Our mission is to eliminate the gap between intent and implementation — allowing developers to describe their system once, then build, validate, and evolve software across any language, framework, or platform.
+NAEOS (Nusantara AI Engineering Operating System) is an open-source, vendor-neutral engineering control plane for AI coding agents.
 
-## Our Vision
+The project focuses on a specific engineering boundary: **an AI agent may propose work, but the engineering system must determine what is authorized, what executes, and what evidence remains.**
 
-We envision a world where engineering teams spend less time on boilerplate and configuration, and more time on solving real problems. NAEOS bridges the gap between architecture and code, making declarative engineering accessible to every developer.
+The current canonical model is:
 
-<div class="about-grid">
-<div class="about-card">
-<h3>Open Source</h3>
-<p>NAEOS is fully open source under the Apache License 2.0. We believe in community-driven development and transparent governance.</p>
-</div>
+```text
+Specification
+    ↓
+NEIR
+    ↓
+Validation + Policy
+    ↓
+Agent Intent
+    ↓
+Authorized Execution
+    ↓
+Observation
+    ↓
+Evidence
+    ↓
+Independent Verification
+```
 
-<div class="about-card">
-<h3>Vendor Neutral</h3>
-<p>Multi-language, multi-cloud, multi-AI-platform. NAEOS works with your existing toolchain — no lock-in, no migration required.</p>
-</div>
+## Why we are building it
 
-<div class="about-card">
-<h3>Extensible</h3>
-<p>Adapters, plugins, and profiles make NAEOS customizable for any domain. Publish your own profiles and plugins to the marketplace.</p>
-</div>
+AI-assisted software development changes the speed and shape of engineering work. The challenge is no longer only how to generate code; teams also need explicit authorization boundaries, reproducible execution, traceability, and evidence that can be inspected after the agent has finished.
 
-<div class="about-card">
-<h3>Deterministic</h3>
-<p>NAEOS is designed around reproducible, auditable, and testable pipelines. Review the documented capabilities and project fit before using it in an organizational environment.</p>
-</div>
-</div>
+NAEOS is being built to provide that layer without requiring a single AI vendor, agent runtime, or cloud provider.
 
-## Key Principles
+## Current proof
 
-1. **Specify Once** — A single source of truth for your entire system
-2. **Build Anywhere** — Generate code, docs, configs, and AI context from one spec
-3. **Full Traceability** — From intent through implementation to deployment
-4. **Continuous Alignment** — Keep generated code in sync with your specification
+The repository has moved beyond a purely conceptual architecture. The public proof path combines the live Control Plane, the Golden Path, the Reference Demo, evidence records, and the independent verifier.
 
-## The NAEOS OSS
+P1.6–P1.10 are the primary Golden Path proof sequence. P1.11 provides independent verification of serialized evidence.
 
-The NAEOS OSS is a community-driven organization that oversees the development, governance, and ecosystem of the NAEOS platform. NAEOS OSS stewardship supports:
+## Project principles
 
-- Open and transparent development
-- Community governance and contribution guidelines
-- Long-term sustainability of the project
-- Ecosystem growth through profiles, plugins, and integrations
+- **Governance before execution** — policy and authorization define the execution boundary.
+- **Evidence over claims** — important behavior should leave inspectable evidence.
+- **Independent verification** — verification should not depend on the same agent that performed the work.
+- **Vendor neutrality** — the control boundary should not depend on one AI provider.
+- **Reproducibility** — technical evaluators should be able to reproduce the documented proof.
+- **Human accountability** — AI assists engineering; humans remain accountable for consequential changes.
+
+## Where the project is going
+
+The execution strategy is deliberately staged:
+
+1. **P0 — Public consistency:** synchronize website, SEO, whitepaper, FAQ, About, and public documentation with the repository truth.
+2. **P1 — Golden Path:** make P1.6–P1.10 the primary reproducible developer demonstration.
+3. **P2 — External adoption:** work with the first 5–10 developers or repositories and capture evidence and failure modes.
+4. **P3 — Ecosystem:** prioritize SDKs, integrations, and marketplace capabilities based on adoption evidence.
+5. **P4 — Commercialization:** evaluate Cloud/Enterprise packaging after technical adoption evidence exists.
+
+This sequence keeps product expansion downstream of reproducible technical proof and external use.

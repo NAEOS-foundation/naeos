@@ -14,7 +14,7 @@ aliases: ["/whitepaper/"]
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Platform Version** | v3.6.0 (repository state) |
+| **Software Release Baseline** | v3.6.0\n| **Engineering Milestone Baseline** | P1.11 — Independent Verifier CLI (DONE) |
 
 ---
 
@@ -24,7 +24,7 @@ NAEOS is an open-source declarative engineering platform that transforms specifi
 
 Under the motto **"Architecture Drives Engineering."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
-The current repository state includes Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, a production server daemon (`naeos serve`), SBOM and artifact signing, Helm chart scaffolding, and compliance-oriented policy templates for SOC 2, HIPAA, and GDPR workflows.
+The current repository includes the control-plane authorization, execution, evidence, and independent-verification path documented by the P1.6–P1.11 milestones. Other platform capabilities remain part of the broader repository surface; this whitepaper distinguishes software release versions from engineering milestones and does not treat milestone labels as release versions.
 
 ---
 

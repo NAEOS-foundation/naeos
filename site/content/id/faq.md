@@ -1,76 +1,22 @@
 ---
-title: Pertanyaan Umum
-description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
+title: Pertanyaan yang Sering Diajukan
+description: Pertanyaan umum tentang NAEOS, engineering control plane untuk AI coding agents, evidence, dan Golden Path.
 ---
 
 <div class="faq-list">
-<div class="faq-item">
-<button class="faq-question">
-<span>Apa itu NAEOS?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>NAEOS (Nusantara AI Engineering Operating System) adalah platform rekayasa deklaratif yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. NAEOS adalah runtime rekayasa — bukan sekadar generator proyek — yang memahami spesifikasi, membangun model internal (NEIR), mengatur rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apa itu NAEOS?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>NAEOS (Nusantara AI Engineering Operating System) adalah engineering control plane open-source untuk AI coding agents. NAEOS memberikan batas eksplisit antara intent engineering, specification, policy, execution terotorisasi, observation, evidence, dan independent verification.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Apa bedanya NAEOS dengan generator proyek biasa?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>Tidak seperti generator proyek statis (seperti create-react-app atau cookiecutters), NAEOS adalah runtime rekayasa lengkap. NAEOS tidak hanya membuat file sekali — ia memelihara hubungan berkelanjutan antara spesifikasi dan kode Anda. NAEOS memvalidasi, mengkompilasi ke set instruksi AI, menghasilkan dokumentasi, dan beradaptasi saat spesifikasi Anda berkembang.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Masalah apa yang diselesaikan NAEOS?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>AI coding agents dapat menghasilkan dan mengusulkan perubahan dengan cepat, tetapi tim engineering tetap perlu mengendalikan apa yang boleh dilakukan agent dan memiliki bukti tentang apa yang benar-benar terjadi. NAEOS menyediakan control boundary yang terstruktur untuk workflow tersebut.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Bahasa apa saja yang didukung?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>NAEOS saat ini mendukung pembuatan kode untuk Go, TypeScript, Python, Java, dan Rust. Setiap bahasa memiliki adapter khusus yang mengikuti praktik terbaik dan pola idiomatis untuk bahasa tersebut.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apa model control NAEOS?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>Model saat ini adalah: Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification. Batas utamanya adalah agent tidak memberikan authority kepada dirinya sendiri.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Asisten coding AI apa yang didukung?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>NAEOS mengkompilasi spesifikasi menjadi set instruksi AI untuk 7 platform: GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode, dan Windsurf. Setiap adapter menghasilkan file konteks khusus platform yang membantu asisten AI Anda memahami arsitektur proyek Anda.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apa itu Golden Path?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>Golden Path adalah jalur proof developer yang reproducible untuk workflow control plane. Jalur adopsi saat ini adalah Control Plane → Golden Path → Reference Demo → Evidence → Independent Verification. P1.6–P1.10 menjadi urutan proof utama.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Apakah saya perlu tahu Go untuk menggunakan NAEOS?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>Tidak. NAEOS adalah alat CLI yang ditulis dalam Go, tetapi Anda hanya perlu menulis spesifikasi YAML/JSON. Outputnya bisa dalam salah satu dari 5 bahasa yang didukung. Anda tidak memerlukan pengetahuan Go untuk menggunakan NAEOS secara efektif.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apa yang ditambahkan P1.11?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>P1.11 menambahkan independent verifier CLI untuk EvidenceBundle yang telah diserialisasi. Verifier memeriksa binding identitas decision/execution dan integritas evidence tanpa mengevaluasi policy, menjalankan action, atau membutuhkan control plane live.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Bagaimana cara memulai dengan NAEOS?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>Lihat <a href="/id/docs/getting-started/">Panduan Awal</a> untuk memulai. Pasang NAEOS via Go, Docker, atau unduh biner dari GitHub Releases. Buat spesifikasi YAML, jalankan <code>naeos run</code>, dan dalam hitungan menit Anda akan memiliki kode yang dihasilkan.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apakah NAEOS sudah production-ready?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>NAEOS memiliki banyak capability engineering dan governance, tetapi proof publik dan adoption sengaja diperkuat terlebih dahulu sebelum komersialisasi yang lebih luas. Evaluasi scope, Golden Path, dan evidence repository untuk kebutuhan Anda.</p></div></div>
 
-<div class="faq-item">
-<button class="faq-question">
-<span>Apakah NAEOS gratis?</span>
-<span class="faq-arrow">▾</span>
-</button>
-<div class="faq-answer">
-<p>Ya. NAEOS gratis dan open source di bawah Lisensi Apache 2.0. Lisensi mengizinkan penggunaan pribadi dan komersial tanpa biaya lisensi; tinjau dokumentasi proyek untuk menilai kecocokan deployment.</p>
-</div>
-</div>
+<div class="faq-item"><button class="faq-question"><span>Apakah NAEOS open source?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>Ya. NAEOS menggunakan Apache License 2.0. Kontribusi dikelola melalui proses contribution berbasis DCO di repository.</p></div></div>
+
+<div class="faq-item"><button class="faq-question"><span>Bagaimana cara mengevaluasi NAEOS?</span><span class="faq-arrow">▾</span></button><div class="faq-answer"><p>Mulai dari Control Plane publik, lalu jalankan Golden Path dan Reference Demo dari fresh checkout. Periksa evidence yang dihasilkan dan verifikasi secara independen. Ini adalah jalur evaluasi teknis yang direkomendasikan.</p></div></div>
 </div>

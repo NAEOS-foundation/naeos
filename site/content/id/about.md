@@ -1,50 +1,59 @@
 ---
-title: Tentang NAEOS OSS
-description: Pelajari misi, visi, dan tim di balik NAEOS.
+title: Tentang NAEOS
+description: NAEOS adalah engineering control plane open-source untuk AI coding agents, dengan governance, authorized execution, evidence, dan verification.
 ---
 
-## Misi Kami
+## Apa itu NAEOS
 
-NAEOS (Nusantara AI Engineering Operating System) adalah platform rekayasa deklaratif open-source yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Misi kami adalah menghilangkan kesenjangan antara niat dan implementasi — memungkinkan pengembang untuk mendeskripsikan sistem mereka sekali, lalu membangun, memvalidasi, dan mengembangkan perangkat lunak di berbagai bahasa, kerangka kerja, atau platform.
+NAEOS (Nusantara AI Engineering Operating System) adalah engineering control plane open-source dan vendor-neutral untuk AI coding agents.
 
-## Visi Kami
+Fokus NAEOS adalah satu batas engineering yang jelas: **AI agent boleh mengusulkan pekerjaan, tetapi sistem engineering yang menentukan apa yang diizinkan, apa yang dieksekusi, dan evidence apa yang tersisa.**
 
-Kami membayangkan dunia di mana tim rekayasa menghabiskan lebih sedikit waktu untuk boilerplate dan konfigurasi, dan lebih banyak waktu untuk memecahkan masalah nyata. NAEOS menjembatani kesenjangan antara arsitektur dan kode, membuat rekayasa deklaratif dapat diakses oleh setiap pengembang.
+Model canonical saat ini:
 
-<div class="about-grid">
-<div class="about-card">
-<h3>Open Source</h3>
-<p>NAEOS sepenuhnya open source di bawah Lisensi Apache 2.0. Kami percaya pada pengembangan yang didorong oleh komunitas dan tata kelola yang transparan.</p>
-</div>
+```text
+Specification
+    ↓
+NEIR
+    ↓
+Validation + Policy
+    ↓
+Agent Intent
+    ↓
+Authorized Execution
+    ↓
+Observation
+    ↓
+Evidence
+    ↓
+Independent Verification
+```
 
-<div class="about-card">
-<h3>Netral Vendor</h3>
-<p>Multi-bahasa, multi-cloud, multi-platform-AI. NAEOS bekerja dengan toolchain Anda yang sudah ada — tanpa lock-in, tanpa migrasi yang diperlukan.</p>
-</div>
+## Mengapa kami membangunnya
 
-<div class="about-card">
-<h3>Ekstensibel</h3>
-<p>Adapter, plugin, dan profil membuat NAEOS dapat disesuaikan untuk domain apa pun. Publikasikan profil dan plugin Anda sendiri ke marketplace.</p>
-</div>
+AI-assisted software development mengubah kecepatan dan bentuk pekerjaan engineering. Tantangannya bukan hanya menghasilkan kode; tim juga membutuhkan authorization boundary yang eksplisit, execution yang reproducible, traceability, dan evidence yang dapat diperiksa setelah agent selesai.
 
-<div class="about-card">
-<h3>Deterministik</h3>
-<p>NAEOS dirancang dengan pipeline yang dapat direproduksi, diaudit, dan diuji. Tinjau kemampuan yang terdokumentasi dan kecocokan proyek sebelum menggunakannya dalam lingkungan organisasi.</p>
-</div>
-</div>
+NAEOS dibangun sebagai layer tersebut tanpa bergantung pada satu AI vendor, agent runtime, atau cloud provider.
 
-## Prinsip Utama
+## Proof saat ini
 
-1. **Tentukan Sekali** — Satu sumber kebenaran untuk seluruh sistem Anda
-2. **Bangun di Mana Saja** — Hasilkan kode, dokumen, konfigurasi, dan konteks AI dari satu spek
-3. **Ketelusuran Penuh** — Dari niat hingga implementasi hingga deployment
-4. **Penyelarasan Berkelanjutan** — Jaga kode yang dihasilkan tetap selaras dengan spesifikasi Anda
+Repository telah melampaui tahap konsep. Public proof path menggabungkan Control Plane live, Golden Path, Reference Demo, evidence records, dan independent verifier.
 
-## NAEOS OSS
+P1.6–P1.10 adalah urutan proof utama Golden Path. P1.11 menyediakan independent verification terhadap evidence yang telah diserialisasi.
 
-NAEOS OSS adalah organisasi yang digerakkan oleh komunitas yang mengawasi pengembangan, tata kelola, dan ekosistem platform NAEOS. Yayasan memastikan:
+## Prinsip proyek
 
-- Pengembangan yang terbuka dan transparan
-- Tata kelola komunitas dan pedoman kontribusi
-- Keberlanjutan jangka panjang proyek
-- Pertumbuhan ekosistem melalui profil, plugin, dan integrasi
+- **Governance sebelum execution** — policy dan authorization menentukan batas execution.
+- **Evidence di atas claim** — perilaku penting harus meninggalkan evidence yang dapat diperiksa.
+- **Independent verification** — verification tidak bergantung pada agent yang melakukan pekerjaan.
+- **Vendor neutrality** — control boundary tidak bergantung pada satu AI provider.
+- **Reproducibility** — evaluator teknis harus dapat mengulang proof yang didokumentasikan.
+- **Human accountability** — AI membantu engineering; manusia tetap bertanggung jawab atas perubahan konsekuensial.
+
+## Arah eksekusi
+
+1. **P0 — Public consistency:** sinkronkan website, SEO, whitepaper, FAQ, About, dan dokumentasi publik dengan repository truth.
+2. **P1 — Golden Path:** jadikan P1.6–P1.10 sebagai demo developer yang reproducible.
+3. **P2 — External adoption:** bekerja dengan 5–10 developer atau repository pertama dan mengumpulkan evidence serta failure modes.
+4. **P3 — Ecosystem:** prioritaskan SDK, integrations, dan marketplace berdasarkan evidence adoption.
+5. **P4 — Commercialization:** evaluasi Cloud/Enterprise setelah tersedia evidence technical adoption.
