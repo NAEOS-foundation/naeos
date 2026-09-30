@@ -50,7 +50,7 @@ Narration:
 "NAEOS changes that. It starts with one specification and builds a shared engineering model."
 
 On-screen text:
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 ---
 
@@ -138,7 +138,7 @@ Narration:
 "NAEOS is open source and built in public. Explore the repository, try the quick start, and see how specification-driven engineering can bring more consistency to AI-assisted development."
 
 Final text:
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 ---
 
@@ -160,7 +160,7 @@ This is different from scaffolding. It gives teams a structured, validated syste
 
 NAEOS is open source and built in public. Explore the repository, try the quick start, and see how specification-driven engineering can bring more consistency to AI-assisted development.
 
-Specify once. Build anywhere."
+Architecture Drives Engineering."
 
 ---
 
@@ -187,6 +187,6 @@ Specify once. Build anywhere."
 ## Suggested title cards
 
 - "AI can generate code. NAEOS structures the system."
-- "Specify once. Build anywhere."
+- "Architecture Drives Engineering."
 - "From specification to system."
 - "Why AI-assisted engineering needs structure"
