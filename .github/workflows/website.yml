@@ -63,8 +63,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: naeos-site-opennext
-          # Archive OpenNext build into a tarball so upload-artifact does not
-          # skip the hidden .open-next/ (dot) directory.
           path: naeos-site-opennext.tar.gz
           if-no-files-found: error
           retention-days: 7
@@ -76,32 +74,28 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          # If the token lacks KV permissions this step self-heals (warns, not fails).
-          # Extract ids with grep: wrangler may prefix stdout with a telemetry
-          # banner, which breaks jq's strict JSON parse.
           ID=$(npx wrangler kv namespace list 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           if [ -z "$ID" ]; then
             ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           fi
           if [ -n "$ID" ]; then
-            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]'               < wrangler.jsonc > wrangler.jsonc.tmp
+            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]' < wrangler.jsonc > wrangler.jsonc.tmp
             mv wrangler.jsonc.tmp wrangler.jsonc
             echo "Newsletter KV namespace bound: $ID"
           else
             echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
           fi
       - name: Preview on Cloudflare Workers
-        # Every PR gets an isolated Worker Preview; production remains main-only.
-        if: github.event_name == 'pull_request'
+        # Dependabot pull requests do not receive repository secrets. Build and
+        # validation still run; Cloudflare preview is reserved for trusted PRs.
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: site
           command: preview
-
       - name: Deploy to Cloudflare Workers
-        # Production deploys run only from the protected main branch.
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
