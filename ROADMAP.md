@@ -11,7 +11,7 @@
 - **Core direction:** Engineering Control Plane for AI Coding Agents
 - **Canonical model:** Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification
 - **Repository proof path:** Golden Path → Reference Demo → External Validation
-- **Current engineering milestone:** **P1.6 — Public Control-Plane Golden Path**
+- **Current engineering milestone:** **P1.9 — Evidence & Verification Plane**
 - **Primary public surface:** /control-plane on the NAEOS website
 
 The project has already implemented substantial policy, control-plane, runtime,
@@ -22,45 +22,69 @@ surface area.
 
 ## Current execution track
 
-### P1.6 — Public Control Plane
+### P1.7 — Policy Change Mid-Run / Stale Authorization
 
-**Status: IN PROGRESS**
+**Status: DONE**
 
-Goal: make the control-plane contract observable from a public browser surface
-without implying that a browser request executes a production side effect.
+Goal: prove that an authorization issued under one active policy version cannot
+be reused after the active policy advances.
 
-Target proof:
-
-~~~text
-Request
-  ↓
-Policy / Grant Evaluation
-  ↓
-ALLOW / DENY / REQUIRE_APPROVAL
-  ↓
-Decision Record / Ledger
-  ↓
-Inspectable Evidence
-~~~
+Evidence:
+- `docs/control-plane/p1-7-policy-change-mid-run.md`
+- `docs/experiments/EXP-001-policy-change-mid-run.md`
+- `examples/control-plane-policy-change/`
 
 Acceptance:
+- [x] Authorization issued under policy v1
+- [x] Policy advances to v2
+- [x] Execution-boundary freshness check rejects stale authorization
+- [x] Execution is blocked
+- [x] No side effect occurs
+- [x] Evidence is retained
+- [x] Independent verification passes
 
-- [x] Real control-plane decision endpoint
-- [x] Public website Control Plane page
-- [x] Explicit CORS allowlisting
-- [x] Rate and request-size limits
-- [x] Optional server-to-server authentication
-- [x] Side-effect-free public decision path
-- [x] Production deployment
-- [x] Website CSP permits the public control-plane endpoint
-- [ ] Browser-level ALLOW proof verified against production
-- [ ] Browser-level DENY proof verified against production
-- [ ] Public evidence walkthrough captured
-- [ ] P1.6 documentation and screenshots synchronized
+### P1.8 — Atomic Execution Commit Boundary
 
-Reference: docs/control-plane/live-proof.md
+**Status: DONE**
 
-### Track 1 — Five-minute developer onboarding
+Goal: close the in-process check-to-side-effect race by making policy freshness
+validation and the authorized side-effect callback share one execution boundary.
+
+Evidence:
+- `docs/control-plane/p1-8-atomic-execution.md`
+- `docs/experiments/EXP-002-atomic-execution-commit-boundary.md`
+- `examples/control-plane-atomic-execution/`
+
+Acceptance:
+- [x] Authorization validated against active policy
+- [x] Atomic execution boundary acquired
+- [x] Authorized side effect executes inside the boundary
+- [x] Concurrent policy update cannot commit mid-execution
+- [x] Execution evidence is recorded
+- [x] Independent verification passes
+
+### P1.9 — Evidence & Verification Plane
+
+**Status: IMPLEMENTED**
+
+Goal: make one agent action independently reconstructable through a canonical
+verifier-facing evidence contract.
+
+Evidence:
+- `docs/control-plane/p1-9-evidence-verification.md`
+- `internal/controlplane/evidence.go`
+- `internal/controlplane/evidence_test.go`
+
+Acceptance:
+- [x] Reconstruct one action lifecycle
+- [x] Bind policy/version
+- [x] Bind grant
+- [x] Bind artifact
+- [x] Bind execution
+- [x] Independent verification
+- [x] Tamper detection
+
+## Track 1 — Five-minute developer onboarding
 
 **Status: ACTIVE**
 
@@ -83,7 +107,7 @@ References:
 - docs/EXTERNAL-VALIDATION.md
 - START-HERE.md
 
-### Track 2 — Documentation Truth Sync
+## Track 2 — Documentation Truth Sync
 
 **Status: ACTIVE**
 
@@ -103,7 +127,7 @@ rather than reproduce competing roadmaps.
 - [ ] Ensure release notes, website, README, and whitepaper distinguish
       software releases from experiment milestones
 
-### Track 3 — Adoption Engineering
+## Track 3 — Adoption Engineering
 
 **Status: NEXT**
 
@@ -133,7 +157,7 @@ Targets:
 Success should be measured by **reproducible usage and technical feedback**, not
 only traffic, followers, or impressions.
 
-### Track 4 — Design Partner Pilot
+## Track 4 — Design Partner Pilot
 
 **Status: AFTER PUBLIC PROOF**
 
@@ -162,7 +186,7 @@ Pilot questions:
 
 Do not expand the pilot scope until these questions produce concrete evidence.
 
-### Track 5 — Ecosystem / P2
+## Track 5 — Ecosystem / P2
 
 **Status: GATED BY ADOPTION EVIDENCE**
 
@@ -182,9 +206,13 @@ feature volume.
 ## Strategic sequence
 
 ~~~text
-P1.6 Public Control Plane
+P1.7 Policy Freshness
         ↓
-Production browser proof
+P1.8 Atomic Execution
+        ↓
+P1.9 Evidence & Verification
+        ↓
+P1.6 Public Control Plane
         ↓
 Five-minute onboarding
         ↓
