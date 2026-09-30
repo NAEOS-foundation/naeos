@@ -97,7 +97,7 @@ Validate → Policy → AI context
 Generate artifacts and engineering outputs
 ```
 
-If you want the authoritative references, use [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) first, then:
+If you want the authoritative references, use [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) first. For repository navigation and domain boundaries, see [REPOSITORY-ARCHITECTURE.md](REPOSITORY-ARCHITECTURE.md). Then:
 
 - [NAEOS-NRA-001](Reference%20Architecture/NAEOS-NRA-001.md)
 - [NAEOS-MTS-001](NAEOS-MTS-001.md)

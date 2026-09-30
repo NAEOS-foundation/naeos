@@ -22,7 +22,11 @@ Implementation
 Experiments
 ```
 
-### 1. Constitution
+### Repository structure
+
+The repository structure and domain boundaries are defined in [REPOSITORY-ARCHITECTURE.md](REPOSITORY-ARCHITECTURE.md). That document is a structural map; this authority model determines which documents are authoritative when content conflicts.
+
+## 1. Constitution
 
 The Constitution defines the highest-level normative engineering principles and constraints.
 
