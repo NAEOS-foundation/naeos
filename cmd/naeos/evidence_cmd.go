@@ -127,7 +127,7 @@ Example:
 				Action:      action,
 				Resource:    resource,
 				Environment: environment,
-				Actor:        actor,
+				Actor:       actor,
 			})
 			if err != nil {
 				return err
