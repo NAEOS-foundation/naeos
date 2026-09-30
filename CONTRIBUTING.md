@@ -294,9 +294,9 @@ per the [Developer Certificate of Origin](https://developercertificate.org/):
 The DCO check (`.github/workflows/dco.yml`) verifies every commit in a pull
 request. If you contribute on behalf of an employer, client, or other party,
 make sure that party has granted you the right to contribute under the
-Apache License 2.0. NAEOS Foundation may require a Contributor License
-Agreement (CLA) for commercial or corporate contributions, especially ahead of
-the NAEOS Cloud / Enterprise products.
+Apache License 2.0. NAEOS does not require copyright assignment through the
+DCO; the DCO records the contributor's certification that they have the right
+to submit the contribution.
 
 ## AI-Assisted Contributions
 
