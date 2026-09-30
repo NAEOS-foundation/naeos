@@ -32,6 +32,7 @@ func newEvidenceCommand() *cobra.Command {
 	cmd.AddCommand(newEvidenceLogCommand())
 	cmd.AddCommand(newEvidenceQueryCommand())
 	cmd.AddCommand(newEvidenceVerifyCommand())
+	cmd.AddCommand(newEvidenceVerifyBundleCommand())
 	cmd.AddCommand(newEvidenceSummaryCommand())
 	cmd.AddCommand(newEvidenceHashCommand())
 	return cmd
@@ -99,7 +100,6 @@ Example:
     --environment production --policy-file policy.json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Load or create a policy registry for the control plane.
 			var reg *policy.Registry
 			if policyFile != "" {
 				data, err := os.ReadFile(policyFile)
@@ -127,13 +127,12 @@ Example:
 				Action:      action,
 				Resource:    resource,
 				Environment: environment,
-				Actor:       actor,
+				Actor:        actor,
 			})
 			if err != nil {
 				return err
 			}
 
-			// Build the evidence record.
 			store, err := loadEvidenceStore()
 			if err != nil {
 				return err
@@ -226,15 +225,13 @@ func newEvidenceQueryCommand() *cobra.Command {
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n", "ID", "DECISION", "STATUS", "ACTOR", "RESOURCE")
 			fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n",
-				strings.Repeat("-", 12), strings.Repeat("-", 8), strings.Repeat("-", 10),
-				strings.Repeat("-", 20), strings.Repeat("-", 20))
+				strings.Repeat("-", 12), strings.Repeat("-", 8), strings.Repeat("-", 10), strings.Repeat("-", 20), strings.Repeat("-", 20))
 			for _, r := range results {
 				id := r.ID
 				if len(id) > 11 {
 					id = id[:11] + "…"
 				}
-				fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n",
-					id, r.Decision, r.ExecutionStatus, r.Actor, r.Resource)
+				fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n", id, r.Decision, r.ExecutionStatus, r.Actor, r.Resource)
 			}
 			return nil
 		},
