@@ -12,6 +12,8 @@ The evaluation asks:
 
 The runbook verifies the existing Golden Path and Reference Demo. It does not introduce a second demo path.
 
+The evaluation should distinguish two proof boundaries: the Golden Path demonstrates the runnable local control-plane workflow; P1.11 provides a separate read-only independent verifier for serialized canonical evidence.
+
 ## 2. Fixed evaluation record
 
 Record these values before running:
@@ -124,6 +126,10 @@ Record the artifact count from summary.md.
 | Evidence summary exists | summary.md | PASS / FAIL |
 
 A validation report should not mark the overall run successful if a required check fails. Record deviations rather than silently omitting them.
+
+### What a successful validation proves
+
+It proves that the documented repository workflow was reproduced at the recorded commit and that its required evidence artifacts matched the acceptance matrix. It does not establish production readiness, customer adoption, enterprise compliance, or the safety of every external AI-agent integration.
 
 ## 9. Validation report template
 
