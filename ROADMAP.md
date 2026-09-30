@@ -10,40 +10,22 @@
 - **Current documented release:** NAEOS 3.6.0 (VERSION)
 - **Core direction:** Engineering Control Plane for AI Coding Agents
 - **Canonical model:** Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification
-- **Repository proof path:** Golden Path → Reference Demo → External Validation
-- **Current engineering milestone:** **P1.6 — Public Control-Plane Golden Path**
+- **Repository proof path:** Golden Path → Reference Demo → External Validation → Independent Verification
+- **Current engineering milestone:** **P1.11 — Independent Verifier CLI — DONE**
+- **Next execution track:** **Adoption Engineering**
 - **Primary public surface:** /control-plane on the NAEOS website
 
-The project has already implemented substantial policy, control-plane, runtime,
-evidence, verification, observability, signing, SBOM, plugin, and production
-server capabilities. The next work should therefore prioritize **proof,
-reproducibility, adoption, and real-world evaluation** over adding unrelated
-surface area.
+NAEOS has implemented substantial policy, control-plane, runtime, evidence,
+verification, observability, signing, SBOM, plugin, and production-server
+capabilities. The current priority is therefore **proof, reproducibility,
+adoption, and real-world evaluation**, not unrelated feature expansion.
 
-## Current execution track
+## Completed engineering milestones
 
-### P1.6 — Public Control Plane
+### P1.6 — Public Control Plane — DONE
 
-**Status: IN PROGRESS**
-
-Goal: make the control-plane contract observable from a public browser surface
-without implying that a browser request executes a production side effect.
-
-Target proof:
-
-~~~text
-Request
-  ↓
-Policy / Grant Evaluation
-  ↓
-ALLOW / DENY / REQUIRE_APPROVAL
-  ↓
-Decision Record / Ledger
-  ↓
-Inspectable Evidence
-~~~
-
-Acceptance:
+The public control-plane proof established a side-effect-free browser path for
+real authorization decisions.
 
 - [x] Real control-plane decision endpoint
 - [x] Public website Control Plane page
@@ -52,27 +34,53 @@ Acceptance:
 - [x] Optional server-to-server authentication
 - [x] Side-effect-free public decision path
 - [x] Production deployment
-- [x] Website CSP permits the public control-plane endpoint
-- [ ] Browser-level ALLOW proof verified against production
-- [ ] Browser-level DENY proof verified against production
-- [ ] Public evidence walkthrough captured
-- [ ] P1.6 documentation and screenshots synchronized
+- [x] Website CSP permits the control-plane endpoint
+- [x] Browser-level ALLOW proof
+- [x] Browser-level DENY proof
+- [x] Public evidence walkthrough
+- [x] Documentation synchronized
 
 Reference: docs/control-plane/live-proof.md
 
-### Track 1 — Five-minute developer onboarding
+### P1.7 — Policy Change Mid-Run — DONE
+
+The governance/control boundary demonstrates that policy changes do not silently
+invalidate or bypass the decision state already governing an active run.
+
+### P1.8 — Atomic Execution Commit Boundary — DONE
+
+The execution boundary preserves the atomic relationship between authorization
+and the committed execution transition.
+
+### P1.11 — Independent Verifier CLI — DONE
+
+P1.11 adds a verifier-facing CLI for canonical serialized EvidenceBundle records.
+
+- [x] `naeos evidence verify-bundle --input-file <bundle.json>`
+- [x] Decision/execution identity binding verification
+- [x] Evidence digest recomputation
+- [x] Table and JSON verification output
+- [x] Non-zero exit on verification failure
+- [x] Valid and tampered bundle tests
+- [x] Read-only verifier with no live control-plane dependency
+- [x] Independent verifier documentation
+
+The merged implementation is PR #384.
+
+## Track 1 — Five-minute developer onboarding
 
 **Status: ACTIVE**
 
-The repository already has a canonical five-minute CLI Golden Path. The next
-step is to make the public control-plane proof and the local Golden Path feel
-like one coherent onboarding journey.
+The repository has a canonical CLI Golden Path. The next step is to make the
+public control-plane proof, local Golden Path, Reference Demo, and independent
+verification feel like one coherent onboarding journey.
 
 - [x] Canonical CLI demo
 - [x] Golden Path acceptance contract
 - [x] Reference Demo evidence story
 - [x] External Validation runbook
-- [ ] Link public Control Plane → Golden Path → Reference Demo
+- [x] Independent EvidenceBundle verifier
+- [ ] Link public Control Plane → Golden Path → Reference Demo → Verifier
 - [ ] Verify fresh-checkout onboarding on the current release
 - [ ] Remove or fix broken onboarding links
 - [ ] Add one concise "what you just proved" explanation
@@ -81,9 +89,10 @@ References:
 - docs/GOLDEN-PATH.md
 - docs/REFERENCE-DEMO.md
 - docs/EXTERNAL-VALIDATION.md
+- docs/control-plane/p1-11-independent-verifier-cli.md
 - START-HERE.md
 
-### Track 2 — Documentation Truth Sync
+## Track 2 — Documentation Truth Sync
 
 **Status: ACTIVE**
 
@@ -96,14 +105,15 @@ rather than reproduce competing roadmaps.
 - [x] Golden Path defines reproducible acceptance criteria
 - [x] Reference Demo defines the evidence narrative
 - [x] External Validation defines independent evaluation
+- [x] Independent verifier documented
 - [x] Whitepapers identify repository version 3.6.0
-- [x] Top-level roadmap aligned with the current execution milestone
+- [x] Top-level roadmap reflects completed P1 milestones
 - [ ] Audit public website copy against the canonical positioning
 - [ ] Audit roadmap/version references for stale phase language
 - [ ] Ensure release notes, website, README, and whitepaper distinguish
       software releases from experiment milestones
 
-### Track 3 — Adoption Engineering
+## Track 3 — Adoption Engineering
 
 **Status: NEXT**
 
@@ -113,6 +123,8 @@ Goal: turn technical proof into repeatable developer adoption.
 Public proof
     ↓
 Developer runs NAEOS
+    ↓
+Developer verifies the evidence
     ↓
 Developer understands the control boundary
     ↓
@@ -133,9 +145,9 @@ Targets:
 Success should be measured by **reproducible usage and technical feedback**, not
 only traffic, followers, or impressions.
 
-### Track 4 — Design Partner Pilot
+## Track 4 — Design Partner Pilot
 
-**Status: AFTER PUBLIC PROOF**
+**Status: AFTER ADOPTION EVIDENCE**
 
 Start with a narrow boundary rather than a full enterprise deployment:
 
@@ -162,7 +174,7 @@ Pilot questions:
 
 Do not expand the pilot scope until these questions produce concrete evidence.
 
-### Track 5 — Ecosystem / P2
+## Track 5 — Ecosystem / P2
 
 **Status: GATED BY ADOPTION EVIDENCE**
 
@@ -182,9 +194,8 @@ feature volume.
 ## Strategic sequence
 
 ~~~text
-P1.6 Public Control Plane
-        ↓
-Production browser proof
+Completed proof
+P1.6 → P1.7 → P1.8 → P1.11
         ↓
 Five-minute onboarding
         ↓
