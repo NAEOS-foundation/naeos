@@ -8,7 +8,7 @@ It helps teams move from raw specification to validated system artifacts through
 
 Specification-first. AI-ready. Governance-aware.
 
-Specify once. Build anywhere.
+Architecture Drives Engineering.
 
 Explore the repo: https://github.com/NAEOS-foundation/naeos
 
