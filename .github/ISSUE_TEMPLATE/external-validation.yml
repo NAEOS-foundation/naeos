@@ -1,0 +1,129 @@
+name: External Validation Report
+description: Record an independent technical evaluation of the NAEOS Golden Path.
+title: "[VALIDATION] "
+labels:
+  - validation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template after running the canonical NAEOS Golden Path from a clean checkout.
+
+        Required references:
+        - docs/EXTERNAL-VALIDATION.md
+        - docs/EXTERNAL-HUMAN-VALIDATION.md
+        - docs/GOLDEN-PATH.md
+
+        This report records technical observation. It does not establish production readiness, customer adoption, compliance, or security of every integration.
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit SHA
+      description: Exact repository commit evaluated.
+    validations:
+      required: true
+
+  - type: input
+    id: evaluator
+    attributes:
+      label: Evaluator
+      description: Name or handle of the person performing the evaluation.
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Go version, and relevant tool versions.
+      placeholder: "Ubuntu 24.04 / amd64 / Go 1.26.6"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: determination
+    attributes:
+      label: Determination
+      options:
+        - Reproduced as documented
+        - Reproduced with deviation
+        - Not reproduced
+    validations:
+      required: true
+
+  - type: input
+    id: run-id
+    attributes:
+      label: run_id
+      description: run_id observed in run.json.
+    validations:
+      required: true
+
+  - type: input
+    id: specification-hash
+    attributes:
+      label: specification_hash
+      description: specification_hash observed in run.json.
+    validations:
+      required: true
+
+  - type: input
+    id: neir-hash
+    attributes:
+      label: neir_hash
+      description: neir_hash observed in run.json.
+    validations:
+      required: true
+
+  - type: textarea
+    id: checks
+    attributes:
+      label: Acceptance checks
+      description: Mark each required check from the evidence actually observed.
+      value: |
+        - [ ] Clean checkout at recorded commit
+        - [ ] CLI build
+        - [ ] Canonical demo
+        - [ ] Specification evidence
+        - [ ] NEIR evidence
+        - [ ] Validation evidence
+        - [ ] Policy rejection evidence
+        - [ ] AI context evidence
+        - [ ] Traceability evidence
+        - [ ] Generated artifacts
+        - [ ] Evidence summary
+    validations:
+      required: true
+
+  - type: textarea
+    id: observations
+    attributes:
+      label: Evaluator observations
+      description: What was clear, unclear, surprising, or difficult to reproduce?
+    validations:
+      required: true
+
+  - type: textarea
+    id: deviations
+    attributes:
+      label: Deviations
+      description: Record exact step, expected result, observed result, evidence, and whether it blocks reproducibility. Use "None" if there were no deviations.
+    validations:
+      required: true
+
+  - type: textarea
+    id: follow-up
+    attributes:
+      label: Follow-up
+      description: What should be clarified, fixed, repeated, or tested next?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence references
+      description: Link relevant artifacts, logs, commits, or follow-up issues. Do not upload secrets or private customer data.
+    validations:
+      required: false
