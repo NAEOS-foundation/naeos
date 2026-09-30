@@ -92,7 +92,9 @@ jobs:
           fi
       - name: Preview on Cloudflare Workers
         # Every PR gets an isolated Worker Preview; production remains main-only.
-        if: github.event_name == 'pull_request'
+        # Dependabot pull requests do not receive repository secrets.
+        # Build and validation still run; preview is reserved for trusted PRs.
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
