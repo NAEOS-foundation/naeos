@@ -4,7 +4,7 @@
 - Title: Adopt NAEOS Specification-First Workflow
 - Status: Proposed
 - Date: 2026-07-09
-- Authors: NAEOS Foundation
+- Authors: NAEOS OSS
 - Related Documents: README.md, specification/NAEOS-SPEC-001.md
 
 ## Context
