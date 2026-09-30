@@ -106,6 +106,12 @@ A technical evaluator can use this sequence without trusting the documentation n
 
 The evaluator should treat the repository files and generated outputs as the primary evidence, rather than relying on screenshots or claims in this document.
 
+### What this run proves
+
+A successful reference run demonstrates the local control-plane path from declared engineering intent through validation, policy, context generation, authorized generation, artifacts, and traceable evidence. It does not establish production readiness, adoption, compliance, or the safety of arbitrary external agent integrations.
+
+For the separate independent-verification capability, see [P1.11 — Independent Verifier CLI](control-plane/p1-11-independent-verifier-cli.md). P1.11 verifies a serialized canonical `EvidenceBundle` in read-only mode and is intentionally not presented as another demo path.
+
 ## 7. CI relationship
 
 The Golden Path is already exercised by repository automation and the CLI test suite. That makes the reference demo a regression contract as well as a presentation path.
