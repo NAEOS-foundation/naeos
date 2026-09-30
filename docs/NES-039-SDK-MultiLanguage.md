@@ -15,7 +15,7 @@ Dokumen ini mencakup arsitektur adapter, kontrak SDK per bahasa, konfigurasi bah
 - NES-040 Output Adapter Architecture
 - NES-019 SDK
 - NAEOS-SPEC-008 Compiler Model
-- NAEOS-GOV-001 Project Charter — Specify Once. Build Anywhere.
+- NAEOS-GOV-001 Project Charter — Architecture Drives Engineering.
 
 ## 5. Supported Languages
 
