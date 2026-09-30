@@ -3,7 +3,7 @@ Title: Governance Model
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: Critical
 
 Motto:
@@ -69,10 +69,10 @@ Long-Term Sustainability
 
 Struktur governance NAEOS:
 
-4. NAEOS Foundation
+4. NAEOS OSS
 Purpose
 
-NAEOS Foundation bertanggung jawab menjaga visi, nilai, dan keberlanjutan proyek.
+NAEOS OSS bertanggung jawab menjaga visi, nilai, dan keberlanjutan proyek.
 
 Responsibilities
 
