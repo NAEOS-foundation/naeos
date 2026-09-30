@@ -9,14 +9,14 @@ export const DEFAULT_LANG: Lang = "en";
 export const SITE = {
   baseUrl: "https://naeos.dev",
   title: {
-    en: "NAEOS — Declarative Platform Engineering System",
-    id: "NAEOS — Sistem Rekayasa Platform Deklaratif",
+    en: "NAEOS — AI Engineering Operating System",
+    id: "NAEOS — Sistem Operasi Rekayasa AI",
   } as Record<Lang, string>,
   description: {
-    en: "Transform YAML/JSON specifications into validated, multi-language project structures with full traceability from intent to implementation.",
-    id: "Ubah spesifikasi YAML/JSON menjadi struktur proyek multi-bahasa yang tervalidasi dengan ketelusuran penuh dari niat hingga implementasi.",
+    en: "The Engineering Control Plane for AI Coding Agents. Govern AI-assisted software engineering through explicit architecture, policy, authorized execution, evidence, and verification.",
+    id: "Lapisan kendali rekayasa untuk AI coding agents: arsitektur, kebijakan, eksekusi terotorisasi, bukti, dan verifikasi.",
   } as Record<Lang, string>,
-  copyright: "Copyright © 2026 NAEOS Foundation. All rights reserved.",
+  copyright: "Copyright © 2025-2026 NAEOS contributors.",
   repo: "https://github.com/NAEOS-foundation/naeos",
   repoOwner: "NAEOS-foundation",
   repoName: "naeos",

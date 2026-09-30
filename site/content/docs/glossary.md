@@ -6,7 +6,7 @@ weight: 22
 
 | Term | Definition |
 |------|------------|
-| **NAEOS** | Nusantara AI Engineering Operating System — an open-source declarative platform engineering system |
+| **NAEOS** | Nusantara AI Engineering Operating System — the open-source engineering control plane for AI coding agents |
 | **NEIR** | NAEOS Engineering Intermediate Representation — the unified intermediate model that represents the entire project |
 | **Spec** | Specification — a YAML or JSON document that defines the project, modules, services, and architecture |
 | **Pipeline** | The processing chain: parse → normalize → resolve → build NEIR → validate → build graph → policy evaluation → schedule → generate → review → write artifacts |

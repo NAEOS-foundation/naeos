@@ -139,9 +139,9 @@ func postMessage(ctx context.Context, token, channelID, text string) (string, er
 
 const welcomeMessage = `Welcome to the NAEOS Community 👋
 
-NAEOS is a declarative engineering platform: describe your system once, and it builds, validates, and evolves real software — for humans and AI.
+NAEOS is an AI Engineering Operating System and the engineering control plane for AI coding agents. It governs architecture, policy, validation, context, execution, and evidence.
 
-*Specify once. Build anywhere.*
+*Architecture Drives Engineering.*
 
 *Start here*
 1. Say hi in <#introductions>.
@@ -166,7 +166,7 @@ const preLaunchMessage = `*NAEOS is launching Tuesday 🚀*
 
 On *Tuesday, 18 Aug* we launch NAEOS on Product Hunt.
 
-NAEOS is a declarative engineering platform. You describe your system *once* in YAML/JSON — it builds an internal engineering model (NEIR) and generates validated code in Go, TypeScript, Python, Java, Rust, plus AI instruction sets for 6 tools and an MCP server.
+NAEOS is an AI Engineering Operating System. It turns engineering intent into governed, validated, AI-ready execution workflows around AI coding agents.
 
 *This week:*
 - 👀 Community walkthrough of v3.1.0 (caching, profiling, architecture patterns)

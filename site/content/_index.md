@@ -1,6 +1,6 @@
 ---
-title: NAEOS — Declarative Platform Engineering System
-description: Transform YAML/JSON specifications into validated, multi-language project structures with full traceability from intent to implementation.
+title: NAEOS — AI Engineering Operating System
+description: The Engineering Control Plane for AI Coding Agents. Govern AI-assisted software engineering through explicit architecture, policy, authorized execution, evidence, and verification.
 ---
 
 <!-- Content is rendered via layouts/index.html -->

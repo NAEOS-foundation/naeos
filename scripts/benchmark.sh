@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2024-2026 NAEOS Foundation
+# Copyright 2025-2026 NAEOS contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # Run benchmarks and compare against baseline

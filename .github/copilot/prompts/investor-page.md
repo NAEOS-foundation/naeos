@@ -8,7 +8,7 @@ Build a dedicated **Investor Page** for NAEOS.
 
 The page must position NAEOS as:
 
-> **The Engineering Control Plane for the AI-Native Software Era.**
+> **The Engineering Control Plane for AI Coding Agents.**
 
 Primary message:
 
@@ -16,7 +16,7 @@ Primary message:
 
 Tagline:
 
-> **Specify once. Build anywhere.**
+> **Architecture Drives Engineering.**
 
 ---
 
@@ -82,7 +82,7 @@ Use this positioning consistently:
 
 ## Primary positioning
 
-> NAEOS is the engineering control plane for the AI-native software era.
+> NAEOS is the Nusantara AI Engineering Operating System and the engineering control plane for AI coding agents.
 
 ## Supporting statement
 
