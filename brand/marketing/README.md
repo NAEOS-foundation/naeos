@@ -4,14 +4,14 @@ This folder contains ready-to-use marketing assets based on the repository’s v
 
 ## Verified positioning
 
-NAEOS is a declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline.
+NAEOS is an AI Engineering Operating System for AI coding agents, providing an engineering control plane for architecture, policy, execution, evidence, and verification.
 
 Core message:
 
-- Specify Once. Build Anywhere.
-- Specification-first engineering
-- AI context compiled from a shared model
-- Governance, validation, and traceability built into the workflow
+- Architecture Drives Engineering.
+- AI engineering control plane
+- Architecture, policy, and AI context compiled from a shared engineering model
+- Governance, validation, execution controls, evidence, and verification built into the workflow
 
 ## Included assets
 
@@ -39,6 +39,6 @@ Core message:
 ## Brand baseline
 
 - Brand name: NAEOS
-- Tagline: Specify Once. Build Anywhere.
+- Tagline: Architecture Drives Engineering.
 - Tone: precise, technical, open-source, engineering-led
 - Avoid: unverified enterprise claims, unsupported customer stories, and hype-heavy phrasing

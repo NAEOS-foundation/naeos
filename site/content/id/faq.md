@@ -10,7 +10,7 @@ description: Pertanyaan umum tentang NAEOS dan rekayasa deklaratif.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>NAEOS (Nusantara Engineering & Architecture Operating System) adalah platform rekayasa deklaratif yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. NAEOS adalah runtime rekayasa — bukan sekadar generator proyek — yang memahami spesifikasi, membangun model internal (NEIR), mengatur rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya.</p>
+<p>NAEOS (Nusantara AI Engineering Operating System) adalah platform rekayasa deklaratif yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. NAEOS adalah runtime rekayasa — bukan sekadar generator proyek — yang memahami spesifikasi, membangun model internal (NEIR), mengatur rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasi sepanjang siklus hidupnya.</p>
 </div>
 </div>
 

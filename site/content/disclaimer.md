@@ -14,7 +14,7 @@ the use of NAEOS remains with you.
 
 ## 2. No Liability
 
-In no event shall the NAEOS Foundation, its maintainers, or contributors be
+In no event shall the NAEOS OSS, its maintainers, or contributors be
 liable for any claim, damages, or other liability — whether in an action of
 contract, tort, or otherwise — arising from, out of, or in connection with the
 software or the use of the software.

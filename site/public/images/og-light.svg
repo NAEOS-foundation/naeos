@@ -34,7 +34,7 @@
   </g>
   <text x="200" y="260" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="96" font-weight="800" fill="#0a0a0a" letter-spacing="-2">NAEOS</text>
   <rect x="200" y="280" width="120" height="4" rx="2" fill="url(#accent-grad)"/>
-  <text x="200" y="330" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="32" font-weight="500" fill="#666666" letter-spacing="-0.5">Specify Once. Build Anywhere.</text>
+  <text x="200" y="330" font-family="Inter, 'SF Pro Display', -apple-system, sans-serif" font-size="32" font-weight="500" fill="#666666" letter-spacing="-0.5">Architecture Drives Engineering.</text>
   <text x="200" y="370" font-family="Inter, sans-serif" font-size="20" fill="#999999">Declarative Platform Engineering System</text>
   <rect x="200" y="400" width="160" height="36" rx="18" fill="#f0f0f0" stroke="#dddddd" stroke-width="1"/>
   <text x="280" y="424" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="600" fill="#08d6ff" text-anchor="middle">v2.1.0</text>

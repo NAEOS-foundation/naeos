@@ -1,13 +1,13 @@
 # NAEOS — Official Whitepaper
 
-**Nusantara Engineering & Architecture Operating System**
+**Nusantara AI Engineering Operating System**
 
-> *"Specify Once. Build Anywhere."*
+> *"Architecture Drives Engineering."*
 
 | | |
 |---|---|
 | **Document Version** | 1.0.0 |
-| **Status** | Public Draft |
+| **Status** | Stable |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
 | **Platform Version** | v3.6.0 (repository state) |
@@ -18,7 +18,7 @@
 
 NAEOS is an open-source declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline. NAEOS is not just a project generator — it is an *engineering runtime* that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with their specifications throughout the entire lifecycle.
 
-Under the motto **"Specify Once. Build Anywhere."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
+Under the motto **"Architecture Drives Engineering."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
 The current repository state includes Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, a production server daemon (`naeos serve`), SBOM and artifact signing, Helm chart scaffolding, and compliance-oriented policy templates for SOC 2, HIPAA, and GDPR workflows.
 
@@ -469,6 +469,6 @@ Under Apache License 2.0, with a vendor-neutral architecture and a growing ecosy
 
 ---
 
-*NAEOS Foundation — "Engineering With Discipline"*
+*NAEOS OSS — "Engineering With Discipline"*
 
 *This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.6.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*

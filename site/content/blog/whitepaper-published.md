@@ -13,7 +13,7 @@ We are excited to announce the publication of the **official NAEOS whitepaper** 
 The whitepaper is a comprehensive technical document that covers:
 
 - **Executive summary & problem statement** — why declarative engineering answers the fragmentation crisis of modern software development
-- **Vision & mission** — "Specify Once. Build Anywhere."
+- **Vision & mission** — "Architecture Drives Engineering."
 - **The Engineering Constitution** — the 12 constitutional articles that NAEOS compiles into executable rules
 - **Platform architecture** — the five-layer model and the deterministic nine-stage compilation pipeline
 - **Core components** — Specification Language v2, NEIR, the multi-language generator, kernel, AI compiler with 6 output adapters, governance & compliance, and the ecosystem marketplace

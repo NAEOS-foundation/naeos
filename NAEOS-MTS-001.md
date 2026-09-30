@@ -6,7 +6,7 @@ Document ID: NAEOS-MTS-001
 Version: 1.0.0
 Status: Proposed
 Project: NAEOS — Nusantara AI Engineering Operating System
-Maintainer: NAEOS Foundation
+Maintainer: NAEOS OSS
 Last Updated: September 2026
 
 ---

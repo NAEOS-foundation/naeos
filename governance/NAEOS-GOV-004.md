@@ -3,11 +3,11 @@ Title: Manifesto
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -21,9 +21,9 @@ Referenced By:
 NAEOS Manifesto
 Executive Summary
 
-NAEOS Manifesto adalah pernyataan fundamental mengenai keyakinan, nilai, dan prinsip yang menjadi dasar pembangunan NAEOS.
+NAEOS Manifesto is pernyataan fundamental mengenai keyakinan, nilai, and prinsip that become dasar pembangunan NAEOS.
 
-Manifesto ini mendefinisikan bagaimana NAEOS memandang:
+Manifesto ini defines bagaimana NAEOS memanandg:
 
 software engineering,
 artificial intelligence,
@@ -32,124 +32,124 @@ automation,
 collaboration,
 kualitas software.
 
-NAEOS percaya bahwa masa depan software engineering bukan tentang menggantikan manusia dengan AI.
+NAEOS percaya bahwa masa depan software engineering not tentang menggantikan manusia with AI.
 
-Masa depan software engineering adalah kolaborasi antara manusia yang memiliki tujuan dan AI yang memiliki kemampuan eksekusi.
+Masa depan software engineering is kolaborasi antara manusia that have objective and AI that have kemampuan eksekusi.
 
 1. Purpose
 
-Dokumen ini menjawab pertanyaan:
+This document menjawab pertanyaan:
 
-"Apa yang NAEOS percayai?"
+"Apa that NAEOS percayai?"
 
-Manifesto menjadi dasar budaya dan keputusan seluruh ekosistem NAEOS.
+Manifesto become dasar budaya and decisions all ekosistem NAEOS.
 
 2. The NAEOS Declaration
 We Believe
 
-Kami percaya bahwa software terbaik tidak dimulai dari kode.
+We percaya bahwa software terbaik not dimulai from kode.
 
-Software terbaik dimulai dari pemahaman.
+Software terbaik dimulai from pemahaman.
 
-Pemahaman harus menjadi spesifikasi.
+Pemahaman must become spesifikasi.
 
-Spesifikasi harus menjadi sistem.
+Spesifikasi must become sistem.
 
-Sistem harus menghasilkan nilai.
+Sistem must produce nilai.
 
 3. The Manifesto
 1. Intent Over Implementation
 
-Kami menghargai:
+We menghargai:
 
-Tujuan sebelum kode.
+Purpose sebelum kode.
 
-Karena kode adalah implementasi dari pemikiran.
+Karena kode is implementasi from pemikiran.
 
-Tanpa intent yang jelas, implementasi hanya menghasilkan kompleksitas.
+Tanpa intent that jelas, implementasi hanya produce kompleksitas.
 
 2. Specification Over Prompt
 
-Kami menghargai:
+We menghargai:
 
-Specification lebih tinggi daripada prompt.
+Specification more tinggi fromon prompt.
 
-Prompt adalah instruksi sementara.
+Prompt is instruksi sementara.
 
-Specification adalah kontrak engineering.
+Specification is kontrak engineering.
 
-Prompt dapat berubah.
+Prompt can berubah.
 
-Specification harus bertahan.
+Specification must bertahan.
 
 3. Knowledge Over Information
 
-Kami menghargai:
+We menghargai:
 
-Knowledge yang terstruktur lebih bernilai daripada informasi yang tersebar.
+Knowledge that terstruktur more bernilai fromon informasi that tersebar.
 
-NAEOS mengubah pengalaman engineering menjadi aset yang dapat digunakan kembali.
+NAEOS mengubah pengalaman engineering become aset that can used kembali.
 
 4. Architecture Over Speed
 
-Kami menghargai:
+We menghargai:
 
-Arsitektur yang benar sebelum implementasi cepat.
+Arsitektur that benar sebelum implementasi cepat.
 
-Kecepatan tanpa arah menghasilkan technical debt.
+Kecepatan without arah produce technical debt.
 
 5. Quality By Design
 
-Kami menghargai:
+We menghargai:
 
-Kualitas yang dirancang sejak awal.
+Kualitas that dirancang sejak awal.
 
-Kualitas bukan aktivitas terakhir.
+Kualitas not aktivitas terakhir.
 
-Kualitas adalah bagian dari proses.
+Kualitas is foran from proses.
 
 6. Human Judgment With AI Capability
 
-Kami menghargai:
+We menghargai:
 
-Keputusan manusia dan kemampuan AI secara bersamaan.
+Decisions manusia and kemampuan AI in bersamaan.
 
 AI memperluas kemampuan manusia.
 
-AI tidak menggantikan tanggung jawab engineering.
+AI not menggantikan tanggung jawab engineering.
 
 7. Open Knowledge
 
-Kami menghargai:
+We menghargai:
 
-Pengetahuan yang terbuka dan dapat digunakan bersama.
+Pengetahuan that terbuka and can used bersama.
 
-Engineering berkembang melalui berbagi pengalaman.
+Engineering berkembang through berfor pengalaman.
 
 8. Automation With Responsibility
 
-Kami menghargai:
+We menghargai:
 
-Otomasi yang memperkuat proses engineering.
+Otomasi that memperkuat proses engineering.
 
-Tidak semua hal harus otomatis.
+Not semua hal must otomatis.
 
-Tetapi semua proses yang dapat distandarkan harus dapat divalidasi.
+Tetapi semua proses that can distandarkan must can divalidasi.
 
 4. NAEOS Values
 Value 01
 Clarity
 
-Kami mencari kejelasan dalam:
+We mencari kejelasan in:
 
-tujuan,
+objective,
 requirement,
 architecture,
 decision.
 Value 02
 Consistency
 
-Kami menjaga konsistensi melalui:
+We maintain konsistensi through:
 
 specification,
 standards,
@@ -157,17 +157,17 @@ validation.
 Value 03
 Simplicity
 
-Kami menghindari kompleksitas yang tidak diperlukan.
+We menghinfrom kompleksitas that not required.
 
 Value 04
 Transparency
 
-Setiap keputusan harus dapat dipahami.
+Setiap decisions must can dipahami.
 
 Value 05
 Sustainability
 
-Software harus dapat bertahan dan berkembang.
+Software must can bertahan and berkembang.
 
 5. Human + AI Philosophy
 
@@ -175,20 +175,20 @@ NAEOS menggunakan model:
 
 6. What NAEOS Rejects
 
-NAEOS menolak pendekatan berikut:
+NAEOS menolak pendekatan following:
 
 Prompt-Only Development
 
 Masalah:
 
 konteks mudah hilang,
-hasil tidak konsisten,
-sulit dipelihara.
+hasil not konsisten,
+sulit maintained.
 Code Generation Without Understanding
 
 Masalah:
 
-tidak memahami domain,
+not memahami domain,
 risiko keamanan,
 kualitas rendah.
 Documentation As Afterthought
@@ -197,7 +197,7 @@ Masalah:
 
 knowledge hilang,
 onboarding sulit,
-keputusan tidak terlacak.
+decisions not terlacak.
 Vendor Lock-In
 
 Masalah:
@@ -235,28 +235,28 @@ Review
 Improve
 8. The Developer Promise
 
-NAEOS berjanji kepada developer:
+NAEOS berjanji keon developer:
 
-Kami akan menyediakan:
+We akan provide:
 
-standar yang jelas,
+standar that jelas,
 tooling terbuka,
 knowledge reusable,
 dokumentasi lengkap,
 interoperabilitas AI.
 9. The AI Promise
 
-NAEOS berjanji bahwa AI yang menggunakan NAEOS harus:
+NAEOS berjanji bahwa AI that menggunakan NAEOS must:
 
 Mampu memahami konteks.
 
-Mengikuti aturan engineering.
+Follows aturan engineering.
 
 Menghormati batasan keamanan.
 
-Menjelaskan keputusan.
+Menjelaskan decisions.
 
-Menghasilkan artefak yang dapat ditinjau.
+Menghasilkan artefak that can ditinjau.
 
 10. Official Manifesto Statement
 
@@ -266,22 +266,22 @@ It is humans and machines building together through shared knowledge, clear spec
 
 11. Short Version
 
-Untuk halaman utama website:
+For halaman utama website:
 
 NAEOS believes software should be specified before it is generated, knowledge should be preserved before it is lost, and AI should enhance engineering rather than replace it.
 
 12. Conformance
 
-Seluruh proyek yang mengadopsi NAEOS:
+Seluruh proyek that mengadopsi NAEOS:
 
 MUST:
 
-mengikuti specification-first approach,
+follows specification-first approach,
 menghormati engineering principles.
 
 SHOULD:
 
-menjaga dokumentasi,
+maintain dokumentasi,
 menggunakan automation.
 
 MAY:

@@ -4,11 +4,11 @@ Title: Versioning Policy
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Steward: NAEOS OSS
 Priority: Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -23,9 +23,9 @@ Referenced By:
 NAEOS Versioning Policy
 Executive Summary
 
-Versioning Policy mendefinisikan bagaimana seluruh artefak NAEOS berkembang secara konsisten dan dapat diprediksi.
+Versioning Policy defines bagaimana all artefak NAEOS berkembang in konsisten and can diprediksi.
 
-Kebijakan ini berlaku untuk:
+Kebijakan ini berlaku to:
 
 Specification
 Constitution
@@ -40,12 +40,12 @@ Website
 Reference Platform
 1. Purpose
 
-Dokumen ini bertujuan untuk:
+This document berobjective to:
 
-menjaga kompatibilitas,
-mengendalikan perubahan,
+maintain kompatibilitas,
+mengendalikan changes,
 mempermudah migrasi,
-memastikan stabilitas ekosistem.
+ensure stabilitas ekosistem.
 2. Versioning Model
 
 NAEOS menggunakan Semantic Versioning (SemVer 2.0.0).
@@ -62,12 +62,12 @@ Contoh:
 2.0.0
 3. MAJOR Version
 
-MAJOR berubah apabila terdapat:
+MAJOR berubah apabila tercan:
 
 breaking changes,
-perubahan struktur specification,
-perubahan metadata wajib,
-perubahan compiler yang tidak kompatibel.
+changes struktur specification,
+changes metadata wajib,
+changes compiler that not kompatibel.
 
 Contoh:
 
@@ -78,7 +78,7 @@ Contoh:
 2.0.0
 4. MINOR Version
 
-MINOR bertambah untuk:
+MINOR bertambah to:
 
 fitur baru,
 penambahan standar,
@@ -94,7 +94,7 @@ Contoh:
 1.3.0
 5. PATCH Version
 
-PATCH digunakan untuk:
+PATCH used to:
 
 typo,
 perbaikan dokumentasi,
@@ -111,19 +111,19 @@ Contoh:
 1.3.3
 6. Document Lifecycle
 
-Setiap dokumen memiliki status berikut:
+Setiap dokumen have status following:
 
 Status	Deskripsi
-Draft	Sedang dikembangkan
+Draft	Seandg dikembangkan
 Review	Menunggu evaluasi
 Proposed	Diusulkan
 Accepted	Disetujui
-Stable	Siap digunakan
-Deprecated	Tidak direkomendasikan
-Archived	Tidak dipelihara
+Stable	Siap used
+Deprecated	Not direkomendasikan
+Archived	Not maintained
 7. Release Channels
 
-NAEOS memiliki empat jalur rilis.
+NAEOS have empat jalur rilis.
 
 Alpha
 
@@ -135,7 +135,7 @@ Beta
 
 Fitur lengkap.
 
-Masih dapat berubah.
+Masih can berubah.
 
 Release Candidate (RC)
 
@@ -145,7 +145,7 @@ Hanya menerima bug fix.
 
 Stable
 
-Direkomendasikan untuk produksi.
+Direkomendasikan to produksi.
 
 8. Compatibility Rules
 
@@ -155,23 +155,23 @@ MUST:
 
 mendeklarasikan versi,
 menyatakan kompatibilitas,
-mengikuti SemVer.
+follows SemVer.
 
 Compiler:
 
-MUST mampu menolak specification yang tidak kompatibel.
+MUST mampu menolak specification that not kompatibel.
 
 9. Deprecation Policy
 
-Fitur yang akan dihapus:
+Fitur that akan dihapus:
 
-Ditandai sebagai Deprecated.
+Ditandai as Deprecated.
 Tetap didukung minimal satu rilis MAJOR.
-Memiliki panduan migrasi.
-Baru dihapus pada rilis MAJOR berikutnya.
+Have panduan migrasi.
+Baru dihapus on rilis MAJOR followingnya.
 10. Migration Policy
 
-Setiap breaking change wajib menyediakan:
+Setiap breaking change wajib provide:
 
 Migration Guide
 Compatibility Notes
@@ -188,19 +188,19 @@ Kebijakan dukungan:
 
 MAJOR terbaru: Full Support
 MAJOR sebelumnya: Security & Critical Fixes
-Versi lebih lama: Community Support
+Versi more lama: Community Support
 13. Version Metadata
 
-Setiap dokumen wajib memiliki metadata berikut:
+Setiap dokumen wajib have metadata following:
 
 version: 1.0.0
 status: Stable
 last_updated: 2026-07-09
-owner: NAEOS Foundation
+owner: NAEOS OSS
 review_cycle: 12 months
 14. Release Artifacts
 
-Setiap rilis NAEOS harus menghasilkan:
+Setiap rilis NAEOS must produce:
 
 Release Notes
 Change Log
@@ -219,7 +219,7 @@ SDK	SemVer
 Website	Rolling Release
 16. Versioning Principles
 
-NAEOS mengikuti prinsip:
+NAEOS follows prinsip:
 
 Predictable Releases
 Backward Compatibility
@@ -233,13 +233,13 @@ Implementasi NAEOS:
 MUST:
 
 menggunakan versi resmi,
-mengikuti kebijakan kompatibilitas,
-menyediakan metadata versi.
+follows kebijakan kompatibilitas,
+provide metadata versi.
 
 SHOULD:
 
-menyediakan changelog,
-menyediakan migration guide.
+provide changelog,
+provide migration guide.
 18. Related Documents
 ID	Document
 NAEOS-GOV-001	Project Charter

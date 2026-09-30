@@ -18,7 +18,7 @@ NAEOS helps teams move from raw specification to validated software artifacts wi
 AI-generated code becomes more useful when it is grounded in a consistent engineering model. NAEOS helps reduce drift between intent, architecture, implementation, and AI tooling.
 
 ## Example callout
-Specify once. Build anywhere.
+Architecture Drives Engineering.
 
 ## CTA
 Explore the repo, read the architecture, and try the quick start.

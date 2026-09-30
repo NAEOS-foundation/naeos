@@ -22,7 +22,7 @@
 
 "It is working from a consistent engineering model."
 
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 "Explore NAEOS on GitHub."
 
@@ -48,7 +48,7 @@
 
 0:30–0:40
 - Final hero shot with logo and tagline
-- Text: "Specify once. Build anywhere."
+- Text: "Architecture Drives Engineering."
 - CTA: "Explore GitHub"
 
 ---
@@ -61,7 +61,7 @@
 
 "Parse. Validate. Generate. Compile AI context."
 
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 "Explore NAEOS on GitHub."
 

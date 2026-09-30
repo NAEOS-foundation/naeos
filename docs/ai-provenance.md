@@ -2,7 +2,7 @@
 
 - Status: Active
 - Version: 1.0
-- Owner: NAEOS Foundation
+- Owner: NAEOS OSS
 
 ## 1. Purpose
 
@@ -59,7 +59,7 @@ Disclosure is recommended, not mandatory:
 
 ## 6. Enforcement and Scope
 
-This policy applies to all repositories owned by the NAEOS Foundation.
+This policy applies to all repositories owned by the NAEOS OSS.
 Secrets and provenance issues found in PR review are treated as blocking;
 failure to disclose is handled by maintainer discretion, matching severity.
 

@@ -44,7 +44,7 @@ Compiler tidak menghasilkan satu output. Compiler menghasilkan banyak target dar
 
 Inilah filosofi utama NAEOS:
 
-> **Specify Once. Build Anywhere.**
+> **Architecture Drives Engineering.**
 
 Compiler terdiri dari dua lapisan generasi:
 1. **Default Engine** — menghasilkan boilerplate Go-centric (README, Dockerfile, CI, go.mod, entry point, module scaffolding)

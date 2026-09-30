@@ -2,12 +2,12 @@ Document ID : NAEOS-GOV-005
 Title       : Core Principles
 Version     : 1.0.0
 Status      : Stable
-Owner       : NAEOS Foundation
+Owner       : NAEOS OSS
 Category    : Governance
 Priority    : Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -23,17 +23,17 @@ Referenced By:
 NAEOS Core Principles
 Executive Summary
 
-Core Principles mendefinisikan prinsip fundamental yang menjadi dasar seluruh keputusan teknis dan arsitektural dalam ekosistem NAEOS.
+Core Principles defines prinsip fundamental that become dasar all decisions teknis and arsitektural in ekosistem NAEOS.
 
-Prinsip-prinsip ini bersifat normatif — setiap komponen NAEOS harus konsisten dengan prinsip-prinsip berikut.
+Prinsip-prinsip ini bersifat normatif — setiap komponen NAEOS must konsisten with prinsip-prinsip following.
 
 1. Purpose
 
-Dokumen ini menjawab pertanyaan:
+This document menjawab pertanyaan:
 
-"Prinsip apa yang mengatur seluruh keputusan dalam NAEOS?"
+"Prinsip apa that mengatur all decisions in NAEOS?"
 
-Core Principles menjadi filter untuk evaluasi setiap proposal, RFC, dan ADR dalam ekosistem NAEOS.
+Core Principles become filter to evaluasi setiap proposal, RFC, and ADR in ekosistem NAEOS.
 
 2. The Principles
 
@@ -42,109 +42,109 @@ Specification is the Single Source of Truth
 
 English: The specification defines what exists, what is valid, and what is required. No other artifact holds higher authority.
 
-Indonesia: Spesifikasi mendefinisikan apa yang ada, apa yang valid, dan apa yang diperlukan. Tidak ada artefak lain yang memiliki otoritas lebih tinggi.
+Indonesia: Spesifikasi defines apa that ada, apa that valid, and apa that required. Not ada artefak lain that have otoritas more tinggi.
 
 Implikasi:
 
-Kode harus sinkron dengan spesifikasi.
-Dokumentasi harus dihasilkan dari spesifikasi.
-Keputusan engineering harus terdokumentasi dalam spesifikasi.
-Prompt atau instruksi AI tidak menggantikan spesifikasi.
+Kode must sinkron with spesifikasi.
+Dokumentasi must dihasilkan from spesifikasi.
+Decisions engineering must terdokumentasi in spesifikasi.
+Prompt or instruksi AI not menggantikan spesifikasi.
 
 Principle 02
 Architecture Precedes Implementation
 
 English: Design decisions must be made and documented before code is written.
 
-Indonesia: Keputusan desain harus dibuat dan didokumentasikan sebelum kode ditulis.
+Indonesia: Decisions desain must dibuat and didokumentasikan sebelum kode ditulis.
 
 Implikasi:
 
-Setiap modul harus memiliki arsitektur yang didefinisikan.
-Perubahan arsitektur harus melalui proses governance.
-AI tidak boleh menghasilkan kode tanpa memahami konteks arsitektural.
+Setiap modul must have arsitektur that didefinisikan.
+Changes arsitektur must through proses governance.
+AI not bby produce kode without memahami konteks arsitektural.
 
 Principle 03
 Knowledge is Reusable
 
 English: Engineering knowledge must be structured for discovery and reuse across projects and teams.
 
-Indonesia: Pengetahuan engineering harus terstruktur untuk ditemukan dan digunakan ulang lintas proyek dan tim.
+Indonesia: Pengetahuan engineering must terstruktur to ditemukan and used ulang across proyek and tim.
 
 Implikasi:
 
-Knowledge harus disimpan dalam format yang dapat diquery.
-Knowledge harus terhubung dengan konteks (keputusan, komponen, implementasi).
-Knowledge harus versi dan dapat ditelusuri (traceable).
+Knowledge must disimpan in format that can diquery.
+Knowledge must terhubung with konteks (decisions, komponen, implementasi).
+Knowledge must versi and can traced (traceable).
 
 Principle 04
 Documentation is Part of the Product
 
 English: Documentation is not an afterthought; it is an artifact that must be generated, validated, and maintained alongside code.
 
-Indonesia: Dokumentasi bukan hal yang dipikirkan belakangan; dokumentasi adalah artefak yang harus dihasilkan, divalidasi, dan dipelihara bersama kode.
+Indonesia: Dokumentasi not hal that dipikirkan belakangan; dokumentasi is artefak that must dihasilkan, divalidasi, and maintained bersama kode.
 
 Implikasi:
 
-Dokumentasi harus dihasilkan dari spesifikasi.
-Dokumentasi harus divalidasi oleh governance.
-Dokumentasi harus versioned dan terlacak.
+Dokumentasi must dihasilkan from spesifikasi.
+Dokumentasi must divalidasi by governance.
+Dokumentasi must versioned and terlacak.
 
 Principle 05
 Automation Reinforces Engineering
 
 English: Manual processes that can be automated should be automated to ensure consistency and reduce human error.
 
-Indonesia: Proses manual yang dapat diotomasi harus diotomasi untuk memastikan konsistensi dan mengurangi human error.
+Indonesia: Proses manual that can diotomasi must diotomasi to ensure konsistensi and mengurangi human error.
 
 Implikasi:
 
-Validator harus berjalan secara otomatis.
-Pipeline harus terotomasi dari spesifikasi hingga artefak.
-Governance rules harus dapat dievaluasi secara programmatic.
+Validator must berjalan in otomatis.
+Pipeline must terotomasi from spesifikasi hingga artefak.
+Governance rules must can dievaluasi in programmatic.
 
 Principle 06
 Every Rule Must Be Explainable
 
 English: Every policy rule, governance decision, and validation constraint must have a clear rationale.
 
-Indonesia: Setiap aturan policy, keputusan governance, dan kendala validasi harus memiliki alasan yang jelas.
+Indonesia: Setiap aturan policy, decisions governance, and kendala validasi must have alasan that jelas.
 
 Implikasi:
 
-Setiap rule harus memiliki deskripsi dan rationale.
-Keputusan governance harus dapat ditelusuri ke prinsip.
-Error messages harus jelas dan actionable.
+Setiap rule must have deskripsi and rationale.
+Decisions governance must can traced ke prinsip.
+Error messages must jelas and actionable.
 
 Principle 07
 Every Artifact Must Be Traceable
 
 English: Every generated artifact must maintain provenance back to its source specification and the decisions that shaped it.
 
-Indonesia: Setiap artefak yang dihasilkan harus mempertahankan provenance kembali ke spesifikasi sumber dan keputusan yang membentuknya.
+Indonesia: Setiap artefak that dihasilkan must mempertahankan provenance kembali ke spesifikasi sumber and decisions that membentuknya.
 
 Implikasi:
 
-Provenance tracking harus tercatat untuk setiap artefak.
-Lineage harus dapat ditelusuri mundur (backward tracing).
-Metadata provenance harus tersedia untuk auditing.
+Provenance tracking must tercatat to setiap artefak.
+Lineage must can traced mundur (backward tracing).
+Metadata provenance must available to auditing.
 
 Principle 08
 Every Decision Should Be Reviewable
 
 English: Engineering decisions should be captured in a format that allows future review, challenge, and evolution.
 
-Indonesia: Keputusan engineering harus ditangkap dalam format yang memungkinkan review, tantangan, dan evolusi di masa depan.
+Indonesia: Decisions engineering must ditangkap in format that memungkinkan review, tantangan, and evolusi di masa depan.
 
 Implikasi:
 
-Keputusan harus didokumentasikan sebagai ADR atau RFC.
-Proses review harus terbuka dan transparan.
-Evolusi keputusan harus terlacak.
+Decisions must didokumentasikan as ADR or RFC.
+Proses review must terbuka and transparan.
+Evolusi decisions must terlacak.
 
 3. Principle Hierarchy
 
-Prinsip-prinsip di atas memiliki hierarki:
+Prinsip-prinsip di atas have hierarki:
 
 1. Specification is the Single Source of Truth (fondasi)
 2. Architecture Precedes Implementation (desain)
@@ -155,33 +155,33 @@ Prinsip-prinsip di atas memiliki hierarki:
 7. Every Artifact Must Be Traceable (auditability)
 8. Every Decision Should Be Reviewable (evolusi)
 
-Jika terjadi konflik antar prinsip, prinsip dengan nomor lebih rendah memiliki prioritas lebih tinggi.
+Jika terjadi konflik antar prinsip, prinsip with nomor more rendah have prioritas more tinggi.
 
 4. Application in Practice
 
 4.1 RFC Process
 
-Setiap RFC harus mendemonstrasikan konsistensi dengan prinsip-prinsip di atas.
+Setiap RFC must mendemonstrasikan konsistensi with prinsip-prinsip di atas.
 
 4.2 Policy Design
 
-Setiap policy rule harus memiliki rationale yang merujuk ke prinsip yang relevan.
+Setiap policy rule must have rationale that merujuk ke prinsip that relevan.
 
 4.3 Architecture Review
 
-Setiap review arsitektur harus mengevaluasi konsistensi dengan prinsip-prinsip di atas.
+Setiap review arsitektur must mengevaluasi konsistensi with prinsip-prinsip di atas.
 
 5. Exceptions
 
-Pengecualian terhadap prinsip hanya dapat diberikan melalui:
+Pengecualian to prinsip hanya can diberikan through:
 
-RFC resmi dengan justifikasi kuat,
-persetujuan governance board,
-dokumentasi dalam ADR terkait.
+RFC resmi with justifikasi kuat,
+perseobjective governance board,
+dokumentasi in ADR terkait.
 
 6. Revision Policy
 
-Perubahan pada Core Principles hanya dapat dilakukan melalui RFC resmi dan persetujuan governance.
+Changes on Core Principles hanya can performed through RFC resmi and perseobjective governance.
 
 7. References
 

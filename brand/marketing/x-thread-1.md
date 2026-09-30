@@ -26,6 +26,6 @@ This is not only about generation. It is about structure.
 AI-assisted development is faster when the engineering model is explicit, reusable, and traceable.
 
 8/8
-Specify once. Build anywhere.
+Architecture Drives Engineering.
 
 Explore the repo: https://github.com/NAEOS-foundation/naeos

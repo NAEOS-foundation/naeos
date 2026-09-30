@@ -14,7 +14,7 @@ Normative: true
 
 Priority: HIGH
 
-Owner: NAEOS Foundation
+Steward: NAEOS OSS
 
 Motto:
 "Compose Once. Govern Everywhere."

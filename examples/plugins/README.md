@@ -1,6 +1,6 @@
 # Official Example Plugins
 
-This directory contains NAEOS Foundation–maintained example plugins. Each is a
+This directory contains NAEOS OSS–maintained example plugins. Each is a
 self-contained Go module demonstrating a specific plugin SDK pattern.
 
 | Plugin | Pattern demonstrated |

@@ -1,7 +1,7 @@
 NAEOS
-Copyright 2024-2026 NAEOS Foundation
+Copyright 2025-2026 NAEOS contributors
 
-This product includes software developed by the NAEOS Foundation
+This product includes software developed by NAEOS contributors
 (https://github.com/NAEOS-foundation/naeos).
 
 ================================================================================
@@ -21,12 +21,11 @@ specific language governing permissions and limitations under the License.
 ================================================================================
 Branding and Trademarks
 
-"NAEOS", "NEIR", and the NAEOS logos are branding of the NAEOS Foundation and
-are not granted under the Apache License. The Apache License permits reasonable
-and customary use of these names to describe the origin of this software; all
-other uses, including on software, services, or materials that are not the
-project's own, require the Foundation's prior written permission. See the
-repository README for the current branding and trademark policy.
+"NAEOS", "NEIR", and the NAEOS logos are project branding associated with NAEOS OSS
+and are not granted under the Apache License. The Apache License does not grant
+trademark rights. Any use beyond reasonable and customary reference to the
+origin of this software is subject to the applicable trademark rights holder's
+requirements. See the repository README for the current branding policy.
 
 Third-party names and marks referenced for compatibility (for example, AI
 coding assistants and editors) belong to their respective owners; mere

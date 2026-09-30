@@ -2,14 +2,14 @@
 
 **Status:** Draft operasional 1.0  
 **Tanggal:** 2026-09-08  
-**Pemilik:** NAEOS Foundation  
+**Pemilik:** NAEOS OSS  
 **Sumber utama:** [README.md](README.md), [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md), [GETTING-STARTED.md](GETTING-STARTED.md), [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [site/content/community.md](site/content/community.md)
 
 Dokumen ini menerjemahkan kondisi repository menjadi strategi marketing yang dapat dijalankan. Setiap klaim produk harus diverifikasi kembali terhadap repository sebelum dipublikasikan. Angka adopsi, pelanggan, revenue, benchmark, partnership, dan compliance **belum terverifikasi dari repository** dan tidak boleh digunakan sebagai proof point.
 
 ## 1. Executive Summary
 
-NAEOS diposisikan sebagai **declarative engineering platform** dengan pesan utama **“Specify Once. Build Anywhere.”**. Produk ini menghubungkan spesifikasi YAML/JSON, validasi, NEIR, generation, AI context, governance, dan artifacts dalam satu pipeline.
+NAEOS diposisikan sebagai **declarative engineering platform** dengan pesan utama **“Architecture Drives Engineering.”**. Produk ini menghubungkan spesifikasi YAML/JSON, validasi, NEIR, generation, AI context, governance, dan artifacts dalam satu pipeline.
 
 Strategi 90 hari berfokus pada:
 
@@ -23,7 +23,7 @@ Strategi 90 hari berfokus pada:
 
 ### What
 
-NAEOS adalah Nusantara Engineering & Architecture Operating System, sebuah platform engineering deklaratif yang mengubah spesifikasi menjadi sistem software melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas.
+NAEOS adalah Nusantara AI Engineering Operating System, sebuah platform engineering deklaratif yang mengubah spesifikasi menjadi sistem software melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas.
 
 ### Why
 

@@ -1,11 +1,11 @@
 ---
-title: Tentang NAEOS Foundation
+title: Tentang NAEOS OSS
 description: Pelajari misi, visi, dan tim di balik NAEOS.
 ---
 
 ## Misi Kami
 
-NAEOS (Nusantara Engineering & Architecture Operating System) adalah platform rekayasa deklaratif open-source yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Misi kami adalah menghilangkan kesenjangan antara niat dan implementasi — memungkinkan pengembang untuk mendeskripsikan sistem mereka sekali, lalu membangun, memvalidasi, dan mengembangkan perangkat lunak di berbagai bahasa, kerangka kerja, atau platform.
+NAEOS (Nusantara AI Engineering Operating System) adalah platform rekayasa deklaratif open-source yang mengubah spesifikasi YAML/JSON menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Misi kami adalah menghilangkan kesenjangan antara niat dan implementasi — memungkinkan pengembang untuk mendeskripsikan sistem mereka sekali, lalu membangun, memvalidasi, dan mengembangkan perangkat lunak di berbagai bahasa, kerangka kerja, atau platform.
 
 ## Visi Kami
 
@@ -40,9 +40,9 @@ Kami membayangkan dunia di mana tim rekayasa menghabiskan lebih sedikit waktu un
 3. **Ketelusuran Penuh** — Dari niat hingga implementasi hingga deployment
 4. **Penyelarasan Berkelanjutan** — Jaga kode yang dihasilkan tetap selaras dengan spesifikasi Anda
 
-## NAEOS Foundation
+## NAEOS OSS
 
-NAEOS Foundation adalah organisasi yang digerakkan oleh komunitas yang mengawasi pengembangan, tata kelola, dan ekosistem platform NAEOS. Yayasan memastikan:
+NAEOS OSS adalah organisasi yang digerakkan oleh komunitas yang mengawasi pengembangan, tata kelola, dan ekosistem platform NAEOS. Yayasan memastikan:
 
 - Pengembangan yang terbuka dan transparan
 - Tata kelola komunitas dan pedoman kontribusi

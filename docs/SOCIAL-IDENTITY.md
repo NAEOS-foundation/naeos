@@ -11,9 +11,9 @@ This document is the canonical operating reference for NAEOS public social ident
 ## Canonical brand
 
 - Brand: NAEOS
-- Full name: Nusantara Engineering & Architecture Operating System
-- Canonical descriptor: Declarative Engineering Platform for AI-Native Software
-- Primary tagline: Specify Once. Build Anywhere.
+- Full name: Nusantara AI Engineering Operating System
+- Canonical descriptor: AI Engineering Operating System
+- Primary tagline: Architecture Drives Engineering.
 - Technical positioning: The Engineering Control Plane for AI Coding Agents.
 - Technical model: Specification → NEIR → Validation + Policy → Agent Context / Intent → Authorized Execution → Observation → Evidence → Independent Verification.
 - License: Apache 2.0
@@ -26,7 +26,7 @@ Use the canonical descriptor for public profile bios and product descriptions.
 
 Use "The Engineering Control Plane for AI Coding Agents" as the technical/category explanation.
 
-"AI Engineering Operating System" may be used as a historical/vision narrative, but is not the primary product descriptor.
+"AI Engineering Operating System is the canonical category positioning for NAEOS.
 
 Do not alternate between multiple product categories in the same profile.
 
@@ -48,7 +48,7 @@ Do not alternate between multiple product categories in the same profile.
 
 ### Short bio
 
-Declarative engineering platform for AI-native software. Specify once. Build anywhere.
+Declarative engineering platform for AI-native software. Architecture Drives Engineering.
 
 ### Technical bio
 
@@ -64,7 +64,7 @@ NAEOS is an open-source engineering control plane for AI coding agents. It conne
 2. Link directly to GitHub when the post is technical or contribution-oriented.
 3. Use GitHub Discussions or the verified community invite for community calls-to-action.
 4. Do not publish unverified X, YouTube, Reddit, or Discord URLs as official accounts.
-5. Keep public handles consistent with NAEOS or NAEOS Foundation.
+5. Keep public handles consistent with NAEOS or NAEOS OSS.
 6. Do not use personal/founder accounts as substitutes for official NAEOS ownership.
 
 ## Content pillars

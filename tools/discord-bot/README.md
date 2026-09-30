@@ -75,7 +75,7 @@ After provisioning, run `serve` once, then `/setup` in `#announcements`.
 | `NAEOS_STATE_FILE` | no | `.naeos-bot-state.json` | Where the last-seen release tag is stored |
 | `NAEOS_ANNOUNCE_ON_STARTUP` | no | `false` | Post the Product Hunt announcement on startup |
 | `NAEOS_PH_LAUNCH_URL` | no | — | Product Hunt launch URL |
-| `NAEOS_PH_TAGLINE` | no | `Specify Once. Build Anywhere.` | Tagline for PH embed |
+| `NAEOS_PH_TAGLINE` | no | `Architecture Drives Engineering.` | Tagline for PH embed |
 | `NAEOS_PH_GALLERY_URL` | no | repo hero image | Image shown in the PH announcement |
 | `NAEOS_PH_RELEASE_NOTE` | no | v3.0.0 blurb | Short launch note |
 | `NAEOS_BIN` | no | `naeos` (in PATH) | Local `naeos` binary path for `/doctor` |
