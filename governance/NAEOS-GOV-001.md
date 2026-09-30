@@ -8,7 +8,7 @@ Priority    : Critical
 
 Motto
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 Executive Summary
 
 NAEOS (Nusantara AI Engineering Operating System) adalah sebuah Open AI Engineering Specification yang bertujuan menjadi standar terbuka untuk membangun perangkat lunak modern bersama AI.
@@ -293,7 +293,7 @@ dari specification yang sama.
 
 12. Official Motto
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 13. Official Principles
 Knowledge Before Code
