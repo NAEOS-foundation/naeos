@@ -260,7 +260,7 @@ AI Tool Interfaces
 MCP Servers
 Plugin Contracts
 
-Pendekatan ini akan membuat NAEOS memiliki satu konstitusi yang mengatur seluruh kontrak komunikasi antar manusia, layanan, aplikasi, dan AI, sehingga konsisten dengan filosofi "Specify Once. Build Anywhere."
+Pendekatan ini akan membuat NAEOS memiliki satu konstitusi yang mengatur seluruh kontrak komunikasi antar manusia, layanan, aplikasi, dan AI, sehingga konsisten dengan filosofi "Architecture Drives Engineering."
 
 Lanjutkan 
 
@@ -565,7 +565,7 @@ Build Anywhere
 
 NAEOS tidak lagi hanya menjadi spesifikasi dokumentasi atau framework AI, melainkan sebuah Engineering Operating System yang mendefinisikan tata kelola, hukum, standar, pengetahuan, validasi, kompilasi, dan implementasi software secara terpadu sesuai dengan motto:
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 Bagus. Setelah VISION.md, dokumen yang paling penting adalah MISSION.md. Berbeda dengan visi yang menjelaskan arah jangka panjang, misi menjelaskan apa yang harus dilakukan oleh proyek setiap hari agar visi tersebut tercapai.
 
@@ -711,7 +711,7 @@ NAEOS adalah platform yang membantu pengembang membangun perangkat lunak secara 
 
 Semua itu dimulai dari satu prinsip:
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 Saya menyarankan urutan dokumentasi selanjutnya adalah:
 
@@ -733,7 +733,7 @@ Baik. Sekarang kita menyusun salah satu dokumen yang akan menjadi identitas proy
 MANIFESTO.md
 NAEOS Manifesto
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 Why NAEOS Exists
 
@@ -837,7 +837,7 @@ Kami membangun fondasi bagi generasi berikutnya dari software engineering.
 
 Dan perjalanan itu dimulai dengan satu prinsip yang sederhana namun kuat:
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 Status Dokumentasi
 
@@ -1054,7 +1054,7 @@ Selama prinsip-prinsip di dalamnya dipatuhi, platform dapat berkembang tanpa keh
 
 Konstitusi ini menjadi pedoman resmi bagi seluruh kontributor dan pengembang NAEOS.
 
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 Status Dokumentasi
 
