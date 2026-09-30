@@ -3,7 +3,7 @@
 Berikut istilah utama yang sering digunakan dalam ekosistem NAEOS.
 
 ## Istilah inti
-- NAEOS: Nusantara Engineering & Architecture Operating System — platform engineering deklaratif open-source.
+- NAEOS: Nusantara AI Engineering Operating System — platform engineering deklaratif open-source.
 - NEIR: NAEOS Engineering Intermediate Representation — model antara terpadu yang merepresentasikan seluruh proyek.
 - Spec: Specification — dokumen YAML atau JSON yang mendefinisikan proyek, modul, layanan, dan arsitektur.
 - Pipeline: rantai pemrosesan: parse → normalize → resolve → build NEIR → validate → build graph → policy evaluation → schedule → generate → review → write artifacts.

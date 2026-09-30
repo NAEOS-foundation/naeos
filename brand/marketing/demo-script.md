@@ -25,7 +25,7 @@ Show that NAEOS is not just a code generator. It is a declarative engineering pl
 
 "That means teams are not managing scattered prompts and drifted implementation. They are working from one source of truth."
 
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 ### CTA
 "Explore the NAEOS repository and try the quick start."
@@ -138,7 +138,7 @@ Narration:
 ## Short quotes for slides
 
 - "AI can generate code. NAEOS structures the engineering system around it."
-- "Specify once. Build anywhere."
+- "Architecture Drives Engineering."
 - "NAEOS turns intent into a validated, reusable engineering model."
 - "From specification to AI context, governance, and generated artifacts."
 - "The bottleneck in AI-assisted development is not generation — it is consistency."

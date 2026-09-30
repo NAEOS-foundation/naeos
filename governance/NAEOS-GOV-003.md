@@ -3,11 +3,11 @@ Title: Mission
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -20,21 +20,21 @@ Referenced By:
 NAEOS Mission
 Executive Summary
 
-Mission NAEOS adalah menerjemahkan visi menjadi tindakan nyata melalui pembangunan sebuah ekosistem engineering terbuka yang menghubungkan manusia, pengetahuan, spesifikasi, AI agent, dan software[...]
+Mission NAEOS is menerjemahkan visi become tindakan nyata through pembangunan a ekosistem engineering terbuka that menghubungkan manusia, pengetahuan, spesifikasi, AI agent, and software[...]
 
-NAEOS berkomitmen membangun fondasi yang memungkinkan:
+NAEOS berkomitmen build fondasi that memungkinkan:
 
-engineer mendefinisikan intent secara jelas,
+engineer defines intent in jelas,
 AI memahami konteks engineering,
-sistem menghasilkan artefak berkualitas,
+sistem produce artefak berkualitas,
 organisasi mempertahankan knowledge jangka panjang.
 1. Purpose
 
-Dokumen ini mendefinisikan misi resmi NAEOS.
+This document defines misi resmi NAEOS.
 
 Mission menjawab pertanyaan:
 
-"Apa yang harus dilakukan NAEOS untuk mencapai visi?"
+"Apa that must performed NAEOS to mencapai visi?"
 
 2. Official Mission Statement
 English
@@ -43,19 +43,19 @@ To design, develop, and maintain an open engineering specification ecosystem tha
 
 Indonesia
 
-Merancang, membangun, dan memelihara ekosistem spesifikasi engineering terbuka yang memungkinkan manusia dan sistem AI berkolaborasi menciptakan software yang aman, scalable, dan mudah dipelihara.
+Merancang, build, and memelihara ekosistem spesifikasi engineering terbuka that memungkinkan manusia and sistem AI berkolaborasi menciptakan software that aman, scalable, and mudah maintained.
 
 3. Mission Framework
 
-NAEOS memiliki lima misi utama.
+NAEOS have lima misi utama.
 
 Mission 01
 Define Engineering Standards
-Tujuan
+Purpose
 
-Membangun standar engineering yang dapat digunakan manusia dan AI.
+Build standar engineering that can used manusia and AI.
 
-NAEOS MUST menyediakan:
+NAEOS MUST provide:
 specification format,
 document model,
 rule model,
@@ -73,11 +73,11 @@ Standardized Specification
 Reusable Engineering Practice
 Mission 02
 Preserve Engineering Knowledge
-Tujuan
+Purpose
 
-Mengubah pengalaman engineering menjadi aset yang dapat digunakan ulang.
+Mengubah pengalaman engineering become aset that can used ulang.
 
-Masalah saat ini:
+Masalah currently:
 
 Senior Engineer
 
@@ -87,7 +87,7 @@ Knowledge
 
 ↓
 
-Tidak terdokumentasi
+Not terdokumentasi
 
 ↓
 
@@ -116,9 +116,9 @@ Templates
 Reference Architecture
 Mission 03
 Enable Human-AI Collaboration
-Tujuan
+Purpose
 
-Menciptakan bahasa bersama antara manusia dan AI.
+Menciptakan bahasa bersama antara manusia and AI.
 
 Model tradisional:
 
@@ -157,22 +157,22 @@ AI Understanding
 Implementation
 Output
 
-AI dapat memahami:
+AI can memahami:
 
-tujuan,
+objective,
 constraint,
 architecture,
 security,
 quality requirements.
 Mission 04
 Automate Engineering Governance
-Tujuan
+Purpose
 
-Membuat kualitas software dapat divalidasi otomatis.
+Membuat kualitas software can divalidasi otomatis.
 
 Contoh:
 
-Developer membuat perubahan.
+Developer membuat changes.
 
 NAEOS memeriksa:
 
@@ -204,11 +204,11 @@ generator,
 reviewer.
 Mission 05
 Build Open Ecosystem
-Tujuan
+Purpose
 
-Menciptakan komunitas dan ekosistem global.
+Menciptakan komunitas and ekosistem global.
 
-NAEOS mendukung:
+NAEOS support:
 
 contributor,
 researcher,
@@ -218,14 +218,14 @@ educator.
 4. Strategic Objectives
 Objective 01
 
-Membangun Core Specification.
+Build Core Specification.
 
 Target:
 
 NAEOS Specification v1.0
 Objective 02
 
-Membangun Compiler Infrastructure.
+Build Compiler Infrastructure.
 
 Target:
 
@@ -236,14 +236,14 @@ One Specification
 Multiple AI Platforms
 Objective 03
 
-Membangun Knowledge Registry.
+Build Knowledge Registry.
 
 Target:
 
 Engineering Knowledge Marketplace
 Objective 04
 
-Membangun Reference Implementation.
+Build Reference Implementation.
 
 Target:
 
@@ -304,7 +304,7 @@ flowchart LR
 
 6. Strategic Programs
 
-NAEOS Foundation akan memiliki program berikut.
+NAEOS OSS akan have program following.
 
 Program 01
 NAEOS Specification Program
@@ -348,19 +348,19 @@ NAEOS Mission berhasil apabila:
 
 Technical Metrics
 specification tervalidasi otomatis,
-compiler menghasilkan artefak,
-AI agent dapat menggunakan specification.
+compiler produce artefak,
+AI agent can menggunakan specification.
 Community Metrics
 contributor aktif,
 project menggunakan NAEOS,
-profile domain tersedia.
+profile domain available.
 Quality Metrics
 peningkatan konsistensi software,
 pengurangan technical debt,
 dokumentasi selalu sinkron.
 8. Mission Principles
 
-NAEOS mengikuti prinsip:
+NAEOS follows prinsip:
 
 Open By Default
 
@@ -381,26 +381,26 @@ NAEOS:
 
 MUST:
 
-tetap vendor-neutral,
-menjaga open specification,
-mendukung interoperabilitas.
+remain vendor-neutral,
+maintain open specification,
+support interoperabilitas.
 
 SHOULD:
 
 menggunakan standar terbuka,
-menyediakan dokumentasi lengkap.
+provide dokumentasi lengkap.
 
 MAY:
 
-menyediakan layanan komersial.
+provide layanan komersial.
 10. Relationship With Motto
 Specify Once
 
-Mission memastikan specification menjadi aset utama.
+Mission ensure specification become aset utama.
 
 Build Anywhere
 
-Mission memastikan specification dapat digunakan lintas:
+Mission ensure specification can used across:
 
 bahasa,
 platform,

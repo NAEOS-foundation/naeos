@@ -16,7 +16,7 @@ The campaign should measure Product Hunt referrals, GitHub visits, quick-start c
 
 The launch went live at 00:01 PT (14:01 WIB). Here's the sequence:
 
-1. **PH post published** — name, tagline ("Specify Once. Build Anywhere."), 5 gallery images, and a 300-word description
+1. **PH post published** — name, tagline ("Architecture Drives Engineering."), 5 gallery images, and a 300-word description
 2. **First comment** — a personal note from Bayu explaining the problem (spec/code drift) and why we built NAEOS
 3. **X thread** — 6-tweet thread covering the problem, the solution, AI integration, v3.1.0 highlights, and the quick start
 4. **LinkedIn post** — longer-form version for the professional network

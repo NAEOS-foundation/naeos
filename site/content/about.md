@@ -1,11 +1,11 @@
 ---
-title: About NAEOS Foundation
+title: About NAEOS OSS
 description: Learn about the mission, vision, and team behind NAEOS.
 ---
 
 ## Our Mission
 
-NAEOS (Nusantara Engineering & Architecture Operating System) is an open-source declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems. Our mission is to eliminate the gap between intent and implementation — allowing developers to describe their system once, then build, validate, and evolve software across any language, framework, or platform.
+NAEOS (Nusantara AI Engineering Operating System) is an open-source declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems. Our mission is to eliminate the gap between intent and implementation — allowing developers to describe their system once, then build, validate, and evolve software across any language, framework, or platform.
 
 ## Our Vision
 
@@ -40,9 +40,9 @@ We envision a world where engineering teams spend less time on boilerplate and c
 3. **Full Traceability** — From intent through implementation to deployment
 4. **Continuous Alignment** — Keep generated code in sync with your specification
 
-## The NAEOS Foundation
+## The NAEOS OSS
 
-The NAEOS Foundation is a community-driven organization that oversees the development, governance, and ecosystem of the NAEOS platform. The foundation ensures:
+The NAEOS OSS is a community-driven organization that oversees the development, governance, and ecosystem of the NAEOS platform. The foundation ensures:
 
 - Open and transparent development
 - Community governance and contribution guidelines

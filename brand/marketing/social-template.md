@@ -14,7 +14,7 @@ NAEOS is a declarative engineering platform that takes a specification, builds a
 
 We believe engineering should be more structured, more traceable, and more reusable for both humans and AI.
 
-Specify once. Build anywhere.
+Architecture Drives Engineering.
 
 CTA: Explore the repo and try the quick start.
 

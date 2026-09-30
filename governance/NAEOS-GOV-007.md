@@ -3,11 +3,11 @@ Title: Roadmap
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: High
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -22,9 +22,9 @@ Referenced By:
 NAEOS Roadmap
 Executive Summary
 
-Roadmap NAEOS mendefinisikan tahapan evolusi proyek dari fondasi awal hingga menjadi ekosistem engineering platform yang dapat digunakan secara luas.
+Roadmap NAEOS defines tahapan evolusi proyek from fondasi awal hingga become ekosistem engineering platform that can used in luas.
 
-Roadmap ini tidak hanya berfokus pada software development, tetapi mencakup:
+Roadmap ini not hanya berfokus on software development, remaini mencakup:
 
 specification evolution,
 knowledge system,
@@ -34,12 +34,12 @@ ecosystem development,
 community adoption.
 1. Purpose
 
-Dokumen ini bertujuan:
+This document berobjective:
 
 menentukan prioritas pembangunan,
-menghindari scope creep,
+menghinfrom scope creep,
 memberikan arah jangka panjang,
-menjadi referensi release planning.
+become referensi release planning.
 2. Roadmap Philosophy
 
 NAEOS berkembang berdasarkan prinsip:
@@ -65,7 +65,7 @@ Timeline
 
 Objective
 
-Membangun fondasi identitas, governance, dan specification awal.
+Build fondasi identitas, governance, and specification awal.
 
 Deliverables
 Governance
@@ -84,7 +84,7 @@ Documentation system
 CI/CD foundation
 Success Criteria
 
-NAEOS memiliki:
+NAEOS have:
 
 identitas resmi,
 governance jelas,
@@ -97,7 +97,7 @@ Timeline
 
 Objective
 
-Membangun bahasa dasar NAEOS.
+Build bahasa dasar NAEOS.
 
 Deliverables
 Specification Model
@@ -125,9 +125,9 @@ Success Criteria
 
 NAEOS mampu:
 
-mendefinisikan dokumen,
+defines dokumen,
 memvalidasi struktur,
-membangun dependency graph.
+build dependency graph.
 Phase 2 — Constitution & Standards
 Timeline
 
@@ -135,7 +135,7 @@ Timeline
 
 Objective
 
-Membangun engineering knowledge base.
+Build engineering knowledge base.
 
 Deliverables
 Constitution
@@ -166,7 +166,7 @@ AI Engineering
 
 Success Criteria
 
-Developer dapat menggunakan NAEOS sebagai engineering guideline.
+Developer can menggunakan NAEOS as engineering guideline.
 
 Phase 3 — Compiler Foundation
 Timeline
@@ -175,10 +175,10 @@ Timeline
 
 Objective
 
-Membangun mesin transformasi specification.
+Build mesin transformasi specification.
 
 Architecture
-Diagram tidak valid atau tidak didukung.
+Diagram not valid or not didukung.
 Output Adapter
 
 Target:
@@ -191,7 +191,7 @@ Codex
 OpenCode
 Success Criteria
 
-Satu specification dapat menghasilkan berbagai AI instruction format.
+Satu specification can produce berbagai AI instruction format.
 
 Phase 4 — NAEOS CLI
 Timeline
@@ -216,7 +216,7 @@ naeos doctor
 naeos review
 Success Criteria
 
-Developer dapat menggunakan NAEOS melalui command line.
+Developer can menggunakan NAEOS through command line.
 
 Phase 5 — Knowledge Ecosystem
 Timeline
@@ -225,7 +225,7 @@ Timeline
 
 Objective
 
-Membangun repository knowledge.
+Build repository knowledge.
 
 Components
 Profile Registry
@@ -254,7 +254,7 @@ Build AI Agent
 Build Marketplace
 Success Criteria
 
-Komunitas dapat berbagi engineering knowledge.
+Komunitas can berfor engineering knowledge.
 
 Phase 6 — NAEOS Studio
 Timeline
@@ -263,7 +263,7 @@ Timeline
 
 Objective
 
-Membangun pengalaman visual.
+Build pengalaman visual.
 
 Features
 Specification Editor
@@ -273,7 +273,7 @@ Rule Explorer
 AI Assistant
 Success Criteria
 
-Non-expert dapat memahami dan menggunakan NAEOS.
+Non-expert can memahami and menggunakan NAEOS.
 
 Phase 7 — Enterprise Platform
 Timeline
@@ -282,7 +282,7 @@ Timeline
 
 Objective
 
-Membangun layanan enterprise.
+Build layanan enterprise.
 
 Features
 Team Workspace
@@ -291,7 +291,7 @@ Private Knowledge Base
 Compliance Dashboard
 Enterprise Integration
 4. Long-Term Architecture
-Diagram tidak valid atau tidak didukung.
+Diagram not valid or not didukung.
 5. Milestone Release Plan
 Version	Goal
 v0.1	Repository Foundation
@@ -304,7 +304,7 @@ v2.0	Ecosystem Platform
 v3.0	Enterprise Platform
 6. Roadmap Rules
 
-NAEOS roadmap mengikuti aturan:
+NAEOS roadmap follows aturan:
 
 Rule 1
 
@@ -324,7 +324,7 @@ Breaking changes require major version.
 
 7. Out of Scope
 
-Untuk menjaga fokus, fitur berikut tidak menjadi prioritas v1:
+For maintain fokus, fitur following not become prioritas v1:
 
 membuat foundation model sendiri,
 mengganti IDE,

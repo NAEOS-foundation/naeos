@@ -46,7 +46,7 @@ NAEOS treats the specification as the source of truth. From there, it normalizes
 
 That gives teams a clearer path from intent to implementation.
 
-Specify once. Build anywhere.
+Architecture Drives Engineering.
 
 CTA:
 See the repo and open the architecture docs.

@@ -1,13 +1,13 @@
 # Landing Page Hero Copy
 
 ## Primary headline
-Specify Once. Build Anywhere.
+Architecture Drives Engineering.
 
 ## Subheadline
-NAEOS is a declarative engineering platform for AI-native software delivery.
+NAEOS is an AI Engineering Operating System for AI coding agents.
 
 ## Supporting paragraph
-It turns specifications into a shared engineering model, then validates, compiles, and generates the artifacts teams need from that same source of truth.
+It provides the engineering control plane around AI coding agents: architecture, policy, authorized execution, evidence, and independent verification.
 
 ## CTA buttons
 - Try NAEOS

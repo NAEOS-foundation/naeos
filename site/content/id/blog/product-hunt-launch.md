@@ -16,7 +16,7 @@ Kampanye seharusnya mengukur referral Product Hunt, kunjungan GitHub, penyelesai
 
 Peluncuran berlangsung pada pukul 00:01 PT (14:01 WIB). Berikut urutannya:
 
-1. **Postingan PH dipublikasikan** — nama, tagline ("Specify Once. Build Anywhere."), 5 gambar galeri, dan deskripsi 300 kata
+1. **Postingan PH dipublikasikan** — nama, tagline ("Architecture Drives Engineering."), 5 gambar galeri, dan deskripsi 300 kata
 2. **Komentar pertama** — catatan pribadi dari Bayu menjelaskan masalah (drift spesifikasi/kode) dan mengapa kami membangun NAEOS
 3. **Thread X** — thread 6 tweet yang mencakup masalah, solusi, integrasi AI, sorotan v3.1.0, dan quick start
 4. **Postingan LinkedIn** — versi format lebih panjang untuk jaringan profesional

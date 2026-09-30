@@ -1,7 +1,7 @@
 # NAEOS YouTube Demo Script
 
 ## Video concept
-Title: "NAEOS — Specify Once. Build Anywhere."
+Title: "NAEOS — Architecture Drives Engineering."
 
 Duration: 60–90 seconds
 
@@ -42,7 +42,7 @@ Narration:
 "NAEOS is a declarative engineering platform. A team defines the system once, and NAEOS turns that specification into a consistent engineering model."
 
 On screen text:
-"Specify once. Build anywhere."
+"Architecture Drives Engineering."
 
 ---
 
@@ -94,13 +94,13 @@ It parses the specification, normalizes it, resolves dependencies, builds the NE
 
 This is different from plain scaffolding. NAEOS brings structure, traceability, and governance into AI-assisted development.
 
-Specify once. Build anywhere."
+Architecture Drives Engineering."
 
 ---
 
 ## Short title options
 
-1. NAEOS — Specify Once. Build Anywhere.
+1. NAEOS — Architecture Drives Engineering.
 2. NAEOS: A Declarative Engineering Platform for AI-Assisted Development
 3. Why AI coding needs a specification layer
 4. From specification to system: NAEOS
@@ -112,7 +112,7 @@ Specify once. Build anywhere."
 
 Text:
 - NAEOS
-- Specify Once. Build Anywhere.
+- Architecture Drives Engineering.
 - AI-assisted engineering, structured
 
 Visual:

@@ -6,7 +6,7 @@ Document ID: NAEOS-RDP-001
 Version: 1.0.0
 Status: Proposed
 Project: NAEOS — Nusantara AI Engineering Operating System
-Maintainer: NAEOS Foundation
+Maintainer: NAEOS OSS
 Last Updated: September 2026
 
 ---
@@ -960,7 +960,7 @@ NAEOS must preserve interoperability.
 
 The long-term NAEOS ecosystem should look like:
 
-                       NAEOS FOUNDATION
+                       NAEOS OSS
                               │
              ┌────────────────┼────────────────┐
              │                │                │

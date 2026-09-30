@@ -23,7 +23,7 @@ This flow demonstrates: specification → NEIR → validation → policy → AI 
 - [PARTNER-REQUESTS.md](PARTNER-REQUESTS.md) — scoped partner requests and pilot starting points.
 - [PARTNERS.md](PARTNERS.md) — current partner directory and open opportunities.
 - [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — official whitepaper (English).
-- [WHITEPAPER.md](WHITEPAPER.md) — whitepaper resmi (Bahasa Indonesia).
+- [WHITEPAPER.md](WHITEPAPER.md) — official whitepaper (English).
 
 ## 2. Concepts and architecture
 - [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md) — core specification overview.

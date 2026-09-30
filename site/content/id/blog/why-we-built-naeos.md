@@ -2,7 +2,7 @@
 title: "Kenapa Kami Membangun NAEOS: Rekayasa Terfragmentasi, dan Itu Masalah Struktural"
 description: "Kisah di balik NAEOS — masalah fragmentasi dalam rekayasa perangkat lunak modern, jebakan spec-drift, dan mengapa kami membangun platform rekayasa deklaratif."
 date: 2026-08-17
-author: "NAEOS Foundation"
+author: "NAEOS OSS"
 categories: ["announcement"]
 ---
 
@@ -28,7 +28,7 @@ NAEOS dibangun di atas satu klaim:
 
 > **Spesifikasi adalah satu-satunya sumber kebenaran. Segala sesuatu — kode, dokumentasi, konfigurasi, konteks AI, artifact deployment — harus diturunkan dari spesifikasi melalui pipeline yang deterministik, tervalidasi, dan dapat diaudit.**
 
-Kalimat itu adalah seluruh produknya. NAEOS (Nusantara Engineering & Architecture Operating System) adalah runtime rekayasa deklaratif yang mengambil spesifikasi YAML/JSON dan menjalankannya melalui pipeline 11 stage: parse, normalize, resolve, build NEIR, validate, build graph, evaluate policy, schedule, generate, review, dan write artifacts.
+Kalimat itu adalah seluruh produknya. NAEOS (Nusantara AI Engineering Operating System) adalah runtime rekayasa deklaratif yang mengambil spesifikasi YAML/JSON dan menjalankannya melalui pipeline 11 stage: parse, normalize, resolve, build NEIR, validate, build graph, evaluate policy, schedule, generate, review, dan write artifacts.
 
 Semua yang di hilir diturunkan dari satu model — **NEIR** (NAEOS Engineering Intermediate Representation) — representasi kanonik dan versioned dari sistem Anda yang mencakup modul, layanan, pola arsitektur, API, storage, keamanan, target AI, dan deployment. Tidak ada generator independen yang saling menyimpang. Satu model, banyak adapter.
 

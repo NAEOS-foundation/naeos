@@ -1,72 +1,72 @@
-# NAEOS — Whitepaper Resmi
+# NAEOS — Official Whitepaper
 
-**Nusantara Engineering & Architecture Operating System**
+**Nusantara AI Engineering Operating System**
 
-> *"Specify Once. Build Anywhere."*
+> *"Architecture Drives Engineering."*
 
 | | |
 |---|---|
-| **Versi Dokumen** | 1.0.0 |
-| **Status** | Public Draft |
-| **Lisensi Proyek** | Apache License 2.0 |
-| **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.6.0 (status repositori) |
+| **Document Version** | 1.0.0 |
+| **Status** | Stable |
+| **Project License** | Apache License 2.0 |
+| **Repository** | github.com/NAEOS-foundation/naeos |
+| **Platform Version** | v3.6.0 (repository state) |
 
 ---
 
-## Ringkasan Eksekutif
+## Executive Summary
 
-NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas. NAEOS bukan sekadar *project generator* — ia adalah *engineering runtime* yang memahami spesifikasi, membangun model internal (NEIR), mengorkestrasi rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasinya sepanjang siklus hidup.
+NAEOS is an open-source declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline. NAEOS is not just a project generator — it is an *engineering runtime* that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with their specifications throughout the entire lifecycle.
 
-Dengan semboyan **"Specify Once. Build Anywhere."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan model engineering yang dapat dibagi untuk kode, dokumentasi, konfigurasi, dan konteks AI.
+Under the motto **"Architecture Drives Engineering."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
-Status repositori saat ini mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart scaffolding, dan template kebijakan yang berorientasi pada kepatuhan SOC 2, HIPAA, dan GDPR.
-
----
-
-## 1. Latar Belakang & Pernyataan Masalah
-
-### 1.1 Fragmentasi Software Engineering
-
-Industri perangkat lunak menghadapi krisis fragmentasi yang sistemik:
-
-- **Multi-bahasa, multi-framework** — Sebuah sistem tunggal kini melibatkan Go, TypeScript, Python, Java, dan Rust secara bersamaan, masing-masing dengan framework, konvensi, dan toolchain-nya sendiri.
-- **Drift antara spesifikasi dan implementasi** — Dokumentasi dan kode berjalan menyimpang; tidak ada mekanisme otomatis yang menjamin keselarasan.
-- **Kehilangan konteks engineering** — Keputusan arsitektur, ADR, dan pengetahuan organisasi hanya tersimpan di kepala individu, tidak terdokumentasi, dan tidak dapat ditelusuri.
-- **Ledakan tooling AI** — Setiap AI coding agent (GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode) memiliki format konteks dan instruksi yang berbeda, memaksa organisasi memelihara banyak file konfigurasi yang identik isinya namun berbeda formatnya.
-- **Ketidakkonsistenan tata kelola** — Tanpa mekanisme penegakan, kebijakan, standar, dan aturan organisasi tidak dieksekusi — hanya menjadi dokumen.
-
-### 1.2 Biaya Ketidakkonsistenan
-
-Dampak dari masalah di atas terukur secara langsung: pengerjaan ulang (*rework*), audit yang mahal, migrasi yang menyakitkan, *knowledge loss* saat anggota tim keluar, dan kesulitan memenuhi kepatuhan regulasi (SOC 2, HIPAA, GDPR) karena kurangnya bukti audit yang dapat diverifikasi.
-
-### 1.3 Tesis
-
-> **Spesifikasi adalah sumber kebenaran tunggal (*single source of truth*). Segala sesuatu — kode, dokumentasi, konfigurasi, konteks AI, artefak deployment — harus diturunkan dari spesifikasi melalui pipeline yang deterministik, tervalidasi, dan dapat diaudit.**
-
-NAEOS dibangun untuk membuktikan tesis ini.
+The current repository state includes Specification Language v2, a multi-adapter AI compiler, a NEIR-aware LSP, constitution-based governance, a marketplace, a production server daemon (`naeos serve`), SBOM and artifact signing, Helm chart scaffolding, and compliance-oriented policy templates for SOC 2, HIPAA, and GDPR workflows.
 
 ---
 
-## 2. Visi & Misi
+## 1. Background & Problem Statement
 
-### Visi
+### 1.1 The Fragmentation of Software Engineering
 
-Membangun platform engineering open-source yang memungkinkan developer dan organisasi **mendeskripsikan sistem mereka sekali**, kemudian membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan konstitusi engineering yang ditegakkan secara otomatis.
+The software industry faces a systemic fragmentation crisis:
 
-### Misi
+- **Multi-language, multi-framework** — A single system now spans Go, TypeScript, Python, Java, and Rust simultaneously, each with its own frameworks, conventions, and toolchains.
+- **Specification–implementation drift** — Documentation and code diverge over time; no automated mechanism guarantees alignment.
+- **Loss of engineering context** — Architectural decisions, ADRs, and organizational knowledge live only in individuals' heads — undocumented and untraceable.
+- **AI tooling explosion** — Each AI coding agent (GitHub Copilot, Claude Code, Cursor, Gemini CLI, Codex, OpenCode) uses a different context and instruction format, forcing organizations to maintain many configuration files with identical content but different formats.
+- **Inconsistent governance** — Without enforcement mechanisms, policies, standards, and organizational rules remain static documents that are never executed.
 
-1. Menjadikan spesifikasi deklaratif sebagai sumber kebenaran tunggal seluruh artefak engineering.
-2. Menyediakan pipeline kompilasi yang deterministik, tervalidasi, dan dapat diaudit.
-3. Menjembatani kesenjangan antara governance, spesifikasi, dan eksekusi melalui policy yang dapat dieksekusi.
-4. Membangun jembatan universal menuju seluruh AI coding agent tanpa vendor lock-in.
-5. Memberikan **voucher kedaulatan teknologi**: platform yang netral vendor, netral bahasa, dan netral cloud.
+### 1.2 The Cost of Inconsistency
+
+The impact is directly measurable: rework, expensive audits, painful migrations, knowledge loss when team members leave, and failure to meet regulatory compliance (SOC 2, HIPAA, GDPR) due to a lack of verifiable audit evidence.
+
+### 1.3 Thesis
+
+> **The specification is the single source of truth. Everything — code, documentation, configuration, AI context, deployment artifacts — must be derived from the specification through a deterministic, validated, auditable pipeline.**
+
+NAEOS was built to prove this thesis.
 
 ---
 
-## 3. Prinsip Dasar: Engineering Constitution
+## 2. Vision & Mission
 
-NAEOS memformalkan prinsip-prinsipnya dalam **Engineering Constitution** (NAEOS-CON-001) — dokumen normatif tertinggi yang menjadi sumber aturan eksekusi. Hirarki normatifnya:
+### Vision
+
+Build an open-source engineering platform that enables developers and organizations to **describe their system once**, then build, validate, and evolve software across multiple languages, frameworks, and platforms — with an engineering constitution enforced automatically.
+
+### Mission
+
+1. Make the declarative specification the single source of truth for every engineering artifact.
+2. Provide a deterministic, validated, auditable compilation pipeline.
+3. Bridge the gap between governance, specification, and execution through executable policies.
+4. Build a universal bridge to all AI coding agents without vendor lock-in.
+5. Deliver **technological sovereignty**: a vendor-neutral, language-neutral, cloud-neutral platform.
+
+---
+
+## 3. Foundational Principles: The Engineering Constitution
+
+NAEOS formalizes its principles in the **Engineering Constitution** (NAEOS-CON-001) — the highest normative document, acting as the source of executable rules. Its normative hierarchy:
 
 ```mermaid
 graph LR
@@ -76,24 +76,24 @@ graph LR
     style CONST fill:#7c4dff,color:#fff,font-weight:bold
 ```
 
-Dua belas pasal konstitusi:
+The twelve constitutional articles:
 
-| # | Pasal | Inti |
-|---|-------|------|
-| I | **Specification First** | Tanpa spesifikasi = tanpa implementasi |
-| II | **Knowledge Preservation** | Seluruh keputusan engineering wajib terdokumentasi (ADR, RFC, API contract) |
+| # | Article | Essence |
+|---|---------|---------|
+| I | **Specification First** | No specification = no implementation |
+| II | **Knowledge Preservation** | Every engineering decision must be documented (ADR, RFC, API contract) |
 | III | **Traceability** | Requirement → Spec → Architecture → Code → Test → Deployment |
-| IV | **Single Source of Truth** | Dua artefak resmi tidak boleh menyatakan informasi normatif berbeda |
-| V | **Human Accountability** | AI membantu, manusia memutuskan dan bertanggung jawab atas rilis |
-| VI | **Security by Design** | Keamanan adalah bagian dari desain sejak awal, bukan tahap akhir |
-| VII | **Documentation as Code** | Dokumentasi berversi, direview, divalidasi, dan dikompilasi |
-| VIII | **Reproducibility** | Input yang sama menghasilkan output yang identik |
-| IX | **Vendor Neutrality** | Tanpa ketergantungan pada satu vendor AI |
-| X | **Extensibility** | Perluasan tanpa memodifikasi spesifikasi inti |
-| XI | **Quality Before Velocity** | Kecepatan tidak mengorbankan keamanan, maintainability, dan correctness |
-| XII | **Continuous Improvement** | Konstitusi berkembang melalui proses RFC dan ADR |
+| IV | **Single Source of Truth** | No two official artifacts may state conflicting normative information |
+| V | **Human Accountability** | AI assists; humans decide and are accountable for releases |
+| VI | **Security by Design** | Security is part of design from the start, not a final stage |
+| VII | **Documentation as Code** | Documentation is versioned, reviewed, validated, and compiled |
+| VIII | **Reproducibility** | Identical input produces identical output |
+| IX | **Vendor Neutrality** | No dependency on a single AI vendor |
+| X | **Extensibility** | Extension without modifying core specifications |
+| XI | **Quality Before Velocity** | Speed must not sacrifice security, maintainability, correctness |
+| XII | **Continuous Improvement** | The constitution evolves through RFC and ADR processes |
 
-Ciri khas NAEOS: **konstitusi bukan sekadar dokumen** — pasal-pasalnya dikompilasi menjadi aturan yang dapat dieksekusi oleh Rule Engine, dieksekusi oleh Validator dan Compiler, dan diperiksa oleh AI Review:
+What makes NAEOS distinctive: **the constitution is not merely a document** — its articles are compiled into executable rules enforced by the Rule Engine, executed by the Validator and Compiler, and checked by AI Review:
 
 ```mermaid
 graph LR
@@ -104,40 +104,40 @@ graph LR
 
 ---
 
-## 4. Arsitektur Platform
+## 4. Platform Architecture
 
-### 4.1 Model Berlapis
+### 4.1 Layered Model
 
-NAEOS menghubungkan lima lapisan utama:
+NAEOS connects five principal layers:
 
 ```mermaid
 graph TB
-    subgraph L1["Lapisan 5 — Output Layer"]
+    subgraph L1["Layer 5 — Output Layer"]
         NEIR[NEIR Model]
         ART[Artifacts]
         DOCS[Docs]
         AICX[AI Context]
     end
 
-    subgraph L2["Lapisan 4 — Generation Layer"]
+    subgraph L2["Layer 4 — Generation Layer"]
         GEN[Generator]
         ADP[Adapters]
         TPL[Template Engine]
     end
 
-    subgraph L3["Lapisan 3 — Reasoning Layer"]
+    subgraph L3["Layer 3 — Reasoning Layer"]
         RG[Reasoning Graph]
         KG[Knowledge Graph]
         TR[Traceability]
     end
 
-    subgraph L4["Lapisan 2 — Validation Layer"]
+    subgraph L4["Layer 2 — Validation Layer"]
         PV[Policy Validator]
         RE[Rule Engine]
         DG[Dependency Graph]
     end
 
-    subgraph L5["Lapisan 1 — Specification Layer"]
+    subgraph L5["Layer 1 — Specification Layer"]
         NES[NES Documents]
         SPEC[SPEC Documents]
         GOV[Governance Docs]
@@ -160,33 +160,33 @@ graph TB
     NEIR --> AICX
 ```
 
-### 4.2 Pipeline Kompilasi
+### 4.2 Compilation Pipeline
 
-Pipeline inti mengikuti alur deterministik sembilan tahap:
+The core pipeline follows a deterministic flow:
 
 ```mermaid
 flowchart TB
-    IN["Spesifikasi (YAML / JSON / HCL)"] --> P["1. Parse — AST dengan interpolasi variabel"]
+    IN["Specification (YAML / JSON / HCL)"] --> P["1. Parse — AST with variable interpolation"]
     P --> N["2. Normalize"]
-    N --> R["3. Resolve — cross-reference ($ref, $include)"]
-    R --> B["4. Build NEIR — model engineering terpusat"]
-    B --> V["5. Validate — circular deps, port conflict, boundaries"]
+    N --> R["3. Resolve — cross-references ($ref, $include)"]
+    R --> B["4. Build NEIR — unified engineering model"]
+    B --> V["5. Validate — circular deps, port conflicts, boundaries"]
     V --> G["6. Build Graph — dependency graph + policy evaluation"]
-    G --> S["7. Schedule — penjadwalan DAG berbasis prioritas"]
-    S --> GE["8. Generate — multi-bahasa (Go, TS, Python, Java, Rust)"]
-    GE --> W["9. Review & Write — governance review + penulisan artefak"]
+    G --> S["7. Schedule — priority-based DAG scheduling"]
+    S --> GE["8. Generate — multi-language (Go, TS, Python, Java, Rust)"]
+    GE --> W["9. Review & Write — governance review + artifact writing"]
     W --> OUT["Output: Code, Configs, Docs, AI Context, Artifacts"]
 ```
 
-Pipeline didukung oleh infrastruktur production-grade:
+The pipeline is backed by production-grade infrastructure:
 
-- **Stage caching v2** — cache per-tahap berbasis hash SHA-256 NEIR; hit rate dapat diinspeksi via `--profile`.
-- **Generasi paralel** — multi-adapter berjalan konkuren (3 adapter ±1.4ms vs ±3ms sekuensial).
-- **Profiling & memprofiler** — timing/memori per tahap, heap diffing, dan deteksi kebocoran memori.
-- **Middleware pipeline** — rantai yang dapat disusun (log, metrics, auth, cache).
-- **Event sourcing & observability** — snapshot eksekusi, telemetry tracing, dan WebSocket live updates.
+- **Stage caching v2** — per-stage cache keyed by NEIR SHA-256 hash; hit rate inspectable via `--profile`.
+- **Parallel generation** — concurrent multi-adapter execution (±1.4ms for 3 adapters vs ±3ms sequential).
+- **Profiling & memory profiler** — per-stage timing/memory, heap diffing, leak detection.
+- **Pipeline middleware** — composable chain (log, metrics, auth, cache).
+- **Event sourcing & observability** — execution snapshots, telemetry tracing, WebSocket live updates.
 
-### 4.3 Alur Data End-to-End
+### 4.3 End-to-End Data Flow
 
 ```mermaid
 sequenceDiagram
@@ -212,31 +212,31 @@ sequenceDiagram
     Adapter-->>Generator: []Artifact
     Generator-->>Pipeline: NEIRResult{NEIR, Artifacts}
     Pipeline-->>CLI: result
-    CLI-->>User: stdout atau file yang diekspor
+    CLI-->>User: stdout or exported files
 ```
 
 ---
 
-## 5. Komponen Inti
+## 5. Core Components
 
 ### 5.1 Specification Language v2
 
-Bahasa spesifikasi NAEOS adalah sumber kebenaran tunggal, human-readable, dan machine-validatable:
+The NAEOS specification language is the single source of truth — human-readable and machine-validatable:
 
-| Fitur | Sintaks | Kegunaan |
-|-------|---------|----------|
-| Interpolasi variabel | `${var}` | Referensi nilai dalam spec |
-| Variabel lingkungan | `$env{VAR}` | Resolusi dari environment |
-| Cross-reference | `$ref{path}` | Referensi antar bagian spec |
-| Komposisi file | `$include{file}` | Spec multi-file |
-| Fungsi bawaan | `$fn{upper/slug/default/...}` | Transformasi nilai |
-| Sektion kondisional | `$if{cond}...$endif` | Konten bersyarat |
+| Feature | Syntax | Purpose |
+|---------|--------|---------|
+| Variable interpolation | `${var}` | Reference values within a spec |
+| Environment variables | `$env{VAR}` | Resolve from environment |
+| Cross-references | `$ref{path}` | Reference between spec sections |
+| File composition | `$include{file}` | Multi-file specs |
+| Built-in functions | `$fn{upper/slug/default/...}` | Value transformations |
+| Conditional sections | `$if{cond}...$endif` | Conditional content |
 
-Versi 2.0 mendukung **modul kondisional** (field `Condition`), **profil lingkungan** (`ActiveProfile`/`Inherits`), dan validasi berbasis skema dengan auto-check versi minimal.
+Version 2.0 adds **conditional modules** (`Condition` field), **environment profiles** (`ActiveProfile`/`Inherits`), and schema-based validation with automatic minimum-version checking.
 
 ### 5.2 NEIR — NAEOS Engineering Intermediate Representation
 
-NEIR adalah **model engineering terpusat** yang mewakili seluruh sistem. NEIR bukan sekadar AST — ia adalah kanonik yang mencakup 14 domain:
+NEIR is the **unified engineering model** representing the entire system. NEIR is not merely an AST — it is a canonical model spanning 14 domains:
 
 `project, architecture, domain, module, component, service, API, storage, infrastructure, security, AI, documentation, deployment, testing, metadata`
 
@@ -299,35 +299,35 @@ classDiagram
     NEIR --> GenerationConfig
 ```
 
-Ciri teknis NEIR:
+Technical characteristics:
 
-- **Lazy loading** — accessor per-seksi; hanya data yang dibutuhkan yang dimuat.
-- **Versi skema** — schema registry semver dengan validasi jarak jauh (`naeos schema validate`).
-- **Deterministik** — input identik menghasilkan NEIR identik (Pasal VIII).
-- **Diff-able** — perbandingan struktural NEIR untuk memantau evolusi sistem.
+- **Lazy loading** — per-section accessors; only required data is loaded.
+- **Schema versioning** — semver schema registry with remote validation (`naeos schema validate`).
+- **Deterministic** — identical input produces identical NEIR (Article VIII).
+- **Diff-able** — structural NEIR comparison to track system evolution.
 
-### 5.3 Generator Multi-Bahasa
+### 5.3 Multi-Language Generator
 
-| Bahasa | Stack yang didukung | Status |
-|--------|---------------------|--------|
-| Go | — | Aktif |
-| TypeScript | — | Aktif |
-| Python | — | Aktif |
-| Java | JUnit 5 | Aktif |
-| Rust | Axum 0.7 | Aktif |
+| Language | Supported Stack | Status |
+|----------|-----------------|--------|
+| Go | — | Active |
+| TypeScript | — | Active |
+| Python | — | Active |
+| Java | JUnit 5 | Active |
+| Rust | Axum 0.7 | Active |
 
-Setiap adapter menghasilkan artefak yang konsisten: kode, konfigurasi, Dockerfile (5 bahasa), docker-compose, dan manifest Kubernetes.
+Each adapter produces consistent artifacts: code, configuration, Dockerfiles (5 languages), docker-compose, and Kubernetes manifests.
 
 ### 5.4 Kernel & Runtime
 
-- **Service Registry** — registrasi layanan terpusat
-- **Event Bus** — pub/sub internal dengan PipelineObserver
+- **Service Registry** — centralized service registration
+- **Event Bus** — internal pub/sub with PipelineObserver
 - **Telemetry** — spans, batched export, HTTP exporter, Prometheus metrics
 - **Lifecycle Management** — health checks, graceful shutdown, WebSocket draining
 
 ### 5.5 AI Integration & Compiler
 
-NAEOS compiler mengubah NEIR menjadi **set instruksi AI** untuk 6 target tools:
+The NAEOS compiler transforms NEIR into **AI instruction sets** for 6 target tools:
 
 ```mermaid
 graph LR
@@ -341,134 +341,134 @@ graph LR
     style C fill:#08d6ff,color:#05050a,font-weight:bold
 ```
 
-Ditambah:
+Additionally:
 
-- **MCP Server** — Model Context Protocol untuk integrasi agent (validate_spec, compile_spec, list_artifacts, get_pipeline_status, export_terraform, list_plugins).
-- **Context Bundles** — ringkasan proyek yang dioptimalkan untuk LLM, diperkaya dependency graph, security context, dan cloud resource mapping.
-- **AI Compiler Adapter** — streaming kompilasi spesifikasi ke LLM (OpenAI, Anthropic, Ollama) dengan true SSE streaming.
-- **Prompt Library** — template prompt YAML terpusat (LLM + compiler adapters) dengan fungsi template kustom.
-- **LSP NEIR-aware** — Language Server Protocol untuk spesifikasi YAML: autocomplete, diagnostics, hover, go-to-definition, code actions — integrasi parser nyata.
-- **VS Code extension** — generator ekstensi (`naeos dx vscode-gen`) dengan TextMate grammar dan LSP client.
-- **AI Constitution** (NAEOS-CON-002) — pasal khusus yang mengatur peran AI dalam engineering, sejalan dengan Pasal V dan IX.
+- **MCP Server** — Model Context Protocol for agent integration (validate_spec, compile_spec, list_artifacts, get_pipeline_status, export_terraform, list_plugins).
+- **Context Bundles** — LLM-optimized project summaries enriched with dependency graphs, security context, and cloud resource mapping.
+- **AI Compiler Adapter** — streaming spec compilation to LLMs (OpenAI, Anthropic, Ollama) with true SSE streaming.
+- **Prompt Library** — centralized YAML-based prompt templates (LLM + compiler adapters) with custom template functions.
+- **NEIR-aware LSP** — Language Server Protocol for spec YAML: autocomplete, diagnostics, hover, go-to-definition, code actions — with real parser integration.
+- **VS Code extension** — extension generator (`naeos dx vscode-gen`) with TextMate grammar and LSP client.
+- **AI Constitution** (NAEOS-CON-002) — articles specifically governing AI's role in engineering, aligned with Articles V and IX.
 
-### 5.6 Tata Kelola & Kepatuhan
+### 5.6 Governance & Compliance
 
 **Policy & Governance:**
-- Policy Evaluator — 9 operator, 5 aturan bawaan
-- Artifact Review — pemeriksaan artefak terhadap aturan governance
-- Audit Trail — jejak keputusan yang dapat ditelusuri
-- RBAC hierarkis — role admin/developer/viewer dengan parent chain dan deny rules; 4 template kepatuhan (auditor, SOC2, GDPR, HIPAA)
+- Policy Evaluator — 9 operators, 5 built-in rules
+- Artifact Review — artifact inspection against governance rules
+- Audit Trail — traceable decision trail
+- Hierarchical RBAC — admin/developer/viewer roles with parent chains and deny rules; 4 compliance templates (auditor, SOC2, GDPR, HIPAA)
 
-**Keamanan enterprise:**
+**Enterprise security:**
 - **SSO** — OIDC (discovery, JWKS RSA verification, auth code flow), SAML 2.0, LDAP (TCP/TLS, ASN.1 BER)
-- **Audit berantai** — HashedAuditor (SHA-256 chain dengan verifikasi tamper), EncryptedAuditor (AES-256-GCM), export cloud (AWS SigV4, GCS HMAC, Azure SharedKey)
-- **Compliance frameworks** — SOC 2 (8 kontrol CC1.1–CC8.1), HIPAA (11 kontrol 164.308–164.312), GDPR (8 artikel), dengan `GenerateReport()` dan CLI `naeos compliance`
+- **Chained audit** — HashedAuditor (SHA-256 chain with tamper verification), EncryptedAuditor (AES-256-GCM), cloud export (AWS SigV4, GCS HMAC, Azure SharedKey)
+- **Compliance frameworks** — SOC 2 (8 controls CC1.1–CC8.1), HIPAA (11 controls 164.308–164.312), GDPR (8 articles), with `GenerateReport()` and `naeos compliance` CLI
 
-**Keamanan teknis:**
-- Rate limiting API key, body size limits, CORS whitelist, X-Request-ID propagation
-- Plugin WASM sandbox dengan verifikasi tanda tangan SHA-256
-- OAuth2 nyata (Google, GitHub), OIDC discovery + JWKS
-- Typed error system dengan 15 kode error + sentinel errors
+**Technical security:**
+- API key rate limiting, body size limits, CORS whitelist, X-Request-ID propagation
+- WASM plugin sandbox with SHA-256 signature verification
+- Real OAuth2 (Google, GitHub), OIDC discovery + JWKS
+- Typed error system with 15 error codes + sentinel errors
 
-### 5.7 Ekosistem Marketplace
+### 5.7 Ecosystem Marketplace
 
-| Marketplace | Fungsi | Konten |
-|-------------|--------|--------|
-| **Profile** | Publish, search, download | 5 profil industri bawaan: SaaS, AI Agent, FinTech, Healthcare, Government |
-| **Plugin** | Install/uninstall/search | Runtime WASM (wazero), hot-reload, event bus, registry publik |
-| **Template** | Publish starter project | Scaffolding dengan CI/CD, SDK, dan WASM entry point |
+| Marketplace | Function | Content |
+|-------------|----------|---------|
+| **Profile** | Publish, search, download | 5 built-in industry profiles: SaaS, AI Agent, FinTech, Healthcare, Government |
+| **Plugin** | Install/uninstall/search | WASM runtime (wazero), hot-reload, event bus, public registry |
+| **Template** | Publish starter projects | Scaffolding with CI/CD, SDK, and WASM entry point |
 
-Plugin dapat dieksekusi dengan aman melalui **sandbox JSON-over-stdin/stdout** dan **WASI**, dengan verifikasi signature dan lazy loading.
-
----
-
-## 6. Diferensiasi: NAEOS vs Pendekatan Konvensional
-
-| Dimensi | Approach Konvensional | NAEOS |
-|---------|----------------------|-------|
-| Sumber kebenaran | Banyak (kode, docs, wiki, chat) | Satu: spesifikasi deklaratif |
-| Kode & spec | Drift seiring waktu | Diturunkan bersama dari spec, selalu selaras |
-| Konteks AI | File manual per tool, mudah usang | Dikompilasi dari NEIR untuk 6 tools sekaligus |
-| Governance | Dokumen statis, tidak dieksekusi | Konstitusi → Rule Engine → Validator, ditegakkan otomatis |
-| Traceability | Manual, tidak lengkap | Otomatis: requirement → deployment |
-| Kepatuhan | Audit manual, mahal | Report otomatis (SOC 2/HIPAA/GDPR) + audit chain verifiable |
-| Perluasan | Fork atau tooling terpisah | Plugin WASM, profile, template marketplace resmi |
+Plugins execute safely through a **JSON-over-stdin/stdout sandbox** and **WASI**, with signature verification and lazy loading.
 
 ---
 
-## 7. Posisi Rilis & Roadmap
+## 6. Differentiation: NAEOS vs Conventional Approaches
 
-### Rilis yang telah dicapai
+| Dimension | Conventional Approach | NAEOS |
+|-----------|----------------------|-------|
+| Source of truth | Many (code, docs, wiki, chat) | One: declarative specification |
+| Code & spec | Drift over time | Derived together from spec, always aligned |
+| AI context | Manual per-tool files, easily stale | Compiled from NEIR for 6 tools at once |
+| Governance | Static documents, never executed | Constitution → Rule Engine → Validator, enforced automatically |
+| Traceability | Manual, incomplete | Automatic: requirement → deployment |
+| Compliance | Manual, expensive audits | Automatic reports (SOC 2/HIPAA/GDPR) + verifiable audit chain |
+| Extensibility | Fork or separate tooling | Official plugin WASM, profile, template marketplace |
 
-- **v0.x** — Fondasi: parser, NEIR, pipeline, CLI, compiler 6 adapter, cloud (AWS/GCP/Azure), AI integration, distributed task execution, event sourcing
-- **v1.x** — Stabilitas: database layer (PostgreSQL/MySQL/SQLite), 999 lint issues resolved, production hardening, prompt library, observability dashboard
-- **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), RBAC hierarkis, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, audit hashed chain + encrypted, stage caching, LSP, VS Code extension, distributed real builds, pipeline/memory profiling
-- **v3.0.0** — Rilis ekosistem: 20+ fitur baru, changelog, migration guide, deprecation notices
-- **v3.1.0** — Rilis performa: pipeline caching pada `naeos run`, profiling tingkat run (`--profile`/`--pprof`), pola arsitektur (monolithic/microservices/serverless), penguatan plugin WASM
-- **v3.2.0** — Rilis operasional: daemon produksi `naeos serve` (TLS, graceful shutdown, systemd), policy registry + control plane, runtime execution gateway, immutable evidence store, verifikasi independen, MCP resources/prompts/completions/ping
-- **v3.3.0** — Rilis supply-chain: SBOM (CycloneDX), penandatanganan artefak Ed25519, SBOM verifier
-- **v3.5.0** — Rilis observability & control plane: tracing OTLP, alerting SLO, ekspor SIEM (CEF/NDJSON), dan control plane demo investor
-- **v3.6.0** — Rilis unified control plane: otorisasi, approval, dan evidence anti-tamper yang dapat dipakai ulang di demo investor, serta penguatan supply-chain (gitleaks, NOTICE/SBOM di rilis, penegakan DCO)
-- **v3.4.0** — Rilis deployment: scaffolding Helm chart, bundle air-gapped, config providers (env/file/K8s secret/Vault)
+---
 
-### Metrik kesehatan platform (saat ini)
+## 7. Release History & Roadmap
 
-| Metrik | Nilai |
+### Releases achieved
+
+- **v0.x** — Foundation: parser, NEIR, pipeline, CLI, 6-adapter compiler, cloud (AWS/GCP/Azure), AI integration, distributed task execution, event sourcing
+- **v1.x** — Stability: database layer (PostgreSQL/MySQL/SQLite), 999 lint issues resolved, production hardening, prompt library, observability dashboard
+- **v2.x** — Platform: Supabase integration, NEIR v2.0 (conditional modules, env profiles), hierarchical RBAC, OAuth2/OIDC, SSO (SAML 2.0, LDAP), compliance frameworks, hashed + encrypted audit chains, stage caching, LSP, VS Code extension, real distributed builds, pipeline/memory profiling
+- **v3.0.0** — Ecosystem release: 20+ new features, changelog, migration guide, deprecation notices
+- **v3.1.0** — Performance release: pipeline caching on `naeos run`, run-level profiling (`--profile`/`--pprof`), architecture patterns (monolithic/microservices/serverless), WASM plugin hardening
+- **v3.2.0** — Operations release: production server daemon (`naeos serve`) with TLS, graceful shutdown, and systemd integration; policy registry + control plane, runtime execution gateway, immutable evidence store, independent verification, MCP resources/prompts/completions/ping
+- **v3.3.0** — Supply-chain release: SBOM generation (CycloneDX), Ed25519 artifact signing, SBOM verifier
+- **v3.5.0** — Observability & control-plane release: OTLP tracing, SLO alerting, SIEM export (CEF/NDJSON), and the investor demo control plane
+- **v3.6.0** — Unified control plane release: reusable authorization, approvals, and tamper-evident evidence across the investor demo, coupled with supply-chain hardening (gitleaks, NOTICE/SBOM in releases, DCO enforcement)
+- **v3.4.0** — Deployment release: Helm chart scaffolding, air-gapped bundles, config providers (env/file/K8s secret/Vault)
+
+### Platform health metrics (current)
+
+| Metric | Value |
 |--------|-------|
 | Test coverage | ~87% (target ≥85%) |
-| Lint pass rate | 100% (linters, termasuk gosec & errorlint) |
-| CLI commands | 200+ (284 halaman dokumentasi CLI) |
-| Test coverage CLI | ~80.8% (target 100%) |
-| Package coverage ≥80% | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, dan lainnya) |
+| Lint pass rate | 100% (linters, incl. gosec & errorlint) |
+| CLI commands | 200+ (284 CLI doc pages) |
+| CLI test coverage | ~80.8% (target 100%) |
+| Packages ≥80% coverage | 13+ (watch, rollback, cicd, distributed, gateway, websocket, configschema, monitoring, configreload, database, auth, supabase, and more) |
 
 ### Roadmap
 
-- **v3.5.0** — Observability: ekspor tracing OpenTelemetry (OTLP), SLO & alerting Prometheus, ekspor audit ke SIEM
-- **v3.6.0** — Skala: durable job queue (Postgres outbox), worker pipeline jaringan (NATS/Kafka), idempotency
-- **v3.7.0+** — API v2, webhooks outbound, SDK resmi, MFA/SCIM, governance per-tenant
+- **v3.5.0** — Observability: OpenTelemetry (OTLP) tracing export, SLO & Prometheus alerting, audit export to SIEM
+- **v3.6.0** — Scale: durable job queue (Postgres outbox), networked pipeline workers (NATS/Kafka), idempotency
+- **v3.7.0+** — API v2, outbound webhooks, official SDKs, MFA/SCIM, per-tenant governance
 
-Lihat [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) untuk roadmap proyek saat ini dan status milestone.
-
----
-
-## 8. Model Lisensi & Tata Kelola Proyek
-
-- **Lisensi**: Apache License 2.0 — bebas digunakan, dimodifikasi, dan didistribusikan; komersial dan internal diizinkan dengan atribusi.
-- **Governance dokumen**: seluruh standar mengikuti alur NES (NAEOS Engineering Specification), ADR (Architecture Decision Record), dan RFC dengan review wajib.
-- **CI/CD**: tiap PR wajib lint + test + coverage check; penurunan coverage memblokir merge; setiap API/fitur baru wajib menyertakan dokumentasi.
-- **Rilis**: GoReleaser multi-platform (linux/darwin/windows × amd64/arm64) + Docker image multi-arch + blog post otomatis (EN/ID) per rilis.
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the current project roadmap and milestone status.
 
 ---
 
-## 9. Kasus Penggunaan
+## 8. Licensing & Project Governance
 
-| Skenario | Nilai yang diperoleh |
-|----------|---------------------|
-| **Startup multi-bahasa** | Satu spec menghasilkan kode Go + TypeScript + infra, mengurangi 70% boilerplate |
-| **Organisasi teregulasi** (fintech/healthcare/gov) | Policy enforcement otomatis + laporan SOC 2/HIPAA/GDPR + audit chain tamper-evident |
-| **Tim yang mengadopsi AI coding agents** | Konteks AI dikompilasi untuk 6 tools dari satu sumber — tidak ada lagi file yang usang |
-| **Perusahaan multi-cloud** | Terraform HCL untuk AWS/GCP/Azure dari NEIR; profil industri menstandarkan arsitektur |
-| **Platform besar yang berevolusi** | Diff struktural NEIR, migration engine v0.1→v0.3, rollback, dan repair spec |
-| **Tim yang ingin menjamin kualitas** | Validation komprehensif (circular deps, port conflicts), fuzz testing, benchmark terstandarisasi |
+- **License**: Apache License 2.0 — free to use, modify, and distribute; commercial and internal use permitted with attribution.
+- **Document governance**: all standards follow the NES (NAEOS Engineering Specification) flow, ADR (Architecture Decision Record), and RFC with mandatory review.
+- **CI/CD**: every PR must pass lint + test + coverage checks; coverage drops block merges; every new API/feature must include documentation before merge.
+- **Releases**: GoReleaser multi-platform builds (linux/darwin/windows × amd64/arm64) + multi-arch Docker image + automated blog post (EN/ID) per release.
 
 ---
 
-## 10. Risiko & Pertimbangan Adopsi
+## 9. Use Cases
 
-- **Kematangan ekosistem plugin** — Saat ini 0 plugin komunitas; target 5+ (Q1 2027) dan 20+ (Q3 2027). Mitigasi: plugin SDK, template generator, dan registry publik telah tersedia.
-- **Kurva belajar spec language** — Diimbangi oleh LSP, TUI wizard, dan 57 dokumen spesifikasi NES.
-- **Tantangan determinisme AI** — Konstitusi Pasal V dan VIII memastikan AI hanya membantu di dalam pipeline yang deterministik; manusia tetap memegang keputusan rilis.
-
----
-
-## 11. Kesimpulan
-
-NAEOS menawarkan jawaban struktural atas fragmentasi software engineering modern: sebuah platform yang menegakkan **spesifikasi sebagai sumber kebenaran**, **konstitusi sebagai hukum dasar**, **NEIR sebagai model terpusat**, dan **AI sebagai mitra yang terkurasi** — bukan sebagai pengganti penilaian manusia.
-
-Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus berkembang, NAEOS mengundang organisasi dan komunitas untuk ikut membangun masa depan engineering yang lebih disiplin, dapat ditelusuri, dan dapat direproduksi — di mana Anda mendeskripsikan sistem **sekali**, dan membangunnya **di mana saja**.
+| Scenario | Value Delivered |
+|----------|-----------------|
+| **Multi-language startup** | One spec produces Go + TypeScript code and infra, removing ~70% of boilerplate |
+| **Regulated organizations** (fintech/healthcare/gov) | Automated policy enforcement + SOC 2/HIPAA/GDPR reports + tamper-evident audit chain |
+| **Teams adopting AI coding agents** | AI context compiled for 6 tools from one source — no more stale files |
+| **Multi-cloud enterprises** | Terraform HCL for AWS/GCP/Azure from NEIR; industry profiles standardize architecture |
+| **Large evolving platforms** | Structural NEIR diff, migration engine v0.1→v0.3, rollback, and spec repair |
+| **Teams enforcing quality** | Comprehensive validation (circular deps, port conflicts), fuzz testing, standardized benchmarks |
 
 ---
 
-*NAEOS Foundation — "Engineering With Discipline"*
+## 10. Risks & Adoption Considerations
 
-*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos, v3.6.0) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
+- **Plugin ecosystem maturity** — Currently 0 community plugins; targets of 5+ (Q1 2027) and 20+ (Q3 2027). Mitigation: plugin SDK, template generator, and public registry are already available.
+- **Spec language learning curve** — Mitigated by LSP, TUI wizard, and 57 NES specification documents.
+- **AI determinism challenges** — Constitution Articles V and VIII ensure AI only assists within a deterministic pipeline; humans retain release decisions.
+
+---
+
+## 11. Conclusion
+
+NAEOS offers a structural answer to modern software engineering fragmentation: a platform that enforces **the specification as the source of truth**, **the constitution as governing law**, **NEIR as the unified model**, and **AI as a curated partner** — not a replacement for human judgment.
+
+Under Apache License 2.0, with a vendor-neutral architecture and a growing ecosystem, NAEOS invites organizations and communities to build a more disciplined, traceable, and reproducible future of engineering — where you describe your system **once**, and build it **anywhere**.
+
+---
+
+*NAEOS OSS — "Engineering With Discipline"*
+
+*This document is based on the actual state of the project (NAEOS-foundation/naeos repository, v3.6.0) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*

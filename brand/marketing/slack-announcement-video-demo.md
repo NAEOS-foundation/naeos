@@ -20,7 +20,7 @@ go build -o naeos ./cmd/naeos
 
 • Feedback / tanya: <https://github.com/NAEOS-foundation/naeos/issues>
 
-*Specify once. Build anywhere.* :rocket:
+*Architecture Drives Engineering.* :rocket:
 
 ---
 

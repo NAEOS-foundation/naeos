@@ -17,6 +17,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+      - name: Print original parent tree
+        run: |
+          echo "ORIGINAL_PARENT_TREE=$(git rev-parse HEAD^\{tree\})"
       - name: Verify Signed-off-by on all commits
         shell: bash
         run: |

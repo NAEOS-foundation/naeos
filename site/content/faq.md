@@ -10,7 +10,7 @@ description: Common questions about NAEOS and declarative engineering.
 <span class="faq-arrow">▾</span>
 </button>
 <div class="faq-answer">
-<p>NAEOS (Nusantara Engineering & Architecture Operating System) is a declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems. It is an engineering runtime — not just a project generator — that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle.</p>
+<p>NAEOS (Nusantara AI Engineering Operating System) is a declarative engineering platform that transforms YAML/JSON specifications into validated, multi-language software systems. It is an engineering runtime — not just a project generator — that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with specifications throughout their lifecycle.</p>
 </div>
 </div>
 

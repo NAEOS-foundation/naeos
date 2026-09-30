@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Metadata } from "next";
@@ -78,7 +78,7 @@ export default async function RootLayout({
   const tagline =
     lang === "id"
       ? "Tentukan Sekali. Bangun di Mana Saja."
-      : "Specify Once. Build Anywhere.";
+      : "Architecture Drives Engineering.";
 
   return (
     <html lang={lang} data-theme="dark" data-ws-url="disabled" suppressHydrationWarning>

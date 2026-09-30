@@ -138,7 +138,7 @@ Narasi:
 ## Kutipan yang bisa dipakai di slide / pitch
 
 - "AI bisa menghasilkan kode. NAEOS membantu struktur sistem di sekitarnya."
-- "Specify once. Build anywhere."
+- "Architecture Drives Engineering."
 - "NAEOS turns engineering intent into a validated, reusable system model."
 - "From specification to AI context, governance, and generated artifacts."
 - "The real bottleneck in AI-assisted development is not code generation — it is engineering consistency."

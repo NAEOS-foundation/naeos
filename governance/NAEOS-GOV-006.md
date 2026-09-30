@@ -3,11 +3,11 @@ Title: Governance Model
 Version: 1.0.0
 Status: Stable
 Category: Governance
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 Priority: Critical
 
 Motto:
-  Specify Once. Build Anywhere.
+  Architecture Drives Engineering.
 
 Depends On:
   - NAEOS-GOV-001 Project Charter
@@ -24,33 +24,33 @@ Referenced By:
 NAEOS Governance Model
 Executive Summary
 
-Governance Model mendefinisikan struktur pengelolaan NAEOS agar proyek dapat berkembang secara terbuka, transparan, dan berkelanjutan.
+Governance Model defines struktur pengelolaan NAEOS so that proyek can berkembang in terbuka, transparan, and berkelanjutan.
 
-NAEOS menggunakan model governance yang menggabungkan:
+NAEOS menggunakan model governance that menggabungkan:
 
 open source governance,
 technical leadership,
 community contribution,
 formal proposal process.
 
-Tujuan utama governance:
+The primary objective governance:
 
-Memastikan setiap perubahan terhadap NAEOS memiliki alasan, dampak, dan proses evaluasi yang jelas.
+Ensure setiap changes to NAEOS have alasan, dampak, and proses evaluasi that jelas.
 
 1. Purpose
 
-Dokumen ini mendefinisikan:
+This document defines:
 
 struktur organisasi NAEOS,
-peran dan tanggung jawab,
-proses pengambilan keputusan,
+peran and tanggung jawab,
+proses pengambilan decisions,
 proses RFC,
 proses ADR,
 kontribusi komunitas,
 pengelolaan release.
 2. Governance Philosophy
 
-NAEOS mengikuti prinsip:
+NAEOS follows prinsip:
 
 Open Contribution
 
@@ -69,10 +69,10 @@ Long-Term Sustainability
 
 Struktur governance NAEOS:
 
-4. NAEOS Foundation
+4. NAEOS OSS
 Purpose
 
-NAEOS Foundation bertanggung jawab menjaga visi, nilai, dan keberlanjutan proyek.
+NAEOS OSS bertanggung jawab maintain visi, nilai, and keberlanjutan proyek.
 
 Responsibilities
 
@@ -80,22 +80,22 @@ Foundation:
 
 MUST:
 
-menjaga governance,
-menjaga trademark dan identitas,
-memastikan netralitas proyek.
+maintain governance,
+maintain trademark and identitas,
+ensure netralitas proyek.
 
 SHOULD:
 
-mendukung komunitas,
-menyediakan dokumentasi,
+support komunitas,
+provide dokumentasi,
 mengembangkan ekosistem.
 5. Technical Steering Committee (TSC)
 
-TSC adalah badan pengambil keputusan teknis tertinggi.
+TSC is baand pengambil decisions teknis tertinggi.
 
 Responsibilities
 
-TSC bertanggung jawab terhadap:
+TSC bertanggung jawab to:
 
 architecture decision,
 specification approval,
@@ -103,7 +103,7 @@ standard approval,
 major release.
 Authority
 
-TSC dapat:
+TSC can:
 
 menerima RFC,
 menolak RFC,
@@ -111,7 +111,7 @@ mengubah specification,
 menetapkan roadmap teknis.
 6. Maintainer
 
-Maintainer adalah engineer yang bertanggung jawab menjaga area tertentu.
+Maintainer is engineer that bertanggung jawab maintain area tertentu.
 
 Contoh:
 
@@ -129,13 +129,13 @@ Maintainer Responsibilities
 MUST:
 
 melakukan review,
-menjaga kualitas,
+maintain kualitas,
 membantu contributor.
 7. Contributor
 
-Contributor adalah individu atau organisasi yang berkontribusi.
+Contributor is individu or organisasi that berkontribusi.
 
-Kontribusi dapat berupa:
+Kontribusi can berupa:
 
 code,
 documentation,
@@ -147,22 +147,22 @@ testing.
 
 NAEOS menggunakan model:
 
-Diagram tidak valid atau tidak didukung.
+Diagram not valid or not didukung.
 9. RFC Process
 RFC
 
 (Request For Comments)
 
-digunakan untuk perubahan besar.
+used to changes besar.
 
 RFC Required For
 
 MUST menggunakan RFC:
 
-perubahan specification,
+changes specification,
 fitur baru,
-perubahan architecture,
-perubahan governance.
+changes architecture,
+changes governance.
 RFC Lifecycle
 Draft
 
@@ -206,7 +206,7 @@ ADR
 
 Architecture Decision Record.
 
-Digunakan untuk keputusan teknis.
+Digunakan to decisions teknis.
 
 Contoh:
 
@@ -233,52 +233,52 @@ Implemented
 Superseded
 11. Change Management
 
-Semua perubahan harus mengikuti:
+Semua changes must follows:
 
 12. Community Governance
 
-NAEOS mendorong komunitas melalui:
+NAEOS mendorong komunitas through:
 
 Discussion
 
-Untuk:
+For:
 
 ide,
 feedback,
 pertanyaan.
 Issue
 
-Untuk:
+For:
 
 bug,
 improvement,
 task.
 Pull Request
 
-Untuk:
+For:
 
-perubahan nyata.
+changes nyata.
 13. Code of Conduct
 
 Semua contributor wajib:
 
 menghormati kontribusi,
 memberikan kritik konstruktif,
-menjaga komunikasi profesional.
+maintain komunikasi profesional.
 14. Security Governance
 
-Security issue memiliki proses khusus.
+Security issue have proses khusus.
 
 Security report:
 
 MUST:
 
-ditangani secara privat,
-dilakukan triage,
+ditangani in privat,
+performed triage,
 diperbaiki sebelum disclosure.
 15. Release Governance
 
-Release memiliki tiga kategori.
+Release have tiga kategori.
 
 Patch Release
 
@@ -286,7 +286,7 @@ Contoh:
 
 1.0.1
 
-Untuk:
+For:
 
 bug fix,
 dokumentasi.
@@ -296,7 +296,7 @@ Contoh:
 
 1.1.0
 
-Untuk:
+For:
 
 fitur baru,
 extension.
@@ -306,12 +306,12 @@ Contoh:
 
 2.0.0
 
-Untuk:
+For:
 
 breaking change.
 16. Governance Principles
 
-Governance NAEOS mengikuti:
+Governance NAEOS follows:
 
 Transparency
 
@@ -353,26 +353,26 @@ NAEOS menolak:
 
 Single Person Control
 
-Tidak boleh bergantung pada satu individu.
+Not bby bergantung on satu individu.
 
 Hidden Decisions
 
-Keputusan penting harus tercatat.
+Decisions penting must tercatat.
 
 Unreviewed Standards
 
-Standar harus melalui proses review.
+Standar must through proses review.
 
 Vendor Influence
 
-Tidak boleh ada dominasi vendor tertentu.
+Not bby ada dominasi vendor tertentu.
 
 19. Compliance Checklist
 Requirement	Level
-Memiliki RFC Process	MUST
-Memiliki ADR Process	MUST
-Memiliki Maintainer	MUST
-Transparansi keputusan	MUST
+Have RFC Process	MUST
+Have ADR Process	MUST
+Have Maintainer	MUST
+Transparansi decisions	MUST
 Community contribution	SHOULD
 Public roadmap	SHOULD
 20. Related Documents

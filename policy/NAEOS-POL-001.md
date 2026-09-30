@@ -14,7 +14,7 @@ Normative: true
 
 Priority: CRITICAL
 
-Owner: NAEOS Foundation
+Steward: NAEOS OSS
 
 Motto:
 
