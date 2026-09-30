@@ -14,7 +14,7 @@ Normative: true
 
 Priority: Critical
 
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 
 Depends On:
 

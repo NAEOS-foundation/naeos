@@ -121,7 +121,7 @@ jobs:
             "naeos_${VERSION}_darwin_amd64.tar.gz" "naeos_${VERSION}_darwin_arm64.tar.gz" \
           ; do
             ./naeos-linux-amd64 sign sign "$f" --key /tmp/naeos-release-key.json \
-              --signer "NAEOS Foundation" -o "release-signatures/$(basename "$f").sig.json"
+              --signer "NAEOS OSS" -o "release-signatures/$(basename "$f").sig.json"
           done
           python3 -c "import json; print(json.load(open('/tmp/naeos-release-key.json'))['publicKey'])" \
             > release-signatures/naeos-release-key.txt

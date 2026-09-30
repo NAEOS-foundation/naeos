@@ -18,7 +18,7 @@
   "plugins_publish_step2": "Test and build locally",
   "plugins_publish_step3": "Publish to the registry",
   "plugins_publish_cmd": "naeos marketplace plugin publish ./my-plugin --registry https://registry.naeos.dev",
-  "plugins_publish_official": "Official plugins are maintained by the NAEOS Foundation and marked with the badge above. Reference implementations live in examples/plugins/. Want your plugin listed as official? Open a PR against the registry data.",
+  "plugins_publish_official": "Official plugins are maintained by the NAEOS OSS and marked with the badge above. Reference implementations live in examples/plugins/. Want your plugin listed as official? Open a PR against the registry data.",
   "cta_get_started": "Try NAEOS",
   "cta_install_now": "Install Now",
   "cta_view_on_github": "Explore GitHub",

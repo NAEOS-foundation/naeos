@@ -14,7 +14,7 @@ Normative: true
 
 Priority: CRITICAL
 
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 
 Motto:
 "Operate. Observe. Improve."
@@ -295,7 +295,7 @@ Normative: true
 
 Priority: CRITICAL
 
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 
 Motto:
 

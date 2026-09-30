@@ -1078,7 +1078,7 @@ Document ID| NAEOS-RDP-001
 Version| 1.0.0
 Status| Proposed
 Project| NAEOS
-Maintainer| NAEOS Foundation
+Maintainer| NAEOS OSS
 Scope| Development Roadmap
 Review Cycle| Per major milestone
 Last Updated| September 2026

@@ -1,4 +1,4 @@
-<!-- Copyright 2024-2026 NAEOS Foundation -->
+<!-- Copyright 2025-2026 NAEOS contributors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 NAEOS Repository Legal & License Audit Instructions
@@ -240,7 +240,7 @@ Explain the reasoning.
 Search the repository for:
 
 - NAEOS
-- NAEOS Foundation
+- NAEOS OSS
 - NAEOS logo references
 - product names
 - domain names

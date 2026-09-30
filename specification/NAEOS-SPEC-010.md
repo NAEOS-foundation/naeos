@@ -14,7 +14,7 @@ Normative: true
 
 Priority: CRITICAL
 
-Owner: NAEOS Foundation
+Owner: NAEOS OSS
 
 Depends On:
   - SPEC-001

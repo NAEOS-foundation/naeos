@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025-2026 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -48,7 +48,7 @@ func DefaultConfig() Config {
 		Repo:                "NAEOS-foundation/naeos",
 		ReleasePollInterval: 15 * time.Minute,
 		StateFile:           ".naeos-bot-state.json",
-		PHTagline:           "Specify Once. Build Anywhere.",
+		PHTagline:           "Architecture Drives Engineering.",
 		PHGalleryURL:        "https://raw.githubusercontent.com/NAEOS-foundation/naeos/main/launch/producthunt/assets/01-hero-cover.png",
 		PHReleaseNote:       "v3.0.0 is live — pipeline profiling, stage caching, NEIR-aware LSP, distributed builds.",
 	}
