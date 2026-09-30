@@ -252,7 +252,7 @@ For release history and changes, see [CHANGELOG.md](CHANGELOG.md).
 - [GETTING-STARTED.md](GETTING-STARTED.md) — developer setup
 - [DOCUMENTATION-AUTHORITY.md](DOCUMENTATION-AUTHORITY.md) — normative documentation model
 - [WHITEPAPER-EN.md](WHITEPAPER-EN.md) — English whitepaper
-- [WHITEPAPER.md](WHITEPAPER.md) — Bahasa Indonesia whitepaper
+- [WHITEPAPER.md](WHITEPAPER.md) — official English whitepaper
 - [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) — document index
 - [docs/](docs/) — NAEOS engineering specifications
 - [CHANGELOG.md](CHANGELOG.md) — release history
