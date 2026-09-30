@@ -2,7 +2,7 @@
 title: "Why We Built NAEOS: Engineering Is Fragmented, and That's a Structural Problem"
 description: "The story behind NAEOS — the fragmentation problem in modern software engineering, the specification-drift trap, and why we built a declarative engineering platform."
 date: 2026-08-17
-author: "NAEOS Foundation"
+author: "NAEOS OSS"
 categories: ["announcement"]
 ---
 
@@ -28,7 +28,7 @@ NAEOS is built on one claim:
 
 > **The specification is the single source of truth. Everything — code, documentation, configuration, AI context, deployment artifacts — must be derived from the specification through a deterministic, validated, auditable pipeline.**
 
-That sentence is the entire product. NAEOS (Nusantara Engineering & Architecture Operating System) is a declarative engineering runtime that takes a YAML/JSON specification and runs it through an 11-stage pipeline: parse, normalize, resolve, build NEIR, validate, build graph, evaluate policy, schedule, generate, review, and write artifacts.
+That sentence is the entire product. NAEOS (Nusantara AI Engineering Operating System) is a declarative engineering runtime that takes a YAML/JSON specification and runs it through an 11-stage pipeline: parse, normalize, resolve, build NEIR, validate, build graph, evaluate policy, schedule, generate, review, and write artifacts.
 
 Everything downstream is derived from one model — the **NEIR** (NAEOS Engineering Intermediate Representation) — a canonical, versioned representation of your system spanning modules, services, architecture patterns, APIs, storage, security, AI targets, and deployment. No independent generators drifting apart. One model, many adapters.
 
@@ -69,4 +69,4 @@ naeos run --input-file spec.yaml
 
 One specification. Five languages. A clearer path for reducing drift. [Read the whitepaper](/whitepaper/) for the full thesis, and join us on [GitHub](https://github.com/NAEOS-foundation/naeos).
 
-We built NAEOS because we believe engineering can be more declarative, more transparent, and more structured for humans and for AI. Specify once. Build anywhere.
+We built NAEOS because we believe engineering can be more declarative, more transparent, and more structured for humans and for AI. Architecture Drives Engineering.
