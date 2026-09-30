@@ -2,7 +2,7 @@
 
 - Status: Draft
 - Version: 0.1
-- Owner: NAEOS Foundation
+- Owner: NAEOS OSS
 
 ## 1. Purpose
 
