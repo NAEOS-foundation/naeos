@@ -48,9 +48,9 @@ type PluginInfo struct {
 	Path        string      `json:"path,omitempty"`
 	Enabled     bool        `json:"enabled"`
 	Loaded      bool        `json:"loaded"`
-	State              PluginState          `json:"state"`
-	ActionCapabilities map[string][]string `json:"action_capabilities,omitempty"`
-	StartedAt          time.Time            `json:"started_at,omitempty"`
+	State              PluginState           `json:"state"`
+	ActionCapabilities map[string][]string  `json:"action_capabilities,omitempty"`
+	StartedAt          time.Time             `json:"started_at,omitempty"`
 	Error       error       `json:"error,omitempty"`
 }
 
