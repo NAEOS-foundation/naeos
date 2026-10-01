@@ -36,7 +36,6 @@ func TestEvaluateNoPolicyFailClosed(t *testing.T) {
 	}
 }
 
-
 func TestEvaluateMissingArguments(t *testing.T) {
 	c := newTestPlane(t)
 	if _, err := c.Evaluate(Request{Action: "run"}); err == nil {
