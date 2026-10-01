@@ -159,8 +159,12 @@ func TestQueryAdditionalFilters(t *testing.T) {
 	})
 
 	results := store.Query(EvidenceQuery{ID: first.ID, Action: "run", Environment: "production"})
-	if len(results) != 1 { t.Fatalf("expected 1 matching record, got %d", len(results)) }
-	if results[0].ID != "ev-target" { t.Fatalf("expected ev-target, got %s", results[0].ID) }
+	if len(results) != 1 {
+		t.Fatalf("expected 1 matching record, got %d", len(results))
+	}
+	if results[0].ID != "ev-target" {
+		t.Fatalf("expected ev-target, got %s", results[0].ID)
+	}
 }
 
 func TestQueryTimeRange(t *testing.T) {

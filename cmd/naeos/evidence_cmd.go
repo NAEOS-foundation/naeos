@@ -202,10 +202,14 @@ func newEvidenceQueryCommand() *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			store, err := loadEvidenceStore()
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			parseTime := func(flagName, value string) (time.Time, error) {
-				if value == "" { return time.Time{}, nil }
+				if value == "" {
+					return time.Time{}, nil
+				}
 				parsed, err := time.Parse(time.RFC3339, value)
 				if err != nil {
 					return time.Time{}, fmt.Errorf("--%s must be RFC3339 (for example 2026-10-01T12:00:00Z): %w", flagName, err)
@@ -228,7 +232,9 @@ func newEvidenceQueryCommand() *cobra.Command {
 			}
 
 			var dec control.Decision
-			if decision != "" { dec = control.Decision(decision) }
+			if decision != "" {
+				dec = control.Decision(decision)
+			}
 			results := store.Query(evidence.EvidenceQuery{
 				ID: id, Actor: actor, Resource: resource, Action: action, Environment: environment,
 				PolicyID: policyID, Decision: dec, From: fromTime, To: toTime, Limit: limit,
@@ -248,7 +254,9 @@ func newEvidenceQueryCommand() *cobra.Command {
 				strings.Repeat("-", 16), strings.Repeat("-", 14), strings.Repeat("-", 20), strings.Repeat("-", 12))
 			for _, r := range results {
 				recordID := r.ID
-				if len(recordID) > 11 { recordID = recordID[:11] + "…" }
+				if len(recordID) > 11 {
+					recordID = recordID[:11] + "…"
+				}
 				fmt.Fprintf(out, "%-12s %-20s %-8s %-10s %-16s %-14s %-20s %-12s\n",
 					recordID, r.Timestamp.UTC().Format(time.RFC3339), r.Decision, r.ExecutionStatus,
 					r.Actor, r.Action, r.Resource, r.Environment)
