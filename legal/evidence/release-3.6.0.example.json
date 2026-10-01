@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "release_version": "3.6.0",
+  "repository": "NAEOS-foundation/naeos",
+  "commit_sha": "<replace-with-release-commit>",
+  "release_date": "<UTC-date>",
+  "license": "Apache-2.0",
+  "dco_status": "PASS",
+  "sbom": {
+    "artifact": "sbom.cdx.json",
+    "sha256": "<64-hex-digest>"
+  },
+  "dependency_license_status": "PASS",
+  "attribution_status": "PASS",
+  "security_status": "PASS",
+  "provenance_status": "PASS",
+  "trademark_status": "REVIEWED",
+  "exceptions": [],
+  "reviewer": "<reviewer>",
+  "decision": "PASS"
+}
