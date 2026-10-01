@@ -114,6 +114,10 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Enforce release legal gate
+        run: |
+          bash scripts/release-legal-gate.sh release-legal-evidence.json
+
       - name: Package tar.gz archives (installer format)
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"

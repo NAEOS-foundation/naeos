@@ -289,6 +289,64 @@ jobs:
             exit 1
           fi
 
+      - name: Verify release legal gate allows PASS
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          bash scripts/release-legal-gate.sh "$tmp"
+
+      - name: Verify release legal gate blocks HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "HOLD",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "HOLD"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          if bash scripts/release-legal-gate.sh "$tmp"; then
+            echo "release legal gate allowed HOLD" >&2
+            exit 1
+          fi
+
+
   ci-gate:
     name: CI Gate
     if: always()
