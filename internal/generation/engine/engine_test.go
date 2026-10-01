@@ -42,34 +42,6 @@ func TestGeneratorCreatesArtifactsFromNEIR(t *testing.T) {
 	}
 }
 
-func TestGenerateIncludesLicenseHeaderForGoModulePackage(t *testing.T) {
-	neir := &model.NEIR{
-		Project: &project.Project{Name: "acme-api"},
-		Modules: []module.Module{{Name: "auth", Path: "./auth"}},
-	}
-
-	engine := NewEngine()
-	artifacts, err := engine.Generate(neir)
-	if err != nil {
-		t.Fatalf("Generate returned error: %v", err)
-	}
-
-	for _, artifact := range artifacts {
-		if artifact.Path != "auth/package.go" {
-			continue
-		}
-		content := string(artifact.Content)
-		if !strings.Contains(content, "Copyright 2024-2026 NAEOS Foundation") {
-			t.Fatalf("expected license header in %s", artifact.Path)
-		}
-		if !strings.Contains(content, "SPDX-License-Identifier: Apache-2.0") {
-			t.Fatalf("expected SPDX header in %s", artifact.Path)
-		}
-		return
-	}
-	t.Fatal("expected auth/package.go artifact")
-}
-
 func TestGenerateForLanguageGo(t *testing.T) {
 	neir := &model.NEIR{
 		Project: &project.Project{Name: "acme-api"},

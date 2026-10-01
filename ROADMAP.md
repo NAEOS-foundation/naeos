@@ -140,6 +140,7 @@ Targets:
 
 - [ ] Clear Developer / Contributor / Organization entry points
 - [ ] One copy-paste public demo path
+- [x] Evidence Query UX contract and evaluator query examples
 - [x] Issue template for external validation reports
 - [ ] First cohort of technical evaluators
 - [ ] Capture reproducible deviations and failure modes

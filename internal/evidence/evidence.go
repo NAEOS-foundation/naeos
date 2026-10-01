@@ -222,13 +222,16 @@ func (s *EvidenceStore) Approvals() []EvidenceRecord {
 // Query filters records by the given criteria. Empty fields are
 // wildcards. Results are returned newest-first.
 type EvidenceQuery struct {
-	Actor    string
-	Resource string
-	PolicyID string
-	Decision control.Decision
-	From     time.Time
-	To       time.Time
-	Limit    int
+	ID          string
+	Actor       string
+	Resource    string
+	Action      string
+	Environment string
+	PolicyID    string
+	Decision    control.Decision
+	From        time.Time
+	To          time.Time
+	Limit       int
 }
 
 func (s *EvidenceStore) Query(q EvidenceQuery) []EvidenceRecord {
@@ -237,10 +240,19 @@ func (s *EvidenceStore) Query(q EvidenceQuery) []EvidenceRecord {
 
 	var out []EvidenceRecord
 	for _, r := range s.records {
+		if q.ID != "" && r.ID != q.ID {
+			continue
+		}
 		if q.Actor != "" && r.Actor != q.Actor {
 			continue
 		}
 		if q.Resource != "" && r.Resource != q.Resource {
+			continue
+		}
+		if q.Action != "" && r.Action != q.Action {
+			continue
+		}
+		if q.Environment != "" && r.Environment != q.Environment {
 			continue
 		}
 		if q.PolicyID != "" && r.PolicyID != q.PolicyID {

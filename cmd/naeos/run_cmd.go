@@ -97,20 +97,12 @@ Example:
 			}
 
 			artifactDetails := make([]map[string]any, 0, len(result.Artifacts))
-			artifactPaths := make(map[string]struct{}, len(result.Artifacts))
 			for _, artifact := range result.Artifacts {
 				artifactDetails = append(artifactDetails, map[string]any{
 					"path": artifact.Path,
 					"size": len(artifact.Content),
 				})
-				artifactPaths[artifact.Path] = struct{}{}
 			}
-			logicalArtifactCount := len(result.Artifacts)
-			materializedFileCount := 0
-			if !cfg.DryRun && cfg.OutputDir != "" {
-				materializedFileCount = len(artifactPaths)
-			}
-			artifactPathCollisions := logicalArtifactCount - len(artifactPaths)
 
 			pipelineStages := []string{
 				"[1/8] Specification",
@@ -133,15 +125,10 @@ Example:
 				"specification_hash": result.SpecificationHash,
 				"neir_hash":          result.NEIRHash,
 				"project":            projectName,
-				"artifacts":          logicalArtifactCount,
+				"artifacts":          len(result.Artifacts),
 				"artifact_details":   artifactDetails,
-				"artifact_summary": map[string]any{
-					"logical_artifacts":  logicalArtifactCount,
-					"materialized_files": materializedFileCount,
-					"path_collisions":    artifactPathCollisions,
-				},
-				"tasks":          len(result.Tasks),
-				"execution_plan": result.Tasks,
+				"tasks":              len(result.Tasks),
+				"execution_plan":     result.Tasks,
 				"validation": map[string]any{
 					"status":   "passed",
 					"project":  projectName,
@@ -161,12 +148,10 @@ Example:
 					"graph_edges":  result.Graph.EdgeCount(),
 				},
 				"audit": map[string]any{
-					"status":                  "available",
-					"stages":                  []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
-					"artifact_count":          logicalArtifactCount,
-					"materialized_file_count": materializedFileCount,
-					"path_collisions":         artifactPathCollisions,
-					"task_count":              len(result.Tasks),
+					"status":         "available",
+					"stages":         []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
+					"artifact_count": len(result.Artifacts),
+					"task_count":     len(result.Tasks),
 				},
 				"stages": []string{
 					"specification",
@@ -202,7 +187,7 @@ Example:
 				fmt.Fprintf(&out, "run_id=%s\n", result.RunID)
 				fmt.Fprintf(&out, "specification_hash=%s\n", result.SpecificationHash)
 				fmt.Fprintf(&out, "neir_hash=%s\n", result.NEIRHash)
-				fmt.Fprintf(&out, "artifacts=%d materialized_files=%d path_collisions=%d tasks=%d\n", logicalArtifactCount, materializedFileCount, artifactPathCollisions, len(result.Tasks))
+				fmt.Fprintf(&out, "artifacts=%d tasks=%d\n", len(result.Artifacts), len(result.Tasks))
 				return []byte(out.String())
 			})
 			if err != nil {
