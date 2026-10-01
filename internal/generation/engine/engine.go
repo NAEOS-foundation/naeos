@@ -132,7 +132,7 @@ func GenerateParallel(neir any, concurrency int) ([]Artifact, error) {
 			mu.Lock()
 			artifacts = append(artifacts,
 				Artifact{Path: fmt.Sprintf("%s/README.md", moduleDir), Content: []byte(fmt.Sprintf("# %s\n\nModule for %s project.\n", name, projectName))},
-				Artifact{Path: fmt.Sprintf("%s/package.go", moduleDir), Content: []byte(fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name))},
+				Artifact{Path: fmt.Sprintf("%s/package.go", moduleDir), Content: []byte(goLicenseHeader + fmt.Sprintf("package %s\n\n// %s module.\n", pkg, name))},
 				Artifact{Path: fmt.Sprintf("%s/config.yaml", moduleDir), Content: []byte(fmt.Sprintf("name: %s\nmodule: %s\n", name, name))},
 			)
 			mu.Unlock()
