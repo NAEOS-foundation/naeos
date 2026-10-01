@@ -11,7 +11,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
-func newTestPlane(t *testing.T, failClosed bool, policies ...*policy.Policy) *ControlPlane {
+func newTestPlane(t *testing.T, policies ...*policy.Policy) *ControlPlane {
 	t.Helper()
 	reg := policy.NewRegistry()
 	for _, p := range policies {
@@ -19,11 +19,11 @@ func newTestPlane(t *testing.T, failClosed bool, policies ...*policy.Policy) *Co
 			t.Fatalf("register policy: %v", err)
 		}
 	}
-	return New(reg, FailClosed(failClosed))
+	return New(reg)
 }
 
 func TestEvaluateNoPolicyFailClosed(t *testing.T) {
-	c := newTestPlane(t, true)
+	c := newTestPlane(t)
 	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Context: map[string]any{}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -36,16 +36,8 @@ func TestEvaluateNoPolicyFailClosed(t *testing.T) {
 	}
 }
 
-func TestEvaluateNoPolicyFailOpen(t *testing.T) {
-	c := newTestPlane(t, false)
-	rec, _ := c.Evaluate(Request{Resource: "deploy", Action: "run"})
-	if rec.Decision != DecisionAllow {
-		t.Fatalf("expected ALLOW (fail open), got %s", rec.Decision)
-	}
-}
-
 func TestEvaluateMissingArguments(t *testing.T) {
-	c := newTestPlane(t, true)
+	c := newTestPlane(t)
 	if _, err := c.Evaluate(Request{Action: "run"}); err == nil {
 		t.Fatal("expected error when resource missing")
 	}
@@ -61,7 +53,7 @@ func TestEvaluateApprovalRequired(t *testing.T) {
 		Scope:   policy.Scope{Resource: "deploy", Action: "run", Environment: "production"},
 		Default: policy.DecisionRequireApproval,
 	}
-	c := newTestPlane(t, true, p)
+	c := newTestPlane(t, p)
 
 	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Environment: "production"})
 	if err != nil {
@@ -82,7 +74,7 @@ func TestEvaluateScopeOutOfEnvironment(t *testing.T) {
 		Scope:   policy.Scope{Resource: "deploy", Action: "run", Environment: "production"},
 		Default: policy.DecisionRequireApproval,
 	}
-	c := newTestPlane(t, true, p)
+	c := newTestPlane(t, p)
 
 	// Same action but staging environment => no matching policy => deny.
 	rec, _ := c.Evaluate(Request{Resource: "deploy", Action: "run", Environment: "staging"})
@@ -101,7 +93,7 @@ func TestEvaluateDenyRuleOverridesDefault(t *testing.T) {
 			{RuleID: "tls-min", Condition: "gte:tls_version,1.3", Decision: policy.DecisionAllow, Priority: 1},
 		},
 	}
-	c := newTestPlane(t, true, p)
+	c := newTestPlane(t, p)
 
 	// tls_version 1.2 -> rule fails -> DENY.
 	rec, _ := c.Evaluate(Request{
@@ -131,7 +123,7 @@ func TestEvaluateHighestPriorityApprovalWins(t *testing.T) {
 		Scope:   policy.Scope{Resource: "deploy", Action: "run", Environment: "production"},
 		Default: policy.DecisionRequireApproval,
 	}
-	c := newTestPlane(t, true, base, prod)
+	c := newTestPlane(t, base, prod)
 
 	rec, _ := c.Evaluate(Request{Resource: "deploy", Action: "run", Environment: "production"})
 	if rec.Decision != DecisionRequireApproval {
@@ -148,7 +140,7 @@ func TestEvaluateDeterministic(t *testing.T) {
 		Version: "1.0.0",
 		Default: policy.DecisionRequireApproval,
 	}
-	c := newTestPlane(t, true, p)
+	c := newTestPlane(t, p)
 
 	req := Request{Resource: "r", Action: "a", Context: map[string]any{"k": "v"}}
 	first, _ := c.Evaluate(req)
@@ -159,7 +151,7 @@ func TestEvaluateDeterministic(t *testing.T) {
 }
 
 func TestListDecisions(t *testing.T) {
-	c := newTestPlane(t, true)
+	c := newTestPlane(t)
 	if _, err := c.Evaluate(Request{Resource: "r", Action: "a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +183,7 @@ func TestEvaluateEvaluatorErrorFailsClosed(t *testing.T) {
 			{RuleID: "must-evaluate", Condition: "exists:project", Decision: policy.DecisionAllow, Priority: 1},
 		},
 	}
-	c := newTestPlane(t, true, p)
+	c := newTestPlane(t, p)
 	c.evaluator = errorEvaluator{}
 
 	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Context: map[string]any{"project": "naeos"}})
