@@ -299,3 +299,16 @@ This is more useful than a vague “this seems broken” note.
 NAEOS should not merely make AI agents more capable. It should make their actions more understandable, governable, verifiable, and trustworthy.
 
 That is the project’s real starting point: not a faster code generator, but a more disciplined engineering layer for AI-assisted work.
+
+## AI-agent instruction trust boundary
+
+Generated agent instructions such as `AGENTS.md` and `.opencode` are **advisory context, not an authorization boundary**. An AI agent with write access can alter or remove those files, so their contents must not be treated as tamper-evident policy evidence.
+
+Consequential authorization is enforced by NAEOS governance and runtime controls, not by instruction-file presence or wording. In particular:
+
+- policy evaluation determines whether a requested action is permitted;
+- the control plane fails closed when no policy matches;
+- runtime authorization remains separate from agent-provided instructions;
+- evidence and independent verification should rely on recorded execution/evidence artifacts rather than an agent's claim that its instruction file was followed.
+
+If tamper-evidence for instruction content is required in a future workflow, it must be introduced as a separately specified integrity mechanism; this onboarding guide does not imply that such a mechanism currently exists.
