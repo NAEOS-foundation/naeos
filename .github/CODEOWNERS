@@ -1,0 +1,16 @@
+# NAEOS CODEOWNERS
+#
+# Ownership is intentionally scoped to governance-sensitive paths.
+# General contributors remain free to propose changes elsewhere.
+
+* @NAEOS-foundation
+
+# Governance and policy controls
+/governance/ @NAEOS-foundation
+/internal/policy/ @NAEOS-foundation
+/internal/runtime/ @NAEOS-foundation
+/legal/ @NAEOS-foundation
+
+# CI, release, and security controls
+/.github/ @NAEOS-foundation
+/scripts/ @NAEOS-foundation
