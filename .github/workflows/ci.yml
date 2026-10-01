@@ -243,9 +243,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Validate legal evidence fixture
-        run: bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json
-        continue-on-error: true
       - name: Verify placeholder fixture is rejected
         run: |
           set -euo pipefail
@@ -253,7 +250,44 @@ jobs:
             echo "placeholder evidence fixture was accepted" >&2
             exit 1
           fi
-          echo "Placeholder fixture correctly rejected; CI validates the executable gate without treating the example as release evidence."
+      - name: Validate a complete evidence record
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+      - name: Verify PASS decision rejects HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.security_status = "HOLD"' legal/evidence/release-3.6.0.example.json > "$tmp"
+          jq '.commit_sha = "0123456789abcdef0123456789abcdef01234567" |
+              .release_date = "2026-10-01T00:00:00Z" |
+              .reviewer = "ci-fixture" |
+              .sbom.sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"' "$tmp" > "$tmp.valid"
+          if bash scripts/validate-legal-evidence.sh "$tmp.valid"; then
+            echo "PASS decision with HOLD status was accepted" >&2
+            exit 1
+          fi
 
   ci-gate:
     name: CI Gate
