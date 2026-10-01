@@ -1,11 +1,11 @@
 name: Slack Notifications
-# NAEOS Slack bridge test trigger
-# Triggered by PR synchronization for validation
+# NAEOS Slack bridge
+# Keep GitHub activity actionable; avoid PR synchronize noise.
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, closed, reopened, ready_for_review, synchronize]
+    types: [opened, closed, reopened, ready_for_review]
   issues:
     types: [opened, closed, reopened]
   workflow_run:
