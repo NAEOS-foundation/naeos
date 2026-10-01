@@ -30,6 +30,8 @@ This architecture does not relicense existing NAEOS code.
 - [Trademark & Brand Policy](TRADEMARK.md)
 - [Third-Party Software Policy](THIRD-PARTY.md)
 - [Legal Release Checklist](LEGAL-RELEASE-CHECKLIST.md)
+- [Legal Evidence Registry](LEGAL-EVIDENCE-REGISTRY.md)
+- [Example Release Evidence](evidence/release-3.6.0.example.json)
 
 ## Authority
 
