@@ -29,7 +29,6 @@ func newControlCommand() *cobra.Command {
 
 func newControlEvaluateCommand() *cobra.Command {
 	var resource, action, environment, actor, contextJSON string
-	var failOpen bool
 	var output string
 
 	cmd := &cobra.Command{
@@ -47,7 +46,7 @@ Example:
 			if err != nil {
 				return err
 			}
-			plane := control.New(reg, control.FailClosed(!failOpen))
+			plane := control.New(reg)
 
 			ctx := map[string]any{}
 			if contextJSON != "" {
@@ -100,7 +99,6 @@ Example:
 	cmd.Flags().StringVar(&actor, "actor", "", "actor issuing the request")
 	cmd.Flags().StringVar(&contextJSON, "context", "", "JSON object of evaluation context")
 	cmd.Flags().StringVar(&output, "output", "table", "output format: table or json")
-	cmd.Flags().BoolVar(&failOpen, "fail-open", false, "allow requests with no matching policy (default: deny)")
 	_ = cmd.MarkFlagRequired("resource")
 	_ = cmd.MarkFlagRequired("action")
 	return cmd
