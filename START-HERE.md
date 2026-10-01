@@ -36,63 +36,39 @@ Before running locally, you can inspect the public Control Plane at [naeos.dev/c
 
 Use it to understand the public control boundary first; then reproduce the engineering workflow locally with the Golden Path below.
 
-## 4. Try the Golden Path in 5 minutes
+## 4. Run the Verified Golden Path
 
-The most direct, verified onboarding path in this repository is the canonical CLI demo in [examples/demo-cli/README.md](examples/demo-cli/README.md) and its script at [examples/demo-cli/run-demo.sh](examples/demo-cli/run-demo.sh).
+The canonical onboarding spine is [Verified Golden Path](docs/VERIFIED-GOLDEN-PATH.md). It connects the public control boundary, local Golden Path, evidence inspection, independent verification, governance experiment, and handoff experiment without creating a second implementation path.
 
-This is the repository’s single supported first-run flow:
+Start with the public boundary:
+
+- [NAEOS Control Plane](https://naeos.dev/control-plane/)
+
+Then run the local proof:
 
 ```bash
 go build -o naeos ./cmd/naeos
-./examples/demo-cli/run-demo.sh
+NAEOS_DEMO_OUTPUT_DIR=/tmp/naeos-demo ./examples/demo-cli/run-demo.sh
 ```
 
-The formal [NAEOS Golden Path](docs/GOLDEN-PATH.md) defines the acceptance criteria and evidence map for this same flow.
-
-For an external technical evaluation, start with the [External Evaluator Quickstart](docs/EXTERNAL-EVALUATOR-QUICKSTART.md), then use the [Reference Demo & Evidence Story](docs/REFERENCE-DEMO.md) and the [External Evaluator Scorecard](docs/EXTERNAL-EVALUATOR-SCORECARD.md). It turns the same run into an independent reviewer checklist and traceability narrative. For a reproducible third-party review, use the [External Validation Runbook](docs/EXTERNAL-VALIDATION.md) and [Technical Pilot Definition](docs/PILOT-READINESS.md). For execution, use the [P2.1 Pilot Execution Package](docs/P2-PILOT-EXECUTION-PACKAGE.md), which fixes the pilot boundary, acceptance matrix, evidence anchors, independent-verification boundary, and deviation protocol. For P2.2 external evaluation, use the [Evaluator Intake](docs/P2-EVALUATOR-INTAKE.md) and [External Run #001](docs/P2-EXTERNAL-RUN-001.md) to keep the first independent run fixed, evidence-based, and reproducible. For execution, use the [P2.1 Pilot Execution Package](docs/P2-PILOT-EXECUTION-PACKAGE.md), which fixes the pilot boundary, acceptance matrix, evidence anchors, independent-verification boundary, and deviation protocol.
-
-What to expect:
-- the specification is validated
-- NEIR is materialized and inspected
-- policy evaluation is exercised, including deterministic rejection of invalid configuration
-- an AI context bundle is generated
-- a valid run produces generated artifacts
-- run metadata records traceability (`run_id`, `specification_hash`, `neir_hash`)
-
-This is the best first check because it demonstrates the real NAEOS control-plane workflow without requiring the full architecture first.
+The underlying acceptance contract remains [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md). After the run, inspect the evidence under `/tmp/naeos-demo`, then use the read-only [P1.11 Independent Verifier](docs/control-plane/p1-11-independent-verifier-cli.md) for a canonical `EvidenceBundle`.
 
 ### What you just proved
 
-A successful run gives you repository-backed evidence that:
+A successful local run establishes:
 
 ```text
 Specification
   → NEIR
   → Validation
-  → Policy rejection boundary
+  → Policy
   → AI context
   → Authorized generation
   → Artifacts
-  → Traceable run evidence
+  → Traceable evidence
 ```
 
-This proves the reproducible local control-plane path. It does **not** by itself prove production readiness, customer adoption, enterprise compliance, or the safety of every external agent integration.
-
-For the independent-verification capability, see [P1.11 — Independent Verifier CLI](docs/control-plane/p1-11-independent-verifier-cli.md). It accepts a serialized canonical `EvidenceBundle` and verifies it independently:
-
-```bash
-naeos evidence verify-bundle --input-file evidence.json
-```
-
-P1.11 is intentionally read-only: it does not re-run policy, execute an action, or contact the control plane. Its input is a canonical `EvidenceBundle`, so it should be treated as a separate verification boundary rather than as a direct invocation on the Golden Path's `run.json`.
-
-If you want to go one step further with the AI compiler:
-
-```bash
-naeos ai compile --input-file examples/demo-cli/spec.yaml --target opencode
-```
-
-The default demo intentionally does not require an LLM API key.
+The Verified Golden Path adds independent verification and challenge-oriented experiments around that core proof. It does **not** by itself prove production readiness, customer adoption, enterprise compliance, or the safety of every external agent integration.
 
 ## 5. Run the governance experiment
 
@@ -141,15 +117,15 @@ Start with:
 - [specification/NAEOS-SPEC-001.md](specification/NAEOS-SPEC-001.md)
 - [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md)
 
-### I want to run NAEOS
+### I want to run or verify NAEOS
 
-Use:
+Start with:
 
-- [GETTING-STARTED.md](GETTING-STARTED.md)
+- [docs/VERIFIED-GOLDEN-PATH.md](docs/VERIFIED-GOLDEN-PATH.md)
 - [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md)
 - [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md)
-- [examples/demo-cli/README.md](examples/demo-cli/README.md)
-- [docs/NES-028-CLI-Reference.md](docs/NES-028-CLI-Reference.md)
+- [docs/control-plane/p1-11-independent-verifier-cli.md](docs/control-plane/p1-11-independent-verifier-cli.md)
+- [docs/EXTERNAL-VALIDATION.md](docs/EXTERNAL-VALIDATION.md)
 
 Verified local path:
 

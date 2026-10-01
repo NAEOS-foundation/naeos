@@ -80,12 +80,13 @@ verification feel like one coherent onboarding journey.
 - [x] Reference Demo evidence story
 - [x] External Validation runbook
 - [x] Independent EvidenceBundle verifier
-- [ ] Link public Control Plane → Golden Path → Reference Demo → Verifier
+- [x] Link public Control Plane → Golden Path → Reference Demo → Verifier through the Verified Golden Path navigator
 - [ ] Verify fresh-checkout onboarding on the current release
-- [ ] Remove or fix broken onboarding links
-- [ ] Add one concise "what you just proved" explanation
+- [x] Remove duplicate onboarding routes from START-HERE
+- [x] Add one concise "what you just proved" explanation
 
 References:
+- docs/VERIFIED-GOLDEN-PATH.md
 - docs/GOLDEN-PATH.md
 - docs/REFERENCE-DEMO.md
 - docs/EXTERNAL-VALIDATION.md
@@ -115,7 +116,9 @@ rather than reproduce competing roadmaps.
 
 ## Track 3 — Adoption Engineering
 
-**Status: NEXT**
+**Status: ACTIVE**
+
+The Verified Golden Path is now the canonical adoption spine. The next measurable outcome is reproducible usage by technical evaluators, not additional feature surface.
 
 Goal: turn technical proof into repeatable developer adoption.
 
