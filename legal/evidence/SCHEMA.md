@@ -26,4 +26,4 @@ Allowed status values:
 - `REVIEWED`
 - `NOT_APPLICABLE`
 
-The schema intentionally remains small in v1.0. Release automation may later emit a machine-readable JSON Schema once the field semantics stabilize.
+The schema intentionally remains small in v1.0. The executable validator is `scripts/validate-legal-evidence.sh` and is enforced by the `Legal Evidence Gate` CI job. The example release record is expected to fail validation because it contains placeholders.
