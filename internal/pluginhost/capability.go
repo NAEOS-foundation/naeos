@@ -43,7 +43,7 @@ func (b *CapabilityBoundary) Authorize(pluginName, action string, required []str
 		return nil
 	}
 	if b == nil {
-		return naeoserr.New(naeoserr.ErrPermission, "plugin capability boundary is not configured")
+		return naeoserr.New(naeoserr.ErrPermDenied, "plugin capability boundary is not configured")
 	}
 	pluginName = strings.TrimSpace(pluginName)
 	action = strings.TrimSpace(action)
@@ -63,7 +63,7 @@ func (b *CapabilityBoundary) Authorize(pluginName, action string, required []str
 	}
 	if len(missing) > 0 {
 		sort.Strings(missing)
-		return naeoserr.New(naeoserr.ErrPermission,
+		return naeoserr.New(naeoserr.ErrPermDenied,
 			fmt.Sprintf("plugin %q action %q requires ungranted capabilities: %s",
 				pluginName, action, strings.Join(missing, ", ")))
 	}
