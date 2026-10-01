@@ -90,7 +90,7 @@ import json, sys
 path = sys.argv[1]
 with open(path, 'r', encoding='utf-8') as fh:
     data = json.load(fh)
-required = ['run_id', 'specification_hash', 'neir_hash', 'validation', 'policy', 'context', 'audit', 'stages']
+required = ['run_id', 'specification_hash', 'neir_hash', 'validation', 'policy', 'context', 'audit', 'stages', 'artifact_summary']
 missing = [key for key in required if key not in data]
 if missing:
     raise SystemExit(f'missing required run metadata: {missing}')
@@ -99,6 +99,12 @@ if not isinstance(validation, dict):
     raise SystemExit('validation metadata must be an object')
 if not data.get('run_id') or not data.get('specification_hash') or not data.get('neir_hash'):
     raise SystemExit('run_id/specification_hash/neir_hash are required')
+artifact_summary = data.get('artifact_summary', {})
+for key in ('logical_artifacts', 'materialized_files', 'path_collisions'):
+    if key not in artifact_summary:
+        raise SystemExit(f'missing artifact accounting field: {key}')
+if artifact_summary['logical_artifacts'] < artifact_summary['materialized_files']:
+    raise SystemExit('logical artifact count cannot be smaller than materialized file count')
 print(f"Trace metadata verified: run_id={data['run_id']} specification_hash={data['specification_hash']} neir_hash={data['neir_hash']}")
 PY
 
@@ -120,6 +126,16 @@ for required_file in "${REQUIRED_FILES[@]}"; do
 done
 
 ARTIFACT_COUNT="$(find "$GENERATED_DIR" -type f | wc -l | tr -d ' ')"
+LOGICAL_ARTIFACT_COUNT="$(python3 - "$OUTPUT_DIR/run.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["artifact_summary"]["logical_artifacts"])
+PY
+)"
+PATH_COLLISIONS="$(python3 - "$OUTPUT_DIR/run.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["artifact_summary"]["path_collisions"])
+PY
+)"
 cat > "$OUTPUT_DIR/summary.md" <<EOF
 # NAEOS CLI Demo Result
 
@@ -129,16 +145,20 @@ cat > "$OUTPUT_DIR/summary.md" <<EOF
 - NEIR: \`inspect.json\`
 - AI context: \`context.md\`
 - Run metadata: \`run.json\`
-- Generated artifacts: ${ARTIFACT_COUNT}
+- Logical artifacts: ${LOGICAL_ARTIFACT_COUNT}
+- Materialized files: ${ARTIFACT_COUNT}
+- Artifact path collisions: ${PATH_COLLISIONS}
 - Generated output: \`generated/\`
 
-The canonical demo verified the full control-plane flow: specification, NEIR, validation, policy, AI context, and generated artifacts, with traceability metadata captured in run.json.
+The canonical demo verified the full control-plane flow: specification, NEIR, validation, policy, AI context, and generated artifacts, with traceability metadata and artifact accounting captured in run.json.
 EOF
 
 printf '\n== [8/8] Evidence ==\n'
-printf 'Artifacts generated: %s\n' "$ARTIFACT_COUNT"
+printf 'Logical artifacts: %s\n' "$LOGICAL_ARTIFACT_COUNT"
+printf 'Materialized files: %s\n' "$ARTIFACT_COUNT"
+printf 'Artifact path collisions: %s\n' "$PATH_COLLISIONS"
 printf 'Summary: %s\n' "$OUTPUT_DIR/summary.md"
 
 printf '\nDemo complete. Output: %s\n' "$OUTPUT_DIR"
-printf 'Verified %s generated artifacts and wrote %s/summary.md\n' "$ARTIFACT_COUNT" "$OUTPUT_DIR"
+printf 'Verified %s materialized files from %s logical artifacts and wrote %s/summary.md\n' "$ARTIFACT_COUNT" "$LOGICAL_ARTIFACT_COUNT" "$OUTPUT_DIR"
 printf 'Inspect with: find %s -maxdepth 3 -type f | sort\n' "$OUTPUT_DIR"
