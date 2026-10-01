@@ -347,6 +347,22 @@ jobs:
           fi
 
 
+  merge-base-freshness:
+    name: Merge-base Freshness
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Fetch current base branch
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+      - name: Verify PR contains current base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-merge-base-freshness.sh
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -366,6 +382,7 @@ jobs:
       - change-risk-gate
       - pdr-validation
       - legal-evidence-gate
+      - merge-base-freshness
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -385,6 +402,7 @@ jobs:
           CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
           PDR: ${{ needs['pdr-validation'].result }}
           LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
+          MERGE_BASE: ${{ needs['merge-base-freshness'].result }}
         run: |
           set -euo pipefail
           for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
@@ -392,6 +410,7 @@ jobs:
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
           test "$LEGAL_EVIDENCE" = "success"
+          test "$MERGE_BASE" = "success"
           echo "All required CI jobs passed."
 
   fuzz:
