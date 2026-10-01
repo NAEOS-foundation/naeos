@@ -21,33 +21,33 @@ import (
 // Manager is the unified plugin manager that handles loading, lifecycle,
 // sandboxing, and execution of plugins.
 type Manager struct {
-	pluginDir string
-	plugins   map[string]Plugin
-	info      map[string]*PluginInfo
-	config    PluginConfig
-	sandbox   *Sandbox
-	events    *EventBus
+	pluginDir          string
+	plugins            map[string]Plugin
+	info               map[string]*PluginInfo
+	config             PluginConfig
+	sandbox            *Sandbox
+	events             *EventBus
 	capabilityBoundary *CapabilityBoundary
-	mu        sync.RWMutex
+	mu                 sync.RWMutex
 }
 
 // PluginConfig is the persisted plugin configuration.
 type PluginConfig struct {
-	Plugins []PluginInfo  `json:"plugins"`
-	Sandbox           SandboxConfig   `json:"sandbox,omitempty"`
-	CapabilityGrants  map[string][]string `json:"capability_grants,omitempty"`
-	Lazy              bool            `json:"lazy,omitempty"`
+	Plugins          []PluginInfo          `json:"plugins"`
+	Sandbox          SandboxConfig         `json:"sandbox,omitempty"`
+	CapabilityGrants map[string][]string   `json:"capability_grants,omitempty"`
+	Lazy             bool                  `json:"lazy,omitempty"`
 }
 
 // NewManager creates a new PluginManager for the given directory.
 func NewManager(pluginDir string) *Manager {
 	return &Manager{
-		pluginDir: pluginDir,
-		plugins:   make(map[string]Plugin),
-		info:      make(map[string]*PluginInfo),
-		config:    PluginConfig{Lazy: true},
-		sandbox:   NewSandbox(SandboxConfig{}),
-		events:    NewEventBus(),
+		pluginDir:          pluginDir,
+		plugins:            make(map[string]Plugin),
+		info:               make(map[string]*PluginInfo),
+		config:             PluginConfig{Lazy: true},
+		sandbox:            NewSandbox(SandboxConfig{}),
+		events:             NewEventBus(),
 		capabilityBoundary: mustCapabilityBoundary(nil),
 	}
 }
@@ -80,7 +80,7 @@ func (m *Manager) LoadConfig() error {
 	m.sandbox = NewSandbox(m.config.Sandbox)
 	boundary, err := NewCapabilityBoundary(m.config.CapabilityGrants)
 	if err != nil {
-		return naeoserr.Wrap(err, naeoserr.ErrValidation, "invalid plugin capability grants")
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin capability grants")
 	}
 	m.capabilityBoundary = boundary
 	return nil
@@ -489,7 +489,6 @@ func (m *Manager) Execute(ctx context.Context, name, action string, params map[s
 			return nil, err
 		}
 	}
-
 
 	m.mu.Lock()
 	m.updateStateLocked(name, StateRunning, nil)
