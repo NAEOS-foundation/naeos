@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -190,30 +191,47 @@ Example:
 }
 
 func newEvidenceQueryCommand() *cobra.Command {
-	var actor, resource, policyID, decision, outputFmt string
+	var id, actor, resource, action, environment, policyID, decision, from, to, outputFmt string
 	var limit int
+	var verifyChain bool
 
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query evidence records by criteria",
-		Args:  cobra.NoArgs,
+		Long: "Query the evidence store using exact filters and an optional RFC3339 time range.",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			store, err := loadEvidenceStore()
-			if err != nil {
-				return err
+			if err != nil { return err }
+
+			parseTime := func(flagName, value string) (time.Time, error) {
+				if value == "" { return time.Time{}, nil }
+				parsed, err := time.Parse(time.RFC3339, value)
+				if err != nil {
+					return time.Time{}, fmt.Errorf("--%s must be RFC3339 (for example 2026-10-01T12:00:00Z): %w", flagName, err)
+				}
+				return parsed, nil
+			}
+			fromTime, err := parseTime("from", from)
+			if err != nil { return err }
+			toTime, err := parseTime("to", to)
+			if err != nil { return err }
+			if !fromTime.IsZero() && !toTime.IsZero() && fromTime.After(toTime) {
+				return fmt.Errorf("--from must not be after --to")
+			}
+
+			if verifyChain {
+				idx, err := store.Verify()
+				if err != nil {
+					return fmt.Errorf("evidence chain verification failed at index %d: %w", idx, err)
+				}
 			}
 
 			var dec control.Decision
-			if decision != "" {
-				dec = control.Decision(decision)
-			}
-
+			if decision != "" { dec = control.Decision(decision) }
 			results := store.Query(evidence.EvidenceQuery{
-				Actor:    actor,
-				Resource: resource,
-				PolicyID: policyID,
-				Decision: dec,
-				Limit:    limit,
+				ID: id, Actor: actor, Resource: resource, Action: action, Environment: environment,
+				PolicyID: policyID, Decision: dec, From: fromTime, To: toTime, Limit: limit,
 			})
 
 			if outputFmt == "json" {
@@ -223,29 +241,36 @@ func newEvidenceQueryCommand() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n", "ID", "DECISION", "STATUS", "ACTOR", "RESOURCE")
-			fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n",
-				strings.Repeat("-", 12), strings.Repeat("-", 8), strings.Repeat("-", 10), strings.Repeat("-", 20), strings.Repeat("-", 20))
+			fmt.Fprintf(out, "%-12s %-20s %-8s %-10s %-16s %-14s %-20s %-12s\n",
+				"ID", "TIMESTAMP", "DECISION", "STATUS", "ACTOR", "ACTION", "RESOURCE", "ENVIRONMENT")
+			fmt.Fprintf(out, "%-12s %-20s %-8s %-10s %-16s %-14s %-20s %-12s\n",
+				strings.Repeat("-", 12), strings.Repeat("-", 20), strings.Repeat("-", 8), strings.Repeat("-", 10),
+				strings.Repeat("-", 16), strings.Repeat("-", 14), strings.Repeat("-", 20), strings.Repeat("-", 12))
 			for _, r := range results {
-				id := r.ID
-				if len(id) > 11 {
-					id = id[:11] + "…"
-				}
-				fmt.Fprintf(out, "%-12s %-8s %-10s %-20s %s\n", id, r.Decision, r.ExecutionStatus, r.Actor, r.Resource)
+				recordID := r.ID
+				if len(recordID) > 11 { recordID = recordID[:11] + "…" }
+				fmt.Fprintf(out, "%-12s %-20s %-8s %-10s %-16s %-14s %-20s %-12s\n",
+					recordID, r.Timestamp.UTC().Format(time.RFC3339), r.Decision, r.ExecutionStatus,
+					r.Actor, r.Action, r.Resource, r.Environment)
 			}
 			return nil
 		},
 	}
 
+	cmd.Flags().StringVar(&id, "id", "", "filter by exact evidence ID")
 	cmd.Flags().StringVar(&actor, "actor", "", "filter by actor")
 	cmd.Flags().StringVar(&resource, "resource", "", "filter by resource")
+	cmd.Flags().StringVar(&action, "action", "", "filter by action")
+	cmd.Flags().StringVar(&environment, "environment", "", "filter by environment")
 	cmd.Flags().StringVar(&policyID, "policy", "", "filter by policy ID")
 	cmd.Flags().StringVar(&decision, "decision", "", "filter by decision (ALLOW/DENY/REQUIRE_APPROVAL)")
-	cmd.Flags().IntVar(&limit, "limit", 20, "max records to return")
+	cmd.Flags().StringVar(&from, "from", "", "inclusive start time (RFC3339)")
+	cmd.Flags().StringVar(&to, "to", "", "inclusive end time (RFC3339)")
+	cmd.Flags().IntVar(&limit, "limit", 20, "max records to return; 0 means unlimited")
+	cmd.Flags().BoolVar(&verifyChain, "verify-chain", false, "verify the evidence hash chain before returning results")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
-
 func newEvidenceVerifyCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify",

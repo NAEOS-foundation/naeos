@@ -85,7 +85,7 @@ The run demonstrates:
 - AI context generation;
 - authorized generation;
 - generated artifacts;
-- traceability metadata, including artifact accounting.
+- traceability metadata.
 
 Inspect the resulting evidence:
 
@@ -166,9 +166,7 @@ Golden Path exit status:
 run_id:
 specification_hash:
 neir_hash:
-Logical artifact count:
-Materialized file count:
-Artifact path collisions:
+Generated artifact count:
 
 Independent verification:
 PASS / FAIL / NOT RUN
