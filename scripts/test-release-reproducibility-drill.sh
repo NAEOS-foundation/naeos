@@ -85,12 +85,16 @@ verify_manifest() {
   openssl pkeyutl -verify -rawin -pubin -inkey "$public_key" -in "$artifact" -sigfile "$signature" >/dev/null 2>&1
 }
 
+verify_legal_binding() {
+  jq -e --arg commit "$source_commit" --arg version "$version" --arg sbom "naeos_$version.bom.json" --arg sbom_sha "$sbom_sha256" '
+  (.repository=="NAEOS-foundation/naeos") and (.commit_sha==$commit) and (.release_version==$version)
+  and (.sbom.artifact==$sbom) and (.sbom.sha256==$sbom_sha) and (.decision=="PASS")' "$1" >/dev/null
+}
+
 jq -e --arg commit "$source_commit" --arg digest "sha256:$artifact_sha256" '
 (.fixture==true) and (.repository=="NAEOS-foundation/naeos") and (.commit_sha==$commit) and (.digest==$digest)' "$attestation" >/dev/null
 
-jq -e --arg commit "$source_commit" --arg version "$version" --arg sbom "naeos_$version.bom.json" --arg sbom_sha "$sbom_sha256" '
-(.repository=="NAEOS-foundation/naeos") and (.commit_sha==$commit) and (.release_version==$version)
-and (.sbom.artifact==$sbom) and (.sbom.sha256==$sbom_sha) and (.decision=="PASS")' "$evidence" >/dev/null
+verify_legal_binding "$evidence"
 
 jq -e --arg commit "$source_commit" --arg version "$version" '
 (.fixture==true) and (.tag==("v"+$version)) and (.version==$version)
@@ -107,8 +111,8 @@ fi
 mv "$tmp/artifact.original" "$artifact"
 
 jq '.commit_sha = ("0" * 40)' "$evidence" > "$tmp/evidence-tampered.json"
-if bash "$repo_root/scripts/validate-legal-evidence.sh" "$tmp/evidence-tampered.json" >/dev/null 2>&1; then
-  echo "evidence mutation unexpectedly validated" >&2
+if verify_legal_binding "$tmp/evidence-tampered.json"; then
+  echo "evidence binding mutation unexpectedly passed" >&2
   exit 1
 fi
 
