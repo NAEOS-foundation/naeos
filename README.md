@@ -308,6 +308,7 @@ For public community acquisition, use the workspace's Slack shared-invite URL ra
 - [Governance](governance/) — project governance material
 - [AI-assisted provenance policy](docs/ai-provenance.md) — guidance for AI-assisted contributions
 - [Open-core boundary](docs/open-core.md) — relationship between NAEOS Core and future offerings
+- [Legal Architecture](legal/README.md) — IP provenance, trademarks, third-party licensing, and release legal controls
 
 ## License
 
