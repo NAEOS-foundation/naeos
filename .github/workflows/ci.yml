@@ -403,6 +403,7 @@ jobs:
           PDR: ${{ needs['pdr-validation'].result }}
           LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
           MERGE_BASE: ${{ needs['merge-base-freshness'].result }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
@@ -410,7 +411,9 @@ jobs:
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
           test "$LEGAL_EVIDENCE" = "success"
-          test "$MERGE_BASE" = "success"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            test "$MERGE_BASE" = "success"
+          fi
           echo "All required CI jobs passed."
 
   fuzz:
