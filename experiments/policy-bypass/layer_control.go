@@ -116,7 +116,7 @@ func scnEvaluatorErrorFailsClosed() Result {
 			Priority:  1,
 		}},
 	})
-	plane := control.New(reg, control.FailClosed(false))
+	plane := control.New(reg)
 	rec, err := plane.Evaluate(control.Request{
 		Resource: "ship",
 		Action:   "run",
