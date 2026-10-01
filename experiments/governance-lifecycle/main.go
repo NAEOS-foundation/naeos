@@ -137,7 +137,7 @@ func run() ([]lifecycleResult, string, error) {
 		return nil, "", err
 	}
 
-	cp := control.New(reg, control.FailClosed(true))
+	cp := control.New(reg)
 	store := evidence.NewStore()
 	src := &artifactSource{content: map[string][]byte{}}
 	contract := verification.Contract{
