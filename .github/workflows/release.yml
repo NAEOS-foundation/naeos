@@ -9,6 +9,8 @@ permissions:
   contents: write
   packages: write
   pull-requests: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -87,14 +89,35 @@ jobs:
             --output "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
           go run ./cmd/naeos/ sbom verify "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
 
+      - name: Verify release DCO evidence
+        run: |
+          BASE="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 --first-parent HEAD)"
+          bash scripts/check-release-dco.sh "$BASE" "$GITHUB_SHA"
+
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: checksums.txt
+
+      - name: Attest release SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            naeos-linux-amd64
+            naeos-linux-arm64
+            naeos-darwin-amd64
+            naeos-darwin-arm64
+            naeos-windows-amd64.exe
+          sbom-path: naeos_${{ steps.version.outputs.VERSION }}.bom.json
+
       - name: Generate release legal evidence
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.VERSION }}
-          DCO_STATUS: ${{ vars.NAEOS_LEGAL_DCO_STATUS || 'HOLD' }}
+          DCO_STATUS: PASS
           DEPENDENCY_LICENSE_STATUS: ${{ vars.NAEOS_LEGAL_DEPENDENCY_LICENSE_STATUS || 'HOLD' }}
           ATTRIBUTION_STATUS: ${{ vars.NAEOS_LEGAL_ATTRIBUTION_STATUS || 'HOLD' }}
           SECURITY_STATUS: ${{ vars.NAEOS_LEGAL_SECURITY_STATUS || 'HOLD' }}
-          PROVENANCE_STATUS: ${{ vars.NAEOS_LEGAL_PROVENANCE_STATUS || 'HOLD' }}
+          PROVENANCE_STATUS: PASS
           TRADEMARK_STATUS: ${{ vars.NAEOS_LEGAL_TRADEMARK_STATUS || 'HOLD' }}
           LEGAL_EVIDENCE_REVIEWER: ${{ vars.NAEOS_LEGAL_EVIDENCE_REVIEWER || 'github-actions' }}
         run: |
