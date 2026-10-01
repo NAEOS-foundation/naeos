@@ -54,7 +54,8 @@ A Golden Path run is successful only when all of these are true:
 5. The normal generation pipeline completes.
 6. `run.json` contains `run_id`, `specification_hash`, `neir_hash`, validation, policy, context, audit, and stage metadata.
 7. Expected generated project files exist.
-8. A summary is written under the isolated run directory.
+8. `run.json` records logical artifact count, materialized file count, and any artifact-path collisions.
+9. A summary is written under the isolated run directory.
 
 ### What you just proved
 
@@ -89,7 +90,7 @@ The repository CI executes the same demo script with an isolated temporary outpu
 | Policy | `invalid-policy.log` | A disallowed configuration fails closed |
 | AI Context | `context.md`, `context.json` | Agent-facing context is derived from the engineering model |
 | Generation | `generated/` | The same specification drives project artifacts |
-| Traceability | `run.json` | Run identity and specification/NEIR hashes connect execution to intent |
+| Traceability | `run.json` | Run identity, specification/NEIR hashes, and artifact accounting connect execution to intent |
 | Evidence | `summary.md` plus run metadata | The result is inspectable after the process completes |
 
 ## What the Golden Path does not claim
@@ -113,3 +114,14 @@ When a feature changes the control-plane stages or their contracts, update the G
 **Golden Path principle:** one engineering intent, one reproducible run, inspectable evidence from specification to generated artifact.
 
 **Proof boundary:** the Golden Path proves the local control-plane workflow; P1.11 provides an independent read-only verification boundary for canonical evidence.
+
+
+## Artifact accounting contract
+
+`run.json` distinguishes three related quantities:
+
+- **logical artifacts** — artifact entries returned by the generation pipeline;
+- **materialized files** — unique artifact paths written to the configured output directory;
+- **path collisions** — logical artifact entries that share a materialized path.
+
+These values are intentionally recorded separately so multi-stage or multi-language generation cannot make artifact counts appear inconsistent. A collision is observable evidence and should be investigated when evaluating generation composition.
