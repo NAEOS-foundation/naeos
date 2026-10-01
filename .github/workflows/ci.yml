@@ -238,6 +238,57 @@ jobs:
             exit 1
           fi
 
+  legal-evidence-gate:
+    name: Legal Evidence Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify placeholder fixture is rejected
+        run: |
+          set -euo pipefail
+          if bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json; then
+            echo "placeholder evidence fixture was accepted" >&2
+            exit 1
+          fi
+      - name: Validate a complete evidence record
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+      - name: Verify PASS decision rejects HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.security_status = "HOLD"' legal/evidence/release-3.6.0.example.json > "$tmp"
+          jq '.commit_sha = "0123456789abcdef0123456789abcdef01234567" |
+              .release_date = "2026-10-01T00:00:00Z" |
+              .reviewer = "ci-fixture" |
+              .sbom.sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"' "$tmp" > "$tmp.valid"
+          if bash scripts/validate-legal-evidence.sh "$tmp.valid"; then
+            echo "PASS decision with HOLD status was accepted" >&2
+            exit 1
+          fi
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -256,6 +307,7 @@ jobs:
       - dependency-risk-gate
       - change-risk-gate
       - pdr-validation
+      - legal-evidence-gate
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -274,12 +326,14 @@ jobs:
           DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
           CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
           PDR: ${{ needs['pdr-validation'].result }}
+          LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
         run: |
           set -euo pipefail
           for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
+          test "$LEGAL_EVIDENCE" = "success"
           echo "All required CI jobs passed."
 
   fuzz:
