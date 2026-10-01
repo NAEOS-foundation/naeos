@@ -55,8 +55,8 @@ type DecisionRecord struct {
 // governance: given the same policy, action, and context it always produces
 // the same decision, with no LLM inference required.
 type ControlPlane struct {
-	registry   *policy.Registry
-	evaluator  policy.Evaluator
+	registry  *policy.Registry
+	evaluator policy.Evaluator
 
 	mu        sync.Mutex
 	decisions []DecisionRecord
