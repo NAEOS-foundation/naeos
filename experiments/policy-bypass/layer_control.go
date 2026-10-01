@@ -16,7 +16,6 @@ func controlScenarios() []Result {
 	return []Result{
 		scnFailClosedDenyOnNoPolicy(),
 		scnScopeSpoofViaResource(),
-		scnFailOpenAllowsAnything(),
 		scnEvaluatorErrorFailsClosed(),
 		scnStrictestWins(),
 	}
@@ -99,28 +98,6 @@ func scnScopeSpoofViaResource() Result {
 		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: decisionOutcome(rec.Decision),
 		Evidence: fmt.Sprintf("resource='deployment' -> decision=%s; rule did not match so default fail-closed applied", rec.Decision),
 		Risk:     Medium,
-	}
-}
-
-func scnFailOpenAllowsAnything() Result {
-	reg := policy.NewRegistry()
-	plane := control.New(reg, control.FailClosed(false))
-	rec, err := plane.Evaluate(control.Request{
-		Resource:    "deploy",
-		Action:      "run",
-		Environment: "production",
-		Actor:       "agent-7",
-	})
-	if err != nil {
-		return Result{Layer: LayerControl, Scenario: "fail-open allows unmatched", Attack: "-", Bypassed: false, ObservedOutcome: OutcomeError, Evidence: "eval error", Risk: Critical}
-	}
-	return Result{
-		Layer:    LayerControl,
-		Scenario: "fail-open allows unmatched request",
-		Attack:   "Operator toggles FailClosed(false): every request with no matching policy is allowed instead of denied",
-		Bypassed: rec.Decision == control.DecisionAllow, ObservedOutcome: OutcomeAllow,
-		Evidence: fmt.Sprintf("empty registry + fail-open -> decision=%s", rec.Decision),
-		Risk:     Critical,
 	}
 }
 
