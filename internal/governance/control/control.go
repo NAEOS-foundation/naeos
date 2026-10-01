@@ -68,8 +68,8 @@ type Option func(*ControlPlane)
 // New creates a ControlPlane over the given policy registry.
 func New(reg *policy.Registry, opts ...Option) *ControlPlane {
 	c := &ControlPlane{
-		registry:   reg,
-		evaluator:  policy.NewEvaluator(),
+		registry:  reg,
+		evaluator: policy.NewEvaluator(),
 	}
 	for _, o := range opts {
 		o(c)
