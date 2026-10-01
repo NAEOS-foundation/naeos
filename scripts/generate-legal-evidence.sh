@@ -48,7 +48,8 @@ sha256="$(sha256sum "$SBOM" | awk '{print $1}')"
 
 status_or_hold() {
   local name="$1"
-  local value="${!name:-HOLD}"
+  local value
+  value="${!name:-HOLD}"
   case "$value" in
     PASS|HOLD|REVIEWED|NOT_APPLICABLE) printf '%s' "$value" ;;
     *) echo "invalid status for $name: $value" >&2; exit 1 ;;
