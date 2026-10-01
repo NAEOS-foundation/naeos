@@ -198,8 +198,8 @@ func newEvidenceQueryCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query evidence records by criteria",
-		Long: "Query the evidence store using exact filters and an optional RFC3339 time range.",
-		Args: cobra.NoArgs,
+		Long:  "Query the evidence store using exact filters and an optional RFC3339 time range.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			store, err := loadEvidenceStore()
 			if err != nil {
@@ -217,9 +217,13 @@ func newEvidenceQueryCommand() *cobra.Command {
 				return parsed, nil
 			}
 			fromTime, err := parseTime("from", from)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 			toTime, err := parseTime("to", to)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 			if !fromTime.IsZero() && !toTime.IsZero() && fromTime.After(toTime) {
 				return fmt.Errorf("--from must not be after --to")
 			}
