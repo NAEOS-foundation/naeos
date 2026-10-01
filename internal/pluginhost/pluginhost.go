@@ -41,17 +41,17 @@ const (
 
 // PluginInfo holds metadata about a registered plugin.
 type PluginInfo struct {
-	Name        string      `json:"name"`
-	Version     string      `json:"version"`
-	Description string      `json:"description"`
-	Author      string      `json:"author,omitempty"`
-	Path        string      `json:"path,omitempty"`
-	Enabled     bool        `json:"enabled"`
-	Loaded      bool        `json:"loaded"`
-	State              PluginState           `json:"state"`
-	ActionCapabilities map[string][]string  `json:"action_capabilities,omitempty"`
-	StartedAt          time.Time             `json:"started_at,omitempty"`
-	Error       error       `json:"error,omitempty"`
+	Name               string              `json:"name"`
+	Version            string              `json:"version"`
+	Description        string              `json:"description"`
+	Author             string              `json:"author,omitempty"`
+	Path               string              `json:"path,omitempty"`
+	Enabled            bool                `json:"enabled"`
+	Loaded             bool                `json:"loaded"`
+	State              PluginState         `json:"state"`
+	ActionCapabilities map[string][]string `json:"action_capabilities,omitempty"`
+	StartedAt          time.Time           `json:"started_at,omitempty"`
+	Error              error               `json:"error,omitempty"`
 }
 
 // Manifest describes a plugin's capabilities, actions, and configuration schema.
