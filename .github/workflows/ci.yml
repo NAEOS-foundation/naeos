@@ -238,6 +238,23 @@ jobs:
             exit 1
           fi
 
+  legal-evidence-gate:
+    name: Legal Evidence Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate legal evidence fixture
+        run: bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json
+        continue-on-error: true
+      - name: Verify placeholder fixture is rejected
+        run: |
+          set -euo pipefail
+          if bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json; then
+            echo "placeholder evidence fixture was accepted" >&2
+            exit 1
+          fi
+          echo "Placeholder fixture correctly rejected; CI validates the executable gate without treating the example as release evidence."
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -256,6 +273,7 @@ jobs:
       - dependency-risk-gate
       - change-risk-gate
       - pdr-validation
+      - legal-evidence-gate
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs passed
@@ -274,6 +292,7 @@ jobs:
           DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
           CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
           PDR: ${{ needs['pdr-validation'].result }}
+          LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
         run: |
           set -euo pipefail
           for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
