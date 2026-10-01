@@ -125,6 +125,26 @@ export default async function ControlPlanePage(props: { params: Promise<{ lang: 
         <ControlPlaneLiveDemo lang={lang} />
       </section>
 
+      <section className="control-plane-demo" aria-labelledby="verified-path-title">
+        <div className="section-heading">
+          <div className="eyebrow">VERIFIED GOLDEN PATH</div>
+          <h2 id="verified-path-title">{id ? "Jalankan. Inspeksi. Verifikasi." : "Run. Inspect. Verify."}</h2>
+          <p>
+            {id
+              ? "Ikuti satu jalur onboarding dari control boundary ke evidence dan independent verification."
+              : "Follow one onboarding path from the control boundary to evidence and independent verification."}
+          </p>
+        </div>
+        <div className="control-plane-actions">
+          <a href={`${SITE.repo}/blob/main/docs/VERIFIED-GOLDEN-PATH.md`} className="btn btn-primary btn-lg" target="_blank" rel="noopener">
+            {id ? "Jalankan Golden Path" : "Run Verified Golden Path"}
+          </a>
+          <a href={`${SITE.repo}/blob/main/docs/control-plane/p1-11-independent-verifier-cli.md`} className="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+            {id ? "Lihat Verifier" : "Inspect Verifier"}
+          </a>
+        </div>
+      </section>
+
       <section className="control-plane-principles">
         <div>
           <div className="eyebrow">{id ? "PRINSIP" : "PRINCIPLES"}</div>
