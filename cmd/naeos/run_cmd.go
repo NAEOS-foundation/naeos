@@ -140,8 +140,8 @@ Example:
 					"materialized_files": materializedFileCount,
 					"path_collisions":    artifactPathCollisions,
 				},
-				"tasks":              len(result.Tasks),
-				"execution_plan":     result.Tasks,
+				"tasks":          len(result.Tasks),
+				"execution_plan": result.Tasks,
 				"validation": map[string]any{
 					"status":   "passed",
 					"project":  projectName,
@@ -161,8 +161,8 @@ Example:
 					"graph_edges":  result.Graph.EdgeCount(),
 				},
 				"audit": map[string]any{
-					"status":         "available",
-					"stages":         []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
+					"status":                  "available",
+					"stages":                  []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
 					"artifact_count":          logicalArtifactCount,
 					"materialized_file_count": materializedFileCount,
 					"path_collisions":         artifactPathCollisions,
