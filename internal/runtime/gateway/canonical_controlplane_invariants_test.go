@@ -29,7 +29,7 @@ func realControlPlane(t *testing.T, policies ...*policy.Policy) (*control.Contro
 			t.Fatalf("register policy: %v", err)
 		}
 	}
-	return control.New(reg, control.FailClosed(true)), reg
+	return control.New(reg), reg
 }
 
 func TestCanonicalControlPlaneDenialBlocksSideEffect(t *testing.T) {
