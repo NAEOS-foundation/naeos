@@ -459,7 +459,7 @@ func newGateway(decision policy.Decision, sandbox gateway.Sandbox) (*gateway.Exe
 		Scope:   policy.Scope{Resource: resource, Action: action, Environment: environment},
 		Default: decision, Active: true,
 	})
-	cp := control.New(reg, control.FailClosed(true))
+	cp := control.New(reg)
 	return gateway.New(cp, sandbox), cp
 }
 
