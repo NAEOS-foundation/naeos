@@ -1,0 +1,28 @@
+name: Release Evidence Drill
+
+on:
+  pull_request:
+    paths:
+      - "scripts/check-release-dco.sh"
+      - "scripts/generate-legal-evidence.sh"
+      - "scripts/validate-legal-evidence.sh"
+      - "scripts/release-legal-gate.sh"
+      - "scripts/test-release-evidence-drill.sh"
+      - ".github/workflows/release-drill.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-evidence-drill:
+    name: Release evidence drill
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Run isolated release drill
+        run: bash scripts/test-release-evidence-drill.sh

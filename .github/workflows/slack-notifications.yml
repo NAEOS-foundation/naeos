@@ -82,9 +82,15 @@ jobs:
           jq -n --arg text "$text" '{text: $text}' > payload.json
 
       - name: Send notification to Slack
+        id: send_notification
+        continue-on-error: true
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload-file-path: payload.json
           errors: true
+
+      - name: Report Slack delivery status
+        if: steps.send_notification.outcome == 'failure'
+        run: echo "::warning::Slack notification delivery failed; GitHub workflow remains non-blocking."
