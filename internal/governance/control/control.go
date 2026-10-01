@@ -57,7 +57,6 @@ type DecisionRecord struct {
 type ControlPlane struct {
 	registry   *policy.Registry
 	evaluator  policy.Evaluator
-	failClosed bool
 
 	mu        sync.Mutex
 	decisions []DecisionRecord
@@ -66,19 +65,11 @@ type ControlPlane struct {
 // Option configures a ControlPlane.
 type Option func(*ControlPlane)
 
-// FailClosed controls the decision issued when no policy matches a request.
-// When true (default) unmatched requests are denied; when false they are
-// allowed.
-func FailClosed(enabled bool) Option {
-	return func(c *ControlPlane) { c.failClosed = enabled }
-}
-
 // New creates a ControlPlane over the given policy registry.
 func New(reg *policy.Registry, opts ...Option) *ControlPlane {
 	c := &ControlPlane{
 		registry:   reg,
 		evaluator:  policy.NewEvaluator(),
-		failClosed: true,
 	}
 	for _, o := range opts {
 		o(c)
@@ -99,10 +90,6 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	policies := c.registry.ActiveFor(req.Resource, req.Action, req.Environment)
 
 	if len(policies) == 0 {
-		decision := DecisionDeny
-		if !c.failClosed {
-			decision = DecisionAllow
-		}
 		rec := DecisionRecord{
 			Request:       req,
 			Decision:      decision,
