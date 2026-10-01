@@ -92,7 +92,7 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	if len(policies) == 0 {
 		rec := DecisionRecord{
 			Request:       req,
-			Decision:      decision,
+			Decision:      DecisionDeny,
 			Reasons:       []string{"no matching policy"},
 			Timestamp:     time.Now().UTC(),
 			Deterministic: true,
