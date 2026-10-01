@@ -23,7 +23,7 @@ func (PythonAdapter) Language() language.Language {
 
 func (PythonAdapter) Framework() string { return "" }
 
-func (PythonAdapter) GenerateProject(projectName string) []engine.Artifact {
+func (PythonAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 	pkg := pkgName(projectName)
 

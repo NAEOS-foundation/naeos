@@ -23,7 +23,7 @@ func (RustAdapter) Language() language.Language {
 
 func (RustAdapter) Framework() string { return "" }
 
-func (RustAdapter) GenerateProject(projectName string) []engine.Artifact {
+func (RustAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 
 	return []engine.Artifact{

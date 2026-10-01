@@ -14,10 +14,22 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/language"
 )
 
+// ModuleRef identifies the module a generated project should wire into its
+// entrypoint. Adapters receive it as an optional hint because the module path is
+// declared by the specification, not by the adapter.
+type ModuleRef struct {
+	Name string
+	Path string
+}
+
 type OutputAdapter interface {
 	Language() language.Language
 	Framework() string
-	GenerateProject(projectName string) []engine.Artifact
+	// GenerateProject emits the project skeleton. primary is the module the
+	// generated entrypoint should import, when one is known. It is variadic so
+	// callers that only know the project name can still scaffold a standalone
+	// skeleton without wiring a module.
+	GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact
 	GenerateModule(moduleName, modulePath, projectName string) []engine.Artifact
 	GenerateService(serviceName, serviceKind string, servicePort int, projectName string) []engine.Artifact
 	GenerateDockerfile(projectName string) []engine.Artifact
@@ -135,7 +147,15 @@ func generateWithAdapter(adapter OutputAdapter, neir *model.NEIR) []engine.Artif
 		projectName = neir.Project.Name
 	}
 
-	artifacts = append(artifacts, adapter.GenerateProject(projectName)...)
+	var primary []ModuleRef
+	if len(neir.Modules) > 0 {
+		primary = append(primary, ModuleRef{
+			Name: neir.Modules[0].Name,
+			Path: neir.Modules[0].Path,
+		})
+	}
+
+	artifacts = append(artifacts, adapter.GenerateProject(projectName, primary...)...)
 	artifacts = append(artifacts, adapter.GenerateDockerfile(projectName)...)
 	artifacts = append(artifacts, adapter.GenerateCI(projectName)...)
 

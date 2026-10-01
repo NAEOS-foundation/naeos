@@ -47,7 +47,7 @@ Example:
 				if !ok {
 					continue
 				}
-				artifacts := adapter.GenerateProject(name)
+				artifacts := adapter.GenerateProject(name, adapters.ModuleRef{Name: "core", Path: "./internal/core"})
 				artifacts = append(artifacts, adapter.GenerateDockerfile(name)...)
 				artifacts = append(artifacts, adapter.GenerateCI(name)...)
 
