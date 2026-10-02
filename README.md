@@ -108,6 +108,8 @@ The demo exercises the specification-first pipeline and produces traceable run m
 
 **External Validation:** [docs/EXTERNAL-VALIDATION.md](docs/EXTERNAL-VALIDATION.md) provides a reproducible third-party runbook and evaluation record.
 
+**External Validator Program:** [docs/EXTERNAL-VALIDATOR-BRIEF.md](docs/EXTERNAL-VALIDATOR-BRIEF.md) is the public entry point for Cohort #001; see [Program](docs/EXTERNAL-VALIDATOR-PROGRAM.md) and [Missions](docs/EXTERNAL-VALIDATION-MISSIONS.md) for the program protocol.
+
 For the Todo API demonstration:
 
 ```bash
