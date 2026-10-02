@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 // Command attack-matrix-v2 promotes AM-18 from the Attack Matrix v1 gap

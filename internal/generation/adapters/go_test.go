@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package adapters
@@ -84,13 +84,13 @@ func TestGoAdapter_GenerateService(t *testing.T) {
 			if !strings.Contains(content, "api-gateway") {
 				t.Errorf("server.go should contain service name")
 			}
-			if !strings.Contains(content, "Copyright 2024-2026 NAEOS Foundation") {
+			if !strings.Contains(content, "Copyright 2025 NAEOS contributors") {
 				t.Errorf("server.go should include license header")
 			}
 		}
 		if strings.Contains(art.Path, "server_test.go") {
 			content := string(art.Content)
-			if !strings.Contains(content, "Copyright 2024-2026 NAEOS Foundation") {
+			if !strings.Contains(content, "Copyright 2025 NAEOS contributors") {
 				t.Errorf("server_test.go should include license header")
 			}
 		}

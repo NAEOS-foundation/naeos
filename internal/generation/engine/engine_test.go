@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package engine
@@ -59,7 +59,7 @@ func TestGenerateIncludesLicenseHeaderForGoModulePackage(t *testing.T) {
 			continue
 		}
 		content := string(artifact.Content)
-		if !strings.Contains(content, "Copyright 2024-2026 NAEOS Foundation") {
+		if !strings.Contains(content, "Copyright 2025 NAEOS contributors") {
 			t.Fatalf("expected license header in %s", artifact.Path)
 		}
 		if !strings.Contains(content, "SPDX-License-Identifier: Apache-2.0") {
@@ -139,7 +139,7 @@ func TestGenerateForLanguageGoIncludesLicenseHeader(t *testing.T) {
 	for _, a := range artifacts {
 		if strings.HasSuffix(a.Path, ".go") {
 			content := string(a.Content)
-			if !strings.Contains(content, "Copyright 2024-2026 NAEOS Foundation") {
+			if !strings.Contains(content, "Copyright 2025 NAEOS contributors") {
 				t.Errorf("expected license header in %s", a.Path)
 			}
 			if !strings.Contains(content, "package ") {
