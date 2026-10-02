@@ -70,7 +70,16 @@ jobs:
       - name: Run canonical demo
         run: |
           output_dir="$(mktemp -d)"
+          echo "NAEOS_DEMO_OUT=$output_dir" >> "$GITHUB_ENV"
           NAEOS_BIN="$PWD/naeos"           NAEOS_DEMO_OUTPUT_DIR="$output_dir"             ./examples/demo-cli/run-demo.sh
+      - name: Compile generated Go output
+        run: |
+          set -euo pipefail
+          gen="$NAEOS_DEMO_OUT/generated"
+          test -f "$gen/go.mod" || { echo "generator produced no go.mod"; exit 1; }
+          cp "$PWD/go.sum" "$gen/go.sum"
+          cd "$gen"
+          GOFLAGS=-mod=mod go build ./...
 
   governance-lifecycle:
     name: Governance Lifecycle Experiment
