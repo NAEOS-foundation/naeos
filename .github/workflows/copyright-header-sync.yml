@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          files="$(git grep -Il -e 'Copyright 2024-2026 NAEOS Foundation' -e 'Copyright 2025-2026 NAEOS contributors' || true)"
+          files="$(git grep -Il -e 'Copyright 2024-2026 NAEOS Foundation' -e 'Copyright 2025-2026 NAEOS contributors' -- ':!.github/workflows/copyright-header-sync.yml' || true)"
           if [ -n "$files" ]; then
             while IFS= read -r file; do
               [ -z "$file" ] && continue
@@ -33,7 +33,7 @@ jobs:
             done <<< "$files"
           fi
 
-          if git grep -n -e 'Copyright 2024-2026 NAEOS Foundation' -e 'Copyright 2025-2026 NAEOS contributors'; then
+          if git grep -n -e 'Copyright 2024-2026 NAEOS Foundation' -e 'Copyright 2025-2026 NAEOS contributors' -- ':!.github/workflows/copyright-header-sync.yml'; then
             echo "Old copyright headers remain."
             exit 1
           fi
