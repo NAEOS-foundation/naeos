@@ -34,7 +34,7 @@ type HandoffValidator struct {
 // Production deployments should use NewHandoffValidatorWithSigningKey with a
 // key sourced from a secure secret/attestation provider.
 func NewHandoffValidator(auditLedger *AuditLedger, policyEngine *PolicyEngine, grantStore *GrantStore) *HandoffValidator {
-	return NewHandoffValidatorWithSigningKey(auditLedger, policyEngine, grantStore, []byte("naeos-demo-signing-key-change-in-production"))
+	return NewHandoffValidatorWithSigningKey(auditLedger, policyEngine, grantStore, demoSigningKey())
 }
 
 // NewHandoffValidatorWithSigningKey creates a handoff validator with an explicit
