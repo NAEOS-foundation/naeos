@@ -62,7 +62,7 @@ Relevant to a separate eligible for-profit startup entity. Do not represent an O
 - [ ] Complete independent external evaluator run.
 - [ ] Capture evaluator commit SHA, environment, results, and deviations.
 - [ ] Establish repeatable adoption metrics: users, contributors, downloads, pilots, and integrations.
-- [ ] Remove credential-like hardcoded demo material from security-sensitive examples.
+- [x] Isolate credential-like demo material from security-sensitive examples; the investor demo now uses explicitly local, deterministic, non-secret signing material.
 - [ ] Prepare one-page funding brief and application narratives.
 - [ ] Confirm legal entity/funding recipient for equity or startup-credit applications.
 
