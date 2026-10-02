@@ -51,7 +51,7 @@ go build -o naeos ./cmd/naeos
 NAEOS_DEMO_OUTPUT_DIR=/tmp/naeos-demo ./examples/demo-cli/run-demo.sh
 ```
 
-The underlying acceptance contract remains [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md). After the run, inspect the evidence under `/tmp/naeos-demo`, then use the read-only [P1.11 Independent Verifier](docs/control-plane/p1-11-independent-verifier-cli.md) for a canonical `EvidenceBundle`.
+The underlying acceptance contract remains [docs/GOLDEN-PATH.md](docs/GOLDEN-PATH.md). The repository-level readiness checklist is [docs/READINESS-CONTRACT.md](docs/READINESS-CONTRACT.md). After the run, inspect the evidence under `/tmp/naeos-demo`, then use the read-only [P1.11 Independent Verifier](docs/control-plane/p1-11-independent-verifier-cli.md) for a canonical `EvidenceBundle`.
 
 ### What you just proved
 
