@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2024-2026 NAEOS Foundation
+# Copyright 2025 NAEOS contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # Verifies every tracked first-party source file carries the NAEOS Apache-2.0
@@ -31,7 +31,7 @@ if [ "$missing" -gt 0 ]; then
   echo "error: $missing tracked source file(s) missing the Apache-2.0 SPDX header."
   echo "Add to each file (using // for Go/JS/TS, # for shell/Python — after any"
   echo "shebang or 'use client'/'use server' directive):"
-  echo "  Copyright 2024-2026 NAEOS Foundation"
+  echo "  Copyright 2025 NAEOS contributors"
   echo "  SPDX-License-Identifier: Apache-2.0"
   exit 1
 fi

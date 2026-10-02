@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package parser
@@ -124,6 +124,8 @@ func NewParserWithEnv(baseDir string, envs map[string]string) Parser {
 		if m, ok := value.(map[string]any); ok {
 			if project, ok := m["project"].(string); ok {
 				doc.Project = project
+			} else if name, ok := m["name"].(string); ok {
+				doc.Project = name
 			}
 			if rawModules, ok := m["modules"].([]any); ok {
 				for _, raw := range rawModules {
@@ -370,18 +372,53 @@ func applyDefaults(doc *SpecDocument, input string) {
 	}
 }
 
+// defaultProjectName derives a project name for specifications that declare
+// neither `project:` nor `name:`. It only considers the leading scalar of the
+// document: the whole document must never become the project name, because that
+// name flows into generated directory names, Go module paths and package
+// identifiers.
 func defaultProjectName(input string) string {
 	value := strings.TrimSpace(input)
-	value = strings.ReplaceAll(value, "\n", " ")
-	value = strings.TrimSpace(value)
 	if value == "" {
 		return "default-project"
 	}
-	candidate := slugify(value)
-	if candidate == "" {
-		return "default-project"
+
+	// A leading "key: value" line is a better signal than the whole document.
+	if key, value, ok := splitLeadingYAMLField(value); ok && key != "project" && key != "name" {
+		if candidate := slugify(value); candidate != "" && candidate != "default" {
+			return candidate
+		}
 	}
-	return candidate
+
+	// Otherwise use the first scalar token only.
+	first := strings.FieldsFunc(value, func(r rune) bool {
+		return r == '\n' || r == '\r' || r == ':'
+	})
+	if len(first) > 0 {
+		if candidate := slugify(first[0]); candidate != "" && candidate != "default" {
+			return candidate
+		}
+	}
+
+	return "default-project"
+}
+
+// splitLeadingYAMLField splits the first "key: value" line of a document.
+func splitLeadingYAMLField(input string) (key string, value string, ok bool) {
+	line := input
+	if idx := strings.IndexAny(input, "\r\n"); idx >= 0 {
+		line = input[:idx]
+	}
+	idx := strings.Index(line, ":")
+	if idx <= 0 {
+		return "", "", false
+	}
+	key = strings.TrimSpace(line[:idx])
+	value = strings.TrimSpace(line[idx+1:])
+	if key == "" || value == "" {
+		return "", "", false
+	}
+	return key, value, true
 }
 
 func defaultModuleName(project string) string {

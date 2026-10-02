@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package adapters
@@ -23,7 +23,7 @@ func (PythonAdapter) Language() language.Language {
 
 func (PythonAdapter) Framework() string { return "" }
 
-func (PythonAdapter) GenerateProject(projectName string) []engine.Artifact {
+func (PythonAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 	pkg := pkgName(projectName)
 
