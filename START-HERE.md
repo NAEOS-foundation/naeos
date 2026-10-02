@@ -222,19 +222,23 @@ If you see a gap, ask: “What assumption does NAEOS currently make that may not
 
 ## 10. Good first issues
 
-The repository has a curated set of concrete contributor starting points. Each issue is intentionally scoped so a new contributor can inspect the relevant code or documentation before writing a large change:
+The repository's current contributor/adoption work is tracked in [#447 — External contributor and adoption readiness](https://github.com/NAEOS-foundation/naeos/issues/447). Use it as the coordination point for onboarding gaps and bounded external-contributor work.
 
-- [#209 — Improve policy evaluator edge-case coverage](https://github.com/NAEOS-foundation/naeos/issues/209)
-- [#210 — Add audit evidence for disabled policy rules](https://github.com/NAEOS-foundation/naeos/issues/210)
-- [#211 — Document the NAEOS contribution workflow](https://github.com/NAEOS-foundation/naeos/issues/211)
-- [#212 — Strengthen experiment evidence format](https://github.com/NAEOS-foundation/naeos/issues/212)
-- [#213 — Review plugin registry contributor path](https://github.com/NAEOS-foundation/naeos/issues/213)
+For a concrete contribution, search the repository's open issues for a scoped task, or open a focused report using [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE). Prefer small changes that can be reproduced and reviewed independently.
 
-Use [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) for new bug reports, documentation work, feature requests, plugin contributions, or other concrete gaps.
+If you are unsure where a finding belongs, start with [GitHub Discussions](docs/community/discussions.md) for a design/question discussion, or open the closest issue-template category with the exact reproduction steps and evidence.
 
 ## 11. Contribution workflow
 
-The repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). The simplest accurate contribution flow is:
+The repository already defines the engineering workflow in [CONTRIBUTING.md](CONTRIBUTING.md). For the current external-contributor path, use this sequence:
+
+1. Run the canonical Golden Path from this page.
+2. Inspect the evidence and record the exact command, commit, and observed result.
+3. Choose one small improvement, challenge, or documentation gap.
+4. Report the finding through an issue or discussion before taking on a larger change.
+5. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for the implementation and PR requirements.
+
+The simplest contribution flow is:
 
 1. Clone the repository and read [CONTRIBUTING.md](CONTRIBUTING.md).
 2. Pick a concrete issue, question, or documentation gap.
