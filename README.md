@@ -107,6 +107,7 @@ The demo exercises the specification-first pipeline and produces traceable run m
 **Reference Demo & Evidence Story:** [docs/REFERENCE-DEMO.md](docs/REFERENCE-DEMO.md) turns the same run into an independent reviewer checklist, traceability narrative, and partner-pilot evidence format.
 
 **External Validation:** [docs/EXTERNAL-VALIDATION.md](docs/EXTERNAL-VALIDATION.md) provides a reproducible third-party runbook and evaluation record.
+**Engineering Note #001:** [docs/ENGINEERING-NOTE-001-EXTERNAL-VALIDATION.md](docs/ENGINEERING-NOTE-001-EXTERNAL-VALIDATION.md) explains the engineering rationale and evidence boundary for independent external validation.
 
 **External Validator Program:** [docs/EXTERNAL-VALIDATOR-BRIEF.md](docs/EXTERNAL-VALIDATOR-BRIEF.md) is the public entry point for Cohort #001; see [Program](docs/EXTERNAL-VALIDATOR-PROGRAM.md) and [Missions](docs/EXTERNAL-VALIDATION-MISSIONS.md) for the program protocol.
 
