@@ -30,6 +30,18 @@ go build ./cmd/naeos/
 go test ./...
 ```
 
+## External Contributor Path
+
+For a first contribution, use this bounded path:
+
+1. Start from [START-HERE.md](START-HERE.md) and run the canonical Golden Path.
+2. Record the commit, command, environment, expected result, and observed result.
+3. For a reproducibility or documentation finding, open a focused issue with the relevant evidence.
+4. For a design question or architectural challenge, use the documented [discussion workflow](docs/community/discussions.md).
+5. For a code change, keep the PR scoped to one problem and include the tests or verification performed.
+
+When reporting a failure, include the smallest reproducible command and the relevant output. Do not report an issue as a product defect solely from an agent's claim; distinguish observed behavior from interpretation.
+
 ## Development Workflow
 
 ### Build
