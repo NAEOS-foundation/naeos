@@ -23,7 +23,7 @@ func (JavaAdapter) Language() language.Language {
 
 func (JavaAdapter) Framework() string { return "" }
 
-func (JavaAdapter) GenerateProject(projectName string) []engine.Artifact {
+func (JavaAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 	javaPkg := pkgName(projectName)
 
