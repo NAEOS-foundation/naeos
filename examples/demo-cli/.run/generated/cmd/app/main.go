@@ -8,16 +8,19 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/example/demo-app/internal/core"
-	coreconfig "github.com/example/demo-app/internal/core/config"
-	corehttp "github.com/example/demo-app/internal/core/http"
-	coremiddleware "github.com/example/demo-app/internal/core/middleware"
+	"github.com/example/demo-app/auth"
+	coreconfig "github.com/example/demo-app/auth/config"
+	corehttp "github.com/example/demo-app/auth/http"
+	coremiddleware "github.com/example/demo-app/auth/middleware"
 )
 
 func main() {
-	cfg := coreconfig.Load("config.yaml")
-	handler := core.NewHandler(nil)
-	_ = handler
+	cfg, err := coreconfig.Load("config.yaml")
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+	_ = auth.NewHandler(nil)
+	_ = corehttp.Handler{}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "hello from demo-app on port %d", cfg.Port)
@@ -31,7 +34,6 @@ func main() {
 	mux.HandleFunc("/api/v1/resources", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintln(w, "resources endpoint")
 	})
-	_ = corehttp.Handler{}
 	wrapped := coremiddleware.LoggingMiddleware{}.Wrap(mux)
 	log.Printf("listening on :%d", cfg.Port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), wrapped); err != nil {

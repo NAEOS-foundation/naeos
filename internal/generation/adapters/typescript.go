@@ -23,7 +23,7 @@ func (TypeScriptAdapter) Language() language.Language {
 
 func (TypeScriptAdapter) Framework() string { return "" }
 
-func (TypeScriptAdapter) GenerateProject(projectName string) []engine.Artifact {
+func (TypeScriptAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
 
 	return []engine.Artifact{

@@ -51,18 +51,117 @@ func pkgName(s string) string {
 	return s
 }
 
-func (GoAdapter) GenerateProject(projectName string) []engine.Artifact {
+// moduleImportPath turns a declared module path into a module-relative import
+// path. "./api" becomes "api", "./internal/core" becomes "internal/core".
+func moduleImportPath(modulePath string) string {
+	dir := cleanModulePath(modulePath)
+	if dir == "" {
+		return ""
+	}
+	return dir
+}
+
+func (GoAdapter) GenerateProject(projectName string, primary ...ModuleRef) []engine.Artifact {
 	slug := strutil.Slugify(projectName)
-	pkg := pkgName(projectName)
 
 	return []engine.Artifact{
 		{Path: "README.md", Content: []byte(fmt.Sprintf("# %s\n\nGenerated from NAEOS pipeline (Go).\n\n## Quick Start\n\n```bash\ngo run ./cmd/app\n```\n\n## Test\n\n```bash\ngo test ./...\n```\n", projectName))},
 		{Path: "go.mod", Content: []byte(fmt.Sprintf("module github.com/example/%s\n\ngo 1.22\n\nrequire (\n\tgopkg.in/yaml.v3 v3.0.1\n)\n", slug))},
 		{Path: ".gitignore", Content: []byte("# Binaries\n*.exe\n*.exe~\n*.dll\n*.so\n*.dylib\n\n# Test binary\n*.test\n\n# Output\n*.out\n\n# Dependency\nvendor/\n\n# IDE\n.idea/\n.vscode/\n*.swp\n*.swo\n\n# OS\n.DS_Store\nThumbs.db\n")},
-		{Path: "cmd/app/main.go", Content: []byte(goLicenseHeader + fmt.Sprintf("package main\n\nimport (\n\t\"fmt\"\n\t\"log\"\n\t\"net/http\"\n\n\t\"github.com/example/%s/internal/core\"\n\tcoreconfig \"github.com/example/%s/internal/core/config\"\n\tcorehttp \"github.com/example/%s/internal/core/http\"\n\tcoremiddleware \"github.com/example/%s/internal/core/middleware\"\n)\n\nfunc main() {\n\tcfg := coreconfig.Load(\"config.yaml\")\n\thandler := core.NewHandler(nil)\n\t_ = handler\n\tmux := http.NewServeMux()\n\tmux.HandleFunc(\"/\", func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = fmt.Fprintf(w, \"hello from %s on port %%d\", cfg.Port)\n\t})\n\tmux.HandleFunc(\"/health\", func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = fmt.Fprintln(w, \"ok\")\n\t})\n\tmux.HandleFunc(\"/api/v1\", func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = fmt.Fprintln(w, \"api v1 ready\")\n\t})\n\tmux.HandleFunc(\"/api/v1/resources\", func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = fmt.Fprintln(w, \"resources endpoint\")\n\t})\n\t_ = corehttp.Handler{}\n\twrapped := coremiddleware.LoggingMiddleware{}.Wrap(mux)\n\tlog.Printf(\"listening on :%%d\", cfg.Port)\n\tif err := http.ListenAndServe(fmt.Sprintf(\":%%d\", cfg.Port), wrapped); err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n", slug, slug, slug, slug, projectName))},
-		{Path: fmt.Sprintf("%s/package.go", pkg), Content: []byte(goLicenseHeader + fmt.Sprintf("package %s\n\n// %s module.\n", pkg, projectName))},
+		{Path: "cmd/app/main.go", Content: goEntrypoint(projectName, slug, primary)},
 		{Path: "config.yaml", Content: []byte(fmt.Sprintf("name: %s\nport: 8080\nmode: development\n", slug))},
 	}
+}
+
+// goEntrypoint renders cmd/app/main.go. When a primary module is supplied the
+// entrypoint wires that module's handler, router and middleware, using the
+// module path declared by the specification. Without one it emits a
+// standalone stdlib-only entrypoint, so a scaffold that has no modules yet
+// still compiles.
+func goEntrypoint(projectName, slug string, primary []ModuleRef) []byte {
+	if len(primary) == 0 {
+		return []byte(goLicenseHeader + fmt.Sprintf(`package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, "hello from %s")
+	})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, "ok")
+	})
+	log.Printf("listening on :%%d", 8080)
+	if err := http.ListenAndServe(fmt.Sprintf(":%%d", 8080), mux); err != nil {
+		log.Fatal(err)
+	}
+}
+`, projectName))
+	}
+
+	module := primary[0]
+	importPath := moduleImportPath(module.Path)
+	if importPath == "" {
+		importPath = strutil.Slugify(module.Name)
+	}
+	modulePkg := pkgName(module.Name)
+	if modulePkg == "" {
+		modulePkg = "core"
+	}
+	base := "github.com/example/" + slug
+
+	return []byte(goLicenseHeader + fmt.Sprintf(`package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"%s/%s"
+	coreconfig "%s/%s/config"
+	corehttp "%s/%s/http"
+	coremiddleware "%s/%s/middleware"
+)
+
+func main() {
+	cfg, err := coreconfig.Load("config.yaml")
+	if err != nil {
+		log.Fatalf("load config: %%v", err)
+	}
+	_ = %s.NewHandler(nil)
+	_ = corehttp.Handler{}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, "hello from %s on port %%d", cfg.Port)
+	})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, "ok")
+	})
+	mux.HandleFunc("/api/v1", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, "api v1 ready")
+	})
+	mux.HandleFunc("/api/v1/resources", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, "resources endpoint")
+	})
+	wrapped := coremiddleware.LoggingMiddleware{}.Wrap(mux)
+	log.Printf("listening on :%%d", cfg.Port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%%d", cfg.Port), wrapped); err != nil {
+		log.Fatal(err)
+	}
+}
+`,
+		base, importPath,
+		base, importPath,
+		base, importPath,
+		base, importPath,
+		modulePkg,
+		projectName,
+	))
 }
 
 func (GoAdapter) GenerateModule(moduleName, modulePath, projectName string) []engine.Artifact {
