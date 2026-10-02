@@ -1,4 +1,4 @@
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package engine
@@ -29,7 +29,7 @@ type Artifact struct {
 	Content []byte
 }
 
-const goLicenseHeader = `// Copyright 2024-2026 NAEOS Foundation
+const goLicenseHeader = `// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 `

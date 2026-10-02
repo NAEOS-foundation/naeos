@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { SITE, type Lang } from "@/lib/site";
 
-// Copyright 2025-2026 NAEOS contributors
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 export const runtime = "edge";

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Copyright 2024-2026 NAEOS Foundation
+// Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
 // Validate all ```mermaid blocks in WHITEPAPER*.md (and any files passed as args).
