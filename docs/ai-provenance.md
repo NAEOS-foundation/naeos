@@ -39,21 +39,31 @@ restricted content must be flagged for review rather than committed silently.
 
 ## 4. Documenting AI Assistance
 
-Disclosure is recommended, not mandatory:
+For substantial AI-generated or agent-generated content, include a concise
+provenance note in the pull request. Identify the affected files or content,
+the tool or generator, and material source code, templates, or datasets used.
+This is intended to support rights review; it is not a demand to publish private
+prompts, chain-of-thought, confidential context, or customer information.
 
-- Large agent-generated PRs: add a `Co-authored-by: <tool> <package>` trailer
-  to commits, or note the tool and prompt class in the PR description.
-- Repo files that are wholesale generated (e.g., docs, scaffolds, benchmarks):
-  a file-level `# Generated with <tool> — <date>` header is helpful.
-- Journals, conferences, or regulators that require AI disclosure: follow their
-  requirements; this policy does not override them.
+Routine editorial help, autocomplete, or ordinary coding assistance does not
+require disclosure. A `Co-authored-by` trailer may be used when the tool or
+person is genuinely a co-author, but it does not replace a provenance note
+where one is needed and does not satisfy or replace the contributor's DCO
+sign-off.
+
+For files that are wholly generated, identify the generator and source in the
+pull request or in repository metadata where practical. Do not add generated
+headers to output that is expected to be regenerated and lose those headers.
+Follow any additional disclosure requirements imposed by a journal, conference,
+or regulator.
 
 ## 5. What Reviewers Do
 
-- Reviewers apply judgment, not prohibition. A commit with correct DCO and
-  clean provenance is accepted whether or not it mentions a tool.
-- When a PR shows heavy bulk generation (hundreds of files, templated wording),
-  maintainers may ask for a provenance note.
+- Reviewers apply judgment, not prohibition. AI use alone is not a reason to
+  reject a contribution.
+- For substantial generated changes, reviewers check that the provenance note
+  is sufficient to assess rights and identify any source material requiring
+  attribution or license review.
 - Anything that looks like copied third-party material is routed to the normal
   attribution review process (see `NOTICE` for attribution conventions).
 
