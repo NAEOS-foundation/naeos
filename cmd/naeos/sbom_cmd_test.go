@@ -70,3 +70,32 @@ func TestSBOMVerifyAcceptsCycloneDXLicenseChoices(t *testing.T) {
 		t.Fatalf("expected passing license check in output, got %q", output.String())
 	}
 }
+
+func TestSBOMVerifyKeepsLicenseRequirementOptIn(t *testing.T) {
+	t.Parallel()
+
+	bom, err := sbom.NewGenerator(sbom.GeneratorConfig{}).Generate([]sbom.Component{{
+		Type: sbom.Library,
+		Name: "unlicensed-dependency",
+	}})
+	if err != nil {
+		t.Fatalf("generate BOM: %v", err)
+	}
+
+	path := filepath.Join(t.TempDir(), "bom.json")
+	if err := sbom.Write(bom, path); err != nil {
+		t.Fatalf("write BOM: %v", err)
+	}
+
+	cmd := newSBomVerifyCommand()
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{path})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("verify BOM without strict license requirement: %v\n%s", err, output.String())
+	}
+	if !strings.Contains(output.String(), "[PASS] licenses") {
+		t.Fatalf("expected non-strict verification to preserve current behavior, got %q", output.String())
+	}
+}
