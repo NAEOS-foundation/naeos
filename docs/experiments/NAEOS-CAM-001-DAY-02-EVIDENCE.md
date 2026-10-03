@@ -73,3 +73,7 @@ Compare the observed result with the invariant documented in:
 ```text
 docs/experiments/EXP-002-atomic-execution-commit-boundary.md
 ```
+
+## Record Finalization
+
+This record was prepared after the Day 02 CI evidence job completed successfully and before the evidence document was merged into `main`.
