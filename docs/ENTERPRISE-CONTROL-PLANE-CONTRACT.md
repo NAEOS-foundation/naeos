@@ -15,10 +15,11 @@ Intent → Context/Specification → Policy Evaluation → Capability Authorizat
       → Evidence → Audit/Export
 ```
 
-Every consequential execution must be attributable to tenant, project, environment, actor/service identity, agent identity, repository/resource, capability, policy identifier and immutable version, authorization decision, approval when required, execution identifier, verification result, and evidence identifier.
+Every consequential execution must be attributable to tenant, project, environment, verified actor/service identity, agent identity, repository/resource, capability, policy identifier and immutable version, authorization decision, approval when required, execution identifier, verification result, and evidence identifier.
 
 ## Trust boundaries
 
+- **Identity boundary:** authenticate credentials and resolve a verified principal. Request JSON must not be trusted to establish actor identity.
 - **Control plane:** identity, policy, authorization, approvals, configuration, evidence metadata, audit queries, administration.
 - **Execution boundary:** enforce authorization immediately before consequential side effects.
 - **Evidence boundary:** record observations and integrity metadata independently from agent conversational state.
@@ -36,6 +37,8 @@ Every consequential execution must be attributable to tenant, project, environme
 8. Evidence records observations; claims require verification.
 9. Evidence integrity must be independently checkable.
 10. Tenant and project boundaries are explicit in enterprise-scoped operations.
+11. Authenticated principal identity is established by the identity boundary, not request-body fields.
+12. Resource hierarchy must be verified server-side; IDs alone do not constitute authorization.
 
 ## Enterprise resource model
 
@@ -54,6 +57,8 @@ Organization
 ## API principles
 
 The enterprise API must support explicit versioning, idempotency for mutations, correlation IDs, deterministic authorization decisions, structured errors, pagination, optimistic concurrency/version checks where required, audit metadata for administrative mutations, and backward-compatibility rules.
+
+Authentication uses a verified OIDC/OAuth2-compatible bearer credential at the identity boundary. The authorization request does not accept client-controlled actor identity; the server resolves the principal from validated credentials.
 
 Internal Go package structures are not the long-term API contract.
 
@@ -88,8 +93,10 @@ Availability and disaster-recovery objectives remain deployment-specific until m
 - authorization semantics documented
 - evidence semantics documented
 - trust boundaries documented
+- identity provenance documented
+- hierarchy verification documented
 - contract mapped to implementation packages
-- at least one executable contract test
+- executable contract tests cover identity and hierarchy boundaries
 - later enterprise phases reference this contract instead of redefining semantics
 
 ## Claims boundary
