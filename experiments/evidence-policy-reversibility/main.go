@@ -69,6 +69,8 @@ func main() {
 			Evidence: []Evidence{{ProviderReceipt, "provider-a", Confirmed, now.Add(-2*time.Minute)}, {ResourceState, "resource-observer", Rejected, now.Add(-1*time.Minute)}}, Expected: Unknown},
 		{Name: "06-two-signals-from-same-source-are-not-independent", InitialState: Unknown, Reversibility: Irreversible,
 			Evidence: []Evidence{{ProviderReceipt, "provider-a", Confirmed, now.Add(-2*time.Minute)}, {AuditEvent, "provider-a", Confirmed, now.Add(-1*time.Minute)}}, Expected: Unknown},
+		{Name: "07-disallowed-evidence-does-not-count-toward-independence", InitialState: Unknown, Reversibility: Reversible,
+			Evidence: []Evidence{{EvidenceType("UNTRUSTED_SIGNAL"), "untrusted-source", Confirmed, now.Add(-1*time.Minute)}, {ProviderReceipt, "provider-a", Confirmed, now.Add(-1*time.Minute)}}, Expected: Confirmed},
 	}
 	for i := range scenarios {
 		scenarios[i].Observed, scenarios[i].Reason = evaluate(scenarios[i].Evidence, policyFor(scenarios[i].Reversibility), now)
@@ -100,16 +102,18 @@ func policyFor(r Reversibility) VerificationPolicy {
 func evaluate(es []Evidence, p VerificationPolicy, now time.Time) (State, string) {
 	if len(es) == 0 { return Unknown, "no evidence" }
 	sources := map[string]bool{}
+	accepted := 0
 	var outcome State
 	for _, e := range es {
 		if now.Sub(e.ObservedAt) > p.MaxAge { return Unknown, "evidence is stale" }
 		if !contains(p.AllowedEvidence, e.Type) { continue }
+		accepted++
 		if outcome == "" { outcome = e.Outcome } else if outcome != e.Outcome { return Unknown, "independent evidence conflicts" }
 		sources[e.Source] = true
 	}
 	if outcome == "" { return Unknown, "no acceptable evidence" }
 	if len(sources) < p.MinIndependentProof { return Unknown, "insufficient independent evidence for reversibility policy" }
-	if len(sources) != len(es) { return Unknown, "evidence signals are not independent" }
+	if len(sources) != accepted { return Unknown, "accepted evidence signals are not independent" }
 	return outcome, "evidence satisfies verification policy"
 }
 
