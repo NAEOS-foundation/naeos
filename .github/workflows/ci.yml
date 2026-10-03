@@ -91,7 +91,17 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Run governance lifecycle experiment
-        run: go run ./experiments/governance-lifecycle
+        run: |
+          set -o pipefail
+          mkdir -p governance-lifecycle-evidence
+          go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle-evidence/run.txt
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":0}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > governance-lifecycle-evidence/metadata.json
+      - name: Upload governance lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-lifecycle-evidence-${{ github.sha }}
+          path: governance-lifecycle-evidence/
 
   level3-evidence:
     name: Level-3 Evidence Experiment
