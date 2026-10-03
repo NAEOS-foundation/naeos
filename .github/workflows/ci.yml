@@ -94,8 +94,12 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p governance-lifecycle-evidence
+          set +e
           go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle-evidence/run.txt
-          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":0}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > governance-lifecycle-evidence/metadata.json
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > governance-lifecycle-evidence/metadata.json
+          exit "$rc"
       - name: Upload governance lifecycle evidence
         if: always()
         uses: actions/upload-artifact@v4
