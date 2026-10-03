@@ -14,6 +14,8 @@ paths:
     post:
       operationId: authorizeAction
       tags: [Authorization]
+      security:
+        - bearerAuth: []
       summary: Evaluate an action against an explicit enterprise scope and policy version.
       parameters:
         - $ref: "#/components/parameters/RequestId"
@@ -39,6 +41,8 @@ paths:
     get:
       operationId: getEvidence
       tags: [Evidence]
+      security:
+        - bearerAuth: []
       summary: Retrieve a verifiable authorization lifecycle evidence bundle.
       parameters:
         - name: evidenceId
@@ -52,11 +56,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EvidenceBundle"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
   /tenants:
     get:
       operationId: listTenants
       tags: [Tenancy]
+      security:
+        - bearerAuth: []
       summary: List tenants visible to the authenticated administrative principal.
       responses:
         "200":
@@ -70,7 +78,15 @@ paths:
                   items:
                     type: array
                     items: { $ref: "#/components/schemas/ResourceRef" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC/OAuth2 access token validated by the NAEOS identity boundary. The actor is resolved server-side from the verified token, not trusted from request JSON.
   parameters:
     RequestId:
       name: X-Request-ID
@@ -87,12 +103,14 @@ components:
       type: object
       required: [organization_id, tenant_id, project_id, environment_id]
       properties:
-        organization_id: { type: string }
-        tenant_id: { type: string }
-        project_id: { type: string }
-        environment_id: { type: string }
+        organization_id: { type: string, minLength: 1 }
+        tenant_id: { type: string, minLength: 1 }
+        project_id: { type: string, minLength: 1 }
+        environment_id: { type: string, minLength: 1 }
+      description: IDs identify a requested scope; server-side hierarchy and authorization checks remain mandatory.
     ActorIdentity:
       type: object
+      readOnly: true
       required: [subject, type]
       properties:
         subject: { type: string }
@@ -110,14 +128,14 @@ components:
           additionalProperties: { type: string }
     AuthorizationRequest:
       type: object
-      required: [request_id, scope, actor, action, policy_id, policy_version]
+      required: [request_id, scope, action, policy_id, policy_version]
       properties:
         request_id: { type: string }
         scope: { $ref: "#/components/schemas/EnterpriseScope" }
-        actor: { $ref: "#/components/schemas/ActorIdentity" }
         action: { $ref: "#/components/schemas/Action" }
         policy_id: { type: string }
         policy_version: { type: integer, minimum: 1 }
+      description: Actor identity is derived from the authenticated principal and is not accepted as a client-controlled field.
     Decision:
       type: object
       required: [status, reason]
@@ -178,7 +196,7 @@ components:
     BadRequest:
       description: Invalid request.
     Unauthorized:
-      description: Authentication required.
+      description: Authentication required or access token validation failed.
     Forbidden:
       description: Authenticated principal is not authorized.
     Conflict:
