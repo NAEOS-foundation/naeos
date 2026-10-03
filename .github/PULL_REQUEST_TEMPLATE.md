@@ -37,5 +37,11 @@ Describe the tests you ran to verify your changes:
 
 - [ ] Every commit includes a `Signed-off-by` trailer (`git commit -s`)
 - [ ] My contribution is submitted under the Apache License 2.0
-- [ ] I have the right to contribute (not blocked by an employer, contract, or
-      third-party license)
+- [ ] I have the right to contribute these changes; any required employer,
+      client, or rights-holder permission is in place
+- [ ] I have identified material third-party code, text, examples, specifications,
+      or assets and documented their source and license
+- [ ] If this PR contains substantial AI-generated or otherwise generated
+      material, I have added the provenance note described in
+      [CONTRIBUTING.md](../CONTRIBUTING.md); I have not included private prompts,
+      confidential inputs, personal data, or secrets
