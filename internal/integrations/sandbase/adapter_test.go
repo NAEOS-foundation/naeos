@@ -18,13 +18,17 @@ func TestAdapterEmitsBoundAuthorizationContract(t *testing.T) {
 		AllowedCapabilities:  []controlplane.Capability{"repository.write"},
 		RequiresExplicitAuth: true,
 	}
+	store := controlplane.NewPolicyStore()
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
 	grant := &controlplane.Grant{
 		GrantID: "grant-1", AgentID: "agent-1", PolicyID: policy.ID,
 		PolicyVersion: 1, Capabilities: []controlplane.Capability{"repository.write"},
 		CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
 	}
 	adapter := &Adapter{
-		Gateway: controlplane.NewDecisionGateway(controlplane.NewEvaluator(), controlplane.NewLedger()),
+		Gateway: controlplane.NewDecisionGateway(controlplane.NewEvaluator(store), controlplane.NewLedger()),
 		Policy:  policy, Grant: grant,
 	}
 
