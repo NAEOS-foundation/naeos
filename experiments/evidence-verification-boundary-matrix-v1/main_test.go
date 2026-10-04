@@ -62,3 +62,23 @@ func TestMissingPolicyFailsClosed(t *testing.T) {
 		}
 	}
 }
+
+func TestVerificationRetainsEvidenceIdentityAndProvenance(t *testing.T) {
+	results, err := run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range results {
+		if len(r.EvidenceIDs) != len(r.EvidenceProvenance) {
+			t.Fatalf("%s: evidence identity count %d does not match provenance count %d", r.CaseName, len(r.EvidenceIDs), len(r.EvidenceProvenance))
+		}
+		for i, id := range r.EvidenceIDs {
+			if id == "" {
+				t.Fatalf("%s: evidence item %d has no stable identifier", r.CaseName, i)
+			}
+			if r.EvidenceProvenance[i] == "" {
+				t.Fatalf("%s: evidence item %s has no provenance", r.CaseName, id)
+			}
+		}
+	}
+}
