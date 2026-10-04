@@ -1,0 +1,6 @@
+version: v2
+rules:
+  - capability: tool.execute
+    target: repo.write
+    effect: allow
+    require_approval: true
