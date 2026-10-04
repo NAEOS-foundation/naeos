@@ -62,8 +62,8 @@ type Result struct {
 	EvidenceUsed       []string `json:"evidence_used"`
 	EvidenceIDs        []string `json:"evidence_ids"`
 	EvidenceProvenance []string `json:"evidence_provenance"`
-	ExpectedOutcome Outcome  `json:"expected_outcome"`
-	Passed          bool     `json:"passed"`
+	ExpectedOutcome     Outcome  `json:"expected_outcome"`
+	Passed              bool     `json:"passed"`
 }
 
 func minimumFloor(c Case) string {
