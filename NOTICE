@@ -34,10 +34,11 @@ reference does not imply endorsement, affiliation, or certification.
 ================================================================================
 Third-Party Notices
 
-The NAEOS runtime is statically linked against third-party libraries, all of
-which are permissively licensed (Apache-2.0, BSD, MIT, ISC, MPL-2.0). A machine
-readable software bill of materials (SBOM) and the full third-party license
-attribution are published with each release artifact.
+The NAEOS runtime is statically linked against third-party libraries under
+Apache-2.0, BSD, MIT, and MPL-2.0 terms. The machine-readable SBOM
+published with each release records SPDX license identifiers for the Go
+module dependencies. This notice summarizes selected attribution and does
+not reproduce all upstream license texts.
 
 The single MPL-2.0 dependency is the MySQL driver (go-sql-driver/mysql),
 used unmodified. MPL-2.0 obligations are file-level (they cover the driver's

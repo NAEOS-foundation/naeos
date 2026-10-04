@@ -46,18 +46,29 @@ type Tool struct {
 
 // Component is a software element tracked in the BOM.
 type Component struct {
-	Type       ComponentType `json:"type"`
-	Name       string        `json:"name"`
-	BOMRef     string        `json:"bom-ref,omitempty"`
-	Group      string        `json:"group,omitempty"`
-	Version    string        `json:"version,omitempty"`
-	Supplier   string        `json:"supplier,omitempty"`
-	License    string        `json:"license,omitempty"`
-	Hashes     []Hash        `json:"hashes,omitempty"`
-	Purl       string        `json:"purl,omitempty"`
-	FileName   string        `json:"fileName,omitempty"`
-	Path       string        `json:"path,omitempty"`
-	Properties []Property    `json:"properties,omitempty"`
+	Type       ComponentType   `json:"type"`
+	Name       string          `json:"name"`
+	BOMRef     string          `json:"bom-ref,omitempty"`
+	Group      string          `json:"group,omitempty"`
+	Version    string          `json:"version,omitempty"`
+	Supplier   string          `json:"supplier,omitempty"`
+	Licenses   []LicenseChoice `json:"licenses,omitempty"`
+	Hashes     []Hash          `json:"hashes,omitempty"`
+	Purl       string          `json:"purl,omitempty"`
+	FileName   string          `json:"fileName,omitempty"`
+	Path       string          `json:"path,omitempty"`
+	Properties []Property      `json:"properties,omitempty"`
+}
+
+// LicenseChoice represents a CycloneDX license identifier or SPDX expression.
+type LicenseChoice struct {
+	License    *License `json:"license,omitempty"`
+	Expression string   `json:"expression,omitempty"`
+}
+
+// License identifies a license by its SPDX identifier.
+type License struct {
+	ID string `json:"id,omitempty"`
 }
 
 // Property is an arbitrary key-value annotation.

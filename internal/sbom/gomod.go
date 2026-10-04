@@ -15,10 +15,10 @@ import (
 
 // goModuleLicense is a curated, audit-verified SPDX license map for the Go
 // modules pinned by the NAEOS go.mod. It is maintained manually and does not
-// replace an automated resolver; modules not listed here carry no license
-// field in the generated BOM.
+// replace an automated resolver; modules not listed here block BOM generation
+// until their license has been reviewed and added.
 var goModuleLicense = map[string]string{
-	"github.com/DATA-DOG/go-sqlmock":        "MIT",
+	"github.com/DATA-DOG/go-sqlmock":        "BSD-3-Clause",
 	"github.com/bwmarrin/discordgo":         "BSD-3-Clause",
 	"github.com/charmbracelet/bubbletea":    "MIT",
 	"github.com/charmbracelet/lipgloss":     "MIT",
@@ -149,7 +149,8 @@ func parseGoSum(data []byte) map[string]string {
 // FromGoModules builds a dependency-level CycloneDX BOM from the go.mod and
 // go.sum manifests in root. Direct and indirect modules are emitted as
 // library components with Go package-urls, go.sum content hashes where
-// available, and audit-verified SPDX licenses for curated modules.
+// available, and audit-verified SPDX licenses for curated modules. Generation
+// fails if any required module has no curated license.
 func (g *Generator) FromGoModules(root string) (*BOM, error) {
 	goModPath := filepath.Join(root, "go.mod")
 	goSumPath := filepath.Join(root, "go.sum")
@@ -168,6 +169,11 @@ func (g *Generator) FromGoModules(root string) (*BOM, error) {
 
 	comps := make([]Component, 0, len(refs))
 	for _, ref := range refs {
+		license, ok := goModuleLicense[ref.Path]
+		if !ok {
+			return nil, fmt.Errorf("no audited SPDX license for Go module %s@%s", ref.Path, ref.Version)
+		}
+
 		comp := Component{
 			Type:     Library,
 			Group:    "golang",
@@ -176,7 +182,7 @@ func (g *Generator) FromGoModules(root string) (*BOM, error) {
 			Purl:     Purl("golang", ref.Path, ref.Version),
 			FileName: ref.Path + "@" + ref.Version,
 			Path:     "go.mod",
-			License:  goModuleLicense[ref.Path],
+			Licenses: spdxLicenseChoice(license),
 			Properties: []Property{
 				{Name: "go.module", Value: "direct"},
 			},
@@ -196,9 +202,17 @@ func (g *Generator) FromGoModules(root string) (*BOM, error) {
 	}
 	if bom.Metadata.Component != nil {
 		bom.Metadata.Component.Purl = Purl("pkg", g.cfg.Project, g.cfg.Version)
+		bom.Metadata.Component.Licenses = spdxLicenseChoice("Apache-2.0")
 	}
 	bom.Dependencies = []Dependency{{Ref: goModuleFileRef(root, g.cfg.Project)}}
 	return bom, nil
+}
+
+func spdxLicenseChoice(value string) []LicenseChoice {
+	if strings.Contains(value, " AND ") || strings.Contains(value, " OR ") || strings.Contains(value, " WITH ") {
+		return []LicenseChoice{{Expression: value}}
+	}
+	return []LicenseChoice{{License: &License{ID: value}}}
 }
 
 func goModuleFileRef(root, project string) string {
