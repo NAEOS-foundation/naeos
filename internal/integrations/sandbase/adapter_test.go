@@ -50,7 +50,7 @@ func TestAdapterContractDocumentsFreshnessBoundary(t *testing.T) {
 	v1 := &controlplane.Policy{
 		ID: "sandbase-policy", Version: 1, Status: "active",
 		CreatedAt: now, UpdatedAt: now,
-		AllowedCapabilities: []controlplane.Capability{"repository.write"},
+		AllowedCapabilities:  []controlplane.Capability{"repository.write"},
 		RequiresExplicitAuth: true,
 	}
 	v2 := *v1
