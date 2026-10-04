@@ -23,12 +23,11 @@ export async function generateMetadata(
 
 const stages = [
   ["Specification", "Define engineering intent.", "Tentukan intent engineering."],
-  ["NEIR", "Canonical engineering model.", "Model engineering canonical."],
-  ["Policy", "Validate boundaries.", "Validasi batasan."],
-  ["AI Context", "Prepare relevant context.", "Siapkan context yang relevan."],
-  ["Agent", "Perform bounded work.", "Jalankan pekerjaan dengan batasan."],
-  ["Execution", "Run through engineering workflows.", "Jalankan melalui workflow engineering."],
-  ["Evidence", "Trace results back to intent.", "Telusuri hasil kembali ke intent."],
+  ["Policy", "Decide what is allowed.", "Tentukan apa yang diizinkan."],
+  ["Authorization", "Bind execution to capabilities.", "Ikat execution pada capability."],
+  ["Runtime", "Execute inside the boundary.", "Jalankan di dalam boundary."],
+  ["Evidence", "Capture durable observations.", "Catat evidence yang tahan lama."],
+  ["Verification", "Independently verify outcomes.", "Verifikasi hasil secara independen."],
 ] as const;
 
 export default async function HomePage(
@@ -65,8 +64,8 @@ export default async function HomePage(
             }}
           >
             {id
-              ? "Kendalikan bagaimana AI membangun software."
-              : "Control how AI builds software."}
+              ? "Control plane untuk AI coding agents."
+              : "The Engineering Control Plane for AI Coding Agents."}
           </h1>
           <p
             style={{
@@ -77,8 +76,8 @@ export default async function HomePage(
             }}
           >
             {id
-              ? "NAEOS adalah control plane engineering open-source untuk software development berbasis AI — menghubungkan intent, specification, policy, agent, execution, dan evidence yang dapat diverifikasi."
-              : "NAEOS is an open-source engineering control plane for AI-native software development — connecting intent, specifications, policy, agents, execution, and verifiable evidence."}
+              ? "Bangun software dengan AI di bawah kontrol architecture, policy, execution, evidence, dan verification yang eksplisit."
+              : "Build software with AI under explicit architecture, policy, execution, evidence, and verification controls."}
           </p>
           <div
             style={{
@@ -89,10 +88,10 @@ export default async function HomePage(
             }}
           >
             <Link href={base + "/docs/getting-started"} className="btn btn-primary btn-lg">
-              Get started
+              {id ? "Mulai dengan NAEOS" : "Explore NAEOS"}
             </Link>
-            <Link href={base + "/docs/architecture"} className="btn btn-secondary btn-lg">
-              View architecture
+            <Link href={base + "/enterprise"} className="btn btn-secondary btn-lg">
+              {id ? "Mulai pilot" : "Start a governance pilot"}
             </Link>
             <a
               href={SITE.repo}
@@ -125,7 +124,7 @@ export default async function HomePage(
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(7, minmax(110px, 1fr))",
+                gridTemplateColumns: "repeat(6, minmax(125px, 1fr))",
                 gap: ".5rem",
                 overflowX: "auto",
               }}
@@ -182,6 +181,82 @@ export default async function HomePage(
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="problem-grid">
+            <div className="problem-card">
+              <span className="problem-tag problem-tag-green">{id ? "Govern" : "Govern"}</span>
+              <h2 style={{ marginTop: ".75rem" }}>
+                {id ? "Tetapkan boundary sebelum agent bertindak." : "Set the boundary before the agent acts."}
+              </h2>
+              <p>
+                {id
+                  ? "Policy dan authorization menentukan capability yang tersedia dan kondisi eksekusinya."
+                  : "Policy and authorization determine which capabilities are available and under what conditions they may execute."}
+              </p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-tag">{id ? "Verify" : "Verify"}</span>
+              <h2 style={{ marginTop: ".75rem" }}>
+                {id ? "Jangan samakan execution dengan keberhasilan." : "Do not confuse execution with success."}
+              </h2>
+              <p>
+                {id
+                  ? "NAEOS memisahkan runtime execution dari evidence dan independent verification."
+                  : "NAEOS separates runtime execution from durable evidence and independent verification."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <h2 className="section-title">
+            {id ? "AI harus di-govern, bukan hanya di-prompt." : "AI must be governed, not just prompted."}
+          </h2>
+          <p className="section-subtitle">
+            {id
+              ? "NAEOS mengubah AI coding dari assistant tanpa batas menjadi workflow engineering yang dapat dikontrol."
+              : "NAEOS turns AI coding from an unbounded assistant into a controlled engineering workflow."}
+          </p>
+          <div className="features-grid">
+            {[
+              ["Architecture", id ? "Tetapkan constraint dan boundary engineering." : "Define engineering constraints and system boundaries."],
+              ["Policy", id ? "Tentukan action yang allowed, restricted, atau prohibited." : "Determine which actions are allowed, restricted, or prohibited."],
+              ["Evidence", id ? "Simpan keputusan, observasi, artifact, dan receipt." : "Preserve decisions, observations, artifacts, and receipts."],
+              ["Verification", id ? "Evaluasi outcome secara independen dari execution." : "Evaluate outcomes independently from execution."],
+            ].map(([title, desc]) => (
+              <div className="feature-card" key={title}>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="cta-band">
+            <h2>{id ? "Uji control plane pada workflow engineering Anda." : "Test the control plane on your engineering workflow."}</h2>
+            <p>
+              {id
+                ? "Mulai dengan 30-Day AI Engineering Governance Pilot."
+                : "Start with a scoped 30-Day AI Engineering Governance Pilot."}
+            </p>
+            <div className="cta-band-actions">
+              <Link href={base + "/enterprise"} className="btn btn-primary btn-lg">
+                {id ? "Mulai pilot" : "Start a governance pilot"}
+              </Link>
+              <Link href={base + "/control-plane"} className="btn btn-secondary btn-lg">
+                {id ? "Lihat control plane" : "View the control plane"}
+              </Link>
             </div>
           </div>
         </div>
