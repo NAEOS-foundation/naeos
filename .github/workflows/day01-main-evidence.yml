@@ -1,0 +1,40 @@
+name: Day 01 Main Evidence
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: day01-main-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance-lifecycle:
+    name: Governance Lifecycle — Main Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 01 governance lifecycle experiment
+        run: |
+          set -o pipefail
+          mkdir -p day01-governance-lifecycle-evidence
+          set +e
+          go run ./experiments/governance-lifecycle 2>&1 | tee day01-governance-lifecycle-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","workflow_ref":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_REF" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day01-governance-lifecycle-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 01 main evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day01-governance-lifecycle-evidence-${{ github.sha }}
+          path: day01-governance-lifecycle-evidence/
