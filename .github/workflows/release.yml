@@ -87,7 +87,7 @@ jobs:
             --project NAEOS \
             --version "${{ steps.version.outputs.VERSION }}" \
             --output "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
-          go run ./cmd/naeos/ sbom verify "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
+          go run ./cmd/naeos/ sbom verify --require-licenses "naeos_${{ steps.version.outputs.VERSION }}.bom.json"
 
       - name: Verify release DCO evidence
         run: |
