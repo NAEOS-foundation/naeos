@@ -1,0 +1,40 @@
+id: sandbase-policy-freshness-001
+name: policy-change-mid-session
+version: 1
+actor:
+  type: ai_agent
+session:
+  persistent: true
+authorization:
+  capability: tool.execute
+  target: repo.write
+  initial_policy_version: v1
+steps:
+  - id: start
+    action: start_session
+  - id: authorize-v1
+    action: authorize
+    expect: ALLOW
+    policy_version: v1
+  - id: execute-v1
+    action: execute
+    authorization: fresh
+    expect: ALLOW
+  - id: change-policy
+    action: activate_policy
+    policy_version: v2
+  - id: execute-with-stale-auth
+    action: execute
+    authorization: stale
+    expect: REAUTHORIZE
+  - id: reauthorize-v2
+    action: authorize
+    expect: ALLOW
+    policy_version: v2
+  - id: execute-v2
+    action: execute
+    authorization: fresh
+    expect: ALLOW
+  - id: seal-evidence
+    action: record_evidence
+    expect: PASS

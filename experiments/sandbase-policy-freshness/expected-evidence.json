@@ -1,0 +1,17 @@
+{
+  "experiment": "sandbase-policy-freshness-001",
+  "result": "EXPECTED",
+  "authorization": {
+    "initial_policy": "v1",
+    "stale_policy": "v1",
+    "current_policy": "v2",
+    "reauthorization_required": true
+  },
+  "assertions": [
+    "fresh authorization executes",
+    "policy change invalidates prior authorization",
+    "stale authorization cannot execute consequential action",
+    "reauthorization under v2 is required before execution",
+    "reauthorization is auditable"
+  ]
+}
