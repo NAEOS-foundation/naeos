@@ -8,9 +8,9 @@ import "fmt"
 // EnterpriseScope is the minimum scope attached to enterprise control-plane operations.
 type EnterpriseScope struct {
 	OrganizationID string `json:"organization_id"`
-	TenantID string `json:"tenant_id"`
-	ProjectID string `json:"project_id"`
-	EnvironmentID string `json:"environment_id"`
+	TenantID       string `json:"tenant_id"`
+	ProjectID      string `json:"project_id"`
+	EnvironmentID  string `json:"environment_id"`
 }
 
 func (s EnterpriseScope) Validate() error {
@@ -56,21 +56,21 @@ func (s EnterpriseScope) ValidateHierarchy(h ResourceHierarchy) error {
 
 type ActorIdentity struct {
 	Subject string `json:"subject"`
-	Type string `json:"type"`
-	Issuer string `json:"issuer,omitempty"`
+	Type    string `json:"type"`
+	Issuer  string `json:"issuer,omitempty"`
 }
 
 type AuthenticatedPrincipal struct {
-	Actor ActorIdentity
+	Actor  ActorIdentity
 	Claims map[string]string
 }
 
 type EnterpriseAuthorizationRequest struct {
-	RequestID string `json:"request_id"`
-	Scope EnterpriseScope `json:"scope"`
-	Action Action `json:"action"`
-	PolicyID string `json:"policy_id"`
-	PolicyVersion int `json:"policy_version"`
+	RequestID     string          `json:"request_id"`
+	Scope         EnterpriseScope `json:"scope"`
+	Action        Action          `json:"action"`
+	PolicyID      string          `json:"policy_id"`
+	PolicyVersion int             `json:"policy_version"`
 }
 
 func ResolveAuthorizationRequest(req EnterpriseAuthorizationRequest, principal AuthenticatedPrincipal) (EnterpriseAuthorizationRequest, ActorIdentity, error) {
@@ -87,20 +87,20 @@ func ResolveAuthorizationRequest(req EnterpriseAuthorizationRequest, principal A
 }
 
 type EnterpriseAuthorizationResponse struct {
-	RequestID string `json:"request_id"`
-	Decision DecisionResult `json:"decision"`
-	Scope EnterpriseScope `json:"scope"`
-	PolicyID string `json:"policy_id"`
-	PolicyVersion int `json:"policy_version"`
+	RequestID     string          `json:"request_id"`
+	Decision      DecisionResult  `json:"decision"`
+	Scope         EnterpriseScope `json:"scope"`
+	PolicyID      string          `json:"policy_id"`
+	PolicyVersion int             `json:"policy_version"`
 }
 
 type ResourceRef struct {
 	Type string `json:"type"`
-	ID string `json:"id"`
+	ID   string `json:"id"`
 }
 
 type AuditContext struct {
-	RequestID string `json:"request_id"`
-	Actor ActorIdentity `json:"actor"`
-	Reason string `json:"reason,omitempty"`
+	RequestID string        `json:"request_id"`
+	Actor     ActorIdentity `json:"actor"`
+	Reason    string        `json:"reason,omitempty"`
 }
