@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -97,7 +98,10 @@ func newSBomGenerateCommand() *cobra.Command {
 }
 
 func newSBomVerifyCommand() *cobra.Command {
-	var outputFmt string
+	var (
+		outputFmt       string
+		requireLicenses bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "verify",
@@ -110,11 +114,14 @@ func newSBomVerifyCommand() *cobra.Command {
 				return err
 			}
 
-			checks := verifyBOM(bom)
+			checks := verifyBOM(bom, requireLicenses)
 
 			if outputFmt == "json" {
 				data, _ := json.MarshalIndent(checks, "", "  ")
 				fmt.Fprintln(cmd.OutOrStdout(), string(data))
+				if failed := countFailedChecks(checks); failed > 0 {
+					return fmt.Errorf("SBOM verification failed: %d check(s) failed", failed)
+				}
 				return nil
 			}
 
@@ -136,11 +143,15 @@ func newSBomVerifyCommand() *cobra.Command {
 				fmt.Fprintf(out, "  [%s] %s — %s\n", mark, c.Name, c.Detail)
 			}
 			fmt.Fprintf(out, "\nPassed: %d  Failed: %d\n", passed, failed)
+			if failed > 0 {
+				return fmt.Errorf("SBOM verification failed: %d check(s) failed", failed)
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
+	cmd.Flags().BoolVar(&requireLicenses, "require-licenses", false, "fail if any component has no CycloneDX license declaration")
 	return cmd
 }
 
@@ -171,7 +182,7 @@ type sbomCheck struct {
 	Detail string `json:"detail"`
 }
 
-func verifyBOM(bom *sbom.BOM) []sbomCheck {
+func verifyBOM(bom *sbom.BOM, requireLicenses bool) []sbomCheck {
 	var checks []sbomCheck
 
 	checks = append(checks, sbomCheck{
@@ -223,5 +234,51 @@ func verifyBOM(bom *sbom.BOM) []sbomCheck {
 		Detail: fmt.Sprintf("%d/%d components with hashes", len(bom.Components)-missingHash, len(bom.Components)),
 	})
 
+	licenseComponents := append([]sbom.Component(nil), bom.Components...)
+	if bom.Metadata.Component != nil {
+		licenseComponents = append(licenseComponents, *bom.Metadata.Component)
+	}
+	licensesOk := true
+	licensed := 0
+	for _, component := range licenseComponents {
+		if len(component.Licenses) == 0 {
+			if requireLicenses {
+				licensesOk = false
+			}
+			continue
+		}
+		componentOk := true
+		for _, choice := range component.Licenses {
+			hasLicense := choice.License != nil && choice.License.ID != ""
+			hasExpression := strings.TrimSpace(choice.Expression) != ""
+			if hasLicense == hasExpression {
+				licensesOk = false
+				componentOk = false
+			}
+		}
+		if componentOk {
+			licensed++
+		}
+	}
+	detail := fmt.Sprintf("%d/%d components have valid license declarations", licensed, len(licenseComponents))
+	if requireLicenses {
+		detail += " (required)"
+	}
+	checks = append(checks, sbomCheck{
+		Name:   "licenses",
+		Passed: licensesOk,
+		Detail: detail,
+	})
+
 	return checks
+}
+
+func countFailedChecks(checks []sbomCheck) int {
+	failed := 0
+	for _, check := range checks {
+		if !check.Passed {
+			failed++
+		}
+	}
+	return failed
 }
