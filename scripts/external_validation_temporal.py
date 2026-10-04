@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
 """Real Temporal crash/recovery validation.
 
 The first worker is killed after a durable side effect is committed locally
