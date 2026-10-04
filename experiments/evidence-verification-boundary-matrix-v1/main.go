@@ -47,21 +47,21 @@ type Evidence struct {
 }
 
 type Case struct {
-	Name          string         `json:"name"`
-	Effect        Effect         `json:"effect"`
-	Reversibility Reversibility  `json:"reversibility"`
-	Evidence      []Evidence     `json:"evidence"`
-	HasPolicy     bool           `json:"has_policy"`
-	MinimumFloor  string         `json:"minimum_evidence_floor"`
+	Name          string        `json:"name"`
+	Effect        Effect        `json:"effect"`
+	Reversibility Reversibility `json:"reversibility"`
+	Evidence      []Evidence    `json:"evidence"`
+	HasPolicy     bool          `json:"has_policy"`
+	MinimumFloor  string        `json:"minimum_evidence_floor"`
 }
 
 type Result struct {
-	CaseName       string    `json:"case"`
-	Outcome        Outcome   `json:"outcome"`
-	Reason         string    `json:"reason"`
-	EvidenceUsed   []string  `json:"evidence_used"`
+	CaseName        string   `json:"case"`
+	Outcome         Outcome  `json:"outcome"`
+	Reason          string   `json:"reason"`
+	EvidenceUsed    []string `json:"evidence_used"`
 	ExpectedOutcome Outcome  `json:"expected_outcome"`
-	Passed         bool      `json:"passed"`
+	Passed          bool     `json:"passed"`
 }
 
 func minimumFloor(c Case) string {
@@ -167,7 +167,7 @@ func main() {
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(map[string]any{
 		"experiment": "evidence-verification-boundary-matrix-v1",
-		"thesis": "execution, evidence, verification, and authority are distinct; confirmation requires evidence satisfying the effect-derived floor",
-		"results": results,
+		"thesis":     "execution, evidence, verification, and authority are distinct; confirmation requires evidence satisfying the effect-derived floor",
+		"results":    results,
 	})
 }
