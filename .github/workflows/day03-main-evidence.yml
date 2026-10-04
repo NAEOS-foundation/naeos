@@ -1,0 +1,40 @@
+name: Day 03 Main Evidence
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: day03-main-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy-change:
+    name: Policy Change Mid-Run — Main Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 03 policy change experiment
+        run: |
+          set -o pipefail
+          mkdir -p day03-policy-change-evidence
+          set +e
+          go run ./examples/control-plane-policy-change 2>&1 | tee day03-policy-change-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","workflow_ref":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_REF" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day03-policy-change-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 03 main evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day03-policy-change-evidence-${{ github.sha }}
+          path: day03-policy-change-evidence/
