@@ -1,0 +1,205 @@
+openapi: "3.0.3"
+info:
+  title: NAEOS Enterprise Control Plane API
+  version: "2.0.0"
+  description: Stable enterprise-facing contract. Internal implementation types are not part of this API.
+servers:
+  - url: /api/v2
+tags:
+  - name: Authorization
+  - name: Evidence
+  - name: Tenancy
+paths:
+  /authorize:
+    post:
+      operationId: authorizeAction
+      tags: [Authorization]
+      security:
+        - bearerAuth: []
+      summary: Evaluate an action against an explicit enterprise scope and policy version.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorizationRequest"
+      responses:
+        "200":
+          description: Deterministic authorization decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /evidence/{evidenceId}:
+    get:
+      operationId: getEvidence
+      tags: [Evidence]
+      security:
+        - bearerAuth: []
+      summary: Retrieve a verifiable authorization lifecycle evidence bundle.
+      parameters:
+        - name: evidenceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Evidence bundle.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceBundle"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tenants:
+    get:
+      operationId: listTenants
+      tags: [Tenancy]
+      security:
+        - bearerAuth: []
+      summary: List tenants visible to the authenticated administrative principal.
+      responses:
+        "200":
+          description: Tenant list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ResourceRef" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC/OAuth2 access token validated by the NAEOS identity boundary. The actor is resolved server-side from the verified token, not trusted from request JSON.
+  parameters:
+    RequestId:
+      name: X-Request-ID
+      in: header
+      required: false
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string }
+  schemas:
+    EnterpriseScope:
+      type: object
+      required: [organization_id, tenant_id, project_id, environment_id]
+      properties:
+        organization_id: { type: string, minLength: 1 }
+        tenant_id: { type: string, minLength: 1 }
+        project_id: { type: string, minLength: 1 }
+        environment_id: { type: string, minLength: 1 }
+      description: IDs identify a requested scope; server-side hierarchy and authorization checks remain mandatory.
+    ActorIdentity:
+      type: object
+      readOnly: true
+      required: [subject, type]
+      properties:
+        subject: { type: string }
+        type: { type: string, enum: [human, service, agent] }
+        issuer: { type: string }
+    Action:
+      type: object
+      required: [agent_id, capability]
+      properties:
+        agent_id: { type: string }
+        capability: { type: string }
+        artifact_hash: { type: string }
+        context:
+          type: object
+          additionalProperties: { type: string }
+    AuthorizationRequest:
+      type: object
+      required: [request_id, scope, action, policy_id, policy_version]
+      properties:
+        request_id: { type: string }
+        scope: { $ref: "#/components/schemas/EnterpriseScope" }
+        action: { $ref: "#/components/schemas/Action" }
+        policy_id: { type: string }
+        policy_version: { type: integer, minimum: 1 }
+      description: Actor identity is derived from the authenticated principal and is not accepted as a client-controlled field.
+    Decision:
+      type: object
+      required: [status, reason]
+      properties:
+        decision_id: { type: string }
+        request_id: { type: string }
+        status: { type: string, enum: [ALLOW, DENY, REQUIRE_APPROVAL] }
+        reason: { type: string }
+        policy_id: { type: string }
+        policy_version: { type: integer }
+        requested: { type: string }
+        approved_grant: { type: string }
+        needs_approval: { type: boolean }
+    AuthorizationResponse:
+      type: object
+      required: [request_id, decision, scope, policy_id, policy_version]
+      properties:
+        request_id: { type: string }
+        decision: { $ref: "#/components/schemas/Decision" }
+        scope: { $ref: "#/components/schemas/EnterpriseScope" }
+        policy_id: { type: string }
+        policy_version: { type: integer }
+    ResourceRef:
+      type: object
+      required: [type, id]
+      properties:
+        type: { type: string }
+        id: { type: string }
+    EvidenceBundle:
+      type: object
+      required: [schema_version, request_id, decision_id, agent_id, capability, decision, reason, verification, evidence_digest]
+      properties:
+        schema_version: { type: string }
+        request_id: { type: string }
+        decision_id: { type: string }
+        execution_id: { type: string }
+        agent_id: { type: string }
+        capability: { type: string }
+        artifact_hash: { type: string }
+        decision: { type: string }
+        reason: { type: string }
+        policy_id: { type: string }
+        policy_version: { type: string }
+        grant_id: { type: string }
+        verification:
+          type: object
+          required: [result, decision_consistent, execution_consistent, ledger_integrity]
+          properties:
+            result: { type: string, enum: [PASS, FAIL] }
+            decision_consistent: { type: boolean }
+            execution_consistent: { type: boolean }
+            ledger_integrity: { type: boolean }
+            issues:
+              type: array
+              items: { type: string }
+        evidence_digest: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid request.
+    Unauthorized:
+      description: Authentication required or access token validation failed.
+    Forbidden:
+      description: Authenticated principal is not authorized.
+    Conflict:
+      description: Resource or policy version conflict.
+    NotFound:
+      description: Resource not found.
