@@ -21,32 +21,43 @@ import (
 // Manager is the unified plugin manager that handles loading, lifecycle,
 // sandboxing, and execution of plugins.
 type Manager struct {
-	pluginDir string
-	plugins   map[string]Plugin
-	info      map[string]*PluginInfo
-	config    PluginConfig
-	sandbox   *Sandbox
-	events    *EventBus
-	mu        sync.RWMutex
+	pluginDir          string
+	plugins            map[string]Plugin
+	info               map[string]*PluginInfo
+	config             PluginConfig
+	sandbox            *Sandbox
+	events             *EventBus
+	capabilityBoundary *CapabilityBoundary
+	mu                 sync.RWMutex
 }
 
 // PluginConfig is the persisted plugin configuration.
 type PluginConfig struct {
-	Plugins []PluginInfo  `json:"plugins"`
-	Sandbox SandboxConfig `json:"sandbox,omitempty"`
-	Lazy    bool          `json:"lazy,omitempty"`
+	Plugins          []PluginInfo        `json:"plugins"`
+	Sandbox          SandboxConfig       `json:"sandbox,omitempty"`
+	CapabilityGrants map[string][]string `json:"capability_grants,omitempty"`
+	Lazy             bool                `json:"lazy,omitempty"`
 }
 
 // NewManager creates a new PluginManager for the given directory.
 func NewManager(pluginDir string) *Manager {
 	return &Manager{
-		pluginDir: pluginDir,
-		plugins:   make(map[string]Plugin),
-		info:      make(map[string]*PluginInfo),
-		config:    PluginConfig{Lazy: true},
-		sandbox:   NewSandbox(SandboxConfig{}),
-		events:    NewEventBus(),
+		pluginDir:          pluginDir,
+		plugins:            make(map[string]Plugin),
+		info:               make(map[string]*PluginInfo),
+		config:             PluginConfig{Lazy: true},
+		sandbox:            NewSandbox(SandboxConfig{}),
+		events:             NewEventBus(),
+		capabilityBoundary: mustCapabilityBoundary(nil),
 	}
+}
+
+func mustCapabilityBoundary(grants map[string][]string) *CapabilityBoundary {
+	boundary, err := NewCapabilityBoundary(grants)
+	if err != nil {
+		panic(err)
+	}
+	return boundary
 }
 
 func (m *Manager) configPath() string {
@@ -67,6 +78,11 @@ func (m *Manager) LoadConfig() error {
 		return err
 	}
 	m.sandbox = NewSandbox(m.config.Sandbox)
+	boundary, err := NewCapabilityBoundary(m.config.CapabilityGrants)
+	if err != nil {
+		return naeoserr.Wrapf(err, naeoserr.ErrValidation, "invalid plugin capability grants")
+	}
+	m.capabilityBoundary = boundary
 	return nil
 }
 
@@ -431,6 +447,21 @@ func (m *Manager) ShutdownAll() error {
 	return lastErr
 }
 
+// SetCapabilityBoundary replaces the plugin capability boundary.
+func (m *Manager) SetCapabilityBoundary(boundary *CapabilityBoundary) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.capabilityBoundary = boundary
+}
+
+// AuthorizeCapability checks a plugin action before execution.
+func (m *Manager) AuthorizeCapability(name, action string, required []string) error {
+	m.mu.RLock()
+	boundary := m.capabilityBoundary
+	m.mu.RUnlock()
+	return boundary.Authorize(name, action, required)
+}
+
 // Execute runs a plugin action with sandbox protections.
 // If lazy loading is enabled and the plugin hasn't been loaded yet,
 // it loads and initializes the plugin first.
@@ -452,6 +483,11 @@ func (m *Manager) Execute(ctx context.Context, name, action string, params map[s
 	}
 	if err := m.sandbox.CheckRateLimit(name); err != nil {
 		return nil, err
+	}
+	if info, ok := m.GetInfo(name); ok {
+		if err := m.AuthorizeCapability(name, action, info.ActionCapabilities[action]); err != nil {
+			return nil, err
+		}
 	}
 
 	m.mu.Lock()
