@@ -24,6 +24,7 @@ This matrix is deliberately evidence-first. A document or diagram is not counted
 | An out-of-band side effect is not equivalent to authorization | Gateway history + evidence + independent observation | Level-3 Evidence v1: direct bypass | Side effect observed with no authorized gateway execution; verification fails | Level-3 Evidence job |
 | Execution claims are not observation evidence | Gateway execution result + independent observer/verifier | Level-3 Evidence v1: execution/observation separation | Completion claim with absent effect is preserved as verification failure | Level-3 Evidence job |
 | Artifact mutation after observation is detectable | `internal/evidence` + `internal/verification` | Level-3 Evidence v1: tamper | Re-read digest mismatch causes verification failure | Level-3 Evidence job |
+| Verification outcomes require evidence that satisfies the effect's minimum floor and authority boundary | Evidence + observation + verification contracts | Evidence Verification Boundary Matrix v1 | Runtime-only external evidence remains UNKNOWN; authoritative external evidence can CONFIRM; stale/contradictory/estimated evidence cannot silently confirm | Evidence Verification Boundary Matrix job |
 
 ## Interpretation
 
