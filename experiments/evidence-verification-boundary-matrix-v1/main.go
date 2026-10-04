@@ -94,7 +94,10 @@ func verify(c Case) Result {
 		used = append(used, e.Type+":"+string(e.Status))
 		switch e.Status {
 		case Observed:
-			if e.Authoritative {
+			// A runtime execution record is authoritative only for effects the
+			// runtime itself owns. It is not external proof merely because the
+			// record is internally authoritative.
+			if e.Authoritative && e.Type != "execution_record" {
 				hasAuthoritativeObserved = true
 			}
 		case Stale:
