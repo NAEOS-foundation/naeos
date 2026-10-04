@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from crewai.tools import BaseTool
+from pydantic import PrivateAttr
 from crewai.hooks.tool_hooks import (
     ToolCallHookContext,
     clear_all_tool_call_hooks,
@@ -33,13 +34,14 @@ def digest(value: Any) -> str:
 class SideEffectTool(BaseTool):
     name: str = "crm_query"
     description: str = "Records a controlled local side effect."
+    _effects: list[dict[str, Any]] = PrivateAttr()
 
     def __init__(self, effects: list[dict[str, Any]]) -> None:
         super().__init__()
-        self.effects = effects
+        self._effects = effects
 
     def _run(self, customer_id: str, fields: list[str]) -> str:
-        self.effects.append({"customer_id": customer_id, "fields": fields})
+        self._effects.append({"customer_id": customer_id, "fields": fields})
         return "executed"
 
 
