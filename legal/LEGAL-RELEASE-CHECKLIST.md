@@ -39,6 +39,13 @@ Use this checklist before every public software release.
 - [ ] New proprietary components are outside the Apache-2.0 repository boundary or have explicit licensing.
 - [ ] Existing Apache-2.0 rights are not restricted retroactively.
 - [ ] Hosted/enterprise claims do not imply rights beyond the published terms.
+- [ ] If the release enables or changes a paid offer, the
+      [Commercial Launch Evidence Checklist](COMMERCIAL-LAUNCH-CHECKLIST.md)
+      has been reviewed for that offering.
+- [ ] If the release or repository is used in a fundraising, diligence, or
+      investor-material context, the
+      [Investor Due-Diligence Evidence Checklist](INVESTOR-DUE-DILIGENCE-CHECKLIST.md)
+      has been reviewed.
 
 ## F. Evidence
 
