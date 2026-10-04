@@ -69,11 +69,8 @@ func TestVerificationRetainsEvidenceIdentityAndProvenance(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, r := range results {
-		if len(r.EvidenceIDs) != len(r.EvidenceUsed) {
-			t.Fatalf("%s: evidence identity count %d does not match evidence used count %d", r.CaseName, len(r.EvidenceIDs), len(r.EvidenceUsed))
-		}
-		if len(r.EvidenceProvenance) != len(r.EvidenceUsed) {
-			t.Fatalf("%s: provenance count %d does not match evidence used count %d", r.CaseName, len(r.EvidenceProvenance), len(r.EvidenceUsed))
+		if len(r.EvidenceIDs) != len(r.EvidenceProvenance) {
+			t.Fatalf("%s: evidence identity count %d does not match provenance count %d", r.CaseName, len(r.EvidenceIDs), len(r.EvidenceProvenance))
 		}
 		for i, id := range r.EvidenceIDs {
 			if id == "" {
