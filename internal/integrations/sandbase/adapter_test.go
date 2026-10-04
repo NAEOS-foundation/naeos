@@ -11,7 +11,7 @@ import (
 )
 
 func TestAdapterEmitsBoundAuthorizationContract(t *testing.T) {
-	now := time.Date(2026, 10, 5, 9, 0, 0, time.UTC)
+	now := time.Date(2026, time.October, 5, 9, 0, 0, 0, time.UTC)
 	policy := &controlplane.Policy{
 		ID: "sandbase-policy", Version: 1, Status: "active",
 		CreatedAt: now, UpdatedAt: now,
@@ -45,7 +45,7 @@ func TestAdapterEmitsBoundAuthorizationContract(t *testing.T) {
 }
 
 func TestAdapterContractDocumentsFreshnessBoundary(t *testing.T) {
-	now := time.Date(2026, 10, 5, 9, 0, 0, time.UTC)
+	now := time.Date(2026, time.October, 5, 9, 0, 0, 0, time.UTC)
 	store := controlplane.NewPolicyStore()
 	v1 := &controlplane.Policy{
 		ID: "sandbase-policy", Version: 1, Status: "active",
