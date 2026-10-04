@@ -1,0 +1,40 @@
+name: Day 06 Main Evidence
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: day06-main-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  level3-evidence:
+    name: Real Local Side Effect — Main Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 06 level-3 evidence experiment
+        run: |
+          set -o pipefail
+          mkdir -p day06-level3-evidence
+          set +e
+          go run ./experiments/level3-evidence 2>&1 | tee day06-level3-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","workflow_ref":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_REF" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day06-level3-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 06 main evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day06-level3-evidence-${{ github.sha }}
+          path: day06-level3-evidence/
