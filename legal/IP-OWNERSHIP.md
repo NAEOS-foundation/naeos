@@ -49,9 +49,6 @@ Before a commercial launch, maintain a private or access-controlled register con
 - review status.
 
 Do not place confidential agreements or personal data in the public repository.
-Use [`evidence/asset-provenance-register-template.csv`](evidence/asset-provenance-register-template.csv)
-as a field checklist; populate it only in the approved private register, not in
-the public repository.
 
 ## 6. Prohibited assumptions
 
