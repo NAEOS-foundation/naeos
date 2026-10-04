@@ -1,0 +1,56 @@
+{
+  "experiment": "aip-execution-evidence-001",
+  "result": "EXPECTED",
+  "protocol_boundary": {
+    "protocol": "AIP",
+    "api_version": "aip.io/v1alpha2",
+    "integration_claim": "protocol-neutral"
+  },
+  "scenarios": {
+    "allow-and-observe": {
+      "invocation_id": "inv-allow-001",
+      "authorization_id": "auth-allow-001",
+      "agent_id": "agent-001",
+      "tool": "write_file",
+      "decision": "ALLOW",
+      "policy_version": "v1",
+      "context_digest": "sha256:context-allow",
+      "execution": {
+        "status": "success",
+        "outcome_hash": "<captured-at-runtime>"
+      },
+      "assertions": [
+        "authorization is bound to the invocation",
+        "policy version is preserved",
+        "context digest is preserved",
+        "execution outcome is observed",
+        "evidence can be independently verified"
+      ]
+    },
+    "block-before-execution": {
+      "invocation_id": "inv-block-001",
+      "authorization_id": "auth-block-001",
+      "agent_id": "agent-001",
+      "tool": "delete_file",
+      "decision": "BLOCK",
+      "policy_version": "v1",
+      "context_digest": "sha256:context-block",
+      "execution": {
+        "status": "not_executed"
+      },
+      "assertions": [
+        "authorization denial is preserved",
+        "no execution outcome is asserted",
+        "policy version is preserved",
+        "context digest is preserved",
+        "evidence can be independently verified"
+      ]
+    }
+  },
+  "negative_checks": [
+    "changing authorization_id must fail verification",
+    "changing policy_version must fail verification",
+    "changing context_digest must fail verification",
+    "adding an execution outcome to a BLOCK record must fail verification"
+  ]
+}

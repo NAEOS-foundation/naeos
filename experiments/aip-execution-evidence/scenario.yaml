@@ -1,0 +1,56 @@
+id: aip-execution-evidence-001
+name: authorization-to-execution-evidence
+version: 1
+actor:
+  type: ai_agent
+  identity: aip-style-agent
+session:
+  persistent: true
+authorization:
+  protocol: AIP
+  api_version: aip.io/v1alpha2
+  capability: tool.execute
+  tool: write_file
+  policy_version: v1
+scenarios:
+  - id: allow-and-observe
+    request:
+      invocation_id: inv-allow-001
+      agent_id: agent-001
+      tool: write_file
+      context_digest: sha256:context-allow
+    decision:
+      decision: ALLOW
+      authorization_id: auth-allow-001
+      policy_version: v1
+      context_digest: sha256:context-allow
+    execution:
+      expected: EXECUTE
+      outcome_status: success
+    evidence:
+      expected: PASS
+      independent_verification: PASS
+  - id: block-before-execution
+    request:
+      invocation_id: inv-block-001
+      agent_id: agent-001
+      tool: delete_file
+      context_digest: sha256:context-block
+    decision:
+      decision: BLOCK
+      authorization_id: auth-block-001
+      policy_version: v1
+      context_digest: sha256:context-block
+      reason: policy_denied
+    execution:
+      expected: NOT_EXECUTED
+      outcome_status: null
+    evidence:
+      expected: PASS
+      independent_verification: PASS
+invariants:
+  - ALLOW evidence MUST bind authorization_id to invocation_id.
+  - ALLOW evidence MUST contain an observed execution outcome.
+  - BLOCK evidence MUST NOT contain an execution outcome.
+  - policy_version and context_digest MUST match between authorization and evidence.
+  - verification MUST fail when an authorization/evidence binding is altered.
