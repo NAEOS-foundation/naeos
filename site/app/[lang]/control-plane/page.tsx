@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
 import ControlPlaneLiveDemo from "@/components/control-plane/ControlPlaneLiveDemo";
+import PolicyChangeProof from "@/components/control-plane/PolicyChangeProof";
 
 export function generateStaticParams() {
   return LANGUAGES.map((lang) => ({ lang }));
@@ -143,6 +144,15 @@ export default async function ControlPlanePage(props: { params: Promise<{ lang: 
             {id ? "Lihat Verifier" : "Inspect Verifier"}
           </a>
         </div>
+      </section>
+
+      <section className="control-plane-demo" aria-labelledby="policy-change-proof-title">
+        <div className="section-heading">
+          <div className="eyebrow">FLAGSHIP PROOF</div>
+          <h2 id="policy-change-proof-title">{id ? "Apa yang terjadi ketika policy berubah?" : "What happens when policy changes?"}</h2>
+          <p>{id ? "Satu skenario end-to-end untuk memperlihatkan mengapa authorization harus terikat pada policy dan evidence." : "One end-to-end scenario showing why authorization must remain bound to policy and evidence."}</p>
+        </div>
+        <PolicyChangeProof lang={lang} />
       </section>
 
       <section className="control-plane-principles">
