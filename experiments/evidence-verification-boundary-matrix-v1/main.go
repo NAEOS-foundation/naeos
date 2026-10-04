@@ -9,7 +9,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -83,13 +82,18 @@ func verify(c Case) Result {
 		floor = minimumFloor(c)
 	}
 
-	if !c.HasPolicy {
-		return Result{c.Name, Escalate, "missing verification policy; fail closed", nil, ids, provenance, Escalate, true}
-	}
-
 	used := make([]string, 0, len(c.Evidence))
 	ids := make([]string, 0, len(c.Evidence))
 	provenance := make([]string, 0, len(c.Evidence))
+
+	if !c.HasPolicy {
+		for _, e := range c.Evidence {
+			ids = append(ids, e.ID)
+			provenance = append(provenance, e.Source)
+		}
+		return Result{c.Name, Escalate, "missing verification policy; fail closed", nil, ids, provenance, Escalate, true}
+	}
+
 	hasAuthoritativeObserved := false
 	hasStale := false
 	hasContradiction := false
@@ -144,14 +148,14 @@ func verify(c Case) Result {
 
 func cases() []Case {
 	return []Case{
-		{Name: "internal-reversible-runtime-record", Effect: InternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "naeos-runtime", Type: "execution_record", Status: Observed, Authoritative: true}}},
-		{Name: "external-reversible-runtime-only", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "naeos-runtime", Type: "execution_record", Status: Observed, Authoritative: true}}},
-		{Name: "external-reversible-provider-receipt", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}}},
-		{Name: "internal-irreversible-estimated", Effect: InternalEffect, Reversibility: Irreversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "runtime", Type: "estimated_state", Status: Estimated, Authoritative: false}}},
-		{Name: "external-irreversible-authoritative", Effect: ExternalEffect, Reversibility: Irreversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "provider", Type: "authoritative_state", Status: Observed, Authoritative: true}}},
-		{Name: "external-stale", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "provider", Type: "provider_receipt", Status: Stale, Authoritative: true}}},
-		{Name: "external-contradictory", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}, {Source: "observer", Type: "state_observation", Status: Contradictory, Authoritative: true}}},
-		{Name: "missing-policy", Effect: ExternalEffect, Reversibility: Irreversible, HasPolicy: false, Evidence: []Evidence{{ID: fmt.Sprintf("ev-%03d", n++), Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}}},
+		{Name: "internal-reversible-runtime-record", Effect: InternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-001", Source: "naeos-runtime", Type: "execution_record", Status: Observed, Authoritative: true}}},
+		{Name: "external-reversible-runtime-only", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-002", Source: "naeos-runtime", Type: "execution_record", Status: Observed, Authoritative: true}}},
+		{Name: "external-reversible-provider-receipt", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-003", Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}}},
+		{Name: "internal-irreversible-estimated", Effect: InternalEffect, Reversibility: Irreversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-004", Source: "runtime", Type: "estimated_state", Status: Estimated, Authoritative: false}}},
+		{Name: "external-irreversible-authoritative", Effect: ExternalEffect, Reversibility: Irreversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-005", Source: "provider", Type: "authoritative_state", Status: Observed, Authoritative: true}}},
+		{Name: "external-stale", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-006", Source: "provider", Type: "provider_receipt", Status: Stale, Authoritative: true}}},
+		{Name: "external-contradictory", Effect: ExternalEffect, Reversibility: Reversible, HasPolicy: true, Evidence: []Evidence{{ID: "ev-007", Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}, {ID: "ev-009", Source: "observer", Type: "state_observation", Status: Contradictory, Authoritative: true}}},
+		{Name: "missing-policy", Effect: ExternalEffect, Reversibility: Irreversible, HasPolicy: false, Evidence: []Evidence{{ID: "ev-008", Source: "provider", Type: "provider_receipt", Status: Observed, Authoritative: true}}},
 	}
 }
 
