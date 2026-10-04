@@ -8,20 +8,27 @@ import "fmt"
 // EnterpriseScope is the minimum scope attached to enterprise control-plane operations.
 type EnterpriseScope struct {
 	OrganizationID string `json:"organization_id"`
-	TenantID       string `json:"tenant_id"`
-	ProjectID      string `json:"project_id"`
-	EnvironmentID  string `json:"environment_id"`
+	TenantID string `json:"tenant_id"`
+	ProjectID string `json:"project_id"`
+	EnvironmentID string `json:"environment_id"`
 }
 
 func (s EnterpriseScope) Validate() error {
-	if s.OrganizationID == "" { return fmt.Errorf("organization_id is required") }
-	if s.TenantID == "" { return fmt.Errorf("tenant_id is required") }
-	if s.ProjectID == "" { return fmt.Errorf("project_id is required") }
-	if s.EnvironmentID == "" { return fmt.Errorf("environment_id is required") }
+	if s.OrganizationID == "" {
+		return fmt.Errorf("organization_id is required")
+	}
+	if s.TenantID == "" {
+		return fmt.Errorf("tenant_id is required")
+	}
+	if s.ProjectID == "" {
+		return fmt.Errorf("project_id is required")
+	}
+	if s.EnvironmentID == "" {
+		return fmt.Errorf("environment_id is required")
+	}
 	return nil
 }
 
-// ResourceHierarchy binds enterprise resource IDs to their parent boundaries.
 type ResourceHierarchy interface {
 	TenantBelongsToOrganization(tenantID, organizationID string) bool
 	ProjectBelongsToTenant(projectID, tenantID string) bool
@@ -29,11 +36,21 @@ type ResourceHierarchy interface {
 }
 
 func (s EnterpriseScope) ValidateHierarchy(h ResourceHierarchy) error {
-	if err := s.Validate(); err != nil { return err }
-	if h == nil { return fmt.Errorf("resource hierarchy verifier is required") }
-	if !h.TenantBelongsToOrganization(s.TenantID, s.OrganizationID) { return fmt.Errorf("tenant %q does not belong to organization %q", s.TenantID, s.OrganizationID) }
-	if !h.ProjectBelongsToTenant(s.ProjectID, s.TenantID) { return fmt.Errorf("project %q does not belong to tenant %q", s.ProjectID, s.TenantID) }
-	if !h.EnvironmentBelongsToProject(s.EnvironmentID, s.ProjectID) { return fmt.Errorf("environment %q does not belong to project %q", s.EnvironmentID, s.ProjectID) }
+	if err := s.Validate(); err != nil {
+		return err
+	}
+	if h == nil {
+		return fmt.Errorf("resource hierarchy verifier is required")
+	}
+	if !h.TenantBelongsToOrganization(s.TenantID, s.OrganizationID) {
+		return fmt.Errorf("tenant %q does not belong to organization %q", s.TenantID, s.OrganizationID)
+	}
+	if !h.ProjectBelongsToTenant(s.ProjectID, s.TenantID) {
+		return fmt.Errorf("project %q does not belong to tenant %q", s.ProjectID, s.TenantID)
+	}
+	if !h.EnvironmentBelongsToProject(s.EnvironmentID, s.ProjectID) {
+		return fmt.Errorf("environment %q does not belong to project %q", s.EnvironmentID, s.ProjectID)
+	}
 	return nil
 }
 
@@ -57,9 +74,15 @@ type EnterpriseAuthorizationRequest struct {
 }
 
 func ResolveAuthorizationRequest(req EnterpriseAuthorizationRequest, principal AuthenticatedPrincipal) (EnterpriseAuthorizationRequest, ActorIdentity, error) {
-	if principal.Actor.Subject == "" { return EnterpriseAuthorizationRequest{}, ActorIdentity{}, fmt.Errorf("authenticated principal subject is required") }
-	if principal.Actor.Type != "human" && principal.Actor.Type != "service" && principal.Actor.Type != "agent" { return EnterpriseAuthorizationRequest{}, ActorIdentity{}, fmt.Errorf("unsupported authenticated principal type %q", principal.Actor.Type) }
-	if err := req.Scope.Validate(); err != nil { return EnterpriseAuthorizationRequest{}, ActorIdentity{}, err }
+	if principal.Actor.Subject == "" {
+		return EnterpriseAuthorizationRequest{}, ActorIdentity{}, fmt.Errorf("authenticated principal subject is required")
+	}
+	if principal.Actor.Type != "human" && principal.Actor.Type != "service" && principal.Actor.Type != "agent" {
+		return EnterpriseAuthorizationRequest{}, ActorIdentity{}, fmt.Errorf("unsupported authenticated principal type %q", principal.Actor.Type)
+	}
+	if err := req.Scope.Validate(); err != nil {
+		return EnterpriseAuthorizationRequest{}, ActorIdentity{}, err
+	}
 	return req, principal.Actor, nil
 }
 
