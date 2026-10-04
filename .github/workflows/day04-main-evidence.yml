@@ -1,0 +1,40 @@
+name: Day 04 Main Evidence
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: day04-main-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stale-authorization:
+    name: Stale Authorization — Main Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 04 stale authorization experiment
+        run: |
+          set -o pipefail
+          mkdir -p day04-stale-authorization-evidence
+          set +e
+          go run ./examples/control-plane-policy-change 2>&1 | tee day04-stale-authorization-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","workflow_ref":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_REF" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day04-stale-authorization-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 04 main evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day04-stale-authorization-evidence-${{ github.sha }}
+          path: day04-stale-authorization-evidence/
