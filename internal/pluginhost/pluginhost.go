@@ -41,16 +41,17 @@ const (
 
 // PluginInfo holds metadata about a registered plugin.
 type PluginInfo struct {
-	Name        string      `json:"name"`
-	Version     string      `json:"version"`
-	Description string      `json:"description"`
-	Author      string      `json:"author,omitempty"`
-	Path        string      `json:"path,omitempty"`
-	Enabled     bool        `json:"enabled"`
-	Loaded      bool        `json:"loaded"`
-	State       PluginState `json:"state"`
-	StartedAt   time.Time   `json:"started_at,omitempty"`
-	Error       error       `json:"error,omitempty"`
+	Name               string              `json:"name"`
+	Version            string              `json:"version"`
+	Description        string              `json:"description"`
+	Author             string              `json:"author,omitempty"`
+	Path               string              `json:"path,omitempty"`
+	Enabled            bool                `json:"enabled"`
+	Loaded             bool                `json:"loaded"`
+	State              PluginState         `json:"state"`
+	ActionCapabilities map[string][]string `json:"action_capabilities,omitempty"`
+	StartedAt          time.Time           `json:"started_at,omitempty"`
+	Error              error               `json:"error,omitempty"`
 }
 
 // Manifest describes a plugin's capabilities, actions, and configuration schema.
@@ -67,10 +68,11 @@ type Manifest struct {
 
 // ActionManifest describes a single action a plugin can perform.
 type ActionManifest struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Params      map[string]string `json:"params,omitempty"`
-	Returns     string            `json:"returns,omitempty"`
+	Name         string            `json:"name"`
+	Description  string            `json:"description"`
+	Params       map[string]string `json:"params,omitempty"`
+	Returns      string            `json:"returns,omitempty"`
+	Capabilities []string          `json:"capabilities,omitempty"`
 }
 
 // ConfigField describes a configuration field for a plugin.
