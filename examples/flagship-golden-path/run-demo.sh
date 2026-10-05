@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+
 set -euo pipefail
 
 output_dir="${NAEOS_FLAGSHIP_OUTPUT_DIR:-/tmp/naeos-flagship-golden-path}"
