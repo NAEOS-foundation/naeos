@@ -1,1 +1,5 @@
+# SHA-256 reference fingerprints
+
+The fingerprint below belongs to the original reference artifact in the frozen Logo System FROZEN 1.0 package. It is retained as provenance for that artifact and must not be interpreted as a verified checksum of the separately uploaded repository PNG unless the downloaded repository file is independently hashed.
+
 d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974  NAEOS-Logo-System-FROZEN-1.0/reference/naeos-logo-source-of-truth.png
