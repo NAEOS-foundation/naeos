@@ -10,23 +10,26 @@ Execute the first independent external evaluation using the P2.1 Pilot Execution
 - Workflow: specification-to-service generation
 - Control boundary: invalid policy configuration rejection
 - Canonical path: `examples/demo-cli/run-demo.sh`
-- Commit SHA: <fill before run>
+- Commit SHA: `55ec8ab069f5a5e3f27468a58838b1bb67212c05`
+- Evaluation status: **PENDING EXECUTION**
+
+> This record pins the current `main` state before execution. No PASS/FAIL or reproducibility claim is recorded until the validation workflow produces evidence.
 
 ## Evaluator
 
-- Name / handle:
-- Organization:
-- Contact:
-- Date:
-- OS / architecture:
-- Go version:
+- Name / handle: automated external-validation workflow
+- Organization: NAEOS Foundation repository CI
+- Contact: repository maintainers
+- Date: pending execution
+- OS / architecture: pending execution
+- Go version: pending execution
 
 ## Commands
 
 ```bash
 git clone https://github.com/NAEOS-foundation/naeos.git
 cd naeos
-git checkout <COMMIT_SHA>
+git checkout 55ec8ab069f5a5e3f27468a58838b1bb67212c05
 
 go version
 go build -o naeos ./cmd/naeos
@@ -41,17 +44,17 @@ find /tmp/naeos-pilot -maxdepth 3 -type f | sort
 
 | Check | Result | Evidence / notes |
 |---|---|---|
-| Clean checkout | PASS / FAIL | |
-| CLI build | PASS / FAIL | |
-| Canonical demo | PASS / FAIL | |
-| Specification | PASS / FAIL | |
-| Derived NEIR | PASS / FAIL | |
-| Validation | PASS / FAIL | |
-| Policy rejection | PASS / FAIL | |
-| AI context | PASS / FAIL | |
-| Traceability | PASS / FAIL | |
-| Generated artifacts | PASS / FAIL | |
-| Evidence summary | PASS / FAIL | |
+| Clean checkout | PENDING | |
+| CLI build | PENDING | |
+| Canonical demo | PENDING | |
+| Specification | PENDING | |
+| Derived NEIR | PENDING | |
+| Validation | PENDING | |
+| Policy rejection | PENDING | |
+| AI context | PENDING | |
+| Traceability | PENDING | |
+| Generated artifacts | PENDING | |
+| Evidence summary | PENDING | |
 
 ## Evidence anchors
 
@@ -113,16 +116,15 @@ For every deviation:
 
 ## Determination
 
-Select exactly one:
-
 - [ ] REPRODUCED
 - [ ] REPRODUCED WITH DEVIATION
 - [ ] NOT REPRODUCED
+- [x] PENDING EXECUTION
 
 ## Observations
 
-<Concise factual observations.>
+Pending execution. This section must be populated from observed workflow evidence, not from repository claims.
 
 ## Next action
 
-<Concrete action with a testable acceptance criterion.>
+Run the repository's `External Validation` workflow against this fixed commit and record the generated validation artifact and factual determination.
