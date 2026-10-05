@@ -1,1 +1,33 @@
-{"brand":"NAEOS","tagline":"Architecture Drives Engineering.","description":"Nusantara AI Engineering Operating System","version":"3.0.0","logoMaster":"1.0.0","status":"FROZEN","colors":{"naeosBlue":"#2563FF","electricCyan":"#00D9FF","deepNavy":"#06132B","obsidian":"#05070D","slate":"#64748B","silver":"#E2E8F0","white":"#FFFFFF"},"typography":{"display":"Space Grotesk","body":"Inter","technical":"JetBrains Mono"},"logo":{"primary":"logo.svg","mark":"logo-mark.svg","horizontal":"logo-horizontal.svg","simplified":"logo-simplified.svg","monochrome":"logo-mono.svg"},"sourceOfTruth":"master/naeos-mark-master.svg","freezeRule":"Do not silently replace v1.0. Future geometry changes require a new version."}
+{
+  "brand": "NAEOS",
+  "tagline": "Architecture Drives Engineering.",
+  "description": "Nusantara AI Engineering Operating System",
+  "version": "3.0.0",
+  "logoMaster": "1.0.0",
+  "status": "FROZEN",
+  "colors": {
+    "naeosBlue": "#2563FF",
+    "electricCyan": "#00D9FF",
+    "deepNavy": "#06132B",
+    "obsidian": "#05070D",
+    "slate": "#64748B",
+    "silver": "#E2E8F0",
+    "white": "#FFFFFF"
+  },
+  "typography": {
+    "display": "Space Grotesk",
+    "body": "Inter",
+    "technical": "JetBrains Mono"
+  },
+  "logo": {
+    "primary": "logo.svg",
+    "mark": "logo-mark.svg",
+    "horizontal": "logo-horizontal.svg",
+    "simplified": "logo-simplified.svg",
+    "monochrome": "logo-mono.svg"
+  },
+  "sourceOfTruth": "source-of-truth/naeos-logo-source-of-truth.png",
+  "derivedVector": "master/naeos-mark-master.svg",
+  "sourceOfTruthSha256": "d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974",
+  "freezeRule": "The visual reference is immutable. Derived vectors and production variants may change only through an explicit versioned review; do not silently replace the source of truth."
+}
