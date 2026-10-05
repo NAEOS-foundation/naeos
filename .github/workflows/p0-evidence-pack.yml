@@ -1,0 +1,77 @@
+name: P0 Evidence Pack
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/p0-evidence-pack.yml"
+      - "experiments/governance-lifecycle/**"
+      - "experiments/handoff-governance/**"
+      - "internal/pluginhost/**"
+      - "go.mod"
+      - "go.sum"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-pack:
+    name: Fixed-State P0 Evidence Pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run governance lifecycle
+        run: |
+          set -o pipefail
+          go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle.json
+      - name: Run handoff governance
+        run: |
+          set -o pipefail
+          go run ./experiments/handoff-governance 2>&1 | tee handoff-governance.json
+      - name: Run plugin capability boundary
+        run: |
+          set -o pipefail
+          go test ./internal/pluginhost -run 'TestCapabilityBoundaryFailsClosed|TestManagerDeniesPrivilegedPluginActionWithoutGrant|TestManagerAllowsPrivilegedPluginActionWithExplicitGrant' -count=1 2>&1 | tee plugin-capability.txt
+      - name: Build fixed-state evidence record
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          go_version="$(go version)"
+          jq -e '.results | length == 4 and all(.passed == true)' governance-lifecycle.json >/dev/null
+          jq -e '.results | length == 10 and all(.passed == true)' handoff-governance.json >/dev/null
+          cat > p0-evidence-record.json <<EOF
+          {
+            "schema_version": "1.0",
+            "evaluation_sha": "$sha",
+            "repository": "NAEOS-foundation/naeos",
+            "executor": "${GITHUB_WORKFLOW}/${GITHUB_RUN_ID}",
+            "go_version": "$go_version",
+            "governance_lifecycle": "PASS",
+            "handoff_governance": "PASS",
+            "plugin_capability_boundary": "PASS",
+            "plugin_positive_negative_cases": ["ALLOW with explicit grant", "DENY with missing grant"],
+            "independent_human_evaluator": "OPEN",
+            "production_readiness_claim": false,
+            "customer_adoption_claim": false,
+            "generated_at_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - name: Upload P0 evidence record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-evidence-pack-${{ github.sha }}
+          path: |
+            p0-evidence-record.json
+            governance-lifecycle.json
+            handoff-governance.json
+            plugin-capability.txt
