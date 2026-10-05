@@ -4,13 +4,19 @@ Status: **FROZEN / IMMUTABLE**
 
 ## Visual Source of Truth
 
-`brand/source-of-truth/naeos-logo-source-of-truth.png` is the canonical visual reference for the NAEOS logo.
+`brand/source-of-truth/naeos-logo-source-of-truth.png` is the canonical **original visual reference supplied for the NAEOS logo**.
 
-SHA-256:
+This file is preserved as supplied. It is the visual reference against which derived logo geometry, rendering, and production assets are evaluated.
 
-`d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974`
+> **Important:** the original reference PNG is not required to be byte-identical to any later frozen packaging artifact or derived vector. Its role is visual reference/source material, not a claim that every copy or derivative has identical file bytes.
 
-The reference is preserved as supplied. It must not be edited, redrawn, recompressed, recolored, or replaced in place.
+## Reference Integrity
+
+The repository copy must not be edited, redrawn, recompressed, recolored, or replaced in place.
+
+The SHA-256 recorded in the repository documentation refers to the previously frozen reference-package artifact, not as an assertion that the currently uploaded original-reference PNG has identical bytes.
+
+For byte-level verification of a specific repository copy, download that exact PNG and compute its SHA-256 locally.
 
 ## Derived Assets
 
@@ -19,12 +25,13 @@ The reference is preserved as supplied. It must not be edited, redrawn, recompre
 - `brand/variants/` — derived presentation variants.
 - `brand/lockups/` — derived lockups.
 
-The derived vector is **not** a pixel-identical copy of the visual reference. Any future geometry replacement requires an explicit versioned review and must not silently overwrite the frozen reference.
+The derived vector is **not a pixel-identical copy of the visual reference**. Any future geometry replacement requires an explicit versioned review and must not silently overwrite the original visual reference.
 
 ## Governance
 
-1. The frozen visual reference is the absolute visual source of truth.
+1. The original visual reference is the absolute visual source of truth for visual intent.
 2. Geometry changes require a new version.
 3. Rendering/material changes may be made without changing the reference.
 4. Production consumers must point to approved derived assets.
-5. Do not delete or mutate the frozen reference.
+5. Do not delete or mutate the original visual reference.
+6. Do not treat a package checksum as the checksum of a separately uploaded repository copy unless it has been independently verified.
