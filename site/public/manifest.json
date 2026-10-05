@@ -7,7 +7,7 @@
   "background_color": "#0B1220",
   "theme_color": "#3B82F6",
   "icons": [
-    { "src": "/images/logo-infinity-primary.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/images/logo-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "categories": ["developer-tools", "productivity"],
   "lang": "en"
