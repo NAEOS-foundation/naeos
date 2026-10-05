@@ -26,8 +26,10 @@
     "simplified": "logo-simplified.svg",
     "monochrome": "logo-mono.svg"
   },
-  "sourceOfTruth": "source-of-truth/naeos-logo-source-of-truth.png",
+  "sourceOfTruth": "source-of-truth/README.md",
   "derivedVector": "master/naeos-mark-master.svg",
   "sourceOfTruthSha256": "d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974",
-  "freezeRule": "The visual reference is immutable. Derived vectors and production variants may change only through an explicit versioned review; do not silently replace the source of truth."
+  "freezeRule": "The visual reference is immutable. Derived vectors and production variants may change only through an explicit versioned review; do not silently replace the source of truth.",
+  "visualSourceOfTruthArtifact": "NAEOS Logo System FROZEN 1.0",
+  "visualSourceOfTruthSha256": "d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974"
 }
