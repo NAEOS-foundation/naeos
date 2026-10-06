@@ -127,7 +127,7 @@ func fingerprintRequest(r *http.Request,body []byte)string{
 func(s *Server)v2IdempotencyMiddleware(next http.Handler)http.Handler{
  return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
   key:=strings.TrimSpace(r.Header.Get("Idempotency-Key"))
-  mutating:=r.Method==http.MethodPost||r.Method==http.MethodPut||r.Method==http.MethodPatch||r.Method==http.MethodDelete
+  mutating:=strings.HasPrefix(r.URL.Path,"/api/v2/")&&(r.Method==http.MethodPost||r.Method==http.MethodPut||r.Method==http.MethodPatch||r.Method==http.MethodDelete)
   if !mutating{next.ServeHTTP(w,r);return}
   if key==""{writeProblem(w,r,http.StatusBadRequest,"Idempotency-Key header is required for mutating API v2 requests");return}
   if len(key)>255{writeProblem(w,r,http.StatusBadRequest,"Idempotency-Key must be 255 characters or fewer");return}
