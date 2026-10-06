@@ -421,10 +421,13 @@ type ExecutionEvidence struct {
 // policy-store execution lock and refuses to report successful completion
 // unless the resulting ledger evidence can be materialized and independently
 // verified.
-func (g *DecisionGateway) ExecuteAtomicWithEvidence(req AuthorizeRequest, result DecisionResult, sideEffect func() error) (ExecutionEvidence, error) {
+func (g *DecisionGateway) ExecuteAtomicWithEvidence(req AuthorizeRequest, result DecisionResult, sideEffect func() error, observers ...func(LedgerEvent) LedgerEvent) (ExecutionEvidence, error) {
 	execResult, event := g.ExecuteAtomic(req, result, sideEffect)
 	if execResult.Status != DecisionAllow || event.EventType != "EXECUTION_ALLOWED" {
 		return ExecutionEvidence{Result: execResult, Event: event}, fmt.Errorf("execution did not complete successfully: %s", execResult.Message)
+	}
+	if len(observers) > 0 && observers[0] != nil {
+		g.Ledger.Append(observers[0](event))
 	}
 	bundle, err := g.Ledger.BuildEvidence(execResult.DecisionID)
 	if err != nil {
