@@ -124,8 +124,9 @@ func TestControlEvaluateNoPolicyDeny(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := NewRootCommand()
 	out, err := executeCommand(root, "control", "evaluate", "--resource", "deploy", "--action", "run")
-	if err != nil {
-		t.Fatalf("evaluate failed: %v", err)
+	var exitErr *ExitCodeError
+	if !errors.As(err, &exitErr) || exitErr.Code != ExitCodePolicyDeny {
+		t.Fatalf("expected explicit policy-deny exit code %d, got %v", ExitCodePolicyDeny, err)
 	}
 	if !strings.Contains(out, "DENY") {
 		t.Fatalf("expected DENY (fail-closed), got %q", out)
