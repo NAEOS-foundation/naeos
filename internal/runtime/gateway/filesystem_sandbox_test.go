@@ -13,8 +13,8 @@ func TestDefaultSandboxFilesystemWriteIsObservable(t *testing.T) {
 	root := t.TempDir()
 	sb := NewDefaultSandbox(SandboxConfig{FilesystemRoot: root})
 	req := ToolRequest{
-		Tool:    "filesystem",
-		Action:  "write",
+		Tool:   "filesystem",
+		Action: "write",
 		Payload: map[string]any{
 			"path":    "observed.txt",
 			"content": "naeos",
@@ -43,8 +43,8 @@ func TestDefaultSandboxFilesystemWriteCannotEscapeRoot(t *testing.T) {
 	sb := NewDefaultSandbox(SandboxConfig{FilesystemRoot: root})
 
 	_, err := sb.Execute(ToolRequest{
-		Tool:   "filesystem",
-		Action: "write",
+		Tool:    "filesystem",
+		Action:  "write",
 		Payload: map[string]any{"path": "../escape.txt", "content": "no"},
 	})
 	if err == nil {
