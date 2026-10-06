@@ -100,7 +100,7 @@ func testEvidenceBundle() controlplane.EvidenceBundle {
 			EventType:    "SIDE_EFFECT_OBSERVED",
 		},
 		Verification: controlplane.EvidenceVerification{
-			Result:              "PASS",
+			Result:                "PASS",
 			DecisionConsistent:    true,
 			ExecutionConsistent:   true,
 			ObservationConsistent: true,
