@@ -155,6 +155,17 @@ jobs:
           cache: true
       - name: Run AI Agent Policy Boundary experiment
         run: go run ./experiments/ai-agent-policy-boundary
+      - name: Run Governance Boundary Benchmark
+        run: |
+          set -euo pipefail
+          NAEOS_GOVERNANCE_BENCHMARK_DIR="$RUNNER_TEMP/naeos-governance-benchmark" \
+            bash ./scripts/governance-boundary-benchmark.sh
+      - name: Upload Governance Boundary Benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-boundary-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/naeos-governance-benchmark/
 
   bench-gate:
     name: Benchmark Gate
