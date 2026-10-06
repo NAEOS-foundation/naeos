@@ -69,3 +69,22 @@ func TestSelectHighestRiskRequestSelectsSecurityCriticalityOverGeneralPatch(t *t
 		)
 	}
 }
+
+func TestNPMVersionChange(t *testing.T) {
+	tests := []struct {
+		name, oldv, newv, want string
+	}{
+		{"patch", "0.35.4", "0.35.5", "patch"},
+		{"major", "11.17.2", "12.1.0", "major"},
+		{"caret-patch", "^1.2.3", "^1.2.4", "patch"},
+		{"caret-minor", "^1.2.3", "^1.3.0", "minor"},
+		{"unknown-range", "workspace:*", "workspace:*", "unknown"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := npmVersionChange(tt.oldv, tt.newv); got != tt.want {
+				t.Fatalf("npmVersionChange(%q, %q) = %q, want %q", tt.oldv, tt.newv, got, tt.want)
+			}
+		})
+	}
+}
