@@ -103,7 +103,7 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 // VerifyEvidence independently validates a previously materialized bundle.
 func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	verification := EvidenceVerification{
-		Result:              "PASS",
+		Result:                "PASS",
 		DecisionConsistent:    true,
 		ExecutionConsistent:   true,
 		ObservationConsistent: true,
