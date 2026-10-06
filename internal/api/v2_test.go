@@ -38,10 +38,10 @@ func TestV2PipelinesCursorPagination(t *testing.T) {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
 	var first struct {
-		Data       struct {
+		Data struct {
 			Items []pipelineRun `json:"items"`
 		} `json:"data"`
-		NextCursor string        `json:"next_cursor"`
+		NextCursor string `json:"next_cursor"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &first); err != nil {
 		t.Fatal(err)
