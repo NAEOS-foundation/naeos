@@ -21,7 +21,7 @@ import (
 func TestEvidenceVerifyBundleCommandAcceptsValidBundle(t *testing.T) {
 	bundle := testEvidenceBundle()
 	bundle.EvidenceDigest = testEvidenceDigest(t, bundle)
-	private, public, err := ed25519.GenerateKey(rand.Reader)
+	public, private, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
