@@ -94,7 +94,7 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 		return EvidenceBundle{}, err
 	}
 	bundle.EvidenceDigest = digest
-	if err := signEvidenceBundle(&bundle); err != nil {
+	if err := l.signEvidenceBundle(&bundle); err != nil {
 		return EvidenceBundle{}, err
 	}
 	return bundle, nil
@@ -273,6 +273,29 @@ func evidenceSigningKeys() (ed25519.PrivateKey, ed25519.PublicKey, error) {
 	return evidenceSigningKey, evidenceSigningPublic, nil
 }
 
+func (l *Ledger) signEvidenceBundle(bundle *EvidenceBundle) error {
+	if bundle == nil {
+		return fmt.Errorf("evidence bundle is required")
+	}
+	if len(l.evidenceSignerPrivate) == ed25519.PrivateKeySize {
+		sig := ed25519.Sign(l.evidenceSignerPrivate, []byte(bundle.EvidenceDigest))
+		bundle.EvidenceSignature = base64.RawStdEncoding.EncodeToString(sig)
+		bundle.EvidencePublicKey = base64.RawStdEncoding.EncodeToString(l.evidenceSignerPublic)
+		bundle.EvidenceSignatureAlgorithm = "Ed25519"
+		return nil
+	}
+	private, public, err := evidenceSigningKeys()
+	if err != nil {
+		return err
+	}
+	sig := ed25519.Sign(private, []byte(bundle.EvidenceDigest))
+	bundle.EvidenceSignature = base64.RawStdEncoding.EncodeToString(sig)
+	bundle.EvidencePublicKey = base64.RawStdEncoding.EncodeToString(public)
+	bundle.EvidenceSignatureAlgorithm = "Ed25519"
+	return nil
+}
+
+// signEvidenceBundle preserves the package-level demo signing API for existing tests and local callers.
 func signEvidenceBundle(bundle *EvidenceBundle) error {
 	if bundle == nil {
 		return fmt.Errorf("evidence bundle is required")
@@ -286,6 +309,29 @@ func signEvidenceBundle(bundle *EvidenceBundle) error {
 	bundle.EvidencePublicKey = base64.RawStdEncoding.EncodeToString(public)
 	bundle.EvidenceSignatureAlgorithm = "Ed25519"
 	return nil
+}
+
+// VerifyEvidenceWithTrustedKey verifies the bundle cryptographically and requires
+// the signer to match an operator-supplied trust anchor.
+func VerifyEvidenceWithTrustedKey(bundle EvidenceBundle, trusted ed25519.PublicKey) EvidenceVerification {
+	v := VerifyEvidence(bundle)
+	if len(trusted) != ed25519.PublicKeySize {
+		v.Result = "FAIL"
+		v.LedgerIntegrity = false
+		v.Issues = append(v.Issues, "trusted evidence signing key is missing or invalid")
+		return v
+	}
+	encoded := base64.RawStdEncoding.EncodeToString(trusted)
+	if bundle.EvidencePublicKey != encoded {
+		v.Result = "FAIL"
+		v.LedgerIntegrity = false
+		v.Issues = append(v.Issues, "evidence signer is not the configured trust anchor")
+		return v
+	}
+	if len(v.Issues) == 0 {
+		v.Result = "PASS"
+	}
+	return v
 }
 
 func verifyEvidenceSignature(bundle EvidenceBundle) bool {
