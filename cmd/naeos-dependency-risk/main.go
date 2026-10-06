@@ -141,6 +141,22 @@ func deriveRequest() (requestFile, error) {
 	if base == "" {
 		return requestFile{}, errors.New("NAEOS_DEPENDENCY_RISK_BASE_SHA is required")
 	}
+	changed, err := changedDependencyManifests(base)
+	if err != nil {
+		return requestFile{}, err
+	}
+	if len(changed) == 0 {
+		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "unknown", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}, nil
+	}
+	for _, manifest := range changed {
+		if filepath.Base(manifest) == "package.json" {
+			if req, ok, err := deriveNPMRequest(base, manifest); err != nil {
+				return requestFile{}, err
+			} else if ok {
+				return req, nil
+			}
+		}
+	}
 	raw, err := exec.CommandContext(context.Background(), "git", "diff", base+"...HEAD", "--", "go.mod").Output() //nolint:gosec // BASE_SHA is supplied by the trusted CI workflow
 	if err != nil {
 		return requestFile{}, fmt.Errorf("read dependency diff: %w", err)
@@ -182,6 +198,112 @@ func deriveRequest() (requestFile, error) {
 	}
 
 	return selectHighestRiskRequest(oldv, newv), nil
+}
+
+func changedDependencyManifests(base string) ([]string, error) {
+	raw, err := exec.CommandContext(context.Background(), "git", "diff", "--name-only", base+"...HEAD").Output() //nolint:gosec // BASE_SHA is supplied by trusted CI
+	if err != nil {
+		return nil, fmt.Errorf("list changed files: %w", err)
+	}
+	var out []string
+	for _, path := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+		if path == "" {
+			continue
+		}
+		baseName := filepath.Base(path)
+		switch baseName {
+		case "go.mod", "go.sum", "package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt", "pyproject.toml", "Cargo.toml", "Cargo.lock":
+			out = append(out, path)
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func gitShowFile(base, path string) ([]byte, error) {
+	out, err := exec.CommandContext(context.Background(), "git", "show", base+":"+path).Output() //nolint:gosec // refs are supplied by trusted CI
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func deriveNPMRequest(base, path string) (requestFile, bool, error) {
+	newBytes, err := os.ReadFile(path)
+	if err != nil {
+		return requestFile{}, false, fmt.Errorf("read npm manifest %s: %w", path, err)
+	}
+	oldBytes, oldErr := gitShowFile(base, path)
+	if oldErr != nil {
+		oldBytes = []byte("{}")
+	}
+	var oldPkg, newPkg map[string]any
+	if err := json.Unmarshal(oldBytes, &oldPkg); err != nil {
+		return requestFile{}, false, fmt.Errorf("parse base npm manifest %s: %w", path, err)
+	}
+	if err := json.Unmarshal(newBytes, &newPkg); err != nil {
+		return requestFile{}, false, fmt.Errorf("parse npm manifest %s: %w", path, err)
+	}
+
+	sections := []string{"dependencies", "devDependencies", "optionalDependencies", "peerDependencies"}
+	best := requestFile{
+		PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: "dependency-change",
+		VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false,
+	}
+	bestRank := -1
+	for _, section := range sections {
+		oldDeps, _ := oldPkg[section].(map[string]any)
+		newDeps, _ := newPkg[section].(map[string]any)
+		names := map[string]bool{}
+		for n := range oldDeps {
+			names[n] = true
+		}
+		for n := range newDeps {
+			names[n] = true
+		}
+		for name := range names {
+			ov, ook := oldDeps[name].(string)
+			nv, nok := newDeps[name].(string)
+			if ook && nok && ov == nv {
+				continue
+			}
+			candidate := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: name, Paths: dependencyUsagePathsNPM(name), Evidence: automaticEvidenceAvailable(), KnownDependency: ook && nok}
+			if candidate.KnownDependency {
+				candidate.VersionChange = npmVersionChange(ov, nv)
+			} else {
+				candidate.VersionChange = "unknown"
+			}
+			rank := requestRiskRank(candidate)
+			if rank > bestRank {
+				best, bestRank = candidate, rank
+			}
+		}
+	}
+	return best, bestRank >= 0, nil
+}
+
+func dependencyUsagePathsNPM(name string) []string {
+	out, err := exec.CommandContext(context.Background(), "git", "grep", "-l", "--fixed-strings", name, "--", "*.js", "*.jsx", "*.ts", "*.tsx").Output() //nolint:gosec // name is derived from package.json
+	if err != nil {
+		return nil
+	}
+	var paths []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if line != "" {
+			paths = append(paths, line)
+		}
+	}
+	sort.Strings(paths)
+	return paths
+}
+
+func npmVersionChange(oldv, newv string) string {
+	oldv = strings.TrimSpace(strings.TrimLeft(oldv, "^~>=<v"))
+	newv = strings.TrimSpace(strings.TrimLeft(newv, "^~>=<v"))
+	if !semver.IsValid("v"+oldv) || !semver.IsValid("v"+newv) {
+		return "unknown"
+	}
+	return versionChange(oldv, newv)
 }
 
 func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
