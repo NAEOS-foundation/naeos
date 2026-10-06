@@ -32,8 +32,8 @@ type EvidenceBundle struct {
 	ExecutionEvent             *LedgerEvent         `json:"execution_event,omitempty"`
 	Verification               EvidenceVerification `json:"verification"`
 	EvidenceDigest             string               `json:"evidence_digest"`
-	EvidenceSignature           string               `json:"evidence_signature,omitempty"`
-	EvidencePublicKey           string               `json:"evidence_public_key,omitempty"`
+	EvidenceSignature          string               `json:"evidence_signature,omitempty"`
+	EvidencePublicKey          string               `json:"evidence_public_key,omitempty"`
 	EvidenceSignatureAlgorithm string               `json:"evidence_signature_algorithm,omitempty"`
 }
 
