@@ -44,13 +44,31 @@ export NAEOS_DEPENDENCY_RISK_BASE_SHA="${BASE_SHA}"
 export NAEOS_DEPENDENCY_RISK_OUTPUT="${OUTPUT}"
 if [[ -n "${REQUEST}" ]]; then
   export NAEOS_DEPENDENCY_RISK_REQUEST="${REQUEST}"
-elif printf '%s\n' "${dependency_changed[@]}" | grep -qx 'go.mod'; then
+elif printf '%s\n' "${dependency_changed[@]}" | grep -Eq '(^|/)go.mod$'; then
   echo "No manual request supplied; running Go verification before automatic classification."
   go test ./...
   export NAEOS_DEPENDENCY_RISK_EVIDENCE=true
   echo "Go verification passed; deriving dependency risk from BASE_SHA with verified evidence."
+elif printf '%s\n' "${dependency_changed[@]}" | grep -Eq '(^|/)(package-lock.json|npm-shrinkwrap.json)$'; then
+  echo "No manual request supplied; running reproducible npm verification before automatic classification."
+  declare -A npm_dirs=()
+  for manifest in "${dependency_changed[@]}"; do
+    case "${manifest}" in
+      */package-lock.json|*/npm-shrinkwrap.json|package-lock.json|npm-shrinkwrap.json)
+        npm_dirs["$(dirname "${manifest}")"]=1 ;;
+    esac
+  done
+  for dir in "${!npm_dirs[@]}"; do
+    if [[ "${dir}" == "." ]]; then
+      npm ci --ignore-scripts
+    else
+      npm --prefix "${dir}" ci --ignore-scripts
+    fi
+  done
+  export NAEOS_DEPENDENCY_RISK_EVIDENCE=true
+  echo "npm verification passed; deriving dependency risk from changed package manifests."
 else
-  echo "Automatic dependency-risk derivation currently supports go.mod only; manual request is required for other ecosystems/manifests."
+  echo "Dependency manifests changed without a reproducible lockfile; manual dependency-risk evidence is required."
   exit 1
 fi
 go run ./cmd/naeos-dependency-risk
