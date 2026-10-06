@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
 """Deterministic NAEOS external-validation conformance harness.
 
 This harness validates three invariants independently of NAEOS fixtures:
