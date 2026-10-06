@@ -26,6 +26,7 @@ func newRuntimeCommand() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(newRuntimeExecCommand())
+	cmd.AddCommand(newRuntimeBridgeCommand())
 	cmd.AddCommand(newRuntimeRestrictionsCommand())
 	return cmd
 }
@@ -91,7 +92,7 @@ Example:
 					return fmt.Errorf("marshaling result: %w", err)
 				}
 				fmt.Fprintln(cmd.OutOrStdout(), string(data))
-				return nil
+				return runtimeResultExit(result)
 			}
 
 			out := cmd.OutOrStdout()
@@ -107,7 +108,7 @@ Example:
 			if len(result.Reasons) > 0 {
 				fmt.Fprintf(out, "Reason:   %s\n", strings.Join(result.Reasons, "; "))
 			}
-			return nil
+			return runtimeResultExit(result)
 		},
 	}
 
@@ -182,4 +183,15 @@ func newRuntimeRestrictionsCommand() *cobra.Command {
 		},
 	}
 	return cmd
+}
+
+func runtimeResultExit(result gateway.ExecutionResult) error {
+	switch {
+	case result.Decision == control.DecisionDeny:
+		return newExitCodeError(ExitCodePolicyDeny, "policy decision: DENY")
+	case result.Status == "failed":
+		return newExitCodeError(ExitCodeExecutionFailure, "governed execution failed")
+	default:
+		return nil
+	}
 }
