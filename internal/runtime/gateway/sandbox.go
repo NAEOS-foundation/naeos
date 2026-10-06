@@ -5,6 +5,8 @@ package gateway
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -57,6 +59,7 @@ type SandboxConfig struct {
 	Timeout        time.Duration
 	AllowedTools   []string
 	BlockedTools   []string
+	FilesystemRoot string
 }
 
 // DefaultSandbox is a baseline sandbox implementation that validates
@@ -110,6 +113,10 @@ func (s *DefaultSandbox) Execute(req ToolRequest) (string, error) {
 		}
 	}
 
+	if req.Tool == "filesystem" && req.Action == "write" {
+		return s.executeFilesystemWrite(req)
+	}
+
 	// Build a deterministic output that reflects the execution context.
 	output := fmt.Sprintf("executed %s/%s on %s", req.Tool, req.Action, req.Resource)
 	if len(req.Payload) > 0 {
@@ -123,4 +130,37 @@ func (s *DefaultSandbox) ExecutedCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.count
+}
+
+func (s *DefaultSandbox) executeFilesystemWrite(req ToolRequest) (string, error) {
+	root := s.config.FilesystemRoot
+	if root == "" {
+		return "", naeoserr.New(naeoserr.ErrValidation, "filesystem root is required")
+	}
+	rel, ok := req.Payload["path"].(string)
+	if !ok || rel == "" {
+		return "", naeoserr.New(naeoserr.ErrValidation, "filesystem write requires payload.path")
+	}
+	content, ok := req.Payload["content"].(string)
+	if !ok {
+		return "", naeoserr.New(naeoserr.ErrValidation, "filesystem write requires payload.content")
+	}
+	rootAbs, err := filepath.Abs(root)
+	if err != nil {
+		return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "resolve filesystem root")
+	}
+	targetAbs, err := filepath.Abs(filepath.Join(rootAbs, rel))
+	if err != nil {
+		return "", naeoserr.Wrapf(err, naeoserr.ErrValidation, "resolve filesystem target")
+	}
+	if targetAbs != rootAbs && !strings.HasPrefix(targetAbs, rootAbs+string(filepath.Separator)) {
+		return "", naeoserr.New(naeoserr.ErrPermDenied, "filesystem target escapes sandbox root")
+	}
+	if err := os.MkdirAll(filepath.Dir(targetAbs), 0o750); err != nil {
+		return "", naeoserr.Wrapf(err, naeoserr.ErrPipeline, "create filesystem parent")
+	}
+	if err := os.WriteFile(targetAbs, []byte(content), 0o600); err != nil {
+		return "", naeoserr.Wrapf(err, naeoserr.ErrPipeline, "write filesystem target")
+	}
+	return fmt.Sprintf("wrote %d bytes to %s", len(content), rel), nil
 }

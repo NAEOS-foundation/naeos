@@ -4,10 +4,10 @@
   "description": "Transform YAML/JSON specifications into validated, multi-language project structures with full traceability from intent to implementation.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1220",
-  "theme_color": "#3B82F6",
+  "background_color": "#05070D",
+  "theme_color": "#2563FF",
   "icons": [
-    { "src": "/images/logo-infinity-primary.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/images/logo-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "categories": ["developer-tools", "productivity"],
   "lang": "en"
