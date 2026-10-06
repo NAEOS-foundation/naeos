@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.7.0] - 2026-10-06
 
 ### Added
-- **REST API v2** — cursor-based pipeline pagination, RFC 7807 problem-details errors, required idempotency keys for mutating v2 requests, replay protection for repeated keys, and explicit API version headers.
+- **REST API v2** — cursor-based pipeline pagination, RFC 7807 problem-details errors, required idempotency keys for mutating v2 requests, replay protection for repeated keys, and explicit API version headers, and IP/API-key rate-limit tiers.
 - **API v2 compatibility surface** — `/api/v2/version` and `/api/v2/pipelines` are isolated from the existing `/api/v1` routes to preserve backward compatibility.
 
 
