@@ -2267,7 +2267,7 @@ var startTime = time.Now()
 // and per-route middleware applied on top of the route table.
 func (s *Server) Handler() http.Handler {
 	mw := monitoring.MetricsMiddleware(s.metrics)
-	return mw(s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP)))
+	return mw(s.loggingMiddleware(s.v2IdempotencyMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP))))
 }
 
 // Start begins listening for HTTP requests and handles graceful shutdown.
