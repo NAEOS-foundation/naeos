@@ -79,18 +79,32 @@ func main() {
 		fatal(fmt.Errorf("expected ALLOW, got %s", allow.Status))
 	}
 	resultPath := filepath.Join(out, "positive-side-effect.json")
-	if err := os.WriteFile(resultPath, []byte("{\"side_effect\":\"created\",\"run_id\":\"FLAGSHIP-ALLOW\"}\n"), 0o600); err != nil {
+	_, allowedEvent := gateway.ExecuteAtomic(req, allow, func() error {
+		return os.WriteFile(resultPath, []byte("{\"side_effect\":\"created\",\"run_id\":\"FLAGSHIP-ALLOW\"}\n"), 0o600)
+	})
+	if allowedEvent.EventType != "EXECUTION_ALLOWED" || !fileExists(resultPath) {
+		fatal(fmt.Errorf("governed execution failed: event=%s path_exists=%t", allowedEvent.EventType, fileExists(resultPath)))
+	}
+	observed := fileExists(resultPath)
+	if !observed {
+		fatal(fmt.Errorf("expected governed side effect to be observable"))
+	}
+	ledger.Append(controlplane.LedgerEvent{
+		RequestID: req.RequestID, DecisionID: allow.DecisionID, ExecutionID: allowedEvent.ExecutionID,
+		AgentID: agentID, Capability: capability, ArtifactHash: action.ArtifactHash, EventType: "SIDE_EFFECT_OBSERVED",
+		Decision: controlplane.DecisionAllow, Reason: controlplane.ReasonAllowed,
+		Metadata: map[string]string{"path": resultPath},
+	})
+	bundle, err := ledger.BuildEvidence(allow.DecisionID)
+	if err != nil {
 		fatal(err)
 	}
-	_, allowedEvent := gateway.ExecuteDecision(req, allow)
-	ledger.Append(controlplane.LedgerEvent{RequestID: req.RequestID, DecisionID: allow.DecisionID, ExecutionID: allowedEvent.ExecutionID,
-		AgentID: agentID, Capability: capability, ArtifactHash: action.ArtifactHash, EventType: "SIDE_EFFECT_OBSERVED",
-		Decision: controlplane.DecisionAllow, Reason: controlplane.ReasonAllowed, Metadata: map[string]string{"path": resultPath}})
+	verification := controlplane.VerifyEvidence(bundle)
 	positive := receipt{RunID: req.RequestID, Decision: "ALLOW", PolicyVersion: 1, Execution: "EXECUTION_ALLOWED",
-		SideEffectObserved: fileExists(resultPath), Evidence: []string{"AUTHORIZATION_DECISION", "EXECUTION_ALLOWED", "SIDE_EFFECT_OBSERVED"},
-		Verification: verifier.VerifySession(agentID).Result}
-	if !positive.SideEffectObserved || positive.Verification != "PASS" {
-		fatal(fmt.Errorf("positive verification failed: %+v", positive))
+		SideEffectObserved: observed, Evidence: []string{"AUTHORIZATION_DECISION", "EXECUTION_ALLOWED", "SIDE_EFFECT_OBSERVED"},
+		Verification: verification.Result}
+	if verification.Result != "PASS" || !verification.ObservationConsistent || verifier.VerifySession(agentID).Result != "PASS" {
+		fatal(fmt.Errorf("positive verification failed: %+v issues=%v", positive, verification.Issues))
 	}
 
 	// Freshness negative path: authorization is valid at v1, then policy v2 becomes active.
