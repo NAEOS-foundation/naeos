@@ -101,7 +101,7 @@ func testEvidenceBundle() controlplane.EvidenceBundle {
 		},
 		Verification: controlplane.EvidenceVerification{
 			Result:              "PASS",
-			DecisionConsistent:  true,
+			DecisionConsistent:    true,
 			ExecutionConsistent:   true,
 			ObservationConsistent: true,
 			LedgerIntegrity:       true,
