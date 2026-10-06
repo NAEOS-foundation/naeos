@@ -4,10 +4,14 @@
 package controlplane
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sync"
 )
 
 // EvidenceBundle is a canonical, verifier-facing record for one authorization lifecycle.
@@ -27,7 +31,10 @@ type EvidenceBundle struct {
 	DecisionEvent  LedgerEvent          `json:"decision_event"`
 	ExecutionEvent *LedgerEvent         `json:"execution_event,omitempty"`
 	Verification   EvidenceVerification `json:"verification"`
-	EvidenceDigest string               `json:"evidence_digest"`
+	EvidenceDigest             string               `json:"evidence_digest"`
+	EvidenceSignature           string               `json:"evidence_signature,omitempty"`
+	EvidencePublicKey           string               `json:"evidence_public_key,omitempty"`
+	EvidenceSignatureAlgorithm string               `json:"evidence_signature_algorithm,omitempty"`
 }
 
 // EvidenceVerification describes deterministic checks over the evidence lifecycle.
@@ -50,7 +57,7 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 	}
 
 	bundle := EvidenceBundle{
-		SchemaVersion: "1.0",
+		SchemaVersion: "1.1",
 		RequestID:     decision.RequestID,
 		DecisionID:    decision.DecisionID,
 		AgentID:       decision.AgentID,
@@ -80,6 +87,9 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 		return EvidenceBundle{}, err
 	}
 	bundle.EvidenceDigest = digest
+	if err := signEvidenceBundle(&bundle); err != nil {
+		return EvidenceBundle{}, err
+	}
 	return bundle, nil
 }
 
@@ -127,6 +137,10 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	if err != nil || expected != bundle.EvidenceDigest {
 		verification.LedgerIntegrity = false
 		verification.Issues = append(verification.Issues, "evidence digest mismatch")
+	}
+	if !verifyEvidenceSignature(bundle) {
+		verification.LedgerIntegrity = false
+		verification.Issues = append(verification.Issues, "evidence signature invalid or missing")
 	}
 	if len(verification.Issues) > 0 {
 		verification.Result = "FAIL"
@@ -191,6 +205,9 @@ func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerificatio
 
 func evidenceDigest(bundle EvidenceBundle) (string, error) {
 	bundle.EvidenceDigest = ""
+	bundle.EvidenceSignature = ""
+	bundle.EvidencePublicKey = ""
+	bundle.EvidenceSignatureAlgorithm = ""
 	bundle.Verification.Issues = nil
 	data, err := json.Marshal(bundle)
 	if err != nil {
@@ -198,4 +215,52 @@ func evidenceDigest(bundle EvidenceBundle) (string, error) {
 	}
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:]), nil
+}
+
+
+var (
+	evidenceSigningKey    ed25519.PrivateKey
+	evidenceSigningPublic ed25519.PublicKey
+	evidenceSigningOnce   sync.Once
+	evidenceSigningErr    error
+)
+
+func evidenceSigningKeys() (ed25519.PrivateKey, ed25519.PublicKey, error) {
+	evidenceSigningOnce.Do(func() {
+		evidenceSigningPublic, evidenceSigningKey, evidenceSigningErr = ed25519.GenerateKey(rand.Reader)
+	})
+	if evidenceSigningErr != nil {
+		return nil, nil, fmt.Errorf("generate evidence signing key: %w", evidenceSigningErr)
+	}
+	return evidenceSigningKey, evidenceSigningPublic, nil
+}
+
+func signEvidenceBundle(bundle *EvidenceBundle) error {
+	if bundle == nil {
+		return fmt.Errorf("evidence bundle is required")
+	}
+	private, public, err := evidenceSigningKeys()
+	if err != nil {
+		return err
+	}
+	sig := ed25519.Sign(private, []byte(bundle.EvidenceDigest))
+	bundle.EvidenceSignature = base64.RawStdEncoding.EncodeToString(sig)
+	bundle.EvidencePublicKey = base64.RawStdEncoding.EncodeToString(public)
+	bundle.EvidenceSignatureAlgorithm = "Ed25519"
+	return nil
+}
+
+func verifyEvidenceSignature(bundle EvidenceBundle) bool {
+	if bundle.EvidenceSignatureAlgorithm != "Ed25519" || bundle.EvidenceDigest == "" || bundle.EvidenceSignature == "" || bundle.EvidencePublicKey == "" {
+		return false
+	}
+	public, err := base64.RawStdEncoding.DecodeString(bundle.EvidencePublicKey)
+	if err != nil || len(public) != ed25519.PublicKeySize {
+		return false
+	}
+	sig, err := base64.RawStdEncoding.DecodeString(bundle.EvidenceSignature)
+	if err != nil || len(sig) != ed25519.SignatureSize {
+		return false
+	}
+	return ed25519.Verify(ed25519.PublicKey(public), []byte(bundle.EvidenceDigest), sig)
 }
