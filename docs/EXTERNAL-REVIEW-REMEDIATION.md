@@ -15,7 +15,7 @@ NAEOS treats these as separate proof links:
 5. Durable evidence
 6. Independent verification
 
-The current `main` branch already contains a real filesystem execution experiment and a read-only EvidenceBundle verifier. This remediation closes the remaining evidence-authenticity gap and records the remaining runtime work explicitly.
+The current `main` branch contains real filesystem execution, first-class runtime observation, evidence-backed completion, a signed EvidenceBundle verifier, and stale-policy enforcement. This hardening change closes the remaining reviewer gaps with explicit trust anchors, process exit semantics, an agent-facing JSONL gateway bridge, and a test-oracle taxonomy.
 
 ## Evidence integrity remediation
 
@@ -32,14 +32,15 @@ The public key embedded in a bundle establishes cryptographic authenticity of th
 
 ## Remaining acceptance work
 
-- [ ] evidence signing key lifecycle/trust anchor suitable for production deployment;
-- [ ] evidence-backed completion in the runtime path;
-- [ ] runtime observation as a first-class enforcement component;
-- [ ] live coding-agent execution through the gateway;
-- [ ] explicit CLI exit semantics for DENY / execution failure / verification failure;
-- [ ] test-oracle taxonomy separating oracle defects from actual policy bypasses;
+- [x] evidence signing key trust anchor: `VerifyEvidenceWithTrustedKey` requires an operator-supplied Ed25519 public key; production private keys remain externally managed/KMS-backed;
+- [x] evidence-backed completion in the control-plane execution path;
+- [x] runtime observation as a first-class enforcement component;
+- [x] live agent-facing execution boundary through `naeos runtime bridge` (JSONL protocol; every request is normalized and authorized by the gateway);
+- [x] explicit CLI exit semantics for DENY / execution failure / verification failure (`10/11/12`);
+- [x] test-oracle taxonomy separating oracle defects from actual policy bypasses (`docs/TEST-ORACLE-TAXONOMY.md`);
 - [ ] independent re-test after all items are complete.
 
 ## Evaluation posture
 
 Do not request a paid independent re-test until the acceptance list above is green. The goal is a re-testable commit with reproducible commands, exit codes, evidence artifacts, and verification results rather than an evaluation of known open gaps.
+
