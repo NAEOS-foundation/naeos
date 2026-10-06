@@ -89,11 +89,22 @@ func testEvidenceBundle() controlplane.EvidenceBundle {
 			ArtifactHash: "sha256:artifact",
 			EventType:    "EXECUTION_ALLOWED",
 		},
+		ObservationEvent: &controlplane.LedgerEvent{
+			ID:           "event-observation-1",
+			RequestID:    "request-1",
+			DecisionID:   "decision-1",
+			ExecutionID:  "execution-1",
+			AgentID:      "agent-1",
+			Capability:   controlplane.Capability("repository.read"),
+			ArtifactHash: "sha256:artifact",
+			EventType:    "SIDE_EFFECT_OBSERVED",
+		},
 		Verification: controlplane.EvidenceVerification{
-			Result:              "PASS",
-			DecisionConsistent:  true,
-			ExecutionConsistent: true,
-			LedgerIntegrity:     true,
+			Result:                "PASS",
+			DecisionConsistent:    true,
+			ExecutionConsistent:   true,
+			ObservationConsistent: true,
+			LedgerIntegrity:       true,
 		},
 	}
 }

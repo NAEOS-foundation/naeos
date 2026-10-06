@@ -89,6 +89,9 @@ Example:
 			if len(rec.Reasons) > 0 {
 				fmt.Fprintf(out, "Reason:   %s\n", strings.Join(rec.Reasons, "; "))
 			}
+			if rec.Decision == control.DecisionDeny {
+				return newExitCodeError(ExitCodePolicyDeny, "policy decision: DENY")
+			}
 			return nil
 		},
 	}
