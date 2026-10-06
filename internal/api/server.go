@@ -287,6 +287,10 @@ func (s *Server) setupRoutes() {
 	s.Router.HandleFunc("/healthz", s.handleHealthz)
 	s.Router.HandleFunc("/readyz", s.handleReadyz)
 
+	// REST API v2
+	s.Router.HandleFunc("/api/v2/version", s.handleV2Version)
+	s.Router.HandleFunc("/api/v2/pipelines", s.handleV2Pipelines)
+
 	// API documentation
 	s.Router.HandleFunc("/api/v1/openapi.yaml", s.handleOpenAPISpec)
 	s.Router.HandleFunc("/api/v1/docs", s.handleDocs)
@@ -2263,7 +2267,7 @@ var startTime = time.Now()
 // and per-route middleware applied on top of the route table.
 func (s *Server) Handler() http.Handler {
 	mw := monitoring.MetricsMiddleware(s.metrics)
-	return mw(s.loggingMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP)))
+	return mw(s.loggingMiddleware(s.v2IdempotencyMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP))))
 }
 
 // Start begins listening for HTTP requests and handles graceful shutdown.
