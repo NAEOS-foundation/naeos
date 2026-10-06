@@ -34,12 +34,12 @@ type ToolRequest struct {
 // observable result of an execution. It deliberately does not trust the sandbox
 // output as proof of a side effect.
 type Observation struct {
-	Status     string            // "observed", "absent", "mismatch", "unavailable"
-	Observed   bool
+	Status       string // "observed", "absent", "mismatch", "unavailable"
+	Observed     bool
 	ArtifactHash string
 	ArtifactSize int64
-	Metadata   map[string]string
-	Timestamp  time.Time
+	Metadata     map[string]string
+	Timestamp    time.Time
 }
 
 // Observer verifies or records the externally observable effect of an execution.
