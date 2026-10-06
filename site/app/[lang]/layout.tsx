@@ -38,7 +38,7 @@ export async function generateMetadata(props: {
         { url: "/favicon.svg", type: "image/svg+xml" },
         { url: "/favicon.ico", sizes: "any" },
       ],
-      apple: "/images/logo-infinity-primary.svg",
+      apple: "/images/logo-mark.svg",
     },
     manifest: "/manifest.json",
     openGraph: {
@@ -88,7 +88,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           media="print"
           // @ts-expect-error onLoad is valid on link elements
           onLoad="this.media='all'"
