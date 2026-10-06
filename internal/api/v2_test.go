@@ -53,8 +53,10 @@ func TestV2PipelinesCursorPagination(t *testing.T) {
 	rec = httptest.NewRecorder()
 	s.Handler().ServeHTTP(rec, req)
 	var second struct {
-		Data       []pipelineRun `json:"data"`
-		NextCursor string        `json:"next_cursor"`
+		Data struct {
+			Items []pipelineRun `json:"items"`
+		} `json:"data"`
+		NextCursor string `json:"next_cursor"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &second); err != nil {
 		t.Fatal(err)
