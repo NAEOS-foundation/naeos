@@ -30,6 +30,7 @@ type EvidenceBundle struct {
 	GrantID                    string               `json:"grant_id,omitempty"`
 	DecisionEvent              LedgerEvent          `json:"decision_event"`
 	ExecutionEvent             *LedgerEvent         `json:"execution_event,omitempty"`
+	ObservationEvent           *LedgerEvent         `json:"observation_event,omitempty"`
 	Verification               EvidenceVerification `json:"verification"`
 	EvidenceDigest             string               `json:"evidence_digest"`
 	EvidenceSignature          string               `json:"evidence_signature,omitempty"`
@@ -42,6 +43,7 @@ type EvidenceVerification struct {
 	Result              string   `json:"result"`
 	DecisionConsistent  bool     `json:"decision_consistent"`
 	ExecutionConsistent bool     `json:"execution_consistent"`
+	ObservationConsistent bool   `json:"observation_consistent"`
 	LedgerIntegrity     bool     `json:"ledger_integrity"`
 	Issues              []string `json:"issues,omitempty"`
 }
@@ -57,7 +59,7 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 	}
 
 	bundle := EvidenceBundle{
-		SchemaVersion: "1.1",
+		SchemaVersion: "1.2",
 		RequestID:     decision.RequestID,
 		DecisionID:    decision.DecisionID,
 		AgentID:       decision.AgentID,
@@ -72,13 +74,18 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 	}
 
 	for _, event := range l.Events() {
-		if event.DecisionID != decisionID || (event.EventType != "EXECUTION_ALLOWED" && event.EventType != "EXECUTION_BLOCKED") {
+		if event.DecisionID != decisionID {
 			continue
 		}
-		copyEvent := event
-		bundle.ExecutionID = event.ExecutionID
-		bundle.ExecutionEvent = &copyEvent
-		break
+		if (event.EventType == "EXECUTION_ALLOWED" || event.EventType == "EXECUTION_BLOCKED") && bundle.ExecutionEvent == nil {
+			copyEvent := event
+			bundle.ExecutionID = event.ExecutionID
+			bundle.ExecutionEvent = &copyEvent
+		}
+		if event.EventType == "SIDE_EFFECT_OBSERVED" && bundle.ObservationEvent == nil {
+			copyEvent := event
+			bundle.ObservationEvent = &copyEvent
+		}
 	}
 
 	bundle.Verification = l.verifyEvidenceBundle(bundle)
@@ -98,8 +105,9 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	verification := EvidenceVerification{
 		Result:              "PASS",
 		DecisionConsistent:  true,
-		ExecutionConsistent: true,
-		LedgerIntegrity:     true,
+		ExecutionConsistent:   true,
+		ObservationConsistent: true,
+		LedgerIntegrity:       true,
 	}
 
 	if bundle.DecisionEvent.DecisionID != bundle.DecisionID ||
@@ -131,6 +139,21 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	if bundle.Decision == DecisionDeny && bundle.ExecutionEvent != nil && bundle.ExecutionEvent.EventType == "EXECUTION_ALLOWED" {
 		verification.ExecutionConsistent = false
 		verification.Issues = append(verification.Issues, "denied decision has allowed execution evidence")
+	}
+
+	if bundle.Decision == DecisionAllow {
+		if bundle.ObservationEvent == nil {
+			verification.ObservationConsistent = false
+			verification.Issues = append(verification.Issues, "allowed decision has no observed side-effect evidence")
+		} else {
+			obs := bundle.ObservationEvent
+			if obs.DecisionID != bundle.DecisionID || obs.RequestID != bundle.RequestID ||
+				obs.AgentID != bundle.AgentID || obs.Capability != bundle.Capability ||
+				obs.ArtifactHash != bundle.ArtifactHash || obs.EventType != "SIDE_EFFECT_OBSERVED" {
+				verification.ObservationConsistent = false
+				verification.Issues = append(verification.Issues, "observation evidence does not match bundle identity")
+			}
+		}
 	}
 
 	expected, err := evidenceDigest(bundle)
@@ -187,6 +210,21 @@ func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerificatio
 		v.Issues = append(v.Issues, "denied decision has allowed execution evidence")
 	}
 
+	if bundle.Decision == DecisionAllow {
+		if bundle.ObservationEvent == nil {
+			v.ObservationConsistent = false
+			v.Issues = append(v.Issues, "allowed decision has no observed side-effect evidence")
+		} else if bundle.ObservationEvent.DecisionID != bundle.DecisionID ||
+			bundle.ObservationEvent.RequestID != bundle.RequestID ||
+			bundle.ObservationEvent.AgentID != bundle.AgentID ||
+			bundle.ObservationEvent.Capability != bundle.Capability ||
+			bundle.ObservationEvent.ArtifactHash != bundle.ArtifactHash ||
+			bundle.ObservationEvent.EventType != "SIDE_EFFECT_OBSERVED" {
+			v.ObservationConsistent = false
+			v.Issues = append(v.Issues, "observation evidence does not match bundle identity")
+		}
+	}
+
 	var previous string
 	for _, event := range l.Events() {
 		if event.PreviousHash != previous || event.EventHash != hashLedgerEvent(event) {
@@ -197,7 +235,7 @@ func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerificatio
 		previous = event.EventHash
 	}
 
-	if !v.DecisionConsistent || !v.ExecutionConsistent || !v.LedgerIntegrity {
+	if !v.DecisionConsistent || !v.ExecutionConsistent || !v.ObservationConsistent || !v.LedgerIntegrity {
 		v.Result = "FAIL"
 	}
 	return v
