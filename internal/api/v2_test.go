@@ -1,0 +1,146 @@
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
+	"testing"
+)
+
+func TestV2Version(t *testing.T) {
+	s := NewServer(":0", &AuthConfig{Enabled: false})
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/version", nil)
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("API-Version"); got != "2" {
+		t.Fatalf("API-Version=%q", got)
+	}
+}
+
+func TestV2PipelinesCursorPagination(t *testing.T) {
+	s := NewServer(":0", &AuthConfig{Enabled: false})
+	s.pipelines = []pipelineRun{
+		{ID: "1", Project: "one"},
+		{ID: "2", Project: "two"},
+		{ID: "3", Project: "three"},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/pipelines?limit=2", nil)
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var first struct {
+		Data       []pipelineRun `json:"data"`
+		NextCursor string        `json:"next_cursor"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &first); err != nil {
+		t.Fatal(err)
+	}
+	if len(first.Data) != 2 || first.NextCursor == "" {
+		t.Fatalf("unexpected first page: %+v", first)
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/v2/pipelines?limit=2&cursor="+first.NextCursor, nil)
+	rec = httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, req)
+	var second struct {
+		Data       []pipelineRun `json:"data"`
+		NextCursor string        `json:"next_cursor"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &second); err != nil {
+		t.Fatal(err)
+	}
+	if len(second.Data) != 1 || second.NextCursor != "" {
+		t.Fatalf("unexpected second page: %+v", second)
+	}
+}
+
+func TestV2InvalidCursorUsesRFC7807(t *testing.T) {
+	s := NewServer(":0", &AuthConfig{Enabled: false})
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/pipelines?cursor=bad!", nil)
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d", rec.Code)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/problem+json" {
+		t.Fatalf("content-type=%q", got)
+	}
+	var problem RFC7807Problem
+	if err := json.Unmarshal(rec.Body.Bytes(), &problem); err != nil {
+		t.Fatal(err)
+	}
+	if problem.Status != http.StatusBadRequest || problem.Title != "Bad Request" {
+		t.Fatalf("problem=%+v", problem)
+	}
+}
+
+func TestV2IdempotencyRequiresKeyForMutation(t *testing.T) {
+	s := NewServer(":0", &AuthConfig{Enabled: false})
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	rec := httptest.NewRecorder()
+	s.v2IdempotencyMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("mutation handler must not run without Idempotency-Key")
+	})).ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("Content-Type") != "application/problem+json" {
+		t.Fatalf("content-type=%q", rec.Header().Get("Content-Type"))
+	}
+}
+
+func TestV2IdempotencyReplaysIdenticalMutationAndRejectsKeyReuse(t *testing.T) {
+	v2Idempotency.Lock()
+	v2Idempotency.items = make(map[string]idempotencyEntry)
+	v2Idempotency.Unlock()
+
+	var calls atomic.Int32
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{"accepted":true}`))
+	})
+	middleware := (&Server{}).v2IdempotencyMiddleware(handler)
+
+	first := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	middleware.ServeHTTP(first, req)
+
+	second := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	middleware.ServeHTTP(second, req)
+
+	if first.Code != http.StatusAccepted || second.Code != http.StatusAccepted {
+		t.Fatalf("statuses=%d,%d", first.Code, second.Code)
+	}
+	if first.Body.String() != second.Body.String() || first.Header().Get("Content-Type") != second.Header().Get("Content-Type") {
+		t.Fatalf("replay differs: first=%q second=%q", first.Body.String(), second.Body.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls=%d, want 1", calls.Load())
+	}
+
+	third := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	req.Body = http.NoBody
+	req.URL.RawQuery = "different=true"
+	middleware.ServeHTTP(third, req)
+	if third.Code != http.StatusConflict {
+		t.Fatalf("key reuse status=%d body=%s", third.Code, third.Body.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls after conflicting reuse=%d, want 1", calls.Load())
+	}
+}

@@ -297,7 +297,7 @@ func newEvidenceVerifyCommand() *cobra.Command {
 			idx, err := store.Verify()
 			if err != nil {
 				fmt.Fprintf(cmd.ErrOrStderr(), "CHAIN BROKEN at index %d: %v\n", idx, err)
-				return err
+				return newExitCodeError(ExitCodeVerificationFail, "evidence chain verification failed at index %d: %v", idx, err)
 			}
 
 			summary := store.Summary()
