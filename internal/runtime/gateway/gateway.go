@@ -30,17 +30,37 @@ type ToolRequest struct {
 }
 
 // ExecutionResult records the outcome of an authorized tool execution.
+// Observation is an independently produced runtime record of the externally
+// observable result of an execution. It deliberately does not trust the sandbox
+// output as proof of a side effect.
+type Observation struct {
+	Status     string            // "observed", "absent", "mismatch", "unavailable"
+	Observed   bool
+	ArtifactHash string
+	ArtifactSize int64
+	Metadata   map[string]string
+	Timestamp  time.Time
+}
+
+// Observer verifies or records the externally observable effect of an execution.
+// Implementations should inspect the target system rather than infer state from
+// the sandbox's claimed output.
+type Observer interface {
+	Observe(req ToolRequest, result ExecutionResult) (Observation, error)
+}
+
 type ExecutionResult struct {
-	Request   ToolRequest
-	Decision  control.Decision
-	PolicyID  string
-	RuleID    string
-	Status    string // "completed", "denied", "failed", "skipped"
-	Output    string
-	Hash      string // SHA-256 of output/payload
-	Duration  time.Duration
-	Timestamp time.Time
-	Reasons   []string
+	Request     ToolRequest
+	Decision    control.Decision
+	PolicyID    string
+	RuleID      string
+	Status      string // "completed", "denied", "failed", "skipped"
+	Output      string
+	Hash        string // SHA-256 of output/payload
+	Duration    time.Duration
+	Timestamp   time.Time
+	Reasons     []string
+	Observation *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -90,6 +110,13 @@ func FailClosed(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.failClosed = enabled }
 }
 
+// WithObserver installs a first-class runtime observer. When configured,
+// successful execution is not considered evidence-backed until the observer
+// records the externally observable result.
+func WithObserver(observer Observer) Option {
+	return func(g *ExecutionGateway) { g.observer = observer }
+}
+
 // ExecutionGateway is the single enforcement boundary between agent intent
 // and tool execution. Every tool invocation must pass through this gateway,
 // which evaluates the request against registered policies before allowing
@@ -104,6 +131,7 @@ func FailClosed(enabled bool) Option {
 type ExecutionGateway struct {
 	controlPlane ControlPlane
 	sandbox      Sandbox
+	observer     Observer
 	adapters     map[string]AgentAdapter
 	restrictions []Restriction
 
@@ -270,6 +298,35 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	result.Status = "completed"
 	result.Output = output
 	result.Hash = hashBytes([]byte(output))
+
+	// A sandbox completion is an execution claim, not proof that the requested
+	// side effect became externally observable. If an observer is configured,
+	// it becomes part of the runtime completion boundary.
+	if g.observer != nil {
+		observation, observeErr := g.observer.Observe(req, result)
+		result.Observation = &observation
+		if observeErr != nil {
+			result.Status = "failed"
+			result.Output = observeErr.Error()
+			result.Hash = hashBytes([]byte(result.Output))
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.Wrapf(observeErr, naeoserr.ErrPipeline, "runtime observation failed")
+			}
+			return result, nil
+		}
+		if !observation.Observed {
+			result.Status = "failed"
+			result.Output = "execution completed but required side effect was not observed"
+			result.Hash = hashBytes([]byte(result.Output))
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.New(naeoserr.ErrPipeline, result.Output)
+			}
+			return result, nil
+		}
+	}
+
 	g.record(result)
 	return result, nil
 }
