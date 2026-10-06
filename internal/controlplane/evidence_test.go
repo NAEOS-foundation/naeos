@@ -44,15 +44,15 @@ func TestEvidenceBundleReconstructsAllowedExecution(t *testing.T) {
 		t.Fatalf("expected execution evidence, got %s", event.EventType)
 	}
 	ledger.Append(LedgerEvent{
-		RequestID:   req.RequestID,
-		DecisionID:  result.DecisionID,
-		ExecutionID: event.ExecutionID,
-		AgentID:     req.AgentID,
-		Capability:  req.Action.Capability,
+		RequestID:    req.RequestID,
+		DecisionID:   result.DecisionID,
+		ExecutionID:  event.ExecutionID,
+		AgentID:      req.AgentID,
+		Capability:   req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash,
-		EventType:   "SIDE_EFFECT_OBSERVED",
-		Decision:    DecisionAllow,
-		Reason:      ReasonAllowed,
+		EventType:    "SIDE_EFFECT_OBSERVED",
+		Decision:     DecisionAllow,
+		Reason:       ReasonAllowed,
 	})
 
 	bundle, err := ledger.BuildEvidence(result.DecisionID)
