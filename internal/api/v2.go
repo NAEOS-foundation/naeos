@@ -83,13 +83,19 @@ func parseV2Cursor(r *http.Request) (v2Cursor, error) {
 	return v2Cursor{Offset: 0, Limit: limit}, nil
 }
 
+func writeV2JSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(data)
+}
+
 func (s *Server) handleV2Version(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeProblem(w, r, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	w.Header().Set("API-Version", "2")
-	s.writeJSON(w, http.StatusOK, map[string]any{"version": "2", "api": "v2"})
+	writeV2JSON(w, http.StatusOK, map[string]any{"version": "2", "api": "v2"})
 }
 
 func (s *Server) handleV2Pipelines(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +129,7 @@ func (s *Server) handleV2Pipelines(w http.ResponseWriter, r *http.Request) {
 		nextCursor = encodeV2Cursor(v2Cursor{Offset: end, Limit: cursor.Limit})
 	}
 	w.Header().Set("API-Version", "2")
-	s.writeJSON(w, http.StatusOK, map[string]any{"data": page, "count": len(page), "next_cursor": nextCursor})
+	writeV2JSON(w, http.StatusOK, map[string]any{"data": page, "count": len(page), "next_cursor": nextCursor})
 }
 
 type idempotencyEntry struct {
