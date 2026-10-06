@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -356,11 +357,13 @@ func TestRuntimeExecPersistsActionToSession(t *testing.T) {
 		t.Fatal("expected session to exist after create")
 	}
 
-	if err := run([]string{"runtime", "exec", "--tool", "shell", "--action", "run", "--resource", "scripts/deploy.sh", "--environment", "production", "--actor", "ci-bot", "--session-id", session.ID, "--store-path", storePath}); err != nil {
-		t.Fatalf("run runtime exec returned error: %v", err)
+	err := run([]string{"runtime", "exec", "--tool", "shell", "--action", "run", "--resource", "scripts/deploy.sh", "--environment", "production", "--actor", "ci-bot", "--session-id", session.ID, "--store-path", storePath})
+	var exitErr *ExitCodeError
+	if !errors.As(err, &exitErr) || exitErr.Code != ExitCodePolicyDeny {
+		t.Fatalf("expected explicit policy-deny exit code %d, got %v", ExitCodePolicyDeny, err)
 	}
 
-	store, err := loadAgentStore(storePath)
+	store, err = loadAgentStore(storePath)
 	if err != nil {
 		t.Fatalf("reload agent store after runtime exec: %v", err)
 	}

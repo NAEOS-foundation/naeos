@@ -4,6 +4,8 @@
 package controlplane
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -33,16 +35,31 @@ type LedgerEvent struct {
 
 // Ledger is an append-only event log for decisions and executions.
 type Ledger struct {
-	mu                   sync.RWMutex
-	events               []LedgerEvent
-	nextID               int
-	persistencePath      string
-	lastPersistenceError error
+	mu                    sync.RWMutex
+	events                []LedgerEvent
+	nextID                int
+	persistencePath       string
+	lastPersistenceError  error
+	evidenceSignerPrivate ed25519.PrivateKey
+	evidenceSignerPublic  ed25519.PublicKey
 }
 
 // NewLedger creates a fresh append-only ledger.
 func NewLedger() *Ledger {
-	return &Ledger{events: make([]LedgerEvent, 0)}
+	public, _, _ := ed25519.GenerateKey(rand.Reader)
+	return &Ledger{events: make([]LedgerEvent, 0), evidenceSignerPublic: public}
+}
+
+// NewLedgerWithEvidenceSigner creates a ledger with an operator-supplied Ed25519
+// signing key. Production deployments should load this key from an external
+// secret/KMS and keep private material outside evidence bundles.
+func NewLedgerWithEvidenceSigner(privateKey ed25519.PrivateKey) (*Ledger, error) {
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("evidence signing key must be %d bytes", ed25519.PrivateKeySize)
+	}
+	key := append(ed25519.PrivateKey(nil), privateKey...)
+	public := append(ed25519.PublicKey(nil), privateKey.Public().(ed25519.PublicKey)...)
+	return &Ledger{events: make([]LedgerEvent, 0), evidenceSignerPrivate: key, evidenceSignerPublic: public}, nil
 }
 
 // SetPersistencePath enables snapshot persistence after appends.
