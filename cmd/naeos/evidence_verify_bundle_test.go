@@ -21,11 +21,11 @@ import (
 func TestEvidenceVerifyBundleCommandAcceptsValidBundle(t *testing.T) {
 	bundle := testEvidenceBundle()
 	bundle.EvidenceDigest = testEvidenceDigest(t, bundle)
-	_, public, err := ed25519.GenerateKey(rand.Reader)
+	private, public, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	signature := ed25519.Sign(nil, []byte(bundle.EvidenceDigest))
+	signature := ed25519.Sign(private, []byte(bundle.EvidenceDigest))
 	bundle.EvidenceSignature = base64.RawStdEncoding.EncodeToString(signature)
 	bundle.EvidencePublicKey = base64.RawStdEncoding.EncodeToString(public)
 	bundle.EvidenceSignatureAlgorithm = "Ed25519"
