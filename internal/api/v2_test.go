@@ -38,30 +38,26 @@ func TestV2PipelinesCursorPagination(t *testing.T) {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
 	var first struct {
-		Data struct {
-			Items []pipelineRun `json:"items"`
-		} `json:"data"`
-		NextCursor string `json:"next_cursor"`
+		Data       []pipelineRun `json:"data"`
+		NextCursor string        `json:"next_cursor"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &first); err != nil {
 		t.Fatal(err)
 	}
-	if len(first.Data.Items) != 2 || first.NextCursor == "" {
+	if len(first.Data) != 2 || first.NextCursor == "" {
 		t.Fatalf("unexpected first page: %+v", first)
 	}
 	req = httptest.NewRequest(http.MethodGet, "/api/v2/pipelines?limit=2&cursor="+first.NextCursor, nil)
 	rec = httptest.NewRecorder()
 	s.Handler().ServeHTTP(rec, req)
 	var second struct {
-		Data struct {
-			Items []pipelineRun `json:"items"`
-		} `json:"data"`
-		NextCursor string `json:"next_cursor"`
+		Data       []pipelineRun `json:"data"`
+		NextCursor string        `json:"next_cursor"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &second); err != nil {
 		t.Fatal(err)
 	}
-	if len(second.Data.Items) != 1 || second.NextCursor != "" {
+	if len(second.Data) != 1 || second.NextCursor != "" {
 		t.Fatalf("unexpected second page: %+v", second)
 	}
 }
