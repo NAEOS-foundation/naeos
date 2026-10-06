@@ -19,12 +19,12 @@ export const MAIN_ENTITY = {
       url: SITE.baseUrl,
       downloadUrl: `${SITE.baseUrl}/download/`,
       image: `${SITE.baseUrl}/images/og-default.png`,
-      logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
+      logo: `${SITE.baseUrl}/images/logo-mark.svg`,
       publisher: {
         "@type": "Organization",
         name: "NAEOS OSS",
         url: SITE.baseUrl,
-        logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
+        logo: `${SITE.baseUrl}/images/logo-mark.svg`,
         sameAs: [
           SITE.repo,
           SITE.twitter,
@@ -42,7 +42,7 @@ export const MAIN_ENTITY = {
         "@type": "Organization",
         name: "NAEOS OSS",
         url: SITE.baseUrl,
-        logo: `${SITE.baseUrl}/images/logo-infinity-primary.svg`,
+        logo: `${SITE.baseUrl}/images/logo-mark.svg`,
       },
     },
   ],

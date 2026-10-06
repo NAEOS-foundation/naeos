@@ -1,0 +1,47 @@
+name: External Validation — CrewAI Policy Boundaries 004
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/external_validation_crewai_boundaries.py"
+      - ".github/workflows/external-validation-crewai-boundaries.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crewai-policy-boundaries:
+    name: CrewAI mutation + freshness runtime evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout NAEOS
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CrewAI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "crewai==1.15.16"
+
+      - name: Record runtime versions
+        run: |
+          python --version
+          python -c "import crewai; print('crewai', crewai.__version__)"
+
+      - name: Run real CrewAI policy-boundary validation
+        run: |
+          mkdir -p external-validation-evidence
+          python scripts/external_validation_crewai_boundaries.py             --output external-validation-evidence/crewai-boundaries.json
+
+      - name: Upload runtime evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-validation-crewai-boundaries-${{ github.sha }}
+          path: external-validation-evidence/crewai-boundaries.json
+          if-no-files-found: error
