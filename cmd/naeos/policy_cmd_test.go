@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"encoding/json"
 	"os"
 	"path/filepath"
