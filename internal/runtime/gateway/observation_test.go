@@ -37,8 +37,8 @@ func TestGatewayObservationIsFirstClass(t *testing.T) {
 	gw := New(cp, sb, WithObserver(obs))
 
 	result, err := gw.Authorize(ToolRequest{
-		Tool: "filesystem",
-		Action: "write",
+		Tool:     "filesystem",
+		Action:   "write",
 		Resource: "workspace",
 	})
 	if err != nil {
