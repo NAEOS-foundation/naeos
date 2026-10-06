@@ -37,10 +37,13 @@ jobs:
       - name: Checkout Attenu source at recorded revision
         run: |
           set -euo pipefail
-          git clone --depth 1 https://github.com/attenu-io/attenu-guard.git /tmp/attenu-guard
+          attenu_sha='c68cb1a539b1588f2957af884f6ff31bf1aeaf22'
+          git clone --no-checkout https://github.com/attenu-io/attenu-guard.git /tmp/attenu-guard
           cd /tmp/attenu-guard
-          git rev-parse HEAD > "$GITHUB_WORKSPACE/external-validation-evidence/attenu_commit.txt"
-          printf 'attenu_commit=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_WORKSPACE/external-validation-evidence/metadata.txt"
+          git checkout --detach "$attenu_sha"
+          test "$(git rev-parse HEAD)" = "$attenu_sha"
+          printf '%s\n' "$attenu_sha" > "$GITHUB_WORKSPACE/external-validation-evidence/attenu_commit.txt"
+          printf 'attenu_commit=%s\n' "$attenu_sha" >> "$GITHUB_WORKSPACE/external-validation-evidence/metadata.txt"
 
       - name: Install pinned runtime dependencies
         run: |
