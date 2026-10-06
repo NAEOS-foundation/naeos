@@ -287,6 +287,10 @@ func (s *Server) setupRoutes() {
 	s.Router.HandleFunc("/healthz", s.handleHealthz)
 	s.Router.HandleFunc("/readyz", s.handleReadyz)
 
+	// REST API v2
+	s.Router.HandleFunc("/api/v2/version", s.handleV2Version)
+	s.Router.HandleFunc("/api/v2/pipelines", s.handleV2Pipelines)
+
 	// API documentation
 	s.Router.HandleFunc("/api/v1/openapi.yaml", s.handleOpenAPISpec)
 	s.Router.HandleFunc("/api/v1/docs", s.handleDocs)
