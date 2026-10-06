@@ -16,21 +16,21 @@ import (
 
 // EvidenceBundle is a canonical, verifier-facing record for one authorization lifecycle.
 type EvidenceBundle struct {
-	SchemaVersion  string               `json:"schema_version"`
-	RequestID      string               `json:"request_id"`
-	DecisionID     string               `json:"decision_id"`
-	ExecutionID    string               `json:"execution_id,omitempty"`
-	AgentID        string               `json:"agent_id"`
-	Capability     Capability           `json:"capability"`
-	ArtifactHash   string               `json:"artifact_hash,omitempty"`
-	Decision       DecisionStatus       `json:"decision"`
-	Reason         DecisionReason       `json:"reason"`
-	PolicyID       string               `json:"policy_id,omitempty"`
-	PolicyVersion  string               `json:"policy_version,omitempty"`
-	GrantID        string               `json:"grant_id,omitempty"`
-	DecisionEvent  LedgerEvent          `json:"decision_event"`
-	ExecutionEvent *LedgerEvent         `json:"execution_event,omitempty"`
-	Verification   EvidenceVerification `json:"verification"`
+	SchemaVersion              string               `json:"schema_version"`
+	RequestID                  string               `json:"request_id"`
+	DecisionID                 string               `json:"decision_id"`
+	ExecutionID                string               `json:"execution_id,omitempty"`
+	AgentID                    string               `json:"agent_id"`
+	Capability                 Capability           `json:"capability"`
+	ArtifactHash               string               `json:"artifact_hash,omitempty"`
+	Decision                   DecisionStatus       `json:"decision"`
+	Reason                     DecisionReason       `json:"reason"`
+	PolicyID                   string               `json:"policy_id,omitempty"`
+	PolicyVersion              string               `json:"policy_version,omitempty"`
+	GrantID                    string               `json:"grant_id,omitempty"`
+	DecisionEvent              LedgerEvent          `json:"decision_event"`
+	ExecutionEvent             *LedgerEvent         `json:"execution_event,omitempty"`
+	Verification               EvidenceVerification `json:"verification"`
 	EvidenceDigest             string               `json:"evidence_digest"`
 	EvidenceSignature           string               `json:"evidence_signature,omitempty"`
 	EvidencePublicKey           string               `json:"evidence_public_key,omitempty"`
@@ -216,7 +216,6 @@ func evidenceDigest(bundle EvidenceBundle) (string, error) {
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
-
 
 var (
 	evidenceSigningKey    ed25519.PrivateKey
