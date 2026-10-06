@@ -53,7 +53,10 @@ func TestExecuteAtomicWithEvidenceRequiresVerifiedEvidence(t *testing.T) {
 		t.Fatalf("expected allow, got %s", decision.Status)
 	}
 
-	out, err := gateway.ExecuteAtomicWithEvidence(req, decision, func() error { return nil })
+	out, err := gateway.ExecuteAtomicWithEvidence(req, decision, func() error { return nil }, func(event LedgerEvent) LedgerEvent {
+		event.EventType = "SIDE_EFFECT_OBSERVED"
+		return event
+	})
 	if err != nil {
 		t.Fatalf("expected evidence-backed completion, got %v", err)
 	}
