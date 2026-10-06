@@ -27,14 +27,14 @@ func TestExecuteAtomicWithEvidenceRequiresVerifiedEvidence(t *testing.T) {
 	ledger := NewLedger()
 	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
 	grant := &Grant{
-		GrantID:      "g-evidence",
-		AgentID:      "agent-evidence",
-		PolicyID:     policy.ID,
+		GrantID:       "g-evidence",
+		AgentID:       "agent-evidence",
+		PolicyID:      policy.ID,
 		PolicyVersion: 1,
-		Capabilities: []Capability{"repository.write"},
-		CreatedAt:    now,
-		ExpiresAt:    now.Add(time.Hour),
-		Status:       "active",
+		Capabilities:  []Capability{"repository.write"},
+		CreatedAt:     now,
+		ExpiresAt:     now.Add(time.Hour),
+		Status:        "active",
 	}
 	req := AuthorizeRequest{
 		RequestID: "REQ-EVIDENCE",
@@ -90,14 +90,14 @@ func TestExecuteAtomicWithEvidenceFailsClosedWhenSideEffectFails(t *testing.T) {
 	ledger := NewLedger()
 	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
 	grant := &Grant{
-		GrantID:      "g-fail",
-		AgentID:      "agent-fail",
-		PolicyID:     policy.ID,
+		GrantID:       "g-fail",
+		AgentID:       "agent-fail",
+		PolicyID:      policy.ID,
 		PolicyVersion: 1,
-		Capabilities: []Capability{"repository.write"},
-		CreatedAt:    now,
-		ExpiresAt:    now.Add(time.Hour),
-		Status:       "active",
+		Capabilities:  []Capability{"repository.write"},
+		CreatedAt:     now,
+		ExpiresAt:     now.Add(time.Hour),
+		Status:        "active",
 	}
 	req := AuthorizeRequest{
 		RequestID: "REQ-FAIL",
