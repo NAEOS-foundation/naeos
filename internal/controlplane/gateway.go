@@ -409,7 +409,6 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 	return result, event
 }
 
-
 // ExecutionEvidence is the result of an authorized execution together with
 // independently verifiable evidence materialized from the control-plane ledger.
 type ExecutionEvidence struct {
