@@ -132,7 +132,6 @@ func (s *DefaultSandbox) ExecutedCount() int {
 	return s.count
 }
 
-
 func (s *DefaultSandbox) executeFilesystemWrite(req ToolRequest) (string, error) {
 	root := s.config.FilesystemRoot
 	if root == "" {
