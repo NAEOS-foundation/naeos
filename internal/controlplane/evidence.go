@@ -43,7 +43,7 @@ type EvidenceVerification struct {
 	Result              string   `json:"result"`
 	DecisionConsistent  bool     `json:"decision_consistent"`
 	ExecutionConsistent bool     `json:"execution_consistent"`
-	ObservationConsistent bool   `json:"observation_consistent"`
+	ObservationConsistent bool`json:"observation_consistent"`
 	LedgerIntegrity     bool     `json:"ledger_integrity"`
 	Issues              []string `json:"issues,omitempty"`
 }
@@ -104,7 +104,7 @@ func (l *Ledger) BuildEvidence(decisionID string) (EvidenceBundle, error) {
 func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	verification := EvidenceVerification{
 		Result:              "PASS",
-		DecisionConsistent:  true,
+		DecisionConsistent:    true,
 		ExecutionConsistent:   true,
 		ObservationConsistent: true,
 		LedgerIntegrity:       true,
