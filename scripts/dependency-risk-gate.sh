@@ -49,8 +49,8 @@ elif printf '%s\n' "${dependency_changed[@]}" | grep -Eq '(^|/)go.mod$'; then
   go test ./...
   export NAEOS_DEPENDENCY_RISK_EVIDENCE=true
   echo "Go verification passed; deriving dependency risk from BASE_SHA with verified evidence."
-elif printf '%s\n' "${dependency_changed[@]}" | grep -Eq '(^|/)(package-lock.json|npm-shrinkwrap.json)
 elif printf '%s\n' "${dependency_changed[@]}" | grep -Eq '(^|/)(package-lock.json|npm-shrinkwrap.json)$'; then
+  echo "No manual request supplied; running reproducible npm verification before automatic classification."
   declare -A npm_dirs=()
   for manifest in "${dependency_changed[@]}"; do
     case "${manifest}" in
