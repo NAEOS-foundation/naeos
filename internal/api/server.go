@@ -484,8 +484,21 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 		}
 
 		if !rateLimiter.Allow(rateLimitID) {
-			s.writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+			if strings.HasPrefix(r.URL.Path, "/api/v2/") {
+				writeProblem(w, r, http.StatusTooManyRequests, "rate limit exceeded")
+			} else {
+				s.writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+			}
 			return
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/api/v2/") {
+			if r.Header.Get("X-API-Key") != "" {
+				w.Header().Set("X-RateLimit-Tier", "api-key")
+			} else {
+				w.Header().Set("X-RateLimit-Tier", "ip")
+			}
+			w.Header().Set("API-Version", "2")
 		}
 
 		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(rateLimiter.Rate()))
@@ -2267,7 +2280,7 @@ var startTime = time.Now()
 // and per-route middleware applied on top of the route table.
 func (s *Server) Handler() http.Handler {
 	mw := monitoring.MetricsMiddleware(s.metrics)
-	return mw(s.loggingMiddleware(s.v2IdempotencyMiddleware(s.handlerWithMiddleware(s.Router.ServeHTTP))))
+	return mw(s.loggingMiddleware(s.handlerWithMiddleware(s.v2IdempotencyMiddleware(s.Router.ServeHTTP))))
 }
 
 // Start begins listening for HTTP requests and handles graceful shutdown.
