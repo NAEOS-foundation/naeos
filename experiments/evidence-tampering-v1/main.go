@@ -36,9 +36,9 @@ func baseline() (evidence.EvidenceRecord, *evidence.EvidenceStore) {
 		Action: "write", Environment: "benchmark", PolicyID: "ai-agent-boundary",
 		PolicyVersion: "1.0.0", Decision: control.DecisionAllow,
 		DecisionReasons: []string{"policy explicitly allows bounded filesystem write"},
-		ArtifactName: "agent-action.txt",
-		ArtifactHash: evidence.ComputeArtifactHash([]byte("authorized agent change\n")),
-		ArtifactSize: len([]byte("authorized agent change\n")),
+		ArtifactName:    "agent-action.txt",
+		ArtifactHash:    evidence.ComputeArtifactHash([]byte("authorized agent change\n")),
+		ArtifactSize:    len([]byte("authorized agent change\n")),
 		ExecutionStatus: "completed", ExecutionOutput: "wrote agent-action.txt",
 	})
 	return rec, store
@@ -51,7 +51,7 @@ func verifyRecord(rec evidence.EvidenceRecord, store *evidence.EvidenceStore) (v
 func run() ([]result, error) {
 	original, store := baseline()
 	if index, err := store.Verify(); err != nil || index != -1 {
-		return nil, fmt.Errorf("baseline evidence chain is not intact: index=%d err=%v", index, err)
+		return nil, fmt.Errorf("baseline evidence chain is not intact: index=%d err=%w", index, err)
 	}
 	initial, err := verifyRecord(original, store)
 	if err != nil {
@@ -98,7 +98,7 @@ func run() ([]result, error) {
 	}
 
 	if index, err := store.Verify(); err != nil || index != -1 {
-		return results, fmt.Errorf("authoritative store changed during tampering checks: index=%d err=%v", index, err)
+		return results, fmt.Errorf("authoritative store changed during tampering checks: index=%d err=%w", index, err)
 	}
 	return results, nil
 }
