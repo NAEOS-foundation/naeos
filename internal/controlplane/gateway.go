@@ -409,6 +409,34 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 	return result, event
 }
 
+// ExecutionEvidence is the result of an authorized execution together with
+// independently verifiable evidence materialized from the control-plane ledger.
+type ExecutionEvidence struct {
+	Result   DecisionResult
+	Event    LedgerEvent
+	Evidence EvidenceBundle
+}
+
+// ExecuteAtomicWithEvidence performs the side effect under the existing
+// policy-store execution lock and refuses to report successful completion
+// unless the resulting ledger evidence can be materialized and independently
+// verified.
+func (g *DecisionGateway) ExecuteAtomicWithEvidence(req AuthorizeRequest, result DecisionResult, sideEffect func() error) (ExecutionEvidence, error) {
+	execResult, event := g.ExecuteAtomic(req, result, sideEffect)
+	if execResult.Status != DecisionAllow || event.EventType != "EXECUTION_ALLOWED" {
+		return ExecutionEvidence{Result: execResult, Event: event}, fmt.Errorf("execution did not complete successfully: %s", execResult.Message)
+	}
+	bundle, err := g.Ledger.BuildEvidence(execResult.DecisionID)
+	if err != nil {
+		return ExecutionEvidence{Result: execResult, Event: event}, fmt.Errorf("build execution evidence: %w", err)
+	}
+	verification := VerifyEvidence(bundle)
+	if verification.Result != "PASS" {
+		return ExecutionEvidence{Result: execResult, Event: event, Evidence: bundle}, fmt.Errorf("execution evidence verification failed: %v", verification.Issues)
+	}
+	return ExecutionEvidence{Result: execResult, Event: event, Evidence: bundle}, nil
+}
+
 // String is a concise human-readable summary for the decision gateway.
 func (g *DecisionGateway) String() string {
 	if g == nil {
