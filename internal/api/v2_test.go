@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 )
 
@@ -83,13 +84,63 @@ func TestV2InvalidCursorUsesRFC7807(t *testing.T) {
 
 func TestV2IdempotencyRequiresKeyForMutation(t *testing.T) {
 	s := NewServer(":0", &AuthConfig{Enabled: false})
-	req := httptest.NewRequest(http.MethodPost, "/api/v2/unknown", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
 	rec := httptest.NewRecorder()
-	s.Handler().ServeHTTP(rec, req)
+	s.v2IdempotencyMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("mutation handler must not run without Idempotency-Key")
+	})).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
 	if rec.Header().Get("Content-Type") != "application/problem+json" {
 		t.Fatalf("content-type=%q", rec.Header().Get("Content-Type"))
+	}
+}
+
+func TestV2IdempotencyReplaysIdenticalMutationAndRejectsKeyReuse(t *testing.T) {
+	v2Idempotency.Lock()
+	v2Idempotency.items = make(map[string]idempotencyEntry)
+	v2Idempotency.Unlock()
+
+	var calls atomic.Int32
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{"accepted":true}`))
+	})
+	middleware := (&Server{}).v2IdempotencyMiddleware(handler)
+
+	first := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	middleware.ServeHTTP(first, req)
+
+	second := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	middleware.ServeHTTP(second, req)
+
+	if first.Code != http.StatusAccepted || second.Code != http.StatusAccepted {
+		t.Fatalf("statuses=%d,%d", first.Code, second.Code)
+	}
+	if first.Body.String() != second.Body.String() || first.Header().Get("Content-Type") != second.Header().Get("Content-Type") {
+		t.Fatalf("replay differs: first=%q second=%q", first.Body.String(), second.Body.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls=%d, want 1", calls.Load())
+	}
+
+	third := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "release-v3-7-test")
+	req.Body = http.NoBody
+	req.URL.RawQuery = "different=true"
+	middleware.ServeHTTP(third, req)
+	if third.Code != http.StatusConflict {
+		t.Fatalf("key reuse status=%d body=%s", third.Code, third.Body.String())
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls after conflicting reuse=%d, want 1", calls.Load())
 	}
 }
