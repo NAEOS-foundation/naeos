@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LANGUAGES, DEFAULT_LANG, SITE, type Lang } from "@/lib/site";
 import ControlPlaneLiveDemo from "@/components/control-plane/ControlPlaneLiveDemo";
 import PolicyChangeProof from "@/components/control-plane/PolicyChangeProof";
+import ControlPlaneDashboard from "@/components/control-plane/ControlPlaneDashboard";
 
 export function generateStaticParams() {
   return LANGUAGES.map((lang) => ({ lang }));
@@ -112,6 +113,8 @@ export default async function ControlPlanePage(props: { params: Promise<{ lang: 
           </div>
         </div>
       </section>
+
+      <ControlPlaneDashboard lang={lang} />
 
       <section className="control-plane-live-section" aria-labelledby="control-plane-live-title">
         <div className="section-heading">
