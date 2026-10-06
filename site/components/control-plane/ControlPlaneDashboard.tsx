@@ -41,7 +41,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
     if (!CONTROL_PLANE_ENDPOINT) return;
     let cancelled = false;
     setEvidenceState("loading");
-    fetch(`${CONTROL_PLANE_ENDPOINT.replace(/\\/$/, "")}/api/control-plane/evidence`, { cache: "no-store" })
+    fetch(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence`, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return (await response.json()) as EvidenceResponse;
@@ -116,7 +116,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
                 <div><dt>Agent</dt><dd>{selected.agent}</dd></div><div><dt>Policy</dt><dd>{selected.policy}</dd></div><div><dt>Capability</dt><dd>{selected.capability}</dd></div><div><dt>Reason</dt><dd>{selected.reason}</dd></div>
               </dl>
               <div className="decision-chain"><span>Request</span><b>→</b><span>Policy</span><b>→</b><span>Decision</span><b>→</b><span>Evidence</span></div>
-              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" onClick={() => selected && window.open(`${CONTROL_PLANE_ENDPOINT.replace(/\\/$/, "")}/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>View Evidence</button><button type="button" className="btn btn-secondary btn-sm">View Policy</button></div>
+              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" onClick={() => selected && window.open(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>View Evidence</button><button type="button" className="btn btn-secondary btn-sm">View Policy</button></div>
             </div>
           </div>
           <div className="control-plane-run">
