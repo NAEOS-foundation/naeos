@@ -40,12 +40,12 @@ type EvidenceBundle struct {
 
 // EvidenceVerification describes deterministic checks over the evidence lifecycle.
 type EvidenceVerification struct {
-	Result              string   `json:"result"`
-	DecisionConsistent  bool     `json:"decision_consistent"`
-	ExecutionConsistent bool     `json:"execution_consistent"`
+	Result                string   `json:"result"`
+	DecisionConsistent    bool     `json:"decision_consistent"`
+	ExecutionConsistent   bool     `json:"execution_consistent"`
 	ObservationConsistent bool     `json:"observation_consistent"`
-	LedgerIntegrity     bool     `json:"ledger_integrity"`
-	Issues              []string `json:"issues,omitempty"`
+	LedgerIntegrity       bool     `json:"ledger_integrity"`
+	Issues                []string `json:"issues,omitempty"`
 }
 
 // BuildEvidence materializes a canonical evidence bundle for one decision.
@@ -173,10 +173,11 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 
 func (l *Ledger) verifyEvidenceBundle(bundle EvidenceBundle) EvidenceVerification {
 	v := EvidenceVerification{
-		Result:              "PASS",
-		DecisionConsistent:  true,
-		ExecutionConsistent: true,
-		LedgerIntegrity:     true,
+		Result:                "PASS",
+		DecisionConsistent:    true,
+		ExecutionConsistent:   true,
+		ObservationConsistent: true,
+		LedgerIntegrity:       true,
 	}
 
 	if bundle.DecisionEvent.DecisionID != bundle.DecisionID ||
