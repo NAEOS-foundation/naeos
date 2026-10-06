@@ -167,6 +167,18 @@ jobs:
           name: governance-boundary-benchmark-${{ github.sha }}
           path: ${{ runner.temp }}/naeos-governance-benchmark/
 
+  evidence-tampering:
+    name: Evidence Tampering Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run evidence tampering benchmark
+        run: go run ./experiments/evidence-tampering-v1
+
   bench-gate:
     name: Benchmark Gate
     runs-on: ubuntu-latest
@@ -434,6 +446,7 @@ jobs:
       - level3-evidence
       - ai-agent-policy-boundary
       - bench-gate
+      - evidence-tampering
       - vulncheck
       - coverage
       - supabase-integration
@@ -455,6 +468,7 @@ jobs:
           LEVEL3: ${{ needs['level3-evidence'].result }}
           POLICY: ${{ needs['ai-agent-policy-boundary'].result }}
           BENCH: ${{ needs['bench-gate'].result }}
+          EVIDENCE_TAMPERING: ${{ needs['evidence-tampering'].result }}
           VULNCHECK: ${{ needs.vulncheck.result }}
           COVERAGE: ${{ needs.coverage.result }}
           SUPABASE: ${{ needs['supabase-integration'].result }}
@@ -467,7 +481,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
