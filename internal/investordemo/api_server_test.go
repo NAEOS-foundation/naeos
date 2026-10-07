@@ -433,8 +433,8 @@ func TestAPIControlPlaneRuns(t *testing.T) {
 	if run.ID == "" || run.ExecutionID == "" || run.DecisionID == "" || run.AgentID == "" || run.Capability == "" {
 		t.Fatalf("expected populated run identity fields, got %+v", run)
 	}
-	if run.Status != "VERIFIED" || run.Verification != "PASS" {
-		t.Fatalf("expected verified run state, got %+v", run)
+	if run.Status != "EXECUTING" || run.Verification != "" {
+		t.Fatalf("expected executing run state before side-effect observation, got %+v", run)
 	}
 
 	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/runs", "")
