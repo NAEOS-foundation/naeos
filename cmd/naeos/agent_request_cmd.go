@@ -16,7 +16,7 @@ import (
 
 func newAgentRequestCommand() *cobra.Command {
 	var requestJSON, requestFile, adapterName, outputFmt string
-	var sessionID, storePath string
+	var sessionID, storePath, invocationID string
 
 	cmd := &cobra.Command{
 		Use:   "request",
@@ -44,7 +44,7 @@ Example:
 			}
 			cp := control.New(reg)
 			sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{})
-			gw := gateway.New(cp, sb)
+			gw := gateway.New(cp, sb, gateway.WithReplayProtection(true))
 
 			if adapterName == "" {
 				adapterName = "json"
@@ -61,6 +61,9 @@ Example:
 			req, err := adapter.NormalizeTool(raw)
 			if err != nil {
 				return fmt.Errorf("normalize agent request: %w", err)
+			}
+			if invocationID != "" {
+				req.InvocationID = invocationID
 			}
 			result, err := gw.Authorize(req)
 			if err != nil {
@@ -112,6 +115,7 @@ Example:
 	cmd.Flags().StringVar(&adapterName, "adapter", "json", "agent adapter: json or codex")
 	cmd.Flags().StringVar(&sessionID, "session-id", "", "persist the decision and execution in an agent session")
 	cmd.Flags().StringVar(&storePath, "store-path", "", "path to the agent session store JSON file")
+	cmd.Flags().StringVar(&invocationID, "invocation-id", "", "unique invocation identity used for replay protection")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
