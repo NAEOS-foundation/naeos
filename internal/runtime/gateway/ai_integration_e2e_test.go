@@ -215,7 +215,7 @@ func TestCodexGovernedExecutionJSONEnvelopeEndToEnd(t *testing.T) {
 type e2eStaleAuthorizationControlPlane struct {
 	inner    *control.ControlPlane
 	registry *policy.Registry
-	mutated  bool
+	validations int
 }
 
 func (c *e2eStaleAuthorizationControlPlane) Evaluate(req control.Request) (control.DecisionRecord, error) {
@@ -223,8 +223,8 @@ func (c *e2eStaleAuthorizationControlPlane) Evaluate(req control.Request) (contr
 }
 
 func (c *e2eStaleAuthorizationControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
-	if !c.mutated {
-		c.mutated = true
+	c.validations++
+	if c.validations == 2 {
 		if err := c.registry.Register(&policy.Policy{
 			ID:      "repository-write",
 			Name:    "Repository Write",
