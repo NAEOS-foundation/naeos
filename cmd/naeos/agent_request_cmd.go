@@ -76,7 +76,9 @@ Example:
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), string(encoded)); err != nil {
+					return err
+				}
 				return runtimeResultExit(result)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Agent:    %s\n", req.Actor)
