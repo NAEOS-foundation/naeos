@@ -4,6 +4,8 @@
 package investordemo
 
 import (
+	"crypto/ed25519"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,16 +22,19 @@ import (
 // ============================================================================
 
 type APIServer struct {
-	setup    *DemoSetup
-	mux      *http.ServeMux
-	security *controlPlaneSecurity
+	setup              *DemoSetup
+	mux                *http.ServeMux
+	security           *controlPlaneSecurity
+	trustedEvidenceKey ed25519.PublicKey
 }
 
 // NewAPIServer creates a new API server for the demo.
 func NewAPIServer(setup *DemoSetup) *APIServer {
+	trustedEvidenceKey := loadTrustedEvidenceKey()
 	server := &APIServer{
-		setup: setup,
-		mux:   http.NewServeMux(),
+		setup:              setup,
+		trustedEvidenceKey: trustedEvidenceKey,
+		mux:                http.NewServeMux(),
 		security: newControlPlaneSecurity(
 			os.Getenv("NAEOS_CONTROLPLANE_ALLOWED_ORIGINS"),
 			os.Getenv("NAEOS_CONTROLPLANE_API_TOKEN"),
@@ -58,6 +63,19 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/reset", server.handleReset)
 
 	return server
+}
+
+// loadTrustedEvidenceKey loads the operator trust anchor used to verify evidence.
+func loadTrustedEvidenceKey() ed25519.PublicKey {
+	encoded := strings.TrimSpace(os.Getenv("NAEOS_EVIDENCE_TRUSTED_PUBLIC_KEY"))
+	if encoded == "" {
+		return nil
+	}
+	key, err := base64.RawStdEncoding.DecodeString(encoded)
+	if err != nil || len(key) != ed25519.PublicKeySize {
+		return nil
+	}
+	return ed25519.PublicKey(key)
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -397,7 +415,13 @@ func (as *APIServer) handleControlPlaneEvidence(w http.ResponseWriter, r *http.R
 		if err != nil {
 			continue
 		}
-		bundle.Verification = controlplane.VerifyEvidence(bundle)
+		if len(as.trustedEvidenceKey) == ed25519.PublicKeySize {
+			bundle.Verification = controlplane.VerifyEvidenceWithTrustedKey(bundle, as.trustedEvidenceKey)
+		} else {
+			bundle.Verification = controlplane.VerifyEvidence(bundle)
+			bundle.Verification.Result = "UNTRUSTED"
+			bundle.Verification.Issues = append(bundle.Verification.Issues, "trusted evidence signing key is not configured")
+		}
 		bundles = append(bundles, bundle)
 	}
 
