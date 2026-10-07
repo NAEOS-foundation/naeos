@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 // ============================================================================
@@ -470,6 +472,151 @@ func TestExecutionGate_AuthorizedExecution(t *testing.T) {
 
 	if !result.Executed {
 		t.Errorf("Expected execution to proceed")
+	}
+}
+
+func TestExecutionGate_CompletesEvidenceLifecycle(t *testing.T) {
+	setup := SetupDemoEnvironment()
+
+	request := &ExecutionRequest{
+		RequestID:  generateID("REQ"),
+		AgentID:    "agent-payment-01",
+		Capability: "repository.read",
+		Payload:    map[string]interface{}{"file": "payment_service.go"},
+	}
+
+	result, err := setup.ExecutionGate.Authorize(request)
+	if err != nil {
+		t.Fatalf("unexpected authorization error: %v", err)
+	}
+	if !result.Authorized || !result.Executed {
+		t.Fatalf("expected execution to complete, got %#v", result)
+	}
+	if result.DecisionID == "" || result.ExecutionID == "" || result.EvidenceID == "" {
+		t.Fatalf("expected decision/execution/evidence correlation, got %#v", result)
+	}
+	if result.VerificationStatus != "PASS" {
+		t.Fatalf("expected PASS verification, got %s", result.VerificationStatus)
+	}
+
+	events := setup.ControlPlaneGateway.Ledger.Query(map[string]string{
+		"execution_id": result.ExecutionID,
+	})
+	var observed bool
+	for _, event := range events {
+		if event.EventType == "SIDE_EFFECT_OBSERVED" {
+			observed = true
+			if event.DecisionID != result.DecisionID {
+				t.Fatalf("observation decision mismatch: %#v", event)
+			}
+			if event.ExecutionID != result.ExecutionID {
+				t.Fatalf("observation execution mismatch: %#v", event)
+			}
+			if event.Metadata["verification"] != "PASS" {
+				t.Fatalf("expected PASS observation metadata, got %#v", event.Metadata)
+			}
+		}
+	}
+	if !observed {
+		t.Fatalf("expected SIDE_EFFECT_OBSERVED event for %s", result.ExecutionID)
+	}
+
+	bundle, err := setup.ControlPlaneGateway.Ledger.BuildEvidence(result.DecisionID)
+	if err != nil {
+		t.Fatalf("build evidence: %v", err)
+	}
+	if bundle.ExecutionID != result.ExecutionID {
+		t.Fatalf("evidence execution mismatch: %#v", bundle)
+	}
+	if bundle.ObservationEvent == nil || bundle.ObservationEvent.ExecutionID != result.ExecutionID {
+		t.Fatalf("missing correlated observation evidence: %#v", bundle.ObservationEvent)
+	}
+	if verification := controlplane.VerifyEvidence(bundle); verification.Result != "PASS" {
+		t.Fatalf("expected evidence verification PASS, got %#v", verification)
+	}
+}
+
+func TestExecutionGate_BlockedExecutionHasNoObservation(t *testing.T) {
+	setup := SetupDemoEnvironment()
+
+	request := &ExecutionRequest{
+		RequestID:  generateID("REQ"),
+		AgentID:    "agent-payment-01",
+		Capability: "credential.rotate",
+		Payload:    map[string]interface{}{"key": "prod-api-key"},
+	}
+
+	result, err := setup.ExecutionGate.Authorize(request)
+	if err != nil {
+		t.Fatalf("unexpected authorization error: %v", err)
+	}
+	if result.Authorized || result.Executed {
+		t.Fatalf("expected blocked execution, got %#v", result)
+	}
+
+	for _, event := range setup.ControlPlaneGateway.Ledger.Events() {
+		if event.ExecutionID != "" && event.DecisionID == result.DecisionID && event.EventType == "SIDE_EFFECT_OBSERVED" {
+			t.Fatalf("blocked decision produced observation evidence: %#v", event)
+		}
+	}
+}
+
+func TestExecutionGate_HandoffEvidenceCorrelation(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	payload := map[string]interface{}{"action": "read-repository"}
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-payment-01",
+		Recipient:              "agent-secondary-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                payload,
+		PayloadDigest:          calculatePayloadDigest(payload),
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-payment-01", "destination": "agent-secondary-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: generateNonce(), Timestamp: time.Now().UTC()},
+	}
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
+
+	result, err := setup.ExecutionGate.Authorize(&ExecutionRequest{
+		RequestID:       generateID("REQ"),
+		AgentID:         "agent-payment-01",
+		Capability:      "repository.read",
+		Payload:         payload,
+		HandoffContract: contract,
+	})
+	if err != nil {
+		t.Fatalf("unexpected execution error: %v", err)
+	}
+	if !result.Authorized || !result.Executed {
+		t.Fatalf("expected authorized execution, got authorized=%v executed=%v error=%s", result.Authorized, result.Executed, result.Error)
+	}
+	if result.DecisionID == "" || result.ExecutionID == "" || result.EvidenceID == "" {
+		t.Fatalf("expected decision, execution, and evidence IDs, got decision=%q execution=%q evidence=%q", result.DecisionID, result.ExecutionID, result.EvidenceID)
+	}
+	if result.HandoffValidationID == "" {
+		t.Fatal("expected handoff validation ID to be correlated with execution")
+	}
+
+	var correlated *AuditEvent
+	for _, event := range setup.AuditLedger.GetEvents() {
+		if event.EventType == "HANDOFF_EXECUTION_CORRELATED" {
+			correlated = event
+			break
+		}
+	}
+	if correlated == nil {
+		t.Fatal("expected handoff execution correlation audit event")
+	}
+	if correlated.HandoffValidationID != result.HandoffValidationID ||
+		correlated.DecisionID != result.DecisionID ||
+		correlated.ExecutionID != result.ExecutionID ||
+		correlated.EvidenceID != result.EvidenceID {
+		t.Fatalf("correlation mismatch: handoff=%q decision=%q execution=%q evidence=%q", correlated.HandoffValidationID, correlated.DecisionID, correlated.ExecutionID, correlated.EvidenceID)
 	}
 }
 

@@ -81,6 +81,9 @@ func newRuntimeBridgeCommand() *cobra.Command {
 			gw := gateway.New(cp, sb, gateway.WithObserver(filesystemObserver{root: root}))
 			adapter := gateway.JSONToolAdapter{}
 			gw.RegisterAdapter(adapter.Name(), adapter)
+			if err := gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+				return err
+			}
 
 			in := bufio.NewScanner(cmd.InOrStdin())
 			out := cmd.OutOrStdout()
