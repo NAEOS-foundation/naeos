@@ -223,6 +223,10 @@ func (s *Sandbox) buildEnv() []string {
 		"NAEOS_SANDBOX=1",
 		fmt.Sprintf("NAEOS_TIMEOUT=%s", s.timeout),
 	}
-	env = append(env, os.Environ()...)
+	for _, key := range s.allowedEnv {
+		if value, ok := os.LookupEnv(key); ok {
+			env = append(env, key+"="+value)
+		}
+	}
 	return env
 }
