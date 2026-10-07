@@ -45,7 +45,7 @@ func (s conformanceReplayStore) Claim(string) (bool, error) {
 }
 
 type conformanceAdapter struct {
-	request  ToolRequest
+	request    ToolRequest
 	decisions []ExecutionResult
 }
 
