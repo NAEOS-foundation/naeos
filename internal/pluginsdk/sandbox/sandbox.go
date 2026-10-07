@@ -121,7 +121,7 @@ func (s *Sandbox) Exec(ctx context.Context, pluginPath string, req Request) (*Re
 }
 
 func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*Response, error) {
-	rt := wasm.NewWASMRuntime(s.timeout, 0)
+	rt := wasm.NewWASMRuntime(s.timeout, s.maxMemory)
 	defer rt.Close()
 
 	plugin, err := rt.Load(wasmPath)
