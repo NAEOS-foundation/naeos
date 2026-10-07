@@ -84,44 +84,26 @@ func (l *Ledger) PersistenceError() error {
 
 // Save persists the ledger as a JSON snapshot using an atomic rename.
 func (l *Ledger) Save(path string) error {
-	if l == nil {
-		return fmt.Errorf("ledger unavailable")
-	}
-	if path == "" {
-		return fmt.Errorf("ledger path is required")
-	}
-	data, err := json.Marshal(l.Events())
-	if err != nil {
-		return fmt.Errorf("marshal ledger: %w", err)
-	}
+	if l == nil { return fmt.Errorf("ledger unavailable") }
+	if path == "" { return fmt.Errorf("ledger path is required") }
+	return saveLedgerEvents(path, l.Events())
+}
+
+func saveLedgerEvents(path string, events []LedgerEvent) error {
+	if path == "" { return fmt.Errorf("ledger path is required") }
+	data, err := json.Marshal(events)
+	if err != nil { return fmt.Errorf("marshal ledger: %w", err) }
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o750); err != nil {
-		return fmt.Errorf("create ledger directory: %w", err)
-	}
+	if err := os.MkdirAll(dir, 0o750); err != nil { return fmt.Errorf("create ledger directory: %w", err) }
 	tmp, err := os.CreateTemp(dir, ".ledger-*.tmp")
-	if err != nil {
-		return fmt.Errorf("create ledger snapshot: %w", err)
-	}
+	if err != nil { return fmt.Errorf("create ledger snapshot: %w", err) }
 	tmpName := tmp.Name()
 	defer os.Remove(tmpName)
-	if err := tmp.Chmod(0o600); err != nil {
-		_ = tmp.Close()
-		return fmt.Errorf("protect ledger snapshot: %w", err)
-	}
-	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
-		return fmt.Errorf("write ledger snapshot: %w", err)
-	}
-	if err := tmp.Sync(); err != nil {
-		_ = tmp.Close()
-		return fmt.Errorf("sync ledger snapshot: %w", err)
-	}
-	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("close ledger snapshot: %w", err)
-	}
-	if err := os.Rename(tmpName, path); err != nil {
-		return fmt.Errorf("commit ledger snapshot: %w", err)
-	}
+	if err := tmp.Chmod(0o600); err != nil { _ = tmp.Close(); return fmt.Errorf("protect ledger snapshot: %w", err) }
+	if _, err := tmp.Write(data); err != nil { _ = tmp.Close(); return fmt.Errorf("write ledger snapshot: %w", err) }
+	if err := tmp.Sync(); err != nil { _ = tmp.Close(); return fmt.Errorf("sync ledger snapshot: %w", err) }
+	if err := tmp.Close(); err != nil { return fmt.Errorf("close ledger snapshot: %w", err) }
+	if err := os.Rename(tmpName, path); err != nil { return fmt.Errorf("commit ledger snapshot: %w", err) }
 	return nil
 }
 
@@ -159,34 +141,29 @@ func LoadLedger(path string) (*Ledger, error) {
 	return ledger, nil
 }
 
-// Append adds an event to the ledger. It is always append-only and uses a monotonic event ID.
+// Append adds an event to the ledger. When persistence is configured, the event
+// becomes visible only after its snapshot has been durably committed.
 func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
+	if l == nil { return LedgerEvent{} }
 	l.mu.Lock()
-	l.nextID++
-	if event.ID == "" {
-		event.ID = fmt.Sprintf("EVT-%05d", l.nextID)
-	}
-	if event.Timestamp.IsZero() {
-		event.Timestamp = time.Now().UTC()
-	}
-	if len(l.events) > 0 {
-		event.PreviousHash = l.events[len(l.events)-1].EventHash
-	}
+	defer l.mu.Unlock()
+	nextID := l.nextID + 1
+	if event.ID == "" { event.ID = fmt.Sprintf("EVT-%05d", nextID) }
+	if event.Timestamp.IsZero() { event.Timestamp = time.Now().UTC() }
+	if len(l.events) > 0 { event.PreviousHash = l.events[len(l.events)-1].EventHash }
 	event.EventHash = hashLedgerEvent(event)
-	l.events = append(l.events, event)
-	path := l.persistencePath
-	l.mu.Unlock()
-	if path != "" {
-		if err := l.Save(path); err != nil {
-			l.mu.Lock()
+	if l.persistencePath != "" {
+		snapshot := make([]LedgerEvent, len(l.events)+1)
+		copy(snapshot, l.events)
+		snapshot[len(l.events)] = event
+		if err := saveLedgerEvents(l.persistencePath, snapshot); err != nil {
 			l.lastPersistenceError = err
-			l.mu.Unlock()
-		} else {
-			l.mu.Lock()
-			l.lastPersistenceError = nil
-			l.mu.Unlock()
+			return LedgerEvent{}
 		}
 	}
+	l.nextID = nextID
+	l.events = append(l.events, event)
+	l.lastPersistenceError = nil
 	return event
 }
 
