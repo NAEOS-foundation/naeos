@@ -1,0 +1,14 @@
+{
+  "capability": "repository.write",
+  "tool": "file-edit",
+  "action": "write",
+  "resource": "src/app.go",
+  "environment": "development",
+  "actor": "codex",
+  "payload": {
+    "operation": "replace"
+  },
+  "context": {
+    "task_id": "demo-agent-task-001"
+  }
+}
