@@ -200,3 +200,81 @@ func TestEvaluateEvaluatorErrorFailsClosed(t *testing.T) {
 		t.Fatalf("expected evaluator error in decision evidence, got %#v", rec.Reasons)
 	}
 }
+
+func TestEvaluateBindsCapabilityGrantDigest(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	rec, err := c.Evaluate(Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rec.GrantDigest == "" {
+		t.Fatal("expected authorization grant digest")
+	}
+	if !grantDigestMatches(rec) {
+		t.Fatal("expected grant digest to bind the issued authorization identity")
+	}
+}
+
+func TestValidateDecisionRejectsTamperedCapabilityGrant(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+
+	issued.Request.Capability = "repository.admin"
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected tampered grant to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsTamperedGrantDigest(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+
+	issued.GrantDigest = "tampered"
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected tampered grant digest to be rejected")
+	}
+}
