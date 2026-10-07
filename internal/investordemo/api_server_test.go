@@ -401,7 +401,7 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 func TestAPIControlPlaneRuns(t *testing.T) {
 	as, _ := newTestAPI(t)
 
-	rec := doJSON(t, as, http.MethodPost, "/api/execute", 
+	rec := doJSON(t, as, http.MethodPost, "/api/execute",
 		`{"agent_id":"agent-payment-01","capability":"repository.write","payload":{"file":"runs.go"}}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected execution 200, got %d: %s", rec.Code, rec.Body.String())
