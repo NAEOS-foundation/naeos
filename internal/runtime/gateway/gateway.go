@@ -23,14 +23,14 @@ type ToolRequest struct {
 	InvocationID string
 	// Capability is the normalized capability requested by the agent.
 	// It is authorization-bound and must not be widened downstream.
-	Capability   string
-	Tool         string
-	Action       string
-	Resource     string
-	Environment  string
-	Actor        string
-	Payload      map[string]any
-	Context      map[string]any
+	Capability  string
+	Tool        string
+	Action      string
+	Resource    string
+	Environment string
+	Actor       string
+	Payload     map[string]any
+	Context     map[string]any
 }
 
 // ExecutionResult records the outcome of an authorized tool execution.
@@ -55,17 +55,17 @@ type Observer interface {
 
 type ExecutionResult struct {
 	InvocationID string
-	Request     ToolRequest
-	Decision    control.Decision
-	PolicyID    string
-	RuleID      string
-	Status      string // "completed", "denied", "failed", "skipped"
-	Output      string
-	Hash        string // SHA-256 of output/payload
-	Duration    time.Duration
-	Timestamp   time.Time
-	Reasons     []string
-	Observation *Observation
+	Request      ToolRequest
+	Decision     control.Decision
+	PolicyID     string
+	RuleID       string
+	Status       string // "completed", "denied", "failed", "skipped"
+	Output       string
+	Hash         string // SHA-256 of output/payload
+	Duration     time.Duration
+	Timestamp    time.Time
+	Reasons      []string
+	Observation  *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
