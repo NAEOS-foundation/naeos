@@ -67,6 +67,7 @@ func (ReferenceExternalAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 	context["request_id"] = envelope.RequestID
 
 	return ToolRequest{
+		RequestID:    envelope.RequestID,
 		InvocationID: envelope.InvocationID,
 		Capability:   envelope.Capability,
 		Tool:         envelope.Tool,

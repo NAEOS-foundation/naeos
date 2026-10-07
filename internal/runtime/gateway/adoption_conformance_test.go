@@ -74,6 +74,7 @@ func TestExternalAgentConformanceAllowedRequest(t *testing.T) {
 	gw := New(cp, sb, WithReplayProtection(true))
 
 	result, err := gw.Authorize(ToolRequest{
+		RequestID:    "request-conformance-allow-01",
 		InvocationID: "conformance-allow-01",
 		Tool:         "file-edit",
 		Action:       "write",
@@ -84,7 +85,7 @@ func TestExternalAgentConformanceAllowedRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("allowed request returned error: %v", err)
 	}
-	if result.Status != "completed" || result.Decision != control.DecisionAllow {
+	if result.Status != "completed" || result.Decision != control.DecisionAllow || result.RequestID != "request-conformance-allow-01" || result.Request.RequestID != "request-conformance-allow-01" {
 		t.Fatalf("expected governed ALLOW/completed result, got %+v", result)
 	}
 	if sb.Count() != 1 {

@@ -43,6 +43,7 @@ func (CodexToolAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 		action = "execute"
 	}
 	return ToolRequest{
+		RequestID:    stringValue(args["request_id"]),
 		InvocationID: stringValue(args["invocation_id"]),
 		Capability:   stringValue(args["capability"]),
 		Tool:         name,
