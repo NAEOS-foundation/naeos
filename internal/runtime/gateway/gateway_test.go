@@ -773,8 +773,8 @@ func TestGatewayReplayProtectionAllowsDistinctInvocations(t *testing.T) {
 	for _, id := range []string{"inv-001", "inv-002"} {
 		result, err := gw.Authorize(ToolRequest{
 			InvocationID: id,
-			Tool:        "filesystem",
-			Action:      "write",
+			Tool:         "filesystem",
+			Action:       "write",
 		})
 		if err != nil {
 			t.Fatalf("invocation %s failed: %v", id, err)
