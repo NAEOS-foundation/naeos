@@ -48,6 +48,9 @@ type DecisionRecord struct {
 	Reasons       []string
 	Timestamp     time.Time
 	Deterministic bool
+	// ExpiresAt bounds how long the issued authority remains usable. A zero
+	// value means the control plane has no configured grant TTL.
+	ExpiresAt time.Time
 	// GrantDigest binds the exact authorization identity to this decision.
 	GrantDigest string
 }
@@ -59,9 +62,11 @@ type DecisionRecord struct {
 type ControlPlane struct {
 	registry  *policy.Registry
 	evaluator policy.Evaluator
+	grantTTL  time.Duration
 
-	mu        sync.Mutex
-	decisions []DecisionRecord
+	mu            sync.Mutex
+	decisions     []DecisionRecord
+	revokedGrants map[string]struct{}
 }
 
 // Option configures a ControlPlane.
@@ -70,13 +75,24 @@ type Option func(*ControlPlane)
 // New creates a ControlPlane over the given policy registry.
 func New(reg *policy.Registry, opts ...Option) *ControlPlane {
 	c := &ControlPlane{
-		registry:  reg,
-		evaluator: policy.NewEvaluator(),
+		registry:      reg,
+		evaluator:     policy.NewEvaluator(),
+		revokedGrants: make(map[string]struct{}),
 	}
 	for _, o := range opts {
 		o(c)
 	}
 	return c
+}
+
+// WithGrantTTL configures a finite lifetime for newly issued authorization
+// grants. A non-positive TTL leaves grants without an expiry.
+func WithGrantTTL(ttl time.Duration) Option {
+	return func(c *ControlPlane) {
+		if ttl > 0 {
+			c.grantTTL = ttl
+		}
+	}
 }
 
 // Evaluate issues a deterministic decision for a request. It returns the
@@ -99,6 +115,9 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 			Timestamp:     time.Now().UTC(),
 			Deterministic: true,
 		}
+		if c.grantTTL > 0 {
+			rec.ExpiresAt = rec.Timestamp.Add(c.grantTTL)
+		}
 		if err := bindGrantDigest(&rec); err != nil {
 			return DecisionRecord{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to bind authorization grant")
 		}
@@ -108,7 +127,11 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 
 	// Aggregate over all matching policies. Deny always wins; approval outranks
 	// allow. Ties are broken by strictest decision regardless of policy order.
-	worstRec := DecisionRecord{Request: req, Deterministic: true, Timestamp: time.Now().UTC()}
+	now := time.Now().UTC()
+	worstRec := DecisionRecord{Request: req, Deterministic: true, Timestamp: now}
+	if c.grantTTL > 0 {
+		worstRec.ExpiresAt = now.Add(c.grantTTL)
+	}
 	var evalErrors []string
 
 	for _, pol := range policies {
@@ -127,6 +150,11 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 		// to a policy default or allow execution after an evaluation error.
 		worstRec.Decision = DecisionDeny
 		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
+	}
+	// The strictest policy record may replace worstRec, so restore the
+	// configured grant lifetime before binding the final authorization identity.
+	if c.grantTTL > 0 {
+		worstRec.ExpiresAt = now.Add(c.grantTTL)
 	}
 	if err := bindGrantDigest(&worstRec); err != nil {
 		return DecisionRecord{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to bind authorization grant")
@@ -259,15 +287,49 @@ func (c *ControlPlane) record(rec DecisionRecord) {
 	c.decisions = append(c.decisions, rec)
 }
 
+// RevokeGrant permanently invalidates a previously issued grant.
+func (c *ControlPlane) RevokeGrant(grantDigest string) error {
+	if strings.TrimSpace(grantDigest) == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "grant digest is required")
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.revokedGrants[grantDigest] = struct{}{}
+	return nil
+}
+
+func (c *ControlPlane) grantRevoked(grantDigest string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, revoked := c.revokedGrants[grantDigest]
+	return revoked
+}
+
 // ValidateDecision re-evaluates a decision immediately before execution and
-// rejects it if the active policy identity, version, rule, or decision changed.
+// rejects it if the grant is expired/revoked or the active policy identity,
+// version, rule, or decision changed.
 func (c *ControlPlane) ValidateDecision(req Request, issued DecisionRecord) (DecisionRecord, error) {
+	if issued.GrantDigest == "" || !grantDigestMatches(issued) {
+		return issued, naeoserr.New(naeoserr.ErrConflict, "authorization grant integrity check failed")
+	}
+	if c.grantRevoked(issued.GrantDigest) {
+		return issued, naeoserr.New(naeoserr.ErrConflict, "authorization grant revoked")
+	}
+	if !issued.ExpiresAt.IsZero() && !time.Now().UTC().Before(issued.ExpiresAt) {
+		return issued, naeoserr.New(naeoserr.ErrConflict, "authorization grant expired")
+	}
+
 	current, err := c.Evaluate(req)
 	if err != nil {
 		return DecisionRecord{}, err
 	}
-	if issued.GrantDigest == "" || !grantDigestMatches(issued) || current.GrantDigest == "" || !grantDigestMatches(current) ||
-		current.GrantDigest != issued.GrantDigest ||
+	// Reuse the issued expiry for the current policy identity. A fresh
+	// Evaluate call must not mint a new lifetime during revalidation.
+	current.ExpiresAt = issued.ExpiresAt
+	if err := bindGrantDigest(&current); err != nil {
+		return DecisionRecord{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to rebind authorization grant")
+	}
+	if current.GrantDigest != issued.GrantDigest ||
 		current.Request.Capability != issued.Request.Capability ||
 		current.Request.Resource != issued.Request.Resource ||
 		current.Request.Action != issued.Request.Action ||
