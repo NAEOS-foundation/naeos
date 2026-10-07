@@ -20,6 +20,8 @@ type RuntimeEvent struct {
 	PayloadDigest string
 	Sequence      int
 	Timestamp     time.Time
+	PreviousHash  string
+	EventHash     string
 }
 
 // RuntimeEventProducer is the lifecycle-facing capability for publishing
@@ -120,6 +122,10 @@ func (s *RuntimeEventStore) Append(runID, name, payloadDigest string, sequence i
 		Sequence:      sequence,
 		Timestamp:     time.Now().UTC(),
 	}
+	if len(s.events) > 0 {
+		event.PreviousHash = s.events[len(s.events)-1].EventHash
+	}
+	event.EventHash = hashRuntimeEvent(event)
 	s.events = append(s.events, event)
 	return event, nil
 }
@@ -153,6 +159,12 @@ func (s *RuntimeEventStore) ByID(id string) *RuntimeEvent {
 }
 
 // Verify checks event identities against their canonical contents.
+func hashRuntimeEvent(event RuntimeEvent) string {
+	data := fmt.Sprintf("naeos:runtime-event-chain:v1:%s:%s:%s:%d:%s", event.RunID, event.Name, event.PayloadDigest, event.Sequence, event.PreviousHash)
+	h := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", h[:])
+}
+
 func (s *RuntimeEventStore) Verify() error {
 	if s == nil {
 		return fmt.Errorf("runtime event store is nil")
@@ -164,6 +176,15 @@ func (s *RuntimeEventStore) Verify() error {
 		expected := fmt.Sprintf("evt-%x", h[:])
 		if event.ID != expected {
 			return fmt.Errorf("runtime event identity mismatch at index %d", i)
+		}
+		if i == 0 && event.PreviousHash != "" {
+			return fmt.Errorf("runtime event first record has unexpected previous hash")
+		}
+		if i > 0 && event.PreviousHash != s.events[i-1].EventHash {
+			return fmt.Errorf("runtime event hash chain mismatch at index %d", i)
+		}
+		if event.EventHash != hashRuntimeEvent(event) {
+			return fmt.Errorf("runtime event hash mismatch at index %d", i)
 		}
 	}
 	return nil

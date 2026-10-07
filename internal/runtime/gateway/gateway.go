@@ -17,6 +17,12 @@ import (
 // specific tool or resource. Every request must pass through the execution
 // gateway before reaching the runtime.
 type ToolRequest struct {
+	// RequestID identifies the logical request across adapter, authorization, execution, and evidence.
+	RequestID string
+	// InvocationID uniquely identifies one intended execution. When replay
+	// protection is enabled, the gateway consumes it atomically before the
+	// sandbox side effect and rejects reuse.
+	InvocationID string
 	// Capability is the normalized capability requested by the agent.
 	// It is authorization-bound and must not be widened downstream.
 	Capability  string
@@ -50,17 +56,19 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	Request     ToolRequest
-	Decision    control.Decision
-	PolicyID    string
-	RuleID      string
-	Status      string // "completed", "denied", "failed", "skipped"
-	Output      string
-	Hash        string // SHA-256 of output/payload
-	Duration    time.Duration
-	Timestamp   time.Time
-	Reasons     []string
-	Observation *Observation
+	RequestID    string
+	InvocationID string
+	Request      ToolRequest
+	Decision     control.Decision
+	PolicyID     string
+	RuleID       string
+	Status       string // "completed", "denied", "failed", "skipped"
+	Output       string
+	Hash         string // SHA-256 of output/payload
+	Duration     time.Duration
+	Timestamp    time.Time
+	Reasons      []string
+	Observation  *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -117,6 +125,22 @@ func WithObserver(observer Observer) Option {
 	return func(g *ExecutionGateway) { g.observer = observer }
 }
 
+// WithReplayProtection enables atomic invocation-id replay protection. When
+// enabled, every execution request must provide a non-empty InvocationID.
+func WithReplayProtection(enabled bool) Option {
+	return func(g *ExecutionGateway) { g.replayProtection = enabled }
+}
+
+// WithInvocationStore installs the persistence boundary used to consume
+// invocation identities.
+func WithInvocationStore(store InvocationStore) Option {
+	return func(g *ExecutionGateway) {
+		if store != nil {
+			g.invocationStore = store
+		}
+	}
+}
+
 // ExecutionGateway is the single enforcement boundary between agent intent
 // and tool execution. Every tool invocation must pass through this gateway,
 // which evaluates the request against registered policies before allowing
@@ -135,18 +159,21 @@ type ExecutionGateway struct {
 	adapters     map[string]AgentAdapter
 	restrictions []Restriction
 
-	mu         sync.RWMutex
-	history    []ExecutionResult
-	failClosed bool
+	mu               sync.RWMutex
+	history          []ExecutionResult
+	invocationStore  InvocationStore
+	replayProtection bool
+	failClosed       bool
 }
 
 // New creates an ExecutionGateway with the given control plane and sandbox.
 func New(cp ControlPlane, sb Sandbox, opts ...Option) *ExecutionGateway {
 	g := &ExecutionGateway{
-		controlPlane: cp,
-		sandbox:      sb,
-		adapters:     make(map[string]AgentAdapter),
-		failClosed:   true,
+		controlPlane:    cp,
+		sandbox:         sb,
+		adapters:        make(map[string]AgentAdapter),
+		invocationStore: NewInMemoryInvocationStore(),
+		failClosed:      true,
 	}
 	for _, o := range opts {
 		o(g)
@@ -186,6 +213,9 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	}
 
 	start := time.Now()
+	if g.replayProtection && req.InvocationID == "" {
+		return ExecutionResult{}, naeoserr.New(naeoserr.ErrValidation, "invocation id is required when replay protection is enabled")
+	}
 
 	// Derive resource and action from tool name when not explicitly set.
 	resource := req.Resource
@@ -211,12 +241,14 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	}
 
 	result := ExecutionResult{
-		Request:   req,
-		Decision:  rec.Decision,
-		PolicyID:  rec.PolicyID,
-		RuleID:    rec.RuleID,
-		Timestamp: time.Now().UTC(),
-		Reasons:   rec.Reasons,
+		RequestID:    req.RequestID,
+		InvocationID: req.InvocationID,
+		Request:      req,
+		Decision:     rec.Decision,
+		PolicyID:     rec.PolicyID,
+		RuleID:       rec.RuleID,
+		Timestamp:    time.Now().UTC(),
+		Reasons:      rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
@@ -278,6 +310,30 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		result.PolicyID = current.PolicyID
 		result.RuleID = current.RuleID
 		result.Reasons = current.Reasons
+	}
+
+	// Atomically consume the invocation identity immediately before the side
+	// effect. This is the replay boundary: concurrent or subsequent reuse of
+	// the same invocation cannot reach the sandbox.
+	if g.replayProtection {
+		claimed, claimErr := g.claimInvocation(req.InvocationID)
+		if claimErr != nil {
+			result.Status = "denied"
+			result.Output = "invocation replay state unavailable"
+			result.Duration = time.Since(start)
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.Wrapf(claimErr, naeoserr.ErrPipeline, "invocation replay state unavailable")
+			}
+			return result, nil
+		}
+		if !claimed {
+			result.Status = "denied"
+			result.Output = "invocation already consumed"
+			result.Duration = time.Since(start)
+			g.record(result)
+			return result, nil
+		}
 	}
 
 	// Execute inside the sandbox.
@@ -372,6 +428,13 @@ func (g *ExecutionGateway) Denials() []ExecutionResult {
 		}
 	}
 	return out
+}
+
+func (g *ExecutionGateway) claimInvocation(invocationID string) (bool, error) {
+	if g.invocationStore == nil {
+		return false, fmt.Errorf("invocation replay store is not configured")
+	}
+	return g.invocationStore.Claim(invocationID)
 }
 
 func (g *ExecutionGateway) record(r ExecutionResult) {

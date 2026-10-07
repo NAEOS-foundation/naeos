@@ -30,6 +30,26 @@ func TestLedgerPersistence(t *testing.T) {
 	}
 }
 
+func TestLedgerAppendDoesNotCommitWhenPersistenceFails(t *testing.T) {
+	ledger := NewLedger()
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(blocker, "ledger.json")
+	ledger.SetPersistencePath(path)
+	if event := ledger.Append(LedgerEvent{AgentID: "agent-1", EventType: "TEST"}); event.ID != "" {
+		t.Fatalf("expected failed append to return no committed event, got %+v", event)
+	}
+	if got := ledger.Events(); len(got) != 0 {
+		t.Fatalf("expected failed append to remain invisible, got %+v", got)
+	}
+	if ledger.PersistenceError() == nil {
+		t.Fatal("expected persistence error to be recorded")
+	}
+}
+
 func TestLedgerPersistenceRejectsTampering(t *testing.T) {
 	ledger := NewLedger()
 	ledger.Append(LedgerEvent{Timestamp: time.Now().UTC(), AgentID: "agent-1", EventType: "TEST"})

@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/internal/database"
 )
 
 func TestV2Version(t *testing.T) {
@@ -142,5 +144,62 @@ func TestV2IdempotencyReplaysIdenticalMutationAndRejectsKeyReuse(t *testing.T) {
 	}
 	if calls.Load() != 1 {
 		t.Fatalf("handler calls after conflicting reuse=%d, want 1", calls.Load())
+	}
+}
+
+func TestV2IdempotencyPersistsAcrossDatabaseReconnect(t *testing.T) {
+	dbPath := t.TempDir() + "/idempotency.db"
+	db := database.NewRealSQLite()
+	if err := db.Connect(&database.Config{Database: dbPath}); err != nil {
+		t.Fatal(err)
+	}
+
+	var firstCalls atomic.Int32
+	s1 := NewServer(":0", &AuthConfig{Enabled: false})
+	s1.SetDatabase(db)
+	handler1 := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		firstCalls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"created":true}`))
+	})
+
+	first := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "durable-reconnect-test")
+	s1.v2IdempotencyMiddleware(handler1).ServeHTTP(first, req)
+	if first.Code != http.StatusCreated || firstCalls.Load() != 1 {
+		t.Fatalf("first status=%d calls=%d body=%s", first.Code, firstCalls.Load(), first.Body.String())
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	db2 := database.NewRealSQLite()
+	if err := db2.Connect(&database.Config{Database: dbPath}); err != nil {
+		t.Fatal(err)
+	}
+	defer db2.Close()
+
+	var replayCalls atomic.Int32
+	s2 := NewServer(":0", &AuthConfig{Enabled: false})
+	s2.SetDatabase(db2)
+	handler2 := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		replayCalls.Add(1)
+		t.Fatal("durable replay must not execute mutation handler")
+	})
+	second := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v2/test-mutation", nil)
+	req.Header.Set("Idempotency-Key", "durable-reconnect-test")
+	s2.v2IdempotencyMiddleware(handler2).ServeHTTP(second, req)
+
+	if second.Code != http.StatusCreated {
+		t.Fatalf("replay status=%d body=%s", second.Code, second.Body.String())
+	}
+	if second.Body.String() != first.Body.String() {
+		t.Fatalf("replay body=%q first=%q", second.Body.String(), first.Body.String())
+	}
+	if replayCalls.Load() != 0 {
+		t.Fatalf("replay handler calls=%d, want 0", replayCalls.Load())
 	}
 }
