@@ -17,7 +17,7 @@ func (CodexToolAdapter) Name() string { return "codex" }
 func (CodexToolAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 	data, ok := raw.(map[string]any)
 	if !ok {
-		return ToolRequest{}, fmt.Errorf("Codex adapter expects an object")
+		return ToolRequest{}, fmt.Errorf("codex adapter expects an object")
 	}
 	typ, _ := data["type"].(string)
 	if typ != "function_call" {
@@ -25,7 +25,7 @@ func (CodexToolAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 	}
 	name, _ := data["name"].(string)
 	if name == "" {
-		return ToolRequest{}, fmt.Errorf("Codex function name is required")
+		return ToolRequest{}, fmt.Errorf("codex function name is required")
 	}
 	args, err := decodeCodexArguments(data["arguments"])
 	if err != nil {
@@ -68,7 +68,7 @@ func decodeCodexArguments(raw any) (map[string]any, error) {
 	case map[string]any:
 		return value, nil
 	default:
-		return nil, fmt.Errorf("Codex arguments must be an object or JSON string")
+		return nil, fmt.Errorf("codex arguments must be an object or JSON string")
 	}
 }
 
