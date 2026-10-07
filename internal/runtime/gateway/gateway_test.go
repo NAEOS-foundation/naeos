@@ -730,8 +730,8 @@ func TestGatewayReplayProtectionRejectsDuplicateInvocation(t *testing.T) {
 
 	second, err := gw.Authorize(ToolRequest{
 		InvocationID: "inv-001",
-		Tool:        "filesystem",
-		Action:      "write",
+		Tool:         "filesystem",
+		Action:       "write",
 	})
 	if err != nil {
 		t.Fatalf("replay authorization failed unexpectedly: %v", err)
