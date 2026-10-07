@@ -156,7 +156,13 @@ func DomainsForPaths(paths []string) []Domain {
 		case hasPrefix(path, "architecture/"), hasPrefix(path, "Reference Architecture/"), hasPrefix(path, "specification/"):
 			seen[Architecture] = true
 		case isTest(path):
-			continue
+			// Test files still belong to their parent architectural domain.
+			// Only unclassified tests are excluded from domain classification.
+			if hasPrefix(path, "internal/pluginsdk/") || hasPrefix(path, "pluginsdk/") {
+				seen[Runtime] = true
+			} else {
+				continue
+			}
 		default:
 			seen[General] = true
 		}
