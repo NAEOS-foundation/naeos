@@ -74,6 +74,7 @@ func TestExternalAgentConformanceAllowedRequest(t *testing.T) {
 	gw := New(cp, sb, WithReplayProtection(true))
 
 	result, err := gw.Authorize(ToolRequest{
+		RequestID:    "request-conformance-allow-01",
 		InvocationID: "conformance-allow-01",
 		Tool:         "file-edit",
 		Action:       "write",
@@ -84,7 +85,7 @@ func TestExternalAgentConformanceAllowedRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("allowed request returned error: %v", err)
 	}
-	if result.Status != "completed" || result.Decision != control.DecisionAllow {
+	if result.Status != "completed" || result.Decision != control.DecisionAllow || result.RequestID != "request-conformance-allow-01" || result.Request.RequestID != "request-conformance-allow-01" {
 		t.Fatalf("expected governed ALLOW/completed result, got %+v", result)
 	}
 	if sb.Count() != 1 {
@@ -255,5 +256,37 @@ func TestExternalAgentConformanceContractVersionFixture(t *testing.T) {
 	unknownMajor := "2.0"
 	if unknownMajor[:1] == contractVersion[:1] {
 		t.Fatalf("test fixture did not represent an unknown major version: %s", unknownMajor)
+	}
+}
+
+func TestExternalAgentConformanceRequestIdentitySurvivesReferenceAdapter(t *testing.T) {
+	adapter := ReferenceExternalAdapter{}
+	req, err := adapter.NormalizeTool(map[string]any{
+		"contract":      "naeos.agent-adoption",
+		"version":       "1.0",
+		"request_id":    "request-identity-01",
+		"invocation_id": "invocation-identity-01",
+		"tool":          "filesystem",
+		"action":        "read",
+	})
+	if err != nil {
+		t.Fatalf("normalize adoption envelope: %v", err)
+	}
+	if req.RequestID != "request-identity-01" {
+		t.Fatalf("expected first-class request identity, got %q", req.RequestID)
+	}
+	if req.Context["request_id"] != "request-identity-01" {
+		t.Fatalf("expected compatibility context request identity, got %#v", req.Context["request_id"])
+	}
+
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	result, err := gw.Authorize(req)
+	if err != nil {
+		t.Fatalf("authorize normalized request: %v", err)
+	}
+	if result.RequestID != req.RequestID || result.Request.RequestID != req.RequestID {
+		t.Fatalf("request identity was not preserved end-to-end: result=%q request=%q", result.RequestID, result.Request.RequestID)
 	}
 }

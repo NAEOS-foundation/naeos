@@ -17,6 +17,8 @@ import (
 // specific tool or resource. Every request must pass through the execution
 // gateway before reaching the runtime.
 type ToolRequest struct {
+	// RequestID identifies the logical request across adapter, authorization, execution, and evidence.
+	RequestID string
 	// InvocationID uniquely identifies one intended execution. When replay
 	// protection is enabled, the gateway consumes it atomically before the
 	// sandbox side effect and rejects reuse.
@@ -54,6 +56,7 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
+	RequestID    string
 	InvocationID string
 	Request      ToolRequest
 	Decision     control.Decision
@@ -238,6 +241,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	}
 
 	result := ExecutionResult{
+		RequestID:    req.RequestID,
 		InvocationID: req.InvocationID,
 		Request:      req,
 		Decision:     rec.Decision,

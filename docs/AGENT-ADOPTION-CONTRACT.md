@@ -78,6 +78,10 @@ Policy is authoritative at the control plane. If governing policy changes before
 
 Adapters MUST preserve these semantics and MUST NOT turn denial or pending approval into success.
 
+## Request identity
+
+`request_id` is a first-class identity. It MUST survive adapter normalization and remain attached to the gateway result, execution history, and evidence-facing result. Context copies MAY carry the same value for compatibility, but context is not the canonical identity field.
+
 ## Result
 
 A conforming integration exposes structured authorization and execution state:
@@ -103,7 +107,7 @@ Transport is intentionally unspecified: CLI, HTTP, RPC, or another transport may
 
 The adapter contract is a protocol and integration boundary, not a containment mechanism for arbitrary code. An adapter MUST NOT perform consequential side effects outside the NAEOS gateway, but an interface alone cannot technically prevent arbitrary provider code from making filesystem, network, process, or credential calls if that code has the operating-system authority to do so.
 
-Deployments that treat adapters as untrusted code SHOULD run them without credentials or direct side-effect capability. Consequential credentials and capability handles SHOULD remain owned by the NAEOS-controlled runtime. A conforming adapter implementation MUST therefore be evaluated together with its deployment privilege boundary; passing protocol conformance does not by itself prove adapter containment.
+Deployments that treat adapters as untrusted code MUST run them without consequential credentials or direct side-effect capability. Consequential credentials and capability handles MUST remain owned by the NAEOS-controlled runtime. If third-party adapter code cannot satisfy this privilege boundary, it MUST be isolated outside the trusted runtime boundary before it is allowed to submit intents. Passing protocol conformance does not by itself prove adapter containment.
 
 ## Evidence
 
