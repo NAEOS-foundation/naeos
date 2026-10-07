@@ -44,7 +44,20 @@ func NewWASMRuntime(timeout time.Duration, maxMemory int64) *WASMRuntime {
 		maxMemory = 128 * 1024 * 1024
 	}
 	ctx := context.Background()
-	rt := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCloseOnContextDone(true))
+	memoryLimitPages := uint32(maxMemory / 65536)
+	if maxMemory%65536 != 0 {
+		memoryLimitPages++
+	}
+	if memoryLimitPages == 0 {
+		memoryLimitPages = 1
+	}
+	if uint64(memoryLimitPages)*65536 > uint64(65536)*65536 {
+		memoryLimitPages = 65536
+	}
+	runtimeConfig := wazero.NewRuntimeConfig().
+		WithCloseOnContextDone(true).
+		WithMemoryLimitPages(memoryLimitPages)
+	rt := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
 	_, _ = wasi_snapshot_preview1.Instantiate(ctx, rt)
 
 	return &WASMRuntime{
