@@ -5,7 +5,6 @@ package gateway
 
 import (
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
@@ -251,4 +250,3 @@ func TestExternalAgentConformanceContractVersionFixture(t *testing.T) {
 	}
 }
 
-var _ sync.Locker
