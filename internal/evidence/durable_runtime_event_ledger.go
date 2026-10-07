@@ -179,7 +179,6 @@ func (l *DurableRuntimeEventLedger) appendLocked(event RuntimeEvent) error {
 }
 
 func hashDurableRuntimeEvent(event RuntimeEvent) string {
-	event.EventHash = ""
 	h := sha256.Sum256([]byte(fmt.Sprintf("naeos:durable-runtime-event:v1:%s:%s:%s:%d:%s", event.RunID, event.Name, event.PayloadDigest, event.Sequence, event.PreviousHash)))
 	return fmt.Sprintf("%x", h[:])
 }
