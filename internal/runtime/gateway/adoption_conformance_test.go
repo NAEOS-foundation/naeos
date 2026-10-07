@@ -45,7 +45,7 @@ func (s conformanceReplayStore) Claim(string) (bool, error) {
 }
 
 type conformanceAdapter struct {
-	request    ToolRequest
+	request   ToolRequest
 	decisions []ExecutionResult
 }
 
@@ -249,4 +249,3 @@ func TestExternalAgentConformanceContractVersionFixture(t *testing.T) {
 		t.Fatalf("test fixture did not represent an unknown major version: %s", unknownMajor)
 	}
 }
-
