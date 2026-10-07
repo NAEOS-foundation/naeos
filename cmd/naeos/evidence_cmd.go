@@ -64,10 +64,24 @@ func loadEvidenceStore() (*evidence.EvidenceStore, error) {
 	if err := json.Unmarshal(data, &records); err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "parsing evidence store")
 	}
-	for _, r := range records {
+	// Records are persisted newest-first by EvidenceStore. Validate the
+	// stored chain in oldest-first order before accepting any record.
+	var previousHash string
+	for i := len(records) - 1; i >= 0; i-- {
+		r := records[i]
+		if r.PreviousHash != previousHash {
+			return nil, naeoserr.New(naeoserr.ErrConflict,
+				fmt.Sprintf("evidence chain break at persisted index %d: expected previous_hash %q, got %q", i, previousHash, r.PreviousHash))
+		}
+		expectedHash := evidence.RecomputeHash(r)
+		if r.Hash != expectedHash {
+			return nil, naeoserr.New(naeoserr.ErrConflict,
+				fmt.Sprintf("evidence hash mismatch at persisted index %d: expected %s, got %s", i, expectedHash, r.Hash))
+		}
 		if _, err := store.Append(r); err != nil {
 			return nil, err
 		}
+		previousHash = r.Hash
 	}
 	return store, nil
 }
@@ -142,6 +156,7 @@ Example:
 
 			rec := evidence.EvidenceRecord{
 				Actor:               actor,
+				RequestID:           result.RequestID,
 				Resource:            result.Request.Resource,
 				Action:              result.Request.Action,
 				Environment:         environment,
