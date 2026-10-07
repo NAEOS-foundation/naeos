@@ -30,6 +30,7 @@ func newAgentCommand() *cobra.Command {
 	cmd.AddCommand(newAgentAppendActionCommand())
 	cmd.AddCommand(newAgentListActionsCommand())
 	cmd.AddCommand(newAgentDeleteCommand())
+	cmd.AddCommand(newAgentRequestCommand())
 	return cmd
 }
 

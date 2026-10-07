@@ -398,6 +398,51 @@ func TestAPIControlPlaneEvidence(t *testing.T) {
 	}
 }
 
+func TestAPIControlPlaneRuns(t *testing.T) {
+	as, _ := newTestAPI(t)
+
+	rec := doJSON(t, as, http.MethodPost, "/api/execute",
+		`{"agent_id":"agent-payment-01","capability":"repository.write","payload":{"file":"runs.go"}}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected execution 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	rec = doJSON(t, as, http.MethodGet, "/api/control-plane/runs", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected runs 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Runs []struct {
+			ID           string `json:"id"`
+			DecisionID   string `json:"decision_id"`
+			AgentID      string `json:"agent_id"`
+			Capability   string `json:"capability"`
+			Status       string `json:"status"`
+			ExecutionID  string `json:"execution_id"`
+			Verification string `json:"verification"`
+		} `json:"runs"`
+		Total int `json:"total"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Total != 1 || len(resp.Runs) != 1 {
+		t.Fatalf("expected one execution-backed run, got total=%d runs=%d", resp.Total, len(resp.Runs))
+	}
+	run := resp.Runs[0]
+	if run.ID == "" || run.ExecutionID == "" || run.DecisionID == "" || run.AgentID == "" || run.Capability == "" {
+		t.Fatalf("expected populated run identity fields, got %+v", run)
+	}
+	if run.Status != "VERIFIED" || run.Verification != "PASS" {
+		t.Fatalf("expected verified run state after side-effect observation, got %+v", run)
+	}
+
+	rec = doJSON(t, as, http.MethodPost, "/api/control-plane/runs", "")
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected 405 for POST runs, got %d", rec.Code)
+	}
+}
+
 func TestAPIControlPlaneApprovalLifecycle(t *testing.T) {
 	as, setup := newTestAPI(t)
 	setup.ControlPlaneGateway.Ledger.Append(controlplane.LedgerEvent{
