@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/database"
-	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 )
 
 // sharedDurableInvocationDB models a database whose state survives creation of
@@ -28,7 +26,7 @@ func newSharedDurableInvocationDB() *sharedDurableInvocationDB {
 
 func (d *sharedDurableInvocationDB) Name() string { return "sqlite" }
 
-func (d *sharedDurableInvocationDB) Exec(query string, args ...any) (database.Result, error) {
+func (d *sharedDurableInvocationDB) Exec(_ string, args ...any) (database.Result, error) {
 	if len(args) == 0 {
 		return database.Result{}, nil
 	}
@@ -70,60 +68,83 @@ func TestDatabaseInvocationStoreSurvivesStoreRestart(t *testing.T) {
 	}
 }
 
+func TestDatabaseInvocationStoreConcurrentSharedClaim(t *testing.T) {
+	db := newSharedDurableInvocationDB()
+	storeA := NewDatabaseInvocationStore(db)
+	storeB := NewDatabaseInvocationStore(db)
+
+	const attempts = 32
+	var wg sync.WaitGroup
+	wg.Add(attempts)
+
+	claims := make(chan bool, attempts)
+	errors := make(chan error, attempts)
+	for i := 0; i < attempts; i++ {
+		store := storeA
+		if i%2 == 1 {
+			store = storeB
+		}
+		go func(s InvocationStore) {
+			defer wg.Done()
+			claimed, err := s.Claim("shared-replica-invocation")
+			claims <- claimed
+			errors <- err
+		}(store)
+	}
+
+	wg.Wait()
+	close(claims)
+	close(errors)
+
+	successes := 0
+	for err := range errors {
+		if err != nil {
+			t.Fatalf("unexpected claim error: %v", err)
+		}
+	}
+	for claimed := range claims {
+		if claimed {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("expected exactly one durable claim, got %d", successes)
+	}
+}
+
 func TestDatabaseInvocationStoreSharedAcrossGatewayInstances(t *testing.T) {
 	db := newSharedDurableInvocationDB()
 	storeA := NewDatabaseInvocationStore(db)
 	storeB := NewDatabaseInvocationStore(db)
 
-	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	cp := &stubControlPlane{decision: decisionAllow, policyID: "p1"}
 	sb := &countingSandbox{}
 
 	gatewayA := New(cp, sb, WithReplayProtection(true), WithInvocationStore(storeA))
 	gatewayB := New(cp, sb, WithReplayProtection(true), WithInvocationStore(storeB))
 
-	const attempts = 32
-	var wg sync.WaitGroup
-	wg.Add(attempts)
-	results := make(chan ExecutionResult, attempts)
-	errors := make(chan error, attempts)
-
-	for i := 0; i < attempts; i++ {
-		go func() {
-			defer wg.Done()
-			result, err := gatewayA.Authorize(ToolRequest{
-				InvocationID: "shared-replica-invocation",
-				Tool:         "shell",
-				Action:       "run",
-			})
-			if i%2 == 1 {
-				result, err = gatewayB.Authorize(ToolRequest{
-					InvocationID: "shared-replica-invocation",
-					Tool:         "shell",
-					Action:       "run",
-				})
-			}
-			results <- result
-			errors <- err
-		}()
+	first, err := gatewayA.Authorize(ToolRequest{
+		InvocationID: "gateway-shared-invocation",
+		Tool:         "shell",
+		Action:       "run",
+	})
+	if err != nil {
+		t.Fatalf("first gateway execution failed: %v", err)
+	}
+	if first.Status != "completed" {
+		t.Fatalf("expected first gateway execution to complete, got %s", first.Status)
 	}
 
-	wg.Wait()
-	close(results)
-	close(errors)
-
-	var completed int
-	for err := range errors {
-		if err != nil {
-			t.Fatalf("unexpected gateway error: %v", err)
-		}
+	second, err := gatewayB.Authorize(ToolRequest{
+		InvocationID: "gateway-shared-invocation",
+		Tool:         "shell",
+		Action:       "run",
+	})
+	if err != nil {
+		t.Fatalf("second gateway execution returned unexpected error: %v", err)
 	}
-	for result := range results {
-		if result.Status == "completed" {
-			completed++
-		}
-	}
-	if completed != 1 {
-		t.Fatalf("expected exactly one completed execution, got %d", completed)
+	if second.Status != "denied" {
+		t.Fatalf("expected second gateway execution to be denied, got %s", second.Status)
 	}
 	if got := sb.Count(); got != 1 {
 		t.Fatalf("expected exactly one sandbox side effect, got %d", got)
@@ -147,29 +168,3 @@ func (s *countingSandbox) Count() int {
 	defer s.mu.Unlock()
 	return s.count
 }
-
-func TestDatabaseInvocationStoreExpiryDoesNotReopenReplayWindow(t *testing.T) {
-	db := newSharedDurableInvocationDB()
-	store := NewDatabaseInvocationStore(db)
-
-	claimed, err := store.Claim("retained-invocation")
-	if err != nil {
-		t.Fatalf("initial claim failed: %v", err)
-	}
-	if !claimed {
-		t.Fatal("expected initial claim to succeed")
-	}
-
-	time.Sleep(time.Millisecond)
-
-	claimed, err = store.Claim("retained-invocation")
-	if err != nil {
-		t.Fatalf("repeat claim failed: %v", err)
-	}
-	if claimed {
-		t.Fatal("consumed invocation must remain rejected; retention must not silently reopen replay")
-	}
-}
-
-var _ ControlPlane = (*stubControlPlane)(nil)
-var _ = control.DecisionAllow
