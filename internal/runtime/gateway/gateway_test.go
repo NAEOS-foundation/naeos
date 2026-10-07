@@ -63,8 +63,8 @@ func TestAdapterPrivilegeBoundaryDeniesWithoutGrant(t *testing.T) {
 
 	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{
 		"request_id": "req-p25-deny",
-		"tool": "filesystem",
-		"action": "write",
+		"tool":       "filesystem",
+		"action":     "write",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
