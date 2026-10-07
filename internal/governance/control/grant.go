@@ -15,6 +15,7 @@ type grantIdentity struct {
 	PolicyID      string   `json:"policy_id"`
 	PolicyVersion string   `json:"policy_version"`
 	RuleID        string   `json:"rule_id"`
+	ExpiresAt     string   `json:"expires_at,omitempty"`
 }
 
 // bindGrantDigest creates a deterministic integrity binding for an
@@ -28,6 +29,7 @@ func bindGrantDigest(rec *DecisionRecord) error {
 		PolicyID:      rec.PolicyID,
 		PolicyVersion: rec.PolicyVersion,
 		RuleID:        rec.RuleID,
+		ExpiresAt:     rec.ExpiresAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"),
 	}
 	payload, err := json.Marshal(identity)
 	if err != nil {
@@ -51,6 +53,7 @@ func grantDigestFor(rec DecisionRecord) string {
 		PolicyID:      rec.PolicyID,
 		PolicyVersion: rec.PolicyVersion,
 		RuleID:        rec.RuleID,
+		ExpiresAt:     rec.ExpiresAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"),
 	}
 	payload, err := json.Marshal(identity)
 	if err != nil {
