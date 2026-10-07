@@ -32,7 +32,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 		t.Fatalf("register policy v1: %v", err)
 	}
 
-	cp := control.New(reg)
+	cp := &mutatingControlPlane{inner: control.New(reg), registry: reg}
 	sb := NewDefaultSandbox(SandboxConfig{FilesystemRoot: root})
 	gw := New(cp, sb)
 	adapter := CodexToolAdapter{}
@@ -80,23 +80,9 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 		t.Fatalf("unexpected executed artifact: %q", string(data))
 	}
 
-	// A policy mutation must invalidate the previously valid authorization at
-	// the execution boundary. The same agent request is therefore re-evaluated
-	// against policy v2 and must not produce a second side effect.
-	if err := reg.Register(&policy.Policy{
-		ID:      "repository-write",
-		Name:    "Repository Write",
-		Version: "2.0.0",
-		Scope: policy.Scope{
-			Resource:    "repository",
-			Action:      "write",
-			Environment: "development",
-		},
-		Default: policy.DecisionDeny,
-		Active:  true,
-	}); err != nil {
-		t.Fatalf("register policy v2: %v", err)
-	}
+	// The control plane mutates from policy v1 to v2 after the initial
+	// authorization record is issued. Gateway revalidation must therefore
+	// invalidate the stale authorization before the sandbox is entered.
 
 	result, err = gw.AuthorizeFromAdapter("codex", raw)
 	if err != nil {
@@ -109,7 +95,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 		t.Fatalf("expected denied status after policy rotation, got %s", result.Status)
 	}
 	if got := sb.ExecutedCount(); got != 1 {
-		t.Fatalf("expected gateway to enter sandbox only for the two authorization attempts, got %d", got)
+		t.Fatalf("expected sandbox to execute only the first request, got %d", got)
 	}
 
 	data, err = os.ReadFile(target)
