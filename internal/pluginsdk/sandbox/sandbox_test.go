@@ -216,3 +216,58 @@ print(json.dumps({"ok": true}))
 	cancel()
 	<-done
 }
+
+func TestSandboxNativePluginEnvironmentAllowlist(t *testing.T) {
+	dir := t.TempDir()
+	pluginPath := filepath.Join(dir, "env-plugin")
+	content := `#!/usr/bin/env python3
+import json, os, sys
+json.loads(sys.stdin.read())
+print(json.dumps({"ok": True, "result": {"secret": os.environ.get("NAEOS_TEST_SECRET", ""), "allowed": os.environ.get("NAEOS_TEST_ALLOWED", "")}}))
+`
+	if err := os.WriteFile(pluginPath, []byte(content), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("NAEOS_TEST_SECRET", "should-not-leak")
+	t.Setenv("NAEOS_TEST_ALLOWED", "explicitly-allowed")
+
+	sb := New(Config{Timeout: 5 * time.Second})
+	resp, err := sb.Exec(context.Background(), pluginPath, Request{Method: "env"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !resp.OK {
+		t.Fatalf("expected plugin success, got %q", resp.Error)
+	}
+
+	result, ok := resp.Result.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map result, got %T", resp.Result)
+	}
+	if result["secret"] != "" {
+		t.Fatalf("host secret leaked without allowlist: %v", result["secret"])
+	}
+	if result["allowed"] != "" {
+		t.Fatalf("unconfigured variable should not be inherited: %v", result["allowed"])
+	}
+
+	sb = New(Config{Timeout: 5 * time.Second, AllowedEnv: []string{"NAEOS_TEST_ALLOWED"}})
+	resp, err = sb.Exec(context.Background(), pluginPath, Request{Method: "env"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !resp.OK {
+		t.Fatalf("expected plugin success with allowlist, got %q", resp.Error)
+	}
+	result, ok = resp.Result.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map result, got %T", resp.Result)
+	}
+	if result["secret"] != "" {
+		t.Fatalf("host secret leaked with allowlist: %v", result["secret"])
+	}
+	if result["allowed"] != "explicitly-allowed" {
+		t.Fatalf("expected explicitly allowed variable, got %v", result["allowed"])
+	}
+}
