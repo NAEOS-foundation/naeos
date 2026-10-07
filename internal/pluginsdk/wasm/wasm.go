@@ -31,8 +31,8 @@ type Response struct {
 }
 
 type WASMRuntime struct {
-	timeout   time.Duration
-	maxMemory         int64
+	timeout          time.Duration
+	maxMemory        int64
 	memoryLimitPages uint32
 	rt               wazero.Runtime
 }
@@ -62,8 +62,8 @@ func NewWASMRuntime(timeout time.Duration, maxMemory int64) *WASMRuntime {
 	_, _ = wasi_snapshot_preview1.Instantiate(ctx, rt)
 
 	return &WASMRuntime{
-		timeout:   timeout,
-		maxMemory:         maxMemory,
+		timeout:          timeout,
+		maxMemory:        maxMemory,
 		memoryLimitPages: memoryLimitPages,
 		rt:               rt,
 	}
