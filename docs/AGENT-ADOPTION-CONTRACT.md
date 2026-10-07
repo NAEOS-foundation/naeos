@@ -99,6 +99,12 @@ A conforming integration exposes structured authorization and execution state:
 
 Transport is intentionally unspecified: CLI, HTTP, RPC, or another transport may conform if semantics are preserved.
 
+## Adapter trust boundary
+
+The adapter contract is a protocol and integration boundary, not a containment mechanism for arbitrary code. An adapter MUST NOT perform consequential side effects outside the NAEOS gateway, but an interface alone cannot technically prevent arbitrary provider code from making filesystem, network, process, or credential calls if that code has the operating-system authority to do so.
+
+Deployments that treat adapters as untrusted code SHOULD run them without credentials or direct side-effect capability. Consequential credentials and capability handles SHOULD remain owned by the NAEOS-controlled runtime. A conforming adapter implementation MUST therefore be evaluated together with its deployment privilege boundary; passing protocol conformance does not by itself prove adapter containment.
+
 ## Evidence
 
 Agent transcript, memory, and self-reported completion are not authoritative evidence.
