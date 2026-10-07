@@ -49,8 +49,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 			"actor":       "codex",
 			"payload": map[string]any{
 				"path":    "src/main.go",
-				"content": "package main
-",
+				"content": "package main\n",
 			},
 			"context": map[string]any{
 				"task_id": "e2e-codex-001",
@@ -77,8 +76,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected governed execution to create %s: %v", target, err)
 	}
-	if string(data) != "package main
-" {
+	if string(data) != "package main\n" {
 		t.Fatalf("unexpected executed artifact: %q", string(data))
 	}
 
@@ -100,8 +98,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected original artifact to remain readable: %v", err)
 	}
-	if string(data) != "package main
-" {
+	if string(data) != "package main\n" {
 		t.Fatalf("denied replay changed the artifact: %q", string(data))
 	}
 
