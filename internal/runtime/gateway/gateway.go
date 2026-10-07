@@ -128,6 +128,16 @@ func WithReplayProtection(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.replayProtection = enabled }
 }
 
+// WithInvocationStore installs the persistence boundary used to consume
+// invocation identities.
+func WithInvocationStore(store InvocationStore) Option {
+	return func(g *ExecutionGateway) {
+		if store != nil {
+			g.invocationStore = store
+		}
+	}
+}
+
 // ExecutionGateway is the single enforcement boundary between agent intent
 // and tool execution. Every tool invocation must pass through this gateway,
 // which evaluates the request against registered policies before allowing
@@ -148,7 +158,7 @@ type ExecutionGateway struct {
 
 	mu               sync.RWMutex
 	history          []ExecutionResult
-	replayed         map[string]struct{}
+	invocationStore  InvocationStore
 	replayProtection bool
 	failClosed       bool
 }
@@ -159,7 +169,7 @@ func New(cp ControlPlane, sb Sandbox, opts ...Option) *ExecutionGateway {
 		controlPlane: cp,
 		sandbox:      sb,
 		adapters:     make(map[string]AgentAdapter),
-		replayed:     make(map[string]struct{}),
+		invocationStore: NewInMemoryInvocationStore(),
 		failClosed:   true,
 	}
 	for _, o := range opts {
@@ -301,12 +311,25 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	// Atomically consume the invocation identity immediately before the side
 	// effect. This is the replay boundary: concurrent or subsequent reuse of
 	// the same invocation cannot reach the sandbox.
-	if g.replayProtection && !g.claimInvocation(req.InvocationID) {
-		result.Status = "denied"
-		result.Output = "invocation already consumed"
-		result.Duration = time.Since(start)
-		g.record(result)
-		return result, nil
+	if g.replayProtection {
+		claimed, claimErr := g.claimInvocation(req.InvocationID)
+		if claimErr != nil {
+			result.Status = "denied"
+			result.Output = "invocation replay state unavailable"
+			result.Duration = time.Since(start)
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.Wrapf(claimErr, naeoserr.ErrPipeline, "invocation replay state unavailable")
+			}
+			return result, nil
+		}
+		if !claimed {
+			result.Status = "denied"
+			result.Output = "invocation already consumed"
+			result.Duration = time.Since(start)
+			g.record(result)
+			return result, nil
+		}
 	}
 
 	// Execute inside the sandbox.
@@ -403,14 +426,11 @@ func (g *ExecutionGateway) Denials() []ExecutionResult {
 	return out
 }
 
-func (g *ExecutionGateway) claimInvocation(invocationID string) bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if _, exists := g.replayed[invocationID]; exists {
-		return false
+func (g *ExecutionGateway) claimInvocation(invocationID string) (bool, error) {
+	if g.invocationStore == nil {
+		return false, fmt.Errorf("invocation replay store is not configured")
 	}
-	g.replayed[invocationID] = struct{}{}
-	return true
+	return g.invocationStore.Claim(invocationID)
 }
 
 func (g *ExecutionGateway) record(r ExecutionResult) {
