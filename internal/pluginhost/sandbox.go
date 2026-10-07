@@ -18,6 +18,7 @@ import (
 type SandboxConfig struct {
 	AllowedDirs []string      `json:"allowed_dirs,omitempty"`
 	ExecTimeout time.Duration `json:"exec_timeout,omitempty"`
+	MaxMemory   int64         `json:"max_memory,omitempty"`
 	MaxCalls    int           `json:"max_calls,omitempty"`
 }
 
@@ -32,6 +33,9 @@ type Sandbox struct {
 func NewSandbox(cfg SandboxConfig) *Sandbox {
 	if cfg.ExecTimeout <= 0 {
 		cfg.ExecTimeout = 30 * time.Second
+	}
+	if cfg.MaxMemory == 0 {
+		cfg.MaxMemory = 128 * 1024 * 1024
 	}
 	if cfg.MaxCalls <= 0 {
 		cfg.MaxCalls = 1000

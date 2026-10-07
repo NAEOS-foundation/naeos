@@ -379,7 +379,7 @@ func (m *Manager) loadPlugin(path string) (Plugin, error) {
 
 // loadWASMPlugin compiles and wraps a WASM module as a Plugin.
 func (m *Manager) loadWASMPlugin(path string) (Plugin, error) {
-	rt := wasm.NewWASMRuntime(30*time.Second, 128*1024*1024)
+	rt := wasm.NewWASMRuntime(m.sandbox.config.ExecTimeout, m.config.Sandbox.MaxMemory)
 	p, err := rt.Load(path)
 	if err != nil {
 		_ = rt.Close()
