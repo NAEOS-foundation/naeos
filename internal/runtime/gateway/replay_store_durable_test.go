@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/database"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 )
 
 // sharedDurableInvocationDB models a database whose state survives creation of
@@ -117,7 +118,7 @@ func TestDatabaseInvocationStoreSharedAcrossGatewayInstances(t *testing.T) {
 	storeA := NewDatabaseInvocationStore(db)
 	storeB := NewDatabaseInvocationStore(db)
 
-	cp := &stubControlPlane{decision: decisionAllow, policyID: "p1"}
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
 	sb := &countingSandbox{}
 
 	gatewayA := New(cp, sb, WithReplayProtection(true), WithInvocationStore(storeA))
