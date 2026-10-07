@@ -786,3 +786,62 @@ func TestGatewayReplayProtectionAllowsDistinctInvocations(t *testing.T) {
 		t.Fatalf("expected two sandbox executions, got %d", sb.count)
 	}
 }
+
+
+func TestInMemoryInvocationStoreConcurrentClaim(t *testing.T) {
+	store := NewInMemoryInvocationStore()
+	const attempts = 32
+	results := make(chan bool, attempts)
+	errs := make(chan error, attempts)
+
+	for i := 0; i < attempts; i++ {
+		go func() {
+			claimed, err := store.Claim("concurrent-invocation")
+			results <- claimed
+			errs <- err
+		}()
+	}
+
+	claimedCount := 0
+	for i := 0; i < attempts; i++ {
+		if err := <-errs; err != nil {
+			t.Fatalf("claim returned error: %v", err)
+		}
+		if <-results {
+			claimedCount++
+		}
+	}
+	if claimedCount != 1 {
+		t.Fatalf("expected exactly one successful claim, got %d", claimedCount)
+	}
+}
+
+func TestGatewayReplayStoreFailureFailsClosed(t *testing.T) {
+	store := &failingInvocationStore{err: fmt.Errorf("store unavailable")}
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true), WithInvocationStore(store))
+
+	result, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-storage-failure",
+		Tool:         "filesystem",
+		Action:       "write",
+	})
+	if err == nil {
+		t.Fatal("expected replay store failure to fail closed")
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected denied result, got %s", result.Status)
+	}
+	if sb.count != 0 {
+		t.Fatalf("expected no sandbox execution, got %d", sb.count)
+	}
+}
+
+type failingInvocationStore struct {
+	err error
+}
+
+func (s *failingInvocationStore) Claim(string) (bool, error) {
+	return false, s.err
+}
