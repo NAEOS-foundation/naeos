@@ -212,7 +212,6 @@ func TestCodexGovernedExecutionJSONEnvelopeEndToEnd(t *testing.T) {
 	}
 }
 
-
 type e2eStaleAuthorizationControlPlane struct {
 	inner    *control.ControlPlane
 	registry *policy.Registry
