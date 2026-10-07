@@ -231,5 +231,9 @@ func (c *e2eStaleAuthorizationControlPlane) Evaluate(req control.Request) (contr
 			return control.DecisionRecord{}, err
 		}
 	}
+	return issued, err
+}
+
+func (c *e2eStaleAuthorizationControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
 	return c.inner.ValidateDecision(req, issued)
 }
