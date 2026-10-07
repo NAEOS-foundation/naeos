@@ -61,6 +61,9 @@ func TestReferenceExternalAdapterUsesSameGatewayBoundary(t *testing.T) {
 	adapter := ReferenceExternalAdapter{}
 	gw := New(cp, sb, WithReplayProtection(true))
 	gw.RegisterAdapter(adapter.Name(), adapter)
+	if err := gw.GrantAdapterPolicy(adapter.Name(), AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{
 		"contract":      "naeos.agent-adoption",
