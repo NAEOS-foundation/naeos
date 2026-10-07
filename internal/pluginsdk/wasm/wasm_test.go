@@ -57,6 +57,9 @@ func TestWASMRuntimeCreation(t *testing.T) {
 	if rt.maxMemory != 64*1024*1024 {
 		t.Errorf("expected maxMemory 64MB, got %v", rt.maxMemory)
 	}
+	if rt.memoryLimitPages != 1024 {
+		t.Errorf("expected memory limit 1024 pages, got %d", rt.memoryLimitPages)
+	}
 }
 
 func TestWASMRuntimeDefaults(t *testing.T) {
