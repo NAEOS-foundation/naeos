@@ -125,8 +125,8 @@ type AuthorizationDecision struct {
 type HandoffValidationResult struct {
 	ValidationID               string    `json:"validation_id"`
 	DecisionID                 string    `json:"decision_id,omitempty"`
-	ExecutionID               string    `json:"execution_id,omitempty"`
-	EvidenceID                string    `json:"evidence_id,omitempty"`
+	ExecutionID                string    `json:"execution_id,omitempty"`
+	EvidenceID                 string    `json:"evidence_id,omitempty"`
 	Timestamp                  time.Time `json:"timestamp"`
 	ContractVersion            string    `json:"contract_version"`
 	Valid                      bool      `json:"valid"`
@@ -203,17 +203,17 @@ type ExecutionRequest struct {
 
 // ExecutionResult represents the result of executing a capability.
 type ExecutionResult struct {
-	ExecutionID        string                 `json:"execution_id"`
-	RequestID          string                 `json:"request_id"`
-	DecisionID         string                 `json:"decision_id,omitempty"`
-	EvidenceID         string                 `json:"evidence_id,omitempty"`
-	Timestamp          time.Time              `json:"timestamp"`
-	AgentID            string                 `json:"agent_id"`
-	Capability         Capability             `json:"capability"`
-	Authorized         bool                   `json:"authorized"`
-	Executed           bool                   `json:"executed"`
-	Result             map[string]interface{} `json:"result,omitempty"`
-	Error              string                 `json:"error,omitempty"`
-	VerificationStatus string                 `json:"verification_status,omitempty"`
-	HandoffValidationID string                `json:"handoff_validation_id,omitempty"`
+	ExecutionID         string                 `json:"execution_id"`
+	RequestID           string                 `json:"request_id"`
+	DecisionID          string                 `json:"decision_id,omitempty"`
+	EvidenceID          string                 `json:"evidence_id,omitempty"`
+	Timestamp           time.Time              `json:"timestamp"`
+	AgentID             string                 `json:"agent_id"`
+	Capability          Capability             `json:"capability"`
+	Authorized          bool                   `json:"authorized"`
+	Executed            bool                   `json:"executed"`
+	Result              map[string]interface{} `json:"result,omitempty"`
+	Error               string                 `json:"error,omitempty"`
+	VerificationStatus  string                 `json:"verification_status,omitempty"`
+	HandoffValidationID string                 `json:"handoff_validation_id,omitempty"`
 }
