@@ -36,6 +36,26 @@ func TestAppendAndRetrieve(t *testing.T) {
 	}
 }
 
+func TestRequestIDIsFirstClassEvidenceIdentity(t *testing.T) {
+	store := NewStore()
+	first, _ := store.Append(EvidenceRecord{RequestID: "req-1", Actor: "a", Decision: control.DecisionAllow, PolicyID: "p1"})
+	second, _ := store.Append(EvidenceRecord{RequestID: "req-2", Actor: "a", Decision: control.DecisionAllow, PolicyID: "p1"})
+
+	results := store.Query(EvidenceQuery{RequestID: "req-1"})
+	if len(results) != 1 || results[0].ID != first.ID {
+		t.Fatalf("expected only req-1 evidence, got %#v", results)
+	}
+	if second.RequestID != "req-2" {
+		t.Fatalf("expected second request_id req-2, got %q", second.RequestID)
+	}
+
+	before := RecomputeHash(first)
+	first.RequestID = "tampered"
+	if RecomputeHash(first) == before {
+		t.Fatal("request_id must participate in evidence identity hash")
+	}
+}
+
 func TestChainIntegrity(t *testing.T) {
 	store := NewStore()
 	for i := 0; i < 5; i++ {

@@ -34,7 +34,7 @@ jobs:
           exit "$rc"
       - name: Upload Day 01 main evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: day01-governance-lifecycle-evidence-${{ github.sha }}
           path: day01-governance-lifecycle-evidence/

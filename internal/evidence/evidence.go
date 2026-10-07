@@ -20,6 +20,7 @@ import (
 // integrity hash, forming a complete, tamper-evident audit trail for
 // consequential AI engineering actions.
 type EvidenceRecord struct {
+	RequestID           string           `json:"request_id"`
 	ID                  string           `json:"id"`
 	Timestamp           time.Time        `json:"timestamp"`
 	Actor               string           `json:"actor"`
@@ -223,6 +224,7 @@ func (s *EvidenceStore) Approvals() []EvidenceRecord {
 // wildcards. Results are returned newest-first.
 type EvidenceQuery struct {
 	ID          string
+	RequestID   string
 	Actor       string
 	Resource    string
 	Action      string
@@ -241,6 +243,9 @@ func (s *EvidenceStore) Query(q EvidenceQuery) []EvidenceRecord {
 	var out []EvidenceRecord
 	for _, r := range s.records {
 		if q.ID != "" && r.ID != q.ID {
+			continue
+		}
+		if q.RequestID != "" && r.RequestID != q.RequestID {
 			continue
 		}
 		if q.Actor != "" && r.Actor != q.Actor {
@@ -379,6 +384,7 @@ func computeHashStatic(rec EvidenceRecord) string {
 	// Hash the canonical content fields, excluding the Hash field itself.
 	type hashable struct {
 		ID                  string          `json:"id"`
+		RequestID           string          `json:"request_id"`
 		Timestamp           time.Time       `json:"timestamp"`
 		Actor               string          `json:"actor"`
 		Resource            string          `json:"resource"`
@@ -402,6 +408,7 @@ func computeHashStatic(rec EvidenceRecord) string {
 
 	h := hashable{
 		ID:                  rec.ID,
+		RequestID:           rec.RequestID,
 		Timestamp:           rec.Timestamp,
 		Actor:               rec.Actor,
 		Resource:            rec.Resource,
