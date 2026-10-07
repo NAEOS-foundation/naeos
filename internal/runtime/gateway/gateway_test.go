@@ -787,7 +787,6 @@ func TestGatewayReplayProtectionAllowsDistinctInvocations(t *testing.T) {
 	}
 }
 
-
 func TestInMemoryInvocationStoreConcurrentClaim(t *testing.T) {
 	store := NewInMemoryInvocationStore()
 	const attempts = 32
