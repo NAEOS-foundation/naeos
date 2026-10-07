@@ -37,7 +37,7 @@ func NewSandbox(cfg SandboxConfig) *Sandbox {
 	if cfg.MaxMemory == 0 {
 		cfg.MaxMemory = 128 * 1024 * 1024
 	}
-\tif cfg.MaxCalls <= 0 {
+	if cfg.MaxCalls <= 0 {
 		cfg.MaxCalls = 1000
 	}
 	return &Sandbox{
