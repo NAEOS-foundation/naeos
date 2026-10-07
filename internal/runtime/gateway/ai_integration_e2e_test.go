@@ -32,7 +32,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 		t.Fatalf("register policy v1: %v", err)
 	}
 
-	cp := &mutatingControlPlane{inner: control.New(reg), registry: reg}
+	cp := &e2eStaleAuthorizationControlPlane{inner: control.New(reg), registry: reg}
 	sb := NewDefaultSandbox(SandboxConfig{FilesystemRoot: root})
 	gw := New(cp, sb)
 	adapter := CodexToolAdapter{}
@@ -210,4 +210,36 @@ func TestCodexGovernedExecutionJSONEnvelopeEndToEnd(t *testing.T) {
 	if result.Decision != control.DecisionAllow || result.Status != "completed" {
 		t.Fatalf("expected governed completion, got decision=%s status=%s", result.Decision, result.Status)
 	}
+}
+
+
+type e2eStaleAuthorizationControlPlane struct {
+	inner    *control.ControlPlane
+	registry *policy.Registry
+	mutated  bool
+}
+
+func (c *e2eStaleAuthorizationControlPlane) Evaluate(req control.Request) (control.DecisionRecord, error) {
+	return c.inner.Evaluate(req)
+}
+
+func (c *e2eStaleAuthorizationControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	if !c.mutated {
+		c.mutated = true
+		if err := c.registry.Register(&policy.Policy{
+			ID:      "repository-write",
+			Name:    "Repository Write",
+			Version: "2.0.0",
+			Scope: policy.Scope{
+				Resource:    "repository",
+				Action:      "write",
+				Environment: "development",
+			},
+			Default: policy.DecisionDeny,
+			Active:  true,
+		}); err != nil {
+			return control.DecisionRecord{}, err
+		}
+	}
+	return c.inner.ValidateDecision(req, issued)
 }
