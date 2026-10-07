@@ -7,11 +7,16 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
 func newTestPlane(t *testing.T, policies ...*policy.Policy) *ControlPlane {
+	return newTestPlaneWithOptions(t, nil, policies...)
+}
+
+func newTestPlaneWithOptions(t *testing.T, opts []Option, policies ...*policy.Policy) *ControlPlane {
 	t.Helper()
 	reg := policy.NewRegistry()
 	for _, p := range policies {
@@ -19,7 +24,7 @@ func newTestPlane(t *testing.T, policies ...*policy.Policy) *ControlPlane {
 			t.Fatalf("register policy: %v", err)
 		}
 	}
-	return New(reg)
+	return New(reg, opts...)
 }
 
 func TestEvaluateNoPolicyFailClosed(t *testing.T) {
@@ -198,5 +203,160 @@ func TestEvaluateEvaluatorErrorFailsClosed(t *testing.T) {
 	}
 	if len(rec.Reasons) < 2 || !strings.Contains(rec.Reasons[len(rec.Reasons)-1], "governance evaluator error") {
 		t.Fatalf("expected evaluator error in decision evidence, got %#v", rec.Reasons)
+	}
+}
+
+func TestEvaluateBindsCapabilityGrantDigest(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	rec, err := c.Evaluate(Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rec.GrantDigest == "" {
+		t.Fatal("expected authorization grant digest")
+	}
+	if !grantDigestMatches(rec) {
+		t.Fatal("expected grant digest to bind the issued authorization identity")
+	}
+}
+
+func TestValidateDecisionRejectsTamperedCapabilityGrant(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+
+	issued.Request.Capability = "repository.admin"
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected tampered grant to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsTamperedGrantDigest(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+
+	issued.GrantDigest = "tampered"
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected tampered grant digest to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsExpiredGrant(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlaneWithOptions(t, []Option{WithGrantTTL(time.Millisecond)}, p)
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+	if issued.ExpiresAt.IsZero() {
+		t.Fatal("expected grant expiry to be issued")
+	}
+	time.Sleep(5 * time.Millisecond)
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected expired grant to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsRevokedGrant(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlane(t, p)
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+	if err := c.RevokeGrant(issued.GrantDigest); err != nil {
+		t.Fatalf("revoke grant: %v", err)
+	}
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected revoked grant to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsTamperedGrantExpiry(t *testing.T) {
+	p := &policy.Policy{
+		ID:      "repository-write",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+	}
+	c := newTestPlaneWithOptions(t, []Option{WithGrantTTL(time.Minute)}, p)
+	req := Request{
+		Capability: "repository.write",
+		Resource:   "repository",
+		Action:     "write",
+		Actor:      "codex",
+	}
+	issued, err := c.Evaluate(req)
+	if err != nil {
+		t.Fatalf("issue authorization: %v", err)
+	}
+	issued.ExpiresAt = issued.ExpiresAt.Add(time.Minute)
+	if _, err := c.ValidateDecision(req, issued); err == nil {
+		t.Fatal("expected tampered grant expiry to be rejected")
 	}
 }

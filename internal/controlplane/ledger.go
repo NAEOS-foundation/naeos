@@ -90,7 +90,14 @@ func (l *Ledger) Save(path string) error {
 	if path == "" {
 		return fmt.Errorf("ledger path is required")
 	}
-	data, err := json.Marshal(l.Events())
+	return saveLedgerEvents(path, l.Events())
+}
+
+func saveLedgerEvents(path string, events []LedgerEvent) error {
+	if path == "" {
+		return fmt.Errorf("ledger path is required")
+	}
+	data, err := json.Marshal(events)
 	if err != nil {
 		return fmt.Errorf("marshal ledger: %w", err)
 	}
@@ -159,12 +166,17 @@ func LoadLedger(path string) (*Ledger, error) {
 	return ledger, nil
 }
 
-// Append adds an event to the ledger. It is always append-only and uses a monotonic event ID.
+// Append adds an event to the ledger. When persistence is configured, the event
+// becomes visible only after its snapshot has been durably committed.
 func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
+	if l == nil {
+		return LedgerEvent{}
+	}
 	l.mu.Lock()
-	l.nextID++
+	defer l.mu.Unlock()
+	nextID := l.nextID + 1
 	if event.ID == "" {
-		event.ID = fmt.Sprintf("EVT-%05d", l.nextID)
+		event.ID = fmt.Sprintf("EVT-%05d", nextID)
 	}
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now().UTC()
@@ -173,20 +185,18 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 		event.PreviousHash = l.events[len(l.events)-1].EventHash
 	}
 	event.EventHash = hashLedgerEvent(event)
-	l.events = append(l.events, event)
-	path := l.persistencePath
-	l.mu.Unlock()
-	if path != "" {
-		if err := l.Save(path); err != nil {
-			l.mu.Lock()
+	if l.persistencePath != "" {
+		snapshot := make([]LedgerEvent, len(l.events)+1)
+		copy(snapshot, l.events)
+		snapshot[len(l.events)] = event
+		if err := saveLedgerEvents(l.persistencePath, snapshot); err != nil {
 			l.lastPersistenceError = err
-			l.mu.Unlock()
-		} else {
-			l.mu.Lock()
-			l.lastPersistenceError = nil
-			l.mu.Unlock()
+			return LedgerEvent{}
 		}
 	}
+	l.nextID = nextID
+	l.events = append(l.events, event)
+	l.lastPersistenceError = nil
 	return event
 }
 
