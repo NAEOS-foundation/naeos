@@ -10,20 +10,21 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/NAEOS-foundation/naeos/internal/database"
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
 )
 
 func newAgentRequestCommand() *cobra.Command {
 	var requestJSON, requestFile, adapterName, outputFmt string
-	var sessionID, storePath, invocationID string
+	var sessionID, storePath, invocationID, replayDB string
 
 	cmd := &cobra.Command{
 		Use:   "request",
 		Short: "Authorize and execute an agent tool request through NAEOS",
 		Long: `Submit a normalized agent tool request to the NAEOS execution gateway.
 
-The request is first evaluated by the active governance policy. Only an allowed request reaches the runtime sandbox. The resulting decision and execution metadata can optionally be persisted to an agent session.
+The request is first evaluated by the active governance policy. Only an allowed request reaches the runtime sandbox. Replay protection is enabled by default; the default in-memory store is process-local and suitable only for local/test use. Use --replay-db for durable restart/shared-replica protection. The resulting decision and execution metadata can optionally be persisted to an agent session.
 
 Example:
   naeos agent request --request '{"tool":"file-edit","action":"write","resource":"src/app.go","actor":"codex"}'
@@ -44,7 +45,12 @@ Example:
 			}
 			cp := control.New(reg)
 			sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{})
-			gw := gateway.New(cp, sb, gateway.WithReplayProtection(true))
+			replayStore, closeReplayStore, err := loadReplayStore(replayDB)
+			if err != nil {
+				return err
+			}
+			defer closeReplayStore()
+			gw := gateway.New(cp, sb, gateway.WithReplayProtection(true), gateway.WithInvocationStore(replayStore))
 
 			if adapterName == "" {
 				adapterName = "json"
@@ -55,6 +61,8 @@ Example:
 				adapter = gateway.JSONToolAdapter{}
 			case "codex":
 				adapter = gateway.CodexToolAdapter{}
+			case "reference-external-agent":
+				adapter = gateway.ReferenceExternalAdapter{}
 			default:
 				return fmt.Errorf("unsupported adapter %q", adapterName)
 			}
@@ -112,10 +120,11 @@ Example:
 
 	cmd.Flags().StringVar(&requestJSON, "request", "", "inline JSON agent tool request")
 	cmd.Flags().StringVar(&requestFile, "request-file", "", "path to JSON agent tool request")
-	cmd.Flags().StringVar(&adapterName, "adapter", "json", "agent adapter: json or codex")
+	cmd.Flags().StringVar(&adapterName, "adapter", "json", "agent adapter: json, codex, or reference-external-agent")
 	cmd.Flags().StringVar(&sessionID, "session-id", "", "persist the decision and execution in an agent session")
 	cmd.Flags().StringVar(&storePath, "store-path", "", "path to the agent session store JSON file")
 	cmd.Flags().StringVar(&invocationID, "invocation-id", "", "unique invocation identity used for replay protection")
+	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection; omit only for local/test in-memory replay")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
@@ -135,4 +144,24 @@ func loadAgentRequestInput(inline, file string) ([]byte, error) {
 		return data, nil
 	}
 	return []byte(inline), nil
+}
+
+func loadReplayStore(name string) (gateway.InvocationStore, func(), error) {
+	if name == "" {
+		return gateway.NewInMemoryInvocationStore(), func() {}, nil
+	}
+
+	store := database.NewConnectionStore()
+	saved, err := store.Get(name)
+	if err != nil {
+		return nil, nil, fmt.Errorf("load replay database %q: %w", name, err)
+	}
+	db := database.New(saved.Driver)
+	if db == nil {
+		return nil, nil, fmt.Errorf("unsupported replay database driver %q", saved.Driver)
+	}
+	if err := db.Connect(saved.Config); err != nil {
+		return nil, nil, fmt.Errorf("connect replay database %q: %w", name, err)
+	}
+	return gateway.NewDatabaseInvocationStore(db), func() { _ = db.Close() }, nil
 }
