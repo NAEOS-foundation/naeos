@@ -50,6 +50,7 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/control-plane/decision", server.handleControlPlaneDecision)
 	server.mux.HandleFunc("/api/control-plane/session", server.handleControlPlaneSession)
 	server.mux.HandleFunc("/api/control-plane/evidence", server.handleControlPlaneEvidence)
+	server.mux.HandleFunc("/api/control-plane/runs", server.handleControlPlaneRuns)
 	server.mux.HandleFunc("/api/control-plane/approval", server.handleControlPlaneApproval)
 	server.mux.HandleFunc("/api/control-plane/approval/", server.handleControlPlaneApprovalStatus)
 	server.mux.HandleFunc("/api/control-plane/approval/approve", server.handleControlPlaneApprovalApprove)
@@ -420,6 +421,83 @@ func (as *APIServer) handleControlPlaneEvidence(w http.ResponseWriter, r *http.R
 	writeJSON(w, response)
 }
 
+func (as *APIServer) handleControlPlaneRuns(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if as.setup.ControlPlaneGateway == nil || as.setup.ControlPlaneGateway.Ledger == nil {
+		writeJSON(w, map[string]interface{}{"runs": []interface{}{}, "total": 0})
+		return
+	}
+	events := as.setup.ControlPlaneGateway.Ledger.Events()
+	type run struct {
+		ID           string
+		DecisionID   string
+		AgentID      string
+		Capability   string
+		Status       string
+		StartedAt    time.Time
+		UpdatedAt    time.Time
+		ExecutionID  string
+		Verification string
+	}
+	runs := make([]run, 0, 8)
+	seen := make(map[string]struct{})
+	for i := len(events) - 1; i >= 0 && len(runs) < 8; i-- {
+		e := events[i]
+		if e.ExecutionID == "" {
+			continue
+		}
+		if _, ok := seen[e.ExecutionID]; ok {
+			continue
+		}
+		seen[e.ExecutionID] = struct{}{}
+		r := run{
+			ID: e.ExecutionID, DecisionID: e.DecisionID, AgentID: e.AgentID,
+			Capability: string(e.Capability), Status: "ACTIVE", StartedAt: e.Timestamp,
+			UpdatedAt: e.Timestamp, ExecutionID: e.ExecutionID,
+		}
+		for _, candidate := range events {
+			if candidate.ExecutionID != e.ExecutionID {
+				continue
+			}
+			if candidate.Timestamp.Before(r.StartedAt) {
+				r.StartedAt = candidate.Timestamp
+			}
+			if candidate.Timestamp.After(r.UpdatedAt) {
+				r.UpdatedAt = candidate.Timestamp
+			}
+			switch candidate.EventType {
+			case "SIDE_EFFECT_OBSERVED":
+				r.Status = "VERIFIED"
+				r.Verification = candidate.Metadata["verification"]
+				if r.Verification == "" {
+					r.Verification = "PASS"
+				}
+			case "EXECUTION_FAILED":
+				r.Status = "FAILED"
+				r.Verification = candidate.Metadata["verification"]
+			case "EXECUTION_BLOCKED":
+				r.Status = "BLOCKED"
+			case "EXECUTION_ALLOWED":
+				if r.Status != "VERIFIED" {
+					r.Status = "EXECUTING"
+				}
+			}
+		}
+		runs = append(runs, r)
+	}
+	result := make([]map[string]interface{}, 0, len(runs))
+	for _, item := range runs {
+		result = append(result, map[string]interface{}{
+			"id": item.ID, "decision_id": item.DecisionID, "agent_id": item.AgentID, "capability": item.Capability,
+			"status": item.Status, "started_at": item.StartedAt, "updated_at": item.UpdatedAt,
+			"execution_id": item.ExecutionID, "verification": item.Verification,
+		})
+	}
+	writeJSON(w, map[string]interface{}{"runs": result, "total": len(result)})
+}
 func (as *APIServer) handleControlPlaneApproval(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
