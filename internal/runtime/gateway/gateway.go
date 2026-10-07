@@ -166,11 +166,11 @@ type ExecutionGateway struct {
 // New creates an ExecutionGateway with the given control plane and sandbox.
 func New(cp ControlPlane, sb Sandbox, opts ...Option) *ExecutionGateway {
 	g := &ExecutionGateway{
-		controlPlane: cp,
-		sandbox:      sb,
-		adapters:     make(map[string]AgentAdapter),
+		controlPlane:    cp,
+		sandbox:         sb,
+		adapters:        make(map[string]AgentAdapter),
 		invocationStore: NewInMemoryInvocationStore(),
-		failClosed:   true,
+		failClosed:      true,
 	}
 	for _, o := range opts {
 		o(g)
