@@ -14,6 +14,14 @@ type conformanceRevalidator struct {
 	err error
 }
 
+func (r conformanceRevalidator) Evaluate(req control.Request) (control.DecisionRecord, error) {
+	return control.DecisionRecord{
+		Request:  req,
+		Decision: control.DecisionAllow,
+		PolicyID: "stale-policy",
+	}, nil
+}
+
 func (r conformanceRevalidator) ValidateDecision(control.Request, control.DecisionRecord) (control.DecisionRecord, error) {
 	if r.err != nil {
 		return control.DecisionRecord{}, r.err
