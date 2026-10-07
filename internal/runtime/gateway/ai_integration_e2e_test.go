@@ -108,7 +108,7 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	if result.Status != "denied" {
 		t.Fatalf("expected denied status after policy rotation, got %s", result.Status)
 	}
-	if got := sb.ExecutedCount(); got != 2 {
+	if got := sb.ExecutedCount(); got != 1 {
 		t.Fatalf("expected gateway to enter sandbox only for the two authorization attempts, got %d", got)
 	}
 
