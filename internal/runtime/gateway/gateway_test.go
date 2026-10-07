@@ -701,3 +701,89 @@ func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
 		t.Fatalf("expected control plane to be evaluated twice, got %d calls", cp.calls)
 	}
 }
+
+
+type replayCountingSandbox struct {
+	count int
+}
+
+func (s *replayCountingSandbox) Execute(req ToolRequest) (string, error) {
+	s.count++
+	return "executed", nil
+}
+
+func TestGatewayReplayProtectionRejectsDuplicateInvocation(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	first, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-001",
+		Tool:        "filesystem",
+		Action:      "write",
+	})
+	if err != nil {
+		t.Fatalf("first authorization failed: %v", err)
+	}
+	if first.Status != "completed" {
+		t.Fatalf("expected first invocation to complete, got %s", first.Status)
+	}
+
+	second, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-001",
+		Tool:        "filesystem",
+		Action:      "write",
+	})
+	if err != nil {
+		t.Fatalf("replay authorization failed unexpectedly: %v", err)
+	}
+	if second.Status != "denied" {
+		t.Fatalf("expected replay to be denied, got %s", second.Status)
+	}
+	if second.Output != "invocation already consumed" {
+		t.Fatalf("expected replay reason, got %q", second.Output)
+	}
+	if sb.count != 1 {
+		t.Fatalf("expected exactly one sandbox execution, got %d", sb.count)
+	}
+}
+
+func TestGatewayReplayProtectionRequiresInvocationID(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	_, err := gw.Authorize(ToolRequest{
+		Tool:   "filesystem",
+		Action: "write",
+	})
+	if err == nil {
+		t.Fatal("expected missing invocation identity to fail closed")
+	}
+	if sb.count != 0 {
+		t.Fatalf("expected no sandbox execution, got %d", sb.count)
+	}
+}
+
+func TestGatewayReplayProtectionAllowsDistinctInvocations(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	for _, id := range []string{"inv-001", "inv-002"} {
+		result, err := gw.Authorize(ToolRequest{
+			InvocationID: id,
+			Tool:        "filesystem",
+			Action:      "write",
+		})
+		if err != nil {
+			t.Fatalf("invocation %s failed: %v", id, err)
+		}
+		if result.Status != "completed" {
+			t.Fatalf("invocation %s expected completed, got %s", id, result.Status)
+		}
+	}
+	if sb.count != 2 {
+		t.Fatalf("expected two sandbox executions, got %d", sb.count)
+	}
+}
