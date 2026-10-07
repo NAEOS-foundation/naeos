@@ -21,7 +21,7 @@ func newAgentRequestCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "request",
 		Short: "Authorize and execute an agent tool request through NAEOS",
-		Long: "Submit a normalized agent tool request to the NAEOS execution gateway.\n\nThe request is first evaluated by the active governance policy. Only an allowed request reaches the runtime sandbox. The resulting decision and execution metadata can optionally be persisted to an agent session.\n\nExample:\n  naeos agent request --request '{"tool":"file-edit","action":"write","resource":"src/app.go","actor":"codex"}'\n  naeos agent request --request-file request.json --session-id sess-123 --output json",
+		Long: `Submit a normalized agent tool request to the NAEOS execution gateway.\n\nThe request is first evaluated by the active governance policy. Only an allowed request reaches the runtime sandbox. The resulting decision and execution metadata can optionally be persisted to an agent session.\n\nExample:\n  naeos agent request --request '{"tool":"file-edit","action":"write","resource":"src/app.go","actor":"codex"}'\n  naeos agent request --request-file request.json --session-id sess-123 --output json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			data, err := loadAgentRequestInput(requestJSON, requestFile)
