@@ -452,9 +452,12 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	// Step 2: If a handoff contract was provided, validate it.
 	if request.HandoffContract != nil {
 		handoffValidation := eg.handoffValidator.ValidateHandoff(request.HandoffContract)
+		handoffValidation.DecisionID = decision.DecisionID
+		handoffValidation.ExecutionID = result.ExecutionID
+		result.HandoffValidationID = handoffValidation.ValidationID
 		if !handoffValidation.Valid {
 			result.Error = fmt.Sprintf("Handoff validation failed: %v", handoffValidation.Errors)
-			eg.recordAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, "", 0, "BLOCK", "HANDOFF_VALIDATION_FAILED")
+			eg.recordCorrelatedAuditEvent("EXECUTION_BLOCKED", request.AgentID, request.Capability, "", 0, "BLOCK", "HANDOFF_VALIDATION_FAILED", handoffValidation.ValidationID, decision.DecisionID, result.ExecutionID, "")
 			return result, nil
 		}
 	}
@@ -490,6 +493,14 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	}
 	result.ExecutionID = executionEvidence.ExecutionID
 	result.EvidenceID = executionEvidence.ID
+	if executionEvidence.EventType != "EXECUTION_ALLOWED" || result.ExecutionID == "" {
+		result.Error = fmt.Sprintf("execution did not reach allowed state: %s", executionEvidence.EventType)
+		return result, nil
+	}
+
+	if request.HandoffContract != nil && result.HandoffValidationID != "" {
+		eg.recordCorrelatedAuditEvent("HANDOFF_EXECUTION_CORRELATED", request.AgentID, request.Capability, "", 0, "ALLOW", "HANDOFF_VALIDATED", result.HandoffValidationID, result.DecisionID, result.ExecutionID, result.EvidenceID)
+	}
 	result.Authorized = true
 	result.Executed = true
 	result.Result = map[string]interface{}{
@@ -500,6 +511,36 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	// Step 6: Run independent verification
 	verificationResult := eg.verifier.Verify(request.AgentID, request.Capability, currentGrant.PolicyID)
 	result.VerificationStatus = verificationResult.Result
+
+	// Update the observation metadata with the independent verification outcome.
+	// The ledger event itself remains immutable, so emit a second observation
+	// record that preserves the same execution correlation and verification state.
+	verificationEventType := "SIDE_EFFECT_OBSERVED"
+	verificationDecision := controlplane.DecisionAllow
+	verificationReason := controlplane.ReasonAllowed
+	if verificationResult.Result != "PASS" {
+		verificationEventType = "EXECUTION_FAILED"
+		verificationDecision = controlplane.DecisionDeny
+		verificationReason = controlplane.DecisionReason("verification_failed")
+	}
+	observation := eg.controlPlaneGateway.Ledger.Append(controlplane.LedgerEvent{
+		RequestID:    request.RequestID,
+		DecisionID:   result.DecisionID,
+		ExecutionID:  result.ExecutionID,
+		AgentID:      request.AgentID,
+		Capability:   controlplane.Capability(request.Capability),
+		ArtifactHash: artifactHash,
+		EventType:    verificationEventType,
+		Decision:     verificationDecision,
+		Reason:       verificationReason,
+		Metadata: map[string]string{
+			"verification": verificationResult.Result,
+		},
+	})
+	if observation.ExecutionID != result.ExecutionID {
+		result.Error = "verification evidence could not be correlated with execution"
+		return result, nil
+	}
 
 	eg.recordAuditEvent("EXECUTION_ALLOWED", request.AgentID, request.Capability, currentGrant.PolicyID, currentGrant.PolicyVersion, "ALLOW", "AUTHORIZED")
 
@@ -554,6 +595,10 @@ func (eg *ExecutionGate) enforceControlPlane(request *ExecutionRequest) (control
 
 // recordAuditEvent is a helper that records an execution audit event.
 func (eg *ExecutionGate) recordAuditEvent(eventType, agentID string, cap Capability, policyID string, policyVersion int, decision, reason string) {
+	eg.recordCorrelatedAuditEvent(eventType, agentID, cap, policyID, policyVersion, decision, reason, "", "", "", "")
+}
+
+func (eg *ExecutionGate) recordCorrelatedAuditEvent(eventType, agentID string, cap Capability, policyID string, policyVersion int, decision, reason, handoffValidationID, decisionID, executionID, evidenceID string) {
 	_ = eg.auditLedger.RecordEvent(&AuditEvent{
 		Timestamp:           time.Now(),
 		EventType:           eventType,
@@ -563,5 +608,9 @@ func (eg *ExecutionGate) recordAuditEvent(eventType, agentID string, cap Capabil
 		PolicyVersion:       policyVersion,
 		Decision:            decision,
 		Reason:              reason,
+		HandoffValidationID: handoffValidationID,
+		DecisionID:          decisionID,
+		ExecutionID:         executionID,
+		EvidenceID:          evidenceID,
 	})
 }

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -202,6 +203,65 @@ func (s *Server) v2IdempotencyMiddleware(next http.Handler) http.Handler {
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		fp := fingerprintRequest(r, body)
+		if s.db != nil {
+			if entry, exists, err := s.loadDurableIdempotency(key, fp); err != nil {
+				writeProblem(w, r, http.StatusServiceUnavailable, "idempotency storage unavailable")
+				return
+			} else if exists {
+				if entry.fingerprint != fp {
+					writeProblem(w, r, http.StatusConflict, "Idempotency-Key was already used with a different request")
+					return
+				}
+				if entry.status == http.StatusConflict {
+					w.Header().Set("Retry-After", "1")
+					writeProblem(w, r, http.StatusConflict, "request with this Idempotency-Key is already in progress")
+					return
+				}
+				for k, values := range entry.header {
+					for _, value := range values {
+						w.Header().Add(k, value)
+					}
+				}
+				w.WriteHeader(entry.status)
+				_, _ = w.Write(entry.body)
+				return
+			}
+			claimed, err := s.claimDurableIdempotency(key, fp)
+			if err != nil {
+				writeProblem(w, r, http.StatusServiceUnavailable, "idempotency storage unavailable")
+				return
+			}
+			if !claimed {
+				entry, exists, err := s.loadDurableIdempotency(key, fp)
+				if err != nil || !exists {
+					writeProblem(w, r, http.StatusServiceUnavailable, "idempotency storage unavailable")
+					return
+				}
+				if entry.fingerprint != fp {
+					writeProblem(w, r, http.StatusConflict, "Idempotency-Key was already used with a different request")
+					return
+				}
+				w.Header().Set("Retry-After", "1")
+				writeProblem(w, r, http.StatusConflict, "request with this Idempotency-Key is already in progress")
+				return
+			}
+			rec := newV2ResponseRecorder()
+			next.ServeHTTP(rec, r)
+			if rec.status >= 200 && rec.status < 500 {
+				h := make(http.Header)
+				for k, values := range rec.header {
+					h[k] = append([]string(nil), values...)
+				}
+				if err := s.completeDurableIdempotency(key, fp, rec.status, h, rec.body.Bytes()); err != nil {
+					slog.Warn("failed to persist idempotency response", "error", err)
+				}
+			} else {
+				s.deleteDurableIdempotency(key)
+			}
+			rec.commit(w)
+			return
+		}
+
 		v2Idempotency.Lock()
 		for k, entry := range v2Idempotency.items {
 			if time.Now().After(entry.expiresAt) {
@@ -233,7 +293,7 @@ func (s *Server) v2IdempotencyMiddleware(next http.Handler) http.Handler {
 				h[k] = append([]string(nil), values...)
 			}
 			v2Idempotency.Lock()
-			v2Idempotency.items[key] = idempotencyEntry{fingerprint: fp, status: rec.status, header: h, body: append([]byte(nil), rec.body.Bytes()...), expiresAt: time.Now().Add(24 * time.Hour)}
+			v2Idempotency.items[key] = idempotencyEntry{fingerprint: fp, status: rec.status, header: h, body: append([]byte(nil), rec.body.Bytes()...), expiresAt: time.Now().Add(v2IdempotencyTTL)}
 			v2Idempotency.Unlock()
 		}
 	})
