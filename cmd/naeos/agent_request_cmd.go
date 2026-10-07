@@ -81,15 +81,27 @@ Example:
 				}
 				return runtimeResultExit(result)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Agent:    %s\n", req.Actor)
-			fmt.Fprintf(cmd.OutOrStdout(), "Tool:     %s/%s\n", req.Tool, req.Action)
-			fmt.Fprintf(cmd.OutOrStdout(), "Decision: %s\n", result.Decision)
-			fmt.Fprintf(cmd.OutOrStdout(), "Status:   %s\n", result.Status)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Agent:    %s\n", req.Actor); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Tool:     %s/%s\n", req.Tool, req.Action); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Decision: %s\n", result.Decision); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Status:   %s\n", result.Status); err != nil {
+				return err
+			}
 			if result.PolicyID != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Policy:   %s\n", result.PolicyID)
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Policy:   %s\n", result.PolicyID); err != nil {
+					return err
+				}
 			}
 			if result.Hash != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Hash:     %s\n", result.Hash)
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Hash:     %s\n", result.Hash); err != nil {
+					return err
+				}
 			}
 			return runtimeResultExit(result)
 		},
