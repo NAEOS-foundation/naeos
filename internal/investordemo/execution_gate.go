@@ -493,6 +493,11 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	}
 	result.ExecutionID = executionEvidence.ExecutionID
 	result.EvidenceID = executionEvidence.ID
+	if executionEvidence.EventType != "EXECUTION_ALLOWED" || result.ExecutionID == "" {
+		result.Error = fmt.Sprintf("execution did not reach allowed state: %s", executionEvidence.EventType)
+		return result, nil
+	}
+
 	if request.HandoffContract != nil && result.HandoffValidationID != "" {
 		eg.recordCorrelatedAuditEvent("HANDOFF_EXECUTION_CORRELATED", request.AgentID, request.Capability, "", 0, "ALLOW", "HANDOFF_VALIDATED", result.HandoffValidationID, result.DecisionID, result.ExecutionID, result.EvidenceID)
 	}
@@ -506,6 +511,36 @@ func (eg *ExecutionGate) Authorize(request *ExecutionRequest) (*ExecutionResult,
 	// Step 6: Run independent verification
 	verificationResult := eg.verifier.Verify(request.AgentID, request.Capability, currentGrant.PolicyID)
 	result.VerificationStatus = verificationResult.Result
+
+	// Update the observation metadata with the independent verification outcome.
+	// The ledger event itself remains immutable, so emit a second observation
+	// record that preserves the same execution correlation and verification state.
+	verificationEventType := "SIDE_EFFECT_OBSERVED"
+	verificationDecision := controlplane.DecisionAllow
+	verificationReason := controlplane.ReasonAllowed
+	if verificationResult.Result != "PASS" {
+		verificationEventType = "EXECUTION_FAILED"
+		verificationDecision = controlplane.DecisionDeny
+		verificationReason = controlplane.DecisionReason("verification_failed")
+	}
+	observation := eg.controlPlaneGateway.Ledger.Append(controlplane.LedgerEvent{
+		RequestID:    request.RequestID,
+		DecisionID:   result.DecisionID,
+		ExecutionID:  result.ExecutionID,
+		AgentID:      request.AgentID,
+		Capability:   controlplane.Capability(request.Capability),
+		ArtifactHash: artifactHash,
+		EventType:    verificationEventType,
+		Decision:     verificationDecision,
+		Reason:       verificationReason,
+		Metadata: map[string]string{
+			"verification": verificationResult.Result,
+		},
+	})
+	if observation.ExecutionID != result.ExecutionID {
+		result.Error = "verification evidence could not be correlated with execution"
+		return result, nil
+	}
 
 	eg.recordAuditEvent("EXECUTION_ALLOWED", request.AgentID, request.Capability, currentGrant.PolicyID, currentGrant.PolicyVersion, "ALLOW", "AUTHORIZED")
 

@@ -471,7 +471,13 @@ func (as *APIServer) handleControlPlaneRuns(w http.ResponseWriter, r *http.Reque
 			switch candidate.EventType {
 			case "SIDE_EFFECT_OBSERVED":
 				r.Status = "VERIFIED"
-				r.Verification = "PASS"
+				r.Verification = candidate.Metadata["verification"]
+				if r.Verification == "" {
+					r.Verification = "PASS"
+				}
+			case "EXECUTION_FAILED":
+				r.Status = "FAILED"
+				r.Verification = candidate.Metadata["verification"]
 			case "EXECUTION_BLOCKED":
 				r.Status = "BLOCKED"
 			case "EXECUTION_ALLOWED":
