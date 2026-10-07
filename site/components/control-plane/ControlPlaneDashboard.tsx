@@ -18,6 +18,9 @@ type Decision = {
 
 type Props = { lang: "en" | "id" };
 
+type Run = { id: string; decision_id?: string; agent_id: string; capability?: string; status: "ACTIVE" | "EXECUTING" | "VERIFIED" | "BLOCKED"; started_at: string; updated_at: string; execution_id?: string; verification?: string };
+type RunsResponse = { runs?: Run[]; total?: number };
+
 type EvidenceResponse = { evidence?: Array<{ DecisionID?: string; decision_id?: string; RequestID?: string; request_id?: string; AgentID?: string; agent_id?: string; Capability?: string; capability?: string; Decision?: string; decision?: string; Reason?: string; reason?: string; PolicyID?: string; policy_id?: string; PolicyVersion?: string | number; policy_version?: string | number; Verification?: { Result?: string; result?: string }; verification?: { Result?: string; result?: string }; ExecutionID?: string; execution_id?: string }>; verified?: boolean; persistence_error?: string };
 
 const decisions: Decision[] = [
@@ -36,6 +39,18 @@ export default function ControlPlaneDashboard({ lang }: Props) {
   const [liveDecisions, setLiveDecisions] = useState<Decision[]>([]);
   const [evidenceState, setEvidenceState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [verification, setVerification] = useState<boolean | null>(null);
+  const [runs, setRuns] = useState<Run[]>([]);
+
+  useEffect(() => {
+    if (!CONTROL_PLANE_ENDPOINT) return;
+    let cancelled = false;
+    const endpoint = CONTROL_PLANE_ENDPOINT.endsWith("/") ? CONTROL_PLANE_ENDPOINT.slice(0, -1) : CONTROL_PLANE_ENDPOINT;
+    fetch(endpoint + "/api/control-plane/runs", { cache: "no-store" })
+      .then(async (response) => { if (!response.ok) throw new Error("HTTP " + response.status); return (await response.json()) as RunsResponse; })
+      .then((payload) => { if (!cancelled) setRuns(payload.runs ?? []); })
+      .catch(() => { if (!cancelled) setRuns([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!CONTROL_PLANE_ENDPOINT) return;
@@ -120,9 +135,16 @@ export default function ControlPlaneDashboard({ lang }: Props) {
             </div>
           </div>
           <div className="control-plane-run">
-            <div className="run-heading"><div><span className="console-kicker">ACTIVE RUN</span><h4>RUN-8F31 · coding-agent-07</h4></div><span className="run-progress-label">78%</span></div>
-            <div className="run-progress"><span /></div>
-            <div className="run-steps"><span className="done">Request</span><span className="done">Policy</span><span className="done">Runtime</span><span className="current">Verification</span><span>Evidence</span></div>
+            <div className="run-heading"><div><span className="console-kicker">REAL RUNS</span><h4>{runs.length ? runs.length + " execution traces" : "Waiting for execution traces"}</h4></div><span className="run-progress-label">{runs.length ? "LIVE" : "—"}</span></div>
+            <div className="run-list">
+              {runs.map((run) => (
+                <div className="run-item" key={run.id}>
+                  <div><strong>{run.id}</strong><small>{run.agent_id} · {run.capability ?? "execution"}</small></div>
+                  <span className={"run-state " + run.status.toLowerCase()}>{run.status}</span>
+                </div>
+              ))}
+              {!runs.length && <div className="run-empty">No execution-backed runs are present in the control-plane ledger.</div>}
+            </div>
           </div>
         </div>
       </div>

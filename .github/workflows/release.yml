@@ -130,7 +130,7 @@ jobs:
           bash scripts/validate-legal-evidence.sh release-legal-evidence.json
 
       - name: Upload release legal evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-legal-evidence-${{ steps.version.outputs.VERSION }}
           path: release-legal-evidence.json
@@ -216,7 +216,7 @@ jobs:
           } > /tmp/release-notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@e598afbe1493e6b1bafb1f389cabb956eab91231
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
         with:
           name: NAEOS ${{ steps.version.outputs.VERSION }}
           body_path: /tmp/release-notes.md

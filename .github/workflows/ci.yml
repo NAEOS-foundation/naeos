@@ -102,7 +102,7 @@ jobs:
           exit "$rc"
       - name: Upload governance lifecycle evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: governance-lifecycle-evidence-${{ github.sha }}
           path: governance-lifecycle-evidence/
@@ -128,7 +128,7 @@ jobs:
           exit "$rc"
       - name: Upload Day 02 runtime evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: day2-atomic-execution-evidence-${{ github.sha }}
           path: day2-atomic-execution-evidence/
@@ -162,7 +162,7 @@ jobs:
             bash ./scripts/governance-boundary-benchmark.sh
       - name: Upload Governance Boundary Benchmark evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: governance-boundary-benchmark-${{ github.sha }}
           path: ${{ runner.temp }}/naeos-governance-benchmark/
@@ -256,7 +256,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: bash scripts/dependency-risk-gate.sh
       - name: Upload dependency risk evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-risk-evidence
           path: dependency-risk-evidence.json
@@ -278,7 +278,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash scripts/change-risk-gate.sh
       - name: Upload change risk evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: change-risk-evidence
           path: change-risk-evidence.json

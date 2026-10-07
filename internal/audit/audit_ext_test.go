@@ -144,6 +144,41 @@ func TestVerifyChainFile(t *testing.T) {
 	}
 }
 
+func TestHashedAuditorResumesFileChainAfterRestart(t *testing.T) {
+	dir := t.TempDir()
+	fileAuditor, err := NewFileAuditor(dir)
+	if err != nil {
+		t.Fatalf("NewFileAuditor: %v", err)
+	}
+
+	first := NewHashedAuditor(fileAuditor)
+	if err := first.Log(AuditEvent{UserID: "u1", Action: "create"}); err != nil {
+		t.Fatalf("first Log: %v", err)
+	}
+	if err := first.Log(AuditEvent{UserID: "u2", Action: "update"}); err != nil {
+		t.Fatalf("second Log: %v", err)
+	}
+
+	// Simulate a process restart: construct a fresh hashed auditor over the same file.
+	fileAuditor2, err := NewFileAuditor(dir)
+	if err != nil {
+		t.Fatalf("NewFileAuditor after restart: %v", err)
+	}
+	second := NewHashedAuditor(fileAuditor2)
+	if err := second.Log(AuditEvent{UserID: "u3", Action: "delete"}); err != nil {
+		t.Fatalf("post-restart Log: %v", err)
+	}
+
+	path := filepath.Join(dir, ".naeos", "audit.log")
+	violations, err := VerifyChainFile(path)
+	if err != nil {
+		t.Fatalf("VerifyChainFile: %v", err)
+	}
+	if len(violations) != 0 {
+		t.Fatalf("expected resumed chain to verify, got %v", violations)
+	}
+}
+
 func TestEncryptedAuditorLog(t *testing.T) {
 	passphrase := "test-passphrase-123"
 	mem := NewMemoryAuditor()

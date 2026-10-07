@@ -28,6 +28,8 @@ func (JSONToolAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 	if err := json.Unmarshal(encoded, &request); err != nil {
 		return ToolRequest{}, fmt.Errorf("invalid tool request: %w", err)
 	}
+	request.RequestID = stringValue(data["request_id"])
+	request.InvocationID = stringValue(data["invocation_id"])
 	if request.Tool == "" || request.Action == "" {
 		return ToolRequest{}, fmt.Errorf("tool and action are required")
 	}

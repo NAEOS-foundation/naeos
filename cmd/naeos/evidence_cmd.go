@@ -64,10 +64,24 @@ func loadEvidenceStore() (*evidence.EvidenceStore, error) {
 	if err := json.Unmarshal(data, &records); err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrValidation, "parsing evidence store")
 	}
-	for _, r := range records {
+	// Records are persisted newest-first by EvidenceStore. Validate the
+	// stored chain in oldest-first order before accepting any record.
+	var previousHash string
+	for i := len(records) - 1; i >= 0; i-- {
+		r := records[i]
+		if r.PreviousHash != previousHash {
+			return nil, naeoserr.New(naeoserr.ErrConflict,
+				fmt.Sprintf("evidence chain break at persisted index %d: expected previous_hash %q, got %q", i, previousHash, r.PreviousHash))
+		}
+		expectedHash := evidence.RecomputeHash(r)
+		if r.Hash != expectedHash {
+			return nil, naeoserr.New(naeoserr.ErrConflict,
+				fmt.Sprintf("evidence hash mismatch at persisted index %d: expected %s, got %s", i, expectedHash, r.Hash))
+		}
 		if _, err := store.Append(r); err != nil {
 			return nil, err
 		}
+		previousHash = r.Hash
 	}
 	return store, nil
 }
@@ -88,7 +102,7 @@ func saveEvidenceStore(store *evidence.EvidenceStore) error {
 }
 
 func newEvidenceLogCommand() *cobra.Command {
-	var tool, action, resource, environment, actor, policyFile, outputFmt string
+	var tool, action, resource, environment, actor, requestID, policyFile, outputFmt string
 
 	cmd := &cobra.Command{
 		Use:   "log",
@@ -124,6 +138,7 @@ Example:
 			gw := gateway.New(cp, sb)
 
 			result, err := gw.Authorize(gateway.ToolRequest{
+				RequestID:   requestID,
 				Tool:        tool,
 				Action:      action,
 				Resource:    resource,
@@ -141,6 +156,7 @@ Example:
 
 			rec := evidence.EvidenceRecord{
 				Actor:               actor,
+				RequestID:           result.RequestID,
 				Resource:            result.Request.Resource,
 				Action:              result.Request.Action,
 				Environment:         environment,
@@ -183,6 +199,7 @@ Example:
 	cmd.Flags().StringVar(&resource, "resource", "", "target resource")
 	cmd.Flags().StringVar(&environment, "environment", "", "deployment environment")
 	cmd.Flags().StringVar(&actor, "actor", "", "actor identity")
+	cmd.Flags().StringVar(&requestID, "request-id", "", "logical request identity (recommended for end-to-end correlation)")
 	cmd.Flags().StringVar(&policyFile, "policy-file", "", "path to policy JSON file")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	_ = cmd.MarkFlagRequired("tool")
@@ -191,7 +208,7 @@ Example:
 }
 
 func newEvidenceQueryCommand() *cobra.Command {
-	var id, actor, resource, action, environment, policyID, decision, from, to, outputFmt string
+	var id, requestID, actor, resource, action, environment, policyID, decision, from, to, outputFmt string
 	var limit int
 	var verifyChain bool
 
@@ -240,7 +257,7 @@ func newEvidenceQueryCommand() *cobra.Command {
 				dec = control.Decision(decision)
 			}
 			results := store.Query(evidence.EvidenceQuery{
-				ID: id, Actor: actor, Resource: resource, Action: action, Environment: environment,
+				ID: id, RequestID: requestID, Actor: actor, Resource: resource, Action: action, Environment: environment,
 				PolicyID: policyID, Decision: dec, From: fromTime, To: toTime, Limit: limit,
 			})
 
@@ -270,6 +287,7 @@ func newEvidenceQueryCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&id, "id", "", "filter by exact evidence ID")
+	cmd.Flags().StringVar(&requestID, "request-id", "", "filter by exact logical request ID")
 	cmd.Flags().StringVar(&actor, "actor", "", "filter by actor")
 	cmd.Flags().StringVar(&resource, "resource", "", "filter by resource")
 	cmd.Flags().StringVar(&action, "action", "", "filter by action")

@@ -54,6 +54,54 @@ func (a *stubAdapter) OnDecision(result ExecutionResult) error {
 	return nil
 }
 
+func TestAdapterPrivilegeBoundaryDeniesWithoutGrant(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	adapter := JSONToolAdapter{}
+	gw.RegisterAdapter(adapter.Name(), adapter)
+
+	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{
+		"request_id": "req-p25-deny",
+		"tool":       "filesystem",
+		"action":     "write",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected denial, got %q", result.Status)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("adapter without grant reached sandbox: %d calls", sb.Count())
+	}
+	if result.RequestID != "req-p25-deny" {
+		t.Fatalf("request_id not preserved: %q", result.RequestID)
+	}
+}
+
+func TestAdapterPrivilegeBoundaryAllowsExplicitGrant(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	adapter := JSONToolAdapter{}
+	gw.RegisterAdapter(adapter.Name(), adapter)
+	if err := gw.GrantAdapterPolicy(adapter.Name(), AdapterPolicy{AllowedTools: []string{"filesystem"}, AllowedActions: []string{"write"}}); err != nil {
+		t.Fatalf("grant adapter policy: %v", err)
+	}
+
+	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{"request_id": "req-p25-allow", "tool": "filesystem", "action": "write"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != "completed" {
+		t.Fatalf("expected completion, got %q", result.Status)
+	}
+	if sb.Count() != 1 {
+		t.Fatalf("expected one sandbox call, got %d", sb.Count())
+	}
+}
+
 func TestGatewayAllowExecution(t *testing.T) {
 	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
 	sb := &stubSandbox{output: "ok"}
@@ -184,6 +232,9 @@ func TestGatewayAdapterIntegration(t *testing.T) {
 		},
 	}
 	gw.RegisterAdapter("claude", adapter)
+	if err := gw.GrantAdapterPolicy("claude", AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := gw.AuthorizeFromAdapter("claude", map[string]any{"path": "foo.go"})
 	if err != nil {
@@ -700,4 +751,147 @@ func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
 	if cp.calls != 2 {
 		t.Fatalf("expected control plane to be evaluated twice, got %d calls", cp.calls)
 	}
+}
+
+type replayCountingSandbox struct {
+	count int
+}
+
+func (s *replayCountingSandbox) Execute(req ToolRequest) (string, error) {
+	s.count++
+	return "executed", nil
+}
+
+func TestGatewayReplayProtectionRejectsDuplicateInvocation(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	first, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-001",
+		Tool:         "filesystem",
+		Action:       "write",
+	})
+	if err != nil {
+		t.Fatalf("first authorization failed: %v", err)
+	}
+	if first.Status != "completed" {
+		t.Fatalf("expected first invocation to complete, got %s", first.Status)
+	}
+
+	second, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-001",
+		Tool:         "filesystem",
+		Action:       "write",
+	})
+	if err != nil {
+		t.Fatalf("replay authorization failed unexpectedly: %v", err)
+	}
+	if second.Status != "denied" {
+		t.Fatalf("expected replay to be denied, got %s", second.Status)
+	}
+	if second.Output != "invocation already consumed" {
+		t.Fatalf("expected replay reason, got %q", second.Output)
+	}
+	if sb.count != 1 {
+		t.Fatalf("expected exactly one sandbox execution, got %d", sb.count)
+	}
+}
+
+func TestGatewayReplayProtectionRequiresInvocationID(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	_, err := gw.Authorize(ToolRequest{
+		Tool:   "filesystem",
+		Action: "write",
+	})
+	if err == nil {
+		t.Fatal("expected missing invocation identity to fail closed")
+	}
+	if sb.count != 0 {
+		t.Fatalf("expected no sandbox execution, got %d", sb.count)
+	}
+}
+
+func TestGatewayReplayProtectionAllowsDistinctInvocations(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true))
+
+	for _, id := range []string{"inv-001", "inv-002"} {
+		result, err := gw.Authorize(ToolRequest{
+			InvocationID: id,
+			Tool:         "filesystem",
+			Action:       "write",
+		})
+		if err != nil {
+			t.Fatalf("invocation %s failed: %v", id, err)
+		}
+		if result.Status != "completed" {
+			t.Fatalf("invocation %s expected completed, got %s", id, result.Status)
+		}
+	}
+	if sb.count != 2 {
+		t.Fatalf("expected two sandbox executions, got %d", sb.count)
+	}
+}
+
+func TestInMemoryInvocationStoreConcurrentClaim(t *testing.T) {
+	store := NewInMemoryInvocationStore()
+	const attempts = 32
+	results := make(chan bool, attempts)
+	errs := make(chan error, attempts)
+
+	for i := 0; i < attempts; i++ {
+		go func() {
+			claimed, err := store.Claim("concurrent-invocation")
+			results <- claimed
+			errs <- err
+		}()
+	}
+
+	claimedCount := 0
+	for i := 0; i < attempts; i++ {
+		if err := <-errs; err != nil {
+			t.Fatalf("claim returned error: %v", err)
+		}
+		if <-results {
+			claimedCount++
+		}
+	}
+	if claimedCount != 1 {
+		t.Fatalf("expected exactly one successful claim, got %d", claimedCount)
+	}
+}
+
+func TestGatewayReplayStoreFailureFailsClosed(t *testing.T) {
+	store := &failingInvocationStore{err: fmt.Errorf("store unavailable")}
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &replayCountingSandbox{}
+	gw := New(cp, sb, WithReplayProtection(true), WithInvocationStore(store))
+
+	result, err := gw.Authorize(ToolRequest{
+		InvocationID: "inv-storage-failure",
+		Tool:         "filesystem",
+		Action:       "write",
+	})
+	if err == nil {
+		t.Fatal("expected replay store failure to fail closed")
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected denied result, got %s", result.Status)
+	}
+	if sb.count != 0 {
+		t.Fatalf("expected no sandbox execution, got %d", sb.count)
+	}
+}
+
+type failingInvocationStore struct {
+	err error
+}
+
+func (s *failingInvocationStore) Claim(string) (bool, error) {
+	return false, s.err
 }
