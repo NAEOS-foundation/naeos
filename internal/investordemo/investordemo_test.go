@@ -473,6 +473,65 @@ func TestExecutionGate_AuthorizedExecution(t *testing.T) {
 	}
 }
 
+func TestExecutionGate_HandoffEvidenceCorrelation(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	payload := map[string]interface{}{"action": "read-repository"}
+	contract := &HandoffContract{
+		ContractVersion:        "1.0",
+		CanonicalVersion:       "1",
+		Initiator:              "agent-payment-01",
+		Recipient:              "agent-secondary-02",
+		RequestedCapability:    "repository.read",
+		AuthorizedCapabilities: []Capability{"repository.read"},
+		Payload:                payload,
+		PayloadDigest:          calculatePayloadDigest(payload),
+		PolicyID:               "POLICY-017",
+		PolicyVersion:          17,
+		Provenance:             map[string]interface{}{"source": "agent-payment-01", "destination": "agent-secondary-02"},
+		CreatedAt:              time.Now().UTC(),
+		ExpiresAt:              time.Now().UTC().Add(time.Hour),
+		ReplayProtection:       ReplayProtection{Nonce: generateNonce(), Timestamp: time.Now().UTC()},
+	}
+	contract.Signature = setup.HandoffValidator.SignContract(contract)
+
+	result, err := setup.ExecutionGate.Authorize(&ExecutionRequest{
+		RequestID:       generateID("REQ"),
+		AgentID:         "agent-payment-01",
+		Capability:      "repository.read",
+		Payload:         payload,
+		HandoffContract: contract,
+	})
+	if err != nil {
+		t.Fatalf("unexpected execution error: %v", err)
+	}
+	if !result.Authorized || !result.Executed {
+		t.Fatalf("expected authorized execution, got authorized=%v executed=%v error=%s", result.Authorized, result.Executed, result.Error)
+	}
+	if result.DecisionID == "" || result.ExecutionID == "" || result.EvidenceID == "" {
+		t.Fatalf("expected decision, execution, and evidence IDs, got decision=%q execution=%q evidence=%q", result.DecisionID, result.ExecutionID, result.EvidenceID)
+	}
+	if result.HandoffValidationID == "" {
+		t.Fatal("expected handoff validation ID to be correlated with execution")
+	}
+
+	var correlated *AuditEvent
+	for _, event := range setup.AuditLedger.GetEvents() {
+		if event.EventType == "HANDOFF_EXECUTION_CORRELATED" {
+			correlated = event
+			break
+		}
+	}
+	if correlated == nil {
+		t.Fatal("expected handoff execution correlation audit event")
+	}
+	if correlated.HandoffValidationID != result.HandoffValidationID ||
+		correlated.DecisionID != result.DecisionID ||
+		correlated.ExecutionID != result.ExecutionID ||
+		correlated.EvidenceID != result.EvidenceID {
+		t.Fatalf("correlation mismatch: handoff=%q decision=%q execution=%q evidence=%q", correlated.HandoffValidationID, correlated.DecisionID, correlated.ExecutionID, correlated.EvidenceID)
+	}
+}
+
 func TestExecutionGate_UnauthorizedExecution(t *testing.T) {
 	setup := SetupDemoEnvironment()
 

@@ -124,6 +124,9 @@ type AuthorizationDecision struct {
 // HandoffValidationResult represents the result of validating a handoff contract.
 type HandoffValidationResult struct {
 	ValidationID               string    `json:"validation_id"`
+	DecisionID                 string    `json:"decision_id,omitempty"`
+	ExecutionID                string    `json:"execution_id,omitempty"`
+	EvidenceID                 string    `json:"evidence_id,omitempty"`
 	Timestamp                  time.Time `json:"timestamp"`
 	ContractVersion            string    `json:"contract_version"`
 	Valid                      bool      `json:"valid"`
@@ -162,6 +165,10 @@ type VerificationResult struct {
 // AuditEvent records all important security events in the system.
 type AuditEvent struct {
 	EventID             string                 `json:"event_id"`
+	HandoffValidationID string                 `json:"handoff_validation_id,omitempty"`
+	DecisionID          string                 `json:"decision_id,omitempty"`
+	ExecutionID         string                 `json:"execution_id,omitempty"`
+	EvidenceID          string                 `json:"evidence_id,omitempty"`
 	Timestamp           time.Time              `json:"timestamp"`
 	EventType           string                 `json:"event_type"` // AUTHORIZATION_REQUESTED, AUTHORIZATION_GRANTED, AUTHORIZATION_DENIED, etc.
 	AgentID             string                 `json:"agent_id"`
@@ -196,16 +203,17 @@ type ExecutionRequest struct {
 
 // ExecutionResult represents the result of executing a capability.
 type ExecutionResult struct {
-	ExecutionID        string                 `json:"execution_id"`
-	RequestID          string                 `json:"request_id"`
-	DecisionID         string                 `json:"decision_id,omitempty"`
-	EvidenceID         string                 `json:"evidence_id,omitempty"`
-	Timestamp          time.Time              `json:"timestamp"`
-	AgentID            string                 `json:"agent_id"`
-	Capability         Capability             `json:"capability"`
-	Authorized         bool                   `json:"authorized"`
-	Executed           bool                   `json:"executed"`
-	Result             map[string]interface{} `json:"result,omitempty"`
-	Error              string                 `json:"error,omitempty"`
-	VerificationStatus string                 `json:"verification_status,omitempty"`
+	ExecutionID         string                 `json:"execution_id"`
+	RequestID           string                 `json:"request_id"`
+	DecisionID          string                 `json:"decision_id,omitempty"`
+	EvidenceID          string                 `json:"evidence_id,omitempty"`
+	Timestamp           time.Time              `json:"timestamp"`
+	AgentID             string                 `json:"agent_id"`
+	Capability          Capability             `json:"capability"`
+	Authorized          bool                   `json:"authorized"`
+	Executed            bool                   `json:"executed"`
+	Result              map[string]interface{} `json:"result,omitempty"`
+	Error               string                 `json:"error,omitempty"`
+	VerificationStatus  string                 `json:"verification_status,omitempty"`
+	HandoffValidationID string                 `json:"handoff_validation_id,omitempty"`
 }
