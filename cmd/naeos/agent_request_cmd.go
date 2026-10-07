@@ -18,6 +18,7 @@ import (
 func newAgentRequestCommand() *cobra.Command {
 	var requestJSON, requestFile, adapterName, outputFmt string
 	var sessionID, storePath, invocationID, replayDB string
+	var allowedTools, allowedActions, allowedEnvironments, allowedCapabilities []string
 
 	cmd := &cobra.Command{
 		Use:   "request",
@@ -27,8 +28,10 @@ func newAgentRequestCommand() *cobra.Command {
 The request is first evaluated by the active governance policy. Only an allowed request reaches the runtime sandbox. Replay protection is enabled by default; the default in-memory store is process-local and suitable only for local/test use. Use --replay-db for durable restart/shared-replica protection. The resulting decision and execution metadata can optionally be persisted to an agent session.
 
 Example:
-  naeos agent request --request '{"tool":"file-edit","action":"write","resource":"src/app.go","actor":"codex"}'
-  naeos agent request --request-file request.json --session-id sess-123 --output json`,
+  naeos agent request --adapter reference-external-agent \
+    --allow-tool filesystem --allow-action read \
+    --allow-environment development --allow-capability filesystem.read \
+    --request-file request.json --output json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			data, err := loadAgentRequestInput(requestJSON, requestFile)
@@ -66,17 +69,26 @@ Example:
 			default:
 				return fmt.Errorf("unsupported adapter %q", adapterName)
 			}
-			req, err := adapter.NormalizeTool(raw)
-			if err != nil {
-				return fmt.Errorf("normalize agent request: %w", err)
+			gw.RegisterAdapter(adapter.Name(), adapter)
+			if len(allowedTools) == 0 || len(allowedActions) == 0 {
+				return fmt.Errorf("adapter policy requires at least one --allow-tool and --allow-action; use explicit '*' for a wildcard")
+			}
+			if err := gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{
+				AllowedTools:        allowedTools,
+				AllowedActions:      allowedActions,
+				AllowedEnvironments: allowedEnvironments,
+				AllowedCapabilities: allowedCapabilities,
+			}); err != nil {
+				return fmt.Errorf("grant adapter policy: %w", err)
 			}
 			if invocationID != "" {
-				req.InvocationID = invocationID
+				raw["invocation_id"] = invocationID
 			}
-			result, err := gw.Authorize(req)
+			result, err := gw.AuthorizeFromAdapter(adapter.Name(), raw)
 			if err != nil {
 				return err
 			}
+			req := result.Request
 			if sessionID != "" {
 				if err := persistSessionAction(sessionID, storePath, result); err != nil {
 					return err
@@ -125,6 +137,10 @@ Example:
 	cmd.Flags().StringVar(&storePath, "store-path", "", "path to the agent session store JSON file")
 	cmd.Flags().StringVar(&invocationID, "invocation-id", "", "unique invocation identity used for replay protection")
 	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection; omit only for local/test in-memory replay")
+	cmd.Flags().StringSliceVar(&allowedTools, "allow-tool", nil, "adapter policy tool grant (repeat or comma-separate; explicit '*' for wildcard)")
+	cmd.Flags().StringSliceVar(&allowedActions, "allow-action", nil, "adapter policy action grant (repeat or comma-separate; explicit '*' for wildcard)")
+	cmd.Flags().StringSliceVar(&allowedEnvironments, "allow-environment", nil, "adapter policy environment grant (optional; empty means unconstrained)")
+	cmd.Flags().StringSliceVar(&allowedCapabilities, "allow-capability", nil, "adapter policy capability grant (optional; empty means unconstrained)")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
