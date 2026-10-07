@@ -23,14 +23,14 @@ type ToolRequest struct {
 	InvocationID string
 	// Capability is the normalized capability requested by the agent.
 	// It is authorization-bound and must not be widened downstream.
-	Capability  string
-	Tool        string
-	Action      string
-	Resource    string
-	Environment string
-	Actor       string
-	Payload     map[string]any
-	Context     map[string]any
+	Capability   string
+	Tool         string
+	Action       string
+	Resource     string
+	Environment  string
+	Actor        string
+	Payload      map[string]any
+	Context      map[string]any
 }
 
 // ExecutionResult records the outcome of an authorized tool execution.
@@ -230,11 +230,11 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	result := ExecutionResult{
 		InvocationID: req.InvocationID,
 		Request:      req,
-		Decision:  rec.Decision,
-		PolicyID:  rec.PolicyID,
-		RuleID:    rec.RuleID,
-		Timestamp: time.Now().UTC(),
-		Reasons:   rec.Reasons,
+		Decision:     rec.Decision,
+		PolicyID:     rec.PolicyID,
+		RuleID:       rec.RuleID,
+		Timestamp:    time.Now().UTC(),
+		Reasons:      rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
