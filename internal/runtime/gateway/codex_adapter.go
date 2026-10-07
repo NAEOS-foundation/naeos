@@ -44,14 +44,14 @@ func (CodexToolAdapter) NormalizeTool(raw any) (ToolRequest, error) {
 	}
 	return ToolRequest{
 		InvocationID: stringValue(args["invocation_id"]),
-		Capability:  stringValue(args["capability"]),
-		Tool:        name,
-		Action:      action,
-		Resource:    stringValue(args["resource"]),
-		Environment: stringValue(args["environment"]),
-		Actor:       actor,
-		Payload:     mapValue(args["payload"]),
-		Context:     mapValue(args["context"]),
+		Capability:   stringValue(args["capability"]),
+		Tool:         name,
+		Action:       action,
+		Resource:     stringValue(args["resource"]),
+		Environment:  stringValue(args["environment"]),
+		Actor:        actor,
+		Payload:      mapValue(args["payload"]),
+		Context:      mapValue(args["context"]),
 	}, nil
 }
 
