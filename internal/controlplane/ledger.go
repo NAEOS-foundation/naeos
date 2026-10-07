@@ -84,26 +84,51 @@ func (l *Ledger) PersistenceError() error {
 
 // Save persists the ledger as a JSON snapshot using an atomic rename.
 func (l *Ledger) Save(path string) error {
-	if l == nil { return fmt.Errorf("ledger unavailable") }
-	if path == "" { return fmt.Errorf("ledger path is required") }
+	if l == nil {
+		return fmt.Errorf("ledger unavailable")
+	}
+	if path == "" {
+		return fmt.Errorf("ledger path is required")
+	}
 	return saveLedgerEvents(path, l.Events())
 }
 
 func saveLedgerEvents(path string, events []LedgerEvent) error {
-	if path == "" { return fmt.Errorf("ledger path is required") }
+	if path == "" {
+		return fmt.Errorf("ledger path is required")
+	}
 	data, err := json.Marshal(events)
-	if err != nil { return fmt.Errorf("marshal ledger: %w", err) }
+	if err != nil {
+		return fmt.Errorf("marshal ledger: %w", err)
+	}
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o750); err != nil { return fmt.Errorf("create ledger directory: %w", err) }
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return fmt.Errorf("create ledger directory: %w", err)
+	}
 	tmp, err := os.CreateTemp(dir, ".ledger-*.tmp")
-	if err != nil { return fmt.Errorf("create ledger snapshot: %w", err) }
+	if err != nil {
+		return fmt.Errorf("create ledger snapshot: %w", err)
+	}
 	tmpName := tmp.Name()
 	defer os.Remove(tmpName)
-	if err := tmp.Chmod(0o600); err != nil { _ = tmp.Close(); return fmt.Errorf("protect ledger snapshot: %w", err) }
-	if _, err := tmp.Write(data); err != nil { _ = tmp.Close(); return fmt.Errorf("write ledger snapshot: %w", err) }
-	if err := tmp.Sync(); err != nil { _ = tmp.Close(); return fmt.Errorf("sync ledger snapshot: %w", err) }
-	if err := tmp.Close(); err != nil { return fmt.Errorf("close ledger snapshot: %w", err) }
-	if err := os.Rename(tmpName, path); err != nil { return fmt.Errorf("commit ledger snapshot: %w", err) }
+	if err := tmp.Chmod(0o600); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("protect ledger snapshot: %w", err)
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("write ledger snapshot: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("sync ledger snapshot: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close ledger snapshot: %w", err)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		return fmt.Errorf("commit ledger snapshot: %w", err)
+	}
 	return nil
 }
 
@@ -144,13 +169,21 @@ func LoadLedger(path string) (*Ledger, error) {
 // Append adds an event to the ledger. When persistence is configured, the event
 // becomes visible only after its snapshot has been durably committed.
 func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
-	if l == nil { return LedgerEvent{} }
+	if l == nil {
+		return LedgerEvent{}
+	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	nextID := l.nextID + 1
-	if event.ID == "" { event.ID = fmt.Sprintf("EVT-%05d", nextID) }
-	if event.Timestamp.IsZero() { event.Timestamp = time.Now().UTC() }
-	if len(l.events) > 0 { event.PreviousHash = l.events[len(l.events)-1].EventHash }
+	if event.ID == "" {
+		event.ID = fmt.Sprintf("EVT-%05d", nextID)
+	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now().UTC()
+	}
+	if len(l.events) > 0 {
+		event.PreviousHash = l.events[len(l.events)-1].EventHash
+	}
 	event.EventHash = hashLedgerEvent(event)
 	if l.persistencePath != "" {
 		snapshot := make([]LedgerEvent, len(l.events)+1)
