@@ -50,6 +50,7 @@ func NewAPIServer(setup *DemoSetup) *APIServer {
 	server.mux.HandleFunc("/api/control-plane/decision", server.handleControlPlaneDecision)
 	server.mux.HandleFunc("/api/control-plane/session", server.handleControlPlaneSession)
 	server.mux.HandleFunc("/api/control-plane/evidence", server.handleControlPlaneEvidence)
+	server.mux.HandleFunc("/api/control-plane/runs", server.handleControlPlaneRuns)
 	server.mux.HandleFunc("/api/control-plane/approval", server.handleControlPlaneApproval)
 	server.mux.HandleFunc("/api/control-plane/approval/", server.handleControlPlaneApprovalStatus)
 	server.mux.HandleFunc("/api/control-plane/approval/approve", server.handleControlPlaneApprovalApprove)
