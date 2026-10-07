@@ -88,3 +88,13 @@ func TestAgentRequestCommandExposesReferenceAdapterAndDurableReplay(t *testing.T
 		t.Fatal("expected --invocation-id flag")
 	}
 }
+
+func TestAgentRequestCommandRequiresExplicitAdapterPolicy(t *testing.T) {
+	cmd := newAgentRequestCommand()
+
+	for _, flag := range []string{"allow-tool", "allow-action", "allow-environment", "allow-capability"} {
+		if cmd.Flags().Lookup(flag) == nil {
+			t.Fatalf("expected --%s flag", flag)
+		}
+	}
+}

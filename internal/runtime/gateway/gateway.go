@@ -74,6 +74,35 @@ type ExecutionResult struct {
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
 // translates between the agent's native tool invocation model and the
 // normalized ToolRequest that the gateway understands.
+// AdapterPolicy is the explicit privilege boundary for an adapter. An adapter
+// may normalize any input, but it can reach the execution gateway only when its
+// registered policy grants the requested tool/action/environment/capability.
+type AdapterPolicy struct {
+	AllowedTools        []string
+	AllowedActions      []string
+	AllowedEnvironments []string
+	AllowedCapabilities []string
+}
+
+func (p AdapterPolicy) allows(req ToolRequest) bool {
+	return adapterFieldAllowed(p.AllowedTools, req.Tool) &&
+		adapterFieldAllowed(p.AllowedActions, req.Action) &&
+		adapterFieldAllowed(p.AllowedEnvironments, req.Environment) &&
+		adapterFieldAllowed(p.AllowedCapabilities, req.Capability)
+}
+
+func adapterFieldAllowed(patterns []string, value string) bool {
+	if len(patterns) == 0 {
+		return true
+	}
+	for _, pattern := range patterns {
+		if matchPattern(pattern, value) {
+			return true
+		}
+	}
+	return false
+}
+
 type AgentAdapter interface {
 	// Name returns the identifier of the agent (e.g. "claude", "copilot").
 	Name() string
@@ -153,11 +182,12 @@ func WithInvocationStore(store InvocationStore) Option {
 //	  → (ALLOW) Sandbox.Execute() → ExecutionResult
 //	  → (DENY)  → ExecutionResult{Status: "denied"}
 type ExecutionGateway struct {
-	controlPlane ControlPlane
-	sandbox      Sandbox
-	observer     Observer
-	adapters     map[string]AgentAdapter
-	restrictions []Restriction
+	controlPlane    ControlPlane
+	sandbox         Sandbox
+	observer        Observer
+	adapters        map[string]AgentAdapter
+	adapterPolicies map[string]AdapterPolicy
+	restrictions    []Restriction
 
 	mu               sync.RWMutex
 	history          []ExecutionResult
@@ -172,6 +202,7 @@ func New(cp ControlPlane, sb Sandbox, opts ...Option) *ExecutionGateway {
 		controlPlane:    cp,
 		sandbox:         sb,
 		adapters:        make(map[string]AgentAdapter),
+		adapterPolicies: make(map[string]AdapterPolicy),
 		invocationStore: NewInMemoryInvocationStore(),
 		failClosed:      true,
 	}
@@ -181,11 +212,27 @@ func New(cp ControlPlane, sb Sandbox, opts ...Option) *ExecutionGateway {
 	return g
 }
 
-// RegisterAdapter registers an agent adapter under the given name.
+// RegisterAdapter registers an adapter without execution privilege. Callers
+// must grant an explicit AdapterPolicy before AuthorizeFromAdapter can execute it.
 func (g *ExecutionGateway) RegisterAdapter(name string, adapter AgentAdapter) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.adapters[name] = adapter
+	delete(g.adapterPolicies, name)
+}
+
+// GrantAdapterPolicy gives an adapter an explicit, least-privilege execution grant.
+func (g *ExecutionGateway) GrantAdapterPolicy(name string, policy AdapterPolicy) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if _, ok := g.adapters[name]; !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("adapter %q is not registered", name))
+	}
+	if len(policy.AllowedTools) == 0 || len(policy.AllowedActions) == 0 {
+		return naeoserr.New(naeoserr.ErrValidation, "adapter policy must explicitly grant tools and actions")
+	}
+	g.adapterPolicies[name] = policy
+	return nil
 }
 
 // Adapter returns the registered adapter for the given name, or nil.
@@ -397,6 +444,12 @@ func (g *ExecutionGateway) AuthorizeFromAdapter(adapterName string, raw any) (Ex
 	req, err := adapter.NormalizeTool(raw)
 	if err != nil {
 		return ExecutionResult{}, naeoserr.Wrapf(err, naeoserr.ErrValidation, "adapter %s failed to normalize tool", adapterName)
+	}
+	g.mu.RLock()
+	adapterPolicy, granted := g.adapterPolicies[adapterName]
+	g.mu.RUnlock()
+	if !granted || !adapterPolicy.allows(req) {
+		return ExecutionResult{RequestID: req.RequestID, InvocationID: req.InvocationID, Request: req, Status: "denied", Output: "adapter privilege boundary denied request"}, nil
 	}
 	result, err := g.Authorize(req)
 	if err != nil {
