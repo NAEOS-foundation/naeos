@@ -218,7 +218,11 @@ func (c *e2eStaleAuthorizationControlPlane) Evaluate(req control.Request) (contr
 
 func (c *e2eStaleAuthorizationControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
 	c.validations++
-	if c.validations == 2 {
+	current, err := c.inner.ValidateDecision(req, issued)
+	if err != nil {
+		return current, err
+	}
+	if c.validations == 1 {
 		if err := c.registry.Register(&policy.Policy{
 			ID:      "repository-write",
 			Name:    "Repository Write",
@@ -234,5 +238,5 @@ func (c *e2eStaleAuthorizationControlPlane) ValidateDecision(req control.Request
 			return control.DecisionRecord{}, err
 		}
 	}
-	return c.inner.ValidateDecision(req, issued)
+	return current, nil
 }
