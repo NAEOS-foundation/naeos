@@ -39,6 +39,10 @@ The CLI exposes the protocol-neutral reference adapter as:
 ```bash
 ./naeos agent request \
   --adapter reference-external-agent \
+  --allow-tool filesystem \
+  --allow-action read \
+  --allow-environment development \
+  --allow-capability repository.read \
   --request-file request.json \
   --output json
 ```
@@ -65,6 +69,8 @@ Example `request.json`:
 ```
 
 The reference adapter only normalizes this envelope. Authorization and execution remain in the existing gateway.
+
+The public CLI requires an explicit adapter policy before the request can cross the adapter boundary. Tool and action grants are mandatory; use an explicit `*` when a wildcard is intentionally required. Environment and capability grants are optional dimensions, but should be supplied when the deployment needs those constraints.
 
 ## 4. Replay protection
 
