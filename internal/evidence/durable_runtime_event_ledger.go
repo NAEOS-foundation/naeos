@@ -48,6 +48,10 @@ func (l *DurableRuntimeEventLedger) Publish(runID, name, payloadDigest string, s
 	if err != nil {
 		return RuntimeEvent{}, err
 	}
+	if len(l.events) > 0 {
+		event.PreviousHash = l.events[len(l.events)-1].EventHash
+	}
+	event.EventHash = hashDurableRuntimeEvent(event)
 	if err := l.appendLocked(event); err != nil {
 		return RuntimeEvent{}, err
 	}
@@ -101,8 +105,17 @@ func (l *DurableRuntimeEventLedger) Verify() error {
 		if expected.ID != event.ID {
 			return fmt.Errorf("ledger record %d identity mismatch", i)
 		}
+		if i == 0 && event.PreviousHash != "" {
+			return fmt.Errorf("ledger record %d has unexpected previous hash", i)
+		}
 		if i > 0 && event.Sequence != records[i-1].Sequence+1 {
 			return fmt.Errorf("ledger record %d sequence is not contiguous", i)
+		}
+		if i > 0 && event.PreviousHash != records[i-1].EventHash {
+			return fmt.Errorf("ledger record %d hash chain is broken", i)
+		}
+		if event.EventHash != hashDurableRuntimeEvent(event) {
+			return fmt.Errorf("ledger record %d hash mismatch", i)
 		}
 	}
 	return nil
@@ -126,8 +139,17 @@ func (l *DurableRuntimeEventLedger) load() error {
 		if err != nil || expected.ID != event.ID {
 			return fmt.Errorf("durable runtime ledger record %d failed integrity verification", i)
 		}
+		if i == 0 && event.PreviousHash != "" {
+			return fmt.Errorf("durable runtime ledger record %d has unexpected previous hash", i)
+		}
 		if i > 0 && event.Sequence != l.events[i-1].Sequence+1 {
 			return fmt.Errorf("durable runtime ledger record %d sequence mismatch", i)
+		}
+		if i > 0 && event.PreviousHash != l.events[i-1].EventHash {
+			return fmt.Errorf("durable runtime ledger record %d hash chain mismatch", i)
+		}
+		if event.EventHash != hashDurableRuntimeEvent(event) {
+			return fmt.Errorf("durable runtime ledger record %d hash mismatch", i)
 		}
 		l.events = append(l.events, event)
 	}
@@ -154,6 +176,12 @@ func (l *DurableRuntimeEventLedger) appendLocked(event RuntimeEvent) error {
 		return fmt.Errorf("sync durable runtime ledger: %w", err)
 	}
 	return nil
+}
+
+func hashDurableRuntimeEvent(event RuntimeEvent) string {
+	event.EventHash = ""
+	h := sha256.Sum256([]byte(fmt.Sprintf("naeos:durable-runtime-event:v1:%s:%s:%s:%d:%s", event.RunID, event.Name, event.PayloadDigest, event.Sequence, event.PreviousHash)))
+	return fmt.Sprintf("%x", h[:])
 }
 
 func canonicalRuntimeEvent(runID, name, payloadDigest string, sequence int) (RuntimeEvent, error) {
