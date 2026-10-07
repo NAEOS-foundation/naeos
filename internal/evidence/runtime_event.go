@@ -160,7 +160,6 @@ func (s *RuntimeEventStore) ByID(id string) *RuntimeEvent {
 
 // Verify checks event identities against their canonical contents.
 func hashRuntimeEvent(event RuntimeEvent) string {
-	event.EventHash = ""
 	data := fmt.Sprintf("naeos:runtime-event-chain:v1:%s:%s:%s:%d:%s", event.RunID, event.Name, event.PayloadDigest, event.Sequence, event.PreviousHash)
 	h := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", h[:])
