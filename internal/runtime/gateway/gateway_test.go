@@ -54,6 +54,54 @@ func (a *stubAdapter) OnDecision(result ExecutionResult) error {
 	return nil
 }
 
+func TestAdapterPrivilegeBoundaryDeniesWithoutGrant(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	adapter := JSONToolAdapter{}
+	gw.RegisterAdapter(adapter.Name(), adapter)
+
+	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{
+		"request_id": "req-p25-deny",
+		"tool": "filesystem",
+		"action": "write",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected denial, got %q", result.Status)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("adapter without grant reached sandbox: %d calls", sb.Count())
+	}
+	if result.RequestID != "req-p25-deny" {
+		t.Fatalf("request_id not preserved: %q", result.RequestID)
+	}
+}
+
+func TestAdapterPrivilegeBoundaryAllowsExplicitGrant(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	adapter := JSONToolAdapter{}
+	gw.RegisterAdapter(adapter.Name(), adapter)
+	if err := gw.GrantAdapterPolicy(adapter.Name(), AdapterPolicy{AllowedTools: []string{"filesystem"}, AllowedActions: []string{"write"}}); err != nil {
+		t.Fatalf("grant adapter policy: %v", err)
+	}
+
+	result, err := gw.AuthorizeFromAdapter(adapter.Name(), map[string]any{"request_id": "req-p25-allow", "tool": "filesystem", "action": "write"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != "completed" {
+		t.Fatalf("expected completion, got %q", result.Status)
+	}
+	if sb.Count() != 1 {
+		t.Fatalf("expected one sandbox call, got %d", sb.Count())
+	}
+}
+
 func TestGatewayAllowExecution(t *testing.T) {
 	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
 	sb := &stubSandbox{output: "ok"}
@@ -184,6 +232,9 @@ func TestGatewayAdapterIntegration(t *testing.T) {
 		},
 	}
 	gw.RegisterAdapter("claude", adapter)
+	if err := gw.GrantAdapterPolicy("claude", AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := gw.AuthorizeFromAdapter("claude", map[string]any{"path": "foo.go"})
 	if err != nil {

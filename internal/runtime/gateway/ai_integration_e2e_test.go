@@ -37,6 +37,9 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	gw := New(cp, sb)
 	adapter := CodexToolAdapter{}
 	gw.RegisterAdapter(adapter.Name(), adapter)
+	if err := gw.GrantAdapterPolicy(adapter.Name(), AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+		t.Fatal(err)
+	}
 
 	raw := map[string]any{
 		"type": "function_call",
@@ -175,6 +178,9 @@ func TestCodexGovernedExecutionJSONEnvelopeEndToEnd(t *testing.T) {
 	sb := NewDefaultSandbox(SandboxConfig{})
 	gw := New(cp, sb)
 	gw.RegisterAdapter("codex", CodexToolAdapter{})
+	if err := gw.GrantAdapterPolicy("codex", AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+		t.Fatal(err)
+	}
 
 	envelope := map[string]any{
 		"type": "function_call",
