@@ -258,3 +258,36 @@ func TestExternalAgentConformanceContractVersionFixture(t *testing.T) {
 		t.Fatalf("test fixture did not represent an unknown major version: %s", unknownMajor)
 	}
 }
+
+
+func TestExternalAgentConformanceRequestIdentitySurvivesReferenceAdapter(t *testing.T) {
+	adapter := ReferenceExternalAdapter{}
+	req, err := adapter.NormalizeTool(map[string]any{
+		"contract":      "naeos.agent-adoption",
+		"version":       "1.0",
+		"request_id":    "request-identity-01",
+		"invocation_id": "invocation-identity-01",
+		"tool":          "filesystem",
+		"action":        "read",
+	})
+	if err != nil {
+		t.Fatalf("normalize adoption envelope: %v", err)
+	}
+	if req.RequestID != "request-identity-01" {
+		t.Fatalf("expected first-class request identity, got %q", req.RequestID)
+	}
+	if req.Context["request_id"] != "request-identity-01" {
+		t.Fatalf("expected compatibility context request identity, got %#v", req.Context["request_id"])
+	}
+
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	result, err := gw.Authorize(req)
+	if err != nil {
+		t.Fatalf("authorize normalized request: %v", err)
+	}
+	if result.RequestID != req.RequestID || result.Request.RequestID != req.RequestID {
+		t.Fatalf("request identity was not preserved end-to-end: result=%q request=%q", result.RequestID, result.Request.RequestID)
+	}
+}
