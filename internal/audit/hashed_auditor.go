@@ -23,7 +23,35 @@ type HashedAuditor struct {
 }
 
 func NewHashedAuditor(inner Auditor) *HashedAuditor {
-	return &HashedAuditor{inner: inner}
+	h := &HashedAuditor{inner: inner}
+	if file, ok := inner.(*FileAuditor); ok {
+		if violations, err := VerifyChainFile(file.path); err == nil && len(violations) == 0 {
+			if events, err := readAuditEvents(file.path); err == nil && len(events) > 0 {
+				h.lastID = events[len(events)-1].Hash
+			}
+		}
+	}
+	return h
+}
+
+func readAuditEvents(path string) ([]AuditEvent, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	events := make([]AuditEvent, 0, len(lines))
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		var event AuditEvent
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	return events, nil
 }
 
 func (h *HashedAuditor) Log(event AuditEvent) error {
