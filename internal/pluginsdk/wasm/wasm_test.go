@@ -60,6 +60,9 @@ func TestWASMRuntimeCreation(t *testing.T) {
 	if rt.memoryLimitPages != 1024 {
 		t.Errorf("expected memory limit 1024 pages, got %d", rt.memoryLimitPages)
 	}
+	if rt.memoryLimitPages != 1024 {
+		t.Errorf("expected memory limit 1024 pages, got %d", rt.memoryLimitPages)
+	}
 }
 
 func TestWASMRuntimeDefaults(t *testing.T) {
