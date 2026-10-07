@@ -259,7 +259,6 @@ func TestExternalAgentConformanceContractVersionFixture(t *testing.T) {
 	}
 }
 
-
 func TestExternalAgentConformanceRequestIdentitySurvivesReferenceAdapter(t *testing.T) {
 	adapter := ReferenceExternalAdapter{}
 	req, err := adapter.NormalizeTool(map[string]any{
