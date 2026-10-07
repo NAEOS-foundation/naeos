@@ -146,11 +146,11 @@ type ExecutionGateway struct {
 	adapters     map[string]AgentAdapter
 	restrictions []Restriction
 
-	mu              sync.RWMutex
-	history         []ExecutionResult
-	replayed        map[string]struct{}
+	mu               sync.RWMutex
+	history          []ExecutionResult
+	replayed         map[string]struct{}
 	replayProtection bool
-	failClosed      bool
+	failClosed       bool
 }
 
 // New creates an ExecutionGateway with the given control plane and sandbox.
