@@ -10,11 +10,11 @@ import (
 )
 
 type grantIdentity struct {
-	Request       Request       `json:"request"`
-	Decision      Decision      `json:"decision"`
-	PolicyID      string        `json:"policy_id"`
-	PolicyVersion string        `json:"policy_version"`
-	RuleID        string        `json:"rule_id"`
+	Request       Request  `json:"request"`
+	Decision      Decision `json:"decision"`
+	PolicyID      string   `json:"policy_id"`
+	PolicyVersion string   `json:"policy_version"`
+	RuleID        string   `json:"rule_id"`
 }
 
 // bindGrantDigest creates a deterministic integrity binding for an
