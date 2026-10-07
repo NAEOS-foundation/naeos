@@ -49,7 +49,8 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 			"actor":       "codex",
 			"payload": map[string]any{
 				"path":    "src/main.go",
-				"content": "package main\n",
+				"content": "package main
+",
 			},
 			"context": map[string]any{
 				"task_id": "e2e-codex-001",
@@ -76,13 +77,10 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected governed execution to create %s: %v", target, err)
 	}
-	if string(data) != "package main\n" {
+	if string(data) != "package main
+" {
 		t.Fatalf("unexpected executed artifact: %q", string(data))
 	}
-
-	// The control plane mutates from policy v1 to v2 after the initial
-	// authorization record is issued. Gateway revalidation must therefore
-	// invalidate the stale authorization before the sandbox is entered.
 
 	result, err = gw.AuthorizeFromAdapter("codex", raw)
 	if err != nil {
@@ -102,7 +100,8 @@ func TestCodexGovernedExecutionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected original artifact to remain readable: %v", err)
 	}
-	if string(data) != "package main\n" {
+	if string(data) != "package main
+" {
 		t.Fatalf("denied replay changed the artifact: %q", string(data))
 	}
 
@@ -146,8 +145,6 @@ func TestCodexGovernedExecutionRejectsCapabilityEscalationEndToEnd(t *testing.T)
 		t.Fatalf("issue initial authorization: %v", err)
 	}
 
-	// A decision for read cannot be replayed as authority for write, even
-	// though the same policy independently allows a fresh write request.
 	current, err := cp.ValidateDecision(control.Request{
 		Capability:  "repository.write",
 		Resource:    "repository",
@@ -213,8 +210,8 @@ func TestCodexGovernedExecutionJSONEnvelopeEndToEnd(t *testing.T) {
 }
 
 type e2eStaleAuthorizationControlPlane struct {
-	inner    *control.ControlPlane
-	registry *policy.Registry
+	inner       *control.ControlPlane
+	registry    *policy.Registry
 	validations int
 }
 
