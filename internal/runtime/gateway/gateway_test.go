@@ -702,7 +702,6 @@ func TestGatewayAuthorizationReplayRequiresFreshDecision(t *testing.T) {
 	}
 }
 
-
 type replayCountingSandbox struct {
 	count int
 }
@@ -719,8 +718,8 @@ func TestGatewayReplayProtectionRejectsDuplicateInvocation(t *testing.T) {
 
 	first, err := gw.Authorize(ToolRequest{
 		InvocationID: "inv-001",
-		Tool:        "filesystem",
-		Action:      "write",
+		Tool:         "filesystem",
+		Action:       "write",
 	})
 	if err != nil {
 		t.Fatalf("first authorization failed: %v", err)
