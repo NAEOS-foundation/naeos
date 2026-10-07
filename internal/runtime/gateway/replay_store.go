@@ -21,8 +21,8 @@ type InvocationStore interface {
 // InMemoryInvocationStore is suitable for tests and explicitly local
 // deployments. It does not provide restart or cross-replica protection.
 type InMemoryInvocationStore struct {
-	mu       sync.Mutex
-	claimed  map[string]struct{}
+	mu      sync.Mutex
+	claimed map[string]struct{}
 }
 
 func NewInMemoryInvocationStore() *InMemoryInvocationStore {
