@@ -40,7 +40,7 @@ jobs:
           python scripts/external_validation_crewai_boundaries.py             --output external-validation-evidence/crewai-boundaries.json
 
       - name: Upload runtime evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: external-validation-crewai-boundaries-${{ github.sha }}
           path: external-validation-evidence/crewai-boundaries.json
