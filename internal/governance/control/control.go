@@ -48,6 +48,8 @@ type DecisionRecord struct {
 	Reasons       []string
 	Timestamp     time.Time
 	Deterministic bool
+	// GrantDigest binds the exact authorization identity to this decision.
+	GrantDigest string
 }
 
 // ControlPlane evaluates authorization requests against registered policies
@@ -97,6 +99,9 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 			Timestamp:     time.Now().UTC(),
 			Deterministic: true,
 		}
+		if err := bindGrantDigest(&rec); err != nil {
+			return DecisionRecord{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to bind authorization grant")
+		}
 		c.record(rec)
 		return rec, nil
 	}
@@ -122,6 +127,9 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 		// to a policy default or allow execution after an evaluation error.
 		worstRec.Decision = DecisionDeny
 		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
+	}
+	if err := bindGrantDigest(&worstRec); err != nil {
+		return DecisionRecord{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "failed to bind authorization grant")
 	}
 
 	c.record(worstRec)
@@ -258,7 +266,9 @@ func (c *ControlPlane) ValidateDecision(req Request, issued DecisionRecord) (Dec
 	if err != nil {
 		return DecisionRecord{}, err
 	}
-	if current.Request.Capability != issued.Request.Capability ||
+	if issued.GrantDigest == "" || !grantDigestMatches(issued) || current.GrantDigest == "" || !grantDigestMatches(current) ||
+		current.GrantDigest != issued.GrantDigest ||
+		current.Request.Capability != issued.Request.Capability ||
 		current.Request.Resource != issued.Request.Resource ||
 		current.Request.Action != issued.Request.Action ||
 		current.Request.Environment != issued.Request.Environment ||
