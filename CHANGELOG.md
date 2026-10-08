@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.1] - 2026-10-08
+
+### Added
+- **External adoption hardening** — formal agent adoption, AI integration, external-adopter quickstart, proof-pack, and untrusted-adapter deployment contracts.
+- **Execution gateway conformance** — request identity propagation, durable replay protection, stale-authorization rejection, approval semantics, adapter privilege boundaries, and adapter-denial audit evidence.
+- **Evidence completeness and integrity** — request-bound evidence, runtime-event durability, evidence completeness coverage, and tamper-detection verification paths.
+- **WASM containment conformance** — bounded execution and memory profiles with executable verification that untrusted WASM adapters receive no preopened filesystem.
+- **WASM isolation harness** — reproducible development/Codespaces checks for containment, filesystem boundaries, timeout behavior, and deployment-level credential/socket diagnostics.
+- **REST API v2 hardening** — cursor pagination, RFC 7807 errors, required idempotency keys, replay protection, explicit API version headers, and rate-limit tiers.
+
+### Security
+- Untrusted adapter authority is explicitly retained by the NAEOS runtime; adapters must run inside the documented WASM or OS process/container isolation boundary.
+- Release and CI controls continue to enforce signed-off contributions, policy-bypass checks, secrets scanning, CodeQL, and release evidence gates.
+
+### Changed
+- **Version bump** — 3.7.0 → 3.7.1.
+
+
 ## [3.7.0] - 2026-10-06
 
 ### Added

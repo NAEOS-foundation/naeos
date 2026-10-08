@@ -243,9 +243,9 @@ naeos/
 
 ## Current release
 
-**NAEOS 3.7.0** is the current documented software release.
+**NAEOS 3.7.1** is the current documented software release.
 
-NAEOS software releases and experiment milestones use different version sequences. For example, **NAEOS 3.7.0** is a software release, while **Evidence V5.6** identifies an engineering experiment milestone.
+NAEOS software releases and experiment milestones use different version sequences. For example, **NAEOS 3.7.1** is a software release, while **Evidence V5.6** identifies an engineering experiment milestone.
 
 For release history and changes, see [CHANGELOG.md](CHANGELOG.md).
 
@@ -323,6 +323,6 @@ The **NAEOS**, **NEIR**, and NAEOS logo names are branding of the NAEOS OSS. The
 
 ---
 
-**Active development · NAEOS 3.7.0**
+**Active development · NAEOS 3.7.1**
 
 **Architecture Drives Engineering.**
