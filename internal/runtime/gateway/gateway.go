@@ -40,6 +40,11 @@ type ToolRequest struct {
 // observable result of an execution. It deliberately does not trust the sandbox
 // output as proof of a side effect.
 type Observation struct {
+	// RequestID and InvocationID bind runtime evidence to the governed execution.
+	// When the request supplies either identity, the gateway requires the
+	// observer to return the same value before treating the observation as proof.
+	RequestID    string
+	InvocationID string
 	Status       string // "observed", "absent", "mismatch", "unavailable"
 	Observed     bool
 	ArtifactHash string
@@ -425,7 +430,18 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			}
 			return result, nil
 		}
-		if !observation.Observed {
+		if (req.RequestID != "" && observation.RequestID != req.RequestID) ||
+			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) {
+			result.Status = "failed"
+			result.Output = "runtime observation identity mismatch"
+			result.Hash = hashBytes([]byte(result.Output))
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.New(naeoserr.ErrPipeline, result.Output)
+			}
+			return result, nil
+		}
+		if observation.Status != "observed" || !observation.Observed {
 			result.Status = "failed"
 			result.Output = "execution completed but required side effect was not observed"
 			result.Hash = hashBytes([]byte(result.Output))
