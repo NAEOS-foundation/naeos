@@ -899,3 +899,53 @@ type failingInvocationStore struct {
 func (s *failingInvocationStore) Claim(string) (bool, error) {
 	return false, s.err
 }
+
+
+type decisionRevalidatorStub struct {
+	decision control.Decision
+}
+
+func (s decisionRevalidatorStub) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	issued.Decision = s.decision
+	issued.Reasons = []string{"revalidation changed decision"}
+	return issued, nil
+}
+
+func TestGatewayRevalidationDecisionMustBlockExecution(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1", ruleID: "r1"}
+	sb := &countingSandbox{}
+	gw := New(cp, sb)
+	gw.controlPlane = revalidationControlPlane{
+		stubControlPlane: cp,
+		decision:         control.DecisionDeny,
+	}
+
+	result, err := gw.Authorize(ToolRequest{
+		RequestID: "req-revalidation-deny",
+		Tool:      "filesystem",
+		Action:    "write",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected revalidation denial, got %q", result.Status)
+	}
+	if result.Decision != control.DecisionDeny {
+		t.Fatalf("expected revalidated DENY, got %q", result.Decision)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("revalidated non-ALLOW decision reached sandbox: %d calls", sb.Count())
+	}
+}
+
+type revalidationControlPlane struct {
+	*stubControlPlane
+	decision control.Decision
+}
+
+func (c revalidationControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	issued.Decision = c.decision
+	issued.Reasons = []string{"revalidation changed decision"}
+	return issued, nil
+}
