@@ -149,7 +149,8 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 			obs := bundle.ObservationEvent
 			if obs.DecisionID != bundle.DecisionID || obs.RequestID != bundle.RequestID ||
 				obs.AgentID != bundle.AgentID || obs.Capability != bundle.Capability ||
-				obs.ArtifactHash != bundle.ArtifactHash || obs.EventType != "SIDE_EFFECT_OBSERVED" {
+				obs.ArtifactHash != bundle.ArtifactHash || obs.ExecutionID != bundle.ExecutionID ||
+				obs.EventType != "SIDE_EFFECT_OBSERVED" {
 				verification.ObservationConsistent = false
 				verification.Issues = append(verification.Issues, "observation evidence does not match bundle identity")
 			}

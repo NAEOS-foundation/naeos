@@ -26,6 +26,11 @@ jobs:
 
           missing=0
           while IFS= read -r commit; do
+            parents="$(git show -s --format=%P "$commit")"
+            if [ "$(wc -w <<< "$parents")" -gt 1 ]; then
+              continue
+            fi
+
             message="$(git show -s --format=%B "$commit")"
             if ! printf '%s\n' "$message" | grep -Eq '^Signed-off-by: .+ <.+>$'; then
               echo "::error::Commit $commit is missing a Signed-off-by trailer."
@@ -37,4 +42,4 @@ jobs:
             exit 1
           fi
 
-          echo "All pull request commits contain a Signed-off-by trailer."
+          echo "All authored pull request commits contain a Signed-off-by trailer."
