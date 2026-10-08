@@ -78,6 +78,10 @@ Observation != Authorization
 
 A policy engine determines whether a requested capability is authorized. Runtime execution consumes that authorization but does not reinterpret model output as policy.
 
+### 4.3.1 Untrusted adapter containment
+
+Protocol conformance does not provide OS-level containment. An adapter treated as untrusted MUST run in the WASM sandbox or in a separate OS process/container without consequential credentials or direct side-effect authority. See [Untrusted Adapter Deployment Profile](docs/UNTRUSTED-ADAPTER-DEPLOYMENT.md).
+
 ### 4.3 Handoffs carry constrained authority
 
 A Handoff Contract must make the security-relevant distinction between:
