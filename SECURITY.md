@@ -6,12 +6,12 @@ NAEOS follows the current release line for security support. The versions below 
 
 | Version | Support |
 |---|---|
-| 3.6.x | :white_check_mark: Current release line |
-| 3.5.x | :white_check_mark: Security support |
-| 3.4.x | :warning: Legacy / upgrade recommended |
-| < 3.4.x | :x: Not supported |
+| 3.7.x | :white_check_mark: Current release line |
+| 3.6.x | :white_check_mark: Security support |
+| 3.5.x | :warning: Legacy / upgrade recommended |
+| < 3.5.x | :x: Not supported |
 
-The current NAEOS release is **NAEOS 3.6.0**. Security support is maintained against the current release line unless a release-specific advisory states otherwise.
+The current NAEOS release is **NAEOS 3.7.1**. Security support is maintained against the current release line unless a release-specific advisory states otherwise.
 
 ## Reporting a Vulnerability
 
