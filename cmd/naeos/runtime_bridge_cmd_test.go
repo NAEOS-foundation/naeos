@@ -45,7 +45,7 @@ func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
 	if first.Observation == nil {
 		t.Fatal("first request missing observation")
 	}
-	if first.Observation.RequestID != request["request_id"] || first.Observation.InvocationID != request["invocation_id"] {
+	if first.Observation.RequestID != request["request_id"] || first.Observation.InvocationID != request["invocation_id"] || first.Observation.InvocationDigest != gateway.InvocationDigest(first.Request) {
 		t.Fatalf("observation identity = (%q, %q), want (%q, %q)",
 			first.Observation.RequestID, first.Observation.InvocationID,
 			request["request_id"], request["invocation_id"])
@@ -65,5 +65,33 @@ func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
 	}
 	if string(data) != "one write" {
 		t.Fatalf("artifact content = %q, want one write", string(data))
+	}
+}
+
+
+func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
+	root := t.TempDir()
+	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
+	request := map[string]any{
+		"request_id": "req-bridge-mutation",
+		"invocation_id": "inv-bridge-mutation",
+		"actor": "manus",
+		"tool": "filesystem",
+		"action": "write",
+		"resource": "filesystem",
+		"payload": map[string]any{"path": "mutation.txt", "content": "authorized"},
+	}
+	result, err := gw.AuthorizeFromAdapter("json", request)
+	if err != nil || result.Status != "completed" {
+		t.Fatalf("initial execution failed: result=%+v err=%v", result, err)
+	}
+	evidence, err := gateway.BuildRuntimeEvidence(result)
+	if err != nil {
+		t.Fatalf("build evidence: %v", err)
+	}
+	mutated := result
+	mutated.Request.Payload = map[string]any{"path": "mutation.txt", "content": "tampered"}
+	if gateway.InvocationDigest(mutated.Request) == evidence.InvocationDigest {
+		t.Fatal("mutated invocation must not retain the authorization digest")
 	}
 }
