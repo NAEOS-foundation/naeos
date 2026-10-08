@@ -295,8 +295,8 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	}
 
 	result := ExecutionResult{
-		RequestID:    req.RequestID,
-		InvocationID: req.InvocationID,
+		RequestID:     req.RequestID,
+		InvocationID:  req.InvocationID,
 		Request:      req,
 		Decision:     rec.Decision,
 		PolicyID:     rec.PolicyID,
