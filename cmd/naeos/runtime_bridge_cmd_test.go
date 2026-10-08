@@ -25,10 +25,10 @@ func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
 	request := map[string]any{
 		"request_id":    "req-bridge-replay",
 		"invocation_id": "inv-bridge-replay",
-		"actor":        "manus",
-		"tool":         "filesystem",
-		"action":       "write",
-		"resource":     "filesystem",
+		"actor":         "manus",
+		"tool":          "filesystem",
+		"action":        "write",
+		"resource":      "filesystem",
 		"payload": map[string]any{
 			"path":    "replay.txt",
 			"content": "one write",
@@ -68,18 +68,17 @@ func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
 	}
 }
 
-
 func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 	root := t.TempDir()
 	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
 	request := map[string]any{
-		"request_id": "req-bridge-mutation",
+		"request_id":    "req-bridge-mutation",
 		"invocation_id": "inv-bridge-mutation",
-		"actor": "manus",
-		"tool": "filesystem",
-		"action": "write",
-		"resource": "filesystem",
-		"payload": map[string]any{"path": "mutation.txt", "content": "authorized"},
+		"actor":         "manus",
+		"tool":          "filesystem",
+		"action":        "write",
+		"resource":      "filesystem",
+		"payload":       map[string]any{"path": "mutation.txt", "content": "authorized"},
 	}
 	result, err := gw.AuthorizeFromAdapter("json", request)
 	if err != nil || result.Status != "completed" {
