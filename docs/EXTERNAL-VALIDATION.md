@@ -191,7 +191,42 @@ For each deviation record:
 
 Do not convert a deviation into a success by changing the acceptance criteria during the same evaluation.
 
-## 11. Evidence boundaries
+## 11. Runtime boundary validation
+
+For P3.1 external-adopter validation, the reviewer must also exercise the live protocol-neutral bridge. The repository test suite is not sufficient evidence for this gate.
+
+Build the current commit and run the bridge against an isolated filesystem root:
+
+~~~bash
+go build -o naeos ./cmd/naeos
+rm -rf /tmp/naeos-runtime /tmp/naeos-runtime-evidence.jsonl
+mkdir -p /tmp/naeos-runtime
+
+cat > /tmp/naeos-request.jsonl <<'EOF'
+{"request_id":"p31-allow-001","invocation_id":"p31-inv-001","actor":"external-validator","tool":"filesystem","action":"write","resource":"filesystem","payload":{"path":"observed.txt","content":"NAEOS-P31"}}
+{"request_id":"p31-replay-001","invocation_id":"p31-inv-replay","actor":"external-validator","tool":"filesystem","action":"write","resource":"filesystem","payload":{"path":"replay.txt","content":"one"}}
+{"request_id":"p31-replay-001","invocation_id":"p31-inv-replay","actor":"external-validator","tool":"filesystem","action":"write","resource":"filesystem","payload":{"path":"replay.txt","content":"two"}}
+EOF
+
+./naeos runtime bridge --filesystem-root /tmp/naeos-runtime --evidence-file /tmp/naeos-runtime-evidence.jsonl < /tmp/naeos-request.jsonl
+
+cat /tmp/naeos-runtime/observed.txt
+cat /tmp/naeos-runtime/replay.txt
+cat /tmp/naeos-runtime-evidence.jsonl
+~~~
+
+Acceptance for this runtime boundary:
+
+- the first ALLOW produces exactly one observable side effect;
+- the replayed invocation is denied before a second side effect;
+- each successful receipt contains request_id, invocation_id, invocation_digest, policy identity, decision, execution status, and observation identity;
+- the observer's digest equals the digest of the exact governed request;
+- an independently recomputed receipt digest verifies without the agent process;
+- mutation of payload or context changes the invocation digest and invalidates the prior evidence binding;
+- durable replay must be exercised with --replay-db when restart/cross-worker recovery is claimed.
+
+The canonical runtime receipt is intentionally distinct from sandbox stdout. A successful stdout message is not evidence unless the independently observed artifact is also bound to the same invocation digest.
+## 12. Evidence boundaries
 
 This runbook establishes a reproducible technical evaluation of the repository path. It does not establish:
 
@@ -205,7 +240,7 @@ This runbook establishes a reproducible technical evaluation of the repository p
 
 Those claims require additional evidence appropriate to the claim.
 
-## 12. Relationship to the canonical path
+## 13. Relationship to the canonical path
 
 There is intentionally one first-run execution path:
 
