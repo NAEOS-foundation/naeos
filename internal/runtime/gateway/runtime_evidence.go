@@ -8,6 +8,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 )
 
 // RuntimeEvidence is the canonical, protocol-neutral receipt emitted after a
@@ -85,7 +87,7 @@ func BuildRuntimeEvidence(result ExecutionResult) (RuntimeEvidence, error) {
 		ExecutionHash: result.Hash,
 		Observation: result.Observation,
 	}
-	if result.Status == "completed" && result.Decision == DecisionAllow {
+	if result.Status == "completed" && result.Decision == control.DecisionAllow {
 		if result.Observation == nil || !result.Observation.Observed ||
 			result.Observation.RequestID != result.RequestID ||
 			result.Observation.InvocationID != result.InvocationID ||
@@ -108,7 +110,7 @@ func VerifyRuntimeEvidence(e RuntimeEvidence) error {
 	if e.RequestID == "" || e.InvocationID == "" || e.InvocationDigest == "" {
 		return fmt.Errorf("evidence identity is incomplete")
 	}
-	if e.Decision == string(DecisionAllow) && e.ExecutionStatus == "completed" {
+	if e.Decision == string(control.DecisionAllow) && e.ExecutionStatus == "completed" {
 		if e.Observation == nil || !e.Observation.Observed ||
 			e.Observation.RequestID != e.RequestID ||
 			e.Observation.InvocationID != e.InvocationID ||
