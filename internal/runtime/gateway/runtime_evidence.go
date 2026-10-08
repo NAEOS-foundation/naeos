@@ -16,24 +16,24 @@ import (
 // governed execution. It binds authorization, the exact invocation, and the
 // independently observed outcome without trusting agent/sandbox claims alone.
 type RuntimeEvidence struct {
-	SchemaVersion   string         `json:"schema_version"`
-	RequestID       string         `json:"request_id"`
-	InvocationID    string         `json:"invocation_id"`
-	InvocationDigest string        `json:"invocation_digest"`
-	Tool            string         `json:"tool"`
-	Action          string         `json:"action"`
-	Resource        string         `json:"resource,omitempty"`
-	Environment     string         `json:"environment,omitempty"`
-	Actor           string         `json:"actor,omitempty"`
-	Capability      string         `json:"capability,omitempty"`
-	PolicyID        string         `json:"policy_id,omitempty"`
-	PolicyVersion   string         `json:"policy_version,omitempty"`
-	RuleID          string         `json:"rule_id,omitempty"`
-	Decision        string         `json:"decision"`
-	ExecutionStatus string         `json:"execution_status"`
-	ExecutionHash   string         `json:"execution_hash,omitempty"`
-	Observation     *Observation   `json:"observation,omitempty"`
-	EvidenceDigest  string         `json:"evidence_digest"`
+	SchemaVersion    string       `json:"schema_version"`
+	RequestID        string       `json:"request_id"`
+	InvocationID     string       `json:"invocation_id"`
+	InvocationDigest string       `json:"invocation_digest"`
+	Tool             string       `json:"tool"`
+	Action           string       `json:"action"`
+	Resource         string       `json:"resource,omitempty"`
+	Environment      string       `json:"environment,omitempty"`
+	Actor            string       `json:"actor,omitempty"`
+	Capability       string       `json:"capability,omitempty"`
+	PolicyID         string       `json:"policy_id,omitempty"`
+	PolicyVersion    string       `json:"policy_version,omitempty"`
+	RuleID           string       `json:"rule_id,omitempty"`
+	Decision         string       `json:"decision"`
+	ExecutionStatus  string       `json:"execution_status"`
+	ExecutionHash    string       `json:"execution_hash,omitempty"`
+	Observation      *Observation `json:"observation,omitempty"`
+	EvidenceDigest   string       `json:"evidence_digest"`
 }
 
 // InvocationDigest returns a deterministic SHA-256 digest over the complete
@@ -69,23 +69,23 @@ func BuildRuntimeEvidence(result ExecutionResult) (RuntimeEvidence, error) {
 		return RuntimeEvidence{}, fmt.Errorf("invocation_id is required")
 	}
 	e := RuntimeEvidence{
-		SchemaVersion: "naeos.runtime-evidence.v1",
-		RequestID: result.RequestID,
-		InvocationID: result.InvocationID,
+		SchemaVersion:    "naeos.runtime-evidence.v1",
+		RequestID:        result.RequestID,
+		InvocationID:     result.InvocationID,
 		InvocationDigest: InvocationDigest(result.Request),
-		Tool: result.Request.Tool,
-		Action: result.Request.Action,
-		Resource: result.Request.Resource,
-		Environment: result.Request.Environment,
-		Actor: result.Request.Actor,
-		Capability: result.Request.Capability,
-		PolicyID: result.PolicyID,
-		PolicyVersion: result.PolicyVersion,
-		RuleID: result.RuleID,
-		Decision: string(result.Decision),
-		ExecutionStatus: result.Status,
-		ExecutionHash: result.Hash,
-		Observation: result.Observation,
+		Tool:             result.Request.Tool,
+		Action:           result.Request.Action,
+		Resource:         result.Request.Resource,
+		Environment:      result.Request.Environment,
+		Actor:            result.Request.Actor,
+		Capability:       result.Request.Capability,
+		PolicyID:         result.PolicyID,
+		PolicyVersion:    result.PolicyVersion,
+		RuleID:           result.RuleID,
+		Decision:         string(result.Decision),
+		ExecutionStatus:  result.Status,
+		ExecutionHash:    result.Hash,
+		Observation:      result.Observation,
 	}
 	if result.Status == "completed" && result.Decision == control.DecisionAllow {
 		if result.Observation == nil || !result.Observation.Observed ||
