@@ -357,6 +357,13 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		result.PolicyID = current.PolicyID
 		result.RuleID = current.RuleID
 		result.Reasons = current.Reasons
+		if current.Decision != control.DecisionAllow {
+			result.Status = "denied"
+			result.Output = "authorization invalidated before execution"
+			result.Duration = time.Since(start)
+			g.record(result)
+			return result, nil
+		}
 	}
 
 	// Atomically consume the invocation identity immediately before the side
