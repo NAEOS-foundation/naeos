@@ -40,23 +40,18 @@ type RuntimeEvidence struct {
 // governed invocation identity, including canonicalized payload/context.
 func InvocationDigest(req ToolRequest) string {
 	type canonicalRequest struct {
-		RequestID string         `json:"request_id"`
-		InvocationID string      `json:"invocation_id"`
-		Capability string       `json:"capability"`
-		Tool string             `json:"tool"`
-		Action string            `json:"action"`
-		Resource string          `json:"resource"`
-		Environment string       `json:"environment"`
-		Actor string             `json:"actor"`
-		Payload map[string]any   `json:"payload"`
-		Context map[string]any   `json:"context"`
+		RequestID    string         `json:"request_id"`
+		InvocationID string         `json:"invocation_id"`
+		Capability   string         `json:"capability"`
+		Tool         string         `json:"tool"`
+		Action       string         `json:"action"`
+		Resource     string         `json:"resource"`
+		Environment  string         `json:"environment"`
+		Actor        string         `json:"actor"`
+		Payload      map[string]any `json:"payload"`
+		Context      map[string]any `json:"context"`
 	}
-	data, _ := json.Marshal(canonicalRequest{
-		RequestID: req.RequestID, InvocationID: req.InvocationID,
-		Capability: req.Capability, Tool: req.Tool, Action: req.Action,
-		Resource: req.Resource, Environment: req.Environment, Actor: req.Actor,
-		Payload: req.Payload, Context: req.Context,
-	})
+	data, _ := json.Marshal(canonicalRequest(req))
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:])
 }
