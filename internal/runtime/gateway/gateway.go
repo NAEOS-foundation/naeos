@@ -43,8 +43,9 @@ type Observation struct {
 	// RequestID and InvocationID bind runtime evidence to the governed execution.
 	// When the request supplies either identity, the gateway requires the
 	// observer to return the same value before treating the observation as proof.
-	RequestID    string
-	InvocationID string
+	RequestID        string
+	InvocationID     string
+	InvocationDigest string
 	Status       string // "observed", "absent", "mismatch", "unavailable"
 	Observed     bool
 	ArtifactHash string
@@ -61,9 +62,9 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	RequestID    string
-	InvocationID string
-	Request      ToolRequest
+	RequestID      string
+	InvocationID   string
+	Request        ToolRequest
 	Decision     control.Decision
 	PolicyID     string
 	RuleID       string
@@ -298,6 +299,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		Request:      req,
 		Decision:     rec.Decision,
 		PolicyID:     rec.PolicyID,
+		PolicyVersion: rec.PolicyVersion,
 		RuleID:       rec.RuleID,
 		Timestamp:    time.Now().UTC(),
 		Reasons:      rec.Reasons,
@@ -360,6 +362,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		rec = current
 		result.Decision = current.Decision
 		result.PolicyID = current.PolicyID
+		result.PolicyVersion = current.PolicyVersion
 		result.RuleID = current.RuleID
 		result.Reasons = current.Reasons
 		if current.Decision != control.DecisionAllow {
