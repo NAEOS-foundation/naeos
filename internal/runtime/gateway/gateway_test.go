@@ -78,6 +78,10 @@ func TestAdapterPrivilegeBoundaryDeniesWithoutGrant(t *testing.T) {
 	if result.RequestID != "req-p25-deny" {
 		t.Fatalf("request_id not preserved: %q", result.RequestID)
 	}
+	history := gw.History()
+	if len(history) != 1 || history[0].RequestID != "req-p25-deny" || history[0].Status != "denied" {
+		t.Fatalf("adapter denial was not recorded in gateway history: %+v", history)
+	}
 }
 
 func TestAdapterPrivilegeBoundaryAllowsExplicitGrant(t *testing.T) {

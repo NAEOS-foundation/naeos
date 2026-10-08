@@ -449,7 +449,16 @@ func (g *ExecutionGateway) AuthorizeFromAdapter(adapterName string, raw any) (Ex
 	adapterPolicy, granted := g.adapterPolicies[adapterName]
 	g.mu.RUnlock()
 	if !granted || !adapterPolicy.allows(req) {
-		return ExecutionResult{RequestID: req.RequestID, InvocationID: req.InvocationID, Request: req, Status: "denied", Output: "adapter privilege boundary denied request"}, nil
+		result := ExecutionResult{
+			RequestID:    req.RequestID,
+			InvocationID: req.InvocationID,
+			Request:      req,
+			Status:       "denied",
+			Output:       "adapter privilege boundary denied request",
+			Timestamp:    time.Now().UTC(),
+		}
+		g.record(result)
+		return result, nil
 	}
 	result, err := g.Authorize(req)
 	if err != nil {
