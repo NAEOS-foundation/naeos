@@ -4,7 +4,10 @@
 package gateway
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 )
@@ -94,7 +97,7 @@ func TestRuntimeEvidenceSignatureRejectsDigestRecomputationAttack(t *testing.T) 
 		t.Fatalf("verify signed evidence: %v", err)
 	}
 
-	evidence.Observation.Timestamp = "tampered"
+	evidence.Observation.Timestamp = time.Now()
 	evidence = sealEvidenceDigest(evidence)
 	if err := VerifyRuntimeEvidenceWithPublicKey(evidence, publicKey, "naeos-runtime", "key-1"); err == nil {
 		t.Fatal("recomputed digest after tampering must fail signature verification")
