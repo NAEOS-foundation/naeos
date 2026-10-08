@@ -107,7 +107,7 @@ Transport is intentionally unspecified: CLI, HTTP, RPC, or another transport may
 
 The adapter contract is a protocol and integration boundary, not a containment mechanism for arbitrary code. An adapter MUST NOT perform consequential side effects outside the NAEOS gateway, but an interface alone cannot technically prevent arbitrary provider code from making filesystem, network, process, or credential calls if that code has the operating-system authority to do so.
 
-Deployments that treat adapters as untrusted code MUST run them without consequential credentials or direct side-effect capability. Consequential credentials and capability handles MUST remain owned by the NAEOS-controlled runtime. If third-party adapter code cannot satisfy this privilege boundary, it MUST be isolated outside the trusted runtime boundary before it is allowed to submit intents. Passing protocol conformance does not by itself prove adapter containment.
+Deployments that treat adapters as untrusted code MUST follow the [Untrusted Adapter Deployment Profile](UNTRUSTED-ADAPTER-DEPLOYMENT.md) and run them without consequential credentials or direct side-effect capability. Consequential credentials and capability handles MUST remain owned by the NAEOS-controlled runtime. If third-party adapter code cannot satisfy this privilege boundary, it MUST be isolated outside the trusted runtime boundary before it is allowed to submit intents. Passing protocol conformance does not by itself prove adapter containment.
 
 ## Evidence
 
