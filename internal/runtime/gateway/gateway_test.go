@@ -900,17 +900,6 @@ func (s *failingInvocationStore) Claim(string) (bool, error) {
 	return false, s.err
 }
 
-
-type decisionRevalidatorStub struct {
-	decision control.Decision
-}
-
-func (s decisionRevalidatorStub) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
-	issued.Decision = s.decision
-	issued.Reasons = []string{"revalidation changed decision"}
-	return issued, nil
-}
-
 func TestGatewayRevalidationDecisionMustBlockExecution(t *testing.T) {
 	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1", ruleID: "r1"}
 	sb := &countingSandbox{}
