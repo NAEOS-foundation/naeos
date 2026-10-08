@@ -65,17 +65,17 @@ type ExecutionResult struct {
 	RequestID      string
 	InvocationID   string
 	Request        ToolRequest
-	Decision      control.Decision
-	PolicyID      string
-	PolicyVersion string
-	RuleID        string
-	Status       string // "completed", "denied", "failed", "skipped"
-	Output       string
-	Hash         string // SHA-256 of output/payload
-	Duration     time.Duration
-	Timestamp    time.Time
-	Reasons      []string
-	Observation  *Observation
+	Decision       control.Decision
+	PolicyID       string
+	PolicyVersion  string
+	RuleID         string
+	Status         string // "completed", "denied", "failed", "skipped"
+	Output         string
+	Hash           string // SHA-256 of output/payload
+	Duration       time.Duration
+	Timestamp      time.Time
+	Reasons        []string
+	Observation    *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
