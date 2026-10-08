@@ -1,0 +1,40 @@
+name: Sign-off check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  sign-off:
+    name: Sign-off check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify commit sign-offs
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+
+          missing=0
+          while IFS= read -r commit; do
+            message="$(git show -s --format=%B "$commit")"
+            if ! printf '%s\n' "$message" | grep -Eq '^Signed-off-by: .+ <.+>$'; then
+              echo "::error::Commit $commit is missing a Signed-off-by trailer."
+              missing=1
+            fi
+          done < <(git rev-list "$base..$head")
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "All pull request commits contain a Signed-off-by trailer."
