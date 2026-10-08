@@ -43,14 +43,15 @@ type Observation struct {
 	// RequestID and InvocationID bind runtime evidence to the governed execution.
 	// When the request supplies either identity, the gateway requires the
 	// observer to return the same value before treating the observation as proof.
-	RequestID    string
-	InvocationID string
-	Status       string // "observed", "absent", "mismatch", "unavailable"
-	Observed     bool
-	ArtifactHash string
-	ArtifactSize int64
-	Metadata     map[string]string
-	Timestamp    time.Time
+	RequestID        string
+	InvocationID     string
+	InvocationDigest string
+	Status           string // "observed", "absent", "mismatch", "unavailable"
+	Observed         bool
+	ArtifactHash     string
+	ArtifactSize     int64
+	Metadata         map[string]string
+	Timestamp        time.Time
 }
 
 // Observer verifies or records the externally observable effect of an execution.
@@ -61,19 +62,20 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	RequestID    string
-	InvocationID string
-	Request      ToolRequest
-	Decision     control.Decision
-	PolicyID     string
-	RuleID       string
-	Status       string // "completed", "denied", "failed", "skipped"
-	Output       string
-	Hash         string // SHA-256 of output/payload
-	Duration     time.Duration
-	Timestamp    time.Time
-	Reasons      []string
-	Observation  *Observation
+	RequestID     string
+	InvocationID  string
+	Request       ToolRequest
+	Decision      control.Decision
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
+	Status        string // "completed", "denied", "failed", "skipped"
+	Output        string
+	Hash          string // SHA-256 of output/payload
+	Duration      time.Duration
+	Timestamp     time.Time
+	Reasons       []string
+	Observation   *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -293,14 +295,15 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	}
 
 	result := ExecutionResult{
-		RequestID:    req.RequestID,
-		InvocationID: req.InvocationID,
-		Request:      req,
-		Decision:     rec.Decision,
-		PolicyID:     rec.PolicyID,
-		RuleID:       rec.RuleID,
-		Timestamp:    time.Now().UTC(),
-		Reasons:      rec.Reasons,
+		RequestID:     req.RequestID,
+		InvocationID:  req.InvocationID,
+		Request:       req,
+		Decision:      rec.Decision,
+		PolicyID:      rec.PolicyID,
+		PolicyVersion: rec.PolicyVersion,
+		RuleID:        rec.RuleID,
+		Timestamp:     time.Now().UTC(),
+		Reasons:       rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
@@ -360,6 +363,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		rec = current
 		result.Decision = current.Decision
 		result.PolicyID = current.PolicyID
+		result.PolicyVersion = current.PolicyVersion
 		result.RuleID = current.RuleID
 		result.Reasons = current.Reasons
 		if current.Decision != control.DecisionAllow {
@@ -431,7 +435,8 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			return result, nil
 		}
 		if (req.RequestID != "" && observation.RequestID != req.RequestID) ||
-			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) {
+			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) ||
+			((req.RequestID != "" || req.InvocationID != "") && observation.InvocationDigest != InvocationDigest(req)) {
 			result.Status = "failed"
 			result.Output = "runtime observation identity mismatch"
 			result.Hash = hashBytes([]byte(result.Output))

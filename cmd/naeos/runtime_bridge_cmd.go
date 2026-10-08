@@ -1,4 +1,5 @@
 // Copyright 2025 NAEOS contributors
+// Live bridge execution requires replay protection before consequential side effects.
 // SPDX-License-Identifier: Apache-2.0
 
 package main
@@ -22,7 +23,7 @@ import (
 type filesystemObserver struct{ root string }
 
 func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.ExecutionResult) (gateway.Observation, error) {
-	obs := gateway.Observation{Status: "absent", Timestamp: result.Timestamp}
+	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "absent", Timestamp: result.Timestamp}
 	if req.Tool != "filesystem" || req.Action != "write" {
 		obs.Status = "observed"
 		obs.Observed = true
@@ -61,8 +62,30 @@ func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.Exec
 	return obs, nil
 }
 
+func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore gateway.InvocationStore) *gateway.ExecutionGateway {
+	if replayStore == nil {
+		replayStore = gateway.NewInMemoryInvocationStore()
+	}
+	sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{FilesystemRoot: root})
+	gw := gateway.New(
+		cp,
+		sb,
+		gateway.WithObserver(filesystemObserver{root: root}),
+		gateway.WithReplayProtection(true),
+		gateway.WithInvocationStore(replayStore),
+	)
+	adapter := gateway.JSONToolAdapter{}
+	gw.RegisterAdapter(adapter.Name(), adapter)
+	_ = gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{
+		AllowedTools:   []string{"*"},
+		AllowedActions: []string{"*"},
+	})
+	return gw
+}
+
 func newRuntimeBridgeCommand() *cobra.Command {
 	var root string
+	var replayDB, evidenceFile string
 	cmd := &cobra.Command{
 		Use:   "bridge",
 		Short: "Stream JSON tool calls through the governance gateway",
@@ -77,13 +100,12 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				root = os.TempDir()
 			}
 			cp := control.New(reg)
-			sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{FilesystemRoot: root})
-			gw := gateway.New(cp, sb, gateway.WithObserver(filesystemObserver{root: root}))
-			adapter := gateway.JSONToolAdapter{}
-			gw.RegisterAdapter(adapter.Name(), adapter)
-			if err := gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{AllowedTools: []string{"*"}, AllowedActions: []string{"*"}}); err != nil {
+			replayStore, closeReplayStore, err := loadReplayStore(replayDB)
+			if err != nil {
 				return err
 			}
+			defer closeReplayStore()
+			gw := newRuntimeBridgeGateway(cp, root, replayStore)
 
 			in := bufio.NewScanner(cmd.InOrStdin())
 			out := cmd.OutOrStdout()
@@ -97,6 +119,28 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				if err != nil {
 					response["error"] = err.Error()
 				}
+				if evidenceFile != "" {
+					evidence, evidenceErr := gateway.BuildRuntimeEvidence(result)
+					if evidenceErr != nil {
+						response["evidence_error"] = evidenceErr.Error()
+					} else {
+						evidenceData, evidenceMarshalErr := json.Marshal(evidence)
+						if evidenceMarshalErr != nil {
+							return evidenceMarshalErr
+						}
+						file, openErr := os.OpenFile(evidenceFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+						if openErr != nil {
+							return openErr
+						}
+						if _, writeErr := file.Write(append(evidenceData, '\n')); writeErr != nil {
+							_ = file.Close()
+							return writeErr
+						}
+						if closeErr := file.Close(); closeErr != nil {
+							return closeErr
+						}
+					}
+				}
 				data, encErr := json.Marshal(response)
 				if encErr != nil {
 					return encErr
@@ -109,5 +153,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&root, "filesystem-root", "", "filesystem sandbox root for governed writes")
+	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection")
+	cmd.Flags().StringVar(&evidenceFile, "evidence-file", "", "append canonical runtime evidence JSONL to this file")
 	return cmd
 }
