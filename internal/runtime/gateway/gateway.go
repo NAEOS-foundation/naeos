@@ -435,7 +435,8 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			return result, nil
 		}
 		if (req.RequestID != "" && observation.RequestID != req.RequestID) ||
-			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) {
+			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) ||
+			observation.InvocationDigest != InvocationDigest(req) {
 			result.Status = "failed"
 			result.Output = "runtime observation identity mismatch"
 			result.Hash = hashBytes([]byte(result.Output))
