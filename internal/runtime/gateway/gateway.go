@@ -62,20 +62,20 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	RequestID      string
-	InvocationID   string
-	Request        ToolRequest
-	Decision       control.Decision
-	PolicyID       string
-	PolicyVersion  string
-	RuleID         string
-	Status         string // "completed", "denied", "failed", "skipped"
-	Output         string
-	Hash           string // SHA-256 of output/payload
-	Duration       time.Duration
-	Timestamp      time.Time
-	Reasons        []string
-	Observation    *Observation
+	RequestID     string
+	InvocationID  string
+	Request       ToolRequest
+	Decision      control.Decision
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
+	Status        string // "completed", "denied", "failed", "skipped"
+	Output        string
+	Hash          string // SHA-256 of output/payload
+	Duration      time.Duration
+	Timestamp     time.Time
+	Reasons       []string
+	Observation   *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -297,13 +297,13 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	result := ExecutionResult{
 		RequestID:     req.RequestID,
 		InvocationID:  req.InvocationID,
-		Request:      req,
-		Decision:     rec.Decision,
-		PolicyID:     rec.PolicyID,
+		Request:       req,
+		Decision:      rec.Decision,
+		PolicyID:      rec.PolicyID,
 		PolicyVersion: rec.PolicyVersion,
-		RuleID:       rec.RuleID,
-		Timestamp:    time.Now().UTC(),
-		Reasons:      rec.Reasons,
+		RuleID:        rec.RuleID,
+		Timestamp:     time.Now().UTC(),
+		Reasons:       rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
