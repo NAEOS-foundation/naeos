@@ -61,3 +61,59 @@ func TestRuntimeEvidenceRejectsUnobservedAllow(t *testing.T) {
 		t.Fatal("ALLOW completion without independent observation must not become evidence")
 	}
 }
+
+
+func TestRuntimeEvidenceSignatureRejectsDigestRecomputationAttack(t *testing.T) {
+	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	request := ToolRequest{
+		RequestID: "req-sign-01", InvocationID: "inv-sign-01",
+		Tool: "filesystem", Action: "write",
+		Payload: map[string]any{"path": "signed.txt", "content": "one"},
+	}
+	digest := InvocationDigest(request)
+	result := ExecutionResult{
+		RequestID: request.RequestID, InvocationID: request.InvocationID, Request: request,
+		Decision: control.DecisionAllow, PolicyID: "policy", PolicyVersion: "1.0",
+		Status: "completed", Observation: &Observation{
+			RequestID: request.RequestID, InvocationID: request.InvocationID,
+			InvocationDigest: digest, Status: "observed", Observed: true,
+		},
+	}
+	evidence, err := BuildRuntimeEvidence(result)
+	if err != nil {
+		t.Fatalf("build evidence: %v", err)
+	}
+	if err := SignRuntimeEvidence(&evidence, privateKey, "naeos-runtime", "key-1"); err != nil {
+		t.Fatalf("sign evidence: %v", err)
+	}
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+	if err := VerifyRuntimeEvidenceWithPublicKey(evidence, publicKey, "naeos-runtime", "key-1"); err != nil {
+		t.Fatalf("verify signed evidence: %v", err)
+	}
+
+	evidence.Observation.Timestamp = "tampered"
+	evidence = sealEvidenceDigest(evidence)
+	if err := VerifyRuntimeEvidenceWithPublicKey(evidence, publicKey, "naeos-runtime", "key-1"); err == nil {
+		t.Fatal("recomputed digest after tampering must fail signature verification")
+	}
+}
+
+func TestRuntimeEvidenceRejectsUnsignedReceiptWithTrustedKey(t *testing.T) {
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	evidence := RuntimeEvidence{
+		SchemaVersion: "naeos.runtime-evidence.v1",
+		RequestID: "req-sign-02", InvocationID: "inv-sign-02",
+		InvocationDigest: "sha256:inv", Tool: "filesystem", Action: "write",
+		Decision: "DENY", ExecutionStatus: "denied",
+	}
+	evidence = sealEvidenceDigest(evidence)
+	if err := VerifyRuntimeEvidenceWithPublicKey(evidence, publicKey, "naeos-runtime", "key-1"); err == nil {
+		t.Fatal("unsigned evidence must fail trusted verification")
+	}
+}

@@ -85,7 +85,7 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 
 func newRuntimeBridgeCommand() *cobra.Command {
 	var root string
-	var replayDB, evidenceFile string
+	var replayDB, evidenceFile, evidenceSigningKey, evidenceIssuer, evidenceKeyID string
 	cmd := &cobra.Command{
 		Use:   "bridge",
 		Short: "Stream JSON tool calls through the governance gateway",
@@ -124,6 +124,19 @@ func newRuntimeBridgeCommand() *cobra.Command {
 					if evidenceErr != nil {
 						response["evidence_error"] = evidenceErr.Error()
 					} else {
+						if evidenceSigningKey != "" {
+							keyData, keyReadErr := os.ReadFile(evidenceSigningKey)
+							if keyReadErr != nil {
+								return keyReadErr
+							}
+							privateKey, keyParseErr := gateway.ParseEd25519PrivateKey(keyData)
+							if keyParseErr != nil {
+								return fmt.Errorf("parse evidence signing key: %w", keyParseErr)
+							}
+							if signErr := gateway.SignRuntimeEvidence(&evidence, privateKey, evidenceIssuer, evidenceKeyID); signErr != nil {
+								return fmt.Errorf("sign runtime evidence: %w", signErr)
+							}
+						}
 						evidenceData, evidenceMarshalErr := json.Marshal(evidence)
 						if evidenceMarshalErr != nil {
 							return evidenceMarshalErr
@@ -155,5 +168,8 @@ func newRuntimeBridgeCommand() *cobra.Command {
 	cmd.Flags().StringVar(&root, "filesystem-root", "", "filesystem sandbox root for governed writes")
 	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection")
 	cmd.Flags().StringVar(&evidenceFile, "evidence-file", "", "append canonical runtime evidence JSONL to this file")
+	cmd.Flags().StringVar(&evidenceSigningKey, "evidence-signing-key", "", "Ed25519 private key file for authenticated runtime evidence")
+	cmd.Flags().StringVar(&evidenceIssuer, "evidence-issuer", "", "trusted issuer identity embedded in runtime evidence signatures")
+	cmd.Flags().StringVar(&evidenceKeyID, "evidence-key-id", "", "trusted signing key identifier embedded in runtime evidence signatures")
 	return cmd
 }
