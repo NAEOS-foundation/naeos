@@ -4,11 +4,14 @@
 package wasm
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/tetratelabs/wazero"
 )
 
 var helloWASM = []byte{
@@ -25,6 +28,18 @@ var helloWASM = []byte{
 	0x22, 0x6F, 0x6B, 0x22, 0x3A, 0x74, 0x72, 0x75, 0x65, 0x2C, 0x22, 0x72, 0x65, 0x73, 0x75, 0x6C,
 	0x74, 0x22, 0x3A, 0x22, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x22, 0x7D, 0x00, 0x41, 0x80, 0x02, 0x0B,
 	0x08, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00,
+}
+
+// prestatWASM imports WASI fd_prestat_get and calls it with fd 3. Because
+// NewWASMRuntime does not preopen any filesystem, fd 3 must not be a valid
+// preopened directory and WASI must return EBADF (8).
+var prestatWASM = []byte{
+	0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00, 0x01, 0x0B, 0x02, 0x60, 0x02, 0x7F, 0x7F,
+	0x01, 0x7F, 0x60, 0x00, 0x01, 0x7F, 0x02, 0x29, 0x01, 0x16, 0x77, 0x61, 0x73, 0x69, 0x5F, 0x73, 0x6E,
+	0x61, 0x70, 0x73, 0x68, 0x6F, 0x74, 0x5F, 0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x31, 0x0E,
+	0x66, 0x64, 0x5F, 0x70, 0x72, 0x65, 0x73, 0x74, 0x61, 0x74, 0x5F, 0x67, 0x65, 0x74, 0x00, 0x00,
+	0x03, 0x02, 0x01, 0x01, 0x07, 0x09, 0x01, 0x05, 0x63, 0x68, 0x65, 0x63, 0x6B, 0x00, 0x01, 0x0A, 0x0A,
+	0x01, 0x08, 0x00, 0x41, 0x03, 0x41, 0x00, 0x10, 0x00, 0x0B,
 }
 
 var loopWASM = []byte{
@@ -44,6 +59,36 @@ func writeTempWASM(t *testing.T, data []byte) string {
 	return path
 }
 
+func TestWASMRuntimeHasNoPreopenedFilesystem(t *testing.T) {
+	rt := NewWASMRuntime(5*time.Second, 0)
+	defer rt.Close()
+
+	path := writeTempWASM(t, prestatWASM)
+	plugin, err := rt.Load(path)
+	if err != nil {
+		t.Fatalf("load wasm: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	mod, err := rt.rt.InstantiateModule(ctx, plugin.compiled, wazero.NewModuleConfig())
+	if err != nil {
+		t.Fatalf("instantiate wasm: %v", err)
+	}
+	defer mod.Close(ctx)
+
+	results, err := mod.ExportedFunction("check").Call(ctx)
+	if err != nil {
+		t.Fatalf("call fd_prestat_get: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected one errno result, got %d", len(results))
+	}
+	if results[0] != 8 { // WASI EBADF: no preopened directory is available.
+		t.Fatalf("expected EBADF (8) for fd_prestat_get on fd 3, got %d", results[0])
+	}
+}
+
 func TestWASMRuntimeCreation(t *testing.T) {
 	rt := NewWASMRuntime(5*time.Second, 64*1024*1024)
 	defer rt.Close()
@@ -56,9 +101,6 @@ func TestWASMRuntimeCreation(t *testing.T) {
 	}
 	if rt.maxMemory != 64*1024*1024 {
 		t.Errorf("expected maxMemory 64MB, got %v", rt.maxMemory)
-	}
-	if rt.memoryLimitPages != 1024 {
-		t.Errorf("expected memory limit 1024 pages, got %d", rt.memoryLimitPages)
 	}
 	if rt.memoryLimitPages != 1024 {
 		t.Errorf("expected memory limit 1024 pages, got %d", rt.memoryLimitPages)
