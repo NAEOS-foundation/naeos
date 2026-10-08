@@ -8,7 +8,7 @@ import "testing"
 func TestVerifyEvidenceRejectsDetachedObservation(t *testing.T) {
 	bundle := EvidenceBundle{
 		SchemaVersion: "1.2",
-		RequestID: "req-1", DecisionID: "dec-1", ExecutionID: "exec-1",
+		RequestID:     "req-1", DecisionID: "dec-1", ExecutionID: "exec-1",
 		AgentID: "agent-1", Capability: "repository.write", Decision: DecisionAllow,
 		DecisionEvent: LedgerEvent{
 			RequestID: "req-1", DecisionID: "dec-1", AgentID: "agent-1",
@@ -24,17 +24,23 @@ func TestVerifyEvidenceRejectsDetachedObservation(t *testing.T) {
 		},
 	}
 	digest, err := evidenceDigest(bundle)
-	if err != nil { t.Fatalf("digest: %v", err) }
+	if err != nil {
+		t.Fatalf("digest: %v", err)
+	}
 	bundle.EvidenceDigest = digest
-	if err := signEvidenceBundle(&bundle); err != nil { t.Fatalf("sign: %v", err) }
+	if err := signEvidenceBundle(&bundle); err != nil {
+		t.Fatalf("sign: %v", err)
+	}
 	result := VerifyEvidence(bundle)
-	if result.Result != "FAIL" { t.Fatalf("expected detached observation to fail, got %s: %v", result.Result, result.Issues) }
+	if result.Result != "FAIL" {
+		t.Fatalf("expected detached observation to fail, got %s: %v", result.Result, result.Issues)
+	}
 }
 
 func TestVerifyEvidenceRequiresCompleteAllowChain(t *testing.T) {
 	bundle := EvidenceBundle{
 		SchemaVersion: "1.2",
-		RequestID: "req-1", DecisionID: "dec-1", ExecutionID: "exec-1",
+		RequestID:     "req-1", DecisionID: "dec-1", ExecutionID: "exec-1",
 		AgentID: "agent-1", Capability: "repository.write", Decision: DecisionAllow,
 		DecisionEvent: LedgerEvent{
 			RequestID: "req-1", DecisionID: "dec-1", AgentID: "agent-1",
@@ -46,11 +52,17 @@ func TestVerifyEvidenceRequiresCompleteAllowChain(t *testing.T) {
 		},
 	}
 	digest, err := evidenceDigest(bundle)
-	if err != nil { t.Fatalf("digest: %v", err) }
+	if err != nil {
+		t.Fatalf("digest: %v", err)
+	}
 	bundle.EvidenceDigest = digest
-	if err := signEvidenceBundle(&bundle); err != nil { t.Fatalf("sign: %v", err) }
+	if err := signEvidenceBundle(&bundle); err != nil {
+		t.Fatalf("sign: %v", err)
+	}
 	result := VerifyEvidence(bundle)
-	if result.Result != "FAIL" { t.Fatalf("expected incomplete allow chain to fail, got %s: %v", result.Result, result.Issues) }
+	if result.Result != "FAIL" {
+		t.Fatalf("expected incomplete allow chain to fail, got %s: %v", result.Result, result.Issues)
+	}
 }
 
 func TestVerifyEvidenceBundleRejectsReorderedLedger(t *testing.T) {
@@ -75,5 +87,7 @@ func TestVerifyEvidenceBundleRejectsReorderedLedger(t *testing.T) {
 	events := ledger.Events()
 	ledger.events = []LedgerEvent{events[0], events[2], events[1]}
 	result := ledger.verifyEvidenceBundle(bundle)
-	if result.Result != "FAIL" { t.Fatalf("expected reordered ledger to fail, got %s: %v", result.Result, result.Issues) }
+	if result.Result != "FAIL" {
+		t.Fatalf("expected reordered ledger to fail, got %s: %v", result.Result, result.Issues)
+	}
 }
