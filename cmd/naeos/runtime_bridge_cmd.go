@@ -119,6 +119,28 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				if err != nil {
 					response["error"] = err.Error()
 				}
+				if evidenceFile != "" {
+					evidence, evidenceErr := gateway.BuildRuntimeEvidence(result)
+					if evidenceErr != nil {
+						response["evidence_error"] = evidenceErr.Error()
+					} else {
+						evidenceData, evidenceMarshalErr := json.Marshal(evidence)
+						if evidenceMarshalErr != nil {
+							return evidenceMarshalErr
+						}
+						file, openErr := os.OpenFile(evidenceFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+						if openErr != nil {
+							return openErr
+						}
+						if _, writeErr := file.Write(append(evidenceData, '\n')); writeErr != nil {
+							_ = file.Close()
+							return writeErr
+						}
+						if closeErr := file.Close(); closeErr != nil {
+							return closeErr
+						}
+					}
+				}
 				data, encErr := json.Marshal(response)
 				if encErr != nil {
 					return encErr
@@ -131,6 +153,8 @@ func newRuntimeBridgeCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&root, "filesystem-root", "", "filesystem sandbox root for governed writes")
+	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection")
+	cmd.Flags().StringVar(&evidenceFile, "evidence-file", "", "append canonical runtime evidence JSONL to this file")
 	cmd.Flags().StringVar(&replayDB, "replay-db", "", "SQLite/database replay store; empty uses process-local replay protection")
 	return cmd
 }
