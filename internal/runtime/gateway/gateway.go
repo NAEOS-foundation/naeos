@@ -46,12 +46,12 @@ type Observation struct {
 	RequestID        string
 	InvocationID     string
 	InvocationDigest string
-	Status       string // "observed", "absent", "mismatch", "unavailable"
-	Observed     bool
-	ArtifactHash string
-	ArtifactSize int64
-	Metadata     map[string]string
-	Timestamp    time.Time
+	Status           string // "observed", "absent", "mismatch", "unavailable"
+	Observed         bool
+	ArtifactHash     string
+	ArtifactSize     int64
+	Metadata         map[string]string
+	Timestamp        time.Time
 }
 
 // Observer verifies or records the externally observable effect of an execution.
@@ -65,9 +65,10 @@ type ExecutionResult struct {
 	RequestID      string
 	InvocationID   string
 	Request        ToolRequest
-	Decision     control.Decision
-	PolicyID     string
-	RuleID       string
+	Decision      control.Decision
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
 	Status       string // "completed", "denied", "failed", "skipped"
 	Output       string
 	Hash         string // SHA-256 of output/payload
