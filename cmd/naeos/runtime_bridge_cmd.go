@@ -23,7 +23,7 @@ import (
 type filesystemObserver struct{ root string }
 
 func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.ExecutionResult) (gateway.Observation, error) {
-	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, Status: "absent", Timestamp: result.Timestamp}
+	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "absent", Timestamp: result.Timestamp}
 	if req.Tool != "filesystem" || req.Action != "write" {
 		obs.Status = "observed"
 		obs.Observed = true
@@ -85,7 +85,7 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 
 func newRuntimeBridgeCommand() *cobra.Command {
 	var root string
-	var replayDB string
+	var replayDB, evidenceFile string
 	cmd := &cobra.Command{
 		Use:   "bridge",
 		Short: "Stream JSON tool calls through the governance gateway",
@@ -155,6 +155,5 @@ func newRuntimeBridgeCommand() *cobra.Command {
 	cmd.Flags().StringVar(&root, "filesystem-root", "", "filesystem sandbox root for governed writes")
 	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection")
 	cmd.Flags().StringVar(&evidenceFile, "evidence-file", "", "append canonical runtime evidence JSONL to this file")
-	cmd.Flags().StringVar(&replayDB, "replay-db", "", "SQLite/database replay store; empty uses process-local replay protection")
 	return cmd
 }
