@@ -115,11 +115,11 @@ export default function ControlPlaneDashboard({ lang }: Props) {
         </aside>
         <div className="control-plane-main">
           <header className="control-plane-console-header"><div><span className="console-kicker">CONTROL PLANE</span><h3>{id ? "Ringkasan operasional" : "Operational overview"}</h3></div><span className={"console-status " + (evidenceState === "ready" && verification ? "is-healthy" : evidenceState === "error" ? "is-error" : "is-neutral")}><i /> {evidenceState === "ready" ? (verification ? (id ? "Evidence terverifikasi" : "Evidence verified") : (id ? "Evidence belum terverifikasi" : "Evidence unverified")) : evidenceState === "loading" ? (id ? "Menyinkronkan evidence" : "Syncing evidence") : evidenceState === "error" ? (id ? "Evidence tidak tersedia" : "Evidence unavailable") : (id ? "API belum terhubung" : "API not connected")}</span></header>
-          <div className="control-plane-metrics">
-            <article><span>Agents</span><strong>12</strong><small>2 active now</small></article>
-            <article><span>Active Runs</span><strong>4</strong><small>1 awaiting verification</small></article>
-            <article><span>Blocked</span><strong>3</strong><small>last 24 hours</small></article>
-            <article><span>Verified</span><strong>98.7%</strong><small>decision → evidence</small></article>
+          <div className="control-plane-metrics" aria-label={id ? "Metrik operasional" : "Operational metrics"}>
+            <article><span>Agents</span><strong>{knownAgents || "—"}</strong><small>{id ? "Agen yang terlihat pada data live" : "Agents observed in live data"}</small></article>
+            <article><span>Active Runs</span><strong>{runs.length ? activeRuns : "—"}</strong><small>{runs.length ? (id ? "Dari execution ledger" : "From execution ledger") : (id ? "Belum ada data run" : "No run data yet")}</small></article>
+            <article><span>Blocked</span><strong>{hasLiveDecisions ? blockedDecisions : "—"}</strong><small>{hasLiveDecisions ? (id ? "Dari decision evidence live" : "From live decision evidence") : (id ? "Belum ada data keputusan live" : "No live decision data")}</small></article>
+            <article><span>Verified</span><strong>{verificationRate === null ? "—" : `${verificationRate}%`}</strong><small>{runs.length ? `${verifiedRuns}/${runs.length} ${id ? "run terverifikasi" : "runs verified"}` : (id ? "Belum ada data verifikasi" : "No verification data yet")}</small></article>
           </div>
           <div className="control-plane-console-grid" id="control-plane-decisions">
             <div className="control-plane-panel">
