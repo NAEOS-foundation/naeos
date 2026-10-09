@@ -18,7 +18,11 @@ import (
 func newTestAPI(t *testing.T) (*APIServer, *DemoSetup) {
 	t.Helper()
 	setup := SetupDemoEnvironment()
-	return NewAPIServer(setup), setup
+	as := NewAPIServer(setup)
+	// Unit tests use an explicit token so protected-route tests do not depend
+	// on the developer's shell environment.
+	as.security.token = "test-token"
+	return as, setup
 }
 
 func doJSON(t *testing.T, as *APIServer, method, path, body string) *httptest.ResponseRecorder {
@@ -29,6 +33,9 @@ func doJSON(t *testing.T, as *APIServer, method, path, body string) *httptest.Re
 	} else {
 		req = httptest.NewRequest(method, path, bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if path == "/api/control-plane/decision" && as.security.token != "" {
+		req.Header.Set("Authorization", "Bearer "+as.security.token)
 	}
 	rec := httptest.NewRecorder()
 	as.ServeHTTP(rec, req)
@@ -67,15 +74,43 @@ func TestAPIOptionsPreflight(t *testing.T) {
 func TestAPIControlPlaneSecurity(t *testing.T) {
 	as, _ := newTestAPI(t)
 
+	// Browser CORS preflight must work without a bearer token; the actual
+	// POST remains authenticated.
+	preflight := httptest.NewRequest(http.MethodOptions, "/api/control-plane/decision", nil)
+	preflight.Header.Set("Origin", "https://naeos.dev")
+	preflight.Header.Set("Access-Control-Request-Method", "POST")
+	preflight.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+	preflightRec := httptest.NewRecorder()
+	as.ServeHTTP(preflightRec, preflight)
+	if preflightRec.Code != http.StatusOK {
+		t.Fatalf("expected unauthenticated preflight to pass, got %d", preflightRec.Code)
+	}
+
+	// Disallowed origins are rejected before authentication.
 	req := httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
 		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
 	))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Origin", "https://evil.example")
+	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	as.ServeHTTP(rec, req)
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden origin, got %d", rec.Code)
+	}
+
+	// Missing server configuration must fail closed, even if a caller sends
+	// a plausible bearer token.
+	as.security.token = ""
+	req = httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec = httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected unauthorized when server token is unset, got %d", rec.Code)
 	}
 
 	as.security.token = "test-token"
@@ -95,6 +130,18 @@ func TestAPIControlPlaneSecurity(t *testing.T) {
 	))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Origin", "https://naeos.dev")
+	req.Header.Set("Authorization", "Bearer wrong-token")
+	rec = httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected unauthorized for invalid bearer token, got %d", rec.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader(
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://naeos.dev")
 	req.Header.Set("Authorization", "Bearer test-token")
 	rec = httptest.NewRecorder()
 	as.ServeHTTP(rec, req)
@@ -102,7 +149,6 @@ func TestAPIControlPlaneSecurity(t *testing.T) {
 		t.Fatalf("expected authorized request to pass, got %d", rec.Code)
 	}
 
-	as.security.token = ""
 	as.security.hits = make(map[string][]time.Time)
 	as.security.limit = 1
 	as.security.window = time.Hour

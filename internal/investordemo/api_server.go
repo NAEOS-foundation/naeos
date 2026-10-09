@@ -95,11 +95,8 @@ func (as *APIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if r.Method == http.MethodOptions {
-		if r.URL.Path == "/api/control-plane/decision" && !as.security.authorize(r) {
-			w.Header().Set("WWW-Authenticate", "Bearer")
-			http.Error(w, "authentication required", http.StatusUnauthorized)
-			return
-		}
+		// CORS preflight requests do not carry the application's bearer token.
+		// Validate Origin above; authenticate the actual POST request below.
 		w.WriteHeader(http.StatusOK)
 		return
 	}

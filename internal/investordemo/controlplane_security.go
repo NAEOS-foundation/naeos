@@ -57,8 +57,10 @@ func (s *controlPlaneSecurity) originAllowed(origin string) bool {
 }
 
 func (s *controlPlaneSecurity) authorize(r *http.Request) bool {
+	// Fail closed: a missing server-side token is a configuration error, not
+	// permission to bypass authentication.
 	if s.token == "" {
-		return true
+		return false
 	}
 	const prefix = "Bearer "
 	return strings.HasPrefix(r.Header.Get("Authorization"), prefix) &&
