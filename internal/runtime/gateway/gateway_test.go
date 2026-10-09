@@ -1014,14 +1014,12 @@ func TestGatewayObserverFailuresCannotProduceSuccess(t *testing.T) {
 			sb := &countingSandbox{}
 			obs := tt.observation
 			req := ToolRequest{RequestID: "req-evidence", InvocationID: "inv-evidence", Tool: "filesystem", Action: "write"}
-			if tt.name == "mismatched request identity" {
+			switch tt.name {
+			case "mismatched request identity":
 				obs.InvocationID = req.InvocationID
-			} else if tt.name == "mismatched invocation identity" {
+			case "mismatched invocation identity":
 				obs.RequestID = req.RequestID
-			} else if tt.name == "not observed" {
-				obs.RequestID = req.RequestID
-				obs.InvocationID = req.InvocationID
-			} else if tt.name == "observer error" {
+			case "not observed", "observer error":
 				obs.RequestID = req.RequestID
 				obs.InvocationID = req.InvocationID
 			}
