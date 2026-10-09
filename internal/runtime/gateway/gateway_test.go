@@ -939,7 +939,6 @@ func (c revalidationControlPlane) ValidateDecision(req control.Request, issued c
 	return issued, nil
 }
 
-
 // invariantAuditRevalidator lets tests exercise outcomes at the final authorization boundary.
 type invariantAuditRevalidator struct {
 	*stubControlPlane
