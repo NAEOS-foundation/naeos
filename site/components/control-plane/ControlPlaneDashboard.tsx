@@ -85,7 +85,17 @@ export default function ControlPlaneDashboard({ lang }: Props) {
     return () => { cancelled = true; };
   }, []);
 
-  const visibleDecisions = liveDecisions.length ? liveDecisions : decisions;
+  const hasLiveDecisions = liveDecisions.length > 0;
+  const visibleDecisions = hasLiveDecisions ? liveDecisions : decisions;
+  const activeRuns = runs.filter((run) => run.status === "ACTIVE" || run.status === "EXECUTING").length;
+  const blockedDecisions = liveDecisions.filter((decision) => decision.status === "BLOCK").length;
+  const verifiedRuns = runs.filter((run) => run.status === "VERIFIED").length;
+  const knownAgents = new Set([
+    ...runs.map((run) => run.agent_id),
+    ...liveDecisions.map((decision) => decision.agent),
+  ].filter(Boolean)).size;
+  const verificationRate = runs.length ? Math.round((verifiedRuns / runs.length) * 100) : null;
+  const selectedHasLiveEvidence = hasLiveDecisions && liveDecisions.some((decision) => decision.id === selected.id);
 
   return (
     <section className="control-plane-dashboard" aria-labelledby="control-plane-dashboard-title">
@@ -98,22 +108,22 @@ export default function ControlPlaneDashboard({ lang }: Props) {
         <aside className="control-plane-sidebar" aria-label="Control Plane navigation">
           <div className="control-plane-brand"><span>∞</span><strong>NAEOS</strong></div>
           <nav>
-            <div className="control-plane-nav-group"><span>CONTROL</span><button className="active" type="button">Dashboard</button><button type="button">Agents</button><button type="button">Runs</button><button type="button">Decisions</button></div>
-            <div className="control-plane-nav-group"><span>GOVERNANCE</span><button type="button">Policies</button><button type="button">Exceptions</button></div>
-            <div className="control-plane-nav-group"><span>TRUST</span><button type="button">Verification</button><button type="button">Evidence</button></div>
+            <div className="control-plane-nav-group"><span>CONTROL</span><button className="active" type="button">Dashboard</button><button type="button" disabled title={id ? "Belum tersedia" : "Not available yet"}>Agents</button><button type="button" onClick={() => document.getElementById("control-plane-runs")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Runs</button><button type="button" onClick={() => document.getElementById("control-plane-decisions")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Decisions</button></div>
+            <div className="control-plane-nav-group"><span>GOVERNANCE</span><button type="button" disabled title={id ? "Belum tersedia" : "Not available yet"}>Policies</button><button type="button" disabled title={id ? "Belum tersedia" : "Not available yet"}>Exceptions</button></div>
+            <div className="control-plane-nav-group"><span>TRUST</span><button type="button" onClick={() => document.getElementById("control-plane-evidence")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Verification</button><button type="button" onClick={() => document.getElementById("control-plane-evidence")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Evidence</button></div>
           </nav>
         </aside>
         <div className="control-plane-main">
-          <header className="control-plane-console-header"><div><span className="console-kicker">CONTROL PLANE</span><h3>Operational overview</h3></div><span className="console-status"><i /> {evidenceState === "ready" ? (verification ? "Evidence verified" : "Evidence needs review") : evidenceState === "loading" ? "Syncing evidence" : "Operational"}</span></header>
-          <div className="control-plane-metrics">
-            <article><span>Agents</span><strong>12</strong><small>2 active now</small></article>
-            <article><span>Active Runs</span><strong>4</strong><small>1 awaiting verification</small></article>
-            <article><span>Blocked</span><strong>3</strong><small>last 24 hours</small></article>
-            <article><span>Verified</span><strong>98.7%</strong><small>decision → evidence</small></article>
+          <header className="control-plane-console-header"><div><span className="console-kicker">CONTROL PLANE</span><h3>{id ? "Ringkasan operasional" : "Operational overview"}</h3></div><span className={"console-status " + (evidenceState === "ready" && verification ? "is-healthy" : evidenceState === "error" ? "is-error" : "is-neutral")}><i /> {evidenceState === "ready" ? (verification ? (id ? "Evidence terverifikasi" : "Evidence verified") : (id ? "Evidence belum terverifikasi" : "Evidence unverified")) : evidenceState === "loading" ? (id ? "Menyinkronkan evidence" : "Syncing evidence") : evidenceState === "error" ? (id ? "Evidence tidak tersedia" : "Evidence unavailable") : (id ? "API belum terhubung" : "API not connected")}</span></header>
+          <div className="control-plane-metrics" aria-label={id ? "Metrik operasional" : "Operational metrics"}>
+            <article><span>Agents</span><strong>{knownAgents || "—"}</strong><small>{id ? "Agen yang terlihat pada data live" : "Agents observed in live data"}</small></article>
+            <article><span>Active Runs</span><strong>{runs.length ? activeRuns : "—"}</strong><small>{runs.length ? (id ? "Dari execution ledger" : "From execution ledger") : (id ? "Belum ada data run" : "No run data yet")}</small></article>
+            <article><span>Blocked</span><strong>{hasLiveDecisions ? blockedDecisions : "—"}</strong><small>{hasLiveDecisions ? (id ? "Dari decision evidence live" : "From live decision evidence") : (id ? "Belum ada data keputusan live" : "No live decision data")}</small></article>
+            <article><span>Verified</span><strong>{verificationRate === null ? "—" : `${verificationRate}%`}</strong><small>{runs.length ? `${verifiedRuns}/${runs.length} ${id ? "run terverifikasi" : "runs verified"}` : (id ? "Belum ada data verifikasi" : "No verification data yet")}</small></article>
           </div>
-          <div className="control-plane-console-grid">
+          <div className="control-plane-console-grid" id="control-plane-decisions">
             <div className="control-plane-panel">
-              <div className="panel-header"><div><span className="console-kicker">RECENT DECISIONS</span><h4>{liveDecisions.length ? "Live policy decisions" : "Policy decisions"}</h4></div><span className="panel-count">{visibleDecisions.length}</span></div>
+              <div className="panel-header"><div><span className="console-kicker">RECENT DECISIONS</span><h4>{hasLiveDecisions ? (id ? "Keputusan policy live" : "Live policy decisions") : (id ? "Contoh keputusan" : "Sample decisions")}</h4></div><span className="panel-count">{visibleDecisions.length}</span></div>{!hasLiveDecisions && <p className="control-plane-data-note">{evidenceState === "error" ? (id ? "Data live gagal dimuat. Daftar di bawah adalah contoh, bukan data produksi." : "Live data failed to load. The list below is sample data, not production data.") : (id ? "Data contoh — hubungkan API untuk melihat keputusan nyata." : "Sample data — connect the API to view real decisions.")}</p>}
               <div className="decision-list">
                 {visibleDecisions.map((decision) => (
                   <button key={decision.id} type="button" className={selected.id === decision.id ? "decision-row selected" : "decision-row"} onClick={() => setSelected(decision)}>
@@ -124,18 +134,18 @@ export default function ControlPlaneDashboard({ lang }: Props) {
                 ))}
               </div>
             </div>
-            <div className="control-plane-panel decision-detail-panel">
+            <div className="control-plane-panel decision-detail-panel" id="control-plane-evidence">
               <div className="panel-header"><div><span className="console-kicker">DECISION DETAIL</span><h4>{selected.id}</h4></div><span className={"decision-badge " + selected.status.toLowerCase()}>{selected.status}</span></div>
               <div className="decision-detail-action">{selected.action}</div>
               <dl className="decision-facts">
                 <div><dt>Agent</dt><dd>{selected.agent}</dd></div><div><dt>Policy</dt><dd>{selected.policy}</dd></div><div><dt>Capability</dt><dd>{selected.capability}</dd></div><div><dt>Reason</dt><dd>{selected.reason}</dd></div>
               </dl>
               <div className="decision-chain"><span>Request</span><b>→</b><span>Policy</span><b>→</b><span>Decision</span><b>→</b><span>Evidence</span></div>
-              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" onClick={() => selected && window.open(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>View Evidence</button><button type="button" className="btn btn-secondary btn-sm">View Policy</button></div>
+              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" disabled={!selectedHasLiveEvidence || !CONTROL_PLANE_ENDPOINT} onClick={() => window.open(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>{id ? "Lihat Evidence" : "View Evidence"}</button><button type="button" className="btn btn-secondary btn-sm" disabled title={id ? "Navigasi policy belum tersedia" : "Policy navigation is not available yet"}>{id ? "Lihat Policy" : "View Policy"}</button></div>
             </div>
           </div>
-          <div className="control-plane-run">
-            <div className="run-heading"><div><span className="console-kicker">REAL RUNS</span><h4>{runs.length ? runs.length + " execution traces" : "Waiting for execution traces"}</h4></div><span className="run-progress-label">{runs.length ? "LIVE" : "—"}</span></div>
+          <div className="control-plane-run" id="control-plane-runs">
+            <div className="run-heading"><div><span className="console-kicker">REAL RUNS</span><h4>{runs.length ? runs.length + (id ? " jejak eksekusi" : " execution traces") : (id ? "Menunggu jejak eksekusi" : "Waiting for execution traces")}</h4></div><span className="run-progress-label">{runs.length ? "LIVE" : "—"}</span></div>
             <div className="run-list">
               {runs.map((run) => (
                 <div className="run-item" key={run.id}>
@@ -143,7 +153,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
                   <span className={"run-state " + run.status.toLowerCase()}>{run.status}</span>
                 </div>
               ))}
-              {!runs.length && <div className="run-empty">No execution-backed runs are present in the control-plane ledger.</div>}
+              {!runs.length && <div className="run-empty">{evidenceState === "error" ? (id ? "Run belum dapat dimuat. Periksa koneksi API." : "Runs could not be loaded. Check the API connection.") : (id ? "Belum ada run berbasis eksekusi di ledger control plane." : "No execution-backed runs are present in the control-plane ledger.")}</div>}
             </div>
           </div>
         </div>
