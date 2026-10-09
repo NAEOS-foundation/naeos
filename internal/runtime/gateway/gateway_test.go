@@ -1049,10 +1049,15 @@ func TestGatewaySandboxOutputAloneIsNotObservationEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected execution error: %v", err)
 	}
+	// "completed" means the sandbox returned successfully; it does not prove
+	// that the requested side effect was independently observed.
 	if result.Status != "completed" {
 		t.Fatalf("expected execution status to reflect sandbox completion, got %q", result.Status)
 	}
 	if result.Observation != nil {
 		t.Fatal("sandbox output must not manufacture an independent observation")
+	}
+	if _, err := BuildRuntimeEvidence(result); err == nil {
+		t.Fatal("completed execution without identity-bound observation must not produce runtime evidence")
 	}
 }
