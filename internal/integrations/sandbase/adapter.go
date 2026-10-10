@@ -40,7 +40,8 @@ type AuthorizationDecision struct {
 }
 
 // Adapter translates the external authorization contract into the NAEOS control plane.
-// Execution freshness remains enforced by DecisionGateway.ExecuteDecision/ExecuteAtomic.
+// It resolves the currently active policy on every request so a long-running session
+// cannot continue receiving ALLOW from a stale policy pointer.
 type Adapter struct {
 	Gateway *controlplane.DecisionGateway
 	Policy  *controlplane.Policy
@@ -48,7 +49,7 @@ type Adapter struct {
 }
 
 func (a *Adapter) Authorize(req AuthorizationRequest) (AuthorizationDecision, error) {
-	if a == nil || a.Gateway == nil || a.Policy == nil || a.Grant == nil {
+	if a == nil || a.Gateway == nil || a.Gateway.Evaluator == nil || a.Policy == nil || a.Grant == nil {
 		return AuthorizationDecision{}, fmt.Errorf("sandbase authorization adapter is not configured")
 	}
 	if req.AgentID == "" || req.Capability == "" || req.Target == "" {
@@ -61,20 +62,34 @@ func (a *Adapter) Authorize(req AuthorizationRequest) (AuthorizationDecision, er
 		req.Timestamp = time.Now().UTC()
 	}
 
+	activePolicy, err := a.Gateway.Evaluator.ActivePolicy(a.Policy.ID)
+	if err != nil {
+		return AuthorizationDecision{}, fmt.Errorf("resolve active authorization policy: %w", err)
+	}
+
+	payload := map[string]string{"target": req.Target, "session_id": req.SessionID}
+	if contextFields, ok := req.Context.(map[string]string); ok {
+		for key, value := range contextFields {
+			payload["authorization_context."+key] = value
+		}
+	}
 	action := controlplane.Action{
 		AgentID:      req.AgentID,
 		Capability:   controlplane.Capability(req.Capability),
 		ArtifactHash: req.ArtifactHash,
-		Payload:      map[string]string{"target": req.Target, "session_id": req.SessionID},
+		Payload:      payload,
 	}
 	decision := a.Gateway.Authorize(controlplane.AuthorizeRequest{
 		RequestID: req.RequestID,
 		AgentID:   req.AgentID,
 		Action:    action,
 		Grant:     a.Grant,
-		Policy:    a.Policy,
+		Policy:    activePolicy,
 		Timestamp: req.Timestamp,
 	})
+	if err := a.Gateway.Ledger.PersistenceError(); err != nil {
+		return AuthorizationDecision{}, fmt.Errorf("persist authorization decision: %w", err)
+	}
 
 	contextDigest, err := digest(req.Context)
 	if err != nil {
