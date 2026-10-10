@@ -65,7 +65,12 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     }
 
     try {
-      const response = await fetch(endpoint.replace(/\/$/, "") + "/api/control-plane/decision", {
+      const normalizedEndpoint = endpoint.replace(/\/$/, "");
+      const decisionUrl =
+        normalizedEndpoint === PUBLIC_CONTROL_PLANE_ENDPOINT
+          ? "/api/control-plane/decision"
+          : normalizedEndpoint + "/api/control-plane/decision";
+      const response = await fetch(decisionUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
