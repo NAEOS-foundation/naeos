@@ -34,10 +34,10 @@ type configuredHandler struct {
 	evaluator  *controlplane.Evaluator
 	ledger     *controlplane.Ledger
 
-	mu           sync.Mutex
-	lastVersion  int
-	lastDigest   string
-	policyID     string
+	mu          sync.Mutex
+	lastVersion int
+	lastDigest  string
+	policyID    string
 }
 
 func NewConfiguredHTTPHandler(configPath, bearerToken, ledgerPath string) (http.Handler, error) {
