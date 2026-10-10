@@ -104,8 +104,8 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 		argumentsDigest := strings.ToLower(request.ArgumentsDigest)
 		policyContextDigest := strings.ToLower(request.PolicyContextDigest)
 		artifactHash, err := digest(map[string]string{
-			"digest_schema": request.DigestSchema,
-			"arguments_digest": argumentsDigest,
+			"digest_schema":         request.DigestSchema,
+			"arguments_digest":      argumentsDigest,
 			"policy_context_digest": policyContextDigest,
 		})
 		if err != nil {
@@ -115,16 +115,16 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 			return
 		}
 		authorization, err := adapter.Authorize(AuthorizationRequest{
-			SessionID: request.SessionID,
-			RequestID: request.InvocationID,
-			AgentID: adapter.Grant.AgentID,
-			Capability: request.Capability,
-			Target: request.Target,
+			SessionID:    request.SessionID,
+			RequestID:    request.InvocationID,
+			AgentID:      adapter.Grant.AgentID,
+			Capability:   request.Capability,
+			Target:       request.Target,
 			ArtifactHash: artifactHash,
 			Context: map[string]string{
-				"schema": request.Schema,
-				"digest_schema": request.DigestSchema,
-				"arguments_digest": argumentsDigest,
+				"schema":                request.Schema,
+				"digest_schema":         request.DigestSchema,
+				"arguments_digest":      argumentsDigest,
 				"policy_context_digest": policyContextDigest,
 			},
 		})
@@ -147,10 +147,10 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 			decision = "deny"
 		}
 		writeSandBaseDecision(w, http.StatusOK, SandBaseAuthorizationResponse{
-			Decision: decision,
-			Reason: authorization.Reason,
+			Decision:      decision,
+			Reason:        authorization.Reason,
 			PolicyVersion: strconv.Itoa(authorization.PolicyVersion),
-			DecisionID: authorization.DecisionID,
+			DecisionID:    authorization.DecisionID,
 			ContextDigest: policyContextDigest,
 		})
 	})
