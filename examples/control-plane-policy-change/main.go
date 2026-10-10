@@ -24,20 +24,20 @@ const (
 )
 
 type result struct {
-	RunID                     string `json:"run_id"`
-	AuthorizedPolicyVersion   int    `json:"authorized_policy_version"`
-	CurrentPolicyVersion      int    `json:"current_policy_version"`
-	InitialDecision           string `json:"initial_decision"`
-	StaleExecutionDecision    string `json:"stale_execution_decision"`
-	ReauthorizationDecision   string `json:"reauthorization_decision"`
-	ReauthorizationReason     string `json:"reauthorization_reason"`
-	SideEffectObserved        bool   `json:"side_effect_observed"`
-	AuthorizationEvidence     bool   `json:"authorization_evidence"`
-	StaleBlockedEvidence      bool   `json:"stale_blocked_evidence"`
-	RevocationDecisionEvidence bool  `json:"revocation_decision_evidence"`
-	RevocationBlockedEvidence bool   `json:"revocation_blocked_evidence"`
-	StaleReasonObserved       bool   `json:"stale_reason_observed"`
-	Verification              string `json:"verification"`
+	RunID                      string `json:"run_id"`
+	AuthorizedPolicyVersion    int    `json:"authorized_policy_version"`
+	CurrentPolicyVersion       int    `json:"current_policy_version"`
+	InitialDecision            string `json:"initial_decision"`
+	StaleExecutionDecision     string `json:"stale_execution_decision"`
+	ReauthorizationDecision    string `json:"reauthorization_decision"`
+	ReauthorizationReason      string `json:"reauthorization_reason"`
+	SideEffectObserved         bool   `json:"side_effect_observed"`
+	AuthorizationEvidence      bool   `json:"authorization_evidence"`
+	StaleBlockedEvidence       bool   `json:"stale_blocked_evidence"`
+	RevocationDecisionEvidence bool   `json:"revocation_decision_evidence"`
+	RevocationBlockedEvidence  bool   `json:"revocation_blocked_evidence"`
+	StaleReasonObserved        bool   `json:"stale_reason_observed"`
+	Verification               string `json:"verification"`
 }
 
 func main() {
