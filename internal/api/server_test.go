@@ -1393,10 +1393,14 @@ func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { 
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
 
 func TestSandBaseAuthorizationHandlerRouteIsRegistered(t *testing.T) {
-	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s := NewServer(":8080", &AuthConfig{Enabled: true, JWTSecret: "unrelated-user-jwt-secret"})
 	s.SetSandBaseAuthorizationHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.Header.Get("Authorization") != "Bearer sandbase-test-token" {
+			http.Error(w, "missing SandBase bearer token", http.StatusUnauthorized)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -1404,10 +1408,11 @@ func TestSandBaseAuthorizationHandlerRouteIsRegistered(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/sandbase/authorize", nil)
+	req.Header.Set("Authorization", "Bearer sandbase-test-token")
 	w := httptest.NewRecorder()
-	s.Router.ServeHTTP(w, req)
+	s.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected registered SandBase route to reach handler, got %d: %s", w.Code, w.Body.String())
+		t.Fatalf("expected registered SandBase route to reach its own bearer-auth handler, got %d: %s", w.Code, w.Body.String())
 	}
 	if !strings.Contains(w.Body.String(), `"decision":"allow"`) {
 		t.Fatalf("expected handler response, got %s", w.Body.String())
