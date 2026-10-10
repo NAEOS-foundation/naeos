@@ -16,10 +16,56 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
   const page = await browser.newPage({ viewport });
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  const e2eToken = process.env.NAEOS_E2E_CHALLENGE_TOKEN;
+  if (e2eToken) {
+    const productionOrigin = new URL(baseURL).origin;
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      const requestURL = new URL(request.url());
+      const isControlPlaneDocument =
+        requestURL.origin === productionOrigin &&
+        /^\/(?:en|id)\/control-plane\/?$/.test(requestURL.pathname) &&
+        request.method() === "GET";
+      if (isControlPlaneDocument) {
+        await route.continue({
+          headers: {
+            ...request.headers(),
+            "x-naeos-e2e-token": e2eToken,
+          },
+        });
+        return;
+      }
+      await route.continue();
+    });
+  }
   const response = await page.goto(`${baseURL}${path}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
   assert.ok(response, `No document response for ${path}`);
-  assert.ok(response.status() < 400, `Unexpected HTTP ${response.status()} for ${path}`);
-  await page.locator(".control-plane-dashboard").waitFor({ timeout: 20_000 });
+  const headers = await response.allHeaders();
+  const challengeResponse = response.status() === 403 && headers["cf-mitigated"] === "challenge";
+  if (response.status() >= 400 && !challengeResponse) {
+    const body = (await response.text()).slice(0, 1200).replace(/\\s+/g, " ");
+    assert.fail(`Unexpected HTTP ${response.status()} for ${path}; headers=${JSON.stringify({
+      server: headers.server,
+      "cf-ray": headers["cf-ray"],
+      "cf-mitigated": headers["cf-mitigated"],
+      "content-type": headers["content-type"],
+      location: headers.location,
+    })}; body=${body}`);
+  }
+  try {
+    // Cloudflare Managed Challenge can return an initial 403 while the real browser
+    // executes the challenge. Require the actual dashboard to render before passing.
+    await page.locator(".control-plane-dashboard").waitFor({ timeout: challengeResponse ? 30_000 : 20_000 });
+  } catch {
+    const body = (await page.locator("body").innerText().catch(() => "")).slice(0, 1200).replace(/\\s+/g, " ");
+    assert.fail(`Control Plane did not render for ${path}; initial HTTP ${response.status()}; headers=${JSON.stringify({
+      server: headers.server,
+      "cf-ray": headers["cf-ray"],
+      "cf-mitigated": headers["cf-mitigated"],
+      "content-type": headers["content-type"],
+      location: headers.location,
+    })}; body=${body}`);
+  }
   return { page, pageErrors };
 }
 
