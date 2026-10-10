@@ -40,7 +40,7 @@ func newHTTPTestAdapter(t *testing.T, allowed bool) *Adapter {
 	}
 	return &Adapter{
 		Gateway: controlplane.NewDecisionGateway(controlplane.NewEvaluator(store), controlplane.NewLedger()),
-		Policy: policy, Grant: grant,
+		Policy:  policy, Grant: grant,
 	}
 }
 
