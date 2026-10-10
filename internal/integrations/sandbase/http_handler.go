@@ -62,7 +62,14 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 			})
 			return
 		}
-		providedToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		authorization := r.Header.Get("Authorization")
+		if !strings.HasPrefix(authorization, "Bearer ") {
+			writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
+				Decision: "deny", Reason: "unauthorized",
+			})
+			return
+		}
+		providedToken := strings.TrimPrefix(authorization, "Bearer ")
 		if subtle.ConstantTimeCompare([]byte(providedToken), []byte(bearerToken)) != 1 {
 			writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
 				Decision: "deny", Reason: "unauthorized",
