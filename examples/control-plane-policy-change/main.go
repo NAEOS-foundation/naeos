@@ -17,23 +17,27 @@ const (
 	agentID       = "agent-p1-7"
 	capability    = "repository.write"
 	policyID      = "p1-7-policy"
-	requestID     = "P1.7-STALE-AUTH"
+	requestID     = "P1.7-POLICY-CHANGE"
 	artifactHash  = "sha256:p1-7-artifact"
 	initialPolicy = 1
 	currentPolicy = 2
 )
 
 type result struct {
-	RunID                   string `json:"run_id"`
-	AuthorizedPolicyVersion int    `json:"authorized_policy_version"`
-	CurrentPolicyVersion    int    `json:"current_policy_version"`
-	InitialDecision         string `json:"initial_decision"`
-	ExecutionDecision       string `json:"execution_decision"`
-	SideEffectObserved      bool   `json:"side_effect_observed"`
-	AuthorizationEvidence   bool   `json:"authorization_evidence"`
-	BlockedEvidence         bool   `json:"blocked_evidence"`
-	StaleReasonObserved     bool   `json:"stale_reason_observed"`
-	Verification            string `json:"verification"`
+	RunID                     string `json:"run_id"`
+	AuthorizedPolicyVersion   int    `json:"authorized_policy_version"`
+	CurrentPolicyVersion      int    `json:"current_policy_version"`
+	InitialDecision           string `json:"initial_decision"`
+	StaleExecutionDecision    string `json:"stale_execution_decision"`
+	ReauthorizationDecision   string `json:"reauthorization_decision"`
+	ReauthorizationReason     string `json:"reauthorization_reason"`
+	SideEffectObserved        bool   `json:"side_effect_observed"`
+	AuthorizationEvidence     bool   `json:"authorization_evidence"`
+	StaleBlockedEvidence      bool   `json:"stale_blocked_evidence"`
+	RevocationDecisionEvidence bool  `json:"revocation_decision_evidence"`
+	RevocationBlockedEvidence bool   `json:"revocation_blocked_evidence"`
+	StaleReasonObserved       bool   `json:"stale_reason_observed"`
+	Verification              string `json:"verification"`
 }
 
 func main() {
@@ -47,6 +51,8 @@ func main() {
 	now := time.Now().UTC()
 	policyV1 := policy(now, initialPolicy)
 	policyV2 := policy(now.Add(time.Second), currentPolicy)
+	// Version 2 explicitly revokes the capability that version 1 allowed.
+	policyV2.DeniedCapabilities = []controlplane.Capability{capability}
 	if err := store.Set(policyV1); err != nil {
 		fatal(err)
 	}
@@ -89,35 +95,69 @@ func main() {
 		fatal(err)
 	}
 
-	executed, executionEvidence := gateway.ExecuteDecision(req, authorized)
 	sideEffect := filepath.Join(outputDir, "side-effect.json")
-	observed := fileExists(sideEffect)
-	events := ledger.Query(map[string]string{"request_id": requestID})
-	authorizationEvidence := hasEvent(events, "AUTHORIZATION_DECISION")
-	blockedEvidence := hasEvent(events, "EXECUTION_BLOCKED")
+	staleExecution, staleEvent := gateway.ExecuteAtomic(req, authorized, func() error {
+		return os.WriteFile(sideEffect, []byte(`{"executed":true}`), 0o600)
+	})
+	staleSideEffectObserved := fileExists(sideEffect)
+
+	// Simulate a legitimate reauthorization attempt against v2 with a grant
+	// explicitly rebound to v2. The policy's DENY must still win.
+	grantV2 := *grant
+	grantV2.PolicyVersion = currentPolicy
+	reauthorizeReq := req
+	reauthorizeReq.RequestID = requestID + "-REAUTHORIZE"
+	reauthorizeReq.Policy = policyV2
+	reauthorizeReq.Grant = &grantV2
+	reauthorized := gateway.Authorize(reauthorizeReq)
+	if reauthorized.Status != controlplane.DecisionDeny ||
+		reauthorized.Reason != controlplane.ReasonDeniedByPolicy {
+		fatalf("expected v2 capability revocation to DENY, got %s (%s)", reauthorized.Status, reauthorized.Reason)
+	}
+	_, revocationEvent := gateway.ExecuteAtomic(reauthorizeReq, reauthorized, func() error {
+		return os.WriteFile(sideEffect, []byte(`{"executed":true}`), 0o600)
+	})
+	sideEffectObserved := fileExists(sideEffect)
+
+	staleEvents := ledger.Query(map[string]string{"request_id": requestID})
+	revocationEvents := ledger.Query(map[string]string{"request_id": reauthorizeReq.RequestID})
+	events := append(staleEvents, revocationEvents...)
+	authorizationEvidence := hasEvent(staleEvents, "AUTHORIZATION_DECISION")
+	staleBlockedEvidence := staleEvent.EventType == "EXECUTION_BLOCKED" &&
+		staleEvent.Reason == controlplane.ReasonDeniedStalePolicy
+	revocationDecisionEvidence := hasDeniedPolicyDecision(revocationEvents)
+	revocationBlockedEvidence := revocationEvent.EventType == "EXECUTION_BLOCKED"
 	staleReason := hasStaleReason(events)
 	verification := verifier.VerifySession(agentID)
 
-	pass := executed.Status == controlplane.DecisionDeny &&
-		executed.Reason == controlplane.ReasonDeniedStalePolicy &&
-		executionEvidence.EventType == "EXECUTION_BLOCKED" &&
-		!observed &&
+	pass := staleExecution.Status == controlplane.DecisionDeny &&
+		staleExecution.Reason == controlplane.ReasonDeniedStalePolicy &&
+		!staleSideEffectObserved &&
+		reauthorized.Status == controlplane.DecisionDeny &&
+		reauthorized.Reason == controlplane.ReasonDeniedByPolicy &&
+		!sideEffectObserved &&
 		authorizationEvidence &&
-		blockedEvidence &&
+		staleBlockedEvidence &&
+		revocationDecisionEvidence &&
+		revocationBlockedEvidence &&
 		staleReason &&
 		verification.Result == "PASS"
 
 	out := result{
-		RunID:                   requestID,
-		AuthorizedPolicyVersion: initialPolicy,
-		CurrentPolicyVersion:    currentPolicy,
-		InitialDecision:         string(authorized.Status),
-		ExecutionDecision:       string(executed.Status),
-		SideEffectObserved:      observed,
-		AuthorizationEvidence:   authorizationEvidence,
-		BlockedEvidence:         blockedEvidence,
-		StaleReasonObserved:     staleReason,
-		Verification:            boolStatus(pass),
+		RunID:                      requestID,
+		AuthorizedPolicyVersion:    initialPolicy,
+		CurrentPolicyVersion:       currentPolicy,
+		InitialDecision:            string(authorized.Status),
+		StaleExecutionDecision:     string(staleExecution.Status),
+		ReauthorizationDecision:    string(reauthorized.Status),
+		ReauthorizationReason:      string(reauthorized.Reason),
+		SideEffectObserved:         sideEffectObserved,
+		AuthorizationEvidence:      authorizationEvidence,
+		StaleBlockedEvidence:       staleBlockedEvidence,
+		RevocationDecisionEvidence: revocationDecisionEvidence,
+		RevocationBlockedEvidence:  revocationBlockedEvidence,
+		StaleReasonObserved:        staleReason,
+		Verification:               boolStatus(pass),
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
@@ -128,11 +168,8 @@ func main() {
 	}
 
 	fmt.Printf(
-		"P1.7 RESULT: initial=%s execution=%s reason=%s verification=%s\n",
-		authorized.Status,
-		executed.Status,
-		executed.Reason,
-		out.Verification,
+		"P1.7 RESULT: initial=%s stale_execution=%s reauthorization=%s reason=%s verification=%s\n",
+		authorized.Status, staleExecution.Status, reauthorized.Status, reauthorized.Reason, out.Verification,
 	)
 	fmt.Printf("Evidence: %s\n", filepath.Join(outputDir, "result.json"))
 	if !pass {
@@ -155,6 +192,17 @@ func policy(updatedAt time.Time, version int) *controlplane.Policy {
 func hasEvent(events []controlplane.LedgerEvent, eventType string) bool {
 	for _, event := range events {
 		if event.EventType == eventType {
+			return true
+		}
+	}
+	return false
+}
+
+func hasDeniedPolicyDecision(events []controlplane.LedgerEvent) bool {
+	for _, event := range events {
+		if event.EventType == "AUTHORIZATION_DECISION" &&
+			event.Decision == controlplane.DecisionDeny &&
+			event.Reason == controlplane.ReasonDeniedByPolicy {
 			return true
 		}
 	}
