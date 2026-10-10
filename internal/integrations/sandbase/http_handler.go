@@ -99,20 +99,33 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 			return
 		}
 
-		// Bind both SandBase digests into the NAEOS action. The arguments digest is
-		// also the artifact hash used by the NAEOS decision ledger.
+		// Bind both SandBase digests into one artifact identity recorded by the
+		// NAEOS decision ledger, and preserve them in the evaluated action context.
+		argumentsDigest := strings.ToLower(request.ArgumentsDigest)
+		policyContextDigest := strings.ToLower(request.PolicyContextDigest)
+		artifactHash, err := digest(map[string]string{
+			"digest_schema": request.DigestSchema,
+			"arguments_digest": argumentsDigest,
+			"policy_context_digest": policyContextDigest,
+		})
+		if err != nil {
+			writeSandBaseDecision(w, http.StatusServiceUnavailable, SandBaseAuthorizationResponse{
+				Decision: "deny", Reason: "authorization_unavailable",
+			})
+			return
+		}
 		authorization, err := adapter.Authorize(AuthorizationRequest{
 			SessionID: request.SessionID,
 			RequestID: request.InvocationID,
 			AgentID: adapter.Grant.AgentID,
 			Capability: request.Capability,
 			Target: request.Target,
-			ArtifactHash: "sha256:" + strings.ToLower(request.ArgumentsDigest),
+			ArtifactHash: artifactHash,
 			Context: map[string]string{
 				"schema": request.Schema,
 				"digest_schema": request.DigestSchema,
-				"arguments_digest": strings.ToLower(request.ArgumentsDigest),
-				"policy_context_digest": strings.ToLower(request.PolicyContextDigest),
+				"arguments_digest": argumentsDigest,
+				"policy_context_digest": policyContextDigest,
 			},
 		})
 		if err != nil {
@@ -138,7 +151,7 @@ func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 			Reason: authorization.Reason,
 			PolicyVersion: strconv.Itoa(authorization.PolicyVersion),
 			DecisionID: authorization.DecisionID,
-			ContextDigest: strings.ToLower(request.PolicyContextDigest),
+			ContextDigest: policyContextDigest,
 		})
 	})
 }
