@@ -4,6 +4,7 @@
 package sandbase
 
 import (
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -42,15 +43,30 @@ type SandBaseAuthorizationResponse struct {
 }
 
 // NewHTTPHandler exposes Adapter using SandBase's sandbase.authz/v1 HTTP contract.
-// The adapter's configured Grant supplies the trusted NAEOS agent identity; callers
-// cannot select an agent by sending an untrusted field in the SandBase envelope.
-func NewHTTPHandler(adapter *Adapter) http.Handler {
+// A non-empty shared bearer token is mandatory. The adapter's configured Grant
+// supplies the trusted NAEOS agent identity; request bodies cannot select an agent.
+func NewHTTPHandler(adapter *Adapter, bearerToken string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, `{"decision":"deny","reason":"method_not_allowed"}`, http.StatusMethodNotAllowed)
+			writeSandBaseDecision(w, http.StatusMethodNotAllowed, SandBaseAuthorizationResponse{
+				Decision: "deny", Reason: "method_not_allowed",
+			})
+			return
+		}
+		if strings.TrimSpace(bearerToken) == "" {
+			writeSandBaseDecision(w, http.StatusServiceUnavailable, SandBaseAuthorizationResponse{
+				Decision: "deny", Reason: "authorization_unavailable",
+			})
+			return
+		}
+		providedToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if subtle.ConstantTimeCompare([]byte(providedToken), []byte(bearerToken)) != 1 {
+			writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
+				Decision: "deny", Reason: "unauthorized",
+			})
 			return
 		}
 		if adapter == nil || adapter.Gateway == nil || adapter.Policy == nil || adapter.Grant == nil {
@@ -109,8 +125,7 @@ func NewHTTPHandler(adapter *Adapter) http.Handler {
 		decision := strings.ToLower(authorization.Decision)
 		switch decision {
 		case "allow":
-			// Keep ALLOW only for an explicit NAEOS allow. SandBase's hook is
-			// veto-only; every other NAEOS status must refuse execution.
+			// Only an explicit NAEOS ALLOW can release the veto-only hook.
 		case "deny":
 			if authorization.Reason == "stale_policy" || authorization.Reason == "grant_version_mismatch" {
 				decision = "reauthorize"
