@@ -87,6 +87,9 @@ func (a *Adapter) Authorize(req AuthorizationRequest) (AuthorizationDecision, er
 		Policy:    activePolicy,
 		Timestamp: req.Timestamp,
 	})
+	if err := a.Gateway.Ledger.PersistenceError(); err != nil {
+		return AuthorizationDecision{}, fmt.Errorf("persist authorization decision: %w", err)
+	}
 
 	contextDigest, err := digest(req.Context)
 	if err != nil {
