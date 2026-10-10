@@ -20,8 +20,7 @@ func TestPolicyChangeRevokingCapabilityBlocksStaleAndReauthorizedExecution(t *te
 	policyV2 := &Policy{
 		ID: "POLICY-REVOKE", Version: 2, Status: "active",
 		CreatedAt: now.Add(time.Second), UpdatedAt: now.Add(time.Second),
-		AllowedCapabilities: []Capability{"repository.write"},
-		DeniedCapabilities:  []Capability{"repository.write"},
+		DeniedCapabilities: []Capability{"repository.write"},
 	}
 	if err := store.Set(policyV1); err != nil {
 		t.Fatal(err)
