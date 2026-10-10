@@ -136,6 +136,14 @@ func TestHTTPHandlerRejectsMissingOrIncorrectBearerToken(t *testing.T) {
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("expected incorrect token to be rejected, got %d", response.Code)
 	}
+
+	request = authenticatedRequest(http.MethodPost, validSandBaseRequestBody())
+	request.Header.Set("Authorization", testBearerToken)
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected token without explicit Bearer scheme to be rejected, got %d", response.Code)
+	}
 }
 
 func TestHTTPHandlerRejectsEmptyConfiguredTokenAndNonPOST(t *testing.T) {
