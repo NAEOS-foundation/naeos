@@ -35,7 +35,11 @@ func TestPolicyChangeRevokingCapabilityBlocksStaleAndReauthorizedExecution(t *te
 	}
 	req := AuthorizeRequest{
 		RequestID: "REQ-REVOKE-STALE", AgentID: "agent-revoke",
-		Action: Action{AgentID: "agent-revoke", Capability: "repository.write", ArtifactHash: "sha256:revoke"},
+		Action: Action{
+			AgentID:      "agent-revoke",
+			Capability:   "repository.write",
+			ArtifactHash: "sha256:revoke",
+		},
 		Grant: grant, Policy: policyV1, Timestamp: now,
 	}
 	allow := gateway.Authorize(req)
