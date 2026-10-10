@@ -160,7 +160,14 @@ func (h *configuredHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	providedToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	authorization := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authorization, "Bearer ") {
+		writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
+			Decision: "deny", Reason: "unauthorized",
+		})
+		return
+	}
+	providedToken := strings.TrimPrefix(authorization, "Bearer ")
 	if subtle.ConstantTimeCompare([]byte(providedToken), []byte(h.token)) != 1 {
 		writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
 			Decision: "deny", Reason: "unauthorized",
