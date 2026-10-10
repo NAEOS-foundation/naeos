@@ -32,7 +32,7 @@ func TestHTTPHandlerRequestsReauthorizationAfterPolicyVersionChanges(t *testing.
 	}
 	adapter := &Adapter{
 		Gateway: controlplane.NewDecisionGateway(controlplane.NewEvaluator(store), controlplane.NewLedger()),
-		Policy: v1, Grant: grant,
+		Policy:  v1, Grant: grant,
 	}
 
 	v2 := *v1
