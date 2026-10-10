@@ -14,6 +14,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
+const testBearerToken = "test-sandbase-authz-token"
+
 func newHTTPTestAdapter(t *testing.T, allowed bool) *Adapter {
 	t.Helper()
 	now := time.Date(2026, time.October, 10, 9, 0, 0, 0, time.UTC)
@@ -42,6 +44,12 @@ func newHTTPTestAdapter(t *testing.T, allowed bool) *Adapter {
 	}
 }
 
+func authenticatedRequest(method string, body string) *http.Request {
+	request := httptest.NewRequest(method, "/authorize", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer "+testBearerToken)
+	return request
+}
+
 func validSandBaseRequestBody() string {
 	return `{
 		"schema":"sandbase.authz/v1",
@@ -56,10 +64,9 @@ func validSandBaseRequestBody() string {
 }
 
 func TestHTTPHandlerAcceptsSandBaseAuthzV1(t *testing.T) {
-	handler := NewHTTPHandler(newHTTPTestAdapter(t, true))
-	request := httptest.NewRequest(http.MethodPost, "/authorize", strings.NewReader(validSandBaseRequestBody()))
+	handler := NewHTTPHandler(newHTTPTestAdapter(t, true), testBearerToken)
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodPost, validSandBaseRequestBody()))
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected HTTP 200, got %d: %s", response.Code, response.Body.String())
@@ -80,10 +87,9 @@ func TestHTTPHandlerAcceptsSandBaseAuthzV1(t *testing.T) {
 }
 
 func TestHTTPHandlerFailsClosedOnNAEOSDeny(t *testing.T) {
-	handler := NewHTTPHandler(newHTTPTestAdapter(t, false))
-	request := httptest.NewRequest(http.MethodPost, "/authorize", strings.NewReader(validSandBaseRequestBody()))
+	handler := NewHTTPHandler(newHTTPTestAdapter(t, false), testBearerToken)
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodPost, validSandBaseRequestBody()))
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected a readable veto decision, got HTTP %d", response.Code)
@@ -98,29 +104,51 @@ func TestHTTPHandlerFailsClosedOnNAEOSDeny(t *testing.T) {
 }
 
 func TestHTTPHandlerRejectsInvalidDigestAndUnknownSchema(t *testing.T) {
-	handler := NewHTTPHandler(newHTTPTestAdapter(t, true))
+	handler := NewHTTPHandler(newHTTPTestAdapter(t, true), testBearerToken)
 	body := strings.Replace(validSandBaseRequestBody(), strings.Repeat("a", 64), "not-a-digest", 1)
-	request := httptest.NewRequest(http.MethodPost, "/authorize", strings.NewReader(body))
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodPost, body))
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("expected malformed digest to fail closed with HTTP 400, got %d", response.Code)
 	}
 
 	body = strings.Replace(validSandBaseRequestBody(), "sandbase.authz/v1", "sandbase.authz/v2", 1)
-	request = httptest.NewRequest(http.MethodPost, "/authorize", strings.NewReader(body))
 	response = httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodPost, body))
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("expected unknown schema to be rejected, got %d", response.Code)
 	}
 }
 
-func TestHTTPHandlerRejectsNonPOST(t *testing.T) {
-	handler := NewHTTPHandler(newHTTPTestAdapter(t, true))
-	request := httptest.NewRequest(http.MethodGet, "/authorize", nil)
+func TestHTTPHandlerRejectsMissingOrIncorrectBearerToken(t *testing.T) {
+	handler := NewHTTPHandler(newHTTPTestAdapter(t, true), testBearerToken)
+	request := httptest.NewRequest(http.MethodPost, "/authorize", strings.NewReader(validSandBaseRequestBody()))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected missing token to be rejected, got %d", response.Code)
+	}
+
+	request = authenticatedRequest(http.MethodPost, validSandBaseRequestBody())
+	request.Header.Set("Authorization", "Bearer wrong-token")
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected incorrect token to be rejected, got %d", response.Code)
+	}
+}
+
+func TestHTTPHandlerRejectsEmptyConfiguredTokenAndNonPOST(t *testing.T) {
+	handler := NewHTTPHandler(newHTTPTestAdapter(t, true), "")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodPost, validSandBaseRequestBody()))
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected missing server token to fail closed, got %d", response.Code)
+	}
+
+	handler = NewHTTPHandler(newHTTPTestAdapter(t, true), testBearerToken)
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodGet, ""))
 	if response.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected HTTP 405, got %d", response.Code)
 	}
