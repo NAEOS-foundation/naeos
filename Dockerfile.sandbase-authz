@@ -1,0 +1,20 @@
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+
+FROM golang:1.26.9-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /naeos ./cmd/naeos/
+
+FROM alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1
+RUN apk --no-cache add ca-certificates git
+WORKDIR /app
+COPY --from=builder /naeos /usr/local/bin/naeos
+COPY --from=builder /app/LICENSE /app/NOTICE /usr/local/share/naeos/
+COPY entrypoint.sandbase-authz.sh /usr/local/bin/entrypoint-sandbase-authz
+RUN chmod 0555 /usr/local/bin/entrypoint-sandbase-authz && adduser -D -u 1000 naeos
+USER naeos
+HEALTHCHECK --interval=30s --timeout=5s CMD /usr/local/bin/naeos health || exit 1
+ENTRYPOINT ["/usr/local/bin/entrypoint-sandbase-authz"]
