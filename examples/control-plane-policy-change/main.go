@@ -51,7 +51,8 @@ func main() {
 	now := time.Now().UTC()
 	policyV1 := policy(now, initialPolicy)
 	policyV2 := policy(now.Add(time.Second), currentPolicy)
-	// Version 2 explicitly revokes the capability that version 1 allowed.
+	// Version 2 removes the capability from the allowlist and explicitly denies it.
+	policyV2.AllowedCapabilities = nil
 	policyV2.DeniedCapabilities = []controlplane.Capability{capability}
 	if err := store.Set(policyV1); err != nil {
 		fatal(err)
