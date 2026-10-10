@@ -5,6 +5,7 @@ package sandbase
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -150,6 +151,22 @@ func validateRuntimeConfig(config RuntimeConfig) error {
 }
 
 func (h *configuredHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		writeSandBaseDecision(w, http.StatusMethodNotAllowed, SandBaseAuthorizationResponse{
+			Decision: "deny", Reason: "method_not_allowed",
+		})
+		return
+	}
+	providedToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if subtle.ConstantTimeCompare([]byte(providedToken), []byte(h.token)) != 1 {
+		writeSandBaseDecision(w, http.StatusUnauthorized, SandBaseAuthorizationResponse{
+			Decision: "deny", Reason: "unauthorized",
+		})
+		return
+	}
 	policy, grant, err := h.refreshPolicy()
 	if err != nil {
 		writeSandBaseDecision(w, http.StatusServiceUnavailable, SandBaseAuthorizationResponse{
