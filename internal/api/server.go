@@ -2276,6 +2276,16 @@ func parsePagination(r *http.Request) (offset, limit int) {
 
 var startTime = time.Now()
 
+// SetSandBaseAuthorizationHandler registers the optional SandBase authorization
+// endpoint. The handler is supplied by the daemon's explicitly configured policy
+// and grant source; no route is exposed unless that configuration is valid.
+func (s *Server) SetSandBaseAuthorizationHandler(handler http.Handler) {
+	if s == nil || s.Router == nil || handler == nil {
+		return
+	}
+	s.Router.Handle("/api/v1/integrations/sandbase/authorize", handler)
+}
+
 // Handler returns the fully-wrapped HTTP handler: metrics, request logging,
 // and per-route middleware applied on top of the route table.
 func (s *Server) Handler() http.Handler {
