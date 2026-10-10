@@ -104,3 +104,32 @@ func TestConfiguredHTTPHandlerReloadsPolicyAndFailsClosedOnVersionReuse(t *testi
 		t.Fatalf("expected authorization ledger snapshot to be persisted: %v", err)
 	}
 }
+
+func TestConfiguredHTTPHandlerFailsClosedWhenLedgerPersistenceFails(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "sandbase-authz.json")
+	ledgerPath := filepath.Join(dir, "ledger.json")
+	writeRuntimeConfig(t, configPath, 1, 1, true)
+
+	handler, err := NewConfiguredHTTPHandler(configPath, testBearerToken, ledgerPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Replacing the future ledger file with a directory forces the append
+	// snapshot rename to fail after initialization.
+	if err := os.Mkdir(ledgerPath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	response := configuredRequest(handler)
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected ledger persistence failure to deny authorization, got status=%d body=%s", response.Code, response.Body.String())
+	}
+	var decision SandBaseAuthorizationResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decision); err != nil {
+		t.Fatal(err)
+	}
+	if decision.Decision != "deny" {
+		t.Fatalf("expected fail-closed deny on ledger persistence failure, got %+v", decision)
+	}
+}
