@@ -32,7 +32,7 @@ func writeRuntimeConfig(t *testing.T, path string, version int, grantVersion int
 			GrantID: "grant-sandbase", AgentID: "trusted-agent",
 			PolicyID: policy.ID, PolicyVersion: grantVersion,
 			Capabilities: []controlplane.Capability{"tool.execute"},
-			CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+			CreatedAt:    now, ExpiresAt: now.Add(time.Hour), Status: "active",
 		},
 	}
 	data, err := json.Marshal(config)
