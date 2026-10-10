@@ -1391,3 +1391,25 @@ func (m *unhealthyDB) MigrateContext(ctx context.Context, migrations []database.
 func (m *unhealthyDB) Rollback(version int) error                             { return nil }
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
+
+func TestSandBaseAuthorizationHandlerRouteIsRegistered(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s.SetSandBaseAuthorizationHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"decision":"allow"}`))
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/sandbase/authorize", nil)
+	w := httptest.NewRecorder()
+	s.Router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected registered SandBase route to reach handler, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"decision":"allow"`) {
+		t.Fatalf("expected handler response, got %s", w.Body.String())
+	}
+}
