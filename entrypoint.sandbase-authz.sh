@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+
 set -eu
 : "${NAEOS_API_JWT_SECRET:?NAEOS_API_JWT_SECRET is required}"
 if [ -n "${NAEOS_SANDBASE_AUTHZ_CONFIG_JSON:-}" ]; then
