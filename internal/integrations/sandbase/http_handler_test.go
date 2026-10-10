@@ -18,7 +18,7 @@ const testBearerToken = "test-sandbase-authz-token"
 
 func newHTTPTestAdapter(t *testing.T, allowed bool) *Adapter {
 	t.Helper()
-	now := time.Date(2026, time.October, 10, 9, 0, 0, 0, time.UTC)
+	now := time.Now().UTC().Truncate(time.Second)
 	policy := &controlplane.Policy{
 		ID: "sandbase-policy", Version: 1, Status: "active",
 		CreatedAt: now, UpdatedAt: now,
