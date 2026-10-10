@@ -9,10 +9,10 @@ on:
   workflow_run:
     workflows: ["Website"]
     types: [completed]
-    branches: [main]
 
 permissions:
   contents: read
+  issues: read
 
 jobs:
   pull-request-browser-e2e:
@@ -58,8 +58,52 @@ jobs:
           fi
           node --test e2e/control-plane.e2e.test.mjs
 
+  cloudflare-worker-preview-browser-e2e:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install site dependencies
+        run: npm install --ignore-scripts --legacy-peer-deps
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Wait for Cloudflare Worker preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            PREVIEW_URL="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate --jq '.[].body' | sed -n 's/^### Preview URL: \(https:\/\/[^ ]*workers\.dev\).*/\1/p' | tail -n 1)"
+            if [ -n "$PREVIEW_URL" ] && curl --fail --silent --show-error "$PREVIEW_URL/en/control-plane" >/dev/null; then
+              echo "BASE_URL=$PREVIEW_URL" >> "$GITHUB_ENV"
+              echo "Cloudflare Worker preview is responding: $PREVIEW_URL"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Cloudflare Worker preview did not become reachable in 10 minutes." >&2
+          exit 1
+      - name: Run real browser E2E against Cloudflare Worker preview
+        run: node --test e2e/control-plane.e2e.test.mjs
+
   production-browser-e2e:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -68,7 +112,7 @@ jobs:
       - name: Checkout deployed main commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
@@ -84,4 +128,11 @@ jobs:
       - name: Run real browser E2E against Cloudflare production
         env:
           BASE_URL: https://naeos.dev
-        run: node --test e2e/control-plane.e2e.test.mjs
+          NAEOS_E2E_CHALLENGE_TOKEN: ${{ secrets.NAEOS_E2E_CHALLENGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NAEOS_E2E_CHALLENGE_TOKEN:-}" ]; then
+            echo "Missing repository secret NAEOS_E2E_CHALLENGE_TOKEN. Configure the narrowly scoped Cloudflare E2E rule before production verification." >&2
+            exit 1
+          fi
+          node --test e2e/control-plane.e2e.test.mjs

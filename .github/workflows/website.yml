@@ -8,11 +8,13 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
+      - '.github/workflows/control-plane-e2e.yml'
   pull_request:
     branches: [main]
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
+      - '.github/workflows/control-plane-e2e.yml'
   workflow_dispatch:
 
 permissions:
