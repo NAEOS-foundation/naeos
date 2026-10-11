@@ -188,7 +188,7 @@ test("Policy Change Proof walks all six deterministic states and resets on repla
     assert.equal(state.badge, "BLOCKED", "step 5 must reject the stale authorization");
     assertJSONState(state.json, { policy_version: 2, authorization: "STALE", execution: "BLOCKED" });
 
-    await proof.getByRole("button", { name: "Complete" }).click();
+    await next.click();
     state = await readPolicyProofState(proof);
     assert.equal(state.badge, "VERIFIED", "final step must retain verifiable evidence");
     assertJSONState(state.json, { policy_version: 2, authorization: "STALE", execution: "BLOCKED", evidence: "RETAINED" });
@@ -226,10 +226,11 @@ test("Policy Change Proof is localized in Indonesian and drives the same states"
     assert.equal(state.badge, "BLOCKED", "stale authorization must be blocked after the policy change");
     assertJSONState(state.json, { policy_version: 2, authorization: "STALE", execution: "BLOCKED" });
 
-    await proof.getByRole("button", { name: "Selesai" }).click();
+    await proof.getByRole("button", { name: "Lanjutkan" }).click();
     state = await readPolicyProofState(proof);
     assert.equal(state.badge, "VERIFIED");
     assertJSONState(state.json, { evidence: "RETAINED" });
+    assert.ok(await proof.getByRole("button", { name: "Selesai" }).isDisabled(), "Selesai is disabled on the final step");
 
     await proof.getByRole("button", { name: "Ulangi proof" }).click();
     state = await readPolicyProofState(proof);
