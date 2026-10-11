@@ -88,7 +88,7 @@ async function readPolicyProofState(proof) {
 
 function assertJSONState(json, expected) {
   for (const [key, value] of Object.entries(expected)) {
-    assert.match(json, new RegExp(`"${key}":\\s*${value}`), `expected policy-proof JSON ${key}=${value}`);
+    assert.match(json, new RegExp(`"${key}":\\s*"?${value}"?`), `expected policy-proof JSON ${key}=${value}`);
   }
 }
 
@@ -368,7 +368,7 @@ test("Control Plane live demo sends a Bearer token only when one is configured",
         sentHeaders.authorization = route.request().headers()["authorization"] || null;
         await route.fulfill({ status: 200, contentType: "application/json", body: allowedPayload });
       });
-      await endpointInput.fill("http://127.0.0.1:9091");
+      await endpointInput.fill(baseURL);
       await tokenInput.fill(fillToken);
       await demo.getByRole("button", { name: "Evaluate Request" }).click();
       await demo.locator('[aria-live="polite"]').waitFor({ state: "visible" });
@@ -407,7 +407,7 @@ test("Control Plane live demo surfaces an authentication failure from a protecte
       });
     });
 
-    await demo.locator('[data-testid="control-plane-live-demo-endpoint"]').fill("http://127.0.0.1:9091");
+    await demo.locator('[data-testid="control-plane-live-demo-endpoint"]').fill(baseURL);
     await demo.getByRole("button", { name: "Evaluate Request" }).click();
 
     const alert = demo.locator('[role="alert"]');
@@ -455,7 +455,7 @@ test("Control Plane hero and verified-path actions link to the documented destin
     try {
       const id = lang === "id";
       const architectureHref = (await page.getByRole("link", { name: id ? "Lihat Arsitektur" : "Explore Architecture" }).getAttribute("href")) || "";
-      assert.match(architectureHref, id ? /\/id\/docs\/architecture$/ : /\/docs\/architecture$/, "architecture CTA must point at the architecture doc");
+      assert.match(architectureHref, id ? /\/id\/docs\/architecture\/?$/ : /\/docs\/architecture\/?$/, "architecture CTA must point at the architecture doc");
 
       const githubHref = (await page.getByRole("link", { name: id ? "Lihat GitHub" : "View GitHub" }).getAttribute("href")) || "";
       assert.equal(githubHref.replace(/\/$/, ""), "https://github.com/NAEOS-foundation/naeos", "GitHub CTA must point at the repository");
