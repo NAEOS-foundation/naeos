@@ -33,7 +33,9 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   const configuredEndpoint =
     process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
     (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
+  const configuredToken = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_TOKEN || "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
+  const [token, setToken] = useState(configuredToken);
   const [agentId, setAgentId] = useState("agent-payment-01");
   const [capability, setCapability] = useState(ALLOW_CAPABILITY);
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
@@ -65,9 +67,13 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     }
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token.trim()) {
+        headers["Authorization"] = `Bearer ${token.trim()}`;
+      }
       const response = await fetch(endpoint.replace(/\/$/, "") + "/api/control-plane/decision", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           agent_id: agentId,
           capability,
@@ -94,7 +100,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   }
 
   return (
-    <div className={styles.controlPlaneLive}>
+    <div data-testid="control-plane-live-demo" className={styles.controlPlaneLive}>
       <div className={styles.liveHeader}>
         <div>
           <div className="eyebrow">LIVE POLICY EVALUATION</div>
@@ -112,7 +118,19 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
 
       <label>
         <span>Control Plane endpoint</span>
-        <input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} placeholder="http://localhost:9091" />
+        <input data-testid="control-plane-live-demo-endpoint" value={endpoint} onChange={(event) => setEndpoint(event.target.value)} placeholder="http://localhost:9091" />
+      </label>
+
+      <label>
+        <span>API token (optional)</span>
+        <input
+          data-testid="control-plane-live-demo-token"
+          type="password"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder={id ? "Bearer token jika endpoint butuh autentikasi" : "Bearer token if the endpoint requires authentication"}
+          autoComplete="off"
+        />
       </label>
 
       <div className={styles.fields}>
