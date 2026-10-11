@@ -66,6 +66,15 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
       location: headers.location,
     })}; body=${body}`);
   }
+  // React exposes __reactProps on an element only after it has hydrated that
+  // node. Filling the controlled live-demo inputs before hydration can lose the
+  // value (React resets the field to its server-rendered state on hydration),
+  // which is timing-dependent and flaky on fast preview runners. Wait for the
+  // hydration of an input before handing the page to the test.
+  await page.waitForFunction((sel) => {
+    const node = document.querySelector(sel);
+    return !!node && Object.getOwnPropertyNames(node).some((name) => name.startsWith("__reactProps"));
+  }, '[data-testid="control-plane-live-demo-token"]', { timeout: 15_000 });
   return { page, pageErrors };
 }
 
