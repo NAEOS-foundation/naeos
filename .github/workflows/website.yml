@@ -56,8 +56,8 @@ jobs:
       - name: Select environment-specific Control Plane API
         env:
           API_URL_PRODUCTION: https://naeos-control-plane-production.up.railway.app
-          API_URL_STAGING: https://naeos-control-plane-staging-staging.up.railway.app
-          API_URL_DEVELOPMENT: https://naeos-control-plane-development-development.up.railway.app
+          API_URL_STAGING: https://naeos-control-plane-staging.up.railway.app
+          API_URL_DEVELOPMENT: https://naeos-control-plane-development.up.railway.app
         run: |
           set -euo pipefail
           case "$GITHUB_REF" in
