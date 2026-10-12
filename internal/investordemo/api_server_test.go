@@ -15,6 +15,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
+// newTestAPI intentionally configures only an isolated test credential.
 func newTestAPI(t *testing.T) (*APIServer, *DemoSetup) {
 	t.Helper()
 	setup := SetupDemoEnvironment()
