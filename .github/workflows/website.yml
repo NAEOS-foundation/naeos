@@ -4,7 +4,7 @@ name: Website
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/control-plane-auth-signed-off-20261012]
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
