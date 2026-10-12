@@ -75,3 +75,33 @@ The current root contains approximately 49 first-level files/directories, while 
 - [ ] Go tests and relevant website checks run, or explicitly marked not run.
 - [ ] CI results are inspected before merge.
 - [ ] Main remains the stable integration branch.
+
+## Root Markdown inventory (Phase 2 audit)
+
+This classification is a review aid, not an instruction to move every item. Keep canonical and high-traffic entry points in place. Any path move requires a separate inbound-reference audit and a coordinated update to links, CI, release workflows, and site navigation.
+
+| Root file | Class | Initial disposition |
+|---|---|---|
+| `README.md` | Entry point | Keep at root |
+| `START-HERE.md`, `GETTING-STARTED.md` | Onboarding | Keep at root for discoverability; link to deeper guides |
+| `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` | Community and security policy | Keep at root (standard GitHub discovery paths) |
+| `AGENTS.md` | Agent instructions | Keep at root; preserve tooling discovery |
+| `LICENSE`, `NOTICE` | Legal / licensing | Keep at root (not Markdown inventory, but root-critical) |
+| `DOCUMENTATION-AUTHORITY.md`, `DOCUMENTATION-INDEX.md` | Documentation governance/navigation | Keep at root; canonical cross-repository entry points |
+| `REPOSITORY-ARCHITECTURE.md` | Repository map | Keep at root; reference this plan rather than duplicating its rules |
+| `NAEOS-MTS-001.md` | Normative technical specification | Keep at root until authority and external references are checked |
+| `NAEOS-PER-001.md` | Project evolution record | Candidate for a project-record location after link audit |
+| `NAEOS-RDP-001.md` | Roadmap/development plan record | Candidate for a project-record location after checking roadmap authority and links |
+| `ARCHITECTURE-OVERVIEW.md`, `TRUST-BOUNDARY-MAP.md` | Architecture/reference | Check authority overlap and references before moving or consolidating |
+| `WHITEPAPER.md`, `WHITEPAPER-EN.md` | Public-facing whitepaper | Keep published paths stable until external links and site publishing are audited |
+| `MARKETING-STRATEGY.md` | Marketing/operations | Candidate for `brand/marketing/` after inbound-reference audit |
+| `NAEOS-PARTNER-TARGET-LIST-v1.0.md`, `PARTNER-PROGRAM.md`, `PARTNER-REQUESTS.md`, `PARTNERS.md` | Partner operations | Candidate for `docs/partners/`; inspect website, forms, and relative links first |
+| `DEVELOPMENT_PLAN.md`, `ROADMAP.md`, `CHANGELOG.md` | Project planning/history | Keep canonical authority explicit; do not merge or relocate until overlapping roadmap roles are reconciled |
+| `GLOSSARY.md` | Terminology reference | Candidate for `docs/` only after auditing inbound links and generated docs |
+
+### Phase 2 reference audit findings
+
+- `.run/generated` is referenced in `docs/EXTERNAL-VALIDATION-CASE-STUDY-001.md` and two `brand/marketing/` assets. These references describe generated output, so ignoring it does not remove the documented workflow; however, whether its tracked contents are needed for reproducibility must be checked before deletion.
+- `Reference Architecture/NAEOS-NRA-001.md` and `Reference Architecture/NAEOS-NRA-002.md` both contain NAEOS-NRA-001 identity text. Treat this as a separate document-authority review; do not rename or consolidate either file as part of a general cleanup without resolving the apparent identifier overlap.
+- The root has multiple roadmap/planning artifacts with explicit authority distinctions. Preserve those distinctions and avoid creating a second canonical roadmap.
+- No root Markdown files are moved in this phase. The next structural PR should move only low-risk partner/marketing records after the full inbound-link and workflow search is complete.
