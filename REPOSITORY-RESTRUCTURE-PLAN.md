@@ -105,3 +105,29 @@ This classification is a review aid, not an instruction to move every item. Keep
 - `Reference Architecture/NAEOS-NRA-001.md` and `Reference Architecture/NAEOS-NRA-002.md` both contain NAEOS-NRA-001 identity text. Treat this as a separate document-authority review; do not rename or consolidate either file as part of a general cleanup without resolving the apparent identifier overlap.
 - The root has multiple roadmap/planning artifacts with explicit authority distinctions. Preserve those distinctions and avoid creating a second canonical roadmap.
 - No root Markdown files are moved in this phase. The next structural PR should move only low-risk partner/marketing records after the full inbound-link and workflow search is complete.
+
+
+### Phase 2 reference audit — migration blockers and generated output
+
+The inbound-reference search found these concrete dependencies for the candidate documents:
+
+- `PARTNER-PROGRAM.md`: referenced by `README.md`, `PARTNERS.md`, and `DOCUMENTATION-INDEX.md`; the partner directory links back to it.
+- `PARTNER-REQUESTS.md`: referenced by `PARTNER-PROGRAM.md`, `docs/partners/30-DAY-PLAN.md`, and `DOCUMENTATION-INDEX.md`. The 30-day plan uses a relative path (`../../PARTNER-REQUESTS.md`).
+- `PARTNERS.md` and `NAEOS-PARTNER-TARGET-LIST-v1.0.md`: indexed from `DOCUMENTATION-INDEX.md`.
+- `MARKETING-STRATEGY.md`: referenced by `DOCUMENTATION-INDEX.md` and `.github/copilot/prompts/investor-page.md`.
+- `GLOSSARY.md`: linked from `GETTING-STARTED.md` and `DOCUMENTATION-INDEX.md`.
+- `ARCHITECTURE-OVERVIEW.md`: linked from `START-HERE.md`, `GETTING-STARTED.md`, and `DOCUMENTATION-AUTHORITY.md`; it is also linked by the published investor page using an absolute GitHub URL.
+- `NAEOS-PER-001.md` and `NAEOS-RDP-001.md`: indexed from `DOCUMENTATION-INDEX.md`; roadmap and authority semantics must be settled before either moves.
+
+**Decision:** do not move these files in the current hygiene PR. A move must update the known relative links and index entries in the same change, then run a repository-wide search and link/build checks. Absolute GitHub URLs and external consumers may continue to depend on the old paths, so a compatibility file or redirect may be required.
+
+The checked-in `examples/demo-cli/.run/generated/` tree contains **76 tracked tree/blob entries**, including generated Go and TypeScript projects. The canonical demo script writes output under `.run/`, and the external validation case study cites specific generated Go files as evidence; the marketing HN draft and video storyboard also describe this output. The ignore rule added in Phase 1 only prevents new untracked output from being added—it does not remove files already tracked by Git.
+
+**Decision:** preserve the existing generated snapshot for now. Before untracking or deleting it, determine whether the demo/test contract intentionally uses the snapshot, whether it can be regenerated deterministically, and whether the case study should point to an archived fixture or the output from its pinned validation commit. Do not claim the current snapshot proves the behavior of current `main`.
+
+### Next safe migration sequence
+
+1. Let the current PR checks finish; do not merge while CI is pending.
+2. In a dedicated follow-up PR, migrate at most one low-risk document group and update all known links together. Partner docs are not yet low-risk because they have reciprocal and relative references.
+3. Treat generated-output cleanup as a separate change from document moves.
+4. Add broken-local-Markdown-link validation only after checking the existing repository's conventions and exceptions; do not introduce a broad gate that fails on known intentional external or generated links.
