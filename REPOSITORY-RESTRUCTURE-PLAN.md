@@ -151,3 +151,35 @@ The current main tree contains 2,408 entries (recursive Git tree; not a count of
 2. Remove only confirmed accidental runtime artifacts such as tracked SQLite sidecars in a separate PR, with Go tests.
 3. Document the intended roles of bench/ versus benchmarks/ and check scripts/workflows before any rename.
 4. Build an internal-package dependency map before considering source-code reorganization.
+
+
+## Phase 4 reconnaissance — Go package boundaries (first pass)
+
+This is a source-level reconnaissance pass, not a complete static dependency graph. The recursive Git tree for `main` contains **612 Go files under `internal/`**, including tests, spread across **78 immediate subdirectories**. That confirms the area is large enough to justify an explicit boundary map, but not that it should be split into multiple modules or moved wholesale.
+
+### Observed responsibility seams
+
+| Area | Evidence observed in current source | Restructuring implication |
+|---|---|---|
+| `internal/controlplane/` | Defines policy, grant, action, decision, execution-lock, and ledger/evidence-oriented types in package `controlplane`. The sampled `model.go`, `evaluator.go`, `ledger.go`, `gateway.go`, and `evidence.go` are primarily standard-library imports. | Treat as a core domain boundary; do not relocate it before tracing its callers and public contracts. |
+| `internal/evidence/` | Evidence records import `internal/governance/control`; runtime evidence builder also imports that decision package. | There is an explicit evidence-to-governance dependency. Preserve direction and inspect types/contracts before attempting to unify evidence packages. |
+| `internal/runtime/gateway/` | Imports both `internal/errors` and `internal/governance/control`. | Runtime gateway currently depends on shared error and governance-control contracts; those contracts are potential boundary anchors. |
+| `internal/runtime/engine/` | The sampled engine imports `internal/errors` plus standard-library packages. | Runtime engine and runtime gateway are separate Go packages; keep their roles distinct until call paths prove otherwise. |
+| `internal/audit/` | Sampled audit implementation imports `internal/errors`; encrypted audit implementation also imports `internal/securityext`. | Audit storage/formatting and evidence lifecycle should not be assumed to be the same domain merely because both retain records. |
+| `internal/investordemo/` | `controlplane_bridge.go` imports `internal/controlplane`. | Demo/experiment code is an explicit consumer of control-plane types; preserve the demo contract while mapping dependencies. |
+
+### Boundary risks to investigate before any source moves
+
+- **Potentially overlapping concepts, not proven duplicates:** `internal/controlplane`, `internal/governance/control`, `internal/evidence`, and `internal/audit` all touch authorization decisions, policy context, or records. They are not interchangeable based on names alone. Compare their types, persistence guarantees, callers, and tests before consolidation.
+- **Large surface area:** `cmd/naeos/main.go` registers a broad CLI command set. Moving packages can affect many command handlers even when a package compiles in isolation; the dependency map must include CLI entry points and integration tests.
+- **No module split proposed:** the repository currently declares one Go module, `github.com/NAEOS-foundation/naeos`. Do not introduce nested modules or public package moves as a cleanup shortcut.
+- **Tests count toward the 612-file inventory:** the count is a path inventory, not a count of production source files or independent packages. Some immediate directories contain nested packages, so it is not a full package count.
+
+### Next validation steps
+
+1. Generate a reproducible import graph from the repository checkout (for example, `go list -deps -json ./...` or a dedicated import-graph script) and retain package-level edges, not only directory sizes.
+2. Identify high-fan-in packages and cycles, if any, from the actual graph; do not infer cycles from folder names.
+3. Trace `controlplane`, `governance/control`, `evidence`, `audit`, and `runtime` from CLI/API entry points through tests and persistence adapters.
+4. Record a proposed boundary change only when it has a specific coupling problem, a path/import migration plan, and targeted regression tests.
+5. Keep source moves out of the current structure-hygiene PR. A source refactor must be a separate, behavior-preserving PR with full Go and relevant integration checks.
+
