@@ -20,7 +20,7 @@ The Railway Control Plane services use separate per-environment API tokens and J
 4. Promote the exact accepted candidate from `staging` to `main`; production deploys only from `main`.
 5. Do not make environment-specific hotfixes directly in `main` without back-merging them into `staging` and `develop`.
 
-The long-lived `staging` and `develop` branches were initialized from `main`. Before the first release using this flow, reconcile them with current `main` and confirm branch protections in GitHub. Branch-protection status could not be verified through the current GitHub connection.
+The long-lived `staging` and `develop` branches were initialized from `main`. NAEOS `main` is protected; the new NAEOS `staging` and `develop` branches are not yet protected and must be protected in GitHub settings before relying on this flow. The CRM repository's `main` was unprotected; `staging` and `develop` branches have now been created there, but they also require branch protection.
 
 ## Isolation rules
 
@@ -35,4 +35,5 @@ The long-lived `staging` and `develop` branches were initialized from `main`. Be
 
 - Production Railway services remain on `main`.
 - Staging and development Control Plane deployments are reporting SUCCESS in Railway. DNS/HTTP reachability and browser CORS still need independent verification before calling the complete website-to-API path healthy.
+- CRM is not yet fully separated: `naeos-crm-api` and its database/Redis configuration currently exist only in production. The CRM repository now has `staging` and `develop` branches, but do not deploy either branch until dedicated staging/development Postgres and Redis resources and unique CRM auth secrets are provisioned. Never reuse production `DATABASE_URL` or `REDIS_URL`.
 - This configuration creates persistent staging/development Workers; pull-request previews remain ephemeral.
