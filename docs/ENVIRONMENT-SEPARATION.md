@@ -26,7 +26,7 @@ The long-lived `staging` and `develop` branches were initialized from `main`. NA
 
 - Production custom domains are attached only to the top-level `naeos` Worker. Named Workers use `workers.dev` and have no production routes.
 - Each website build must set `NEXT_PUBLIC_CONTROL_PLANE_API_URL` to its matching Railway API endpoint. PR previews use the development endpoint; never silently fall back to production.
-- Website builds select these isolated API endpoints by branch: staging uses `https://naeos-control-plane-staging-staging.up.railway.app`; development and PR previews use `https://naeos-control-plane-development-development.up.railway.app`. Verify both endpoints and update the URLs if Railway regenerates them.
+- Website builds select these isolated API endpoints by branch: staging uses `https://naeos-control-plane-staging.up.railway.app`; development and PR previews use `https://naeos-control-plane-development.up.railway.app`. Verify both endpoints and update the URLs if Railway regenerates them.
 - The newsletter KV namespace is currently provisioned only by the production workflow. Staging/development intentionally do not bind the production KV namespace; provision separate KV namespaces before testing newsletter writes there.
 - Keep SandBase tokens, JWT secrets, API tokens, and database credentials unique per environment. Do not place secrets in `wrangler.jsonc`, workflow YAML, issues, or logs.
 - Do not mark an environment healthy or an integration E2E PASS without a successful deployment, live request evidence, and an independent check.
