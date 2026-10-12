@@ -131,3 +131,23 @@ The checked-in `examples/demo-cli/.run/generated/` tree contains **76 tracked tr
 2. In a dedicated follow-up PR, migrate at most one low-risk document group and update all known links together. Partner docs are not yet low-risk because they have reciprocal and relative references.
 3. Treat generated-output cleanup as a separate change from document moves.
 4. Add broken-local-Markdown-link validation only after checking the existing repository's conventions and exceptions; do not introduce a broad gate that fails on known intentional external or generated links.
+
+
+## Phase 3 reconnaissance — structural boundaries and tracked artifacts
+
+The current main tree contains 2,408 entries (recursive Git tree; not a count of files alone). The largest first-level domains by entry count include internal/ (761), docs/ (472), site/ (315), cmd/ (193), and examples/ (165). These sizes alone are not evidence that a directory should be split or moved.
+
+### Findings that need follow-up
+
+- **Tracked SQLite sidecars:** cmd/naeos/test.db-shm (32 KiB) and cmd/naeos/test.db-wal (empty) are tracked in main. These are SQLite shared-memory/write-ahead-log sidecars, not source files. The existing .gitignore already contains *.db-shm and *.db-wal, but those rules do not untrack files already committed. Before removing them, verify no test or fixture intentionally relies on their exact bytes; then delete them in a dedicated cleanup commit and run relevant Go tests.
+- **Benchmark locations:** bench/baseline.txt is a small Go benchmark result, while benchmarks/governance-boundary-v1/README.md defines a reproducible governance-boundary benchmark backed by scripts/governance-boundary-benchmark.sh. They are related but not equivalent. Do not blindly merge the directories; first define whether bench/ is historical measured output and benchmarks/ is the reproducible benchmark interface.
+- **Built-in prompt assets:** prompts/builtin/ contains YAML compiler and LLM prompts plus a manifest. Treat these as product/runtime assets, not miscellaneous documentation. Keep their paths stable until loader/embed configuration and tests are audited.
+- **Runtime concentration:** internal/ is the largest domain and contains many separately named packages. Do not perform a mass package move. Start with a package/dependency map and identify actual coupling or naming overlap before proposing a split.
+- **Separate kernel domain:** kernel/ is small compared with internal/, but it has an explicit architectural role in REPOSITORY-ARCHITECTURE.md. Directory size is not a reason to merge it into internal/.
+
+### Recommended order
+
+1. Finish and review the current hygiene PR.
+2. Remove only confirmed accidental runtime artifacts such as tracked SQLite sidecars in a separate PR, with Go tests.
+3. Document the intended roles of bench/ versus benchmarks/ and check scripts/workflows before any rename.
+4. Build an internal-package dependency map before considering source-code reorganization.
