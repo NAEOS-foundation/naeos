@@ -2,7 +2,7 @@ name: Control Plane Browser E2E
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/control-plane-auth-signed-off-20261012]
     paths:
       - "site/**"
       - ".github/workflows/control-plane-e2e.yml"
