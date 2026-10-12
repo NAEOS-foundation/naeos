@@ -33,9 +33,8 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   const configuredEndpoint =
     process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
     (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
-  const configuredToken = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_TOKEN || "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
-  const [token, setToken] = useState(configuredToken);
+  // Tokens entered by a user are transient browser input; never inject a secret via NEXT_PUBLIC env.
   const [agentId, setAgentId] = useState("agent-payment-01");
   const [capability, setCapability] = useState(ALLOW_CAPABILITY);
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
