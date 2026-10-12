@@ -358,7 +358,7 @@ test("Control Plane live demo sends a Bearer token only when one is configured",
     await tokenInput.waitFor({ state: "visible" });
     assert.equal(await tokenInput.getAttribute("type"), "password", "token field must mask its value");
     assert.equal(await tokenInput.getAttribute("autoComplete"), "off", "token field must disable autofill");
-    assert.equal(await tokenInput.getAttribute("placeholder"), "Bearer token if the endpoint requires authentication");
+    assert.equal(await tokenInput.getAttribute("placeholder"), "Token for custom endpoints only");
 
     const allowedPayload = JSON.stringify({
       status: "ALLOW",
