@@ -34,5 +34,5 @@ The long-lived `staging` and `develop` branches were initialized from `main`. Be
 ## Current limitations
 
 - Production Railway services remain on `main`.
-- Staging and development Control Plane services are being provisioned separately; their health and public endpoints must be verified before wiring the website to them.
+- Staging and development Control Plane deployments are reporting SUCCESS in Railway. DNS/HTTP reachability and browser CORS still need independent verification before calling the complete website-to-API path healthy.
 - This configuration creates persistent staging/development Workers; pull-request previews remain ephemeral.
