@@ -2,14 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, staging, develop]
     paths-ignore:
       - 'site/**'
       - 'docs/**'
       - '**.md'
       - '.github/workflows/website.yml'
   pull_request:
-    branches: [main]
+    branches: [main, staging, develop]
   workflow_dispatch:
 
 permissions:

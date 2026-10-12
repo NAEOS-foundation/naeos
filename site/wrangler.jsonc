@@ -21,10 +21,22 @@
     "binding": "ASSETS"
   },
   "routes": [
-    { "pattern": "naeos.dev", "custom_domain": true },
-    { "pattern": "www.naeos.dev", "custom_domain": true },
-    { "pattern": "docs.naeos.dev", "custom_domain": true },
-    { "pattern": "registry.naeos.dev", "custom_domain": true }
+    {
+      "pattern": "naeos.dev",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.naeos.dev",
+      "custom_domain": true
+    },
+    {
+      "pattern": "docs.naeos.dev",
+      "custom_domain": true
+    },
+    {
+      "pattern": "registry.naeos.dev",
+      "custom_domain": true
+    }
   ],
   "services": [
     {
@@ -33,5 +45,45 @@
     }
   ],
   "kv_namespaces": [],
-  "previews": {}
+  "previews": {},
+  "env": {
+    "staging": {
+      "name": "naeos-staging",
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "NAEOS_ENVIRONMENT": "staging"
+      },
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "naeos-staging"
+        }
+      ],
+      "kv_namespaces": []
+    },
+    "development": {
+      "name": "naeos-development",
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "NAEOS_ENVIRONMENT": "development"
+      },
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "naeos-development"
+        }
+      ],
+      "kv_namespaces": []
+    }
+  }
 }

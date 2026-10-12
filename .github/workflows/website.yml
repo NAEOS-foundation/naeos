@@ -4,13 +4,13 @@ name: Website
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging, develop]
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
       - '.github/workflows/control-plane-e2e.yml'
   pull_request:
-    branches: [main]
+    branches: [main, staging, develop]
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
@@ -53,9 +53,24 @@ jobs:
         run: node --test --experimental-strip-types app/api/social/draft/external-publisher.test.ts
       - name: Verify LinkedIn publisher adapter
         run: node --test --experimental-strip-types app/api/social/draft/linkedin-publisher.test.ts
-      - name: Build
+      - name: Select environment-specific Control Plane API
         env:
-          NEXT_PUBLIC_CONTROL_PLANE_API_URL: https://naeos-control-plane-production.up.railway.app
+          API_URL_PRODUCTION: https://naeos-control-plane-production.up.railway.app
+          API_URL_STAGING: https://naeos-control-plane-staging-staging.up.railway.app
+          API_URL_DEVELOPMENT: https://naeos-control-plane-development-development.up.railway.app
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF" in
+            refs/heads/main) api_url="$API_URL_PRODUCTION" ;;
+            refs/heads/staging) api_url="$API_URL_STAGING" ;;
+            *) api_url="$API_URL_DEVELOPMENT" ;;
+          esac
+          if [ -z "$api_url" ]; then
+            echo "::error::Missing environment-specific Control Plane URL. Verify the staging/development Railway endpoints are healthy before deploying."
+            exit 1
+          fi
+          echo "NEXT_PUBLIC_CONTROL_PLANE_API_URL=$api_url" >> "$GITHUB_ENV"
+      - name: Build
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
@@ -113,3 +128,21 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: site
           command: deploy
+
+      - name: Deploy staging Worker
+        if: github.ref == 'refs/heads/staging' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: deploy --env staging
+
+      - name: Deploy development Worker
+        if: github.ref == 'refs/heads/develop' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          command: deploy --env development
