@@ -40,6 +40,974 @@ jobs:
           bash scripts/go-package-graph.sh > "${RUNNER_TEMP}/naeos-go-package-graph.dot"
           test -s "${RUNNER_TEMP}/naeos-go-package-graph.dot"
           grep -Fq 'digraph GoPackages {' "${RUNNER_TEMP}/naeos-go-package-graph.dot"
+          bash scripts/go-package-graph.sh --stats > "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          grep -Eq '^PACKAGES=[1-9][0-9]*
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build
+        run: go build ./cmd/naeos/
+      - name: Build investor demo server
+        run: go build ./cmd/naeos-demo/
+      - name: Demo module tests (investordemo + naeos-demo)
+        run: go test -race -count=1 -timeout 300s ./internal/investordemo/ ./cmd/naeos-demo/
+      - name: Test with race detector
+        run: go test -race -count=1 -timeout 300s ./...
+      - name: Vet
+        run: go vet ./...
+
+  canonical-demo:
+    name: Canonical CLI Demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build CLI
+        run: go build -o naeos ./cmd/naeos
+      - name: Run canonical demo
+        run: |
+          output_dir="$(mktemp -d)"
+          echo "NAEOS_DEMO_OUT=$output_dir" >> "$GITHUB_ENV"
+          NAEOS_BIN="$PWD/naeos"           NAEOS_DEMO_OUTPUT_DIR="$output_dir"             ./examples/demo-cli/run-demo.sh
+      - name: Compile generated Go output
+        run: |
+          set -euo pipefail
+          gen="$NAEOS_DEMO_OUT/generated"
+          test -f "$gen/go.mod" || { echo "generator produced no go.mod"; exit 1; }
+          cp "$PWD/go.sum" "$gen/go.sum"
+          cd "$gen"
+          GOFLAGS=-mod=mod go build ./...
+
+  governance-lifecycle:
+    name: Governance Lifecycle Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run governance lifecycle experiment
+        run: |
+          set -o pipefail
+          mkdir -p governance-lifecycle-evidence
+          set +e
+          go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > governance-lifecycle-evidence/metadata.json
+          exit "$rc"
+      - name: Upload governance lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: governance-lifecycle-evidence-${{ github.sha }}
+          path: governance-lifecycle-evidence/
+
+  day2-atomic-execution:
+    name: Day 02 Atomic Execution Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 02 atomic execution experiment
+        run: |
+          set -o pipefail
+          mkdir -p day2-atomic-execution-evidence
+          set +e
+          go run ./examples/control-plane-atomic-execution 2>&1 | tee day2-atomic-execution-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day2-atomic-execution-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 02 runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: day2-atomic-execution-evidence-${{ github.sha }}
+          path: day2-atomic-execution-evidence/
+  level3-evidence:
+    name: Level-3 Evidence Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run level-3 evidence experiment
+        run: go run ./experiments/level3-evidence
+
+  ai-agent-policy-boundary:
+    name: AI Agent Policy Boundary Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run AI Agent Policy Boundary experiment
+        run: go run ./experiments/ai-agent-policy-boundary
+      - name: Run Governance Boundary Benchmark
+        run: |
+          set -euo pipefail
+          NAEOS_GOVERNANCE_BENCHMARK_DIR="$RUNNER_TEMP/naeos-governance-benchmark" \
+            bash ./scripts/governance-boundary-benchmark.sh
+      - name: Upload Governance Boundary Benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: governance-boundary-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/naeos-governance-benchmark/
+
+  evidence-tampering:
+    name: Evidence Tampering Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run evidence tampering benchmark
+        run: go run ./experiments/evidence-tampering-v1
+
+  bench-gate:
+    name: Benchmark Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Check for benchmark regression
+        run: bash scripts/bench-gate.sh
+
+  vulncheck:
+    name: Govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          $(go env GOPATH)/bin/govulncheck ./...
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Generate coverage
+        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic -timeout 300s ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@e53489f4d376d79066609109e7a95a29eb3740b1
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false
+
+  supabase-integration:
+    name: Supabase Integration
+    runs-on: ubuntu-latest
+    if: github.repository == 'NAEOS-foundation/naeos' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABEL_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
+        run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
+
+  dependency-risk-gate:
+    name: Dependency Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate dependency risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash scripts/dependency-risk-gate.sh
+      - name: Upload dependency risk evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-risk-evidence
+          path: dependency-risk-evidence.json
+
+  change-risk-gate:
+    name: Change Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate change risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash scripts/change-risk-gate.sh
+      - name: Upload change risk evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: change-risk-evidence
+          path: change-risk-evidence.json
+
+  pdr-validation:
+    name: Policy Decision Record Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate PDR fixture
+        run: bash scripts/validate-policy-decision-record.sh governance/examples/policy-decision-record.json
+      - name: Verify fail-closed missing evidence
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence = []' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted missing evidence" >&2
+            exit 1
+          fi
+      - name: Verify fail-closed malformed digest
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence[0].digest = "invalid"' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted malformed evidence digest" >&2
+            exit 1
+          fi
+
+  legal-evidence-gate:
+    name: Legal Evidence Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify placeholder fixture is rejected
+        run: |
+          set -euo pipefail
+          if bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json; then
+            echo "placeholder evidence fixture was accepted" >&2
+            exit 1
+          fi
+      - name: Validate a complete evidence record
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+      - name: Verify PASS decision rejects HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.security_status = "HOLD"' legal/evidence/release-3.6.0.example.json > "$tmp"
+          jq '.commit_sha = "0123456789abcdef0123456789abcdef01234567" |
+              .release_date = "2026-10-01T00:00:00Z" |
+              .reviewer = "ci-fixture" |
+              .sbom.sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"' "$tmp" > "$tmp.valid"
+          if bash scripts/validate-legal-evidence.sh "$tmp.valid"; then
+            echo "PASS decision with HOLD status was accepted" >&2
+            exit 1
+          fi
+
+      - name: Verify release legal gate allows PASS
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          bash scripts/release-legal-gate.sh "$tmp"
+
+      - name: Verify release legal gate blocks HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "HOLD",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "HOLD"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          if bash scripts/release-legal-gate.sh "$tmp"; then
+            echo "release legal gate allowed HOLD" >&2
+            exit 1
+          fi
+
+
+  merge-base-freshness:
+    name: Merge-base Freshness
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Fetch current base branch
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+      - name: Verify PR contains current base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-merge-base-freshness.sh
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - lint
+      - test
+      - canonical-demo
+      - governance-lifecycle
+      - day2-atomic-execution
+      - level3-evidence
+      - ai-agent-policy-boundary
+      - bench-gate
+      - evidence-tampering
+      - vulncheck
+      - coverage
+      - supabase-integration
+      - fuzz
+      - dependency-risk-gate
+      - change-risk-gate
+      - pdr-validation
+      - legal-evidence-gate
+      - merge-base-freshness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs passed
+        env:
+          LINT: ${{ needs.lint.result }}
+          TEST: ${{ needs.test.result }}
+          CANONICAL_DEMO: ${{ needs['canonical-demo'].result }}
+          GOVERNANCE: ${{ needs['governance-lifecycle'].result }}
+          DAY2_ATOMIC: ${{ needs['day2-atomic-execution'].result }}
+          LEVEL3: ${{ needs['level3-evidence'].result }}
+          POLICY: ${{ needs['ai-agent-policy-boundary'].result }}
+          BENCH: ${{ needs['bench-gate'].result }}
+          EVIDENCE_TAMPERING: ${{ needs['evidence-tampering'].result }}
+          VULNCHECK: ${{ needs.vulncheck.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+          SUPABASE: ${{ needs['supabase-integration'].result }}
+          FUZZ: ${{ needs.fuzz.result }}
+          DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
+          CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
+          PDR: ${{ needs['pdr-validation'].result }}
+          LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
+          MERGE_BASE: ${{ needs['merge-base-freshness'].result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
+            test "$result" = "success"
+          done
+          test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
+          test "$LEGAL_EVIDENCE" = "success"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            test "$MERGE_BASE" = "success"
+          fi
+          echo "All required CI jobs passed."
+
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Fuzz parser
+        run: go test -fuzz=^FuzzParse$ -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz schema version
+        run: go test -fuzz=FuzzSchemaVersionParse -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz variable resolver
+        run: go test -fuzz=FuzzVariableResolver -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz validate modules
+        run: go test -fuzz=FuzzValidateModules -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz version parse
+        run: go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/
+      - name: Fuzz normalizer
+        run: go test -fuzz='^FuzzNormalize$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz normalizer raw
+        run: go test -fuzz='^FuzzNormalizeRaw$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz flatten
+        run: go test -fuzz='^FuzzFlatten$' -fuzztime=30s ./internal/specification/normalizer/
+ "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          grep -Eq '^EDGES=[0-9]+
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build
+        run: go build ./cmd/naeos/
+      - name: Build investor demo server
+        run: go build ./cmd/naeos-demo/
+      - name: Demo module tests (investordemo + naeos-demo)
+        run: go test -race -count=1 -timeout 300s ./internal/investordemo/ ./cmd/naeos-demo/
+      - name: Test with race detector
+        run: go test -race -count=1 -timeout 300s ./...
+      - name: Vet
+        run: go vet ./...
+
+  canonical-demo:
+    name: Canonical CLI Demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build CLI
+        run: go build -o naeos ./cmd/naeos
+      - name: Run canonical demo
+        run: |
+          output_dir="$(mktemp -d)"
+          echo "NAEOS_DEMO_OUT=$output_dir" >> "$GITHUB_ENV"
+          NAEOS_BIN="$PWD/naeos"           NAEOS_DEMO_OUTPUT_DIR="$output_dir"             ./examples/demo-cli/run-demo.sh
+      - name: Compile generated Go output
+        run: |
+          set -euo pipefail
+          gen="$NAEOS_DEMO_OUT/generated"
+          test -f "$gen/go.mod" || { echo "generator produced no go.mod"; exit 1; }
+          cp "$PWD/go.sum" "$gen/go.sum"
+          cd "$gen"
+          GOFLAGS=-mod=mod go build ./...
+
+  governance-lifecycle:
+    name: Governance Lifecycle Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run governance lifecycle experiment
+        run: |
+          set -o pipefail
+          mkdir -p governance-lifecycle-evidence
+          set +e
+          go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > governance-lifecycle-evidence/metadata.json
+          exit "$rc"
+      - name: Upload governance lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: governance-lifecycle-evidence-${{ github.sha }}
+          path: governance-lifecycle-evidence/
+
+  day2-atomic-execution:
+    name: Day 02 Atomic Execution Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run Day 02 atomic execution experiment
+        run: |
+          set -o pipefail
+          mkdir -p day2-atomic-execution-evidence
+          set +e
+          go run ./examples/control-plane-atomic-execution 2>&1 | tee day2-atomic-execution-evidence/run.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '{"commit_sha":"%s","workflow_run":"%s","timestamp_utc":"%s","exit_code":%s}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" > day2-atomic-execution-evidence/metadata.json
+          exit "$rc"
+      - name: Upload Day 02 runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: day2-atomic-execution-evidence-${{ github.sha }}
+          path: day2-atomic-execution-evidence/
+  level3-evidence:
+    name: Level-3 Evidence Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run level-3 evidence experiment
+        run: go run ./experiments/level3-evidence
+
+  ai-agent-policy-boundary:
+    name: AI Agent Policy Boundary Experiment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run AI Agent Policy Boundary experiment
+        run: go run ./experiments/ai-agent-policy-boundary
+      - name: Run Governance Boundary Benchmark
+        run: |
+          set -euo pipefail
+          NAEOS_GOVERNANCE_BENCHMARK_DIR="$RUNNER_TEMP/naeos-governance-benchmark" \
+            bash ./scripts/governance-boundary-benchmark.sh
+      - name: Upload Governance Boundary Benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: governance-boundary-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/naeos-governance-benchmark/
+
+  evidence-tampering:
+    name: Evidence Tampering Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run evidence tampering benchmark
+        run: go run ./experiments/evidence-tampering-v1
+
+  bench-gate:
+    name: Benchmark Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Check for benchmark regression
+        run: bash scripts/bench-gate.sh
+
+  vulncheck:
+    name: Govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          $(go env GOPATH)/bin/govulncheck ./...
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Generate coverage
+        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic -timeout 300s ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@e53489f4d376d79066609109e7a95a29eb3740b1
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false
+
+  supabase-integration:
+    name: Supabase Integration
+    runs-on: ubuntu-latest
+    if: github.repository == 'NAEOS-foundation/naeos' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Supabase integration tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABEL_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
+        run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
+
+  dependency-risk-gate:
+    name: Dependency Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate dependency risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash scripts/dependency-risk-gate.sh
+      - name: Upload dependency risk evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-risk-evidence
+          path: dependency-risk-evidence.json
+
+  change-risk-gate:
+    name: Change Risk Governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Evaluate change risk
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash scripts/change-risk-gate.sh
+      - name: Upload change risk evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: change-risk-evidence
+          path: change-risk-evidence.json
+
+  pdr-validation:
+    name: Policy Decision Record Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate PDR fixture
+        run: bash scripts/validate-policy-decision-record.sh governance/examples/policy-decision-record.json
+      - name: Verify fail-closed missing evidence
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence = []' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted missing evidence" >&2
+            exit 1
+          fi
+      - name: Verify fail-closed malformed digest
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.evidence[0].digest = "invalid"' governance/examples/policy-decision-record.json > "$tmp"
+          if bash scripts/validate-policy-decision-record.sh "$tmp"; then
+            echo "validator accepted malformed evidence digest" >&2
+            exit 1
+          fi
+
+  legal-evidence-gate:
+    name: Legal Evidence Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify placeholder fixture is rejected
+        run: |
+          set -euo pipefail
+          if bash scripts/validate-legal-evidence.sh legal/evidence/release-3.6.0.example.json; then
+            echo "placeholder evidence fixture was accepted" >&2
+            exit 1
+          fi
+      - name: Validate a complete evidence record
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+      - name: Verify PASS decision rejects HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          jq '.security_status = "HOLD"' legal/evidence/release-3.6.0.example.json > "$tmp"
+          jq '.commit_sha = "0123456789abcdef0123456789abcdef01234567" |
+              .release_date = "2026-10-01T00:00:00Z" |
+              .reviewer = "ci-fixture" |
+              .sbom.sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"' "$tmp" > "$tmp.valid"
+          if bash scripts/validate-legal-evidence.sh "$tmp.valid"; then
+            echo "PASS decision with HOLD status was accepted" >&2
+            exit 1
+          fi
+
+      - name: Verify release legal gate allows PASS
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "PASS",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "PASS"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          bash scripts/release-legal-gate.sh "$tmp"
+
+      - name: Verify release legal gate blocks HOLD
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp)"
+          cat > "$tmp" <<'EOF'
+          {
+            "schema_version": "1.0",
+            "release_version": "3.6.0",
+            "repository": "NAEOS-foundation/naeos",
+            "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "release_date": "2026-10-01T00:00:00Z",
+            "license": "Apache-2.0",
+            "dco_status": "PASS",
+            "sbom": {"artifact": "sbom.cdx.json", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+            "dependency_license_status": "PASS",
+            "attribution_status": "PASS",
+            "security_status": "HOLD",
+            "provenance_status": "PASS",
+            "trademark_status": "REVIEWED",
+            "exceptions": [],
+            "reviewer": "ci-fixture",
+            "decision": "HOLD"
+          }
+          EOF
+          bash scripts/validate-legal-evidence.sh "$tmp"
+          if bash scripts/release-legal-gate.sh "$tmp"; then
+            echo "release legal gate allowed HOLD" >&2
+            exit 1
+          fi
+
+
+  merge-base-freshness:
+    name: Merge-base Freshness
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Fetch current base branch
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+      - name: Verify PR contains current base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-merge-base-freshness.sh
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - lint
+      - test
+      - canonical-demo
+      - governance-lifecycle
+      - day2-atomic-execution
+      - level3-evidence
+      - ai-agent-policy-boundary
+      - bench-gate
+      - evidence-tampering
+      - vulncheck
+      - coverage
+      - supabase-integration
+      - fuzz
+      - dependency-risk-gate
+      - change-risk-gate
+      - pdr-validation
+      - legal-evidence-gate
+      - merge-base-freshness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs passed
+        env:
+          LINT: ${{ needs.lint.result }}
+          TEST: ${{ needs.test.result }}
+          CANONICAL_DEMO: ${{ needs['canonical-demo'].result }}
+          GOVERNANCE: ${{ needs['governance-lifecycle'].result }}
+          DAY2_ATOMIC: ${{ needs['day2-atomic-execution'].result }}
+          LEVEL3: ${{ needs['level3-evidence'].result }}
+          POLICY: ${{ needs['ai-agent-policy-boundary'].result }}
+          BENCH: ${{ needs['bench-gate'].result }}
+          EVIDENCE_TAMPERING: ${{ needs['evidence-tampering'].result }}
+          VULNCHECK: ${{ needs.vulncheck.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+          SUPABASE: ${{ needs['supabase-integration'].result }}
+          FUZZ: ${{ needs.fuzz.result }}
+          DEPENDENCY_RISK: ${{ needs['dependency-risk-gate'].result }}
+          CHANGE_RISK: ${{ needs['change-risk-gate'].result }}
+          PDR: ${{ needs['pdr-validation'].result }}
+          LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
+          MERGE_BASE: ${{ needs['merge-base-freshness'].result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
+            test "$result" = "success"
+          done
+          test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
+          test "$LEGAL_EVIDENCE" = "success"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            test "$MERGE_BASE" = "success"
+          fi
+          echo "All required CI jobs passed."
+
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Fuzz parser
+        run: go test -fuzz=^FuzzParse$ -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz schema version
+        run: go test -fuzz=FuzzSchemaVersionParse -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz variable resolver
+        run: go test -fuzz=FuzzVariableResolver -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz validate modules
+        run: go test -fuzz=FuzzValidateModules -fuzztime=30s ./internal/specification/parser/
+      - name: Fuzz version parse
+        run: go test -fuzz=FuzzParseVersion -fuzztime=30s ./internal/migration/
+      - name: Fuzz normalizer
+        run: go test -fuzz='^FuzzNormalize$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz normalizer raw
+        run: go test -fuzz='^FuzzNormalizeRaw$' -fuzztime=30s ./internal/specification/normalizer/
+      - name: Fuzz flatten
+        run: go test -fuzz='^FuzzFlatten$' -fuzztime=30s ./internal/specification/normalizer/
+ "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          cat "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
 
   test:
     name: Test

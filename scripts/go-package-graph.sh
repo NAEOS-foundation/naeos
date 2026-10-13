@@ -8,8 +8,8 @@ set -euo pipefail
 # External dependencies are intentionally omitted. The output is generated on
 # demand and should not be committed as a repository snapshot.
 
-if [[ $# -gt 1 ]]; then
-  echo "usage: $0 [output.dot]" >&2
+if [[ $# -gt 1 ]] || [[ $# -eq 1 && "$1" != "--stats" ]]; then
+  echo "usage: $0 [output.dot|--stats]" >&2
   exit 2
 fi
 
@@ -25,11 +25,13 @@ if [[ -z "$module" ]]; then
 fi
 
 tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
+stats_tmp="$(mktemp)"
+sorted_tmp="$(mktemp)"
+trap 'rm -f "$tmp" "$stats_tmp" "$sorted_tmp"' EXIT
 go list -f '{{.ImportPath}}|{{join .Imports ","}}' ./... > "$tmp"
 
 render_graph() {
-  awk -F'|' -v prefix="$module/" '
+  awk -F'|' -v module="$module" -v prefix="$module/" '
     BEGIN {
       print "digraph GoPackages {"
       print "  rankdir=LR;"
@@ -37,15 +39,25 @@ render_graph() {
     }
     {
       importer = $1
-      if (index(importer, prefix) != 1) next
-      importer = substr(importer, length(prefix) + 1)
+      if (importer == module) {
+        importer = "."
+      } else if (index(importer, prefix) == 1) {
+        importer = substr(importer, length(prefix) + 1)
+      } else {
+        next
+      }
       printf "  \"%s\";\n", importer
 
       count = split($2, imports, ",")
       for (i = 1; i <= count; i++) {
         imported = imports[i]
-        if (index(imported, prefix) != 1) continue
-        imported = substr(imported, length(prefix) + 1)
+        if (imported == module) {
+          imported = "."
+        } else if (index(imported, prefix) == 1) {
+          imported = substr(imported, length(prefix) + 1)
+        } else {
+          continue
+        }
         printf "  \"%s\" -> \"%s\";\n", importer, imported
       }
     }
@@ -53,7 +65,58 @@ render_graph() {
   ' "$tmp"
 }
 
-if [[ $# -eq 1 ]]; then
+render_stats() {
+  awk -F'|' -v module="$module" -v prefix="$module/" '
+    {
+      importer = $1
+      if (importer == module) {
+        importer = "."
+      } else if (index(importer, prefix) == 1) {
+        importer = substr(importer, length(prefix) + 1)
+      } else {
+        next
+      }
+      nodes[importer] = 1
+
+      count = split($2, imports, ",")
+      for (i = 1; i <= count; i++) {
+        imported = imports[i]
+        if (imported == module) {
+          imported = "."
+        } else if (index(imported, prefix) == 1) {
+          imported = substr(imported, length(prefix) + 1)
+        } else {
+          continue
+        }
+        nodes[imported] = 1
+        outgoing[importer]++
+        incoming[imported]++
+        edges++
+      }
+    }
+    END {
+      print "PACKAGES=" length(nodes)
+      print "EDGES=" edges + 0
+      for (pkg in nodes) {
+        printf "%s\t%d\t%d\n", pkg, incoming[pkg] + 0, outgoing[pkg] + 0
+      }
+    }
+  ' "$tmp" > "$stats_tmp"
+
+  sed -n '1,2p' "$stats_tmp"
+  sed -n '3,$p' "$stats_tmp" | sort -t "$(printf '\t')" -k2,2nr -k1,1 > "$sorted_tmp"
+  printf '\nTop packages by fan-in (incoming internal imports):\n'
+  printf 'package\tfan_in\tfan_out\n'
+  sed -n '1,15p' "$sorted_tmp"
+  sort -t "$(printf '\t')" -k3,3nr -k1,1 "$sorted_tmp" > "$stats_tmp"
+  printf '\nTop packages by fan-out (outgoing internal imports):\n'
+  printf 'package\tfan_in\tfan_out\n'
+  sed -n '1,15p' "$stats_tmp"
+}
+
+if [[ $# -eq 1 && "$1" == "--stats" ]]; then
+  render_stats
+elif [[ $# -eq 1 ]]; then
   render_graph > "$1"
 else
   render_graph
