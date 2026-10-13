@@ -74,6 +74,37 @@ Top fan-out packages (outgoing internal imports):
 - `internal/evidence`, `internal/governance/control`, and `internal/controlplane` are visible governance/evidence boundaries. Their fan-in values do not establish duplication or justify consolidation.
 - The graph counts production imports exposed by `go list`; it excludes test-only imports and does not encode runtime call direction, dependency injection, or semantic ownership.
 
+### Source-level follow-up from the baseline
+
+The following source inspection used `main` at the time of review. These are
+review targets, not approved package moves:
+
+- **`pkg/pipeline`** — fan-in 6, fan-out 25. `pipeline.go` imports evidence,
+  generation, governance policy/review, NEIR model/builder/validator, planner,
+  profiling, registry/schema registry, specification parsing/resolution, and
+  kernel/config packages. This is a cross-domain orchestration surface. Before
+  splitting it, identify cohesive stages and existing public types; do not move
+  code solely to reduce its import count.
+- **`internal/api`** — fan-in 2, fan-out 19. `server.go` is a large server
+  composition file and imports multiple service domains including audit,
+  authentication, database, plugin hosting, schema registry, WebSocket, and
+  pipeline. A future review should distinguish route/handler wiring from server
+  lifecycle and shared dependencies. Any extraction needs API/server integration
+  tests and must preserve route behavior.
+- **`internal/neir/model`** — fan-in 20, fan-out 16. `model.go` aggregates
+  types from multiple `internal/neir/model/*` subpackages. This may be an
+  intentional facade, so retain it until callers and compatibility expectations
+  are understood.
+- **`internal/errors`** — fan-in 75, fan-out 0. It is a widely imported leaf;
+  high fan-in alone is not evidence of a defect or a reason to split it.
+
+**Current recommendation:** do not consolidate `internal/controlplane` with
+`internal/governance/control`. The graph measures imports, not equivalent
+authorization semantics. First map the decision types, policy-version checks,
+runtime call sites, evidence records, persistence guarantees, and targeted tests.
+The first source refactor should target a demonstrated responsibility problem
+and be isolated in its own PR.
+
 ## Safe review sequence
 
 1. Generate the graph at the commit under review and retain the commit SHA with any findings.
