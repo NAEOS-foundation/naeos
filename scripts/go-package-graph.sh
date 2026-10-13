@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+
 set -euo pipefail
 
 # Emit a Graphviz DOT graph of direct imports between packages in this Go module.
