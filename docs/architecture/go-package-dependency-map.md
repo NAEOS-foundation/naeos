@@ -111,3 +111,35 @@ and be isolated in its own PR.
 2. Identify high-fan-in packages and verify their callers with targeted searches.
 3. Check whether any proposed dependency inversion or package move changes authorization, runtime enforcement, evidence, persistence, CLI, or public documentation contracts.
 4. Make one behavior-preserving change per PR and run the relevant package tests plus repository CI.
+
+
+### Caller and enforcement-boundary audit — 2026-10-15
+
+This pass searched source call sites and inspected the implementation and
+focused tests on `main` at base commit
+`82215b2596bc9ca46c34a9c252106c44b0e84841`. It maps active usage; it does
+not establish that every integration is production-deployed.
+
+| Surface | Observed callers and contracts | Boundary conclusion |
+|---|---|---|
+| `internal/governance/control` | CLI runtime paths in `cmd/naeos/runtime_cmd.go`, `runtime_bridge_cmd.go`, `agent_request_cmd.go`, and `evidence_cmd.go` construct this control plane and pass it to `internal/runtime/gateway`. The control plane binds a grant digest, supports grant revocation/expiry, and implements `ValidateDecision`. | Canonical governance contract for the CLI runtime gateway path observed in this audit. |
+| `internal/runtime/gateway` | `ExecutionGateway.Authorize` evaluates a request, applies restrictions, optionally calls `DecisionRevalidator.ValidateDecision`, and atomically claims an invocation ID before sandbox execution when replay protection is enabled. The concrete `control.ControlPlane` implements the revalidation interface. | Runtime side-effect boundary. Keep revalidation and replay-claim ordering intact during future changes. The interface permits non-revalidating implementations, so callers/configuration must be reviewed before claiming all deployments enforce second-phase validation. |
+| `internal/evidence` | `EvidenceRecord` imports `governance/control.Decision`; completion validation checks the evidence chain and runtime ledger. `pkg/pipeline` calls `ValidateCompletionWithRuntimeLedger`. | Run-completion evidence contract tied to the governance decision model; distinct from the control-plane authorization ledger. |
+| `internal/controlplane` | Used by `internal/integrations/sandbase` and `internal/investordemo`, plus control-plane examples. It defines its own `Policy`, `Grant`, `DecisionGateway`, `Ledger`, and `EvidenceBundle`. | Separate contract used by SandBase integration and the control-plane/investor-demo flow; not proven to be a duplicate of `governance/control`. |
+| SandBase freshness tests | `internal/integrations/sandbase/http_handler_freshness_test.go` checks that a v1 grant against active policy v2 returns `reauthorize`. `internal/controlplane/policy_change_revocation_test.go` checks that stale authorization does not invoke the side effect and emits a blocked event. | Existing tests cover important stale-policy behavior in this contract, but they do not justify merging the two control-plane models. |
+
+#### Concrete implications
+
+1. Do not consolidate the two packages as a repository-cleanup task. They serve
+   different call paths and have different decision and evidence types.
+2. Keep runtime gateway authorization revalidation immediately before replay
+   claiming and side-effect execution; changing that sequence requires targeted
+   concurrency and stale-policy regression tests.
+3. Keep SandBase policy refresh/version checks and the adapter's active-policy
+   lookup in the integration path. Audit the complete grant lifecycle separately
+   before changing its policy/grant model.
+4. Keep `internal/evidence` completion/provenance validation distinct from the
+   `internal/controlplane.Ledger` until a contract-level comparison proves
+   which records are authoritative for each flow.
+5. This was source inspection only. It does not claim local tests ran, nor that
+   all deployment configurations enable the same enforcement options.
