@@ -176,7 +176,6 @@ func TestEvaluator_DeniesGrantAgentMismatch(t *testing.T) {
 	}
 }
 
-
 func TestPolicyStoreIsolatesPolicySnapshots(t *testing.T) {
 	store := NewPolicyStore()
 	input := &Policy{
