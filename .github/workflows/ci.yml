@@ -35,6 +35,15 @@ jobs:
           version: v2.12.2
       - name: License headers
         run: bash scripts/check-license-headers.sh
+      - name: Validate Go package graph generator
+        run: |
+          bash scripts/go-package-graph.sh > "${RUNNER_TEMP}/naeos-go-package-graph.dot"
+          test -s "${RUNNER_TEMP}/naeos-go-package-graph.dot"
+          grep -Fq 'digraph GoPackages {' "${RUNNER_TEMP}/naeos-go-package-graph.dot"
+          bash scripts/go-package-graph.sh --stats > "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          grep -Eq '^PACKAGES=[1-9][0-9]*$' "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          grep -Eq '^EDGES=[0-9]+$' "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
+          cat "${RUNNER_TEMP}/naeos-go-package-graph-stats.txt"
 
   test:
     name: Test
