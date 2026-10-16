@@ -471,7 +471,6 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 	verifyUnknown(reloaded)
 }
 
-
 func TestDecisionGateway_ExecuteAtomicDoesNotRunSideEffectWithoutDurableIntent(t *testing.T) {
 	now := time.Now().UTC()
 	store := NewPolicyStore()
