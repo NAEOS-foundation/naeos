@@ -374,6 +374,20 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 				return nil
 			}
 		}
+		executionID := controlPlaneID("EXEC")
+		startedEvent := g.Ledger.Append(LedgerEvent{
+			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+			ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+			Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
+		})
+		if startedEvent.ID == "" {
+			// Never invoke a side effect unless its execution intent is durably recorded.
+			result.Status = DecisionDeny
+			result.Reason = ReasonDeniedByPolicy
+			result.Message = "execution intent could not be durably recorded; side effect was not invoked"
+			return nil
+		}
 		if err := sideEffect(); err != nil {
 			// An error does not prove that an external side effect was not committed.
 			// Preserve the uncertainty instead of falsely reporting DENY or success.
@@ -382,7 +396,7 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 			result.Message = fmt.Sprintf("side-effect outcome is unconfirmed: %v", err)
 			event = g.Ledger.Append(LedgerEvent{
 				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
-				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+				ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
 				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_UNKNOWN", Decision: DecisionUnknown, Reason: result.Reason,
 			})
 			return nil
@@ -391,7 +405,7 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 		result.Reason = ReasonAllowed
 		event = g.Ledger.Append(LedgerEvent{
 			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
-			ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+			ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
 			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_ALLOWED", Decision: DecisionAllow,
 			Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
 		})
