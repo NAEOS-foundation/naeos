@@ -375,13 +375,15 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 			}
 		}
 		if err := sideEffect(); err != nil {
-			result.Status = DecisionDeny
-			result.Reason = DecisionReason("execution_failed")
-			result.Message = err.Error()
+			// An error does not prove that an external side effect was not committed.
+			// Preserve the uncertainty instead of falsely reporting DENY or success.
+			result.Status = DecisionUnknown
+			result.Reason = ReasonExecutionOutcomeUnknown
+			result.Message = fmt.Sprintf("side-effect outcome is unconfirmed: %v", err)
 			event = g.Ledger.Append(LedgerEvent{
 				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
 				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
-				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
+				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_UNKNOWN", Decision: DecisionUnknown, Reason: result.Reason,
 			})
 			return nil
 		}
@@ -393,6 +395,13 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 			ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_ALLOWED", Decision: DecisionAllow,
 			Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
 		})
+		if event.ID == "" {
+			// The side effect returned success, but its execution receipt was not
+			// durably committed. The caller must reconcile before treating it as done.
+			result.Status = DecisionUnknown
+			result.Reason = ReasonExecutionOutcomeUnknown
+			result.Message = "side effect completed but execution evidence could not be durably committed"
+		}
 		return nil
 	})
 	if err != nil {
