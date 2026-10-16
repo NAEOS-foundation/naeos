@@ -302,6 +302,13 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 		Issues:          []string{},
 	}
 	for _, event := range l.EventsForAgent(agentID) {
+		if event.EventType == "EXECUTION_UNKNOWN" {
+			summary.PolicyCompliant = false
+			if summary.Result == "PASS" {
+				summary.Result = "UNKNOWN"
+			}
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unconfirmed execution %s for %s requires reconciliation", event.ID, event.Capability))
+		}
 		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
 			summary.BlockedAttempts++
 			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for %s: %s", event.ID, event.Capability, event.Reason))
