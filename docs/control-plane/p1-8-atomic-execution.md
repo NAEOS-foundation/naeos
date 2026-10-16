@@ -16,7 +16,7 @@ A concurrent policy update cannot become active between the freshness check and 
 
 ## Evidence
 
-The ledger records AUTHORIZATION_DECISION, then durably records EXECUTION_STARTED before invoking the side effect. A successful execution adds EXECUTION_ALLOWED with the same execution ID. If the final receipt cannot be committed, the unmatched start remains durable and verification reports UNKNOWN until reconciliation. Failed or stale attempts that never enter execution remain fail-closed and record EXECUTION_BLOCKED.
+The ledger records AUTHORIZATION_DECISION, then records EXECUTION_STARTED before invoking the side effect. When ledger persistence is configured, that start event is committed to the durable snapshot before the callback runs; a persistence failure prevents invocation. A successful execution adds EXECUTION_ALLOWED with the same execution ID. If the final receipt cannot be committed, the unmatched start remains durable and verification reports UNKNOWN until reconciliation. Failed or stale attempts that never enter execution remain fail-closed and record EXECUTION_BLOCKED.
 
 ## Acceptance criteria
 
