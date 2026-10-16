@@ -441,6 +441,16 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 		t.Fatal("expected ledger persistence error to be observable")
 	}
 
+	// The same authorization must not be replayed while its start remains unresolved.
+	retryCalled := false
+	retry, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+		retryCalled = true
+		return nil
+	})
+	if retryCalled || retry.Status != DecisionDeny {
+		t.Fatalf("expected unresolved execution replay to be blocked, called=%t status=%s", retryCalled, retry.Status)
+	}
+
 	// Reload from the last durable snapshot: the unmatched intent must survive
 	// restart and prevent a false PASS even though the final receipt is absent.
 	reloaded, err := LoadLedger(ledgerPath)
