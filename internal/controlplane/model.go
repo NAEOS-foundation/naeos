@@ -18,6 +18,7 @@ const (
 	DecisionAllow   DecisionStatus = "ALLOW"
 	DecisionDeny    DecisionStatus = "DENY"
 	DecisionPending DecisionStatus = "REQUIRE_APPROVAL"
+	DecisionUnknown DecisionStatus = "UNKNOWN"
 )
 
 // DecisionReason describes why a decision was made.
@@ -36,6 +37,7 @@ const (
 	ReasonDeniedStalePolicy     DecisionReason = "stale_policy"
 	ReasonRequiresApproval      DecisionReason = "approval_required"
 	ReasonNoPolicyFound         DecisionReason = "policy_not_found"
+	ReasonExecutionOutcomeUnknown DecisionReason = "execution_outcome_unknown"
 )
 
 // Policy defines the active rules for a named policy version.
