@@ -52,6 +52,7 @@ func main() {
 
 	evaluator := controlplane.NewEvaluator(store)
 	ledger := controlplane.NewLedger()
+	ledger.SetPersistencePath(filepath.Join(outputDir, "ledger.json"))
 	gateway := controlplane.NewDecisionGateway(evaluator, ledger)
 	verifier := controlplane.NewSessionVerifier(ledger, evaluator)
 
