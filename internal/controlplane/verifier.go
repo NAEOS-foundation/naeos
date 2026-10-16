@@ -41,7 +41,18 @@ func (v *SessionVerifier) Verify(agentID string, action Action, grant *Grant, po
 		return decision
 	}
 	if v.Ledger != nil {
-		for _, event := range v.Ledger.EventsForAgent(agentID) {
+		events := v.Ledger.EventsForAgent(agentID)
+		for _, event := range events {
+			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash && event.EventType == "EXECUTION_UNKNOWN" {
+				return DecisionResult{Status: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown, Requested: action.Capability, Message: fmt.Sprintf("execution outcome for %s is unconfirmed and requires reconciliation", action.Capability)}
+			}
+		}
+		for _, event := range unresolvedExecutionStarts(events) {
+			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash {
+				return DecisionResult{Status: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown, Requested: action.Capability, Message: fmt.Sprintf("execution intent for %s has no durable outcome receipt", action.Capability)}
+			}
+		}
+		for _, event := range events {
 			if event.Capability == action.Capability && event.Decision == DecisionDeny {
 				return DecisionResult{Status: DecisionDeny, Reason: ReasonDeniedByPolicy, Requested: action.Capability, Message: fmt.Sprintf("evidence ledger shows denied execution for %s", action.Capability)}
 			}
