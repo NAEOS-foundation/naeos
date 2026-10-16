@@ -382,7 +382,7 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 			Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
 		})
 		if startedEvent.ID == "" {
-			// Never invoke a side effect unless its execution intent is durably recorded.
+			// With persistence configured, Append returns only after the intent is durable. Never invoke a side effect if this append fails.
 			result.Status = DecisionDeny
 			result.Reason = ReasonDeniedByPolicy
 			result.Message = "execution intent could not be durably recorded; side effect was not invoked"
