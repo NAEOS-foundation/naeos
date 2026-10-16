@@ -336,7 +336,6 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 	return summary
 }
 
-
 // unresolvedExecutionStarts identifies execution intents that have no recorded terminal outcome.
 // A start event is persisted before invoking an external side effect, so it remains evidence of
 // uncertainty if the process crashes or the final receipt cannot be durably appended.
