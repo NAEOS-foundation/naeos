@@ -275,7 +275,8 @@ func (l *Ledger) HasExecution(decisionID string) bool {
 		return false
 	}
 	for _, event := range l.Events() {
-		if event.DecisionID == decisionID && event.EventType == "EXECUTION_ALLOWED" {
+		if event.DecisionID == decisionID &&
+			(event.EventType == "EXECUTION_STARTED" || event.EventType == "EXECUTION_ALLOWED" || event.EventType == "EXECUTION_UNKNOWN") {
 			return true
 		}
 	}
