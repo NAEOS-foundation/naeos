@@ -57,6 +57,13 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 	}
 	summary := VerificationSummary{AgentID: agentID, Result: "PASS", PolicyCompliant: true}
 	for _, event := range v.Ledger.EventsForAgent(agentID) {
+		if event.EventType == "EXECUTION_UNKNOWN" {
+			summary.PolicyCompliant = false
+			if summary.Result == "PASS" {
+				summary.Result = "UNKNOWN"
+			}
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unconfirmed execution %s for capability %s requires reconciliation", event.ID, event.Capability))
+		}
 		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
 			summary.BlockedAttempts++
 			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for capability %s", event.ID, event.Capability))
