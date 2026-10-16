@@ -470,3 +470,39 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 	}
 	verifyUnknown(reloaded)
 }
+
+
+func TestDecisionGateway_ExecuteAtomicDoesNotRunSideEffectWithoutDurableIntent(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-INTENT-FAIL", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-INTENT-FAIL", AgentID: "agent-intent-fail", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-INTENT-FAIL", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:intent-fail"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+	sideEffectCalled := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		sideEffectCalled = true
+		return nil
+	})
+	if sideEffectCalled {
+		t.Fatal("side effect must not run when its execution intent cannot be durably recorded")
+	}
+	if result.Status != DecisionDeny || event.ID != "" {
+		t.Fatalf("expected fail-closed DENY without a receipt, got status=%s event=%+v", result.Status, event)
+	}
+}
