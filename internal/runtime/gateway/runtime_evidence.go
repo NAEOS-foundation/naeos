@@ -4,36 +4,50 @@
 package gateway
 
 import (
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 )
+
+// EvidenceSignature authenticates a canonical runtime evidence receipt.
+// The signature covers the canonical evidence payload including EvidenceDigest,
+// but excludes this signature field itself.
+type EvidenceSignature struct {
+	Algorithm string `json:"algorithm"`
+	Issuer    string `json:"issuer"`
+	KeyID     string `json:"key_id"`
+	Value     string `json:"value"`
+}
 
 // RuntimeEvidence is the canonical, protocol-neutral receipt emitted after a
 // governed execution. It binds authorization, the exact invocation, and the
 // independently observed outcome without trusting agent/sandbox claims alone.
 type RuntimeEvidence struct {
-	SchemaVersion    string       `json:"schema_version"`
-	RequestID        string       `json:"request_id"`
-	InvocationID     string       `json:"invocation_id"`
-	InvocationDigest string       `json:"invocation_digest"`
-	Tool             string       `json:"tool"`
-	Action           string       `json:"action"`
-	Resource         string       `json:"resource,omitempty"`
-	Environment      string       `json:"environment,omitempty"`
-	Actor            string       `json:"actor,omitempty"`
-	Capability       string       `json:"capability,omitempty"`
-	PolicyID         string       `json:"policy_id,omitempty"`
-	PolicyVersion    string       `json:"policy_version,omitempty"`
-	RuleID           string       `json:"rule_id,omitempty"`
-	Decision         string       `json:"decision"`
-	ExecutionStatus  string       `json:"execution_status"`
-	ExecutionHash    string       `json:"execution_hash,omitempty"`
-	Observation      *Observation `json:"observation,omitempty"`
-	EvidenceDigest   string       `json:"evidence_digest"`
+	SchemaVersion    string             `json:"schema_version"`
+	RequestID        string             `json:"request_id"`
+	InvocationID     string             `json:"invocation_id"`
+	InvocationDigest string             `json:"invocation_digest"`
+	Tool             string             `json:"tool"`
+	Action           string             `json:"action"`
+	Resource         string             `json:"resource,omitempty"`
+	Environment      string             `json:"environment,omitempty"`
+	Actor            string             `json:"actor,omitempty"`
+	Capability       string             `json:"capability,omitempty"`
+	PolicyID         string             `json:"policy_id,omitempty"`
+	PolicyVersion    string             `json:"policy_version,omitempty"`
+	RuleID           string             `json:"rule_id,omitempty"`
+	Decision         string             `json:"decision"`
+	ExecutionStatus  string             `json:"execution_status"`
+	ExecutionHash    string             `json:"execution_hash,omitempty"`
+	Observation      *Observation       `json:"observation,omitempty"`
+	EvidenceDigest   string             `json:"evidence_digest"`
+	Signature        *EvidenceSignature `json:"signature,omitempty"`
 }
 
 // InvocationDigest returns a deterministic SHA-256 digest over the complete
@@ -90,15 +104,71 @@ func BuildRuntimeEvidence(result ExecutionResult) (RuntimeEvidence, error) {
 			return RuntimeEvidence{}, fmt.Errorf("completed execution lacks identity-bound observation")
 		}
 	}
+	return sealEvidenceDigest(e), nil
+}
+
+func sealEvidenceDigest(e RuntimeEvidence) RuntimeEvidence {
+	e.EvidenceDigest = ""
+	e.Signature = nil
 	data, _ := json.Marshal(e)
 	sum := sha256.Sum256(data)
 	e.EvidenceDigest = "sha256:" + hex.EncodeToString(sum[:])
-	return e, nil
+	return e
 }
 
-// VerifyRuntimeEvidence independently recomputes the invocation and evidence
-// digests and checks the authorization/execution/observation binding.
+func canonicalEvidenceForSignature(e RuntimeEvidence) ([]byte, error) {
+	if e.EvidenceDigest == "" {
+		return nil, fmt.Errorf("evidence digest is required")
+	}
+	e.Signature = nil
+	data, err := json.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// SignRuntimeEvidence authenticates a receipt using Ed25519. The signature is
+// over the canonical receipt including its digest, so digest recomputation
+// after tampering cannot forge a valid receipt without the signing key.
+func SignRuntimeEvidence(e *RuntimeEvidence, privateKey ed25519.PrivateKey, issuer, keyID string) error {
+	if e == nil {
+		return fmt.Errorf("evidence is nil")
+	}
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return fmt.Errorf("invalid Ed25519 private key length")
+	}
+	if strings.TrimSpace(issuer) == "" || strings.TrimSpace(keyID) == "" {
+		return fmt.Errorf("issuer and key_id are required")
+	}
+	payload, err := canonicalEvidenceForSignature(*e)
+	if err != nil {
+		return err
+	}
+	signature := ed25519.Sign(privateKey, payload)
+	e.Signature = &EvidenceSignature{
+		Algorithm: "Ed25519",
+		Issuer:    issuer,
+		KeyID:     keyID,
+		Value:     base64.StdEncoding.EncodeToString(signature),
+	}
+	return nil
+}
+
+// VerifyRuntimeEvidence independently verifies receipt integrity. When a
+// trusted public key is supplied, it also verifies issuer/key identity and
+// cryptographic authenticity.
 func VerifyRuntimeEvidence(e RuntimeEvidence) error {
+	return verifyRuntimeEvidence(e, nil, "", "")
+}
+
+// VerifyRuntimeEvidenceWithPublicKey verifies the receipt against the supplied
+// trusted Ed25519 public key and expected issuer/key ID.
+func VerifyRuntimeEvidenceWithPublicKey(e RuntimeEvidence, publicKey ed25519.PublicKey, issuer, keyID string) error {
+	return verifyRuntimeEvidence(e, publicKey, issuer, keyID)
+}
+
+func verifyRuntimeEvidence(e RuntimeEvidence, publicKey ed25519.PublicKey, issuer, keyID string) error {
 	if e.SchemaVersion != "naeos.runtime-evidence.v1" {
 		return fmt.Errorf("unsupported evidence schema %q", e.SchemaVersion)
 	}
@@ -115,12 +185,62 @@ func VerifyRuntimeEvidence(e RuntimeEvidence) error {
 	}
 	got := e.EvidenceDigest
 	e.EvidenceDigest = ""
+	e.Signature = nil
 	data, _ := json.Marshal(e)
 	sum := sha256.Sum256(data)
-	e.EvidenceDigest = got
 	expected := "sha256:" + hex.EncodeToString(sum[:])
+	e.EvidenceDigest = got
 	if got != expected {
 		return fmt.Errorf("evidence digest mismatch: expected %s got %s", expected, got)
 	}
+	if publicKey == nil {
+		return nil
+	}
+	if e.Signature == nil {
+		return fmt.Errorf("evidence signature is required")
+	}
+	if e.Signature.Algorithm != "Ed25519" || e.Signature.Issuer != issuer || e.Signature.KeyID != keyID {
+		return fmt.Errorf("evidence signature trust metadata mismatch")
+	}
+	sig, err := base64.StdEncoding.DecodeString(e.Signature.Value)
+	if err != nil {
+		return fmt.Errorf("decode evidence signature: %w", err)
+	}
+	payload, err := canonicalEvidenceForSignature(e)
+	if err != nil {
+		return err
+	}
+	if !ed25519.Verify(publicKey, payload, sig) {
+		return fmt.Errorf("evidence signature verification failed")
+	}
 	return nil
+}
+
+// ParseEd25519PrivateKey accepts raw, base64, or hexadecimal Ed25519 private
+// key material. Raw 32-byte seeds are expanded using ed25519.NewKeyFromSeed.
+func ParseEd25519PrivateKey(data []byte) (ed25519.PrivateKey, error) {
+	data = []byte(strings.TrimSpace(string(data)))
+	if len(data) == ed25519.SeedSize {
+		return ed25519.NewKeyFromSeed(data), nil
+	}
+	if len(data) == ed25519.PrivateKeySize {
+		return ed25519.PrivateKey(data), nil
+	}
+	if decoded, err := base64.StdEncoding.DecodeString(string(data)); err == nil {
+		if len(decoded) == ed25519.SeedSize {
+			return ed25519.NewKeyFromSeed(decoded), nil
+		}
+		if len(decoded) == ed25519.PrivateKeySize {
+			return ed25519.PrivateKey(decoded), nil
+		}
+	}
+	if decoded, err := hex.DecodeString(string(data)); err == nil {
+		if len(decoded) == ed25519.SeedSize {
+			return ed25519.NewKeyFromSeed(decoded), nil
+		}
+		if len(decoded) == ed25519.PrivateKeySize {
+			return ed25519.PrivateKey(decoded), nil
+		}
+	}
+	return nil, fmt.Errorf("unsupported Ed25519 private key encoding")
 }
