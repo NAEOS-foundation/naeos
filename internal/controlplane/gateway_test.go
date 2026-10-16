@@ -450,7 +450,10 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 	verifyUnknown := func(candidate *Ledger) {
 		t.Helper()
 		if got := NewSessionVerifier(candidate, NewEvaluator(store)).VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
-			t.Fatalf("expected durable unresolved intent to remain UNKNOWN, got %+v", got)
+			t.Fatalf("expected session verifier to preserve UNKNOWN, got %+v", got)
+		}
+		if got := candidate.VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+			t.Fatalf("expected ledger verifier to preserve UNKNOWN, got %+v", got)
 		}
 	}
 	verifyUnknown(reloaded)
