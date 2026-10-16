@@ -25,18 +25,18 @@ const (
 type DecisionReason string
 
 const (
-	ReasonAllowed               DecisionReason = "allowed_by_policy"
-	ReasonDeniedByPolicy        DecisionReason = "denied_by_policy"
-	ReasonDeniedProtected       DecisionReason = "protected_capability"
-	ReasonDeniedByGrant         DecisionReason = "grant_not_valid"
-	ReasonDeniedByScope         DecisionReason = "capability_not_in_grant"
-	ReasonDeniedMalformedGrant  DecisionReason = "malformed_grant"
-	ReasonDeniedPolicyMismatch  DecisionReason = "grant_policy_mismatch"
-	ReasonDeniedVersionMismatch DecisionReason = "grant_version_mismatch"
-	ReasonDeniedAgentMismatch   DecisionReason = "agent_scope_mismatch"
-	ReasonDeniedStalePolicy     DecisionReason = "stale_policy"
-	ReasonRequiresApproval      DecisionReason = "approval_required"
-	ReasonNoPolicyFound         DecisionReason = "policy_not_found"
+	ReasonAllowed                 DecisionReason = "allowed_by_policy"
+	ReasonDeniedByPolicy          DecisionReason = "denied_by_policy"
+	ReasonDeniedProtected         DecisionReason = "protected_capability"
+	ReasonDeniedByGrant           DecisionReason = "grant_not_valid"
+	ReasonDeniedByScope           DecisionReason = "capability_not_in_grant"
+	ReasonDeniedMalformedGrant    DecisionReason = "malformed_grant"
+	ReasonDeniedPolicyMismatch    DecisionReason = "grant_policy_mismatch"
+	ReasonDeniedVersionMismatch   DecisionReason = "grant_version_mismatch"
+	ReasonDeniedAgentMismatch     DecisionReason = "agent_scope_mismatch"
+	ReasonDeniedStalePolicy       DecisionReason = "stale_policy"
+	ReasonRequiresApproval        DecisionReason = "approval_required"
+	ReasonNoPolicyFound           DecisionReason = "policy_not_found"
 	ReasonExecutionOutcomeUnknown DecisionReason = "execution_outcome_unknown"
 )
 
