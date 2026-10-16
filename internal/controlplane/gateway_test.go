@@ -4,6 +4,9 @@
 package controlplane
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -361,5 +364,76 @@ func TestDecisionGateway_ExecuteAtomicSerializesPolicyChangeWithSideEffect(t *te
 	events := ledger.Query(map[string]string{"request_id": req.RequestID})
 	if len(events) != 2 || events[1].EventType != "EXECUTION_ALLOWED" {
 		t.Fatalf("expected authorization then execution evidence, got %#v", events)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenSideEffectReturnsError(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-UNKNOWN-ERROR", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-UNKNOWN-ERROR", AgentID: "agent-unknown-error", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-UNKNOWN-ERROR", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:unknown-error"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		return fmt.Errorf("upstream timed out after submitting write")
+	})
+	if result.Status != DecisionUnknown || result.Reason != ReasonExecutionOutcomeUnknown {
+		t.Fatalf("expected UNKNOWN execution outcome, got %s (%s)", result.Status, result.Message)
+	}
+	if event.EventType != "EXECUTION_UNKNOWN" || event.Decision != DecisionUnknown {
+		t.Fatalf("expected EXECUTION_UNKNOWN evidence, got %+v", event)
+	}
+	if got := NewSessionVerifier(ledger, NewEvaluator(store)).VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+		t.Fatalf("expected session verification UNKNOWN pending reconciliation, got %+v", got)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFails(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-UNKNOWN-RECEIPT", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-UNKNOWN-RECEIPT", AgentID: "agent-unknown-receipt", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-UNKNOWN-RECEIPT", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:unknown-receipt"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+	sideEffectCommitted := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		sideEffectCommitted = true
+		return nil
+	})
+	if !sideEffectCommitted {
+		t.Fatal("expected side effect to have run")
+	}
+	if result.Status != DecisionUnknown || result.Reason != ReasonExecutionOutcomeUnknown {
+		t.Fatalf("expected UNKNOWN after receipt persistence failure, got %s (%s)", result.Status, result.Message)
+	}
+	if event.ID != "" {
+		t.Fatalf("expected no durable receipt to be returned, got %+v", event)
+	}
+	if got := ledger.PersistenceError(); got == nil {
+		t.Fatal("expected ledger persistence error to be observable")
 	}
 }
