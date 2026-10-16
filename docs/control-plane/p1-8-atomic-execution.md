@@ -10,7 +10,7 @@ P1.7 proves authorization freshness at the execution boundary. P1.8 closes the i
     T1: execution boundary -> active policy v1 -> commit lock
     T2: durable EXECUTION_STARTED intent is committed
     T3: side effect executes while policy update is excluded
-    T4: EXECUTION_ALLOWED receipt is committed -> policy update may commit
+    T4: final receipt is committed or the durable start remains unresolved -> callback returns -> policy update may commit
 
 A concurrent policy update cannot become active between the freshness check and the side-effect callback when both operations use the same PolicyStore execution boundary.
 
