@@ -56,7 +56,9 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 		return VerificationSummary{AgentID: agentID, Result: "FAIL", PolicyCompliant: false, Issues: []string{"evidence ledger unavailable"}}
 	}
 	summary := VerificationSummary{AgentID: agentID, Result: "PASS", PolicyCompliant: true}
-	for _, event := range v.Ledger.EventsForAgent(agentID) {
+	events := v.Ledger.EventsForAgent(agentID)
+	unresolvedStarts := unresolvedExecutionStarts(events)
+	for _, event := range events {
 		if event.EventType == "EXECUTION_UNKNOWN" {
 			summary.PolicyCompliant = false
 			if summary.Result == "PASS" {
@@ -75,6 +77,13 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 			summary.Result = "FAIL"
 			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution %s for capability %s", event.ID, event.Capability))
 		}
+	}
+	for _, event := range unresolvedStarts {
+		summary.PolicyCompliant = false
+		if summary.Result == "PASS" {
+			summary.Result = "UNKNOWN"
+		}
+		summary.Issues = append(summary.Issues, fmt.Sprintf("execution %s was started but has no durable outcome receipt; reconciliation required", event.ExecutionID))
 	}
 	if summary.PolicyCompliant && len(summary.Issues) == 0 {
 		summary.Issues = nil
