@@ -301,7 +301,9 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 		PolicyCompliant: true,
 		Issues:          []string{},
 	}
-	for _, event := range l.EventsForAgent(agentID) {
+	events := l.EventsForAgent(agentID)
+	unresolvedStarts := unresolvedExecutionStarts(events)
+	for _, event := range events {
 		if event.EventType == "EXECUTION_UNKNOWN" {
 			summary.PolicyCompliant = false
 			if summary.Result == "PASS" {
@@ -321,8 +323,49 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution evidence %s for %s", event.ID, event.Capability))
 		}
 	}
+	for _, event := range unresolvedStarts {
+		summary.PolicyCompliant = false
+		if summary.Result == "PASS" {
+			summary.Result = "UNKNOWN"
+		}
+		summary.Issues = append(summary.Issues, fmt.Sprintf("execution %s was started but has no durable outcome receipt; reconciliation required", event.ExecutionID))
+	}
 	if summary.PolicyCompliant && len(summary.Issues) == 0 {
 		summary.Issues = nil
 	}
 	return summary
+}
+
+
+// unresolvedExecutionStarts identifies execution intents that have no recorded terminal outcome.
+// A start event is persisted before invoking an external side effect, so it remains evidence of
+// uncertainty if the process crashes or the final receipt cannot be durably appended.
+func unresolvedExecutionStarts(events []LedgerEvent) []LedgerEvent {
+	starts := make(map[string]LedgerEvent)
+	resolved := make(map[string]struct{})
+	for _, event := range events {
+		if event.ExecutionID == "" {
+			continue
+		}
+		switch event.EventType {
+		case "EXECUTION_STARTED":
+			starts[event.ExecutionID] = event
+		case "EXECUTION_ALLOWED", "EXECUTION_UNKNOWN", "EXECUTION_BLOCKED":
+			resolved[event.ExecutionID] = struct{}{}
+		}
+	}
+	unresolved := make([]LedgerEvent, 0)
+	for _, event := range events {
+		if event.EventType != "EXECUTION_STARTED" || event.ExecutionID == "" {
+			continue
+		}
+		if _, ok := starts[event.ExecutionID]; !ok {
+			continue
+		}
+		if _, ok := resolved[event.ExecutionID]; !ok {
+			unresolved = append(unresolved, event)
+			delete(starts, event.ExecutionID)
+		}
+	}
+	return unresolved
 }
