@@ -350,7 +350,7 @@ func unresolvedExecutionStarts(events []LedgerEvent) []LedgerEvent {
 		switch event.EventType {
 		case "EXECUTION_STARTED":
 			starts[event.ExecutionID] = event
-		case "EXECUTION_ALLOWED", "EXECUTION_UNKNOWN", "EXECUTION_BLOCKED":
+		case "EXECUTION_ALLOWED", "EXECUTION_UNKNOWN":
 			resolved[event.ExecutionID] = struct{}{}
 		}
 	}
