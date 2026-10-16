@@ -362,8 +362,8 @@ func TestDecisionGateway_ExecuteAtomicSerializesPolicyChangeWithSideEffect(t *te
 		t.Fatalf("expected policy v2 after commit, got v%d", active.Version)
 	}
 	events := ledger.Query(map[string]string{"request_id": req.RequestID})
-	if len(events) != 2 || events[1].EventType != "EXECUTION_ALLOWED" {
-		t.Fatalf("expected authorization then execution evidence, got %#v", events)
+	if len(events) != 3 || events[1].EventType != "EXECUTION_STARTED" || events[2].EventType != "EXECUTION_ALLOWED" {
+		t.Fatalf("expected authorization, durable execution intent, and execution receipt, got %#v", events)
 	}
 }
 
@@ -405,7 +405,10 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 		t.Fatal(err)
 	}
 	grant := &Grant{GrantID: "GRANT-UNKNOWN-RECEIPT", AgentID: "agent-unknown-receipt", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	root := t.TempDir()
+	ledgerPath := filepath.Join(root, "ledger.json")
 	ledger := NewLedger()
+	ledger.SetPersistencePath(ledgerPath)
 	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
 	req := AuthorizeRequest{RequestID: "REQ-UNKNOWN-RECEIPT", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:unknown-receipt"}, Grant: grant, Policy: policy, Timestamp: now}
 	authorized := gateway.Authorize(req)
@@ -413,19 +416,20 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
 	}
 
-	root := t.TempDir()
 	blocker := filepath.Join(root, "not-a-directory")
 	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
 	sideEffectCommitted := false
 	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		// The execution intent has already been durably recorded. Simulate the
+		// persistence target becoming unavailable before the final receipt.
+		ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
 		sideEffectCommitted = true
 		return nil
 	})
 	if !sideEffectCommitted {
-		t.Fatal("expected side effect to have run")
+		t.Fatal("expected side effect to have run after its intent was persisted")
 	}
 	if result.Status != DecisionUnknown || result.Reason != ReasonExecutionOutcomeUnknown {
 		t.Fatalf("expected UNKNOWN after receipt persistence failure, got %s (%s)", result.Status, result.Message)
@@ -436,4 +440,30 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 	if got := ledger.PersistenceError(); got == nil {
 		t.Fatal("expected ledger persistence error to be observable")
 	}
+
+	// Reload from the last durable snapshot: the unmatched intent must survive
+	// restart and prevent a false PASS even though the final receipt is absent.
+	reloaded, err := LoadLedger(ledgerPath)
+	if err != nil {
+		t.Fatalf("load durable ledger snapshot: %v", err)
+	}
+	verifyUnknown := func(candidate *Ledger) {
+		t.Helper()
+		if got := NewSessionVerifier(candidate, NewEvaluator(store)).VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+			t.Fatalf("expected durable unresolved intent to remain UNKNOWN, got %+v", got)
+		}
+	}
+	verifyUnknown(reloaded)
+
+	// A later successful append must carry the unmatched intent forward, not
+	// erase uncertainty merely because the ledger can write again.
+	ledger.SetPersistencePath(ledgerPath)
+	if event := ledger.Append(LedgerEvent{Timestamp: now.Add(time.Second), AgentID: grant.AgentID, EventType: "RECONCILIATION_CHECKPOINT"}); event.ID == "" {
+		t.Fatal("expected subsequent ledger append to succeed")
+	}
+	reloaded, err = LoadLedger(ledgerPath)
+	if err != nil {
+		t.Fatalf("reload ledger after subsequent append: %v", err)
+	}
+	verifyUnknown(reloaded)
 }
