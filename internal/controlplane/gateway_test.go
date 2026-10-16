@@ -392,8 +392,12 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenSideEffectReturnsError
 	if event.EventType != "EXECUTION_UNKNOWN" || event.Decision != DecisionUnknown {
 		t.Fatalf("expected EXECUTION_UNKNOWN evidence, got %+v", event)
 	}
-	if got := NewSessionVerifier(ledger, NewEvaluator(store)).VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+	verifier := NewSessionVerifier(ledger, NewEvaluator(store))
+	if got := verifier.VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
 		t.Fatalf("expected session verification UNKNOWN pending reconciliation, got %+v", got)
+	}
+	if got := verifier.Verify(grant.AgentID, req.Action, grant, policy); got.Status != DecisionUnknown {
+		t.Fatalf("expected action verification UNKNOWN pending reconciliation, got %+v", got)
 	}
 }
 
@@ -464,6 +468,9 @@ func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFail
 		}
 		if got := candidate.VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
 			t.Fatalf("expected ledger verifier to preserve UNKNOWN, got %+v", got)
+		}
+		if got := NewSessionVerifier(candidate, NewEvaluator(store)).Verify(grant.AgentID, req.Action, grant, policy); got.Status != DecisionUnknown {
+			t.Fatalf("expected action verifier to preserve UNKNOWN, got %+v", got)
 		}
 	}
 	verifyUnknown(reloaded)
