@@ -269,7 +269,7 @@ func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	return LedgerEvent{}, false
 }
 
-// HasExecution reports whether a decision already produced an execution event.
+// HasExecution reports whether a decision has started execution or has a recorded execution outcome.
 func (l *Ledger) HasExecution(decisionID string) bool {
 	if l == nil || decisionID == "" {
 		return false
