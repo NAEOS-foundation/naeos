@@ -252,8 +252,8 @@ func (l *Ledger) ReconcileExecution(executionID string, outcome ExecutionOutcome
 		Decision: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown,
 		Metadata: map[string]string{
 			"reconciliation_outcome": string(outcome),
-			"evidence_ref": evidenceRef,
-			"reconciler_id": reconcilerID,
+			"evidence_ref":           evidenceRef,
+			"reconciler_id":          reconcilerID,
 		},
 	})
 	if returned.ID == "" {
