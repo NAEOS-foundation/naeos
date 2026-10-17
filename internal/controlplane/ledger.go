@@ -174,6 +174,10 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if event.EventType == "EXECUTION_RECONCILED" {
+		l.lastPersistenceError = fmt.Errorf("use ReconcileExecution to append reconciliation events")
+		return LedgerEvent{}
+	}
 	return l.appendLocked(event)
 }
 
