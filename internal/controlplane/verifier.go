@@ -43,7 +43,7 @@ func (v *SessionVerifier) Verify(agentID string, action Action, grant *Grant, po
 	if v.Ledger != nil {
 		events := v.Ledger.EventsForAgent(agentID)
 		for _, event := range events {
-			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash && event.EventType == "EXECUTION_UNKNOWN" {
+			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash && event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
 				return DecisionResult{Status: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown, Requested: action.Capability, Message: fmt.Sprintf("execution outcome for %s is unconfirmed and requires reconciliation", action.Capability)}
 			}
 		}
@@ -70,7 +70,7 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 	events := v.Ledger.EventsForAgent(agentID)
 	unresolvedStarts := unresolvedExecutionStarts(events)
 	for _, event := range events {
-		if event.EventType == "EXECUTION_UNKNOWN" {
+		if event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
 			summary.PolicyCompliant = false
 			if summary.Result == "PASS" {
 				summary.Result = "UNKNOWN"
