@@ -1,0 +1,26 @@
+{
+  "profile": "naeos-candidate-jcs-sha256-v1",
+  "canonicalization": "RFC 8785 JCS",
+  "hash": "SHA-256",
+  "domain_prefix_utf8": "NAEOS-CANDIDATE-DIGEST-V1\\n",
+  "vectors": [
+    {
+      "id": "V1-simple-object",
+      "candidate": {"tool": "read", "input": {"path": "README.md"}},
+      "canonical_json_utf8": "{\"input\":{\"path\":\"README.md\"},\"tool\":\"read\"}",
+      "expected_digest_hex": "03456eee715cb6afb3753f93ab27d9581c08e8782745fcc7edd4954155502229"
+    },
+    {
+      "id": "V2-nested-object-and-number",
+      "candidate": {"tool": "mock.transfer", "input": {"amount": 10, "destination": "sandbox-account"}},
+      "canonical_json_utf8": "{\"input\":{\"amount\":10,\"destination\":\"sandbox-account\"},\"tool\":\"mock.transfer\"}",
+      "expected_digest_hex": "b88b4d1ba641a21b67380300c88ef0c1ee6948dfbaf1183a04a1781d5b2ec892"
+    },
+    {
+      "id": "V3-unicode-and-array",
+      "candidate": {"tool": "update", "input": {"enabled": true, "labels": ["alpha", "beta"], "note": "café"}},
+      "canonical_json_utf8": "{\"input\":{\"enabled\":true,\"labels\":[\"alpha\",\"beta\"],\"note\":\"café\"},\"tool\":\"update\"}",
+      "expected_digest_hex": "66e96293868fb92b6da62cfc9f6f2b231e07f7147b6727ed9f95d65fdc377795"
+    }
+  ]
+}
