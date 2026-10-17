@@ -41,7 +41,18 @@ func (v *SessionVerifier) Verify(agentID string, action Action, grant *Grant, po
 		return decision
 	}
 	if v.Ledger != nil {
-		for _, event := range v.Ledger.EventsForAgent(agentID) {
+		events := v.Ledger.EventsForAgent(agentID)
+		for _, event := range events {
+			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash && event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
+				return DecisionResult{Status: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown, Requested: action.Capability, Message: fmt.Sprintf("execution outcome for %s is unconfirmed and requires reconciliation", action.Capability)}
+			}
+		}
+		for _, event := range unresolvedExecutionStarts(events) {
+			if event.Capability == action.Capability && event.ArtifactHash == action.ArtifactHash {
+				return DecisionResult{Status: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown, Requested: action.Capability, Message: fmt.Sprintf("execution intent for %s has no durable outcome receipt", action.Capability)}
+			}
+		}
+		for _, event := range events {
 			if event.Capability == action.Capability && event.Decision == DecisionDeny {
 				return DecisionResult{Status: DecisionDeny, Reason: ReasonDeniedByPolicy, Requested: action.Capability, Message: fmt.Sprintf("evidence ledger shows denied execution for %s", action.Capability)}
 			}
@@ -56,7 +67,16 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 		return VerificationSummary{AgentID: agentID, Result: "FAIL", PolicyCompliant: false, Issues: []string{"evidence ledger unavailable"}}
 	}
 	summary := VerificationSummary{AgentID: agentID, Result: "PASS", PolicyCompliant: true}
-	for _, event := range v.Ledger.EventsForAgent(agentID) {
+	events := v.Ledger.EventsForAgent(agentID)
+	unresolvedStarts := unresolvedExecutionStarts(events)
+	for _, event := range events {
+		if event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
+			summary.PolicyCompliant = false
+			if summary.Result == "PASS" {
+				summary.Result = "UNKNOWN"
+			}
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unconfirmed execution %s for capability %s requires reconciliation", event.ID, event.Capability))
+		}
 		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
 			summary.BlockedAttempts++
 			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for capability %s", event.ID, event.Capability))
@@ -68,6 +88,13 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 			summary.Result = "FAIL"
 			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution %s for capability %s", event.ID, event.Capability))
 		}
+	}
+	for _, event := range unresolvedStarts {
+		summary.PolicyCompliant = false
+		if summary.Result == "PASS" {
+			summary.Result = "UNKNOWN"
+		}
+		summary.Issues = append(summary.Issues, fmt.Sprintf("execution %s was started but has no durable outcome receipt; reconciliation required", event.ExecutionID))
 	}
 	if summary.PolicyCompliant && len(summary.Issues) == 0 {
 		summary.Issues = nil

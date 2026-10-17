@@ -2,7 +2,7 @@
 
 This example demonstrates the P1.8 execution boundary:
 
-    authorize v1 -> atomic execution lock -> side effect -> EXECUTION_ALLOWED
+    authorize v1 -> atomic execution lock -> durable EXECUTION_STARTED -> side effect -> EXECUTION_ALLOWED
 
 The side effect is a disposable local file. The real invariant is that the policy store cannot activate v2 in the middle of the atomic execution callback.
 
@@ -20,7 +20,7 @@ No network, credentials, or external service is required.
 
 - Authorization under policy v1 returns ALLOW.
 - The side effect is created only inside ExecuteAtomic.
-- Evidence contains AUTHORIZATION_DECISION and EXECUTION_ALLOWED.
+- Evidence contains AUTHORIZATION_DECISION, EXECUTION_STARTED, and EXECUTION_ALLOWED.
 - Policy v2 becomes active only after the atomic side effect returns.
 - Independent session verification returns PASS.
 - The command exits non-zero if an assertion fails.

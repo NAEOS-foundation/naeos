@@ -174,6 +174,14 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if event.EventType == "EXECUTION_RECONCILED" {
+		return LedgerEvent{}
+	}
+	return l.appendLocked(event)
+}
+
+// appendLocked appends an event while the caller holds l.mu.
+func (l *Ledger) appendLocked(event LedgerEvent) LedgerEvent {
 	nextID := l.nextID + 1
 	if event.ID == "" {
 		event.ID = fmt.Sprintf("EVT-%05d", nextID)
@@ -198,6 +206,76 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	l.events = append(l.events, event)
 	l.lastPersistenceError = nil
 	return event
+}
+
+// ReconcileExecution records an explicit, append-only operator assertion for an
+// ambiguous execution. Evidence is a reference to supporting material, not proof
+// by itself; callers must authenticate and authorize the reconciler separately.
+func (l *Ledger) ReconcileExecution(executionID string, outcome ExecutionOutcome, evidenceRef, reconcilerID string) (LedgerEvent, error) {
+	if l == nil {
+		return LedgerEvent{}, fmt.Errorf("ledger unavailable")
+	}
+	if executionID == "" || evidenceRef == "" || reconcilerID == "" {
+		return LedgerEvent{}, fmt.Errorf("execution ID, evidence reference, and reconciler identity are required")
+	}
+	if outcome != ExecutionOutcomeCommitted && outcome != ExecutionOutcomeNotCommitted {
+		return LedgerEvent{}, fmt.Errorf("unsupported reconciliation outcome %q", outcome)
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	var start LedgerEvent
+	found := false
+	unknown := false
+	for _, event := range l.events {
+		if event.ExecutionID != executionID {
+			continue
+		}
+		switch event.EventType {
+		case "EXECUTION_STARTED":
+			start, found = event, true
+		case "EXECUTION_UNKNOWN":
+			unknown = true
+		case "EXECUTION_RECONCILED":
+			return LedgerEvent{}, fmt.Errorf("execution %s is already reconciled", executionID)
+		case "EXECUTION_ALLOWED":
+			return LedgerEvent{}, fmt.Errorf("execution %s already has a confirmed successful receipt", executionID)
+		}
+	}
+	if !found || !unknown && !hasUnresolvedStart(l.events, executionID) {
+		return LedgerEvent{}, fmt.Errorf("execution %s has no unresolved outcome to reconcile", executionID)
+	}
+	returned := l.appendLocked(LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
+		ExecutionID: executionID, AgentID: start.AgentID, Capability: start.Capability,
+		ArtifactHash: start.ArtifactHash, EventType: "EXECUTION_RECONCILED",
+		Decision: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown,
+		Metadata: map[string]string{
+			"reconciliation_outcome": string(outcome),
+			"evidence_ref":           evidenceRef,
+			"reconciler_id":          reconcilerID,
+		},
+	})
+	if returned.ID == "" {
+		return LedgerEvent{}, fmt.Errorf("persist reconciliation event: %w", l.lastPersistenceError)
+	}
+	return returned, nil
+}
+
+func hasUnresolvedStart(events []LedgerEvent, executionID string) bool {
+	started, terminal := false, false
+	for _, event := range events {
+		if event.ExecutionID != executionID {
+			continue
+		}
+		switch event.EventType {
+		case "EXECUTION_STARTED":
+			started = true
+		case "EXECUTION_ALLOWED", "EXECUTION_RECONCILED":
+			terminal = true
+		}
+	}
+	return started && !terminal
 }
 
 func hashLedgerEvent(event LedgerEvent) string {
@@ -269,13 +347,14 @@ func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	return LedgerEvent{}, false
 }
 
-// HasExecution reports whether a decision already produced an execution event.
+// HasExecution reports whether a decision has started execution or has a recorded execution outcome.
 func (l *Ledger) HasExecution(decisionID string) bool {
 	if l == nil || decisionID == "" {
 		return false
 	}
 	for _, event := range l.Events() {
-		if event.DecisionID == decisionID && event.EventType == "EXECUTION_ALLOWED" {
+		if event.DecisionID == decisionID &&
+			(event.EventType == "EXECUTION_STARTED" || event.EventType == "EXECUTION_ALLOWED" || event.EventType == "EXECUTION_UNKNOWN") {
 			return true
 		}
 	}
@@ -301,7 +380,16 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 		PolicyCompliant: true,
 		Issues:          []string{},
 	}
-	for _, event := range l.EventsForAgent(agentID) {
+	events := l.EventsForAgent(agentID)
+	unresolvedStarts := unresolvedExecutionStarts(events)
+	for _, event := range events {
+		if event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
+			summary.PolicyCompliant = false
+			if summary.Result == "PASS" {
+				summary.Result = "UNKNOWN"
+			}
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unconfirmed execution %s for %s requires reconciliation", event.ID, event.Capability))
+		}
 		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
 			summary.BlockedAttempts++
 			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for %s: %s", event.ID, event.Capability, event.Reason))
@@ -314,8 +402,75 @@ func (l *Ledger) VerifySession(agentID string) VerificationSummary {
 			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution evidence %s for %s", event.ID, event.Capability))
 		}
 	}
+	for _, event := range unresolvedStarts {
+		summary.PolicyCompliant = false
+		if summary.Result == "PASS" {
+			summary.Result = "UNKNOWN"
+		}
+		summary.Issues = append(summary.Issues, fmt.Sprintf("execution %s was started but has no durable outcome receipt; reconciliation required", event.ExecutionID))
+	}
 	if summary.PolicyCompliant && len(summary.Issues) == 0 {
 		summary.Issues = nil
 	}
 	return summary
+}
+
+// unresolvedExecutionStarts identifies execution intents that have no recorded terminal outcome.
+// A start event is persisted before invoking an external side effect, so it remains evidence of
+// uncertainty if the process crashes or the final receipt cannot be durably appended.
+func unresolvedExecutionStarts(events []LedgerEvent) []LedgerEvent {
+	starts := make(map[string]LedgerEvent)
+	resolved := make(map[string]struct{})
+	for _, event := range events {
+		if event.ExecutionID == "" {
+			continue
+		}
+		switch event.EventType {
+		case "EXECUTION_STARTED":
+			starts[event.ExecutionID] = event
+		case "EXECUTION_ALLOWED":
+			resolved[event.ExecutionID] = struct{}{}
+		case "EXECUTION_UNKNOWN":
+			resolved[event.ExecutionID] = struct{}{}
+		case "EXECUTION_RECONCILED":
+			if executionHasValidReconciliation(events, event.ExecutionID) {
+				resolved[event.ExecutionID] = struct{}{}
+			}
+		}
+	}
+	unresolved := make([]LedgerEvent, 0)
+	for _, event := range events {
+		if event.EventType != "EXECUTION_STARTED" || event.ExecutionID == "" {
+			continue
+		}
+		if _, ok := starts[event.ExecutionID]; !ok {
+			continue
+		}
+		if _, ok := resolved[event.ExecutionID]; !ok {
+			unresolved = append(unresolved, event)
+			delete(starts, event.ExecutionID)
+		}
+	}
+	return unresolved
+}
+
+// executionHasValidReconciliation accepts only a reconciliation event bound to
+// the execution ID and carrying all required assertion fields.
+func executionHasValidReconciliation(events []LedgerEvent, executionID string) bool {
+	if executionID == "" {
+		return false
+	}
+	for _, event := range events {
+		if event.ExecutionID != executionID || event.EventType != "EXECUTION_RECONCILED" {
+			continue
+		}
+		if event.Metadata["evidence_ref"] == "" || event.Metadata["reconciler_id"] == "" {
+			continue
+		}
+		outcome := ExecutionOutcome(event.Metadata["reconciliation_outcome"])
+		if outcome == ExecutionOutcomeCommitted || outcome == ExecutionOutcomeNotCommitted {
+			return true
+		}
+	}
+	return false
 }
