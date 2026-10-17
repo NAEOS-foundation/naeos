@@ -290,5 +290,3 @@ func (l *Ledger) HasExecution(decisionID string) bool {
 	}
 	return false
 }
-
-// VerificationSummary is the result of a session verification against the evidence ledger.
