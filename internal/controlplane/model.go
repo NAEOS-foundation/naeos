@@ -24,6 +24,14 @@ const (
 // DecisionReason describes why a decision was made.
 type DecisionReason string
 
+// ExecutionOutcome is an operator-confirmed result used to reconcile an ambiguous execution.
+type ExecutionOutcome string
+
+const (
+	ExecutionOutcomeCommitted    ExecutionOutcome = "COMMITTED"
+	ExecutionOutcomeNotCommitted ExecutionOutcome = "NOT_COMMITTED"
+)
+
 const (
 	ReasonAllowed                 DecisionReason = "allowed_by_policy"
 	ReasonDeniedByPolicy          DecisionReason = "denied_by_policy"
