@@ -430,8 +430,9 @@ func unresolvedExecutionStarts(events []LedgerEvent) []LedgerEvent {
 		case "EXECUTION_UNKNOWN":
 			resolved[event.ExecutionID] = struct{}{}
 		case "EXECUTION_RECONCILED":
-			if executionHasValidReconciliation(events, event.ExecutionID) { resolved[event.ExecutionID] = struct{}{} }
-			resolved[event.ExecutionID] = struct{}{}
+			if executionHasValidReconciliation(events, event.ExecutionID) {
+				resolved[event.ExecutionID] = struct{}{}
+			}
 		}
 	}
 	unresolved := make([]LedgerEvent, 0)
