@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"sync"
 	"time"
@@ -25,25 +26,53 @@ func NewPolicyStore() *PolicyStore {
 	}
 }
 
-// Set stores a policy as the active policy and tracks versions.
+// Set stores an immutable snapshot of a policy as the active version.
+// Callers cannot mutate stored policy state through the input pointer.
 func (ps *PolicyStore) Set(policy *Policy) error {
 	if policy == nil {
 		return fmt.Errorf("policy must not be nil")
 	}
-	if policy.ID == "" {
+	candidate := clonePolicy(policy)
+	if candidate.ID == "" {
 		return fmt.Errorf("policy ID is required")
 	}
-	if policy.Version <= 0 {
+	if candidate.Version <= 0 {
 		return fmt.Errorf("policy version must be greater than zero")
 	}
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	ps.current[policy.ID] = policy
-	if _, ok := ps.byVersion[policy.ID]; !ok {
-		ps.byVersion[policy.ID] = make(map[int]*Policy)
+
+	if current, ok := ps.current[candidate.ID]; ok {
+		switch {
+		case candidate.Version < current.Version:
+			return fmt.Errorf("policy version rollback is not allowed: %s v%d is active", candidate.ID, current.Version)
+		case candidate.Version == current.Version:
+			if !reflect.DeepEqual(current, candidate) {
+				return fmt.Errorf("policy contents changed without incrementing policy version: %s v%d", candidate.ID, candidate.Version)
+			}
+			return nil
+		}
 	}
-	ps.byVersion[policy.ID][policy.Version] = policy
+	if _, ok := ps.byVersion[candidate.ID]; !ok {
+		ps.byVersion[candidate.ID] = make(map[int]*Policy)
+	}
+	ps.current[candidate.ID] = candidate
+	ps.byVersion[candidate.ID][candidate.Version] = candidate
 	return nil
+}
+
+// clonePolicy copies all mutable fields so policy snapshots cannot be changed
+// through slices or pointers retained by callers.
+func clonePolicy(policy *Policy) *Policy {
+	if policy == nil {
+		return nil
+	}
+	cloned := *policy
+	cloned.AllowedCapabilities = append([]Capability(nil), policy.AllowedCapabilities...)
+	cloned.DeniedCapabilities = append([]Capability(nil), policy.DeniedCapabilities...)
+	cloned.ProtectedCapabilities = append([]Capability(nil), policy.ProtectedCapabilities...)
+	cloned.ApprovalRequired = append([]Capability(nil), policy.ApprovalRequired...)
+	return &cloned
 }
 
 // Active returns the active policy for the given policy ID.
@@ -57,7 +86,7 @@ func (ps *PolicyStore) Active(policyID string) (*Policy, error) {
 	if policy.Status != "active" {
 		return nil, fmt.Errorf("%w: %s (status=%s)", ErrPolicyInactive, policyID, policy.Status)
 	}
-	return policy, nil
+	return clonePolicy(policy), nil
 }
 
 // Version returns a specific policy version.
@@ -72,7 +101,7 @@ func (ps *PolicyStore) Version(policyID string, version int) (*Policy, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s v%d", ErrPolicyVersionNotFound, policyID, version)
 	}
-	return policy, nil
+	return clonePolicy(policy), nil
 }
 
 // WithExecutionLock validates the active policy and executes fn while policy updates are excluded.
@@ -96,7 +125,7 @@ func (ps *PolicyStore) WithExecutionLock(policyID string, version int, fn func(*
 	if policy.Version != version {
 		return fmt.Errorf("%w: %s v%d is not active", ErrPolicyVersionNotFound, policyID, version)
 	}
-	return fn(policy)
+	return fn(clonePolicy(policy))
 }
 
 // Evaluator evaluates a request against an active policy and grant.
