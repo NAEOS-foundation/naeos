@@ -110,7 +110,8 @@ func TestRuntimeEvidenceRejectsUnsignedReceiptWithTrustedKey(t *testing.T) {
 	}
 	evidence := RuntimeEvidence{
 		SchemaVersion: "naeos.runtime-evidence.v1",
-		RequestID: "req-sign-02", InvocationID: "inv-sign-02",
+		RequestID:    "req-sign-02",
+		InvocationID: "inv-sign-02",
 		InvocationDigest: "sha256:inv", Tool: "filesystem", Action: "write",
 		Decision: "DENY", ExecutionStatus: "denied",
 	}
