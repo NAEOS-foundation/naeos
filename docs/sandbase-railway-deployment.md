@@ -6,7 +6,7 @@ This runbook describes a **separate** Railway service for the NAEOS `naeos serve
 
 1. Create a new Railway service from `NAEOS-foundation/naeos`, branch `main`.
 2. Set its Dockerfile path to `Dockerfile.sandbase-authz`.
-3. Set the Railway health check path to `/api/health` and expose port `8080` over Railway HTTPS.
+3. Set the Railway health check path to `/api/v1/health` and expose port `8080` over Railway HTTPS. Do not use `/api/health`: that path is not the daemon's unauthenticated health route and can return HTTP 401. Keep authentication enabled for all other API routes.
 4. Add `NAEOS_API_JWT_SECRET` as a strong random secret. This protects the general API; it is separate from the SandBase hook token.
 5. Until the policy/grant is approved, leave both SandBase-specific variables unset. The endpoint will not be registered yet.
 
