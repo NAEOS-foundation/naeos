@@ -1734,3 +1734,15 @@ pre:hover .copy-hover-btn, .copy-hover-btn:focus-visible { opacity: 1; }
   .run-steps { overflow-x: auto; justify-content: flex-start; padding-bottom: .25rem; }
   .run-steps span { white-space: nowrap; }
 }
+
+/* Control Plane UX — truthful data and disabled navigation states */
+.control-plane-dashboard .console-status.is-healthy { color: #27c93f; border-color: rgba(39,201,63,.25); }
+.control-plane-dashboard .console-status.is-error { color: #ff6b6b; border-color: rgba(255,68,68,.3); }
+.control-plane-dashboard .console-status.is-neutral { color: var(--color-text-muted); border-color: var(--color-border); }
+.control-plane-dashboard .console-status.is-error i { background: #ff6b6b; box-shadow: 0 0 8px rgba(255,68,68,.3); }
+.control-plane-dashboard .console-status.is-neutral i { background: var(--color-text-dim); box-shadow: none; }
+.control-plane-data-note { margin: .5rem 1rem .75rem; padding: .65rem .75rem; border: 1px dashed var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-muted); font-size: .72rem; line-height: 1.55; }
+.control-plane-sidebar .control-plane-nav-group button:disabled,
+.control-plane-dashboard .decision-detail-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.control-plane-dashboard .decision-detail-actions button:disabled:hover { transform: none; }
+

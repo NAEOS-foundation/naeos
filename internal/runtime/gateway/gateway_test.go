@@ -938,3 +938,126 @@ func (c revalidationControlPlane) ValidateDecision(req control.Request, issued c
 	issued.Reasons = []string{"revalidation changed decision"}
 	return issued, nil
 }
+
+// invariantAuditRevalidator lets tests exercise outcomes at the final authorization boundary.
+type invariantAuditRevalidator struct {
+	*stubControlPlane
+	decision control.Decision
+	err      error
+}
+
+func (c invariantAuditRevalidator) ValidateDecision(_ control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	if c.err != nil {
+		return control.DecisionRecord{}, c.err
+	}
+	issued.Decision = c.decision
+	issued.Reasons = []string{"invariant audit revalidation"}
+	return issued, nil
+}
+
+func TestGatewayRevalidationNonAllowAndErrorFailClosed(t *testing.T) {
+	tests := []struct {
+		name     string
+		decision control.Decision
+		err      error
+	}{
+		{name: "require approval", decision: control.DecisionRequireApproval},
+		{name: "unknown decision", decision: control.Decision("UNKNOWN")},
+		{name: "revalidation error", decision: control.DecisionAllow, err: fmt.Errorf("policy store unavailable")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+			sb := &countingSandbox{}
+			gw := New(cp, sb)
+			gw.controlPlane = invariantAuditRevalidator{stubControlPlane: cp, decision: tt.decision, err: tt.err}
+
+			result, err := gw.Authorize(ToolRequest{RequestID: "req-audit-" + tt.name, Tool: "filesystem", Action: "write"})
+			if tt.err != nil && err != nil {
+				// Fail-closed may surface the revalidation failure as an error.
+			} else if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if result.Status != "denied" {
+				t.Fatalf("expected fail-closed denial, got status=%q err=%v", result.Status, err)
+			}
+			if sb.Count() != 0 {
+				t.Fatalf("non-ALLOW/error revalidation reached sandbox: %d calls", sb.Count())
+			}
+		})
+	}
+}
+
+type invariantAuditObserver struct {
+	observation Observation
+	err         error
+}
+
+func (o invariantAuditObserver) Observe(ToolRequest, ExecutionResult) (Observation, error) {
+	return o.observation, o.err
+}
+
+func TestGatewayObserverFailuresCannotProduceSuccess(t *testing.T) {
+	tests := []struct {
+		name        string
+		observation Observation
+		err         error
+	}{
+		{name: "not observed", observation: Observation{Status: "absent", Observed: false}},
+		{name: "mismatched request identity", observation: Observation{RequestID: "other-request", Status: "observed", Observed: true}},
+		{name: "mismatched invocation identity", observation: Observation{RequestID: "req-evidence", InvocationID: "other-invocation", Status: "observed", Observed: true}},
+		{name: "observer error", observation: Observation{Status: "observed", Observed: true}, err: fmt.Errorf("observer unavailable")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+			sb := &countingSandbox{}
+			obs := tt.observation
+			req := ToolRequest{RequestID: "req-evidence", InvocationID: "inv-evidence", Tool: "filesystem", Action: "write"}
+			switch tt.name {
+			case "mismatched request identity":
+				obs.InvocationID = req.InvocationID
+			case "mismatched invocation identity":
+				obs.RequestID = req.RequestID
+			case "not observed", "observer error":
+				obs.RequestID = req.RequestID
+				obs.InvocationID = req.InvocationID
+			}
+			obs.InvocationDigest = InvocationDigest(req)
+			gw := New(cp, sb, WithObserver(invariantAuditObserver{observation: obs, err: tt.err}))
+
+			result, err := gw.Authorize(req)
+			if err == nil {
+				t.Fatalf("expected observer failure to fail closed")
+			}
+			if result.Status != "failed" {
+				t.Fatalf("expected failed result, got %q", result.Status)
+			}
+			if result.Observation == nil {
+				t.Fatal("expected observer result to be retained for audit")
+			}
+		})
+	}
+}
+
+func TestGatewaySandboxOutputAloneIsNotObservationEvidence(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &stubSandbox{output: "claimed side effect succeeded"}
+	gw := New(cp, sb)
+
+	result, err := gw.Authorize(ToolRequest{RequestID: "req-no-observer", InvocationID: "inv-no-observer", Tool: "filesystem", Action: "write"})
+	if err != nil {
+		t.Fatalf("unexpected execution error: %v", err)
+	}
+	// "completed" means the sandbox returned successfully; it does not prove
+	// that the requested side effect was independently observed.
+	if result.Status != "completed" {
+		t.Fatalf("expected execution status to reflect sandbox completion, got %q", result.Status)
+	}
+	if result.Observation != nil {
+		t.Fatal("sandbox output must not manufacture an independent observation")
+	}
+	if _, err := BuildRuntimeEvidence(result); err == nil {
+		t.Fatal("completed execution without identity-bound observation must not produce runtime evidence")
+	}
+}

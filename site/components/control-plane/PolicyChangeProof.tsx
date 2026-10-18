@@ -27,7 +27,7 @@ export default function PolicyChangeProof({ lang }: { lang: "en" | "id" }) {
   const current = steps[step];
 
   return (
-    <div style={{ border: "1px solid var(--border-color, #263238)", borderRadius: "16px", padding: "1.25rem", background: "var(--surface, rgba(255,255,255,.02))" }}>
+    <div data-testid="policy-change-proof" style={{ border: "1px solid var(--border-color, #263238)", borderRadius: "16px", padding: "1.25rem", background: "var(--surface, rgba(255,255,255,.02))" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start", flexWrap: "wrap" }}>
         <div>
           <div className="eyebrow">POLICY CHANGE PROOF</div>

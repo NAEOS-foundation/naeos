@@ -20,6 +20,7 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 
 	"github.com/NAEOS-foundation/naeos/internal/api"
+	"github.com/NAEOS-foundation/naeos/internal/integrations/sandbase"
 	"github.com/NAEOS-foundation/naeos/internal/observability"
 )
 
@@ -74,6 +75,15 @@ func New(cfg *Config) (*Server, error) {
 	if apiServer != nil {
 		for key, rps := range cfg.APIKeys {
 			apiServer.RegisterAPIKey(key, rps)
+		}
+		if configPath := strings.TrimSpace(os.Getenv("NAEOS_SANDBASE_AUTHZ_CONFIG")); configPath != "" {
+			token := os.Getenv("NAEOS_SANDBASE_AUTHZ_TOKEN")
+			ledgerPath := os.Getenv("NAEOS_SANDBASE_AUTHZ_LEDGER")
+			handler, err := sandbase.NewConfiguredHTTPHandler(configPath, token, ledgerPath)
+			if err != nil {
+				return nil, fmt.Errorf("configure SandBase authorization endpoint: %w", err)
+			}
+			apiServer.SetSandBaseAuthorizationHandler(handler)
 		}
 	}
 
