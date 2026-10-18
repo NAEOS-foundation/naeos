@@ -295,9 +295,21 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	// action/resource defaults used by the authorization and execution paths.
 	req.Resource = resource
 	req.Action = action
+	// Snapshot all candidate data before authorization. The sandbox must execute
+	// this isolated snapshot, not caller-owned maps/slices that may be mutated
+	// while policy evaluation or revalidation is in progress.
+	var snapshotErr error
+	req.Payload, snapshotErr = cloneCandidateMap(req.Payload)
+	if snapshotErr != nil {
+		return ExecutionResult{}, naeoserr.Wrapf(snapshotErr, naeoserr.ErrValidation, "candidate payload snapshot failed")
+	}
+	req.Context, snapshotErr = cloneCandidateMap(req.Context)
+	if snapshotErr != nil {
+		return ExecutionResult{}, naeoserr.Wrapf(snapshotErr, naeoserr.ErrValidation, "candidate context snapshot failed")
+	}
+
 	// Reserved digest metadata is owned by the gateway. Strip any caller
 	// attempt to pre-populate it before hashing or forwarding the request.
-	req.Context = cloneMap(req.Context)
 	delete(req.Context, candidateDigestContextKeyV1)
 	delete(req.Context, candidateProfileContextKeyV1)
 	candidateDigest, digestErr := CandidateDigestV1(req)
