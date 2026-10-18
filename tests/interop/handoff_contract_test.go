@@ -1,8 +1,6 @@
 package interop
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,15 +20,18 @@ func (c Candidate) Digest() (string, error) {
 	if c.Tool == "" {
 		return "", errors.New("tool is required")
 	}
-	// encoding/json sorts map keys. The contract pins this representation for
-	// the test harness; a cross-language adapter must implement the same spec or
-	// negotiate a separately versioned canonicalization profile.
+	if err := validateJCSValue(c.Tool); err != nil {
+		return "", err
+	}
+	if err := validateJCSValue(c.Input); err != nil {
+		return "", err
+	}
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", err
 	}
-	sum := sha256.Sum256(b)
-	return hex.EncodeToString(sum[:]), nil
+	digest, _, err := CandidateDigestJSON(b)
+	return digest, err
 }
 
 type Decision string
