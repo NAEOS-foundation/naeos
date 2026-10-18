@@ -3,6 +3,7 @@ module github.com/NAEOS-foundation/naeos
 go 1.26.9
 
 require (
+	github.com/gowebpki/jcs v1.0.1
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/charmbracelet/bubbletea v1.3.10

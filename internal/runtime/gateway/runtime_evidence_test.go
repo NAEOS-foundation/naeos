@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,10 @@ func TestRuntimeEvidenceBindsExactInvocation(t *testing.T) {
 		Context: map[string]any{"policy_context": "v1"},
 	}
 	digest := InvocationDigest(req)
+	candidateDigest, err := CandidateDigestV1(req)
+	if err != nil {
+		t.Fatalf("candidate digest: %v", err)
+	}
 	mutated := req
 	mutated.Payload = map[string]any{"path": "a.txt", "content": "two"}
 	if digest == InvocationDigest(mutated) {
@@ -36,6 +41,7 @@ func TestRuntimeEvidenceBindsExactInvocation(t *testing.T) {
 	result := ExecutionResult{
 		RequestID: req.RequestID, InvocationID: req.InvocationID, Request: req,
 		Decision: control.DecisionAllow, PolicyID: "policy", PolicyVersion: "1.0",
+		CandidateDigest: candidateDigest, CandidateDigestProfile: CandidateDigestProfileV1,
 		Status: "completed", Hash: "sha256:output", Observation: &obs,
 	}
 	evidence, err := BuildRuntimeEvidence(result)
@@ -57,9 +63,14 @@ func TestRuntimeEvidenceBindsExactInvocation(t *testing.T) {
 
 func TestRuntimeEvidenceRejectsUnobservedAllow(t *testing.T) {
 	req := ToolRequest{RequestID: "req-evidence-02", InvocationID: "inv-evidence-02", Tool: "filesystem", Action: "write"}
+	candidateDigest, err := CandidateDigestV1(req)
+	if err != nil {
+		t.Fatalf("candidate digest: %v", err)
+	}
 	result := ExecutionResult{
 		RequestID: req.RequestID, InvocationID: req.InvocationID, Request: req,
-		Decision: control.DecisionAllow, Status: "completed",
+		Decision: control.DecisionAllow, CandidateDigest: candidateDigest,
+		CandidateDigestProfile: CandidateDigestProfileV1, Status: "completed",
 	}
 	if _, err := BuildRuntimeEvidence(result); err == nil {
 		t.Fatal("ALLOW completion without independent observation must not become evidence")
@@ -134,5 +145,20 @@ func TestParseEd25519PrivateKeyPreservesRawSeedWhitespaceBytes(t *testing.T) {
 	want := ed25519.NewKeyFromSeed(seed)
 	if !bytes.Equal(got, want) {
 		t.Fatal("parsed raw seed does not match original key material")
+	}
+}
+
+func TestRuntimeEvidenceRejectsCandidateDigestMismatch(t *testing.T) {
+	req := ToolRequest{
+		RequestID: "req-evidence-03", InvocationID: "inv-evidence-03",
+		Tool: "filesystem", Action: "write", Payload: map[string]any{"path": "a.txt"},
+	}
+	result := ExecutionResult{
+		RequestID: req.RequestID, InvocationID: req.InvocationID, Request: req,
+		Decision: control.DecisionDeny, CandidateDigest: strings.Repeat("0", 64),
+		CandidateDigestProfile: CandidateDigestProfileV1, Status: "denied",
+	}
+	if _, err := BuildRuntimeEvidence(result); err == nil {
+		t.Fatal("evidence must reject a digest that does not match the request")
 	}
 }
