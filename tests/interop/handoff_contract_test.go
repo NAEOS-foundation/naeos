@@ -198,10 +198,7 @@ func TestT05UnknownSideEffectSuppressesAutomaticRetry(t *testing.T) {
 	if e.Outcome != Unknown || e.RetryAllowed || !e.ReconciliationRequired {
 		t.Fatalf("UNKNOWN must require reconciliation and suppress retry: %+v", e)
 	}
-	// Simulate retry scheduler consulting evidence: it must not invoke again.
-	if e.Outcome == Unknown && e.ReconciliationRequired {
-		// Intentionally do not call Execute again.
-	}
+	// No retry is performed: UNKNOWN with reconciliation required must remain pending.
 	if g.Invocations != 1 {
 		t.Fatalf("unexpected retry: invocation count=%d", g.Invocations)
 	}
