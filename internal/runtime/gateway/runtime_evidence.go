@@ -221,14 +221,17 @@ func verifyRuntimeEvidence(e RuntimeEvidence, publicKey ed25519.PublicKey, issue
 // ParseEd25519PrivateKey accepts raw, base64, or hexadecimal Ed25519 private
 // key material. Raw 32-byte seeds are expanded using ed25519.NewKeyFromSeed.
 func ParseEd25519PrivateKey(data []byte) (ed25519.PrivateKey, error) {
-	data = []byte(strings.TrimSpace(string(data)))
+	// Check binary encodings before trimming text whitespace: valid raw key
+	// material can begin or end with bytes that strings.TrimSpace removes.
 	if len(data) == ed25519.SeedSize {
 		return ed25519.NewKeyFromSeed(data), nil
 	}
 	if len(data) == ed25519.PrivateKeySize {
-		return ed25519.PrivateKey(data), nil
+		return ed25519.PrivateKey(append([]byte(nil), data...)), nil
 	}
-	if decoded, err := base64.StdEncoding.DecodeString(string(data)); err == nil {
+
+	text := strings.TrimSpace(string(data))
+	if decoded, err := base64.StdEncoding.DecodeString(text); err == nil {
 		if len(decoded) == ed25519.SeedSize {
 			return ed25519.NewKeyFromSeed(decoded), nil
 		}
@@ -236,7 +239,7 @@ func ParseEd25519PrivateKey(data []byte) (ed25519.PrivateKey, error) {
 			return ed25519.PrivateKey(decoded), nil
 		}
 	}
-	if decoded, err := hex.DecodeString(string(data)); err == nil {
+	if decoded, err := hex.DecodeString(text); err == nil {
 		if len(decoded) == ed25519.SeedSize {
 			return ed25519.NewKeyFromSeed(decoded), nil
 		}
