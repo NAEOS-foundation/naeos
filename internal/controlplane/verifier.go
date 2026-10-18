@@ -101,3 +101,56 @@ func (v *SessionVerifier) VerifySession(agentID string) VerificationSummary {
 	}
 	return summary
 }
+
+type VerificationSummary struct {
+	AgentID                string   `json:"agent_id"`
+	Result                 string   `json:"result"`
+	PolicyCompliant        bool     `json:"policy_compliant"`
+	Unauthorized           int      `json:"unauthorized"`
+	BlockedAttempts        int      `json:"blocked_attempts"`
+	UnauthorizedExecutions int      `json:"unauthorized_executions"`
+	Issues                 []string `json:"issues,omitempty"`
+}
+
+// VerifySession inspects ledger events for unauthorized or blocked actions.
+func (l *Ledger) VerifySession(agentID string) VerificationSummary {
+	summary := VerificationSummary{
+		AgentID:         agentID,
+		Result:          "PASS",
+		PolicyCompliant: true,
+		Issues:          []string{},
+	}
+	events := l.EventsForAgent(agentID)
+	unresolvedStarts := unresolvedExecutionStarts(events)
+	for _, event := range events {
+		if event.EventType == "EXECUTION_UNKNOWN" && !executionHasValidReconciliation(events, event.ExecutionID) {
+			summary.PolicyCompliant = false
+			if summary.Result == "PASS" {
+				summary.Result = "UNKNOWN"
+			}
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unconfirmed execution %s for %s requires reconciliation", event.ID, event.Capability))
+		}
+		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
+			summary.BlockedAttempts++
+			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for %s: %s", event.ID, event.Capability, event.Reason))
+		}
+		if event.EventType == "EXECUTION_ALLOWED" && event.Decision != DecisionAllow {
+			summary.Unauthorized++
+			summary.UnauthorizedExecutions++
+			summary.PolicyCompliant = false
+			summary.Result = "FAIL"
+			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution evidence %s for %s", event.ID, event.Capability))
+		}
+	}
+	for _, event := range unresolvedStarts {
+		summary.PolicyCompliant = false
+		if summary.Result == "PASS" {
+			summary.Result = "UNKNOWN"
+		}
+		summary.Issues = append(summary.Issues, fmt.Sprintf("execution %s was started but has no durable outcome receipt; reconciliation required", event.ExecutionID))
+	}
+	if summary.PolicyCompliant && len(summary.Issues) == 0 {
+		summary.Issues = nil
+	}
+	return summary
+}
