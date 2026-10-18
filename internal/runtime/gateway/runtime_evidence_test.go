@@ -4,6 +4,7 @@
 package gateway
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"testing"
@@ -118,5 +119,20 @@ func TestRuntimeEvidenceRejectsUnsignedReceiptWithTrustedKey(t *testing.T) {
 	evidence = sealEvidenceDigest(evidence)
 	if err := VerifyRuntimeEvidenceWithPublicKey(evidence, publicKey, "naeos-runtime", "key-1"); err == nil {
 		t.Fatal("unsigned evidence must fail trusted verification")
+	}
+}
+
+func TestParseEd25519PrivateKeyPreservesRawSeedWhitespaceBytes(t *testing.T) {
+	seed := make([]byte, ed25519.SeedSize)
+	seed[0] = '\n'
+	seed[len(seed)-1] = '\t'
+
+	got, err := ParseEd25519PrivateKey(seed)
+	if err != nil {
+		t.Fatalf("parse raw seed: %v", err)
+	}
+	want := ed25519.NewKeyFromSeed(seed)
+	if !bytes.Equal(got, want) {
+		t.Fatal("parsed raw seed does not match original key material")
 	}
 }
