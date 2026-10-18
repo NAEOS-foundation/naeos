@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./ControlPlaneLiveDemo.module.css";
 
 type DecisionResponse = {
@@ -30,6 +30,11 @@ const DENY_CAPABILITY = "production.deploy";
 
 export default function ControlPlaneLiveDemo({ lang }: Props) {
   const id = lang === "id";
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
   const configuredEndpoint =
     process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
     (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
@@ -108,7 +113,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   }
 
   return (
-    <div data-testid="control-plane-live-demo" className={styles.controlPlaneLive}>
+    <div data-testid="control-plane-live-demo" data-hydrated={hydrated ? "true" : "false"} className={styles.controlPlaneLive}>
       <div className={styles.liveHeader}>
         <div>
           <div className="eyebrow">LIVE POLICY EVALUATION</div>
