@@ -88,9 +88,14 @@ func TestRuntimeEvidenceSignatureRejectsDigestRecomputationAttack(t *testing.T) 
 		Payload: map[string]any{"path": "signed.txt", "content": "one"},
 	}
 	digest := InvocationDigest(request)
+	candidateDigest, err := CandidateDigestV1(request)
+	if err != nil {
+		t.Fatalf("candidate digest: %v", err)
+	}
 	result := ExecutionResult{
 		RequestID: request.RequestID, InvocationID: request.InvocationID, Request: request,
 		Decision: control.DecisionAllow, PolicyID: "policy", PolicyVersion: "1.0",
+		CandidateDigest: candidateDigest, CandidateDigestProfile: CandidateDigestProfileV1,
 		Status: "completed", Observation: &Observation{
 			RequestID: request.RequestID, InvocationID: request.InvocationID,
 			InvocationDigest: digest, Status: "observed", Observed: true,

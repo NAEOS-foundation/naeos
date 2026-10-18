@@ -88,21 +88,30 @@ func TestCandidateDigestV1BindsNormalizedRequestToAuthorization(t *testing.T) {
 	}
 }
 
-func TestCandidateDigestV1RejectsMutationBeforeSandbox(t *testing.T) {
+func TestCandidateDigestV1ExecutesIsolatedSnapshotWhenCallerMutatesNestedInput(t *testing.T) {
 	req := ToolRequest{
 		RequestID: "req-digest-02", InvocationID: "inv-digest-02",
 		Tool: "filesystem", Action: "write", Resource: "filesystem",
-		Payload: map[string]any{"content": "approved"},
+		Payload: map[string]any{
+			"document": map[string]any{"blocks": []any{"approved"}},
+		},
 	}
-	cp := &digestBindingControlPlane{mutate: func() { req.Payload["content"] = "mutated" }}
+	cp := &digestBindingControlPlane{mutate: func() {
+		document := req.Payload["document"].(map[string]any)
+		document["blocks"].([]any)[0] = "mutated"
+	}}
 	sb := &digestCaptureSandbox{}
 	gw := New(cp, sb)
 	result, err := gw.Authorize(req)
-	if err == nil {
-		t.Fatal("candidate mutation after authorization must fail closed")
+	if err != nil {
+		t.Fatalf("authorized snapshot should execute independently of caller mutation: %v", err)
 	}
-	if result.Status != "denied" || sb.calls != 0 {
-		t.Fatalf("mutated candidate reached sandbox: status=%s calls=%d", result.Status, sb.calls)
+	if result.Status != "completed" || sb.calls != 1 {
+		t.Fatalf("expected one execution of snapshot, status=%s calls=%d", result.Status, sb.calls)
+	}
+	document := sb.last.Payload["document"].(map[string]any)
+	if got := document["blocks"].([]any)[0]; got != "approved" {
+		t.Fatalf("sandbox did not receive the authorized snapshot: got %v", got)
 	}
 }
 
