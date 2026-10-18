@@ -184,12 +184,14 @@ func verifyRuntimeEvidence(e RuntimeEvidence, publicKey ed25519.PublicKey, issue
 		}
 	}
 	got := e.EvidenceDigest
+	signature := e.Signature
 	e.EvidenceDigest = ""
 	e.Signature = nil
 	data, _ := json.Marshal(e)
 	sum := sha256.Sum256(data)
 	expected := "sha256:" + hex.EncodeToString(sum[:])
 	e.EvidenceDigest = got
+	e.Signature = signature
 	if got != expected {
 		return fmt.Errorf("evidence digest mismatch: expected %s got %s", expected, got)
 	}
