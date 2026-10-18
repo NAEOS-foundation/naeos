@@ -892,7 +892,6 @@ type artifactList struct {
 	Artifacts []engine.Artifact `json:"artifacts"`
 }
 
-
 func specHash(input string) string {
 	h := sha256.Sum256([]byte(input))
 	return fmt.Sprintf("%x", h[:8])
