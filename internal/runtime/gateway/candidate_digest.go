@@ -26,6 +26,113 @@ const (
 // CandidateDigestV1 binds the exact normalized tool/action arguments using
 // RFC 8785 JCS and SHA-256. Request and invocation IDs are evidence identities,
 // not candidate arguments; authorization metadata is checked separately.
+// cloneCandidateMap makes an isolated, type-preserving snapshot of JSON-like input.
+// It recursively copies maps, slices, arrays, pointers, and exported struct fields.
+// The depth limit also rejects cyclic values before canonicalization can recurse forever.
+func cloneCandidateMap(input map[string]any) (map[string]any, error) {
+	if input == nil {
+		return nil, nil
+	}
+	cloned, err := cloneCandidateValue(reflect.ValueOf(input), 0)
+	if err != nil {
+		return nil, err
+	}
+	result, ok := cloned.Interface().(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("candidate snapshot has unexpected type %T", cloned.Interface())
+	}
+	return result, nil
+}
+
+func cloneCandidateValue(value reflect.Value, depth int) (reflect.Value, error) {
+	if depth > 128 {
+		return reflect.Value{}, fmt.Errorf("candidate value exceeds snapshot depth limit or contains a cycle")
+	}
+	if !value.IsValid() {
+		return value, nil
+	}
+	switch value.Kind() {
+	case reflect.Interface:
+		if value.IsNil() {
+			return reflect.Zero(value.Type()), nil
+		}
+		cloned, err := cloneCandidateValue(value.Elem(), depth+1)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		out := reflect.New(value.Type()).Elem()
+		out.Set(cloned)
+		return out, nil
+	case reflect.Pointer:
+		if value.IsNil() {
+			return reflect.Zero(value.Type()), nil
+		}
+		cloned, err := cloneCandidateValue(value.Elem(), depth+1)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		out := reflect.New(value.Type().Elem())
+		out.Elem().Set(cloned)
+		return out, nil
+	case reflect.Map:
+		if value.IsNil() {
+			return reflect.Zero(value.Type()), nil
+		}
+		if value.Type().Key().Kind() != reflect.String {
+			return reflect.Value{}, fmt.Errorf("candidate snapshot requires string-keyed maps")
+		}
+		out := reflect.MakeMapWithSize(value.Type(), value.Len())
+		iter := value.MapRange()
+		for iter.Next() {
+			cloned, err := cloneCandidateValue(iter.Value(), depth+1)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			out.SetMapIndex(iter.Key(), cloned)
+		}
+		return out, nil
+	case reflect.Slice:
+		if value.IsNil() {
+			return reflect.Zero(value.Type()), nil
+		}
+		out := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+		for i := 0; i < value.Len(); i++ {
+			cloned, err := cloneCandidateValue(value.Index(i), depth+1)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			out.Index(i).Set(cloned)
+		}
+		return out, nil
+	case reflect.Array:
+		out := reflect.New(value.Type()).Elem()
+		for i := 0; i < value.Len(); i++ {
+			cloned, err := cloneCandidateValue(value.Index(i), depth+1)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			out.Index(i).Set(cloned)
+		}
+		return out, nil
+	case reflect.Struct:
+		out := reflect.New(value.Type()).Elem()
+		out.Set(value)
+		for i := 0; i < value.NumField(); i++ {
+			if value.Type().Field(i).PkgPath != "" {
+				continue
+			}
+			cloned, err := cloneCandidateValue(value.Field(i), depth+1)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			out.Field(i).Set(cloned)
+		}
+		return out, nil
+	default:
+		return value, nil
+	}
+}
+
 func CandidateDigestV1(req ToolRequest) (string, error) {
 	if req.Tool == "" {
 		return "", fmt.Errorf("candidate tool is required")
