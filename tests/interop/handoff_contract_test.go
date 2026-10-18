@@ -42,13 +42,13 @@ const (
 )
 
 type Authorization struct {
-	ID             string
-	Decision       Decision
+	ID              string
+	Decision        Decision
 	CandidateDigest string
-	PolicyVersion  string
-	Subject        string
-	Scope          string
-	ExpiresAt      time.Time
+	PolicyVersion   string
+	Subject         string
+	Scope           string
+	ExpiresAt       time.Time
 }
 
 type Outcome string
@@ -60,22 +60,22 @@ const (
 )
 
 type Evidence struct {
-	DecisionID       string
-	InvocationID     string
-	CandidateDigest  string
-	PolicyVersion    string
-	Outcome          Outcome
-	RetryAllowed     bool
+	DecisionID             string
+	InvocationID           string
+	CandidateDigest        string
+	PolicyVersion          string
+	Outcome                Outcome
+	RetryAllowed           bool
 	ReconciliationRequired bool
-	Reason           string
+	Reason                 string
 }
 
 type Gate struct {
 	CurrentPolicy string
-	Now            time.Time
-	ProviderError  bool
-	Invocations    int
-	SideEffects    map[string]string // action ID -> committed mock effect
+	Now           time.Time
+	ProviderError bool
+	Invocations   int
+	SideEffects   map[string]string // action ID -> committed mock effect
 }
 
 func (g *Gate) Authorize(c Candidate, a Authorization, subject, scope string) (string, error) {
@@ -247,9 +247,13 @@ func TestCanonicalDigestIsStableAcrossMapInsertionOrder(t *testing.T) {
 	a := Candidate{Tool: "mock.read", Input: map[string]any{"z": "last", "a": "first"}}
 	b := Candidate{Tool: "mock.read", Input: map[string]any{"a": "first", "z": "last"}}
 	da, err := a.Digest()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	db, err := b.Digest()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if da != db {
 		t.Fatalf("expected deterministic digest; got %s and %s", da, db)
 	}
