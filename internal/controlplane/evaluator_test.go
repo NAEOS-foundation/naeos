@@ -175,3 +175,72 @@ func TestEvaluator_DeniesGrantAgentMismatch(t *testing.T) {
 		t.Fatalf("expected agent mismatch deny, got %s (%s)", result.Status, result.Reason)
 	}
 }
+
+func TestPolicyStoreIsolatesPolicySnapshots(t *testing.T) {
+	store := NewPolicyStore()
+	input := &Policy{
+		ID: "POLICY-IMMUTABLE", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(input); err != nil {
+		t.Fatal(err)
+	}
+
+	// Mutating the caller-owned input must not mutate the stored snapshot.
+	input.AllowedCapabilities[0] = "repository.write"
+	input.AllowedCapabilities = append(input.AllowedCapabilities, "production.delete")
+
+	active, err := store.Active("POLICY-IMMUTABLE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active.AllowedCapabilities) != 1 || active.AllowedCapabilities[0] != "repository.read" {
+		t.Fatalf("stored policy changed through input pointer: %+v", active.AllowedCapabilities)
+	}
+
+	// Mutating returned snapshots must not mutate active or historical policy.
+	active.AllowedCapabilities[0] = "production.delete"
+	active.Status = "inactive"
+	historical, err := store.Version("POLICY-IMMUTABLE", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(historical.AllowedCapabilities) != 1 || historical.AllowedCapabilities[0] != "repository.read" || historical.Status != "active" {
+		t.Fatalf("stored policy changed through returned snapshot: %+v", historical)
+	}
+}
+
+func TestPolicyStoreRejectsVersionReuseAndRollback(t *testing.T) {
+	store := NewPolicyStore()
+	v1 := &Policy{
+		ID: "POLICY-VERSIONED", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(v1); err != nil {
+		t.Fatal(err)
+	}
+
+	mutatedV1 := clonePolicy(v1)
+	mutatedV1.AllowedCapabilities = []Capability{"production.delete"}
+	if err := store.Set(mutatedV1); err == nil {
+		t.Fatal("expected same-version policy mutation to be rejected")
+	}
+
+	v2 := clonePolicy(v1)
+	v2.Version = 2
+	v2.AllowedCapabilities = []Capability{"repository.write"}
+	if err := store.Set(v2); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Set(v1); err == nil {
+		t.Fatal("expected policy version rollback to be rejected")
+	}
+
+	active, err := store.Active("POLICY-VERSIONED")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if active.Version != 2 || len(active.AllowedCapabilities) != 1 || active.AllowedCapabilities[0] != "repository.write" {
+		t.Fatalf("unexpected active policy after rejected updates: %+v", active)
+	}
+}
