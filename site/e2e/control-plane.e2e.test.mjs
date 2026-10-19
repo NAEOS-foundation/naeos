@@ -40,7 +40,14 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
         requestURL.origin === productionOrigin &&
         /^\/(?:en|id)\/control-plane\/?$/.test(requestURL.pathname) &&
         request.method() === "GET";
-      if (isControlPlaneDocument) {
+      // Cloudflare's narrowly scoped E2E exception must cover the document and
+      // the Next.js static assets required to hydrate it. Without the same
+      // header on /_next/static requests, production can return 403 HTML for JS.
+      const isNextStaticAsset =
+        requestURL.origin === productionOrigin &&
+        requestURL.pathname.startsWith("/_next/static/") &&
+        request.method() === "GET";
+      if (isControlPlaneDocument || isNextStaticAsset) {
         await route.continue({
           headers: {
             ...request.headers(),
