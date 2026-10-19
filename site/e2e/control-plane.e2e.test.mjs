@@ -15,7 +15,21 @@ after(async () => {
 async function openPage(path, viewport = { width: 1440, height: 1000 }) {
   const page = await browser.newPage({ viewport });
   const pageErrors = [];
+  const consoleErrors = [];
+  const failedRequests = [];
+  const scriptResponses = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("requestfailed", (request) => {
+    failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" });
+  });
+  page.on("response", (response) => {
+    if (/\/_next\/static\/.*\.js(?:\?|$)/.test(response.url())) {
+      scriptResponses.push({ url: response.url(), status: response.status() });
+    }
+  });
   const e2eToken = process.env.NAEOS_E2E_CHALLENGE_TOKEN;
   if (e2eToken) {
     const productionOrigin = new URL(baseURL).origin;
@@ -68,10 +82,30 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
   }
   // Wait for the client component's explicit hydration marker instead of
   // depending on React's private DOM properties, which are implementation details.
-  await page.locator('[data-testid="control-plane-live-demo"][data-hydrated="true"]').waitFor({
-    state: "attached",
-    timeout: 15_000,
-  });
+  try {
+    await page.locator('[data-testid="control-plane-live-demo"][data-hydrated="true"]').waitFor({
+      state: "attached",
+      timeout: 15_000,
+    });
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => ({
+      url: location.href,
+      readyState: document.readyState,
+      markerCount: document.querySelectorAll('[data-testid="control-plane-live-demo"]').length,
+      markerState: document.querySelector('[data-testid="control-plane-live-demo"]')?.getAttribute("data-hydrated") ?? null,
+      scripts: Array.from(document.scripts, (script) => script.src).filter(Boolean),
+      nextBuildId: document.querySelector('meta[name="next-build-id"]')?.getAttribute("content") ?? null,
+    })).catch((diagnosticError) => ({ diagnosticError: String(diagnosticError) }));
+    assert.fail(
+      `Client hydration marker did not become true for ${path}; diagnostics=${JSON.stringify({
+        ...diagnostics,
+        pageErrors,
+        consoleErrors: consoleErrors.slice(-20),
+        failedRequests: failedRequests.slice(-30),
+        scriptResponses: scriptResponses.slice(-30),
+      })}; originalError=${String(error)}`,
+    );
+  }
   return { page, pageErrors };
 }
 
