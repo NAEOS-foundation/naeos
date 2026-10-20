@@ -24,6 +24,7 @@ var goModuleLicense = map[string]string{
 	"github.com/charmbracelet/lipgloss":     "MIT",
 	"github.com/fsnotify/fsnotify":          "BSD-3-Clause",
 	"github.com/go-sql-driver/mysql":        "MPL-2.0",
+	"github.com/gowebpki/jcs":               "Apache-2.0",
 	"github.com/gorilla/websocket":          "BSD-2-Clause",
 	"github.com/jackc/pgx/v5":               "MIT",
 	"github.com/nats-io/nats.go":            "Apache-2.0",
