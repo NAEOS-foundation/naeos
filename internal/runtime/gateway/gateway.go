@@ -138,11 +138,18 @@ type ControlPlane interface {
 	Evaluate(req control.Request) (control.DecisionRecord, error)
 }
 
-// DecisionRevalidator is an optional second-phase authorization check.
-// Production control planes should implement it so policy changes between
-// authorization and execution invalidate the original decision.
+// DecisionRevalidator is a second-phase authorization check. Production
+// execution paths should require it so policy changes between authorization
+// and execution invalidate the original decision.
 type DecisionRevalidator interface {
 	ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error)
+}
+
+// WithRequiredRevalidation requires the control plane to implement
+// DecisionRevalidator. If it does not, ALLOW requests fail closed before
+// reaching the sandbox. Keep this enabled on production/golden-path gateways.
+func WithRequiredRevalidation(enabled bool) Option {
+	return func(g *ExecutionGateway) { g.requireRevalidation = enabled }
 }
 
 // Option configures an ExecutionGateway.
@@ -199,8 +206,9 @@ type ExecutionGateway struct {
 	mu               sync.RWMutex
 	history          []ExecutionResult
 	invocationStore  InvocationStore
-	replayProtection bool
-	failClosed       bool
+	replayProtection   bool
+	requireRevalidation bool
+	failClosed         bool
 }
 
 // New creates an ExecutionGateway with the given control plane and sandbox.
@@ -344,7 +352,15 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	// Revalidate immediately before execution when the control plane supports
 	// a second-phase check. This closes the policy-mutation window between the
 	// initial authorization decision and the externally observable side effect.
-	if revalidator, ok := g.controlPlane.(DecisionRevalidator); ok {
+	revalidator, supportsRevalidation := g.controlPlane.(DecisionRevalidator)
+	if g.requireRevalidation && !supportsRevalidation {
+		result.Status = "denied"
+		result.Output = "authorization revalidation unavailable"
+		result.Duration = time.Since(start)
+		g.record(result)
+		return result, naeoserr.New(naeoserr.ErrPipeline, result.Output)
+	}
+	if supportsRevalidation {
 		current, err := revalidator.ValidateDecision(control.Request{
 			Capability:  req.Capability,
 			Resource:    resource,
