@@ -31,6 +31,23 @@ func (r auditRevalidator) ValidateDecision(req control.Request, issued control.D
 	return issued, nil
 }
 
+func TestGatewayInvariantRequiredRevalidationFailsClosedWhenUnsupported(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow}
+	sb := &countingSandbox{}
+	gw := New(cp, sb, WithRequiredRevalidation(true))
+
+	result, err := gw.Authorize(ToolRequest{RequestID: "audit-no-revalidator", Tool: "filesystem", Action: "write"})
+	if err == nil {
+		t.Fatal("expected missing decision revalidation to fail closed")
+	}
+	if result.Status != "denied" {
+		t.Fatalf("expected denied result, got %q", result.Status)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("missing revalidation reached sandbox: %d calls", sb.Count())
+	}
+}
+
 func TestGatewayInvariantUnknownDecisionFailsClosed(t *testing.T) {
 	cp := &stubControlPlane{decision: control.Decision("UNKNOWN")}
 	sb := &countingSandbox{}
