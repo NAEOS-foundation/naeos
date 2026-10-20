@@ -78,9 +78,12 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 	)
 	adapter := gateway.JSONToolAdapter{}
 	gw.RegisterAdapter(adapter.Name(), adapter)
+	// This bridge currently has an independently verifiable observer only for
+	// filesystem writes. Deny unsupported tools/actions at the adapter boundary,
+	// before the sandbox, rather than execute them and fail evidence afterward.
 	_ = gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{
-		AllowedTools:   []string{"*"},
-		AllowedActions: []string{"*"},
+		AllowedTools:   []string{"filesystem"},
+		AllowedActions: []string{"write"},
 	})
 	return gw
 }
