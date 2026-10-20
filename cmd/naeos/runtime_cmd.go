@@ -51,7 +51,7 @@ Example:
 			}
 			cp := control.New(reg)
 			sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{})
-			gw := gateway.New(cp, sb)
+			gw := gateway.New(cp, sb, gateway.WithRequiredRevalidation(true))
 
 			ctx := map[string]any{}
 			if contextJSON != "" {
