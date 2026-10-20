@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.6.0 (status repositori) |
+| **Versi Platform** | v3.7.1 (versi rilis saat ini) |
 
 ---
 
