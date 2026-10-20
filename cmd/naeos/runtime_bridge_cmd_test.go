@@ -103,10 +103,10 @@ func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 func TestFilesystemObserverDoesNotClaimUnsupportedActionObserved(t *testing.T) {
 	observer := filesystemObserver{root: t.TempDir()}
 	req := gateway.ToolRequest{
-		RequestID: "req-observer-unsupported",
+		RequestID:    "req-observer-unsupported",
 		InvocationID: "inv-observer-unsupported",
-		Tool: "shell",
-		Action: "run",
+		Tool:         "shell",
+		Action:       "run",
 	}
 	obs, err := observer.Observe(req, gateway.ExecutionResult{Timestamp: time.Now().UTC()})
 	if err != nil {
