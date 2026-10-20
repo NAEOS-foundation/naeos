@@ -15,10 +15,6 @@ on:
       - site/data/status.json
       - site/content/blog/ecommerce-end-to-end-tutorial.md
       - site/content/id/blog/ecommerce-end-to-end-tutorial.md
-      - WHITEPAPER.md
-      - WHITEPAPER-EN.md
-      - site/content/whitepaper.md
-      - site/content/id/whitepaper.md
       - scripts/check-public-version-consistency.sh
       - .github/workflows/public-version-consistency.yml
   pull_request:
@@ -27,6 +23,14 @@ on:
       - VERSION
       - README.md
       - ROADMAP.md
+      - WHITEPAPER.md
+      - WHITEPAPER-EN.md
+      - site/content/whitepaper.md
+      - site/content/id/whitepaper.md
+      - site/lib/site.ts
+      - site/data/status.json
+      - site/content/blog/ecommerce-end-to-end-tutorial.md
+      - site/content/id/blog/ecommerce-end-to-end-tutorial.md
       - scripts/check-public-version-consistency.sh
       - .github/workflows/public-version-consistency.yml
   workflow_dispatch:
