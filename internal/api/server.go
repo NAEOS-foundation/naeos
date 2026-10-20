@@ -544,7 +544,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 		// SandBase authorization uses its own dedicated shared bearer token and
 		// validates it inside the configured handler, not as a user JWT.
 		var userID string
-		if s.Auth.Enabled && r.URL.Path != "/api/v1/health" && r.URL.Path != "/api/v1/integrations/sandbase/authorize" {
+		if s.Auth.Enabled && r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" && r.URL.Path != "/api/v1/integrations/sandbase/authorize" {
 			token := r.Header.Get("Authorization")
 			if token == "" {
 				s.writeError(w, http.StatusUnauthorized, "authorization required")
