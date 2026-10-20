@@ -7,6 +7,10 @@ on:
       - VERSION
       - README.md
       - ROADMAP.md
+      - WHITEPAPER.md
+      - WHITEPAPER-EN.md
+      - site/content/whitepaper.md
+      - site/content/id/whitepaper.md
       - scripts/check-public-version-consistency.sh
       - .github/workflows/public-version-consistency.yml
   pull_request:
