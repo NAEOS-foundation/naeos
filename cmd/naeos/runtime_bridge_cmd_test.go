@@ -100,6 +100,31 @@ func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 	}
 }
 
+
+func TestRuntimeBridgeRejectsUnsupportedToolBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
+	request := map[string]any{
+		"request_id":    "req-bridge-unsupported",
+		"invocation_id": "inv-bridge-unsupported",
+		"actor":         "manus",
+		"tool":          "shell",
+		"action":        "run",
+		"resource":      "shell",
+		"payload":       map[string]any{"command": "echo should-not-run"},
+	}
+	result, err := gw.AuthorizeFromAdapter("json", request)
+	if err != nil {
+		t.Fatalf("unsupported request should return a governed adapter denial: %v", err)
+	}
+	if result.Status != "denied" || result.Output != "adapter privilege boundary denied request" {
+		t.Fatalf("unsupported tool was not denied at adapter boundary: %+v", result)
+	}
+	if result.Observation != nil {
+		t.Fatalf("unsupported tool unexpectedly produced runtime observation: %+v", result.Observation)
+	}
+}
+
 func TestFilesystemObserverDoesNotClaimUnsupportedActionObserved(t *testing.T) {
 	observer := filesystemObserver{root: t.TempDir()}
 	req := gateway.ToolRequest{
