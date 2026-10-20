@@ -107,7 +107,7 @@ rather than reproduce competing roadmaps.
 - [x] Reference Demo defines the evidence narrative
 - [x] External Validation defines independent evaluation
 - [x] Independent verifier documented
-- [ ] Audit whitepapers for stale software-release claims
+- [x] Whitepapers identify current software release 3.7.1; historical release notes remain historical
 - [x] Top-level roadmap reflects completed P1 milestones
 - [ ] Audit public website copy against the canonical positioning
 - [ ] Audit roadmap/version references for stale phase language
