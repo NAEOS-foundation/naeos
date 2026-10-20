@@ -97,6 +97,20 @@ func TestGatewayInvariantRevalidationRequireApprovalCannotExecute(t *testing.T) 
 	}
 }
 
+func TestGatewayInvariantRevalidationDenyCannotExecute(t *testing.T) {
+	cp := auditRevalidator{decision: control.DecisionDeny}
+	sb := &countingSandbox{}
+	gw := New(cp, sb, WithRequiredRevalidation(true))
+
+	result, err := gw.Authorize(ToolRequest{Tool: "filesystem", Action: "write"})
+	if err != nil {
+		t.Fatalf("revalidation DENY should be represented as governed denial: %v", err)
+	}
+	if result.Status != "denied" || result.Decision != control.DecisionDeny || sb.Count() != 0 {
+		t.Fatalf("revalidation DENY crossed execution boundary: result=%+v side_effects=%d", result, sb.Count())
+	}
+}
+
 func TestGatewayInvariantRevalidationErrorFailsClosed(t *testing.T) {
 	cp := auditRevalidator{err: errors.New("policy changed during revalidation")}
 	sb := &countingSandbox{}
