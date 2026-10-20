@@ -203,12 +203,12 @@ type ExecutionGateway struct {
 	adapterPolicies map[string]AdapterPolicy
 	restrictions    []Restriction
 
-	mu               sync.RWMutex
-	history          []ExecutionResult
-	invocationStore  InvocationStore
-	replayProtection   bool
+	mu                  sync.RWMutex
+	history             []ExecutionResult
+	invocationStore     InvocationStore
+	replayProtection    bool
 	requireRevalidation bool
-	failClosed         bool
+	failClosed          bool
 }
 
 // New creates an ExecutionGateway with the given control plane and sandbox.
