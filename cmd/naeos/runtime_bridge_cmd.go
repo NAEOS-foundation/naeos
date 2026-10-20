@@ -73,6 +73,7 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 		gateway.WithObserver(filesystemObserver{root: root}),
 		gateway.WithReplayProtection(true),
 		gateway.WithInvocationStore(replayStore),
+		gateway.WithRequiredRevalidation(true),
 	)
 	adapter := gateway.JSONToolAdapter{}
 	gw.RegisterAdapter(adapter.Name(), adapter)
