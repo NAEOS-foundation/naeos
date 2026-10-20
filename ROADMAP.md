@@ -7,7 +7,7 @@
 
 ## Current baseline
 
-- **Current documented release:** NAEOS 3.6.0 (VERSION)
+- **Current documented release:** NAEOS 3.7.1 (VERSION)
 - **Core direction:** Engineering Control Plane for AI Coding Agents
 - **Canonical model:** Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification
 - **Repository proof path:** Golden Path → Reference Demo → External Validation → Independent Verification
@@ -107,7 +107,7 @@ rather than reproduce competing roadmaps.
 - [x] Reference Demo defines the evidence narrative
 - [x] External Validation defines independent evaluation
 - [x] Independent verifier documented
-- [x] Whitepapers identify repository version 3.6.0
+- [ ] Audit whitepapers for stale software-release claims
 - [x] Top-level roadmap reflects completed P1 milestones
 - [ ] Audit public website copy against the canonical positioning
 - [ ] Audit roadmap/version references for stale phase language
