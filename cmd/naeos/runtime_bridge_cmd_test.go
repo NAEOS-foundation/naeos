@@ -18,6 +18,10 @@ func (bridgeAllowControlPlane) Evaluate(req control.Request) (control.DecisionRe
 	return control.DecisionRecord{Request: req, Decision: control.DecisionAllow, PolicyID: "bridge-test", RuleID: "allow"}, nil
 }
 
+func (bridgeAllowControlPlane) ValidateDecision(_ control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	return issued, nil
+}
+
 func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
 	root := t.TempDir()
 	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
