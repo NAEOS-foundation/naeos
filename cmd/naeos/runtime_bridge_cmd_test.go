@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
@@ -96,5 +97,25 @@ func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 	mutated.Request.Payload = map[string]any{"path": "mutation.txt", "content": "tampered"}
 	if gateway.InvocationDigest(mutated.Request) == evidence.InvocationDigest {
 		t.Fatal("mutated invocation must not retain the authorization digest")
+	}
+}
+
+func TestFilesystemObserverDoesNotClaimUnsupportedActionObserved(t *testing.T) {
+	observer := filesystemObserver{root: t.TempDir()}
+	req := gateway.ToolRequest{
+		RequestID: "req-observer-unsupported",
+		InvocationID: "inv-observer-unsupported",
+		Tool: "shell",
+		Action: "run",
+	}
+	obs, err := observer.Observe(req, gateway.ExecutionResult{Timestamp: time.Now().UTC()})
+	if err != nil {
+		t.Fatalf("unsupported observation should be reported as unavailable, not error: %v", err)
+	}
+	if obs.Status != "unavailable" || obs.Observed {
+		t.Fatalf("unsupported action must not be represented as independently observed: %+v", obs)
+	}
+	if obs.RequestID != req.RequestID || obs.InvocationID != req.InvocationID || obs.InvocationDigest != gateway.InvocationDigest(req) {
+		t.Fatalf("unsupported observation must preserve invocation identity: %+v", obs)
 	}
 }
