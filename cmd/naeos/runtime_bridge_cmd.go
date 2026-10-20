@@ -23,10 +23,11 @@ import (
 type filesystemObserver struct{ root string }
 
 func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.ExecutionResult) (gateway.Observation, error) {
-	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "absent", Timestamp: result.Timestamp}
+	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "unavailable", Timestamp: result.Timestamp}
+	// This observer currently verifies only filesystem writes by reading the
+	// target artifact back. Do not claim independent observation for tools or
+	// actions whose effects this observer cannot inspect.
 	if req.Tool != "filesystem" || req.Action != "write" {
-		obs.Status = "observed"
-		obs.Observed = true
 		return obs, nil
 	}
 	rel, ok := req.Payload["path"].(string)
