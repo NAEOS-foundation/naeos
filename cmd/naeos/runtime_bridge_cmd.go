@@ -23,10 +23,11 @@ import (
 type filesystemObserver struct{ root string }
 
 func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.ExecutionResult) (gateway.Observation, error) {
-	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "absent", Timestamp: result.Timestamp}
+	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "unavailable", Timestamp: result.Timestamp}
+	// This observer currently verifies only filesystem writes by reading the
+	// target artifact back. Do not claim independent observation for tools or
+	// actions whose effects this observer cannot inspect.
 	if req.Tool != "filesystem" || req.Action != "write" {
-		obs.Status = "observed"
-		obs.Observed = true
 		return obs, nil
 	}
 	rel, ok := req.Payload["path"].(string)
@@ -73,12 +74,16 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 		gateway.WithObserver(filesystemObserver{root: root}),
 		gateway.WithReplayProtection(true),
 		gateway.WithInvocationStore(replayStore),
+		gateway.WithRequiredRevalidation(true),
 	)
 	adapter := gateway.JSONToolAdapter{}
 	gw.RegisterAdapter(adapter.Name(), adapter)
+	// This bridge currently has an independently verifiable observer only for
+	// filesystem writes. Deny unsupported tools/actions at the adapter boundary,
+	// before the sandbox, rather than execute them and fail evidence afterward.
 	_ = gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{
-		AllowedTools:   []string{"*"},
-		AllowedActions: []string{"*"},
+		AllowedTools:   []string{"filesystem"},
+		AllowedActions: []string{"write"},
 	})
 	return gw
 }
