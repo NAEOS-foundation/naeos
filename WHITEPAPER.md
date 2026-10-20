@@ -10,7 +10,7 @@
 | **Status** | Stable |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Software Release Baseline** | v3.6.0
+| **Software Release Baseline** | v3.7.1
 | **Engineering Milestone Baseline** | P1.11 — Independent Verifier CLI (DONE) |
 
 ---
