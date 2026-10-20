@@ -1,0 +1,32 @@
+name: Public Version Consistency
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+      - README.md
+      - ROADMAP.md
+      - scripts/check-public-version-consistency.sh
+      - .github/workflows/public-version-consistency.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - VERSION
+      - README.md
+      - ROADMAP.md
+      - scripts/check-public-version-consistency.sh
+      - .github/workflows/public-version-consistency.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-version-consistency:
+    name: Check public release references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify public version references
+        run: bash scripts/check-public-version-consistency.sh
