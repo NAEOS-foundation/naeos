@@ -11,7 +11,6 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
-
 type mutatingPolicyControlPlane struct {
 	*control.ControlPlane
 	registry *policy.Registry
