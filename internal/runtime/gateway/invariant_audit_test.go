@@ -8,7 +8,64 @@ import (
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
+	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
+
+
+type mutatingPolicyControlPlane struct {
+	*control.ControlPlane
+	registry *policy.Registry
+}
+
+func (c mutatingPolicyControlPlane) ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	if err := c.registry.Register(&policy.Policy{
+		ID:      "gateway-mutation-policy",
+		Version: "2.0.0",
+		Scope:   policy.Scope{Resource: "filesystem", Action: "write"},
+		Default: policy.DecisionDeny,
+	}); err != nil {
+		return control.DecisionRecord{}, err
+	}
+	return c.ControlPlane.ValidateDecision(req, issued)
+}
+
+func TestGatewayInvariantRealPolicyMutationCannotExecute(t *testing.T) {
+	registry := policy.NewRegistry()
+	if err := registry.Register(&policy.Policy{
+		ID:      "gateway-mutation-policy",
+		Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "filesystem", Action: "write"},
+		Default: policy.DecisionAllow,
+	}); err != nil {
+		t.Fatalf("register initial policy: %v", err)
+	}
+
+	cp := mutatingPolicyControlPlane{
+		ControlPlane: control.New(registry),
+		registry:     registry,
+	}
+	sb := &countingSandbox{}
+	gw := New(cp, sb, WithRequiredRevalidation(true))
+
+	result, err := gw.Authorize(ToolRequest{
+		RequestID: "audit-policy-mutation",
+		Tool:      "filesystem",
+		Action:    "write",
+	})
+	if err != nil {
+		t.Fatalf("policy mutation should be handled as a governed denial: %v", err)
+	}
+	if result.Status != "denied" {
+		t.Fatalf("policy mutation was not denied: result=%+v", result)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("policy mutation crossed execution boundary: side_effects=%d", sb.Count())
+	}
+	active, ok := registry.GetActive("gateway-mutation-policy")
+	if !ok || active.Version != "2.0.0" || active.Default != policy.DecisionDeny {
+		t.Fatalf("test did not apply the intended real policy mutation: active=%+v found=%t", active, ok)
+	}
+}
 
 type auditRevalidator struct {
 	decision control.Decision
