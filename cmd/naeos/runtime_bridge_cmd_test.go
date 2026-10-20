@@ -100,7 +100,6 @@ func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 	}
 }
 
-
 func TestRuntimeBridgeRejectsUnsupportedToolBeforeExecution(t *testing.T) {
 	root := t.TempDir()
 	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
