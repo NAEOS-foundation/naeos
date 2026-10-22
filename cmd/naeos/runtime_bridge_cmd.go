@@ -23,10 +23,11 @@ import (
 type filesystemObserver struct{ root string }
 
 func (o filesystemObserver) Observe(req gateway.ToolRequest, result gateway.ExecutionResult) (gateway.Observation, error) {
-	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "absent", Timestamp: result.Timestamp}
+	obs := gateway.Observation{RequestID: req.RequestID, InvocationID: req.InvocationID, InvocationDigest: gateway.InvocationDigest(req), Status: "unavailable", Timestamp: result.Timestamp}
+	// This observer currently verifies only filesystem writes by reading the
+	// target artifact back. Do not claim independent observation for tools or
+	// actions whose effects this observer cannot inspect.
 	if req.Tool != "filesystem" || req.Action != "write" {
-		obs.Status = "observed"
-		obs.Observed = true
 		return obs, nil
 	}
 	rel, ok := req.Payload["path"].(string)
@@ -73,19 +74,23 @@ func newRuntimeBridgeGateway(cp gateway.ControlPlane, root string, replayStore g
 		gateway.WithObserver(filesystemObserver{root: root}),
 		gateway.WithReplayProtection(true),
 		gateway.WithInvocationStore(replayStore),
+		gateway.WithRequiredRevalidation(true),
 	)
 	adapter := gateway.JSONToolAdapter{}
 	gw.RegisterAdapter(adapter.Name(), adapter)
+	// This bridge currently has an independently verifiable observer only for
+	// filesystem writes. Deny unsupported tools/actions at the adapter boundary,
+	// before the sandbox, rather than execute them and fail evidence afterward.
 	_ = gw.GrantAdapterPolicy(adapter.Name(), gateway.AdapterPolicy{
-		AllowedTools:   []string{"*"},
-		AllowedActions: []string{"*"},
+		AllowedTools:   []string{"filesystem"},
+		AllowedActions: []string{"write"},
 	})
 	return gw
 }
 
 func newRuntimeBridgeCommand() *cobra.Command {
 	var root string
-	var replayDB, evidenceFile string
+	var replayDB, evidenceFile, evidenceSigningKey, evidenceIssuer, evidenceKeyID string
 	cmd := &cobra.Command{
 		Use:   "bridge",
 		Short: "Stream JSON tool calls through the governance gateway",
@@ -124,6 +129,19 @@ func newRuntimeBridgeCommand() *cobra.Command {
 					if evidenceErr != nil {
 						response["evidence_error"] = evidenceErr.Error()
 					} else {
+						if evidenceSigningKey != "" {
+							keyData, keyReadErr := os.ReadFile(evidenceSigningKey)
+							if keyReadErr != nil {
+								return keyReadErr
+							}
+							privateKey, keyParseErr := gateway.ParseEd25519PrivateKey(keyData)
+							if keyParseErr != nil {
+								return fmt.Errorf("parse evidence signing key: %w", keyParseErr)
+							}
+							if signErr := gateway.SignRuntimeEvidence(&evidence, privateKey, evidenceIssuer, evidenceKeyID); signErr != nil {
+								return fmt.Errorf("sign runtime evidence: %w", signErr)
+							}
+						}
 						evidenceData, evidenceMarshalErr := json.Marshal(evidence)
 						if evidenceMarshalErr != nil {
 							return evidenceMarshalErr
@@ -155,5 +173,8 @@ func newRuntimeBridgeCommand() *cobra.Command {
 	cmd.Flags().StringVar(&root, "filesystem-root", "", "filesystem sandbox root for governed writes")
 	cmd.Flags().StringVar(&replayDB, "replay-db", "", "named database connection for durable replay protection")
 	cmd.Flags().StringVar(&evidenceFile, "evidence-file", "", "append canonical runtime evidence JSONL to this file")
+	cmd.Flags().StringVar(&evidenceSigningKey, "evidence-signing-key", "", "Ed25519 private key file for authenticated runtime evidence")
+	cmd.Flags().StringVar(&evidenceIssuer, "evidence-issuer", "", "trusted issuer identity embedded in runtime evidence signatures")
+	cmd.Flags().StringVar(&evidenceKeyID, "evidence-key-id", "", "trusted signing key identifier embedded in runtime evidence signatures")
 	return cmd
 }

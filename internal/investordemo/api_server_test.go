@@ -15,10 +15,15 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
+// newTestAPI intentionally configures only an isolated test credential.
 func newTestAPI(t *testing.T) (*APIServer, *DemoSetup) {
 	t.Helper()
 	setup := SetupDemoEnvironment()
-	return NewAPIServer(setup), setup
+	as := NewAPIServer(setup)
+	// API tests use an explicit test-only credential; production must configure
+	// its own server-side token and fail closed when it is absent.
+	as.security.token = "test-token"
+	return as, setup
 }
 
 func doJSON(t *testing.T, as *APIServer, method, path, body string) *httptest.ResponseRecorder {
@@ -29,6 +34,9 @@ func doJSON(t *testing.T, as *APIServer, method, path, body string) *httptest.Re
 	} else {
 		req = httptest.NewRequest(method, path, bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if as.security != nil && as.security.token != "" {
+		req.Header.Set("Authorization", "Bearer "+as.security.token)
 	}
 	rec := httptest.NewRecorder()
 	as.ServeHTTP(rec, req)
@@ -103,13 +111,20 @@ func TestAPIControlPlaneSecurity(t *testing.T) {
 	}
 
 	as.security.token = ""
+	missingToken := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
+		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)
+	if missingToken.Code != http.StatusUnauthorized {
+		t.Fatalf("expected fail-closed unauthorized without configured token, got %d", missingToken.Code)
+	}
+
+	as.security.token = "test-token"
 	as.security.hits = make(map[string][]time.Time)
 	as.security.limit = 1
 	as.security.window = time.Hour
 	first := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
 		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)
 	if first.Code != http.StatusOK {
-		t.Fatalf("expected first request to pass, got %d", first.Code)
+		t.Fatalf("expected first authorized request to pass, got %d", first.Code)
 	}
 	second := doJSON(t, as, http.MethodPost, "/api/control-plane/decision",
 		`{"agent_id":"agent-payment-01","capability":"repository.read"}`)

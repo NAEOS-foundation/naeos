@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/control"
 	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
@@ -16,6 +17,10 @@ type bridgeAllowControlPlane struct{}
 
 func (bridgeAllowControlPlane) Evaluate(req control.Request) (control.DecisionRecord, error) {
 	return control.DecisionRecord{Request: req, Decision: control.DecisionAllow, PolicyID: "bridge-test", RuleID: "allow"}, nil
+}
+
+func (bridgeAllowControlPlane) ValidateDecision(_ control.Request, issued control.DecisionRecord) (control.DecisionRecord, error) {
+	return issued, nil
 }
 
 func TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite(t *testing.T) {
@@ -92,5 +97,49 @@ func TestRuntimeBridgeEvidenceRejectsMutatedInvocation(t *testing.T) {
 	mutated.Request.Payload = map[string]any{"path": "mutation.txt", "content": "tampered"}
 	if gateway.InvocationDigest(mutated.Request) == evidence.InvocationDigest {
 		t.Fatal("mutated invocation must not retain the authorization digest")
+	}
+}
+
+func TestRuntimeBridgeRejectsUnsupportedToolBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
+	request := map[string]any{
+		"request_id":    "req-bridge-unsupported",
+		"invocation_id": "inv-bridge-unsupported",
+		"actor":         "manus",
+		"tool":          "shell",
+		"action":        "run",
+		"resource":      "shell",
+		"payload":       map[string]any{"command": "echo should-not-run"},
+	}
+	result, err := gw.AuthorizeFromAdapter("json", request)
+	if err != nil {
+		t.Fatalf("unsupported request should return a governed adapter denial: %v", err)
+	}
+	if result.Status != "denied" || result.Output != "adapter privilege boundary denied request" {
+		t.Fatalf("unsupported tool was not denied at adapter boundary: %+v", result)
+	}
+	if result.Observation != nil {
+		t.Fatalf("unsupported tool unexpectedly produced runtime observation: %+v", result.Observation)
+	}
+}
+
+func TestFilesystemObserverDoesNotClaimUnsupportedActionObserved(t *testing.T) {
+	observer := filesystemObserver{root: t.TempDir()}
+	req := gateway.ToolRequest{
+		RequestID:    "req-observer-unsupported",
+		InvocationID: "inv-observer-unsupported",
+		Tool:         "shell",
+		Action:       "run",
+	}
+	obs, err := observer.Observe(req, gateway.ExecutionResult{Timestamp: time.Now().UTC()})
+	if err != nil {
+		t.Fatalf("unsupported observation should be reported as unavailable, not error: %v", err)
+	}
+	if obs.Status != "unavailable" || obs.Observed {
+		t.Fatalf("unsupported action must not be represented as independently observed: %+v", obs)
+	}
+	if obs.RequestID != req.RequestID || obs.InvocationID != req.InvocationID || obs.InvocationDigest != gateway.InvocationDigest(req) {
+		t.Fatalf("unsupported observation must preserve invocation identity: %+v", obs)
 	}
 }
