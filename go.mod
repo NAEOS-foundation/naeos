@@ -1,6 +1,6 @@
 module github.com/NAEOS-foundation/naeos
 
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/gowebpki/jcs v1.0.1
