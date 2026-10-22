@@ -15,21 +15,30 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"golang.org/x/mod/semver"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 )
 
+type dependencyIdentity struct {
+	Ecosystem string `json:"ecosystem"`
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+}
+
 type requestFile struct {
-	PolicyVersion   string   `json:"policy_version"`
-	SchemaVersion   string   `json:"schema_version"`
-	Ecosystem       string   `json:"ecosystem"`
-	Name            string   `json:"name"`
-	VersionChange   string   `json:"version_change"`
-	Paths           []string `json:"paths"`
-	Evidence        bool     `json:"evidence_available"`
-	KnownDependency bool     `json:"known_dependency"`
+	PolicyVersion   string               `json:"policy_version"`
+	SchemaVersion   string               `json:"schema_version"`
+	Ecosystem       string               `json:"ecosystem"`
+	Name            string               `json:"name"`
+	VersionChange   string               `json:"version_change"`
+	Version         string               `json:"version"`
+	Dependencies    []dependencyIdentity `json:"dependencies,omitempty"`
+	Paths           []string             `json:"paths"`
+	Evidence        bool                 `json:"evidence_available"`
+	KnownDependency bool                 `json:"known_dependency"`
 }
 
 type policyFile struct {
@@ -59,6 +68,9 @@ func run() error {
 	}
 
 	requestPath := os.Getenv("NAEOS_DEPENDENCY_RISK_REQUEST")
+	if requestPath != "" && strings.EqualFold(os.Getenv("GITHUB_ACTIONS"), "true") {
+		return errors.New("manual dependency-risk request overrides are prohibited in CI")
+	}
 	var req requestFile
 	if requestPath == "" {
 		req, err = deriveRequest()
@@ -88,6 +100,15 @@ func run() error {
 		return errors.New("request policy/schema version is unsupported")
 	}
 
+	var reviewEvidence *trustedReviewEvidence
+	if strings.EqualFold(os.Getenv("GITHUB_ACTIONS"), "true") {
+		base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
+		reviewEvidence, err = loadTrustedReview(base, policy.PolicyVersion, req, time.Now().UTC())
+		if err != nil {
+			return fmt.Errorf("trusted dependency review required: %w", err)
+		}
+	}
+
 	result := dependencyrisk.Classify(dependencyrisk.Request{
 		Ecosystem:         req.Ecosystem,
 		Name:              req.Name,
@@ -97,10 +118,11 @@ func run() error {
 		KnownDependency:   req.KnownDependency,
 	})
 	evidence := struct {
-		PolicyID      string                `json:"policy_id"`
-		PolicyVersion string                `json:"policy_version"`
-		Result        dependencyrisk.Result `json:"result"`
-	}{policy.PolicyID, policy.PolicyVersion, result}
+		PolicyID      string                 `json:"policy_id"`
+		PolicyVersion string                 `json:"policy_version"`
+		Result        dependencyrisk.Result  `json:"result"`
+		Review        *trustedReviewEvidence `json:"trusted_review,omitempty"`
+	}{policy.PolicyID, policy.PolicyVersion, result, reviewEvidence}
 
 	out := os.Getenv("NAEOS_DEPENDENCY_RISK_OUTPUT")
 	if out == "" {
@@ -251,6 +273,7 @@ func deriveNPMRequest(base, path string) (requestFile, bool, error) {
 		VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false,
 	}
 	bestRank := -1
+	var changedDependencies []dependencyIdentity
 	for _, section := range sections {
 		oldDeps, _ := oldPkg[section].(map[string]any)
 		newDeps, _ := newPkg[section].(map[string]any)
@@ -267,7 +290,12 @@ func deriveNPMRequest(base, path string) (requestFile, bool, error) {
 			if ook && nok && ov == nv {
 				continue
 			}
-			candidate := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: name, Paths: dependencyUsagePathsNPM(name), Evidence: automaticEvidenceAvailable(), KnownDependency: ook && nok}
+			version := nv
+			if !nok {
+				version = ov
+			}
+			changedDependencies = append(changedDependencies, dependencyIdentity{Ecosystem: "npm", Name: name, Version: exactPackageVersion(version)})
+			candidate := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: name, Version: exactPackageVersion(version), Paths: dependencyUsagePathsNPM(name), Evidence: automaticEvidenceAvailable(), KnownDependency: ook && nok}
 			if candidate.KnownDependency {
 				candidate.VersionChange = npmVersionChange(ov, nv)
 			} else {
@@ -279,6 +307,7 @@ func deriveNPMRequest(base, path string) (requestFile, bool, error) {
 			}
 		}
 	}
+	best.Dependencies = changedDependencies
 	return best, bestRank >= 0, nil
 }
 
@@ -295,6 +324,14 @@ func dependencyUsagePathsNPM(name string) []string {
 	}
 	sort.Strings(paths)
 	return paths
+}
+
+func exactPackageVersion(value string) string {
+	value = strings.TrimSpace(strings.TrimPrefix(value, "v"))
+	if !semver.IsValid("v" + value) {
+		return ""
+	}
+	return value
 }
 
 func npmVersionChange(oldv, newv string) string {
@@ -325,14 +362,21 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 	}
 	best := base
 	bestRank := -1
+	dependencies := make([]dependencyIdentity, 0, len(names))
 	for _, name := range names {
 		oldVersion, oldOK := oldv[name]
 		newVersion, newOK := newv[name]
+		version := oldVersion
+		if newOK {
+			version = newVersion
+		}
+		dependencies = append(dependencies, dependencyIdentity{Ecosystem: "go", Name: name, Version: version})
 		candidate := requestFile{
 			PolicyVersion:   "1.0.0",
 			SchemaVersion:   "1.0.0",
 			Ecosystem:       "go",
 			Name:            name,
+			Version:         version,
 			Paths:           dependencyUsagePaths(name),
 			Evidence:        automaticEvidenceAvailable(),
 			KnownDependency: oldOK && newOK,
@@ -348,6 +392,7 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 			bestRank = rank
 		}
 	}
+	best.Dependencies = dependencies
 	return best
 }
 

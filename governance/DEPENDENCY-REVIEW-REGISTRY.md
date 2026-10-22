@@ -32,4 +32,6 @@ A record is valid only when every required field is present, URLs use HTTPS, the
 
 ## Implementation status
 
-The schema and validation primitives are being introduced first. The CI integration must next load the registry from the trusted base revision, remove any PR-controlled approval path, and add integration tests for self-approval attempts and mixed-risk dependency changes. Until that integration and its independent review are complete, this work must not be used to unblock PR #648 or #652.
+The CLI now reads `governance/dependency-review-registry.json` from the trusted base commit with `git show`, rejects missing/malformed/stale/policy-mismatched registries, requires an exact version match for every changed dependency, rejects reviewer/PR-author identity matches, and records the trusted source revision plus matched review references in evidence. The checked-in registry is intentionally empty: no dependency is approved by default. Go module versions are extracted from `go.mod`; npm package versions must be exact semantic versions in `package.json` at present, so ranges and unsupported lockfile-only changes fail closed rather than being guessed. The registry remains evidence, not an automatic allow, and the existing risk classifier still decides the required gates.
+
+PR #670 remains draft pending CI and independent security review. Do not use it to unblock PR #648 or #652 until CI passes and the trusted-base integration has been independently reviewed.
