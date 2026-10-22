@@ -3,7 +3,12 @@
 
 package main
 
-import "testing"
+import (
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+)
 
 func TestSelectHighestRiskRequestRejectsNewDependency(t *testing.T) {
 	req := selectHighestRiskRequest(
@@ -86,5 +91,20 @@ func TestNPMVersionChange(t *testing.T) {
 				t.Fatalf("npmVersionChange(%q, %q) = %q, want %q", tt.oldv, tt.newv, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDependencyRiskGateRejectsManualRequestInCI(t *testing.T) {
+	cmd := exec.Command("bash", "../../scripts/dependency-risk-gate.sh")
+	cmd.Env = append(os.Environ(),
+		"GITHUB_ACTIONS=true",
+		"NAEOS_DEPENDENCY_RISK_REQUEST=attacker-controlled.json",
+	)
+	output, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatal("dependency risk gate accepted a manual request in CI")
+	}
+	if !strings.Contains(string(output), "Manual dependency-risk request overrides are prohibited in CI") {
+		t.Fatalf("expected fail-closed override rejection, got: %s", output)
 	}
 }
