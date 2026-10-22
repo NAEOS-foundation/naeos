@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
 """Independent Python RFC 8785/SHA-256 conformance check for NAEOS digest v1.
 
 Uses the third-party rfc8785 package rather than the Go implementation under test.
