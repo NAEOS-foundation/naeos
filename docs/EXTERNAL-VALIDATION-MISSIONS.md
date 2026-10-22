@@ -151,7 +151,8 @@ Deviation / failure reproduction:
 
 ### Cross-scenario integrity checks
 
-- Record the exact commit SHA and environment for every run; do not combine evidence from different commits without labeling the boundary.
+- Record the exact commit SHA, environment, and deployed artifact/build identity for every run when available; a source commit alone does not prove which artifact was executed.
+- Do not combine evidence from different commits or deployed artifacts without labeling the boundary.
 - Preserve both successful and failed attempts. Do not infer a blocked action from a DENY decision alone; observe the execution boundary.
 - A skipped or unavailable workflow is not a pass. Use `BLOCKED` when a required prerequisite prevents execution and `NOT TESTED` when the scenario was not attempted.
 - For each `VERIFIED` result, identify the artifact and independent check that support it.
