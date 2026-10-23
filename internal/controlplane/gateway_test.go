@@ -625,7 +625,7 @@ func TestDecisionGateway_ExecuteAtomicRejectsGrantThatExpiresAfterAuthorization(
 	req := AuthorizeRequest{
 		RequestID: "REQ-GRANT-EXPIRY", AgentID: "agent-grant-expiry",
 		Action: Action{AgentID: "agent-grant-expiry", Capability: "repository.write", ArtifactHash: "sha256:grant-expiry"},
-		Grant: grant, Policy: policy, Timestamp: now,
+		Grant:  grant, Policy: policy, Timestamp: now,
 	}
 	authorized := gateway.Authorize(req)
 	if authorized.Status != DecisionAllow {
@@ -654,7 +654,7 @@ func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestT
 	store := NewPolicyStore()
 	policy := &Policy{
 		ID: "POLICY-APPROVAL-EXPIRY", Version: 1, Status: "active",
-		ApprovalRequired: []Capability{"repository.write"},
+		ApprovalRequired:    []Capability{"repository.write"},
 		AllowedCapabilities: []Capability{"repository.write"},
 	}
 	if err := store.Set(policy); err != nil {
@@ -671,7 +671,7 @@ func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestT
 	req := AuthorizeRequest{
 		RequestID: "REQ-APPROVAL-EXPIRY", AgentID: grant.AgentID,
 		Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:approval-expiry"},
-		Grant: grant, Policy: policy, Timestamp: now,
+		Grant:  grant, Policy: policy, Timestamp: now,
 	}
 	pending := gateway.Authorize(req)
 	if pending.Status != DecisionPending {
@@ -709,4 +709,3 @@ func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestT
 		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
 	}
 }
-
