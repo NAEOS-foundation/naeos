@@ -232,7 +232,7 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 
 	if result.Status == DecisionAllow {
 		if req.ApprovalID != "" && g.Approvals != nil {
-			if _, err := g.Approvals.Consume(req.ApprovalID, req.Timestamp); err != nil {
+			if _, err := g.Approvals.Consume(req.ApprovalID, time.Now().UTC()); err != nil {
 				result.Status = DecisionDeny
 				result.Reason = ReasonDeniedByPolicy
 				result.Message = fmt.Sprintf("approval could not be consumed: %v", err)
@@ -398,7 +398,7 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 		}
 
 		if req.ApprovalID != "" && g.Approvals != nil {
-			if _, consumeErr := g.Approvals.Consume(req.ApprovalID, req.Timestamp); consumeErr != nil {
+			if _, consumeErr := g.Approvals.Consume(req.ApprovalID, time.Now().UTC()); consumeErr != nil {
 				result.Status = DecisionDeny
 				result.Reason = ReasonDeniedByPolicy
 				result.Message = fmt.Sprintf("approval could not be consumed: %v", consumeErr)
