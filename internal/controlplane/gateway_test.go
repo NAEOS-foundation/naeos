@@ -522,3 +522,130 @@ func TestDecisionGateway_ExecuteAtomicDoesNotRunSideEffectWithoutDurableIntent(t
 		t.Fatalf("expected fail-closed DENY without a receipt, got status=%s event=%+v", result.Status, event)
 	}
 }
+
+
+func TestDecisionGateway_ExecuteAtomicRevalidatesGrantBeforeSideEffect(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Grant)
+		reason DecisionReason
+	}{
+		{
+			name: "revoked after authorization",
+			mutate: func(g *Grant) { g.Revoked = true },
+			reason: ReasonDeniedByGrant,
+		},
+		{
+			name: "agent binding changed after authorization",
+			mutate: func(g *Grant) { g.AgentID = "other-agent" },
+			reason: ReasonDeniedAgentMismatch,
+		},
+		{
+			name: "capability removed after authorization",
+			mutate: func(g *Grant) { g.Capabilities = []Capability{"repository.read"} },
+			reason: ReasonDeniedByScope,
+		},
+		{
+			name: "policy binding changed after authorization",
+			mutate: func(g *Grant) { g.PolicyID = "OTHER-POLICY" },
+			reason: ReasonDeniedPolicyMismatch,
+		},
+		{
+			name: "policy version changed after authorization",
+			mutate: func(g *Grant) { g.PolicyVersion = 99 },
+			reason: ReasonDeniedVersionMismatch,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			now := time.Now().UTC()
+			store := NewPolicyStore()
+			policy := &Policy{
+				ID: "POLICY-GRANT-REVALIDATION", Version: 1, Status: "active",
+				AllowedCapabilities: []Capability{"repository.write"},
+			}
+			if err := store.Set(policy); err != nil {
+				t.Fatal(err)
+			}
+			grant := &Grant{
+				GrantID: "GRANT-REVALIDATION", AgentID: "agent-revalidation",
+				PolicyID: policy.ID, PolicyVersion: policy.Version,
+				Capabilities: []Capability{"repository.write"}, Status: "active",
+				CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+			}
+			ledger := NewLedger()
+			gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+			req := AuthorizeRequest{
+				RequestID: "REQ-GRANT-REVALIDATION", AgentID: "agent-revalidation",
+				Action: Action{AgentID: "agent-revalidation", Capability: "repository.write", ArtifactHash: "sha256:grant-revalidation"},
+				Grant: grant, Policy: policy, Timestamp: now,
+			}
+			authorized := gateway.Authorize(req)
+			if authorized.Status != DecisionAllow {
+				t.Fatalf("expected initial ALLOW, got %s (%s)", authorized.Status, authorized.Message)
+			}
+			tc.mutate(grant)
+
+			called := false
+			result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+				called = true
+				return nil
+			})
+			if called {
+				t.Fatal("side effect must not run after grant validity or binding changes")
+			}
+			if result.Status != DecisionDeny || result.Reason != tc.reason {
+				t.Fatalf("expected DENY (%s), got %s (%s)", tc.reason, result.Status, result.Reason)
+			}
+			if event.EventType != "EXECUTION_BLOCKED" {
+				t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+			}
+		})
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicRejectsGrantThatExpiresAfterAuthorization(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{
+		ID: "POLICY-GRANT-EXPIRY", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-GRANT-EXPIRY", AgentID: "agent-grant-expiry",
+		PolicyID: policy.ID, PolicyVersion: policy.Version,
+		Capabilities: []Capability{"repository.write"}, Status: "active",
+		CreatedAt: now, ExpiresAt: now.Add(30 * time.Millisecond),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-GRANT-EXPIRY", AgentID: "agent-grant-expiry",
+		Action: Action{AgentID: "agent-grant-expiry", Capability: "repository.write", ArtifactHash: "sha256:grant-expiry"},
+		Grant: grant, Policy: policy, Timestamp: now,
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected initial ALLOW, got %s (%s)", authorized.Status, authorized.Message)
+	}
+	time.Sleep(time.Until(grant.ExpiresAt) + 10*time.Millisecond)
+
+	called := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called {
+		t.Fatal("side effect must not run after the grant expires")
+	}
+	if result.Status != DecisionDeny || result.Reason != ReasonDeniedByGrant {
+		t.Fatalf("expected expired-grant DENY, got %s (%s)", result.Status, result.Reason)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+}
