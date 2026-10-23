@@ -89,9 +89,7 @@ export default async function RootLayout({
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-          media="print"
-          // @ts-expect-error onLoad is valid on link elements
-          onLoad="this.media='all'"
+          media="all"
         />
         <noscript>
           <link
