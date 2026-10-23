@@ -677,7 +677,7 @@ func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestT
 	if pending.Status != DecisionPending {
 		t.Fatalf("expected pending authorization, got %s (%s)", pending.Status, pending.Message)
 	}
-	expiresAt := time.Now().UTC().Add(100 * time.Millisecond)
+	expiresAt := time.Now().UTC().Add(time.Second)
 	approval, err := gateway.RequestApproval(pending, "reviewer-expiry", expiresAt)
 	if err != nil {
 		t.Fatal(err)
