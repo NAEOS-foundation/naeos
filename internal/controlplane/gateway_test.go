@@ -523,7 +523,6 @@ func TestDecisionGateway_ExecuteAtomicDoesNotRunSideEffectWithoutDurableIntent(t
 	}
 }
 
-
 func TestDecisionGateway_ExecuteAtomicRevalidatesGrantBeforeSideEffect(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -531,27 +530,27 @@ func TestDecisionGateway_ExecuteAtomicRevalidatesGrantBeforeSideEffect(t *testin
 		reason DecisionReason
 	}{
 		{
-			name: "revoked after authorization",
+			name:   "revoked after authorization",
 			mutate: func(g *Grant) { g.Revoked = true },
 			reason: ReasonDeniedByGrant,
 		},
 		{
-			name: "agent binding changed after authorization",
+			name:   "agent binding changed after authorization",
 			mutate: func(g *Grant) { g.AgentID = "other-agent" },
 			reason: ReasonDeniedAgentMismatch,
 		},
 		{
-			name: "capability removed after authorization",
+			name:   "capability removed after authorization",
 			mutate: func(g *Grant) { g.Capabilities = []Capability{"repository.read"} },
 			reason: ReasonDeniedByScope,
 		},
 		{
-			name: "policy binding changed after authorization",
+			name:   "policy binding changed after authorization",
 			mutate: func(g *Grant) { g.PolicyID = "OTHER-POLICY" },
 			reason: ReasonDeniedPolicyMismatch,
 		},
 		{
-			name: "policy version changed after authorization",
+			name:   "policy version changed after authorization",
 			mutate: func(g *Grant) { g.PolicyVersion = 99 },
 			reason: ReasonDeniedVersionMismatch,
 		},
@@ -579,7 +578,7 @@ func TestDecisionGateway_ExecuteAtomicRevalidatesGrantBeforeSideEffect(t *testin
 			req := AuthorizeRequest{
 				RequestID: "REQ-GRANT-REVALIDATION", AgentID: "agent-revalidation",
 				Action: Action{AgentID: "agent-revalidation", Capability: "repository.write", ArtifactHash: "sha256:grant-revalidation"},
-				Grant: grant, Policy: policy, Timestamp: now,
+				Grant:  grant, Policy: policy, Timestamp: now,
 			}
 			authorized := gateway.Authorize(req)
 			if authorized.Status != DecisionAllow {
