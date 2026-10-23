@@ -648,3 +648,65 @@ func TestDecisionGateway_ExecuteAtomicRejectsGrantThatExpiresAfterAuthorization(
 		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
 	}
 }
+
+func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestTimestamp(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{
+		ID: "POLICY-APPROVAL-EXPIRY", Version: 1, Status: "active",
+		ApprovalRequired: []Capability{"repository.write"},
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-APPROVAL-EXPIRY", AgentID: "agent-approval-expiry",
+		PolicyID: policy.ID, PolicyVersion: policy.Version,
+		Capabilities: []Capability{"repository.write"}, Status: "active",
+		CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-APPROVAL-EXPIRY", AgentID: grant.AgentID,
+		Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:approval-expiry"},
+		Grant: grant, Policy: policy, Timestamp: now,
+	}
+	pending := gateway.Authorize(req)
+	if pending.Status != DecisionPending {
+		t.Fatalf("expected pending authorization, got %s (%s)", pending.Status, pending.Message)
+	}
+	expiresAt := time.Now().UTC().Add(100 * time.Millisecond)
+	approval, err := gateway.RequestApproval(pending, "reviewer-expiry", expiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gateway.Approve(approval.ID, "approved before expiry", "sha256:approval-expiry", time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Until(expiresAt) + 10*time.Millisecond)
+
+	// A caller-supplied historical timestamp must not make an expired approval valid.
+	req.DecisionID = pending.DecisionID
+	req.ApprovalID = approval.ID
+	called := false
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected historical authorization evaluation to produce ALLOW before execution boundary, got %s (%s)", authorized.Status, authorized.Message)
+	}
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called {
+		t.Fatal("side effect must not run with an approval that has expired at execution time")
+	}
+	if result.Status != DecisionDeny {
+		t.Fatalf("expected expired approval DENY, got %s (%s)", result.Status, result.Message)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+}
+
