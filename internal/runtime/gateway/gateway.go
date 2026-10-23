@@ -426,7 +426,6 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		if g.failClosed {
 			return result, naeoserr.Wrapf(execErr, naeoserr.ErrPipeline, "sandbox execution failed")
 		}
-		g.record(result)
 		return result, nil
 	}
 
