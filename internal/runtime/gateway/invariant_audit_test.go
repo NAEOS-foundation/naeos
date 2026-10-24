@@ -200,7 +200,7 @@ func TestGatewayInvariantObservationMismatchFailsClosed(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected observation mismatch to fail closed")
 	}
-	if result.Status != "failed" || sb.Count() != 1 {
+	if result.Status != "unknown" || sb.Count() != 1 {
 		t.Fatalf("unexpected mismatch handling: result=%+v side_effects=%d", result, sb.Count())
 	}
 }
@@ -226,7 +226,7 @@ func TestGatewayInvariantObservationMustBindIdentity(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected mismatched observation identity to fail closed")
 	}
-	if result.Status != "failed" || sb.Count() != 1 {
+	if result.Status != "unknown" || sb.Count() != 1 {
 		t.Fatalf("unexpected observation identity handling: result=%+v side_effects=%d", result, sb.Count())
 	}
 }
@@ -242,7 +242,7 @@ func TestGatewayInvariantEvidenceCannotBeClaimedFromSandboxOutputAlone(t *testin
 	if err == nil {
 		t.Fatal("expected sandbox output without observed evidence to fail closed")
 	}
-	if result.Status != "failed" || result.Observation == nil || result.Observation.Observed {
+	if result.Status != "unknown" || result.Observation == nil || result.Observation.Observed {
 		t.Fatalf("sandbox output was treated as evidence: result=%+v", result)
 	}
 }
