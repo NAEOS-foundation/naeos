@@ -180,10 +180,10 @@ func TestAmbiguousExecutionIsUnknownAndCannotBeReplayedAfterRestart(t *testing.T
 
 	firstGateway := New(cp, sandbox, WithReplayProtection(true), WithInvocationStore(NewDatabaseInvocationStore(db)))
 	request := ToolRequest{
-		RequestID: "req-ambiguous-recovery",
+		RequestID:    "req-ambiguous-recovery",
 		InvocationID: "inv-ambiguous-recovery",
-		Tool: "external-write",
-		Action: "commit",
+		Tool:         "external-write",
+		Action:       "commit",
 	}
 	first, err := firstGateway.Authorize(request)
 	if err == nil {
