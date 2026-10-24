@@ -8,7 +8,7 @@
 
 <p>
   <a href="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml"><img src="https://github.com/NAEOS-foundation/naeos/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://img.shields.io/badge/go-1.26.9+-00ADD8"><img src="https://img.shields.io/badge/go-1.26.9+-00ADD8?logo=go&logoColor=white" alt="Go 1.26.9+"></a>
+  <a href="https://img.shields.io/badge/go-1.26.10+-00ADD8"><img src="https://img.shields.io/badge/go-1.26.10+-00ADD8?logo=go&logoColor=white" alt="Go 1.26.10+"></a>
   <a href="https://img.shields.io/github/v/release/NAEOS-foundation/naeos"><img src="https://img.shields.io/github/v/release/NAEOS-foundation/naeos" alt="Latest release"></a>
   <a href="https://github.com/NAEOS-foundation/naeos/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
 </p>
@@ -141,7 +141,7 @@ The goal is not merely to generate code. The goal is to preserve enough engineer
 
 NAEOS is designed to remain vendor-neutral at the engineering layer.
 
-NAEOS targets Go **1.26.6 or later** and can produce agent-specific instruction/context artifacts for tools such as:
+NAEOS targets Go **1.26.10 or later** and can produce agent-specific instruction/context artifacts for tools such as:
 
 - GitHub Copilot
 - Claude Code
