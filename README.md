@@ -141,7 +141,7 @@ The goal is not merely to generate code. The goal is to preserve enough engineer
 
 NAEOS is designed to remain vendor-neutral at the engineering layer.
 
-NAEOS targets Go **1.26.6 or later** and can produce agent-specific instruction/context artifacts for tools such as:
+NAEOS targets Go **1.26.10 or later** and can produce agent-specific instruction/context artifacts for tools such as:
 
 - GitHub Copilot
 - Claude Code
