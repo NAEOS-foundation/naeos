@@ -311,8 +311,8 @@ func TestGatewaySandboxFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from sandbox failure")
 	}
-	if result.Status != "failed" {
-		t.Fatalf("expected failed, got %s", result.Status)
+	if result.Status != "unknown" {
+		t.Fatalf("expected unknown outcome after sandbox error, got %s", result.Status)
 	}
 }
 
@@ -325,12 +325,12 @@ func TestGatewayFailOpen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error in fail-open mode, got %v", err)
 	}
-	if result.Status != "failed" {
-		t.Fatalf("expected failed, got %s", result.Status)
+	if result.Status != "unknown" {
+		t.Fatalf("expected unknown outcome after sandbox error, got %s", result.Status)
 	}
 	history := gw.History()
 	if len(history) != 1 {
-		t.Fatalf("expected exactly one history entry for a single failed execution, got %d", len(history))
+		t.Fatalf("expected exactly one history entry for a single ambiguous execution, got %d", len(history))
 	}
 }
 
@@ -1034,8 +1034,8 @@ func TestGatewayObserverFailuresCannotProduceSuccess(t *testing.T) {
 			if err == nil {
 				t.Fatalf("expected observer failure to fail closed")
 			}
-			if result.Status != "failed" {
-				t.Fatalf("expected failed result, got %q", result.Status)
+			if result.Status != "unknown" {
+				t.Fatalf("expected unknown result when observation is missing or invalid, got %q", result.Status)
 			}
 			if result.Observation == nil {
 				t.Fatal("expected observer result to be retained for audit")
