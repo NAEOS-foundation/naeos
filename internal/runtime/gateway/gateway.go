@@ -69,7 +69,7 @@ type ExecutionResult struct {
 	PolicyID      string
 	PolicyVersion string
 	RuleID        string
-	Status        string // "completed", "denied", "failed", "skipped"
+	Status        string // "completed", "denied", "failed", "unknown", "skipped"
 	Output        string
 	Hash          string // SHA-256 of output/payload
 	Duration      time.Duration
@@ -419,12 +419,15 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	output, execErr := g.sandbox.Execute(req)
 	result.Duration = time.Since(start)
 	if execErr != nil {
-		result.Status = "failed"
-		result.Output = execErr.Error()
+		// An execution error does not prove that the side effect did not happen.
+		// The sandbox may have committed the effect and lost its response (for
+		// example, a timeout after dispatch). Preserve that ambiguity explicitly.
+		result.Status = "unknown"
+		result.Output = fmt.Sprintf("execution outcome unknown: %v", execErr)
 		result.Hash = hashBytes([]byte(result.Output))
 		g.record(result)
 		if g.failClosed {
-			return result, naeoserr.Wrapf(execErr, naeoserr.ErrPipeline, "sandbox execution failed")
+			return result, naeoserr.Wrapf(execErr, naeoserr.ErrPipeline, "sandbox execution outcome unknown")
 		}
 		return result, nil
 	}
@@ -440,20 +443,20 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		observation, observeErr := g.observer.Observe(req, result)
 		result.Observation = &observation
 		if observeErr != nil {
-			result.Status = "failed"
-			result.Output = observeErr.Error()
+			result.Status = "unknown"
+			result.Output = fmt.Sprintf("execution outcome unknown: runtime observation failed: %v", observeErr)
 			result.Hash = hashBytes([]byte(result.Output))
 			g.record(result)
 			if g.failClosed {
-				return result, naeoserr.Wrapf(observeErr, naeoserr.ErrPipeline, "runtime observation failed")
+				return result, naeoserr.Wrapf(observeErr, naeoserr.ErrPipeline, "runtime observation failed; execution outcome unknown")
 			}
 			return result, nil
 		}
 		if (req.RequestID != "" && observation.RequestID != req.RequestID) ||
 			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) ||
 			((req.RequestID != "" || req.InvocationID != "") && observation.InvocationDigest != InvocationDigest(req)) {
-			result.Status = "failed"
-			result.Output = "runtime observation identity mismatch"
+			result.Status = "unknown"
+			result.Output = "execution outcome unknown: runtime observation identity mismatch"
 			result.Hash = hashBytes([]byte(result.Output))
 			g.record(result)
 			if g.failClosed {
@@ -462,8 +465,10 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			return result, nil
 		}
 		if observation.Status != "observed" || !observation.Observed {
-			result.Status = "failed"
-			result.Output = "execution completed but required side effect was not observed"
+			// Absence, mismatch, and unavailable observations are not proof that
+			// an external effect did not occur. Keep the outcome unresolved.
+			result.Status = "unknown"
+			result.Output = "execution outcome unknown: required side effect was not authoritatively observed"
 			result.Hash = hashBytes([]byte(result.Output))
 			g.record(result)
 			if g.failClosed {
