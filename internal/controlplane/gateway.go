@@ -232,7 +232,7 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 
 	if result.Status == DecisionAllow {
 		if req.ApprovalID != "" && g.Approvals != nil {
-			if _, err := g.Approvals.Consume(req.ApprovalID, req.Timestamp); err != nil {
+			if _, err := g.Approvals.Consume(req.ApprovalID, time.Now().UTC()); err != nil {
 				result.Status = DecisionDeny
 				result.Reason = ReasonDeniedByPolicy
 				result.Message = fmt.Sprintf("approval could not be consumed: %v", err)
@@ -361,8 +361,44 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 			})
 			return nil
 		}
+
+		// Revalidate the grant at the side-effect boundary, not only at the
+		// earlier authorization timestamp. The request and grant are caller-owned
+		// pointers, so bind them again to the active policy, agent, and capability.
+		grantFailure := DecisionReason("")
+		grantMessage := ""
+		switch {
+		case req.Grant == nil || !req.Grant.IsValid(time.Now().UTC()):
+			grantFailure = ReasonDeniedByGrant
+			grantMessage = "grant is missing, revoked, inactive, or expired at execution time"
+		case req.Grant.PolicyID != active.ID:
+			grantFailure = ReasonDeniedPolicyMismatch
+			grantMessage = "grant policy does not match the active execution policy"
+		case req.Grant.PolicyVersion != active.Version:
+			grantFailure = ReasonDeniedVersionMismatch
+			grantMessage = "grant policy version does not match the active execution policy"
+		case req.Grant.AgentID != req.AgentID || req.Action.AgentID != req.AgentID:
+			grantFailure = ReasonDeniedAgentMismatch
+			grantMessage = "grant, request, and action agent bindings do not match"
+		case !containsCapability(req.Grant.Capabilities, req.Action.Capability):
+			grantFailure = ReasonDeniedByScope
+			grantMessage = "grant does not include the requested capability at execution time"
+		}
+		if grantFailure != "" {
+			result.Status = DecisionDeny
+			result.Reason = grantFailure
+			result.Message = grantMessage
+			event = g.Ledger.Append(LedgerEvent{
+				Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
+				ExecutionID: controlPlaneID("EXEC"), AgentID: req.AgentID, Capability: req.Action.Capability,
+				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
+				Reason: result.Reason, Metadata: map[string]string{"policy_id": active.ID, "policy_version": fmt.Sprintf("%d", active.Version)},
+			})
+			return nil
+		}
+
 		if req.ApprovalID != "" && g.Approvals != nil {
-			if _, consumeErr := g.Approvals.Consume(req.ApprovalID, req.Timestamp); consumeErr != nil {
+			if _, consumeErr := g.Approvals.Consume(req.ApprovalID, time.Now().UTC()); consumeErr != nil {
 				result.Status = DecisionDeny
 				result.Reason = ReasonDeniedByPolicy
 				result.Message = fmt.Sprintf("approval could not be consumed: %v", consumeErr)

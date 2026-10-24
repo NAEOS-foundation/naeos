@@ -328,6 +328,10 @@ func TestGatewayFailOpen(t *testing.T) {
 	if result.Status != "failed" {
 		t.Fatalf("expected failed, got %s", result.Status)
 	}
+	history := gw.History()
+	if len(history) != 1 {
+		t.Fatalf("expected exactly one history entry for a single failed execution, got %d", len(history))
+	}
 }
 
 func TestGatewayDeterministicDecision(t *testing.T) {
