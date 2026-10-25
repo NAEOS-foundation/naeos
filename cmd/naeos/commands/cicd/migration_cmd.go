@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spf13/cobra"
 	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/database"
 )

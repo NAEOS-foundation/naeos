@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/spf13/cobra"
 	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/verification"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
@@ -75,7 +75,7 @@ Examples:
 				Services: len(result.NEIR.Services),
 				Summary:  fmt.Sprintf("valid — project: %s, modules: %d, services: %d", projectName, len(result.NEIR.Modules), len(result.NEIR.Services)),
 			}
-				return clihelpers.RenderValidation(cmd, vr, clihelpers.CLIOutputFormat, outputFile)
+			return clihelpers.RenderValidation(cmd, vr, clihelpers.CLIOutputFormat, outputFile)
 		},
 	}
 

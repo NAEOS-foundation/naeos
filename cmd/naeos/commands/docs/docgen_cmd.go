@@ -6,8 +6,8 @@ package docs
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
 
 	"github.com/NAEOS-foundation/naeos/internal/docgen"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"

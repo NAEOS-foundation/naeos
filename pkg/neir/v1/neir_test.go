@@ -21,7 +21,7 @@ func TestDecodeEncodePreservesUnknownFields(t *testing.T) {
 	if document.Project == nil || document.Project.Name != "demo" || len(document.Modules) != 1 || document.Modules[0].Name != "core" {
 		t.Fatalf("typed fields were not decoded: %#v", document)
 	}
-	if string(document.Metadata.NEIRVersion) != "2.0.0" {
+	if document.Metadata.NEIRVersion != "2.0.0" {
 		t.Fatalf("metadata version = %q", document.Metadata.NEIRVersion)
 	}
 
