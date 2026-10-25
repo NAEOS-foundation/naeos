@@ -41,7 +41,7 @@ The graph was generated in CI from the PR head and uploaded as the `naeos-go-imp
 | Control-plane fan-in / fan-out | 8 / 0 | No first-party imports appear from its implementation package in this snapshot; it is consumed by CLI, examples, demo/integration packages, and governance PDR |
 | Audit fan-in / fan-out | 5 / 2 | Consumed by API, compliance, demo-observability, and observability; imports errors and security extensions |
 | Runtime gateway fan-in / fan-out | 3 / 3 | Imports database, errors, and governance-control; consumed by CLI and security/evidence experiments |
-| Runtime engine fan-in / fan-out | 0 / 1 | Only an outgoing edge to errors appears; this is a candidate for a focused usage/build-tag/generated-code investigation, not proof that the package is dead |
+| Runtime engine fan-in / fan-out | 0 / 1 | Targeted source search found no production caller of `internal/runtime/engine`; its visible `NewEngine()` matches are its own tests and documentation skeletons. Treat as a strong orphan-package candidate, but confirm with full-repository grep/build-tag/generated-code checks before removal |
 
 ### Graph-based conclusions
 
@@ -49,13 +49,13 @@ The graph was generated in CI from the PR head and uploaded as the `naeos-go-imp
 2. **`internal/errors` is a high-centrality shared dependency.** Changes to its exported types or error semantics need broad tests; avoid moving it during a structural-only phase.
 3. **`pkg/pipeline` and `internal/api` are high-fan-out packages.** Their composition responsibilities should be examined before splitting them; fan-out alone does not establish a design flaw.
 4. **Governance-control and evidence are distinct, directionally coupled domains.** The graph confirms evidence imports governance-control, while the two have different callers. Do not merge them based on naming or shared decision/evidence vocabulary.
-5. **`internal/runtime/engine` needs a separate reachability check.** Zero inbound direct-import edges can mean a genuinely unused package, but can also reflect indirect construction, build tags, generated integration, or test-only use. Search source references and inspect its tests before proposing deletion or relocation.
+5. **`internal/runtime/engine` is the clearest follow-up candidate.** The graph has zero inbound edges, and targeted GitHub source search found no production caller of its `NewEngine()` or package path; the returned code matches were its own tests plus design-document skeletons. This is stronger evidence of an orphan than the graph alone, but search results are not a complete checkout-wide grep. Before removal, run exact repository-wide searches, inspect build tags/generated code and package tests, and compare its API with the actively used `internal/generation/engine` to avoid confusing the two packages.
 6. The artifact is the machine-generated source of truth for this snapshot. Re-run the workflow after any import-affecting commit; do not hand-edit or infer individual edges in this report.
 
 ## Next analysis sequence
 
 1. Inspect all inbound/outbound edges and source callers for any proposed package boundary change.
-2. Investigate `internal/runtime/engine` reachability using source references, tests, build tags, and generated code before labeling it unused.
+2. Validate the orphan-package hypothesis for `internal/runtime/engine` with checkout-wide `git grep`, build-tag/generated-code inspection, and tests. Do not confuse it with the actively used `internal/generation/engine`, which supplies the generator used by `pkg/pipeline`.
 3. Review the API/CLI composition boundary and the fan-out of `pkg/pipeline` to identify concrete coupling rather than reorganizing by directory size.
 4. Choose one low-risk refactor only when a specific issue is supported by graph and call-site evidence.
 5. Add targeted regression tests and run package tests, full Go CI, and relevant integration checks.
@@ -80,4 +80,4 @@ The following direct consumers were found in the baseline source. This is a targ
 - The caller search confirms that `internal/governance/control` is a high-consequence boundary: it is consumed by CLI entry points, runtime execution, and evidence generation.
 - `internal/audit` is consumed by API, compliance, observability, and demo-observability code, which supports keeping it separate from hash-chained execution evidence.
 - `internal/controlplane` and `internal/governance/control` have distinct observed consumers and workflows. No duplicate API or safe consolidation has been established.
-- The CI-generated graph now supplies static fan-in/fan-out counts for this snapshot. The full Go test suite is still validated by CI, not by a local checkout in this environment.
+- The CI-generated graph now supplies static fan-in/fan-out counts for this snapshot. A targeted GitHub source search found no production caller for `internal/runtime/engine`; the generator used by `pkg/pipeline` is instead `internal/generation/engine`. Exact checkout-wide reference validation remains outstanding. The full Go test suite is still validated by CI, not by a local checkout in this environment.
