@@ -35,9 +35,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   useEffect(() => {
     setHydrated(true);
   }, []);
-  const configuredEndpoint =
-    process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
-    (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
+  const configuredEndpoint = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL || "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
   // Never prefill credentials from NEXT_PUBLIC_* build variables; they are browser-visible.
   // User-entered tokens are transient and intended only for manually configured endpoints.
