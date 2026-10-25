@@ -106,7 +106,6 @@ This classification is a review aid, not an instruction to move every item. Keep
 - The root has multiple roadmap/planning artifacts with explicit authority distinctions. Preserve those distinctions and avoid creating a second canonical roadmap.
 - No root Markdown files are moved in this phase. The next structural PR should move only low-risk partner/marketing records after the full inbound-link and workflow search is complete.
 
-
 ### Phase 2 reference audit — migration blockers and generated output
 
 The inbound-reference search found these concrete dependencies for the candidate documents:
@@ -132,7 +131,6 @@ The checked-in `examples/demo-cli/.run/generated/` tree contains **76 tracked tr
 3. Treat generated-output cleanup as a separate change from document moves.
 4. Add broken-local-Markdown-link validation only after checking the existing repository's conventions and exceptions; do not introduce a broad gate that fails on known intentional external or generated links.
 
-
 ## Phase 3 reconnaissance — structural boundaries and tracked artifacts
 
 The current main tree contains 2,408 entries (recursive Git tree; not a count of files alone). The largest first-level domains by entry count include internal/ (761), docs/ (472), site/ (315), cmd/ (193), and examples/ (165). These sizes alone are not evidence that a directory should be split or moved.
@@ -151,7 +149,6 @@ The current main tree contains 2,408 entries (recursive Git tree; not a count of
 2. Remove only confirmed accidental runtime artifacts such as tracked SQLite sidecars in a separate PR, with Go tests.
 3. Document the intended roles of bench/ versus benchmarks/ and check scripts/workflows before any rename.
 4. Build an internal-package dependency map before considering source-code reorganization.
-
 
 ## Phase 4 reconnaissance — Go package boundaries (first pass)
 
@@ -183,3 +180,14 @@ This is a source-level reconnaissance pass, not a complete static dependency gra
 4. Record a proposed boundary change only when it has a specific coupling problem, a path/import migration plan, and targeted regression tests.
 5. Keep source moves out of the current structure-hygiene PR. A source refactor must be a separate, behavior-preserving PR with full Go and relevant integration checks.
 
+## Phase 4 implementation — reproducible import graph
+
+Added `scripts/internal-import-graph.sh` to emit sorted, deduplicated TSV edges in the form `importing_package<TAB>imported_package`. It scopes output to first-party imports in the NAEOS Go module and includes packages across `./...` so command-line and library consumers are represented, not just packages below `internal/`.
+
+Run it from any directory inside a checkout with:
+
+```bash
+bash scripts/internal-import-graph.sh > /tmp/naeos-import-graph.tsv
+```
+
+This is an audit primitive, not a claim that the graph has already been generated or reviewed. **Validation status:** not run in this environment; CI and local Go tests must confirm the script works before merge. Next, derive fan-in/fan-out and inspect actual edges for the control-plane, governance, evidence, audit, and runtime packages. Do not move packages based only on the output volume or directory size.

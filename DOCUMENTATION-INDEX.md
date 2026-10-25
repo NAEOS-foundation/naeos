@@ -38,6 +38,7 @@ This flow demonstrates: specification → NEIR → validation → policy → AI 
 - [specification/NAEOS-SPEC-010.md](specification/NAEOS-SPEC-010.md) — intent model.
 - [Reference Architecture/NAEOS-NRA-001.md](Reference%20Architecture/NAEOS-NRA-001.md) — reference architecture.
 - [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md) — conceptual architecture overview.
+- [docs/architecture/GO-PACKAGE-BOUNDARY-AUDIT.md](docs/architecture/GO-PACKAGE-BOUNDARY-AUDIT.md) — preliminary Go package-boundary findings and safe refactor sequence.
 
 ## 3. Governance and constitution
 - [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md) — engineering constitution.
