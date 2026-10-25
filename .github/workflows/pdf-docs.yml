@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: pdf-docs
@@ -90,14 +91,25 @@ jobs:
           test -s site/public/downloads/naeos-cli-reference.pdf
           test -s site/public/downloads/naeos-getting-started.pdf
 
-      - name: Commit generated assets
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/public/downloads/*.pdf site/public/openapi.yaml
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "docs: regenerate PDF documentation and openapi spec"
-            git push
-          fi
+      - name: Create pull request for generated assets
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: |
+            site/public/downloads/*.pdf
+            site/public/openapi.yaml
+          commit-message: |
+            docs: regenerate PDF documentation and OpenAPI spec
+
+            Signed-off-by: bayu priatno <80336658+bayu911-source@users.noreply.github.com>
+          title: "docs: regenerate PDF documentation and OpenAPI spec"
+          body: |
+            ## Summary
+            - Regenerate the published PDF documentation from the canonical Markdown sources.
+            - Synchronize the published OpenAPI specification.
+
+            ## Validation
+            - PDF generation and non-empty output checks passed in the generating workflow.
+            - Merge through the normal pull-request review and required-check process; this workflow does not push directly to `main`.
+          branch: automation/generated-doc-assets
+          delete-branch: true
