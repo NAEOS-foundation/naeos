@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 	"github.com/NAEOS-foundation/naeos/internal/evidence"

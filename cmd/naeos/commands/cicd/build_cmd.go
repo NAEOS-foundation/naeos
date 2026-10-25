@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"gopkg.in/yaml.v3"
 
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"github.com/NAEOS-foundation/naeos/internal/distributed"
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
@@ -222,7 +222,7 @@ func RunBuildDistributed(cmd *cobra.Command, configPath, input, inputFile string
 
 	coord.Start(ctx)
 
-		parsedSpec, err := ParseSpecInput(inputValue)
+	parsedSpec, err := ParseSpecInput(inputValue)
 	if err != nil {
 		return fmt.Errorf("parse spec for distribution: %w", err)
 	}

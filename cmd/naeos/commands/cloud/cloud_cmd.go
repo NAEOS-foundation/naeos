@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"gopkg.in/yaml.v3"
 
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"github.com/NAEOS-foundation/naeos/internal/cloud"
 )
 

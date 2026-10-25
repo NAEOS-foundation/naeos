@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
 
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"

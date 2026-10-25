@@ -5,12 +5,13 @@ package evidence
 
 import (
 	"encoding/json"
-	"github.com/NAEOS-foundation/naeos/internal/evidence"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/evidence"
 )
 
 func TestLoadEvidenceStoreRejectsPersistedHashTampering(t *testing.T) {

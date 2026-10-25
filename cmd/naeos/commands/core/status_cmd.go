@@ -92,9 +92,9 @@ Example:
 
 			_ = metricsPort
 
-		switch clihelpers.CLIOutputFormat {
-		case "json", "yaml":
-			return clihelpers.FormatOutput(cmd.OutOrStdout(), status, clihelpers.CLIOutputFormat)
+			switch clihelpers.CLIOutputFormat {
+			case "json", "yaml":
+				return clihelpers.FormatOutput(cmd.OutOrStdout(), status, clihelpers.CLIOutputFormat)
 			default:
 				out := cmd.OutOrStdout()
 				fmt.Fprintf(out, "NAEOS Status\n")

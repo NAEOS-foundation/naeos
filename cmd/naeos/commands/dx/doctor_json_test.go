@@ -6,8 +6,9 @@ package dx
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/spf13/cobra"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestRenderDoctorJSONHealthy(t *testing.T) {
