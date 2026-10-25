@@ -26,8 +26,21 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
     failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" });
   });
   page.on("response", (response) => {
-    if (/\/_next\/static\/.*\.js(?:\?|$)/.test(response.url())) {
-      scriptResponses.push({ url: response.url(), status: response.status() });
+    if (/\\/_next\\/static\\/.*\\.js(?:\\?|$)/.test(response.url())) {
+      const requestHeaders = response.request().headers();
+      const responseHeaders = response.headers();
+      // Record only whether the secret header is present; never log its value.
+      // Cloudflare metadata distinguishes a missing exception from a CDN/origin
+      // failure without exposing the E2E token in Actions logs.
+      scriptResponses.push({
+        url: response.url(),
+        status: response.status(),
+        e2eTokenHeaderPresent: Boolean(requestHeaders["x-naeos-e2e-token"]),
+        server: responseHeaders.server,
+        cfRay: responseHeaders["cf-ray"],
+        cfMitigated: responseHeaders["cf-mitigated"],
+        contentType: responseHeaders["content-type"],
+      });
     }
   });
   const e2eToken = process.env.NAEOS_E2E_CHALLENGE_TOKEN;
