@@ -37,8 +37,8 @@ Sources:
 - [Website workflow](../../.github/workflows/website.yml)
 - [Cloudflare Worker config](../../site/wrangler.jsonc)
 - [Control Plane proxy route](../../site/app/api/control-plane/decision/route.ts)
-- [Control Plane live proof](control-plane/live-proof.md)
-- [Separate SandBase Railway deployment runbook](sandbase-railway-deployment.md)
+- [Control Plane live proof](../control-plane/live-proof.md)
+- [Separate SandBase Railway deployment runbook](../sandbase-railway-deployment.md)
 
 ## 2. Environment inventory
 
