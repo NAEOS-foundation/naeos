@@ -14,7 +14,8 @@ aliases: ["/whitepaper/"]
 | **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
-| **Software Release Baseline** | v3.7.1\n| **Engineering Milestone Baseline** | P1.11 — Independent Verifier CLI (DONE) |
+| **Software Release Baseline** | v3.7.1 |
+| **Engineering Milestone Baseline** | P1.11 — Independent Verifier CLI (DONE) |
 
 ---
 
