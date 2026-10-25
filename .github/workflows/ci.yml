@@ -29,6 +29,29 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Validate and generate Go import graph
+        run: |
+          set -euo pipefail
+          bash -n scripts/internal-import-graph.sh
+          graph="$RUNNER_TEMP/naeos-import-graph.tsv"
+          bash scripts/internal-import-graph.sh > "$graph"
+          test -s "$graph"
+          LC_ALL=C sort -c "$graph"
+          awk -F '\t' -v module="github.com/NAEOS-foundation/naeos" -v prefix="github.com/NAEOS-foundation/naeos/" '
+            NF != 2 { exit 1 }
+            !($1 == module || index($1, prefix) == 1) { exit 1 }
+            !($2 == module || index($2, prefix) == 1) { exit 1 }
+            END { if (NR == 0) exit 1 }
+          ' "$graph"
+          echo "Import graph edges: $(wc -l < "$graph")"
+          head -n 20 "$graph"
+          echo "NAEOS_IMPORT_GRAPH=$graph" >> "$GITHUB_ENV"
+      - name: Upload Go import graph artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: naeos-go-import-graph-${{ github.sha }}
+          path: ${{ runner.temp }}/naeos-import-graph.tsv
+          if-no-files-found: error
       - name: golangci-lint
         uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa
         with:
