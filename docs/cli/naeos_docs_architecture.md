@@ -25,4 +25,3 @@ naeos docs architecture [flags]
 ### SEE ALSO
 
 * [naeos docs](naeos_docs.md)	 - Generate project documentation
-

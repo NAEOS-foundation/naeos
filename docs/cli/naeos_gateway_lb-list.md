@@ -25,4 +25,3 @@ naeos gateway lb-list [flags]
 ### SEE ALSO
 
 * [naeos gateway](naeos_gateway.md)	 - API gateway management
-

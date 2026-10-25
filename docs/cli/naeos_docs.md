@@ -31,4 +31,3 @@ Example:
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos docs api](naeos_docs_api.md)	 - Generate API documentation
 * [naeos docs architecture](naeos_docs_architecture.md)	 - Generate architecture diagram
-

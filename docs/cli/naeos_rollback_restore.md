@@ -24,4 +24,3 @@ naeos rollback restore [snapshot-id] [flags]
 ### SEE ALSO
 
 * [naeos rollback](naeos_rollback.md)	 - Rollback to a previous snapshot of generated artifacts
-

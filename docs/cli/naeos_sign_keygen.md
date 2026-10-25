@@ -24,4 +24,3 @@ naeos sign keygen [flags]
 ### SEE ALSO
 
 * [naeos sign](naeos_sign.md)	 - Digital artifact signing and verification
-

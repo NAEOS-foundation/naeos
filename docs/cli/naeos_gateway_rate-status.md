@@ -24,4 +24,3 @@ naeos gateway rate-status [flags]
 ### SEE ALSO
 
 * [naeos gateway](naeos_gateway.md)	 - API gateway management
-

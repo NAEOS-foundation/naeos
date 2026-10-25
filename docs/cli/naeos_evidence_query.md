@@ -1,57 +1,42 @@
 ## naeos evidence query
 
-Query evidence records by exact criteria, optional RFC3339 time range, and optional chain verification.
+Query evidence records by criteria
+
+### Synopsis
+
+Query the evidence store using exact filters and an optional RFC3339 time range.
 
 ```
 naeos evidence query [flags]
 ```
 
-### Query model
+### Options
 
-All filters are conjunctive: a record must satisfy every supplied filter.
-
-- `--id` — exact evidence ID
-- `--actor` — exact actor identity
-- `--resource` — exact resource
-- `--action` — exact action
-- `--environment` — exact execution environment
-- `--policy` — exact policy ID
-- `--decision` — exact decision (`ALLOW`, `DENY`, `REQUIRE_APPROVAL`)
-- `--from` — inclusive RFC3339 start time
-- `--to` — inclusive RFC3339 end time
-- `--limit` — maximum number of records; `0` means unlimited
-- `--verify-chain` — verify the complete evidence hash chain before returning results
-- `--output json` — return full evidence records instead of the human-readable table
-
-Results are returned newest-first.
-
-### Examples
-
-Query production actions by an agent:
-
-```bash
-naeos evidence query --actor ci-bot --environment production
+```
+      --action string        filter by action
+      --actor string         filter by actor
+      --decision string      filter by decision (ALLOW/DENY/REQUIRE_APPROVAL)
+      --environment string   filter by environment
+      --from string          inclusive start time (RFC3339)
+  -h, --help                 help for query
+      --id string            filter by exact evidence ID
+      --limit int            max records to return; 0 means unlimited (default 20)
+      --output string        output format: table or json (default "table")
+      --policy string        filter by policy ID
+      --request-id string    filter by exact logical request ID
+      --resource string      filter by resource
+      --to string            inclusive end time (RFC3339)
+      --verify-chain         verify the evidence hash chain before returning results
 ```
 
-Find denied actions in a time window:
+### Options inherited from parent commands
 
-```bash
-naeos evidence query \
-  --decision DENY \
-  --from 2026-10-01T00:00:00Z \
-  --to 2026-10-01T23:59:59Z
+```
+      --dry-run                global dry-run mode: preview without writing to disk
+      --output-format string   output format: json, yaml, table (default "table")
+      --verbose                enable verbose logging
 ```
 
-Retrieve one evidence record as JSON and verify the chain first:
+### SEE ALSO
 
-```bash
-naeos evidence query --id ev-123 --verify-chain --output json
-```
-
-### Output semantics
-
-The table view exposes the primary audit dimensions: ID, timestamp, decision, execution status, actor, action, resource, and environment.
-
-JSON output preserves the complete `EvidenceRecord`, including policy, reasons, artifact integrity fields, approval binding, metadata, and hash-chain fields.
-
-Malformed timestamps and a range where `--from` is after `--to` fail with a non-zero exit status.
+* [naeos evidence](naeos_evidence.md)	 - Governance evidence store — immutable audit trail

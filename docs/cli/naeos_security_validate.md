@@ -25,4 +25,3 @@ naeos security validate [flags]
 ### SEE ALSO
 
 * [naeos security](naeos_security.md)	 - Security and secrets management
-

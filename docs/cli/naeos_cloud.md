@@ -33,4 +33,3 @@ Deploy NAEOS projects to AWS, GCP, or Azure.
 * [naeos cloud plan](naeos_cloud_plan.md)	 - Plan cloud deployment
 * [naeos cloud status](naeos_cloud_status.md)	 - Show deployed resource status
 * [naeos cloud types](naeos_cloud_types.md)	 - List supported resource types
-

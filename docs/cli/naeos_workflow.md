@@ -40,4 +40,3 @@ naeos workflow [flags]
 * [naeos workflow list](naeos_workflow_list.md)	 - List all workflows
 * [naeos workflow reject](naeos_workflow_reject.md)	 - Reject a pending request
 * [naeos workflow requests](naeos_workflow_requests.md)	 - List approval requests
-

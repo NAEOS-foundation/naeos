@@ -41,4 +41,3 @@ Examples:
 * [naeos template remove](naeos_template_remove.md)	 - Remove a custom template
 * [naeos template search](naeos_template_search.md)	 - Search for starter project templates in the marketplace
 * [naeos template show](naeos_template_show.md)	 - Show details of a prompt template
-

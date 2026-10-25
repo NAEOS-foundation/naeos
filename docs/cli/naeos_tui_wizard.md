@@ -27,4 +27,3 @@ naeos tui wizard [flags]
 ### SEE ALSO
 
 * [naeos tui](naeos_tui.md)	 - Terminal user interface tools
-

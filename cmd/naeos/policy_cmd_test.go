@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 )
 
@@ -125,9 +126,9 @@ func TestControlEvaluateNoPolicyDeny(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := NewRootCommand()
 	out, err := executeCommand(root, "control", "evaluate", "--resource", "deploy", "--action", "run")
-	var exitErr *ExitCodeError
-	if !errors.As(err, &exitErr) || exitErr.Code != ExitCodePolicyDeny {
-		t.Fatalf("expected explicit policy-deny exit code %d, got %v", ExitCodePolicyDeny, err)
+	var exitErr *clihelpers.ExitCodeError
+	if !errors.As(err, &exitErr) || exitErr.Code != clihelpers.ExitCodePolicyDeny {
+		t.Fatalf("expected explicit policy-deny exit code %d, got %v", clihelpers.ExitCodePolicyDeny, err)
 	}
 	if !strings.Contains(out, "DENY") {
 		t.Fatalf("expected DENY (fail-closed), got %q", out)

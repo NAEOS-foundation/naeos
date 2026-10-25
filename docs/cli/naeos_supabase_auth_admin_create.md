@@ -25,4 +25,3 @@ naeos supabase auth admin create [flags]
 ### SEE ALSO
 
 * [naeos supabase auth admin](naeos_supabase_auth_admin.md)	 - Admin auth operations (requires service_role_key)
-

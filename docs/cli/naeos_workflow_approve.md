@@ -26,4 +26,3 @@ naeos workflow approve [flags]
 ### SEE ALSO
 
 * [naeos workflow](naeos_workflow.md)	 - Workflow and approval management
-

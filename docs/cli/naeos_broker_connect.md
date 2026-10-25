@@ -29,4 +29,3 @@ naeos broker connect [flags]
 ### SEE ALSO
 
 * [naeos broker](naeos_broker.md)	 - Message broker management
-

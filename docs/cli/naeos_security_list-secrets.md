@@ -24,4 +24,3 @@ naeos security list-secrets [flags]
 ### SEE ALSO
 
 * [naeos security](naeos_security.md)	 - Security and secrets management
-

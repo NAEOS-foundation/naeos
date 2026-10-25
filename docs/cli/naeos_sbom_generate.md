@@ -28,4 +28,3 @@ naeos sbom generate [flags]
 ### SEE ALSO
 
 * [naeos sbom](naeos_sbom.md)	 - Software Bill of Materials generation and verification
-

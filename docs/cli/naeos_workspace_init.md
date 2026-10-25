@@ -24,4 +24,3 @@ naeos workspace init [name] [flags]
 ### SEE ALSO
 
 * [naeos workspace](naeos_workspace.md)	 - Manage multi-module workspaces
-

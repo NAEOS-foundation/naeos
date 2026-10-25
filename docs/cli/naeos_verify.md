@@ -1,10 +1,17 @@
 ## naeos verify
 
-Independently verify governance evidence
+Verify a specification using the existing NAEOS pipeline
 
 ### Synopsis
 
-Run the verification chain (evidence integrity, artifact hash, approval binding) over the evidence store.
+Verify a specification by running the existing NAEOS pipeline: parse, normalize, resolve, build NEIR, and validate.
+
+This is the first vertical slice of the autonomous control-plane verification foundation.
+
+Examples:
+  naeos verify --input-file spec.yaml
+  naeos verify --input-file spec.yaml --output-format json
+  naeos verify --config config.yaml --input-file spec.yaml
 
 ```
 naeos verify [flags]
@@ -13,7 +20,11 @@ naeos verify [flags]
 ### Options
 
 ```
-  -h, --help   help for verify
+      --config string        path to JSON or YAML config file (auto-detected if omitted)
+  -h, --help                 help for verify
+      --input string         specification input to process
+      --input-file string    path to a specification file
+      --output-file string   optional file path to write the verification output
 ```
 
 ### Options inherited from parent commands
@@ -29,4 +40,3 @@ naeos verify [flags]
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos verify evidence](naeos_verify_evidence.md)	 - Verify the entire evidence store
 * [naeos verify report](naeos_verify_report.md)	 - Run independent verification and produce a report
-

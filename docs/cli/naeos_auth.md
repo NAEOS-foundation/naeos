@@ -47,4 +47,3 @@ naeos auth [flags]
 * [naeos auth logout](naeos_auth_logout.md)	 - Logout current session
 * [naeos auth sso](naeos_auth_sso.md)	 - SSO/SAML/LDAP provider management
 * [naeos auth whoami](naeos_auth_whoami.md)	 - Show current authenticated identity
-

@@ -32,4 +32,4 @@ naeos evidence [flags]
 * [naeos evidence query](naeos_evidence_query.md)	 - Query evidence records by criteria
 * [naeos evidence summary](naeos_evidence_summary.md)	 - Show aggregate evidence statistics
 * [naeos evidence verify](naeos_evidence_verify.md)	 - Verify the integrity of the evidence chain
-
+* [naeos evidence verify-bundle](naeos_evidence_verify-bundle.md)	 - Verify an exported control-plane evidence bundle

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	securitycmd "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/security"
 	"github.com/NAEOS-foundation/naeos/internal/sbom"
 )
 
@@ -28,7 +29,7 @@ func TestSBOMVerifyRequiresLicensesWhenRequested(t *testing.T) {
 		t.Fatalf("write BOM: %v", err)
 	}
 
-	cmd := newSBomVerifyCommand()
+	cmd := securitycmd.NewSBomVerifyCommand()
 	var output bytes.Buffer
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)
@@ -58,7 +59,7 @@ func TestSBOMVerifyAcceptsCycloneDXLicenseChoices(t *testing.T) {
 		t.Fatalf("write BOM: %v", err)
 	}
 
-	cmd := newSBomVerifyCommand()
+	cmd := securitycmd.NewSBomVerifyCommand()
 	var output bytes.Buffer
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)
@@ -87,7 +88,7 @@ func TestSBOMVerifyKeepsLicenseRequirementOptIn(t *testing.T) {
 		t.Fatalf("write BOM: %v", err)
 	}
 
-	cmd := newSBomVerifyCommand()
+	cmd := securitycmd.NewSBomVerifyCommand()
 	var output bytes.Buffer
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)

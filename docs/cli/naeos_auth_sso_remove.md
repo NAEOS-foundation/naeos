@@ -23,4 +23,3 @@ naeos auth sso remove <name> [flags]
 ### SEE ALSO
 
 * [naeos auth sso](naeos_auth_sso.md)	 - SSO/SAML/LDAP provider management
-

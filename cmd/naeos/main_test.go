@@ -17,8 +17,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
 	"github.com/NAEOS-foundation/naeos/internal/agent"
 )
+
+func loadAgentStoreForTest(path string) (*agent.Store, error) {
+	store := agent.NewStore(path)
+	if err := store.Load(); err != nil {
+		return nil, err
+	}
+	return store, nil
+}
 
 func TestInitCreatesConfigFile(t *testing.T) {
 	dir := t.TempDir()
@@ -266,7 +275,7 @@ func TestAgentCreateAppendActionAndGetSession(t *testing.T) {
 		t.Fatalf("run agent create returned error: %v", err)
 	}
 
-	store, err := loadAgentStore(storePath)
+	store, err := loadAgentStoreForTest(storePath)
 	if err != nil {
 		t.Fatalf("load agent store: %v", err)
 	}
@@ -279,7 +288,7 @@ func TestAgentCreateAppendActionAndGetSession(t *testing.T) {
 		t.Fatalf("run agent append-action returned error: %v", err)
 	}
 
-	store, err = loadAgentStore(storePath)
+	store, err = loadAgentStoreForTest(storePath)
 	if err != nil {
 		t.Fatalf("reload agent store: %v", err)
 	}
@@ -358,12 +367,12 @@ func TestRuntimeExecPersistsActionToSession(t *testing.T) {
 	}
 
 	err := run([]string{"runtime", "exec", "--tool", "shell", "--action", "run", "--resource", "scripts/deploy.sh", "--environment", "production", "--actor", "ci-bot", "--session-id", session.ID, "--store-path", storePath})
-	var exitErr *ExitCodeError
-	if !errors.As(err, &exitErr) || exitErr.Code != ExitCodePolicyDeny {
-		t.Fatalf("expected explicit policy-deny exit code %d, got %v", ExitCodePolicyDeny, err)
+	var exitErr *clihelpers.ExitCodeError
+	if !errors.As(err, &exitErr) || exitErr.Code != clihelpers.ExitCodePolicyDeny {
+		t.Fatalf("expected explicit policy-deny exit code %d, got %v", clihelpers.ExitCodePolicyDeny, err)
 	}
 
-	store, err = loadAgentStore(storePath)
+	store, err = loadAgentStoreForTest(storePath)
 	if err != nil {
 		t.Fatalf("reload agent store after runtime exec: %v", err)
 	}

@@ -26,4 +26,3 @@ Migrate NAEOS specification files to newer schema versions.
 * [naeos migrate plan](naeos_migrate_plan.md)	 - Show migration plan without applying
 * [naeos migrate run](naeos_migrate_run.md)	 - Migrate spec to the latest schema version
 * [naeos migrate versions](naeos_migrate_versions.md)	 - List supported migration versions
-

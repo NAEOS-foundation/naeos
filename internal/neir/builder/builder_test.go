@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"sync"
 	"testing"
 
@@ -15,6 +16,8 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/module"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
+	"github.com/NAEOS-foundation/naeos/internal/neir/version"
+	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
@@ -33,6 +36,9 @@ func TestBuilderCreatesNEIRFromResolvedSpec(t *testing.T) {
 	if neir.Project == nil || neir.Project.Name != "acme-api" {
 		t.Fatalf("expected project acme-api, got %v", neir.Project)
 	}
+	if neir.Metadata == nil || neir.Metadata.NEIRVersion != version.CurrentNEIRVersion || neir.Metadata.SchemaVersion != version.CurrentInputSchemaVersion {
+		t.Fatalf("expected current NEIR/input schema versions, got metadata %#v", neir.Metadata)
+	}
 	if len(neir.Modules) != 1 {
 		t.Fatalf("expected one module, got %d", len(neir.Modules))
 	}
@@ -47,6 +53,38 @@ func TestBuilderCreatesNEIRFromResolvedSpec(t *testing.T) {
 	}
 	if neir.Architecture != nil {
 		t.Fatalf("expected nil architecture, got %v", neir.Architecture)
+	}
+}
+
+func TestBuilderOutputPassesPublishedSchemaStructuralCheck(t *testing.T) {
+	resolved := &resolver.ResolvedSpec{Context: map[string]any{
+		"project":  "acme-api",
+		"modules":  []map[string]any{{"name": "auth", "path": "./internal/auth"}},
+		"services": []map[string]any{{"name": "gateway", "kind": "http", "port": 8080}},
+	}}
+
+	neir, err := NewBuilder().Build(resolved)
+	if err != nil {
+		t.Fatalf("Build returned error: %v", err)
+	}
+
+	data, err := json.Marshal(neir)
+	if err != nil {
+		t.Fatalf("marshal NEIR: %v", err)
+	}
+	var document map[string]any
+	if err := json.Unmarshal(data, &document); err != nil {
+		t.Fatalf("unmarshal NEIR: %v", err)
+	}
+
+	client := schemaregistry.NewNEIRClient("file://../../../site/public/schemaregistry/v1/neir.json")
+	schema, err := client.FetchSchema()
+	if err != nil {
+		t.Fatalf("load published NEIR schema: %v", err)
+	}
+	result := schemaregistry.ValidateJSONSchema(document, schema)
+	if !result.Valid {
+		t.Fatalf("builder output failed published schema structural check: %+v", result.Errors)
 	}
 }
 

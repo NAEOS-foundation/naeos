@@ -12,6 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	clicicd "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/cicd"
+
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
 )
 
@@ -26,7 +28,7 @@ func TestRunBuildDistributedHappy(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
-	err := runBuildDistributed(cmd, configPath, "", inputFile, 2)
+	err := clicicd.RunBuildDistributed(cmd, configPath, "", inputFile, 2)
 	if err != nil {
 		t.Fatalf("runBuildDistributed failed: %v", err)
 	}
@@ -40,7 +42,7 @@ func TestRunBuildDistributedMissingInput(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.SetOut(&bytes.Buffer{})
 
-	err := runBuildDistributed(cmd, configPath, "", filepath.Join(dir, "missing.yaml"), 1)
+	err := clicicd.RunBuildDistributed(cmd, configPath, "", filepath.Join(dir, "missing.yaml"), 1)
 	if err == nil {
 		t.Fatal("expected error for missing input file")
 	}
@@ -54,7 +56,7 @@ func TestRunBuildDistributedInvalidSpec(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.SetOut(&bytes.Buffer{})
 
-	err := runBuildDistributed(cmd, "/nonexistent/config.yaml", "", inputFile, 1)
+	err := clicicd.RunBuildDistributed(cmd, "/nonexistent/config.yaml", "", inputFile, 1)
 	if err == nil {
 		t.Fatal("expected error for invalid spec")
 	}
@@ -68,7 +70,7 @@ func TestRunBuildDistributedInvalidConfig(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 
 	// Workers fail per-task; the function itself returns no error.
-	err := runBuildDistributed(cmd, "/nonexistent/config.yaml", "", inputFile, 1)
+	err := clicicd.RunBuildDistributed(cmd, "/nonexistent/config.yaml", "", inputFile, 1)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,7 +84,7 @@ func TestSaveMemProfile(t *testing.T) {
 	mp.Snapshot("validate")
 	mp.Snapshot("generate")
 
-	if err := saveMemProfile(path, mp); err != nil {
+	if err := clicicd.SaveMemProfile(path, mp); err != nil {
 		t.Fatalf("saveMemProfile failed: %v", err)
 	}
 
@@ -108,7 +110,7 @@ func TestSaveMemProfileErrorPath(t *testing.T) {
 	mp := profiling.NewMemProfiler()
 	mp.Snapshot("start")
 
-	err := saveMemProfile(filepath.Join(blocker, "out.json"), mp)
+	err := clicicd.SaveMemProfile(filepath.Join(blocker, "out.json"), mp)
 	if err == nil {
 		t.Fatal("expected error when target path parent is a file")
 	}
@@ -126,7 +128,7 @@ func TestParseSpecInputModules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			spec, err := parseSpecInput(tt.input)
+			spec, err := clicicd.ParseSpecInput(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}

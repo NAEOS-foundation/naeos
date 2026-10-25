@@ -24,4 +24,3 @@ naeos ai suggest [flags]
 ### SEE ALSO
 
 * [naeos ai](naeos_ai.md)	 - AI-powered assistance commands
-

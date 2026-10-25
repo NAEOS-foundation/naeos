@@ -30,4 +30,3 @@ Example:
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos lock generate](naeos_lock_generate.md)	 - Generate a lock file from current artifacts
 * [naeos lock verify](naeos_lock_verify.md)	 - Verify current artifacts against lock file
-

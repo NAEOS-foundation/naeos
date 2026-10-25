@@ -40,4 +40,3 @@ naeos supabase [flags]
 * [naeos supabase sql](naeos_supabase_sql.md)	 - Execute SQL query via Supabase Management API
 * [naeos supabase status](naeos_supabase_status.md)	 - Check Supabase connection status
 * [naeos supabase storage](naeos_supabase_storage.md)	 - Supabase storage management
-

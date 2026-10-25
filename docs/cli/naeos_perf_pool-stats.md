@@ -25,4 +25,3 @@ naeos perf pool-stats [flags]
 ### SEE ALSO
 
 * [naeos perf](naeos_perf.md)	 - Performance optimization tools
-

@@ -25,4 +25,3 @@ naeos helm chart [flags]
 * [naeos helm](naeos_helm.md)	 - Helm chart scaffolding and validation
 * [naeos helm chart init](naeos_helm_chart_init.md)	 - Initialize a new Helm chart (alias of helm init)
 * [naeos helm chart render](naeos_helm_chart_render.md)	 - Render chart files from a directory
-

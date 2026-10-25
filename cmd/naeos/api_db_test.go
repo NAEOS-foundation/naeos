@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	cliaapi "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/api"
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
 
@@ -18,7 +19,7 @@ func TestAttachDatabaseNoEnv(t *testing.T) {
 	t.Setenv("NAEOS_DB_DATABASE", "")
 
 	server := api.NewServer(":0", &api.AuthConfig{})
-	if err := attachDatabase(server); err != nil {
+	if err := cliaapi.AttachDatabase(server); err != nil {
 		t.Fatalf("attachDatabase without env should be a no-op, got %v", err)
 	}
 }
@@ -31,7 +32,7 @@ func TestAttachDatabaseSQLite(t *testing.T) {
 	t.Setenv("NAEOS_DB_DATABASE", dbFile)
 
 	server := api.NewServer(":0", &api.AuthConfig{})
-	if err := attachDatabase(server); err != nil {
+	if err := cliaapi.AttachDatabase(server); err != nil {
 		t.Fatalf("attachDatabase(sqlite) failed: %v", err)
 	}
 
@@ -46,7 +47,7 @@ func TestAttachDatabaseUnknownDriver(t *testing.T) {
 	t.Setenv("NAEOS_DB_DATABASE", ":memory:")
 
 	server := api.NewServer(":0", &api.AuthConfig{})
-	if err := attachDatabase(server); err == nil {
+	if err := cliaapi.AttachDatabase(server); err == nil {
 		t.Fatal("attachDatabase should return an error for unknown driver")
 	}
 }

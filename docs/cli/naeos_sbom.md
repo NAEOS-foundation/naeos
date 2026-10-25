@@ -30,4 +30,3 @@ naeos sbom [flags]
 * [naeos sbom generate](naeos_sbom_generate.md)	 - Generate a CycloneDX SBOM from a project directory
 * [naeos sbom inspect](naeos_sbom_inspect.md)	 - Display a summary of a CycloneDX SBOM document
 * [naeos sbom verify](naeos_sbom_verify.md)	 - Verify the integrity of a CycloneDX SBOM document
-

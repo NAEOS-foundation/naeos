@@ -1,30 +1,33 @@
 ---
 title: Schema Registry
-description: Registry skema JSON untuk format spesifikasi NEIR — skema berversi untuk memvalidasi dokumen NAEOS Engineering Intelligence Representation.
+description: JSON Schema berversi untuk memvalidasi spesifikasi sumber NAEOS dan dokumen model NEIR terserialisasi.
 ---
 
 ## Ringkasan
 
-NEIR Schema Registry menghosting definisi [JSON Schema](https://json-schema.org/) berversi untuk format spesifikasi NAEOS Engineering Intelligence Representation (NEIR). Skema ini memungkinkan autocompletion IDE, validasi, dan dukungan alat untuk file `.naeos.yaml` dan `.naeos.json`.
+Registry menerbitkan [JSON Schema](https://json-schema.org/) terpisah untuk file spesifikasi sumber NAEOS dan dokumen model NEIR terserialisasi. Gunakan skema input-spec untuk file sumber `.naeos.yaml` dan `.naeos.json`. Gunakan skema model NEIR untuk JSON yang dihasilkan NAEOS.
 
 ## Skema Terbaru
 
-Skema stabil saat ini adalah **[v1](/schemaregistry/v1/neir.json)**.
+Skema stabil saat ini:
 
-| Versi | URL Skema | Status |
-|-------|-----------|--------|
-| v1 | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | Stabil |
-| latest | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) | Stabil terbaru |
+- **Spesifikasi input:** [`/schemaregistry/spec/v1/spec.json`](/schemaregistry/spec/v1/spec.json)
+- **Model NEIR terserialisasi:** [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json)
+
+| Kontrak | URL berversi | URL terbaru |
+|---------|-------------|------------|
+| Spesifikasi sumber | [`/schemaregistry/spec/v1/spec.json`](/schemaregistry/spec/v1/spec.json) | [`/schemaregistry/spec/latest.json`](/schemaregistry/spec/latest.json) |
+| Model NEIR terserialisasi | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) |
 
 ## Penggunaan
 
 ### Integrasi Editor
 
-Tambahkan field `$schema` ke file spesifikasi NEIR Anda:
+Tambahkan URI `$schema` input-spec ke file sumber Anda:
 
 ```yaml
 # naeos.yaml
-$schema: https://registry.naeos.dev/schemaregistry/latest.json
+$schema: https://registry.naeos.dev/schemaregistry/spec/latest.json
 project: my-project
 modules:
   - name: core
@@ -35,7 +38,7 @@ Ini mengaktifkan IntelliSense dan validasi inline di editor seperti VS Code, Jet
 
 ### Validasi CLI
 
-Gunakan CLI NAEOS untuk memvalidasi spesifikasi terhadap skema registry:
+Gunakan CLI NAEOS untuk memvalidasi spesifikasi sumber terhadap skema input:
 
 ```bash
 naeos schema validate spec.yaml
@@ -44,19 +47,20 @@ naeos schema validate spec.json --output json
 
 ### Penggunaan Programatis
 
-Ambil skema secara programatis:
+Ambil skema input-spec secara programatis:
 
 ```bash
-curl -s https://registry.naeos.dev/schemaregistry/latest.json
+curl -s https://registry.naeos.dev/schemaregistry/spec/latest.json
 ```
 
 ## Versioning
 
-Versi skema mengikuti versi spesifikasi NEIR. Perubahan yang tidak kompatibel ke belakang pada model NEIR menghasilkan versi skema baru. Penambahan kecil (field opsional baru) bersifat aditif dalam satu versi.
+Versi skema input-spec dan model NEIR adalah kontrak terpisah. Perubahan pada salah satunya tidak otomatis mengubah versi yang lain. Perubahan yang tidak kompatibel memerlukan path berversi baru untuk kontrak terkait; alias `latest` menunjuk ke versi stabil terbaru.
 
-| NEIR Version | Schema Version | Catatan |
-|-------------|---------------|---------|
-| 1.x | v1 | Skema stabil awal |
+| Kontrak | Versi skema | Catatan |
+|---------|-------------|---------|
+| Input spec | v1 | YAML/JSON sumber; `project` berupa string (atau alias top-level `name`) |
+| Model NEIR | v1 | Model terserialisasi; `project` berupa object |
 
 ## Konten Skema
 

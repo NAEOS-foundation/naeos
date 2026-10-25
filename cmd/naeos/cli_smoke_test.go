@@ -6,6 +6,9 @@ package main
 import (
 	"strings"
 	"testing"
+
+	clicicd "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/cicd"
+	cliasecurity "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/security"
 )
 
 func TestCompletionCommandHelp(t *testing.T) {
@@ -273,7 +276,7 @@ func TestSecurityAuditHelp(t *testing.T) {
 }
 
 func TestGenerateSimpleID(t *testing.T) {
-	id := generateSimpleID()
+	id := cliasecurity.GenerateSimpleID()
 	if id == "" {
 		t.Fatal("expected non-empty ID")
 	}
@@ -291,16 +294,16 @@ func TestOrDefault(t *testing.T) {
 		{"", "", ""},
 	}
 	for _, tt := range tests {
-		got := orDefault(tt.s, tt.def)
+		got := clicicd.OrDefault(tt.s, tt.def)
 		if got != tt.want {
-			t.Errorf("orDefault(%q, %q) = %q, want %q", tt.s, tt.def, got, tt.want)
+			t.Errorf("OrDefault(%q, %q) = %q, want %q", tt.s, tt.def, got, tt.want)
 		}
 	}
 }
 
 func TestParseSpecInput(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
-		spec, err := parseSpecInput(`{"name":"test"}`)
+		spec, err := clicicd.ParseSpecInput(`{"name":"test"}`)
 		if err != nil {
 			t.Fatalf("parse JSON: %v", err)
 		}
@@ -310,7 +313,7 @@ func TestParseSpecInput(t *testing.T) {
 	})
 
 	t.Run("yaml", func(t *testing.T) {
-		spec, err := parseSpecInput("name: test\nversion: 1")
+		spec, err := clicicd.ParseSpecInput("name: test\nversion: 1")
 		if err != nil {
 			t.Fatalf("parse YAML: %v", err)
 		}
@@ -320,7 +323,7 @@ func TestParseSpecInput(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		_, err := parseSpecInput("{{{invalid}}}")
+		_, err := clicicd.ParseSpecInput("{{{invalid}}}")
 		if err == nil {
 			t.Fatal("expected error for invalid input")
 		}

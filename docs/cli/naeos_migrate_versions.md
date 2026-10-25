@@ -23,4 +23,3 @@ naeos migrate versions [flags]
 ### SEE ALSO
 
 * [naeos migrate](naeos_migrate.md)	 - Manage spec schema migrations
-

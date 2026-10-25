@@ -41,4 +41,3 @@ naeos observability [flags]
 * [naeos observability slo](naeos_observability_slo.md)	 - Show a reference SLO with burn-rate alert rules
 * [naeos observability status](naeos_observability_status.md)	 - Show observability stack status
 * [naeos observability trace](naeos_observability_trace.md)	 - Create a new trace span
-

@@ -39,4 +39,3 @@ naeos dx vscode-gen [flags]
 ### SEE ALSO
 
 * [naeos dx](naeos_dx.md)	 - Developer experience tools
-

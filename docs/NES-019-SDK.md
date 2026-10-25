@@ -31,6 +31,7 @@ The SDK covers public API packages (Go), multi-language output adapters, integra
 | `pkg/kernel` | Core kernel: service registry, lifecycle, event bus, telemetry |
 | `pkg/pipeline` | Pipeline orchestrator |
 | `pkg/config` | Configuration loader |
+| `pkg/sdk` | Initial public Go façade with implementation-independent configuration and results |
 
 ### 5.1 pkg/kernel
 
@@ -72,6 +73,59 @@ results, err = p.Validate("specification.yaml")
 cfg, err := config.Load("config.yaml")
 // cfg.Name, cfg.Mode, cfg.Verbose, cfg.OutputDir
 ```
+
+### 5.4 `pkg/sdk`
+
+The `pkg/sdk` façade is the preferred starting point for new external Go
+integrations. It intentionally exposes a smaller configuration surface than
+`pkg/pipeline.Config`; internal implementation objects are converted to public
+DTOs at the façade boundary. Its compatibility guarantees and remaining
+capabilities are still being established; see
+[the SDK boundary design](architecture/SDK-PUBLIC-API-DESIGN.md).
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/NAEOS-foundation/naeos/pkg/sdk"
+)
+
+func run(ctx context.Context, specification string) error {
+    client, err := sdk.New(sdk.Config{
+        Name: "my-project",
+        Languages: []string{"go"},
+    })
+    if err != nil {
+        return err
+    }
+
+    result, err := client.Run(ctx, specification)
+    if err != nil {
+        return err
+    }
+    for _, artifact := range result.Artifacts {
+        _ = artifact.Path // consume the generated artifact
+    }
+    return nil
+}
+```
+
+`sdk.Config` supports scalar pipeline options and public `sdk.PolicyRule`
+values. Set `PolicyRule.Enabled` to `true` to activate a rule. `Mode: "governed"`
+or `RequireGovernance: true` requires at least one enabled rule. `sdk.Result`
+returns artifacts, task/review summaries, governance provenance, and graph
+counts. Successful `Run` and `Validate` results include specification and NEIR
+hashes. The SDK does not expose the internal NEIR object. The versioned public
+model DTO is `pkg/neir/v1`; it types project, module, service, and metadata
+sections and preserves other sections as raw JSON. `sdk.Result.NEIR` returns
+this public DTO for both Run and Validate after pipeline materialization.
+`Run` and `Validate` accept a
+context and check cancellation before processing and between pipeline stages.
+An active stage is not interrupted; cancellation is observed when that stage
+returns. Cancellation during artifact writing can leave files already written
+earlier in the stage.
 
 ## 6. Extension Points
 

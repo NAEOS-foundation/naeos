@@ -24,6 +24,7 @@ naeos evidence log [flags]
   -h, --help                 help for log
       --output string        output format: table or json (default "table")
       --policy-file string   path to policy JSON file
+      --request-id string    logical request identity (recommended for end-to-end correlation)
       --resource string      target resource
       --tool string          tool name (required)
 ```
@@ -39,4 +40,3 @@ naeos evidence log [flags]
 ### SEE ALSO
 
 * [naeos evidence](naeos_evidence.md)	 - Governance evidence store — immutable audit trail
-

@@ -32,4 +32,3 @@ naeos observability slo [flags]
 ### SEE ALSO
 
 * [naeos observability](naeos_observability.md)	 - Observability and telemetry management
-

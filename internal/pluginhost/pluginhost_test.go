@@ -787,6 +787,38 @@ func (p *slowPlugin) Execute(_ string, _ map[string]any) (any, error) {
 	return "done", nil
 }
 
+type contextPlugin struct {
+	*stubPlugin
+	started chan struct{}
+}
+
+func (p *contextPlugin) ExecuteContext(ctx context.Context, _ string, _ map[string]any) (any, error) {
+	close(p.started)
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestManagerPropagatesCallerCancellationToContextExecutor(t *testing.T) {
+	m := NewManager(t.TempDir())
+	m.sandbox = NewSandbox(SandboxConfig{ExecTimeout: 5 * time.Second})
+	p := &contextPlugin{stubPlugin: newStubPlugin("context"), started: make(chan struct{})}
+	if err := m.Register(p); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := m.Execute(ctx, "context", "wait", nil)
+		done <- err
+	}()
+	<-p.started
+	cancel()
+	if err := <-done; err == nil {
+		t.Fatal("expected caller cancellation to reach plugin execution")
+	}
+}
+
 // --- Config Persistence Tests ---
 
 func TestConfigPersistenceRoundTrip(t *testing.T) {

@@ -23,4 +23,3 @@ naeos auth list-role-templates [flags]
 ### SEE ALSO
 
 * [naeos auth](naeos_auth.md)	 - Authentication and authorization management
-

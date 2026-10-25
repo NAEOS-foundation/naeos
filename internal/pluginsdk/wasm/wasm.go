@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -110,6 +111,18 @@ func (p *WASMPlugin) Initialize(_ any) error {
 }
 
 func (p *WASMPlugin) Execute(action string, params map[string]any) (any, error) {
+	result, err := p.ExecuteContext(context.Background(), action, params)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return &Response{OK: false, Error: fmt.Sprintf("wasm execution timed out after %s", p.wasmRuntime.timeout)}, nil
+	}
+	return result, err
+}
+
+// ExecuteContext runs one action until completion or caller/runtime deadline.
+func (p *WASMPlugin) ExecuteContext(ctx context.Context, action string, params map[string]any) (any, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("WASM execution context must not be nil")
+	}
 	req := Request{
 		Method: action,
 		Params: params,
@@ -119,7 +132,7 @@ func (p *WASMPlugin) Execute(action string, params map[string]any) (any, error) 
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrPlugin, "marshal request")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.wasmRuntime.timeout)
+	execCtx, cancel := context.WithTimeout(ctx, p.wasmRuntime.timeout)
 	defer cancel()
 
 	var stdout, stderr bytes.Buffer
@@ -132,17 +145,20 @@ func (p *WASMPlugin) Execute(action string, params map[string]any) (any, error) 
 		WithStartFunctions("_start")
 
 	start := time.Now()
-	mod, err := p.wasmRuntime.rt.InstantiateModule(ctx, p.compiled, cfg)
+	mod, err := p.wasmRuntime.rt.InstantiateModule(execCtx, p.compiled, cfg)
 	elapsed := time.Since(start)
 
 	if err != nil {
+		if execCtx.Err() != nil {
+			return nil, execCtx.Err()
+		}
 		return &Response{
 			OK:      false,
 			Error:   fmt.Sprintf("wasm execution failed: %v, stderr: %s", err, stderr.String()),
 			Elapsed: elapsed.Milliseconds(),
 		}, nil
 	}
-	defer mod.Close(ctx)
+	defer mod.Close(context.Background())
 
 	var resp Response
 	if err := json.Unmarshal(stdout.Bytes(), &resp); err != nil {
