@@ -23,4 +23,3 @@ naeos helm validate <dir> [flags]
 ### SEE ALSO
 
 * [naeos helm](naeos_helm.md)	 - Helm chart scaffolding and validation
-

@@ -31,4 +31,3 @@ naeos audit [file1] [file2] ... [flags]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-

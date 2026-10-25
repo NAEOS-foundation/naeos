@@ -6,6 +6,7 @@ package wasm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -204,14 +205,39 @@ func TestWASMPluginExecuteTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("execute returned error: %v", err)
 	}
-
 	resp, ok := result.(*Response)
 	if !ok {
 		t.Fatalf("expected *Response, got %T", result)
 	}
-
 	if resp.OK {
-		t.Error("expected ok=false for timeout, got ok=true")
+		t.Fatal("expected ok=false for timeout")
+	}
+}
+
+func TestWASMPluginExecuteContextCancellation(t *testing.T) {
+	rt := NewWASMRuntime(5*time.Second, 0)
+	defer rt.Close()
+
+	path := writeTempWASM(t, loopWASM)
+	plugin, err := rt.Load(path)
+	if err != nil {
+		t.Fatalf("load wasm: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := plugin.ExecuteContext(ctx, "test", nil)
+		done <- err
+	}()
+	cancel()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("expected context.Canceled, got %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("WASM execution did not stop after context cancellation")
 	}
 }
 

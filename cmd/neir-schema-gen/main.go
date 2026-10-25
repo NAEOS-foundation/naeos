@@ -43,8 +43,8 @@ func main() {
 	root := map[string]any{
 		"$schema":     "http://json-schema.org/draft-07/schema#",
 		"$id":         "https://registry.naeos.dev/schemaregistry/neir.json",
-		"title":       "NEIR Specification",
-		"description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
+		"title":       "NEIR Model",
+		"description": "JSON Schema for serialized NAEOS Engineering Intelligence Representation (NEIR) model documents",
 		"type":        "object",
 		"properties":  schema,
 		"definitions": defs,
@@ -55,9 +55,16 @@ func main() {
 		root["required"] = required
 	}
 
-	data, err := json.MarshalIndent(root, "", "  ")
+	modelData, err := json.MarshalIndent(root, "", "  ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "marshal: %v\n", err)
+		os.Exit(1)
+	}
+
+	specRoot := inputSpecSchema(root)
+	specData, err := json.MarshalIndent(specRoot, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "marshal input spec schema: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -67,19 +74,80 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := os.WriteFile(filepath.Join(v1Dir, "neir.json"), data, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(v1Dir, "neir.json"), modelData, 0o644); err != nil {
 		fmt.Fprintf(os.Stderr, "write v1/neir.json: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := os.WriteFile(filepath.Join(outDir, "latest.json"), data, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(outDir, "latest.json"), modelData, 0o644); err != nil {
 		fmt.Fprintf(os.Stderr, "write latest.json: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Generated NEIR JSON Schema:")
+	specV1Dir := filepath.Join(outDir, "spec", "v1")
+	if err := os.MkdirAll(specV1Dir, 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "mkdir spec v1: %v\n", err)
+		os.Exit(1)
+	}
+	if err := os.WriteFile(filepath.Join(specV1Dir, "spec.json"), specData, 0o644); err != nil {
+		fmt.Fprintf(os.Stderr, "write spec/v1/spec.json: %v\n", err)
+		os.Exit(1)
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "spec", "latest.json"), specData, 0o644); err != nil {
+		fmt.Fprintf(os.Stderr, "write spec/latest.json: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Generated NEIR model and input specification JSON Schemas:")
 	fmt.Printf("  %s\n", filepath.Join(v1Dir, "neir.json"))
 	fmt.Printf("  %s\n", filepath.Join(outDir, "latest.json"))
+	fmt.Printf("  %s\n", filepath.Join(specV1Dir, "spec.json"))
+	fmt.Printf("  %s\n", filepath.Join(outDir, "spec", "latest.json"))
+}
+
+func inputSpecSchema(modelSchema map[string]any) map[string]any {
+	spec := make(map[string]any, len(modelSchema))
+	for key, value := range modelSchema {
+		spec[key] = value
+	}
+	spec["$id"] = "https://registry.naeos.dev/schemaregistry/spec.json"
+	spec["title"] = "NAEOS Input Specification"
+	spec["description"] = "JSON Schema for source NAEOS engineering specification documents"
+	delete(spec, "required")
+	spec["anyOf"] = []any{
+		map[string]any{"required": []any{"project"}},
+		map[string]any{"required": []any{"name"}},
+	}
+
+	modelProperties, _ := modelSchema["properties"].(map[string]any)
+	properties := make(map[string]any, len(modelProperties)+1)
+	for key, value := range modelProperties {
+		properties[key] = value
+	}
+	properties["project"] = map[string]any{"type": "string", "minLength": 1}
+	properties["name"] = map[string]any{"type": "string", "minLength": 1}
+	properties["deployment"] = inputSectionSchema(modelSchema, "deployment.Deployment", map[string]any{
+		"environments": map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+	})
+	properties["testing"] = inputSectionSchema(modelSchema, "testing.Testing", map[string]any{
+		"coverage": map[string]any{"type": "string"},
+	})
+	spec["properties"] = properties
+	return spec
+}
+
+func inputSectionSchema(modelSchema map[string]any, definitionName string, overrides map[string]any) map[string]any {
+	definitions, _ := modelSchema["definitions"].(map[string]any)
+	definition, _ := definitions[definitionName].(map[string]any)
+	modelProperties, _ := definition["properties"].(map[string]any)
+	properties := make(map[string]any, len(modelProperties)+len(overrides))
+	for key, value := range modelProperties {
+		properties[key] = value
+	}
+	for key, value := range overrides {
+		properties[key] = value
+	}
+	return map[string]any{"type": "object", "properties": properties}
 }
 
 type generator struct {

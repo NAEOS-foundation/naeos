@@ -24,4 +24,3 @@ naeos policy get <policy-id> [flags]
 ### SEE ALSO
 
 * [naeos policy](naeos_policy.md)	 - Manage governance policies
-

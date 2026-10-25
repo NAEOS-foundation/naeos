@@ -102,3 +102,34 @@ func (s *Sandbox) ExecuteWithTimeout(ctx context.Context, fn func() (any, error)
 		return r.value, r.err
 	}
 }
+
+// ExecuteWithContextTimeout passes a combined caller/timeout context to work
+// that can stop itself when canceled. Work that ignores the context can still
+// continue after this method returns; this is not a hard stop for native code.
+func (s *Sandbox) ExecuteWithContextTimeout(ctx context.Context, fn func(context.Context) (any, error)) (any, error) {
+	if ctx == nil {
+		return nil, naeoserr.New(naeoserr.ErrValidation, "plugin execution context must not be nil")
+	}
+	execCtx, cancel := context.WithTimeout(ctx, s.config.ExecTimeout)
+	defer cancel()
+
+	type result struct {
+		value any
+		err   error
+	}
+	ch := make(chan result, 1)
+	go func() {
+		value, err := fn(execCtx)
+		ch <- result{value: value, err: err}
+	}()
+
+	select {
+	case <-execCtx.Done():
+		if ctx.Err() != nil {
+			return nil, naeoserr.Wrapf(ctx.Err(), naeoserr.ErrPlugin, "plugin execution canceled")
+		}
+		return nil, naeoserr.New(naeoserr.ErrTimeout, fmt.Sprintf("plugin execution timed out after %s", s.config.ExecTimeout))
+	case result := <-ch:
+		return result.value, result.err
+	}
+}

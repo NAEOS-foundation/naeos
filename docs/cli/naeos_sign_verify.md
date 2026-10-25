@@ -24,4 +24,3 @@ naeos sign verify <signature-path> [flags]
 ### SEE ALSO
 
 * [naeos sign](naeos_sign.md)	 - Digital artifact signing and verification
-

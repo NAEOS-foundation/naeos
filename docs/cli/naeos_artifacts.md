@@ -28,4 +28,3 @@ Track, deduplicate, and manage generated artifacts with metadata and checksums.
 * [naeos artifacts info](naeos_artifacts_info.md)	 - Show artifact details
 * [naeos artifacts list](naeos_artifacts_list.md)	 - List all tracked artifacts
 * [naeos artifacts summary](naeos_artifacts_summary.md)	 - Show artifact count by kind
-

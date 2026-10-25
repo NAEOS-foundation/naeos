@@ -26,4 +26,3 @@ naeos broker publish [flags]
 ### SEE ALSO
 
 * [naeos broker](naeos_broker.md)	 - Message broker management
-

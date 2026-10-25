@@ -23,4 +23,3 @@ naeos helm chart init <name> [flags]
 ### SEE ALSO
 
 * [naeos helm chart](naeos_helm_chart.md)	 - Create a new Helm chart
-

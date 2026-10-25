@@ -41,4 +41,3 @@ naeos profile run [flags]
 ### SEE ALSO
 
 * [naeos profile](naeos_profile.md)	 - Manage industry-specific project profiles
-

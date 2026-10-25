@@ -30,4 +30,3 @@ naeos airgap [flags]
 * [naeos airgap bundle](naeos_airgap_bundle.md)	 - Build an air-gapped distribution bundle
 * [naeos airgap import](naeos_airgap_import.md)	 - Extract an air-gapped bundle
 * [naeos airgap inspect](naeos_airgap_inspect.md)	 - Inspect an air-gapped bundle manifest
-

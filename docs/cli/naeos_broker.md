@@ -40,4 +40,3 @@ naeos broker [flags]
 * [naeos broker disconnect](naeos_broker_disconnect.md)	 - Disconnect from a broker
 * [naeos broker list](naeos_broker_list.md)	 - List all broker connections
 * [naeos broker publish](naeos_broker_publish.md)	 - Publish a message to a channel
-

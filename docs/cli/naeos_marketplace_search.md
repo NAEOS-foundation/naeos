@@ -25,4 +25,3 @@ naeos marketplace search [query] [flags]
 ### SEE ALSO
 
 * [naeos marketplace](naeos_marketplace.md)	 - Browse and install templates, profiles, and plugins
-

@@ -15,3 +15,9 @@ dist
 *.db
 *.db-*
 .env
+.env.*
+!.env.example
+/.naeos-api.token
+/naeos.bak
+/naeos.bak2
+**/.run/**

@@ -23,4 +23,3 @@ naeos profile compare [profile-a] [profile-b] [flags]
 ### SEE ALSO
 
 * [naeos profile](naeos_profile.md)	 - Manage industry-specific project profiles
-

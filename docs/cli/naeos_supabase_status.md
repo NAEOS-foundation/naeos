@@ -23,4 +23,3 @@ naeos supabase status [flags]
 ### SEE ALSO
 
 * [naeos supabase](naeos_supabase.md)	 - Supabase backend management
-

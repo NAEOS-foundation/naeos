@@ -25,4 +25,3 @@ naeos supabase auth signup [flags]
 ### SEE ALSO
 
 * [naeos supabase auth](naeos_supabase_auth.md)	 - Supabase authentication management
-

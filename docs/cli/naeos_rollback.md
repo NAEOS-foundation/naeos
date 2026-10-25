@@ -30,4 +30,3 @@ Example:
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos rollback list](naeos_rollback_list.md)	 - List available snapshots
 * [naeos rollback restore](naeos_rollback_restore.md)	 - Restore artifacts from a snapshot
-

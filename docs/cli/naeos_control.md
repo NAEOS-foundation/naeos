@@ -28,4 +28,3 @@ naeos control [flags]
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos control evaluate](naeos_control_evaluate.md)	 - Evaluate an authorization request and issue a decision
-

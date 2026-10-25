@@ -26,4 +26,3 @@ naeos sign sign <artifact-path> [flags]
 ### SEE ALSO
 
 * [naeos sign](naeos_sign.md)	 - Digital artifact signing and verification
-

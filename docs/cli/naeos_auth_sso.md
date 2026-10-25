@@ -36,4 +36,3 @@ naeos auth sso [flags]
 * [naeos auth sso configure](naeos_auth_sso_configure.md)	 - Configure an SSO provider
 * [naeos auth sso list](naeos_auth_sso_list.md)	 - List configured SSO providers
 * [naeos auth sso remove](naeos_auth_sso_remove.md)	 - Remove an SSO provider configuration
-

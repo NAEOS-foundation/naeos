@@ -26,4 +26,3 @@ naeos supabase storage upload [flags]
 ### SEE ALSO
 
 * [naeos supabase storage](naeos_supabase_storage.md)	 - Supabase storage management
-

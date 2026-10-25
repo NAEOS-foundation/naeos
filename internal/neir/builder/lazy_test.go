@@ -6,6 +6,7 @@ package builder
 import (
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/neir/version"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
@@ -218,8 +219,11 @@ func TestLazyNEIRMetadata(t *testing.T) {
 	if meta == nil {
 		t.Fatal("expected non-nil Metadata")
 	}
-	if meta.NEIRVersion != "0.1.0" {
-		t.Errorf("expected NEIRVersion '0.1.0', got %q", meta.NEIRVersion)
+	if meta.NEIRVersion != version.CurrentNEIRVersion {
+		t.Errorf("expected NEIRVersion %q, got %q", version.CurrentNEIRVersion, meta.NEIRVersion)
+	}
+	if meta.SchemaVersion != version.CurrentInputSchemaVersion {
+		t.Errorf("expected SchemaVersion %q, got %q", version.CurrentInputSchemaVersion, meta.SchemaVersion)
 	}
 }
 

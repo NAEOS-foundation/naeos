@@ -29,4 +29,3 @@ naeos serve run [flags]
 ### SEE ALSO
 
 * [naeos serve](naeos_serve.md)	 - Run NAEOS as a production daemon
-

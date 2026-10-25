@@ -39,4 +39,3 @@ naeos gateway [flags]
 * [naeos gateway lb-list](naeos_gateway_lb-list.md)	 - List load balancer backends
 * [naeos gateway rate-status](naeos_gateway_rate-status.md)	 - Show rate limiter usage
 * [naeos gateway status](naeos_gateway_status.md)	 - Show gateway status
-

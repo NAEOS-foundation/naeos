@@ -28,4 +28,3 @@ naeos supabase auth [flags]
 * [naeos supabase auth signout](naeos_supabase_auth_signout.md)	 - Sign out current user
 * [naeos supabase auth signup](naeos_supabase_auth_signup.md)	 - Sign up a new user
 * [naeos supabase auth user](naeos_supabase_auth_user.md)	 - Get current authenticated user
-

@@ -24,4 +24,3 @@ naeos artifacts info [path] [flags]
 ### SEE ALSO
 
 * [naeos artifacts](naeos_artifacts.md)	 - Manage generated project artifacts
-

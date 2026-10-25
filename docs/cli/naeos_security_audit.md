@@ -40,4 +40,3 @@ naeos security audit [flags]
 ### SEE ALSO
 
 * [naeos security](naeos_security.md)	 - Security and secrets management
-
