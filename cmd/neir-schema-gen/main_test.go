@@ -12,6 +12,50 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/deployment"
 )
 
+func TestInputSpecSchemaOverridesModelProjectShape(t *testing.T) {
+	modelProject := map[string]any{"type": "object", "$ref": "#/definitions/project.Project"}
+	modules := map[string]any{"type": "array"}
+	modelSchema := map[string]any{
+		"$id":        "https://registry.naeos.dev/schemaregistry/neir.json",
+		"title":      "NEIR Model",
+		"properties": map[string]any{"project": modelProject, "modules": modules},
+		"required":   []any{"project", "modules"},
+		"definitions": map[string]any{
+			"deployment.Deployment": map[string]any{"properties": map[string]any{"environments": map[string]any{"type": "array", "items": map[string]any{"type": "object"}}}},
+			"testing.Testing":       map[string]any{"properties": map[string]any{"coverage": map[string]any{"type": "object"}}},
+		},
+	}
+
+	got := inputSpecSchema(modelSchema)
+	if got["$id"] != "https://registry.naeos.dev/schemaregistry/spec.json" {
+		t.Fatalf("input schema $id = %v", got["$id"])
+	}
+	properties := got["properties"].(map[string]any)
+	if project := properties["project"].(map[string]any); project["type"] != "string" {
+		t.Fatalf("input project schema = %v, want string", project)
+	}
+	if _, ok := properties["name"]; !ok {
+		t.Fatal("input schema should retain the parser's top-level name alias")
+	}
+	if !reflect.DeepEqual(properties["modules"], modules) {
+		t.Fatal("input schema should retain the model module shape")
+	}
+	deployment := properties["deployment"].(map[string]any)["properties"].(map[string]any)
+	if envs := deployment["environments"].(map[string]any); envs["type"] != "array" || envs["items"].(map[string]any)["type"] != "string" {
+		t.Fatalf("input deployment environments schema = %v", envs)
+	}
+	testingSchema := properties["testing"].(map[string]any)["properties"].(map[string]any)
+	if coverage := testingSchema["coverage"].(map[string]any); coverage["type"] != "string" {
+		t.Fatalf("input testing coverage schema = %v", coverage)
+	}
+	if modelSchema["$id"] != "https://registry.naeos.dev/schemaregistry/neir.json" || !reflect.DeepEqual(modelSchema["properties"].(map[string]any)["project"], modelProject) {
+		t.Fatal("input schema generation mutated the model schema")
+	}
+	if _, hasRequired := got["required"]; hasRequired || len(got["anyOf"].([]any)) != 2 {
+		t.Fatalf("input root constraints = required %v, anyOf %v", got["required"], got["anyOf"])
+	}
+}
+
 func TestParseJSONTag(t *testing.T) {
 	t.Parallel()
 

@@ -23,4 +23,3 @@ naeos evidence verify [flags]
 ### SEE ALSO
 
 * [naeos evidence](naeos_evidence.md)	 - Governance evidence store — immutable audit trail
-

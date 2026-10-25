@@ -41,4 +41,3 @@ naeos dx [flags]
 * [naeos dx snippet-get](naeos_dx_snippet-get.md)	 - Get a code snippet
 * [naeos dx snippet-list](naeos_dx_snippet-list.md)	 - List available code snippets
 * [naeos dx vscode-gen](naeos_dx_vscode-gen.md)	 - Generate VS Code extension package
-

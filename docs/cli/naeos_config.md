@@ -30,4 +30,3 @@ naeos config [flags]
 * [naeos config resolve](naeos_config_resolve.md)	 - Resolve a configuration file into concrete values
 * [naeos config sources](naeos_config_sources.md)	 - List available config sources and their reference syntax
 * [naeos config test](naeos_config_test.md)	 - Resolve a single config reference (e.g. env:FOO)
-

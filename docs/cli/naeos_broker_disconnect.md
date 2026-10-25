@@ -24,4 +24,3 @@ naeos broker disconnect [flags]
 ### SEE ALSO
 
 * [naeos broker](naeos_broker.md)	 - Message broker management
-

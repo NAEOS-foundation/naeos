@@ -32,4 +32,3 @@ naeos cloud status [flags]
 ### SEE ALSO
 
 * [naeos cloud](naeos_cloud.md)	 - Cloud deployment commands
-

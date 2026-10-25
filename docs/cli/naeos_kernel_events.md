@@ -27,4 +27,3 @@ naeos kernel events [flags]
 ### SEE ALSO
 
 * [naeos kernel](naeos_kernel.md)	 - Inspect the NAEOS kernel and service registry
-

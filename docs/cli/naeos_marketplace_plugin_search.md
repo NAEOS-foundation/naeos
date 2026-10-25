@@ -25,4 +25,3 @@ naeos marketplace plugin search [query] [flags]
 ### SEE ALSO
 
 * [naeos marketplace plugin](naeos_marketplace_plugin.md)	 - Manage marketplace plugins
-

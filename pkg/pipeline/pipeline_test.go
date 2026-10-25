@@ -756,7 +756,7 @@ func TestValidateSpecWithSchemaMissingRequiredField(t *testing.T) {
 	}
 	found := false
 	for _, e := range result.Errors {
-		if e.Field == "modules" {
+		if strings.Contains(e.Message, "modules") {
 			found = true
 			break
 		}

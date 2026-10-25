@@ -195,6 +195,9 @@ func TestGoModuleLicensed(t *testing.T) {
 	if got := goModuleLicense["github.com/DATA-DOG/go-sqlmock"]; got != "BSD-3-Clause" {
 		t.Errorf("expected go-sqlmock license to match its upstream BSD-3-Clause text, got %q", got)
 	}
+	if got := goModuleLicense["github.com/santhosh-tekuri/jsonschema/v6"]; got != "Apache-2.0" {
+		t.Errorf("expected jsonschema license to match its upstream Apache-2.0 text, got %q", got)
+	}
 }
 
 func TestCurrentGoModulesHaveCuratedLicenses(t *testing.T) {

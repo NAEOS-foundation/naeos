@@ -42,4 +42,3 @@ naeos supabase init [flags]
 ### SEE ALSO
 
 * [naeos supabase](naeos_supabase.md)	 - Supabase backend management
-

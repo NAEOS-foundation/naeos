@@ -34,4 +34,3 @@ naeos migration status [flags]
 ### SEE ALSO
 
 * [naeos migration](naeos_migration.md)	 - Database migration management
-

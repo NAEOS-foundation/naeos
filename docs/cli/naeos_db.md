@@ -38,4 +38,3 @@ naeos db [flags]
 * [naeos db list](naeos_db_list.md)	 - List all database connections
 * [naeos db migrate](naeos_db_migrate.md)	 - Run database migrations
 * [naeos db status](naeos_db_status.md)	 - Show database connection status
-

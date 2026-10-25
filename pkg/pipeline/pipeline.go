@@ -556,7 +556,7 @@ func (p *Pipeline) validateWithoutKernel(input string) (*Result, error) {
 	}
 
 	if p.verbose {
-		client := schemaregistry.NewNEIRClient(schemaregistry.DefaultNEIRSchemaURL)
+		client := schemaregistry.NewNEIRClient(schemaregistry.DefaultSpecSchemaURL)
 		schema, fetchErr := client.FetchSchema()
 		if fetchErr == nil && schema != nil {
 			specPath := ""
@@ -620,11 +620,26 @@ func (p *Pipeline) Validate(input string) (*Result, error) {
 }
 
 func (p *Pipeline) ValidateContext(ctx context.Context, input string) (*Result, error) {
+	if err := pipelineContextError(ctx); err != nil {
+		return nil, err
+	}
 	return p.executeWithKernel(func() (*Result, error) {
-		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("context canceled: %w", err)
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
 		}
-		return p.validateWithoutKernel(input)
+		result, err := p.validateWithoutKernel(input)
+		if err != nil {
+			return nil, err
+		}
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
+		result.SpecificationHash = specHash(input)
+		if result.NEIR != nil {
+			p.materializeNEIR(result.NEIR)
+			result.NEIRHash = neirHash(result.NEIR)
+		}
+		return result, nil
 	})
 }
 
@@ -633,6 +648,9 @@ func (p *Pipeline) Run(input string) (*Result, error) {
 }
 
 func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error) {
+	if err := pipelineContextError(ctx); err != nil {
+		return nil, err
+	}
 	pipelineID := fmt.Sprintf("pipe-%d", time.Now().UnixNano())
 	runEvidence := evidence.NewStore()
 	runtimeObserver := evidence.NewIndependentRuntimeObserver()
@@ -652,12 +670,15 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 	startTime := time.Now()
 	result, err := p.executeWithKernel(func() (*Result, error) {
-		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("context canceled: %w", err)
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
 		}
 
 		p.profileStageStart("validate")
 		result, err := p.runValidate(input)
+		if err == nil {
+			err = pipelineContextError(ctx)
+		}
 		p.profileStageEnd("validate", err)
 		p.memSnapshot("validate")
 		if err != nil {
@@ -669,7 +690,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 
 		p.profileStageStart("build_graph")
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		execGraph := p.runBuildGraph(result)
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		p.profileStageEnd("build_graph", nil)
 		p.memSnapshot("build_graph")
 		result.Graph = execGraph
@@ -678,7 +705,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 
 		p.profileStageStart("policy_eval")
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		policyErr := p.runPolicyEval(result)
+		if policyErr == nil {
+			policyErr = pipelineContextError(ctx)
+		}
 		if policyErr == nil {
 			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "decision", 2, "policy_eval", "pipeline.policy_decision", result.PolicyContextDigest); err != nil {
 				return nil, fmt.Errorf("record policy decision evidence: %w", err)
@@ -691,7 +724,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 
 		p.profileStageStart("schedule")
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		tasks, err := p.runSchedule(result)
+		if err == nil {
+			err = pipelineContextError(ctx)
+		}
 		p.profileStageEnd("schedule", err)
 		p.memSnapshot("schedule")
 		if err != nil {
@@ -702,6 +741,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 
 		p.profileStageStart("generate")
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		var artifacts []engine.Artifact
 		if p.cache != nil && len(result.Artifacts) > 0 {
 			p.logVerbose("generation cache hit, reusing %d artifacts", len(result.Artifacts))
@@ -709,6 +751,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		} else {
 			var genErr error
 			artifacts, genErr = p.runGenerate(result)
+			if genErr == nil {
+				genErr = pipelineContextError(ctx)
+			}
 			if genErr != nil {
 				return nil, genErr
 			}
@@ -721,7 +766,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.memSnapshot("generate")
 
 		p.profileStageStart("review")
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		reviews := p.runReview(artifacts)
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		p.profileStageEnd("review", nil)
 		p.memSnapshot("review")
 		result.Reviews = reviews
@@ -730,11 +781,20 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 
 		p.profileStageStart("write_artifacts")
-		writeErr := p.runWriteArtifacts(artifacts)
+		writeErr := pipelineContextError(ctx)
+		if writeErr == nil {
+			writeErr = p.runWriteArtifacts(ctx, artifacts)
+		}
+		if writeErr == nil {
+			writeErr = pipelineContextError(ctx)
+		}
 		p.profileStageEnd("write_artifacts", writeErr)
 		p.memSnapshot("write_artifacts")
 		if writeErr != nil {
 			return nil, writeErr
+		}
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
 		}
 		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 			return nil, fmt.Errorf("record execution evidence: %w", err)
@@ -742,8 +802,14 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
+		}
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
 		}
 		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record verification evidence: %w", err)
@@ -763,7 +829,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.warn("failed to emit pipeline.run event", "error", err)
 		}
 
+		if err := pipelineContextError(ctx); err != nil {
+			return nil, err
+		}
 		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
+			return nil, err
+		}
+		if err := pipelineContextError(ctx); err != nil {
 			return nil, err
 		}
 
@@ -784,6 +856,16 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 	p.runNotify(pipelineID, startTime, result, err)
 	return result, err
+}
+
+func pipelineContextError(ctx context.Context) error {
+	if ctx == nil {
+		return fmt.Errorf("pipeline context must not be nil")
+	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("pipeline context ended: %w", err)
+	}
+	return nil
 }
 
 func (p *Pipeline) profileStageStart(name string) {
@@ -989,7 +1071,7 @@ func (p *Pipeline) runReview(artifacts []engine.Artifact) []*review.ReviewResult
 	return reviews
 }
 
-func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
+func (p *Pipeline) runWriteArtifacts(ctx context.Context, artifacts []engine.Artifact) error {
 	outputDir := p.outputDirValue
 	if outputDir == "" || p.dryRun {
 		if p.dryRun {
@@ -999,6 +1081,9 @@ func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
 	}
 	p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
 	for _, artifact := range artifacts {
+		if err := pipelineContextError(ctx); err != nil {
+			return err
+		}
 		if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
 			return fmt.Errorf("invalid artifact path: %w", err)
 		}

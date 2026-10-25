@@ -41,4 +41,3 @@ naeos perf [flags]
 * [naeos perf pool-acquire](naeos_perf_pool-acquire.md)	 - Acquire a connection from pool
 * [naeos perf pool-create](naeos_perf_pool-create.md)	 - Create a connection pool
 * [naeos perf pool-stats](naeos_perf_pool-stats.md)	 - Show connection pool statistics
-

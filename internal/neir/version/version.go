@@ -23,8 +23,18 @@ type SemVer struct {
 	Patch int
 }
 
+const (
+	CurrentNEIRVersion        = "2.0.0"
+	CurrentInputSchemaVersion = "0.5.0"
+	DefaultProjectVersion     = "0.1.0"
+)
+
 func Default() VersionInfo {
-	return VersionInfo{NEIRVersion: "0.1.0", SchemaVersion: "1.0", ProjectVersion: "0.1.0"}
+	return VersionInfo{
+		NEIRVersion:    CurrentNEIRVersion,
+		SchemaVersion:  CurrentInputSchemaVersion,
+		ProjectVersion: DefaultProjectVersion,
+	}
 }
 
 func ParseSemVer(s string) (SemVer, error) {

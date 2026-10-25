@@ -20,6 +20,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/storage"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
+	"github.com/NAEOS-foundation/naeos/internal/neir/version"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
@@ -31,12 +32,14 @@ type LazyNEIR struct {
 }
 
 func newLazyNEIR(raw *resolver.ResolvedSpec) *LazyNEIR {
+	versionInfo := version.Default()
 	return &LazyNEIR{
 		raw: raw,
 		neir: &model.NEIR{
 			Metadata: &metadata.Metadata{
-				NEIRVersion:   "0.1.0",
-				SchemaVersion: "1.0",
+				NEIRVersion:    versionInfo.NEIRVersion,
+				SchemaVersion:  versionInfo.SchemaVersion,
+				ProjectVersion: versionInfo.ProjectVersion,
 			},
 		},
 	}

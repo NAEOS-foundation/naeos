@@ -40,4 +40,3 @@ naeos template create [name] [flags]
 ### SEE ALSO
 
 * [naeos template](naeos_template.md)	 - Manage generation templates, prompt library, and template marketplace
-

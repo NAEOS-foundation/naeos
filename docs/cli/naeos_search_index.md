@@ -28,4 +28,3 @@ naeos search index [flags]
 ### SEE ALSO
 
 * [naeos search](naeos_search.md)	 - Full-text search engine management
-

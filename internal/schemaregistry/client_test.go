@@ -27,6 +27,42 @@ func TestValidateNEIRSpecValid(t *testing.T) {
 	}
 }
 
+func TestValidateNEIRSpecNameAlias(t *testing.T) {
+	dir := t.TempDir()
+	spec := filepath.Join(dir, "spec.yaml")
+	if err := os.WriteFile(spec, []byte("name: my-project\nmodules:\n  - name: core\n    path: ./core\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ValidateNEIRSpec(spec, loadTestSchema(t))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Valid {
+		t.Fatalf("expected parser-supported name alias to validate, got errors: %v", result.Errors)
+	}
+}
+
+func TestPublishedInputSchemaAcceptsRepositoryExamples(t *testing.T) {
+	schema := loadTestSchema(t)
+	for _, name := range []string{
+		"spec-minimal.yaml",
+		"spec-full.yaml",
+		"spec-microservice-event.yaml",
+		filepath.Join("todo-api", "spec.yaml"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join("..", "..", "examples", name)
+			result, err := ValidateNEIRSpec(path, schema)
+			if err != nil {
+				t.Fatalf("validate example: %v", err)
+			}
+			if !result.Valid {
+				t.Fatalf("published input schema rejected repository example: %+v", result.Errors)
+			}
+		})
+	}
+}
+
 func TestValidateNEIRSpecMissingRequired(t *testing.T) {
 	dir := t.TempDir()
 	spec := filepath.Join(dir, "spec.yaml")
@@ -84,7 +120,7 @@ func TestValidateNEIRSpecJSON(t *testing.T) {
 func TestValidateNEIRSpecWithSchemaRef(t *testing.T) {
 	dir := t.TempDir()
 	spec := filepath.Join(dir, "spec.yaml")
-	if err := os.WriteFile(spec, []byte("$schema: https://registry.naeos.dev/schemaregistry/latest.json\nproject: test\nmodules:\n  - name: core\n    path: ./internal/core\n"), 0o644); err != nil {
+	if err := os.WriteFile(spec, []byte("$schema: https://registry.naeos.dev/schemaregistry/spec/latest.json\nproject: test\nmodules:\n  - name: core\n    path: ./internal/core\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -107,7 +143,7 @@ func TestValidateNEIRSpecNotExist(t *testing.T) {
 
 func loadTestSchema(t *testing.T) map[string]any {
 	t.Helper()
-	c := NewNEIRClient("file://../../site/public/schemaregistry/latest.json")
+	c := NewNEIRClient("file://../../site/public/schemaregistry/spec/latest.json")
 	schema, err := c.FetchSchema()
 	if err != nil {
 		t.Fatalf("load test schema: %v", err)
@@ -121,8 +157,8 @@ func TestNEIRClientFetchSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if schema["title"] != "NEIR Specification" {
-		t.Errorf("expected 'NEIR Specification', got %v", schema["title"])
+	if schema["title"] != "NEIR Model" {
+		t.Errorf("expected 'NEIR Model', got %v", schema["title"])
 	}
 	props, ok := schema["properties"].(map[string]any)
 	if !ok {

@@ -45,4 +45,3 @@ naeos serve [flags]
 * [naeos serve install](naeos_serve_install.md)	 - Install a systemd unit for the NAEOS daemon
 * [naeos serve run](naeos_serve_run.md)	 - Start the NAEOS daemon in the foreground
 * [naeos serve uninstall](naeos_serve_uninstall.md)	 - Remove the installed systemd unit
-

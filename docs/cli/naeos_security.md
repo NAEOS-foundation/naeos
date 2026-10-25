@@ -42,4 +42,3 @@ naeos security [flags]
 * [naeos security sanitize](naeos_security_sanitize.md)	 - Sanitize input string
 * [naeos security set-secret](naeos_security_set-secret.md)	 - Store an encrypted secret
 * [naeos security validate](naeos_security_validate.md)	 - Validate a value against rules
-

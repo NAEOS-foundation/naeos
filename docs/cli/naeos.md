@@ -19,6 +19,7 @@ Architecture Drives Engineering.
 
 ### SEE ALSO
 
+* [naeos agent](naeos_agent.md)	 - Manage autonomous agent sessions
 * [naeos ai](naeos_ai.md)	 - AI-powered assistance commands
 * [naeos airgap](naeos_airgap.md)	 - Air-gapped distribution bundles
 * [naeos api](naeos_api.md)	 - Start NAEOS REST API server
@@ -89,10 +90,9 @@ Architecture Drives Engineering.
 * [naeos test](naeos_test.md)	 - Run tests for generated code
 * [naeos tui](naeos_tui.md)	 - Terminal user interface tools
 * [naeos validate](naeos_validate.md)	 - Validate a specification using the NAEOS pipeline
-* [naeos verify](naeos_verify.md)	 - Independently verify governance evidence
+* [naeos verify](naeos_verify.md)	 - Verify a specification using the existing NAEOS pipeline
 * [naeos version](naeos_version.md)	 - Show NAEOS version
 * [naeos watch](naeos_watch.md)	 - Watch for specification changes and re-run the pipeline
 * [naeos workflow](naeos_workflow.md)	 - Workflow and approval management
 * [naeos workspace](naeos_workspace.md)	 - Manage multi-module workspaces
 * [naeos ws](naeos_ws.md)	 - Start WebSocket server for real-time updates
-

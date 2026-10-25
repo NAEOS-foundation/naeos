@@ -30,4 +30,3 @@ naeos sign [flags]
 * [naeos sign keygen](naeos_sign_keygen.md)	 - Generate a new Ed25519 key pair
 * [naeos sign sign](naeos_sign_sign.md)	 - Sign an artifact file
 * [naeos sign verify](naeos_sign_verify.md)	 - Verify an artifact signature
-

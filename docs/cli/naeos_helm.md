@@ -30,4 +30,3 @@ naeos helm [flags]
 * [naeos helm chart](naeos_helm_chart.md)	 - Create a new Helm chart
 * [naeos helm init](naeos_helm_init.md)	 - Initialize a new Helm chart
 * [naeos helm validate](naeos_helm_validate.md)	 - Validate a Helm chart directory
-

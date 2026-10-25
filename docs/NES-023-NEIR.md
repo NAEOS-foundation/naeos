@@ -187,6 +187,10 @@ NEIR shall include version metadata:
 - `schemaVersion` — version of the input specification schema
 - `projectVersion` — version of the project being represented
 
+For the current implementation, `neirVersion` is `2.0.0` (this specification's stable version) and `schemaVersion` is `0.5.0` (the current input-spec parser version). The schema registry path, such as `schemaregistry/v1`, versions the registry publication interface and is separate from these metadata values.
+
+The registry publishes distinct schema contracts: `/schemaregistry/spec/v1/spec.json` validates source YAML/JSON, where `project` is a string (or the parser-supported `name` alias); `/schemaregistry/v1/neir.json` validates serialized NEIR, where `project` is a model object. Their `latest` aliases remain separate.
+
 This ensures forward and backward compatibility across evolution of the model.
 
 ## 9. Language Resolution

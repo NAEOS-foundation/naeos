@@ -27,6 +27,6 @@ naeos runtime [flags]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
+* [naeos runtime bridge](naeos_runtime_bridge.md)	 - Stream JSON tool calls through the governance gateway
 * [naeos runtime exec](naeos_runtime_exec.md)	 - Execute a tool request through the governance gateway
 * [naeos runtime restrictions](naeos_runtime_restrictions.md)	 - Show current runtime command restrictions
-

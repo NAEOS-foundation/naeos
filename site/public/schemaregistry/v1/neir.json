@@ -1076,7 +1076,7 @@
       "type": "object"
     }
   },
-  "description": "JSON Schema for the NAEOS Engineering Intelligence Representation (NEIR) specification format",
+  "description": "JSON Schema for serialized NAEOS Engineering Intelligence Representation (NEIR) model documents",
   "properties": {
     "active_profile": {
       "type": "string"
@@ -1152,6 +1152,6 @@
     "project",
     "modules"
   ],
-  "title": "NEIR Specification",
+  "title": "NEIR Model",
   "type": "object"
 }

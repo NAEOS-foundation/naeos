@@ -36,7 +36,7 @@ naeos auth sso configure [flags]
       --issuer string          OIDC issuer URL
       --name string            provider name (required)
       --port int               LDAP port (636 for LDAPS) (default 389)
-      --provider-type string   
+      --provider-type string
       --redirect-url string    OAuth2 redirect URL (default "http://localhost:8080/callback")
       --scope stringArray      OAuth2 scopes
       --sso-url string         SAML SSO URL
@@ -54,4 +54,3 @@ naeos auth sso configure [flags]
 ### SEE ALSO
 
 * [naeos auth sso](naeos_auth_sso.md)	 - SSO/SAML/LDAP provider management
-

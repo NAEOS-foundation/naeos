@@ -24,4 +24,3 @@ naeos airgap inspect <bundle.tar.gz> [flags]
 ### SEE ALSO
 
 * [naeos airgap](naeos_airgap.md)	 - Air-gapped distribution bundles
-

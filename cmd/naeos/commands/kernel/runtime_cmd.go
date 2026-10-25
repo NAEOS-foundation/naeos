@@ -1,0 +1,198 @@
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package kernel
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/spf13/cobra"
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+
+	"github.com/NAEOS-foundation/naeos/internal/agent"
+	"github.com/NAEOS-foundation/naeos/internal/governance/control"
+	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
+)
+
+func NewRuntimeCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "runtime",
+		Short: "Runtime gateway for authorized agent execution",
+		Long:  `Evaluate and execute agent tool requests through the governance control plane. Every request is authorized before execution.`,
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(NewRuntimeExecCommand())
+	cmd.AddCommand(NewRuntimeBridgeCommand())
+	cmd.AddCommand(NewRuntimeRestrictionsCommand())
+	return cmd
+}
+
+func NewRuntimeExecCommand() *cobra.Command {
+	var tool, action, resource, environment, actor, contextJSON, adapterName, outputFmt, sessionID, storePath string
+
+	cmd := &cobra.Command{
+		Use:   "exec",
+		Short: "Execute a tool request through the governance gateway",
+		Long: `Execute an agent tool request after policy evaluation.
+
+Example:
+  naeos runtime exec --tool shell --action run --resource scripts/deploy.sh \
+    --environment production --actor ci-bot
+  naeos runtime exec --tool file-edit --action write --output json`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			reg, err := clihelpers.LoadPolicies()
+			if err != nil {
+				return err
+			}
+			cp := control.New(reg)
+			sb := gateway.NewDefaultSandbox(gateway.SandboxConfig{})
+			gw := gateway.New(cp, sb, gateway.WithRequiredRevalidation(true))
+
+			ctx := map[string]any{}
+			if contextJSON != "" {
+				if err := json.Unmarshal([]byte(contextJSON), &ctx); err != nil {
+					return fmt.Errorf("invalid --context JSON: %w", err)
+				}
+			}
+
+			req := gateway.ToolRequest{
+				Tool:        tool,
+				Action:      action,
+				Resource:    resource,
+				Environment: environment,
+				Actor:       actor,
+				Context:     ctx,
+			}
+
+			var result gateway.ExecutionResult
+			if adapterName != "" {
+				result, err = gw.AuthorizeFromAdapter(adapterName, req)
+			} else {
+				result, err = gw.Authorize(req)
+			}
+			if sessionID != "" {
+				if persistErr := persistSessionAction(sessionID, storePath, result); persistErr != nil {
+					if err == nil {
+						err = persistErr
+					}
+				}
+			}
+			if err != nil {
+				return err
+			}
+
+			if outputFmt == "json" {
+				data, err := json.MarshalIndent(result, "", "  ")
+				if err != nil {
+					return fmt.Errorf("marshaling result: %w", err)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), string(data))
+				return runtimeResultExit(result)
+			}
+
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "Tool:     %s/%s\n", result.Request.Tool, result.Request.Action)
+			fmt.Fprintf(out, "Decision: %s\n", result.Decision)
+			if result.PolicyID != "" {
+				fmt.Fprintf(out, "Policy:   %s\n", result.PolicyID)
+			}
+			fmt.Fprintf(out, "Status:   %s\n", result.Status)
+			if result.Hash != "" {
+				fmt.Fprintf(out, "Hash:     %s\n", result.Hash)
+			}
+			if len(result.Reasons) > 0 {
+				fmt.Fprintf(out, "Reason:   %s\n", strings.Join(result.Reasons, "; "))
+			}
+			return runtimeResultExit(result)
+		},
+	}
+
+	cmd.Flags().StringVar(&tool, "tool", "", "tool name (required)")
+	cmd.Flags().StringVar(&action, "action", "", "action to perform (required)")
+	cmd.Flags().StringVar(&resource, "resource", "", "target resource")
+	cmd.Flags().StringVar(&environment, "environment", "", "deployment environment")
+	cmd.Flags().StringVar(&actor, "actor", "", "actor identity")
+	cmd.Flags().StringVar(&contextJSON, "context", "", "JSON evaluation context")
+	cmd.Flags().StringVar(&adapterName, "adapter", "", "agent adapter to use")
+	cmd.Flags().StringVar(&sessionID, "session-id", "", "persist the execution result into the named agent session")
+	cmd.Flags().StringVar(&storePath, "store-path", "", "path to the agent session store JSON file")
+	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
+	_ = cmd.MarkFlagRequired("tool")
+	_ = cmd.MarkFlagRequired("action")
+	return cmd
+}
+
+func persistSessionAction(sessionID, storePath string, result gateway.ExecutionResult) error {
+	if result.Request.Tool == "" {
+		return nil
+	}
+
+	store, err := loadAgentStore(storePath)
+	if err != nil {
+		return fmt.Errorf("load agent store: %w", err)
+	}
+
+	session, ok := store.GetSession(sessionID)
+	if !ok {
+		return fmt.Errorf("session %s not found", sessionID)
+	}
+
+	params := map[string]any{
+		"tool":        result.Request.Tool,
+		"resource":    result.Request.Resource,
+		"environment": result.Request.Environment,
+		"actor":       result.Request.Actor,
+		"payload":     result.Request.Payload,
+	}
+	if result.Request.Action != "" {
+		params["action"] = result.Request.Action
+	}
+
+	_, err = store.AppendAction(sessionID, agent.Action{
+		AgentID:    session.AgentID,
+		Type:       result.Request.Action,
+		Target:     result.Request.Resource,
+		Reason:     strings.Join(result.Reasons, "; "),
+		Parameters: params,
+		Decision:   string(result.Decision),
+		PolicyID:   result.PolicyID,
+	})
+	if err != nil {
+		return fmt.Errorf("append action: %w", err)
+	}
+	if err := store.Save(); err != nil {
+		return fmt.Errorf("save agent store: %w", err)
+	}
+	return nil
+}
+
+func NewRuntimeRestrictionsCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "restrictions",
+		Short: "Show current runtime command restrictions",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Fprintln(cmd.OutOrStdout(), "Runtime restrictions are configured via governance policies.")
+			fmt.Fprintln(cmd.OutOrStdout(), "Use 'naeos policy register' to define command restrictions.")
+			return nil
+		},
+	}
+	return cmd
+}
+
+func runtimeResultExit(result gateway.ExecutionResult) error {
+	switch {
+	case result.Decision == control.DecisionDeny:
+		return clihelpers.NewExitCodeError(clihelpers.ExitCodePolicyDeny, "policy decision: DENY")
+	case result.Status == "failed":
+		return clihelpers.NewExitCodeError(clihelpers.ExitCodeExecutionFailure, "governed execution failed")
+	default:
+		return nil
+	}
+}

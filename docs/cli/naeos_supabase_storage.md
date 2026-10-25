@@ -29,4 +29,3 @@ naeos supabase storage [flags]
 * [naeos supabase storage list-buckets](naeos_supabase_storage_list-buckets.md)	 - List all storage buckets
 * [naeos supabase storage list-files](naeos_supabase_storage_list-files.md)	 - List files in a bucket
 * [naeos supabase storage upload](naeos_supabase_storage_upload.md)	 - Upload a file to storage
-

@@ -24,4 +24,3 @@ Compliance reporting and audit log export
 * [naeos compliance list-frameworks](naeos_compliance_list-frameworks.md)	 - List supported compliance frameworks
 * [naeos compliance report](naeos_compliance_report.md)	 - Generate a compliance report for a framework (soc2, hipaa, gdpr)
 * [naeos compliance verify](naeos_compliance_verify.md)	 - Verify audit log hash chain integrity
-

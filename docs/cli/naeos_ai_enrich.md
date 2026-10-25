@@ -26,4 +26,3 @@ naeos ai enrich [flags]
 ### SEE ALSO
 
 * [naeos ai](naeos_ai.md)	 - AI-powered assistance commands
-

@@ -30,4 +30,3 @@ List, search, and apply industry-specific project profiles.
 * [naeos profile run](naeos_profile_run.md)	 - Run pipeline with performance and memory profiling
 * [naeos profile search](naeos_profile_search.md)	 - Search profiles by name or description
 * [naeos profile show](naeos_profile_show.md)	 - Show profile details
-

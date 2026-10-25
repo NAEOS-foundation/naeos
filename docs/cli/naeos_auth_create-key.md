@@ -25,4 +25,3 @@ naeos auth create-key [flags]
 ### SEE ALSO
 
 * [naeos auth](naeos_auth.md)	 - Authentication and authorization management
-

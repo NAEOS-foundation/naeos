@@ -22,7 +22,6 @@ naeos control evaluate [flags]
       --actor string         actor issuing the request
       --context string       JSON object of evaluation context
       --environment string   deployment/environment context
-      --fail-open            allow requests with no matching policy (default: deny)
   -h, --help                 help for evaluate
       --output string        output format: table or json (default "table")
       --resource string      resource being acted on (required)
@@ -39,4 +38,3 @@ naeos control evaluate [flags]
 ### SEE ALSO
 
 * [naeos control](naeos_control.md)	 - Governance control plane evaluation
-

@@ -1,7 +1,8 @@
 # Official Example Plugins
 
-This directory contains NAEOS OSS–maintained example plugins. Each is a
-self-contained Go module demonstrating a specific plugin SDK pattern.
+This directory contains NAEOS OSS–maintained example packages within the
+repository's Go module. Each demonstrates a specific plugin implementation
+pattern; they are not standalone external Go modules.
 
 | Plugin | Pattern demonstrated |
 |--------|----------------------|
@@ -26,8 +27,10 @@ cd examples/plugins/hello
 GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm .
 ```
 
-The WASM build is import-free (JSON-over-stdio protocol), so the resulting
-`plugin.wasm` runs standalone in the plugin sandbox.
+The examples use the in-repository `internal/pluginhost` implementation and
+are not standalone external Go modules. The current WASM entry point exchanges
+one JSON request/response over stdio; this wire shape is experimental and has
+no published compatibility guarantee.
 
 ## Installing Locally
 
@@ -43,8 +46,9 @@ naeos marketplace plugin publish examples/plugins/hello \
   --registry https://naeos-foundation.github.io/naeos
 ```
 
-The plugin registry verifies publisher signatures and plugin hashes
-(SHA-256) on install, so published plugins are tamper-evident.
+Check the registry and install implementation for the integrity guarantees
+available in your selected distribution path. Repository documentation alone
+does not establish publisher-signature verification or a trust policy.
 
 ## Writing Your Own
 

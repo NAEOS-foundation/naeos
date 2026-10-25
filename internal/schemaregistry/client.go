@@ -5,6 +5,7 @@ package schemaregistry
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/santhosh-tekuri/jsonschema/v6"
 	"gopkg.in/yaml.v3"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
@@ -21,6 +23,7 @@ import (
 
 const (
 	DefaultNEIRSchemaURL = "https://registry.naeos.dev/schemaregistry/latest.json"
+	DefaultSpecSchemaURL = "https://registry.naeos.dev/schemaregistry/spec/latest.json"
 	NEIRSchemaVersion    = "v1"
 )
 
@@ -130,152 +133,52 @@ func ValidateSpec(spec map[string]any, schema map[string]any) NEIRValidationResu
 }
 
 func validateSpec(spec map[string]any, schema map[string]any) NEIRValidationResult {
-	result := NEIRValidationResult{
-		Valid:   true,
-		Version: NEIRSchemaVersion,
+	return ValidateJSONSchema(spec, schema)
+}
+
+// ValidateJSONSchema applies full JSON Schema validation to a document. External
+// schema references are unavailable unless their resources are embedded in the
+// provided schema, so validation cannot trigger implicit network or file loads.
+func ValidateJSONSchema(document any, schema map[string]any) NEIRValidationResult {
+	result := NEIRValidationResult{Valid: true, Version: NEIRSchemaVersion}
+	compiler := jsonschema.NewCompiler()
+	compiler.DefaultDraft(jsonschema.Draft7)
+	schemaURL, _ := schema["$id"].(string)
+	if schemaURL == "" {
+		schemaURL = "https://naeos.invalid/schema.json"
 	}
-
-	props, _ := schema["properties"].(map[string]any)
-	required, _ := schema["required"].([]any)
-
-	reqFields := make([]string, 0, len(required))
-	for _, r := range required {
-		if s, ok := r.(string); ok {
-			reqFields = append(reqFields, s)
-		}
-	}
-
-	for _, field := range reqFields {
-		if _, exists := spec[field]; !exists {
-			result.Valid = false
-			result.Errors = append(result.Errors, NEIRValidationError{
-				Field:   field,
-				Message: fmt.Sprintf("required field '%s' is missing", field),
-			})
-		}
-	}
-
-	for key, val := range spec {
-		propSchema, ok := props[key].(map[string]any)
-		if ok {
-			errs := validateNEIRValue(key, val, propSchema, schema)
-			result.Errors = append(result.Errors, errs...)
-		}
-	}
-
-	if len(result.Errors) > 0 {
+	if err := compiler.AddResource(schemaURL, schema); err != nil {
 		result.Valid = false
+		result.Errors = append(result.Errors, NEIRValidationError{Message: fmt.Sprintf("register schema: %v", err)})
+		return result
+	}
+	compiled, err := compiler.Compile(schemaURL)
+	if err != nil {
+		result.Valid = false
+		result.Errors = append(result.Errors, NEIRValidationError{Message: fmt.Sprintf("compile schema: %v", err)})
+		return result
+	}
+	if err := compiled.Validate(document); err != nil {
+		result.Valid = false
+		var validationErr *jsonschema.ValidationError
+		if errors.As(err, &validationErr) {
+			appendSchemaOutputErrors(&result.Errors, validationErr.DetailedOutput())
+		} else {
+			result.Errors = append(result.Errors, NEIRValidationError{Message: err.Error()})
+		}
 	}
 
 	return result
 }
 
-func validateNEIRValue(field string, value any, propSchema map[string]any, rootSchema map[string]any) []NEIRValidationError {
-	var errs []NEIRValidationError
-
-	propType, _ := propSchema["type"].(string)
-
-	if ref, ok := propSchema["$ref"].(string); ok {
-		defSchema := resolveNEIRRef(ref, rootSchema)
-		if defSchema != nil {
-			return validateNEIRValue(field, value, defSchema, rootSchema)
-		}
+func appendSchemaOutputErrors(dst *[]NEIRValidationError, output *jsonschema.OutputUnit) {
+	if output.Error != nil && len(output.Errors) == 0 {
+		*dst = append(*dst, NEIRValidationError{
+			Field:   output.InstanceLocation,
+			Message: output.Error.String(),
+		})
 	}
-
-	switch propType {
-	case "object":
-		if valMap, ok := value.(map[string]any); ok {
-			subProps, _ := propSchema["properties"].(map[string]any)
-			subRequired, _ := propSchema["required"].([]any)
-
-			for _, r := range subRequired {
-				if s, ok := r.(string); ok {
-					if _, exists := valMap[s]; !exists {
-						errs = append(errs, NEIRValidationError{
-							Field:   fmt.Sprintf("%s.%s", field, s),
-							Message: fmt.Sprintf("required field '%s.%s' is missing", field, s),
-						})
-					}
-				}
-			}
-
-			for key, val := range valMap {
-				if subProp, ok := subProps[key].(map[string]any); ok {
-					subErrs := validateNEIRValue(fmt.Sprintf("%s.%s", field, key), val, subProp, rootSchema)
-					errs = append(errs, subErrs...)
-				}
-			}
-		}
-	case "array":
-		if arr, ok := value.([]any); ok {
-			items, _ := propSchema["items"].(map[string]any)
-			if items != nil {
-				if ref, ok := items["$ref"].(string); ok {
-					defSchema := resolveNEIRRef(ref, rootSchema)
-					if defSchema != nil {
-						items = defSchema
-					}
-				}
-				for i, item := range arr {
-					itemField := fmt.Sprintf("%s[%d]", field, i)
-					if itemMap, ok := item.(map[string]any); ok {
-						subErrs := validateNEIRValue(itemField, itemMap, items, rootSchema)
-						errs = append(errs, subErrs...)
-					}
-				}
-			}
-		}
-	case "string":
-		if strVal, ok := value.(string); ok {
-			if enumVals, ok := propSchema["enum"].([]any); ok {
-				found := false
-				for _, e := range enumVals {
-					if strVal == fmt.Sprintf("%v", e) {
-						found = true
-						break
-					}
-				}
-				if !found {
-					errs = append(errs, NEIRValidationError{
-						Field:   field,
-						Message: fmt.Sprintf("'%s' must be one of %v", field, enumVals),
-					})
-				}
-			}
-		}
+	for i := range output.Errors {
+		appendSchemaOutputErrors(dst, &output.Errors[i])
 	}
-
-	return errs
-}
-
-func resolveNEIRRef(ref string, rootSchema map[string]any) map[string]any {
-	if len(ref) < 2 || ref[:2] != "#/" {
-		return nil
-	}
-
-	parts := splitNEIRPath(ref[2:])
-	current := rootSchema
-	for _, part := range parts {
-		if m, ok := current[part].(map[string]any); ok {
-			current = m
-		} else {
-			return nil
-		}
-	}
-	return current
-}
-
-func splitNEIRPath(path string) []string {
-	var parts []string
-	start := 0
-	for i := 0; i < len(path); i++ {
-		if path[i] == '/' {
-			parts = append(parts, path[start:i])
-			start = i + 1
-		}
-	}
-	if start < len(path) {
-		parts = append(parts, path[start:])
-	}
-	return parts
 }

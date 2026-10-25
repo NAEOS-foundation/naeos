@@ -25,4 +25,3 @@ naeos security sanitize [flags]
 ### SEE ALSO
 
 * [naeos security](naeos_security.md)	 - Security and secrets management
-
