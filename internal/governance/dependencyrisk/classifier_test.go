@@ -49,3 +49,24 @@ func TestDomainsForPaths(t *testing.T) {
 		t.Fatalf("unexpected domains: %+v", got)
 	}
 }
+
+func TestReviewedCriticalityAndDomainsDriveClassification(t *testing.T) {
+	r := Classify(Request{
+		Ecosystem: "go", Name: "generic-library", VersionChange: Major,
+		EvidenceAvailable: true, KnownDependency: true,
+		ReviewedCriticality: Low, ReviewedDomains: []Domain{Runtime},
+	})
+	if r.Criticality != High || r.Decision != RequireReview {
+		t.Fatalf("reviewed critical-domain dependency must be elevated to high: %+v", r)
+	}
+}
+
+func TestUnreviewedNewDependencyStillDenies(t *testing.T) {
+	r := Classify(Request{
+		Ecosystem: "go", Name: "new-library", VersionChange: Unknown,
+		EvidenceAvailable: true, KnownDependency: false,
+	})
+	if r.Decision != Deny || r.Risk != Risk("unknown") {
+		t.Fatalf("unreviewed dependency must fail closed: %+v", r)
+	}
+}
