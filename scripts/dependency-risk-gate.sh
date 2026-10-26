@@ -8,6 +8,10 @@ BASE_SHA="${BASE_SHA:-${GITHUB_BASE_SHA:-}}"
 REQUEST="${NAEOS_DEPENDENCY_RISK_REQUEST:-}"
 OUTPUT="${NAEOS_DEPENDENCY_RISK_OUTPUT:-dependency-risk-evidence.json}"
 cd "${ROOT}"
+if [[ -n "${REQUEST}" && "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  echo "Manual dependency-risk request overrides are prohibited in CI; derive the request from the dependency diff." >&2
+  exit 1
+fi
 if [[ -z "${BASE_SHA}" ]]; then
   # workflow_dispatch does not provide github.event.before. For a manual
   # validation run, compare the checked-out commit with its first parent.
@@ -25,7 +29,7 @@ for path in "${changed[@]}"; do
     go.mod|go.sum|*/go.mod|*/go.sum|package.json|package-lock.json|npm-shrinkwrap.json|*/package.json|*/package-lock.json|*/npm-shrinkwrap.json|pnpm-lock.yaml|*/pnpm-lock.yaml|yarn.lock|*/yarn.lock|requirements*.txt|*/requirements*.txt|pyproject.toml|*/pyproject.toml|Cargo.toml|Cargo.lock|*/Cargo.toml|*/Cargo.lock) dependency_changed+=("${path}") ;;
   esac
 done
-if ((${#dependency_changed[@]} == 0)); then
+if (("${#dependency_changed[@]}" == 0)); then
   mkdir -p "$(dirname "${OUTPUT}")"
   cat > "${OUTPUT}" <<EOF
 {
