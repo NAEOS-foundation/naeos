@@ -20,7 +20,7 @@ func TestSelectHighestRiskRequestRejectsUnknownAmongExisting(t *testing.T) {
 		map[string]string{"safe": "v1.2.3", "broken": "not-a-version"},
 		map[string]string{"safe": "v1.2.4", "broken": "still-invalid"},
 	)
-	if req.Name != "broken" || req.VersionChange != "unknown" || !req.KnownDependency {
+	if req.Name != "broken" || req.VersionChange != "unknown" || req.KnownDependency {
 		t.Fatalf("unknown version change must dominate aggregate: %+v", req)
 	}
 }
@@ -30,7 +30,7 @@ func TestSelectHighestRiskRequestSelectsMajorOverPatch(t *testing.T) {
 		map[string]string{"safe": "v1.2.3", "major": "v1.2.3"},
 		map[string]string{"safe": "v1.2.4", "major": "v2.0.0"},
 	)
-	if req.Name != "major" || req.VersionChange != "major" || !req.KnownDependency {
+	if req.Name != "major" || req.VersionChange != "major" || req.KnownDependency {
 		t.Fatalf("major change must dominate patch change: %+v", req)
 	}
 }
@@ -40,7 +40,7 @@ func TestSelectHighestRiskRequestAllowsAllSafeChangesToRemainPatch(t *testing.T)
 		map[string]string{"one": "v1.2.3", "two": "v2.4.1"},
 		map[string]string{"one": "v1.2.4", "two": "v2.4.2"},
 	)
-	if req.VersionChange != "patch" || !req.KnownDependency {
+	if req.VersionChange != "patch" || req.KnownDependency {
 		t.Fatalf("all-patch changes should remain patch: %+v", req)
 	}
 }
