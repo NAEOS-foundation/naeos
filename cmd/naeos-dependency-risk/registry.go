@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -145,7 +146,7 @@ func loadTrustedDependencyReviewRegistry(base string) (dependencyReviewRegistry,
 	if strings.TrimSpace(base) == "" {
 		return dependencyReviewRegistry{}, errors.New("trusted dependency registry base SHA is required")
 	}
-	data, err := exec.Command("git", "show", base+":"+dependencyRegistryPath).Output() //nolint:gosec // base is a trusted SHA from the protected CI workflow; path is a constant
+	data, err := exec.CommandContext(context.Background(), "git", "show", base+":"+dependencyRegistryPath).Output() //nolint:gosec // base is a trusted SHA from the protected CI workflow; path is a constant
 	if err != nil {
 		return dependencyReviewRegistry{}, fmt.Errorf("read trusted registry from merge base: %w", err)
 	}
