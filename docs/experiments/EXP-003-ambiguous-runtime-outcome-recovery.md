@@ -1,6 +1,6 @@
 # Experiment 003 — Ambiguous Runtime Outcome Recovery
 
-**Status:** Regression coverage added; CI validation pending  
+**Status:** Merged to `main`; CI, CodeQL, and browser E2E checks passed  
 **Scope:** Runtime gateway execution outcomes and durable invocation replay protection  
 **Motivation:** Microsoft Agent Framework issue [#9033](https://github.com/microsoft/agent-framework/issues/9033) highlights a crash window in which a tool may have run but its result was not durably recorded.
 
