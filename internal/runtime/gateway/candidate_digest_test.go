@@ -171,3 +171,16 @@ func TestCandidateDigestV1RFC8785NegativeZero(t *testing.T) {
 		t.Fatalf("JCS must canonicalize negative zero to zero: %s != %s", positive, negative)
 	}
 }
+
+
+// Cyclic values must be rejected even when CandidateDigestV1 is called
+// directly, without passing through ExecutionGateway's snapshot boundary.
+func TestCandidateDigestV1RejectsCyclicInput(t *testing.T) {
+	payload := map[string]any{}
+	payload["self"] = payload
+	if _, err := CandidateDigestV1(ToolRequest{
+		Tool: "mock", Action: "run", Payload: payload,
+	}); err == nil {
+		t.Fatal("cyclic candidate input must be rejected")
+	}
+}
