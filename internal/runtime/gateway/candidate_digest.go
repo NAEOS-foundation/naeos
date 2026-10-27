@@ -174,10 +174,16 @@ func candidateAuthorizationContextV1(context map[string]any, digest string) map[
 }
 
 func validateJSONValue(value any) error {
-	return validateJSONReflect(reflect.ValueOf(value))
+	return validateJSONReflect(reflect.ValueOf(value), 0)
 }
 
-func validateJSONReflect(value reflect.Value) error {
+func validateJSONReflect(value reflect.Value, depth int) error {
+	// CandidateDigestV1 is also callable directly, outside the gateway's
+	// snapshot path. Bound recursive validation so cyclic or adversarially
+	// deep values fail closed instead of exhausting the goroutine stack.
+	if depth > 128 {
+		return fmt.Errorf("candidate input exceeds validation depth limit or contains a cycle")
+	}
 	if !value.IsValid() {
 		return nil
 	}
@@ -186,7 +192,7 @@ func validateJSONReflect(value reflect.Value) error {
 		if value.IsNil() {
 			return nil
 		}
-		return validateJSONReflect(value.Elem())
+		return validateJSONReflect(value.Elem(), depth+1)
 	case reflect.String:
 		if !utf8.ValidString(value.String()) {
 			return fmt.Errorf("invalid UTF-8 string")
@@ -207,7 +213,7 @@ func validateJSONReflect(value reflect.Value) error {
 			if !utf8.ValidString(iter.Key().String()) {
 				return fmt.Errorf("invalid UTF-8 object key")
 			}
-			if err := validateJSONReflect(iter.Value()); err != nil {
+			if err := validateJSONReflect(iter.Value(), depth+1); err != nil {
 				return err
 			}
 		}
@@ -216,7 +222,7 @@ func validateJSONReflect(value reflect.Value) error {
 			return nil
 		}
 		for i := 0; i < value.Len(); i++ {
-			if err := validateJSONReflect(value.Index(i)); err != nil {
+			if err := validateJSONReflect(value.Index(i), depth+1); err != nil {
 				return err
 			}
 		}
@@ -224,7 +230,7 @@ func validateJSONReflect(value reflect.Value) error {
 		for i := 0; i < value.NumField(); i++ {
 			field := value.Type().Field(i)
 			if field.PkgPath == "" { // exported fields only
-				if err := validateJSONReflect(value.Field(i)); err != nil {
+				if err := validateJSONReflect(value.Field(i), depth+1); err != nil {
 					return err
 				}
 			}
