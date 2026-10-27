@@ -5,7 +5,7 @@
     {
       "ecosystem": "go",
       "name": "github.com/gowebpki/jcs",
-      "version": "v1.0.2",
+      "version": "1.0.2",
       "upstream_source": "https://github.com/gowebpki/jcs",
       "spdx_license": "Apache-2.0",
       "checksum": "h1:IY0Iv76ThSvocWinl2rphYmGLhMufS3ZD1giKqkI6ps=",
