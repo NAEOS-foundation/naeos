@@ -29,25 +29,27 @@ type EvidenceSignature struct {
 // governed execution. It binds authorization, the exact invocation, and the
 // independently observed outcome without trusting agent/sandbox claims alone.
 type RuntimeEvidence struct {
-	SchemaVersion    string             `json:"schema_version"`
-	RequestID        string             `json:"request_id"`
-	InvocationID     string             `json:"invocation_id"`
-	InvocationDigest string             `json:"invocation_digest"`
-	Tool             string             `json:"tool"`
-	Action           string             `json:"action"`
-	Resource         string             `json:"resource,omitempty"`
-	Environment      string             `json:"environment,omitempty"`
-	Actor            string             `json:"actor,omitempty"`
-	Capability       string             `json:"capability,omitempty"`
-	PolicyID         string             `json:"policy_id,omitempty"`
-	PolicyVersion    string             `json:"policy_version,omitempty"`
-	RuleID           string             `json:"rule_id,omitempty"`
-	Decision         string             `json:"decision"`
-	ExecutionStatus  string             `json:"execution_status"`
-	ExecutionHash    string             `json:"execution_hash,omitempty"`
-	Observation      *Observation       `json:"observation,omitempty"`
-	EvidenceDigest   string             `json:"evidence_digest"`
-	Signature        *EvidenceSignature `json:"signature,omitempty"`
+	SchemaVersion          string             `json:"schema_version"`
+	RequestID              string             `json:"request_id"`
+	InvocationID           string             `json:"invocation_id"`
+	InvocationDigest       string             `json:"invocation_digest"`
+	CandidateDigest        string             `json:"candidate_digest"`
+	CandidateDigestProfile string             `json:"candidate_digest_profile"`
+	Tool                   string             `json:"tool"`
+	Action                 string             `json:"action"`
+	Resource               string             `json:"resource,omitempty"`
+	Environment            string             `json:"environment,omitempty"`
+	Actor                  string             `json:"actor,omitempty"`
+	Capability             string             `json:"capability,omitempty"`
+	PolicyID               string             `json:"policy_id,omitempty"`
+	PolicyVersion          string             `json:"policy_version,omitempty"`
+	RuleID                 string             `json:"rule_id,omitempty"`
+	Decision               string             `json:"decision"`
+	ExecutionStatus        string             `json:"execution_status"`
+	ExecutionHash          string             `json:"execution_hash,omitempty"`
+	Observation            *Observation       `json:"observation,omitempty"`
+	EvidenceDigest         string             `json:"evidence_digest"`
+	Signature              *EvidenceSignature `json:"signature,omitempty"`
 }
 
 // InvocationDigest returns a deterministic SHA-256 digest over the complete
@@ -77,24 +79,36 @@ func BuildRuntimeEvidence(result ExecutionResult) (RuntimeEvidence, error) {
 	if result.Request.InvocationID == "" {
 		return RuntimeEvidence{}, fmt.Errorf("invocation_id is required")
 	}
+	if result.CandidateDigest == "" || result.CandidateDigestProfile != CandidateDigestProfileV1 {
+		return RuntimeEvidence{}, fmt.Errorf("candidate digest profile is missing or unsupported")
+	}
+	expectedCandidateDigest, err := CandidateDigestV1(result.Request)
+	if err != nil {
+		return RuntimeEvidence{}, fmt.Errorf("recompute candidate digest: %w", err)
+	}
+	if expectedCandidateDigest != result.CandidateDigest {
+		return RuntimeEvidence{}, fmt.Errorf("candidate digest does not match execution request")
+	}
 	e := RuntimeEvidence{
-		SchemaVersion:    "naeos.runtime-evidence.v1",
-		RequestID:        result.RequestID,
-		InvocationID:     result.InvocationID,
-		InvocationDigest: InvocationDigest(result.Request),
-		Tool:             result.Request.Tool,
-		Action:           result.Request.Action,
-		Resource:         result.Request.Resource,
-		Environment:      result.Request.Environment,
-		Actor:            result.Request.Actor,
-		Capability:       result.Request.Capability,
-		PolicyID:         result.PolicyID,
-		PolicyVersion:    result.PolicyVersion,
-		RuleID:           result.RuleID,
-		Decision:         string(result.Decision),
-		ExecutionStatus:  result.Status,
-		ExecutionHash:    result.Hash,
-		Observation:      result.Observation,
+		SchemaVersion:          "naeos.runtime-evidence.v1",
+		RequestID:              result.RequestID,
+		InvocationID:           result.InvocationID,
+		InvocationDigest:       InvocationDigest(result.Request),
+		CandidateDigest:        result.CandidateDigest,
+		CandidateDigestProfile: result.CandidateDigestProfile,
+		Tool:                   result.Request.Tool,
+		Action:                 result.Request.Action,
+		Resource:               result.Request.Resource,
+		Environment:            result.Request.Environment,
+		Actor:                  result.Request.Actor,
+		Capability:             result.Request.Capability,
+		PolicyID:               result.PolicyID,
+		PolicyVersion:          result.PolicyVersion,
+		RuleID:                 result.RuleID,
+		Decision:               string(result.Decision),
+		ExecutionStatus:        result.Status,
+		ExecutionHash:          result.Hash,
+		Observation:            result.Observation,
 	}
 	if result.Status == "completed" && result.Decision == control.DecisionAllow {
 		if result.Observation == nil || !result.Observation.Observed ||
@@ -174,6 +188,15 @@ func verifyRuntimeEvidence(e RuntimeEvidence, publicKey ed25519.PublicKey, issue
 	}
 	if e.RequestID == "" || e.InvocationID == "" || e.InvocationDigest == "" {
 		return fmt.Errorf("evidence identity is incomplete")
+	}
+	if e.CandidateDigestProfile != CandidateDigestProfileV1 || len(e.CandidateDigest) != 64 {
+		return fmt.Errorf("candidate digest profile is missing or unsupported")
+	}
+	if _, err := hex.DecodeString(e.CandidateDigest); err != nil {
+		return fmt.Errorf("candidate digest is not lowercase hexadecimal")
+	}
+	if strings.ToLower(e.CandidateDigest) != e.CandidateDigest {
+		return fmt.Errorf("candidate digest is not lowercase hexadecimal")
 	}
 	if e.Decision == string(control.DecisionAllow) && e.ExecutionStatus == "completed" {
 		if e.Observation == nil || !e.Observation.Observed ||
