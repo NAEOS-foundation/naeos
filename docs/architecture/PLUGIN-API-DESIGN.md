@@ -1,7 +1,31 @@
 # NAEOS Public Plugin Contract Design
 
-Status: Design proposal; not implemented or a compatibility promise
+Status: Design proposal; steps 1–3 partially implemented (see "Integration status"); not a compatibility promise
 Date: 2026-10-25
+
+## Integration status (2026-10-31)
+
+- Step 1 (v1 schema, finite error-code set): implemented in `pkg/pluginapi/v1`
+  (`ProtocolVersion`, documented error codes, `ValidErrorCode`). Response
+  validation rejects undocumented codes.
+- Step 2 (wire DTO integration): implemented for the WASM adapter. The host
+  now sends v1 `Request` envelopes and requires a single v1 response per
+  invocation; `internal/pluginsdk/scaffold` and `examples/plugins/hello`
+  speak the same public DTOs. The generic process sandbox in
+  `internal/pluginsdk/sandbox` still exchanges its legacy `{"method","params"}`
+  representation with subprocess plugins.
+- Step 3 (strict host validation): implemented host-side in
+  `internal/pluginsdk/wasm`: one-response stdout rule, request-ID echo,
+  protocol-version match, documented error codes, provisional response size
+  limit (`MaxResponseBytes`, default still an open decision), and no raw
+  untrusted output in host error text. Host-side manifest loading and
+  protocol-range selection from `Manifest.ProtocolVersions` are not
+  implemented yet.
+- Native `.so` loading and the internal `pluginhost.Plugin` interface remain
+  internal and trusted-only, as the migration sequence requires.
+
+End-to-end host tests exercise the v1 envelope against a real wasip1 build of
+`examples/plugins/hello` (success, error-code mapping, cancellation, timeout).
 
 ## Goal and boundary
 
@@ -94,9 +118,10 @@ before execution. A future explicit handshake may advertise host capabilities,
 but must not grant privileges. Do not infer compatibility from plugin package
 version or from an unversioned `describe` action.
 
-The current host has neither manifest protocol fields nor wire-envelope
-integration; the new public DTO package is not yet used by the host, scaffold,
-or examples. Those pieces and compatibility tests must change together.
+The WASM host adapter, scaffold, and hello example now use the public DTO
+package; the generic subprocess sandbox still uses the legacy wire shape, and
+host-side manifest negotiation remains to do. Compatibility fixtures and host
+integration tests must keep evolving together.
 
 ## Capabilities and authorization
 

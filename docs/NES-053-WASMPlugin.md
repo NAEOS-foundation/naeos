@@ -82,6 +82,14 @@ func (p *WASMPlugin) Shutdown() error
 
 ## 7. Request/Response Protocol
 
+> **Addendum (2026-10-31):** the WASM adapter now speaks the versioned public
+> envelope from `pkg/pluginapi/v1`: requests carry `protocol_version`,
+> `request_id`, `method: "execute"`, `action`, and `params`; responses must
+> echo `protocol_version` and `request_id`, contain exactly one JSON object on
+> stdout, use a documented finite error-code set on failure, and leave
+> elapsed-time measurement host-side. The legacy unversioned shapes below
+> remain only for the generic subprocess sandbox and historical context.
+
 ### Request
 
 ```go

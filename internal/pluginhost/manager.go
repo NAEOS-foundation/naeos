@@ -403,18 +403,10 @@ func (w *wasmPluginAdapter) Execute(action string, params map[string]any) (any, 
 	return w.ExecuteContext(context.Background(), action, params)
 }
 func (w *wasmPluginAdapter) ExecuteContext(ctx context.Context, action string, params map[string]any) (any, error) {
-	resp, err := w.plugin.ExecuteContext(ctx, action, params)
-	if err != nil {
-		return nil, err
-	}
-	wasmResp, ok := resp.(*wasm.Response)
-	if !ok {
-		return resp, nil
-	}
-	if !wasmResp.OK {
-		return nil, naeoserr.New(naeoserr.ErrPlugin, wasmResp.Error)
-	}
-	return wasmResp.Result, nil
+	// The WASM adapter speaks the public pluginapi v1 envelope natively: it
+	// returns the decoded result or a structured host error. Raw protocol
+	// output never reaches callers here.
+	return w.plugin.ExecuteContext(ctx, action, params)
 }
 func (w *wasmPluginAdapter) Shutdown() error { return nil }
 
