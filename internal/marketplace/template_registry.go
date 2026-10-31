@@ -246,7 +246,10 @@ func submitToRegistry(entry TemplateEntry, registryURL string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	defer transport.CloseIdleConnections()
+	client := &http.Client{Transport: transport, Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "publish to registry")
 	}
