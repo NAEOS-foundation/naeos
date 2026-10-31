@@ -1391,4 +1391,3 @@ func (m *unhealthyDB) MigrateContext(ctx context.Context, migrations []database.
 func (m *unhealthyDB) Rollback(version int) error                             { return nil }
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
-

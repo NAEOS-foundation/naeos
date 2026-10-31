@@ -107,4 +107,3 @@ func TestServerServicesHealthEndpoint(t *testing.T) {
 	}
 	t.Fatalf("expected /healthz to return 200 via %s", fmt.Sprintf("%s/healthz", base))
 }
-
