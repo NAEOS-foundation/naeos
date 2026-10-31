@@ -42,7 +42,7 @@ type dependencyReviewRecord struct {
 }
 
 var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64})$`)
-var spdxIdentifierPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.+-]*$`)
+var spdxTokens = regexp.MustCompile(`[()]|[^[:space:]()]+`)
 
 // parseDependencyReviewRegistry rejects malformed or incomplete records. The
 // caller must supply bytes loaded from the trusted merge-base, never the PR tree.
@@ -112,16 +112,76 @@ func checksumPresentInGoSum(data []byte, record dependencyReviewRecord) bool {
 	return false
 }
 
+// validSPDXLicense accepts a deliberately bounded SPDX expression grammar.
+// Only explicitly reviewed license identifiers are accepted; LicenseRef and
+// WITH exceptions remain unsupported until their provenance is modeled.
 func validSPDXLicense(value string) bool {
-	if !spdxIdentifierPattern.MatchString(value) {
+	tokens := spdxTokens.FindAllString(strings.TrimSpace(value), -1)
+	if len(tokens) == 0 {
 		return false
 	}
-	switch value {
+	parser := spdxExpressionParser{tokens: tokens}
+	return parser.parseOr() && parser.pos == len(parser.tokens)
+}
+
+type spdxExpressionParser struct {
+	tokens []string
+	pos    int
+}
+
+func (p *spdxExpressionParser) parseOr() bool {
+	if !p.parseAnd() {
+		return false
+	}
+	for p.consume("OR") {
+		if !p.parseAnd() {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *spdxExpressionParser) parseAnd() bool {
+	if !p.parsePrimary() {
+		return false
+	}
+	for p.consume("AND") {
+		if !p.parsePrimary() {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *spdxExpressionParser) parsePrimary() bool {
+	if p.consume("(") {
+		if !p.parseOr() || !p.consume(")") {
+			return false
+		}
+		return true
+	}
+	if p.pos >= len(p.tokens) {
+		return false
+	}
+	identifier := p.tokens[p.pos]
+	if identifier == ")" || identifier == "(" || identifier == "AND" || identifier == "OR" {
+		return false
+	}
+	p.pos++
+	switch identifier {
 	case "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "BSD-0-Clause", "ISC", "MPL-2.0", "LGPL-2.1-only", "LGPL-3.0-only", "GPL-2.0-only", "GPL-3.0-only", "Unlicense", "CC0-1.0", "Zlib", "EPL-2.0", "Unicode-3.0":
 		return true
 	default:
 		return false
 	}
+}
+
+func (p *spdxExpressionParser) consume(token string) bool {
+	if p.pos >= len(p.tokens) || p.tokens[p.pos] != token {
+		return false
+	}
+	p.pos++
+	return true
 }
 
 func validDependencyDomain(value string) bool {
