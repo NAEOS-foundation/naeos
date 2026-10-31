@@ -94,7 +94,7 @@ jobs:
           NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR: ${{ runner.temp }}/naeos-p1-6-golden-path
         run: |
           set -euo pipefail
-          ./examples/control-plane-golden-path/run-demo.sh
+          bash ./examples/control-plane-golden-path/run-demo.sh
           test -s "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/result.json"
           test -s "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/allow-side-effect.json"
           test ! -e "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/deny-side-effect.json"
