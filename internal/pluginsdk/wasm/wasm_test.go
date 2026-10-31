@@ -4,15 +4,20 @@
 package wasm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/tetratelabs/wazero"
+
+	pluginapi "github.com/NAEOS-foundation/naeos/pkg/pluginapi/v1"
 )
 
 var helloWASM = []byte{
@@ -31,13 +36,17 @@ var helloWASM = []byte{
 	0x08, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00,
 }
 
+// legacyResponseWASM is kept only as a compile/load fixture; its legacy
+// unversioned stdout output must be rejected by the v1 response decoder.
+var legacyUsageError = "must be rejected"
+
 // prestatWASM imports WASI fd_prestat_get and calls it with fd 3. Because
 // NewWASMRuntime does not preopen any filesystem, fd 3 must not be a valid
 // preopened directory and WASI must return EBADF (8).
 var prestatWASM = []byte{
 	0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00, 0x01, 0x0B, 0x02, 0x60, 0x02, 0x7F, 0x7F,
-	0x01, 0x7F, 0x60, 0x00, 0x01, 0x7F, 0x02, 0x29, 0x01, 0x16, 0x77, 0x61, 0x73, 0x69, 0x5F, 0x73, 0x6E,
-	0x61, 0x70, 0x73, 0x68, 0x6F, 0x74, 0x5F, 0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x31, 0x0E,
+	0x01, 0x7F, 0x60, 0x00, 0x01, 0x7F, 0x02, 0x29, 0x01, 0x16, 0x77, 0x61, 0x73, 0x69, 0x5F, 0x73,
+	0x6E, 0x61, 0x70, 0x73, 0x68, 0x6F, 0x74, 0x5F, 0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x31, 0x0E,
 	0x66, 0x64, 0x5F, 0x70, 0x72, 0x65, 0x73, 0x74, 0x61, 0x74, 0x5F, 0x67, 0x65, 0x74, 0x00, 0x00,
 	0x03, 0x02, 0x01, 0x01, 0x07, 0x09, 0x01, 0x05, 0x63, 0x68, 0x65, 0x63, 0x6B, 0x00, 0x01, 0x0A, 0x0A,
 	0x01, 0x08, 0x00, 0x41, 0x03, 0x41, 0x00, 0x10, 0x00, 0x0B,
@@ -45,10 +54,12 @@ var prestatWASM = []byte{
 
 var loopWASM = []byte{
 	0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00, 0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x03, 0x02,
-	0x01, 0x00, 0x05, 0x03, 0x01, 0x00, 0x01, 0x07, 0x13, 0x02, 0x06, 0x6D, 0x65, 0x6D, 0x6F, 0x72,
-	0x79, 0x02, 0x00, 0x06, 0x5F, 0x73, 0x74, 0x61, 0x72, 0x74, 0x00, 0x00, 0x0A, 0x09, 0x01, 0x07,
+	0x01, 0x00, 0x05, 0x03, 0x01, 0x00, 0x01, 0x07, 0x13, 0x02, 0x06, 0x6D, 0x65, 0x6D, 0x6F,
+	0x72, 0x79, 0x02, 0x00, 0x06, 0x5F, 0x73, 0x74, 0x61, 0x72, 0x74, 0x00, 0x00, 0x0A, 0x09, 0x01, 0x07,
 	0x00, 0x03, 0x40, 0x0C, 0x00, 0x0B, 0x0B, 0x0B, 0x06, 0x01, 0x00, 0x41, 0x00, 0x0B, 0x00,
 }
+
+var _ = legacyUsageError
 
 func writeTempWASM(t *testing.T, data []byte) string {
 	t.Helper()
@@ -156,41 +167,6 @@ func TestWASMRuntimeLoadMissing(t *testing.T) {
 	}
 }
 
-func TestWASMPluginExecute(t *testing.T) {
-	rt := NewWASMRuntime(5*time.Second, 0)
-	defer rt.Close()
-
-	path := writeTempWASM(t, helloWASM)
-	plugin, err := rt.Load(path)
-	if err != nil {
-		t.Fatalf("load wasm: %v", err)
-	}
-
-	result, err := plugin.Execute("test", map[string]any{"key": "value"})
-	if err != nil {
-		t.Fatalf("execute wasm: %v", err)
-	}
-
-	resp, ok := result.(*Response)
-	if !ok {
-		t.Fatalf("expected *Response, got %T", result)
-	}
-
-	if !resp.OK {
-		t.Errorf("expected ok=true, got error: %s", resp.Error)
-	}
-
-	var inner map[string]any
-	if err := json.Unmarshal([]byte(`{"ok":true,"result":"hello"}`), &inner); err != nil {
-		t.Fatal(err)
-	}
-	_ = inner
-
-	if resp.Elapsed < 0 {
-		t.Errorf("expected non-negative elapsed, got %d", resp.Elapsed)
-	}
-}
-
 func TestWASMPluginExecuteTimeout(t *testing.T) {
 	rt := NewWASMRuntime(200*time.Millisecond, 0)
 	defer rt.Close()
@@ -202,15 +178,11 @@ func TestWASMPluginExecuteTimeout(t *testing.T) {
 	}
 
 	result, err := plugin.Execute("test", nil)
-	if err != nil {
-		t.Fatalf("execute returned error: %v", err)
+	if err == nil {
+		t.Fatalf("expected timeout error, got result %v", result)
 	}
-	resp, ok := result.(*Response)
-	if !ok {
-		t.Fatalf("expected *Response, got %T", result)
-	}
-	if resp.OK {
-		t.Fatal("expected ok=false for timeout")
+	if !strings.Contains(err.Error(), "timed out") {
+		t.Fatalf("expected timeout message, got %v", err)
 	}
 }
 
@@ -266,7 +238,7 @@ func TestWASMPluginVersionDescription(t *testing.T) {
 		t.Errorf("expected version 1.0.0, got %q", p.Version())
 	}
 	if p.Description() != "test plugin" {
-		t.Errorf("expected description 'test plugin', got %q", p.Description())
+		t.Errorf("expected description %q, got %q", "test plugin", p.Description())
 	}
 }
 
@@ -319,33 +291,237 @@ func TestWASMPluginExecuteInvalidWASM(t *testing.T) {
 	}
 }
 
-func TestWASMPluginExecuteJSONRoundtrip(t *testing.T) {
-	rt := NewWASMRuntime(5*time.Second, 0)
+func TestNewRequestIDUnique(t *testing.T) {
+	seen := map[string]struct{}{}
+	for i := 0; i < 100; i++ {
+		id := newRequestID()
+		if id == "" {
+			t.Fatal("expected non-empty request ID")
+		}
+		if _, dup := seen[id]; dup {
+			t.Fatalf("duplicate request ID %q", id)
+		}
+		seen[id] = struct{}{}
+	}
+}
+
+func validRequest() pluginapi.Request {
+	return pluginapi.Request{
+		ProtocolVersion: pluginapi.ProtocolVersion,
+		RequestID:       "8c50f92c",
+		Method:          "execute",
+		Action:          "ping",
+	}
+}
+
+func TestParsePluginResponseParsesSuccess(t *testing.T) {
+	req := validRequest()
+	raw := []byte(`{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":{"status":"ok"}}`)
+
+	resp, err := parsePluginResponse(raw, req)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if !resp.OK {
+		t.Fatal("expected successful response")
+	}
+	result, err := decodeResponseResult(resp)
+	if err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	decoded, ok := result.(map[string]any)
+	if !ok {
+		t.Fatalf("expected decoded map, got %T", result)
+	}
+	if decoded["status"] != "ok" {
+		t.Fatalf("unexpected result: %v", result)
+	}
+}
+
+func TestParsePluginResponseAcceptsTrailingWhitespaceOnly(t *testing.T) {
+	req := validRequest()
+	raw := []byte(`{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":null}` + "\n\t \n")
+
+	resp, err := parsePluginResponse(raw, req)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	result, err := decodeResponseResult(resp)
+	if err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	if result != nil {
+		t.Fatalf("expected nil result for missing result field, got %v", result)
+	}
+}
+
+func TestParsePluginResponseParsesPluginError(t *testing.T) {
+	req := validRequest()
+	raw := []byte(`{"protocol_version":"1.0","request_id":"8c50f92c","ok":false,"error":{"code":"invalid_params","message":"name is required"}}`)
+
+	resp, err := parsePluginResponse(raw, req)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if resp.OK {
+		t.Fatal("expected failed response")
+	}
+	failure := responseFailure(req, resp)
+	if !strings.Contains(failure.Error(), "code=invalid_params") {
+		t.Fatalf("expected error code in message, got %v", failure)
+	}
+	if !strings.Contains(failure.Error(), "name is required") {
+		t.Fatalf("expected plugin message in error, got %v", failure)
+	}
+}
+
+func TestParsePluginResponseRejects(t *testing.T) {
+	req := validRequest()
+	responses := map[string]string{
+		"legacy unversioned response": `{"ok":true,"result":"hello"}`,
+		"wrong protocol version":      `{"protocol_version":"9.9","request_id":"8c50f92c","ok":true,"result":null}`,
+		"wrong request ID":            `{"protocol_version":"1.0","request_id":"00000000","ok":true,"result":null}`,
+		"ok with error":               `{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"error":{"code":"invalid_params","message":"x"}}`,
+		"failure without code":        `{"protocol_version":"1.0","request_id":"8c50f92c","ok":false,"error":{"code":"","message":"x"}}`,
+		"failure without error":       `{"protocol_version":"1.0","request_id":"8c50f92c","ok":false}`,
+		"undocumented error code":     `{"protocol_version":"1.0","request_id":"8c50f92c","ok":false,"error":{"code":"banana","message":"x"}}`,
+		"malformed json":              `{"protocol_version":"1.0",`,
+		"array response":              `[{"ok":true}]`,
+		"multiple objects":            `{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":null} {"ok":true}`,
+		"trailing garbage":            `{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":null} garbage`,
+		"empty output":                ``,
+	}
+
+	for name, raw := range responses {
+		resp, err := parsePluginResponse([]byte(raw), req)
+		if resp != nil {
+			t.Errorf("%s: expected nil response, got %v", name, resp)
+		}
+		if err == nil {
+			t.Errorf("%s: expected parse rejection", name)
+		}
+	}
+
+	if _, err := parsePluginResponse(make([]byte, MaxResponseBytes+1), req); err == nil || !strings.Contains(err.Error(), "limit") {
+		t.Errorf("expected size-limit rejection, got %v", err)
+	}
+}
+
+func TestValidErrorCode(t *testing.T) {
+	for code, want := range map[string]bool{
+		pluginapi.ErrorCodeInvalidRequest:     true,
+		pluginapi.ErrorCodeUnsupportedVersion: true,
+		pluginapi.ErrorCodePluginError:        true,
+		pluginapi.ErrorCodeInvalidResponse:    true,
+		"banana":                              false,
+		"":                                    false,
+	} {
+		if got := pluginapi.ValidErrorCode(code); got != want {
+			t.Errorf("ValidErrorCode(%q) = %v, want %v", code, got, want)
+		}
+	}
+}
+
+// buildHelloWASM compiles examples/plugins/hello to a wasip1 module using the
+// local Go toolchain. It exercises the real v1 host-side wire path instead of
+// a static response fixture, because valid responses must echo the
+// host-generated request ID.
+func buildHelloWASM(t *testing.T) string {
+	t.Helper()
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Skipf("go toolchain unavailable: %v", err)
+	}
+	out := filepath.Join(t.TempDir(), "hello.wasm")
+	buildDir, err := filepath.Abs("../../../examples/plugins/hello")
+	if err != nil {
+		t.Fatalf("resolve example dir: %v", err)
+	}
+	cmd := exec.Command(goBin, "build", "-o", out, ".")
+	cmd.Dir = buildDir
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("build example plugin: %v\n%s", err, output)
+	}
+	return out
+}
+
+func TestWASMPluginV1EnvelopeRoundTrip(t *testing.T) {
+	rt := NewWASMRuntime(30*time.Second, 0)
 	defer rt.Close()
 
-	path := writeTempWASM(t, helloWASM)
+	path := buildHelloWASM(t)
 	plugin, err := rt.Load(path)
 	if err != nil {
 		t.Fatalf("load wasm: %v", err)
 	}
 
-	result, err := plugin.Execute("echo", map[string]any{"data": "test"})
+	result, err := plugin.Execute("ping", nil)
 	if err != nil {
-		t.Fatalf("execute: %v", err)
+		t.Fatalf("execute ping: %v", err)
 	}
-
-	resp, ok := result.(*Response)
+	decoded, ok := result.(map[string]any)
 	if !ok {
-		t.Fatalf("expected *Response, got %T", result)
+		t.Fatalf("expected decoded map, got %T", result)
+	}
+	if decoded["status"] != "ok" {
+		t.Fatalf("unexpected ping result: %v", result)
 	}
 
-	respJSON, _ := json.Marshal(resp)
-	var parsed map[string]any
-	if err := json.Unmarshal(respJSON, &parsed); err != nil {
-		t.Fatalf("response is not valid JSON: %v", err)
+	greet, err := plugin.Execute("greet", map[string]any{"name": "NAEOS"})
+	if err != nil {
+		t.Fatalf("execute greet: %v", err)
+	}
+	greetMap, ok := greet.(map[string]any)
+	if !ok {
+		t.Fatalf("expected decoded map, got %T", greet)
+	}
+	if greetMap["message"] != "Hello, NAEOS!" {
+		t.Fatalf("unexpected greet result: %v", greet)
+	}
+}
+
+func TestWASMPluginV1EnvelopeErrorMapping(t *testing.T) {
+	rt := NewWASMRuntime(30*time.Second, 0)
+	defer rt.Close()
+
+	plugin, err := rt.Load(buildHelloWASM(t))
+	if err != nil {
+		t.Fatalf("load wasm: %v", err)
 	}
 
-	if _, exists := parsed["ok"]; !exists {
-		t.Error("response missing 'ok' field")
+	result, err := plugin.Execute("nope", nil)
+	if result != nil {
+		t.Fatalf("expected nil result, got %v", result)
+	}
+	if err == nil {
+		t.Fatal("expected error for unknown action")
+	}
+	if !strings.Contains(err.Error(), "code=plugin_error") {
+		t.Fatalf("expected plugin error code, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "unknown action") {
+		t.Fatalf("expected plugin message, got %v", err)
+	}
+}
+
+func TestDecodePreservesJSONNumbers(t *testing.T) {
+	req := validRequest()
+	raw := []byte(`{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":{"count":7,"ok_flag":true}}`)
+
+	resp, err := parsePluginResponse(raw, req)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	result, err := decodeResponseResult(resp)
+	if err != nil {
+		t.Fatalf("decode result: %v", err)
+	}
+	encoded, err := json.Marshal(result)
+	if err != nil {
+		t.Fatalf("re-encode: %v", err)
+	}
+	if !bytes.Contains(encoded, []byte(`"count":7`)) {
+		t.Fatalf("expected exact JSON number 7, got %s", encoded)
 	}
 }

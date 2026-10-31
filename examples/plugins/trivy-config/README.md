@@ -20,7 +20,7 @@ go build -o trivy-config ./examples/plugins/trivy-config
 ## Run
 
 ```bash
-printf '%s\n' '{"method":"scan","params":{"target":"."}}' | ./trivy-config
+printf '%s\n' '{"protocol_version":"1.0","request_id":"readme","method":"execute","action":"scan","params":{"target":"."}}' | ./trivy-config
 ```
 
 The plugin runs:
@@ -47,6 +47,6 @@ The intentionally small fixture in `testdata/Dockerfile` can be used for a
 local pilot run:
 
 ```bash
-printf '%s\n' '{"method":"scan","params":{"target":"testdata/Dockerfile"}}' \
+printf '%s\n' '{"protocol_version":"1.0","request_id":"readme","method":"execute","action":"scan","params":{"target":"testdata/Dockerfile"}}' \
 	| ./trivy-config > trivy-report.json
 ```

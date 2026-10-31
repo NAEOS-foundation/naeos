@@ -118,30 +118,67 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	pluginapi "github.com/NAEOS-foundation/naeos/pkg/pluginapi/v1"
 )
 
-type request struct {
-	Method string         %[1]sjson:"method"%[1]s
-	Params map[string]any %[1]sjson:"params"%[1]s
+func respond(resp pluginapi.Response) {
+	// stdout is reserved for exactly one response object; diagnostics go to stderr.
+	out, err := json.Marshal(resp)
+	if err != nil {
+		resp = pluginapi.Response{
+			ProtocolVersion: pluginapi.ProtocolVersion,
+			OK:              false,
+			Error:           &pluginapi.Error{Code: pluginapi.ErrorCodeInvalidResponse, Message: "encode response"},
+		}
+		out, _ = json.Marshal(resp)
+	}
+	fmt.Println(string(out))
+}
+
+func fail(req pluginapi.Request, code, message string) {
+	respond(pluginapi.Response{
+		ProtocolVersion: req.ProtocolVersion,
+		RequestID:       req.RequestID,
+		OK:              false,
+		Error:           &pluginapi.Error{Code: code, Message: message},
+	})
+	os.Exit(1)
 }
 
 func main() {
-	var req request
+	var req pluginapi.Request
 	if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
-		fmt.Fprintf(os.Stdout, %[1]s{"ok":false,"error":%%q}%[1]s+"\n", "invalid request: "+err.Error())
-		os.Exit(1)
+		fail(pluginapi.Request{ProtocolVersion: pluginapi.ProtocolVersion}, pluginapi.ErrorCodeInvalidRequest, "invalid request: "+err.Error())
+	}
+	if err := req.Validate(); err != nil {
+		fail(req, pluginapi.ErrorCodeInvalidRequest, err.Error())
 	}
 
-	switch req.Method {
+	switch req.Action {
 	case "ping":
-		fmt.Println(%[1]s{"ok":true,"result":{"status":"ok"}}%[1]s)
+		respond(pluginapi.Response{
+			ProtocolVersion: req.ProtocolVersion,
+			RequestID:       req.RequestID,
+			OK:              true,
+			Result:          json.RawMessage("{\"status\":\"ok\"}"),
+		})
 	case "health":
-		fmt.Println(%[1]s{"ok":true,"result":{"status":"healthy"}}%[1]s)
+		respond(pluginapi.Response{
+			ProtocolVersion: req.ProtocolVersion,
+			RequestID:       req.RequestID,
+			OK:              true,
+			Result:          json.RawMessage("{\"status\":\"healthy\"}"),
+		})
 	case "describe":
-		fmt.Fprintf(os.Stdout, %[1]s{"ok":true,"result":{"name":%%q,"version":"0.1.0"}}%[1]s+"\n", %[2]q)
+		respond(pluginapi.Response{
+			ProtocolVersion: req.ProtocolVersion,
+			RequestID:       req.RequestID,
+			OK:              true,
+			Result:          json.RawMessage(fmt.Sprintf("{\"name\":%%q,\"version\":\"0.1.0\"}", %[2]q)),
+		})
 	default:
-		fmt.Fprintf(os.Stdout, %[1]s{"ok":false,"error":%%q}%[1]s+"\n", fmt.Sprintf("unknown action: %%s", req.Method))
-		os.Exit(1)
+		fail(req, pluginapi.ErrorCodePluginError, fmt.Sprintf("unknown action: %%s", req.Action))
 	}
 }
 `, bt, f.Name)

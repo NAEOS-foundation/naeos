@@ -161,14 +161,6 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 				Error: fmt.Sprintf("wasm plugin error: %v", r.err),
 			}, nil
 		}
-		if wasmResp, ok := r.value.(*wasm.Response); ok {
-			return &Response{
-				OK:      wasmResp.OK,
-				Result:  wasmResp.Result,
-				Error:   wasmResp.Error,
-				Elapsed: wasmResp.Elapsed,
-			}, nil
-		}
 		return &Response{
 			OK:     true,
 			Result: r.value,

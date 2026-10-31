@@ -5,8 +5,10 @@
 > scaffold, and native plugin interface import `internal/pluginhost`; Go's
 > `internal` rule prevents an unrelated module from importing that package.
 > The generated project therefore expects a NAEOS source checkout and a local
-> `replace` directive. Do not promise compatibility for this interface or its
-> JSON-over-stdio protocol until a versioned public contract is published.
+> `replace` directive. The WASM wire envelope now uses the public
+> `pkg/pluginapi/v1` DTO package, but host-side protocol compatibility,
+> manifest negotiation, and compatibility tests are still incomplete; do not
+> promise stability yet.
 
 ## Overview
 
@@ -29,19 +31,44 @@ requires a local `replace` to a matching NAEOS checkout. See
 
 ## Current WASM wire format
 
-The host sends one JSON object to stdin:
+The host sends one JSON object on stdin using the public v1 envelope types
+from `pkg/pluginapi/v1` (`Request`, `Response`, `Manifest`):
 
 ```json
-{"method":"ping","params":{}}
+{
+  "protocol_version": "1.0",
+  "request_id": "8c50f92c",
+  "method": "execute",
+  "action": "ping",
+  "params": {}
+}
 ```
 
-The plugin writes one JSON object to stdout. A successful response has the
-shape `{"ok":true,"result":...}`; an error response has the shape
-`{"ok":false,"error":"..."}`. The host also accepts an `elapsed_ms` field
-and overwrites it with measured execution time. Keep stdout reserved for this
-response; send diagnostic output to stderr. This is an implementation detail
-that may change until a versioned protocol and compatibility policy are
-published.
+The plugin writes exactly one JSON response object to stdout (anything after
+the first object makes the response invalid). A successful response echoes
+the protocol version and request ID:
+
+```json
+{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":{"status":"ok"}}
+```
+
+A failed response uses a documented v1 error code finite set
+(`invalid_request`, `unsupported_version`, `invalid_params`, `denied`,
+`timeout`, `resource_limit`, `plugin_error`, `invalid_response`):
+
+```json
+{"protocol_version":"1.0","request_id":"8c50f92c","ok":false,"error":{"code":"invalid_params","message":"name is required"}}
+```
+
+Rules currently enforced by the host: request IDs are generated host-side and
+must be echoed untouched; stdout is reserved for exactly one response object
+(diagnostics go to stderr); oversized responses and uncorrelated or
+unversioned responses are rejected as structured host errors; elapsed-time
+measurement stays host-side. The exact protocol-version selection helper
+(`Manifest.SupportsProtocol`) exists in the public DTO package, but
+host-side manifest loading and negotiation are not implemented yet. This
+remains an experimental implementation detail until the compatibility policy
+is published.
 
 WASM execution currently uses wazero with a timeout and memory limit. The host
 does not configure filesystem preopens in the shown execution path. Review the

@@ -13,6 +13,37 @@ import (
 
 const ProtocolVersion = "1.0"
 
+// Error codes defined by protocol v1. Plugins should use one of these codes
+// for failed responses; hosts may reject or remap unknown codes.
+const (
+	ErrorCodeInvalidRequest     = "invalid_request"
+	ErrorCodeUnsupportedVersion = "unsupported_version"
+	ErrorCodeInvalidParams      = "invalid_params"
+	ErrorCodeDenied             = "denied"
+	ErrorCodeTimeout            = "timeout"
+	ErrorCodeResourceLimit      = "resource_limit"
+	ErrorCodePluginError        = "plugin_error"
+	ErrorCodeInvalidResponse    = "invalid_response"
+)
+
+var knownErrorCodes = map[string]struct{}{
+	ErrorCodeInvalidRequest:     {},
+	ErrorCodeUnsupportedVersion: {},
+	ErrorCodeInvalidParams:      {},
+	ErrorCodeDenied:             {},
+	ErrorCodeTimeout:            {},
+	ErrorCodeResourceLimit:      {},
+	ErrorCodePluginError:        {},
+	ErrorCodeInvalidResponse:    {},
+}
+
+// ValidErrorCode reports whether the code is one of the documented v1 error
+// codes. The list is finite; plugins must not invent transient codes.
+func ValidErrorCode(code string) bool {
+	_, ok := knownErrorCodes[code]
+	return ok
+}
+
 // Manifest declares plugin metadata and the exact protocol versions supported.
 type Manifest struct {
 	Name             string           `json:"name"`
@@ -96,6 +127,9 @@ func (r Response) Validate(request Request) error {
 	}
 	if !r.OK && (r.Error == nil || strings.TrimSpace(r.Error.Code) == "") {
 		return errors.New("failed plugin response must include an error code")
+	}
+	if !r.OK && r.Error != nil && !ValidErrorCode(r.Error.Code) {
+		return errors.New("failed plugin response uses an undocumented error code")
 	}
 	return nil
 }
