@@ -172,7 +172,6 @@ func TestCandidateDigestV1RFC8785NegativeZero(t *testing.T) {
 	}
 }
 
-
 // Cyclic values must be rejected even when CandidateDigestV1 is called
 // directly, without passing through ExecutionGateway's snapshot boundary.
 func TestCandidateDigestV1RejectsCyclicInput(t *testing.T) {
