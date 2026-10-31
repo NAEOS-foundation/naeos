@@ -124,6 +124,8 @@ The checked-in `examples/demo-cli/.run/generated/` tree contains **76 tracked tr
 
 **Decision:** preserve the existing generated snapshot for now. Before untracking or deleting it, determine whether the demo/test contract intentionally uses the snapshot, whether it can be regenerated deterministically, and whether the case study should point to an archived fixture or the output from its pinned validation commit. Do not claim the current snapshot proves the behavior of current `main`.
 
+**Status (2026-10-31):** reproducibility verified. Executing `examples/demo-cli/run-demo.sh` with the freshly built CLI into a clean output directory reproduced 53 of the 54 tracked snapshot files byte-for-byte (54 materialized files from 60 logical artifacts, 6 path collisions). The only difference is `generated/demoapp/package.go`, stale output from an older generator version. No Go test references the snapshot; the demo contract regenerates output under `.run/` at run time. The tracked snapshot was therefore untracked with `git rm -r --cached` (local copy kept and already covered by the `examples/demo-cli/.run/generated/` ignore rule), so the case-study references remain valid as archived evidence of the pinned run while new output is no longer source-controlled.
+
 ### Next safe migration sequence
 
 1. Let the current PR checks finish; do not merge while CI is pending.
