@@ -135,7 +135,7 @@ func scnEvaluatorErrorFailsClosed() Result {
 		Actor:    "agent-7",
 	})
 	if evalErr != nil {
-		return Result{Layer: LayerControl, Scenario: "malformed policy rejected before activation", Attack: "Malformed condition must not activate", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeError, Evidence: fmt.Sprintf("registration unexpectedly accepted malformed policy; evaluation error: %v", evalErr), Risk: Critical}
+		return Result{Layer: LayerControl, Scenario: "malformed policy rejected before activation", Attack: "Malformed condition must not activate", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeGovernanceInvalid, Evidence: fmt.Sprintf("registration unexpectedly accepted malformed policy; subsequent evaluation error: %v", evalErr), Risk: Critical}
 	}
 	return Result{
 		Layer:           LayerControl,
