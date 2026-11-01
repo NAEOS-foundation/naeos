@@ -714,9 +714,9 @@ func TestDecisionGateway_EvaluationFailureIsNotAuthorizationDecisionAndCannotExe
 	gateway := NewDecisionGateway(NewEvaluator(), ledger)
 	req := AuthorizeRequest{
 		RequestID: "REQ-INDETERMINATE", AgentID: "agent-1",
-		Action: Action{AgentID: "agent-1", Capability: "repository.write"},
-		Grant: &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "missing", PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)},
-		Policy: &Policy{ID: "missing", Version: 1, Status: "active"},
+		Action:    Action{AgentID: "agent-1", Capability: "repository.write"},
+		Grant:     &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "missing", PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)},
+		Policy:    &Policy{ID: "missing", Version: 1, Status: "active"},
 		Timestamp: time.Now().UTC(),
 	}
 	result, event := gateway.Execute(req)
