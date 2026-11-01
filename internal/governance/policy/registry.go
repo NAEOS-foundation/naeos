@@ -38,7 +38,9 @@ type Scope struct {
 }
 
 // PolicyRule is a deterministic guard attached to a policy. When the rule's
-// condition passes it contributes its Decision to the policy outcome.
+// condition passes it contributes its Decision to the policy outcome. A failed
+// condition produces a fail-closed DENY; priority controls evaluation order,
+// while decision severity resolves conflicts.
 type PolicyRule struct {
 	RuleID    string
 	Condition string   // evaluated using the evaluator condition syntax
