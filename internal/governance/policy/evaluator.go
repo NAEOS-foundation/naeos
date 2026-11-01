@@ -57,6 +57,9 @@ func (DefaultEvaluator) EvaluateRules(rules []Rule, ctx map[string]any) ([]Evalu
 		if !rule.Enabled {
 			continue
 		}
+		if strings.TrimSpace(rule.Condition) == "" {
+			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("rule %q has empty condition", rule.RuleID))
+		}
 		if err := validateCondition(rule.Condition); err != nil {
 			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("rule %q has invalid condition: %v", rule.RuleID, err))
 		}
@@ -239,23 +242,23 @@ func validateCondition(condition string) error {
 		}
 		return nil
 	}
-	validatePair := func(raw string) (string, string, error) {
+	validatePair := func(raw string) (string, error) {
 		pair := strings.SplitN(raw, ",", 2)
 		if len(pair) != 2 || strings.TrimSpace(pair[0]) == "" || strings.TrimSpace(pair[1]) == "" {
-			return "", "", fmt.Errorf("operator requires a non-empty key and argument separated by ','")
+			return "", fmt.Errorf("operator requires a non-empty key and argument separated by ','")
 		}
 		key, value := strings.TrimSpace(pair[0]), strings.TrimSpace(pair[1])
 		if err := validatePath(key); err != nil {
-			return "", "", err
+			return "", err
 		}
-		return key, value, nil
+		return value, nil
 	}
 
 	switch name {
 	case "exists", "not_empty":
 		return validatePath(args)
 	case "contains":
-		_, value, err := validatePair(args)
+		value, err := validatePair(args)
 		if err != nil {
 			return err
 		}
@@ -264,16 +267,16 @@ func validateCondition(condition string) error {
 		}
 		return nil
 	case "gt", "lt", "gte", "lte":
-		_, threshold, err := validatePair(args)
+		threshold, err := validatePair(args)
 		if err != nil {
 			return err
 		}
-		if _, err := parseFiniteFloat(threshold); err != nil {
+		if _, err := strconv.ParseFloat(strings.TrimSpace(threshold), 64); err != nil {
 			return fmt.Errorf("invalid numeric threshold %q: %w", threshold, err)
 		}
 		return nil
 	case "in":
-		_, options, err := validatePair(args)
+		options, err := validatePair(args)
 		if err != nil {
 			return err
 		}
