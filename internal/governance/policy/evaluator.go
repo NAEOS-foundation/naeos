@@ -228,12 +228,13 @@ func validateCondition(condition string) error {
 		return fmt.Errorf("condition must contain an operator or key followed by ':' and a value")
 	}
 	name, args := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-	if name == "" || args == "" || strings.ContainsAny(name, " \\t\\r\\n,:" ) {
+	if name == "" || args == "" || strings.ContainsAny(name, " \t\r\n,:") {
 		return fmt.Errorf("condition operator/key and value must be non-empty and well formed")
 	}
 	validatePath := func(path string) error {
 		path = strings.TrimSpace(path)
-		if path == "" || strings.HasPrefix(path, ".") || strings.HasSuffix(path, ".") || strings.Contains(path, "..") || strings.ContainsAny(path, " \\t\\r\\n,:" ) {
+		if path == "" || strings.HasPrefix(path, ".") || strings.HasSuffix(path, ".") ||
+			strings.Contains(path, "..") || strings.ContainsAny(path, " \t\r\n,:") {
 			return fmt.Errorf("invalid context path %q", path)
 		}
 		return nil
@@ -244,27 +245,42 @@ func validateCondition(condition string) error {
 			return "", "", fmt.Errorf("operator requires a non-empty key and argument separated by ','")
 		}
 		key, value := strings.TrimSpace(pair[0]), strings.TrimSpace(pair[1])
-		if err := validatePath(key); err != nil { return "", "", err }
+		if err := validatePath(key); err != nil {
+			return "", "", err
+		}
 		return key, value, nil
 	}
+
 	switch name {
 	case "exists", "not_empty":
 		return validatePath(args)
 	case "contains":
 		_, value, err := validatePair(args)
-		if err != nil { return err }
-		if value == "" { return fmt.Errorf("contains requires a non-empty substring") }
+		if err != nil {
+			return err
+		}
+		if value == "" {
+			return fmt.Errorf("contains requires a non-empty substring")
+		}
 		return nil
 	case "gt", "lt", "gte", "lte":
 		_, threshold, err := validatePair(args)
-		if err != nil { return err }
-		if _, err := parseFiniteFloat(threshold); err != nil { return fmt.Errorf("invalid numeric threshold %q: %w", threshold, err) }
+		if err != nil {
+			return err
+		}
+		if _, err := parseFiniteFloat(threshold); err != nil {
+			return fmt.Errorf("invalid numeric threshold %q: %w", threshold, err)
+		}
 		return nil
 	case "in":
 		_, options, err := validatePair(args)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		for _, option := range strings.Split(options, ",") {
-			if strings.TrimSpace(option) == "" { return fmt.Errorf("in requires non-empty allowed values") }
+			if strings.TrimSpace(option) == "" {
+				return fmt.Errorf("in requires non-empty allowed values")
+			}
 		}
 		return nil
 	default:
