@@ -183,11 +183,18 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			return DecisionResult{
 				Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
 				PolicyID: policyID, Requested: action.Capability,
-				Message: "supplied policy identity does not match the requested policy reference",
+				Message: "supplied policy reference does not match the requested policy selector",
 			}
 		}
 	}
-
+	if ctx.Grant != nil {
+		if policyID == "" {
+			policyID = ctx.Grant.PolicyID
+		}
+		if policyVersion == 0 {
+			policyVersion = ctx.Grant.PolicyVersion
+		}
+	}
 	canonical, err := e.store.Version(policyID, policyVersion)
 	if err != nil {
 		return DecisionResult{
@@ -200,7 +207,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message:   fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
+			Message: fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
 		}
 	}
 	active, err := e.store.Active(policyID)
@@ -209,19 +216,12 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message:   fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
+			Message: fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
 		}
 	}
-	if ctx.Policy != nil && !reflect.DeepEqual(ctx.Policy, canonical) {
-		return DecisionResult{
-			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
-			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
-			Requested: action.Capability,
-			Message:   "supplied policy contents do not match the canonical policy-store snapshot",
-		}
-	}
-	ctx.Policy = canonical
-	policy := ctx.Policy
+	// The caller-supplied policy is only a selector. Its contents are never
+	// evaluated; authorization always uses the immutable PolicyStore snapshot.
+	policy := canonical
 
 	if ctx.Grant != nil && !ctx.Grant.IsValid(ctx.Now) {
 		return DecisionResult{
@@ -372,19 +372,27 @@ func containsCapability(values []Capability, target Capability) bool {
 func (e *Evaluator) EvaluateAction(action Action, grant *Grant, policy *Policy, now time.Time) DecisionResult {
 	action = normalizeRequest(action)
 	ctx := AuthorizationContext{
-		Grant:  grant,
-		Policy: policy,
-		Now:    now,
+		Grant: grant,
+		Now:   now,
+	}
+	if grant != nil {
+		ctx.PolicyID = grant.PolicyID
+		ctx.PolicyVersion = grant.PolicyVersion
 	}
 	if policy != nil {
-		ctx.PolicyID = policy.ID
-		ctx.PolicyVersion = policy.Version
-	}
-	if ctx.PolicyID == "" && policy != nil {
-		ctx.PolicyID = policy.ID
-	}
-	if ctx.PolicyVersion == 0 && policy != nil {
-		ctx.PolicyVersion = policy.Version
+		if ctx.PolicyID != "" && (policy.ID != ctx.PolicyID || policy.Version != ctx.PolicyVersion) {
+			return DecisionResult{
+				Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+				PolicyID: ctx.PolicyID, Requested: action.Capability,
+				Message: "supplied policy reference does not match the grant policy reference",
+			}
+		}
+		if ctx.PolicyID == "" {
+			ctx.PolicyID = policy.ID
+			ctx.PolicyVersion = policy.Version
+		}
+		// Keep only the reference. Evaluate resolves policy contents from the store.
+		ctx.Policy = &Policy{ID: policy.ID, Version: policy.Version}
 	}
 	return e.Evaluate(ctx, action)
 }
