@@ -454,4 +454,3 @@ func TestSummarizeArtifactWritesHandlesEmptyAndDuplicatePaths(t *testing.T) {
 		t.Fatalf("clamped write count summary=(%d,%d,%d), want (3,2,1)", logical, materialized, collisions)
 	}
 }
-
