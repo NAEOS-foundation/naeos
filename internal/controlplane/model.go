@@ -17,8 +17,9 @@ type DecisionStatus string
 const (
 	DecisionAllow   DecisionStatus = "ALLOW"
 	DecisionDeny    DecisionStatus = "DENY"
-	DecisionPending DecisionStatus = "REQUIRE_APPROVAL"
-	DecisionUnknown DecisionStatus = "UNKNOWN"
+	DecisionPending       DecisionStatus = "REQUIRE_APPROVAL"
+	DecisionUnknown       DecisionStatus = "UNKNOWN" // execution outcome is unresolved
+	DecisionIndeterminate DecisionStatus = "INDETERMINATE" // policy outcome could not be evaluated
 )
 
 // DecisionReason describes why a decision was made.
@@ -45,6 +46,7 @@ const (
 	ReasonDeniedStalePolicy       DecisionReason = "stale_policy"
 	ReasonRequiresApproval        DecisionReason = "approval_required"
 	ReasonNoPolicyFound           DecisionReason = "policy_not_found"
+	ReasonEvaluationFailed        DecisionReason = "policy_evaluation_failed"
 	ReasonExecutionOutcomeUnknown DecisionReason = "execution_outcome_unknown"
 )
 
