@@ -58,7 +58,7 @@ find /tmp/naeos-pilot -maxdepth 3 -type f | sort
 
 ## Evidence anchors
 
-```
+```text
 run_id=
 specification_hash=
 neir_hash=
@@ -68,7 +68,7 @@ invalid_policy_rejection=
 
 Metadata groups observed:
 
-```
+```text
 validation=
 policy=
 context=
@@ -78,22 +78,23 @@ stages=
 
 ## Independent verification
 
-If a canonical serialized EvidenceBundle exists:
+If a canonical serialized EvidenceBundle exists, obtain the trust anchor independently and run:
 
 ```bash
-naeos evidence verify-bundle --input-file evidence.json
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub
 ```
 
 Record:
 
-```
+```text
 independent_verification=
 independent_verification_result=
+trust_anchor_source=
 ```
 
 If no canonical bundle exists:
 
-```
+```text
 independent_verification=not_applicable
 reason=
 ```
