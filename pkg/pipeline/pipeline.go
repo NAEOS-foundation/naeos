@@ -1074,7 +1074,13 @@ func (p *Pipeline) runReview(artifacts []engine.Artifact) ([]*review.ReviewResul
 		default:
 			state = ReviewStateError
 		}
-		outcomes = append(outcomes, ReviewOutcome{Artifact: artifact.Path, State: state, Summary: r.Summary})
+		summary := "mandatory review did not pass"
+		if state == ReviewStatePass {
+			summary = "mandatory review passed"
+		} else if state == ReviewStateError {
+			summary = "mandatory reviewer returned an unsupported status"
+		}
+		outcomes = append(outcomes, ReviewOutcome{Artifact: artifact.Path, State: state, Summary: summary})
 		if state != ReviewStatePass {
 			return reviews, outcomes, fmt.Errorf("mandatory review did not pass for artifact %q: status %q", artifact.Path, r.Status)
 		}
