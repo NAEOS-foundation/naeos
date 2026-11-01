@@ -103,7 +103,7 @@ func scnScopeSpoofViaResource() Result {
 
 func scnEvaluatorErrorFailsClosed() Result {
 	reg := policy.NewRegistry()
-	_ = reg.Register(&policy.Policy{
+	err := reg.Register(&policy.Policy{
 		ID:      "invalid-evaluator-policy",
 		Version: "1.0.0",
 		Scope:   policy.Scope{Resource: "ship", Action: "run"},
@@ -116,31 +116,35 @@ func scnEvaluatorErrorFailsClosed() Result {
 			Priority:  1,
 		}},
 	})
+	if err != nil {
+		return normalizeResult(Result{
+			Layer:           LayerControl,
+			Scenario:        "malformed policy rejected before activation",
+			Attack:          "A malformed policy condition must be rejected before an ALLOW-default policy can become active",
+			ExpectedOutcome: OutcomeError,
+			ObservedOutcome: OutcomeError,
+			Evidence:        fmt.Sprintf("policy registration rejected malformed condition: %v", err),
+			Risk:            Critical,
+		})
+	}
+
 	plane := control.New(reg)
-	rec, err := plane.Evaluate(control.Request{
+	rec, evalErr := plane.Evaluate(control.Request{
 		Resource: "ship",
 		Action:   "run",
 		Actor:    "agent-7",
 	})
-	if err != nil {
-		return Result{
-			Layer:           LayerControl,
-			Scenario:        "evaluator error fails closed",
-			Attack:          "A malformed policy rule triggers evaluator failure while the policy default is ALLOW",
-			ExpectedOutcome: OutcomeError,
-			ObservedOutcome: OutcomeError,
-			Evidence:        fmt.Sprintf("unexpected control-plane error: %v", err),
-			Risk:            Critical,
-		}
+	if evalErr != nil {
+		return Result{Layer: LayerControl, Scenario: "malformed policy rejected before activation", Attack: "Malformed condition must not activate", ExpectedOutcome: OutcomeError, ObservedOutcome: OutcomeError, Evidence: fmt.Sprintf("registration unexpectedly accepted malformed policy; evaluation error: %v", evalErr), Risk: Critical}
 	}
 	return Result{
 		Layer:           LayerControl,
-		Scenario:        "evaluator error fails closed",
-		Attack:          "Malformed evaluator input must never fall through to an ALLOW policy default",
+		Scenario:        "malformed policy rejected before activation",
+		Attack:          "A malformed policy condition must be rejected before an ALLOW-default policy can become active",
 		ExpectedOutcome: OutcomeError,
 		ObservedOutcome: decisionOutcome(rec.Decision),
 		Bypassed:        rec.Decision == control.DecisionAllow,
-		Evidence:        fmt.Sprintf("invalid rule condition -> decision=%s; reasons=%v", rec.Decision, rec.Reasons),
+		Evidence:        fmt.Sprintf("registration unexpectedly accepted malformed policy; subsequent decision=%s", rec.Decision),
 		Risk:            Critical,
 	}
 }
