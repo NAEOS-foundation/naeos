@@ -12,6 +12,7 @@ import (
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
+	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
@@ -1052,4 +1053,86 @@ func (legacyEvaluatorForContextTest) Evaluate(ctx map[string]any) error {
 
 func (legacyEvaluatorForContextTest) EvaluateRules(rules []policy.Rule, ctx map[string]any) ([]policy.EvaluationResult, error) {
 	return []policy.EvaluationResult{{Passed: true}}, nil
+}
+
+
+type pipelineReviewerStub struct {
+	result *review.ReviewResult
+	err    error
+}
+
+func (r pipelineReviewerStub) Review(input any) error { return nil }
+func (r pipelineReviewerStub) ReviewArtifact(name, content string, rules []string) (*review.ReviewResult, error) {
+	return r.result, r.err
+}
+
+func TestRunReviewReportsExplicitStatesAndEnforcesMandatoryGate(t *testing.T) {
+	artifact := []engine.Artifact{{Path: "README.md", Content: []byte("# safe")}}
+	tests := []struct {
+		name       string
+		reviewer   review.Reviewer
+		artifacts  []engine.Artifact
+		wantState  ReviewState
+		wantErr    bool
+	}{
+		{name: "pass", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusApproved}}, artifacts: artifact, wantState: ReviewStatePass},
+		{name: "fail", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusRejected}}, artifacts: artifact, wantState: ReviewStateFail, wantErr: true},
+		{name: "reviewer error", reviewer: pipelineReviewerStub{err: fmt.Errorf("sensitive reviewer detail")}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
+		{name: "nil result", reviewer: pipelineReviewerStub{}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
+		{name: "skipped", reviewer: pipelineReviewerStub{}, wantState: ReviewStateSkipped},
+		{name: "not configured", reviewer: nil, artifacts: artifact, wantState: ReviewStateNotConfigured, wantErr: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &Pipeline{reviewer: tc.reviewer}
+			_, outcomes, err := p.runReview(tc.artifacts)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("runReview error=%v, wantErr=%v", err, tc.wantErr)
+			}
+			if len(outcomes) != 1 || outcomes[0].State != tc.wantState {
+				t.Fatalf("unexpected review outcomes: %#v, want state %s", outcomes, tc.wantState)
+			}
+			if tc.name == "reviewer error" && strings.Contains(outcomes[0].Summary, "sensitive reviewer detail") {
+				t.Fatal("review outcome leaked reviewer error details")
+			}
+		})
+	}
+}
+
+func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
+	artifact := []engine.Artifact{{Path: "nested/output.txt", Content: []byte("content")}}
+	tests := []struct {
+		name      string
+		configure func(*Pipeline, string)
+		artifacts []engine.Artifact
+		want      ArtifactWriteStatus
+		wantErr   bool
+	}{
+		{name: "dry run", configure: func(p *Pipeline, _ string) { p.dryRun = true }, artifacts: artifact, want: ArtifactWriteSkippedDryRun},
+		{name: "output directory absent", configure: func(*Pipeline, string) {}, artifacts: artifact, want: ArtifactWriteSkippedNoOutput},
+		{name: "empty output", configure: func(p *Pipeline, dir string) { p.outputDirValue = dir }, want: ArtifactWriteSkippedEmpty},
+		{name: "write error", configure: func(p *Pipeline, dir string) { p.outputDirValue = filepath.Join(dir, "file") }, artifacts: artifact, want: ArtifactWriteFailed, wantErr: true},
+		{name: "successful write", configure: func(p *Pipeline, dir string) { p.outputDirValue = dir }, artifacts: artifact, want: ArtifactWriteWritten},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if tc.name == "write error" {
+				if err := os.WriteFile(filepath.Join(dir, "file"), []byte("not a directory"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			p := &Pipeline{}
+			tc.configure(p, dir)
+			got, err := p.runWriteArtifacts(tc.artifacts)
+			if got != tc.want || (err != nil) != tc.wantErr {
+				t.Fatalf("runWriteArtifacts=(%s,%v), want (%s, err=%v)", got, err, tc.want, tc.wantErr)
+			}
+			if tc.name == "successful write" {
+				if _, err := os.Stat(filepath.Join(dir, "nested", "output.txt")); err != nil {
+					t.Fatalf("expected artifact to be written: %v", err)
+				}
+			}
+		})
+	}
 }
