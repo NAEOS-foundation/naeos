@@ -182,7 +182,7 @@ func TestDurableRuntimeEventLedgerRejectsValidJSONWithoutTerminalNewline(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(data) == 0 || data[len(data)-1] != '\\n' {
+	if len(data) == 0 || data[len(data)-1] != '\n' {
 		t.Fatal("test setup expected a newline-terminated journal")
 	}
 	if err := os.WriteFile(path, data[:len(data)-1], 0o640); err != nil {
@@ -206,7 +206,7 @@ func TestDurableRuntimeEventLedgerLoadRejectsForeignRunWithValidChain(t *testing
 	}
 	second.PreviousHash = first.EventHash
 	second.EventHash = hashDurableRuntimeEvent(second)
-	data := []byte(fmt.Sprintf("%s\\n%s\\n", mustMarshalRuntimeEvent(t, first), mustMarshalRuntimeEvent(t, second)))
+	data := []byte(fmt.Sprintf("%s\n%s\n", mustMarshalRuntimeEvent(t, first), mustMarshalRuntimeEvent(t, second)))
 	if err := os.WriteFile(path, data, 0o640); err != nil {
 		t.Fatal(err)
 	}
