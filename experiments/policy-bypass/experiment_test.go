@@ -76,8 +76,8 @@ func TestPolicyBypassLandscape(t *testing.T) {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
 		}
 		if r.Scenario == "evaluator error fails closed" {
-			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
-				t.Errorf("P1.2 regression: evaluator failure must become DENY: observed=%s verdict=%s evidence=%s",
+			if r.ObservedOutcome != OutcomeError || r.Verdict != VerdictPass {
+				t.Errorf("P1.2 regression: evaluator failure must remain an internal error, not a policy decision: observed=%s verdict=%s evidence=%s",
 					r.ObservedOutcome, r.Verdict, r.Evidence)
 			}
 		}
