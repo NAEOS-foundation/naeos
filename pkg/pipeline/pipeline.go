@@ -778,17 +778,17 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 		if writeStatus == ArtifactWriteWritten {
 			result.CompletionStatus = "written"
-			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 6, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 4, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 				return result, fmt.Errorf("record execution evidence: %w", err)
 			}
 		}
 
 		result.Tasks = tasks
 		result.Artifacts = artifacts
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 5, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 5, "verification", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 6, "verification", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return result, fmt.Errorf("record verification evidence: %w", err)
 		}
 		runtimeObserver.Seal()
@@ -880,7 +880,7 @@ func observationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, revi
 
 func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, reviews []*review.ReviewResult) string {
 	data, _ := json.Marshal(map[string]any{
-		"tasks": len(tasks), "artifacts": len(artifacts), "reviews": len(reviews), "verification": "completion-boundary",
+		"tasks": len(tasks), "artifacts": len(artifacts), "reviews": len(reviews), "verification": "pipeline-generation",
 	})
 	return evidence.ComputeArtifactHash(data)
 }
