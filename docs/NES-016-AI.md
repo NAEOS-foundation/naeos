@@ -265,3 +265,11 @@ AI tidak boleh:
 - [ ] LLM calls respect configured timeouts.
 - [ ] All 5 output adapters produce valid project structures.
 - [ ] MCP integration exposes AI tools correctly.
+
+## 12. Agent Authority Boundary
+
+AI agents may interpret intent, propose actions, and submit requests. Agent capability, model output, prompt content, adapter normalization, and agent memory do not grant authorization.
+
+Every consequential action must pass through the applicable NAEOS policy and control-plane boundary and the governed runtime enforcement gateway. An adapter MUST NOT authorize an action, widen granted capability, execute a protected action directly, or bypass these boundaries.
+
+Agent transcripts and memory are contextual inputs, not authoritative authorization or audit records. Authorization outcomes and consequential execution evidence must be derived from and preserved by authoritative NAEOS records.
