@@ -140,9 +140,12 @@ func TestPipelineWritesArtifactsToOutputDir(t *testing.T) {
 		t.Fatalf("create pipeline failed: %v", err)
 	}
 
-	_, err = p.Run("sample specification")
+	result, err := p.Run("sample specification")
 	if err != nil {
 		t.Fatalf("Run returned error: %v", err)
+	}
+	if result.ArtifactWriteStatus != ArtifactWriteWritten || result.CompletionStatus != "written" {
+		t.Fatalf("successful write must report written completion: write=%s completion=%q", result.ArtifactWriteStatus, result.CompletionStatus)
 	}
 
 	files, err := os.ReadDir(outputDir)
@@ -152,8 +155,6 @@ func TestPipelineWritesArtifactsToOutputDir(t *testing.T) {
 	if len(files) == 0 {
 		t.Fatal("expected output dir to contain generated files")
 	}
-	// A successful artifact write is the only path that reports written completion.
-	// Read the result in a separate run below to avoid changing the filesystem assertion.
 }
 
 func TestConfigFromFileJSON(t *testing.T) {
