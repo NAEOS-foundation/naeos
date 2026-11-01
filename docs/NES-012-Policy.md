@@ -62,7 +62,7 @@ type PolicyRule struct {
 
 ### 5.4 Priority
 
-Priority menentukan urutan evaluasi. Lower number = higher priority.
+Priority menentukan **urutan evaluasi**, bukan tingkat kekuatan keputusan. Lower number = higher priority.
 
 ```
 Priority 1 (Critical) → dievaluasi pertama
@@ -70,6 +70,25 @@ Priority 2 (High)
 Priority 3 (Medium)
 Priority 4 (Low) → dievaluasi terakhir
 ```
+
+Rules dengan priority yang sama dievaluasi menurut `RuleID` secara leksikografis. Urutan ini juga menentukan rule pertama yang dicatat sebagai penyebab ketika beberapa rule gagal. Priority tidak boleh digunakan untuk membuat `ALLOW` mengalahkan `REQUIRE_APPROVAL` atau `DENY`.
+
+### 5.5 Decision Resolution
+
+Semua rule dalam policy yang berlaku dievaluasi. Hasil diselesaikan dengan ketentuan berikut:
+
+1. Kegagalan evaluasi rule (evaluator mengembalikan error) menghentikan evaluasi sebagai kegagalan internal; kondisi ini bukan keputusan otorisasi.
+2. Jika kondisi rule gagal, hasil policy adalah `DENY` (fail-closed). Jika beberapa rule gagal, atribusi menggunakan urutan priority menaik, lalu `RuleID` leksikografis.
+3. Jika semua kondisi rule lulus, gabungkan keputusan seluruh rule yang lulus dengan keputusan default policy. Keputusan paling ketat menjadi hasil policy.
+4. Precedence keputusan bersifat tetap dan tidak dipengaruhi priority:
+
+```
+DENY > REQUIRE_APPROVAL > ALLOW
+```
+
+Precedence yang sama berlaku saat menggabungkan hasil beberapa policy yang berlaku. Jika beberapa policy menghasilkan tingkat keputusan yang sama, atribusi policy dipilih secara deterministik berdasarkan `policy_id`, `policy_version`, lalu `rule_id` secara leksikografis. Urutan registrasi atau iterasi map tidak boleh mengubah hasil maupun atribusinya.
+
+Dengan demikian, priority hanya mengatur urutan evaluasi dan atribusi kegagalan; priority bukan mekanisme conflict resolution.
 
 ## 6. Workflow
 
