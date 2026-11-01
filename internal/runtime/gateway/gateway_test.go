@@ -1046,6 +1046,46 @@ func TestGatewayRevalidationNonAllowAndErrorFailClosed(t *testing.T) {
 	}
 }
 
+func TestGatewayEvaluationFailureDuringRevalidationIsNotDecision(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &countingSandbox{}
+	failure := &control.EvaluationFailure{
+		PolicyID:      "p1",
+		PolicyVersion: "2.0.0",
+		RuleID:        "revalidation-rule",
+		Stage:         "rule_evaluation",
+		Code:          "policy_evaluator_error",
+	}
+	gw := New(cp, sb)
+	gw.controlPlane = invariantAuditRevalidator{
+		stubControlPlane: cp,
+		decision:         control.DecisionAllow,
+		err:              failure,
+	}
+
+	result, err := gw.Authorize(ToolRequest{
+		RequestID: "req-revalidation-evaluation-failure",
+		Tool:      "filesystem",
+		Action:    "write",
+	})
+	if err == nil {
+		t.Fatal("expected indeterminate revalidation to be surfaced")
+	}
+	if result.Status != "failed" || result.Decision != "" {
+		t.Fatalf("expected failed non-decision result, got status=%q decision=%q", result.Status, result.Decision)
+	}
+	if result.EvaluationFailure == nil || result.EvaluationFailure.Code != failure.Code {
+		t.Fatalf("expected structured evaluation failure, got %+v", result.EvaluationFailure)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("revalidation failure reached sandbox: %d calls", sb.Count())
+	}
+	history := gw.History()
+	if len(history) != 1 || history[0].Decision != "" || history[0].Status != "failed" {
+		t.Fatalf("expected non-decision failure history, got %+v", history)
+	}
+}
+
 type invariantAuditObserver struct {
 	observation Observation
 	err         error
