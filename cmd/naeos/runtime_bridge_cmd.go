@@ -226,7 +226,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 						response["evidence_error"] = evidenceErr.Error()
 					} else {
 						if evidenceSigningKey != "" {
-							var privateKey []byte
+							var privateKey ed25519.PrivateKey
 							if durableMode {
 								privateKey = signingKey
 							} else {
