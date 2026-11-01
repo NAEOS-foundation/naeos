@@ -67,11 +67,11 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 
 			if outputFmt == "json" {
 				payload := map[string]interface{}{
-					"verification":       result,
-					"decision_id":         bundle.DecisionID,
-					"digest_integrity":    digestIntegrity,
-					"signature_valid":     signatureValid,
-					"signer_trusted":      signerTrusted,
+					"verification":     result,
+					"decision_id":      bundle.DecisionID,
+					"digest_integrity": digestIntegrity,
+					"signature_valid":  signatureValid,
+					"signer_trusted":   signerTrusted,
 				}
 				if bundle.ExecutionID != "" {
 					payload["execution_id"] = bundle.ExecutionID
