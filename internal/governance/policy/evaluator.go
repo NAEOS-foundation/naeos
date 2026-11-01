@@ -57,8 +57,8 @@ func (DefaultEvaluator) EvaluateRules(rules []Rule, ctx map[string]any) ([]Evalu
 		if !rule.Enabled {
 			continue
 		}
-		if strings.TrimSpace(rule.Condition) == "" {
-			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("rule %q has empty condition", rule.RuleID))
+		if err := validateCondition(rule.Condition); err != nil {
+			return nil, naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("rule %q has invalid condition: %v", rule.RuleID, err))
 		}
 		result := evaluateRule(rule, ctx)
 		results = append(results, result)
@@ -216,7 +216,67 @@ func everyNumericValue(value any, check func(actualStr string) (ok, holds bool))
 	return true, true, ""
 }
 
+// validateCondition checks the complete condition grammar before a rule can be evaluated or registered.
+// Legacy key:value equality conditions remain supported; named operators use strict argument validation.
+func validateCondition(condition string) error {
+	condition = strings.TrimSpace(condition)
+	if condition == "" {
+		return fmt.Errorf("condition is empty")
+	}
+	parts := strings.SplitN(condition, ":", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("condition must contain an operator or key followed by ':' and a value")
+	}
+	name, args := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+	if name == "" || args == "" || strings.ContainsAny(name, " \\t\\r\\n,:" ) {
+		return fmt.Errorf("condition operator/key and value must be non-empty and well formed")
+	}
+	validatePath := func(path string) error {
+		path = strings.TrimSpace(path)
+		if path == "" || strings.HasPrefix(path, ".") || strings.HasSuffix(path, ".") || strings.Contains(path, "..") || strings.ContainsAny(path, " \\t\\r\\n,:" ) {
+			return fmt.Errorf("invalid context path %q", path)
+		}
+		return nil
+	}
+	validatePair := func(raw string) (string, string, error) {
+		pair := strings.SplitN(raw, ",", 2)
+		if len(pair) != 2 || strings.TrimSpace(pair[0]) == "" || strings.TrimSpace(pair[1]) == "" {
+			return "", "", fmt.Errorf("operator requires a non-empty key and argument separated by ','")
+		}
+		key, value := strings.TrimSpace(pair[0]), strings.TrimSpace(pair[1])
+		if err := validatePath(key); err != nil { return "", "", err }
+		return key, value, nil
+	}
+	switch name {
+	case "exists", "not_empty":
+		return validatePath(args)
+	case "contains":
+		_, value, err := validatePair(args)
+		if err != nil { return err }
+		if value == "" { return fmt.Errorf("contains requires a non-empty substring") }
+		return nil
+	case "gt", "lt", "gte", "lte":
+		_, threshold, err := validatePair(args)
+		if err != nil { return err }
+		if _, err := parseFiniteFloat(threshold); err != nil { return fmt.Errorf("invalid numeric threshold %q: %w", threshold, err) }
+		return nil
+	case "in":
+		_, options, err := validatePair(args)
+		if err != nil { return err }
+		for _, option := range strings.Split(options, ",") {
+			if strings.TrimSpace(option) == "" { return fmt.Errorf("in requires non-empty allowed values") }
+		}
+		return nil
+	default:
+		// The default form is the established key:value equality syntax.
+		return validatePath(name)
+	}
+}
+
 func evaluateRule(rule Rule, ctx map[string]any) EvaluationResult {
+	if err := validateCondition(rule.Condition); err != nil {
+		return EvaluationResult{Passed: false, RuleID: rule.RuleID, Message: fmt.Sprintf("invalid condition: %v", err), Action: rule.Action, Priority: rule.Priority}
+	}
 	passed := true
 	message := "rule passed"
 
