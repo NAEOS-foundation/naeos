@@ -144,6 +144,13 @@ type PipelineObserver interface {
 	OnArtifactGenerated(name string, path string)
 }
 
+// PipelineGenerationObserver receives a generation-only outcome when no
+// artifact write occurred. It is optional to preserve compatibility with
+// existing observers.
+type PipelineGenerationObserver interface {
+	OnPipelineGenerated(pipelineID string, artifacts int, status ArtifactWriteStatus, duration string)
+}
+
 type ReviewState string
 
 const (
@@ -1118,6 +1125,12 @@ func (p *Pipeline) runNotify(pipelineID string, startTime time.Time, result *Res
 	artifactCount := 0
 	if result != nil {
 		artifactCount = len(result.Artifacts)
+		if result.CompletionStatus != "written" {
+			if generationObserver, ok := p.observer.(PipelineGenerationObserver); ok {
+				generationObserver.OnPipelineGenerated(pipelineID, artifactCount, result.ArtifactWriteStatus, duration)
+			}
+			return
+		}
 	}
 	p.observer.OnPipelineComplete(pipelineID, artifactCount, duration)
 }
