@@ -4,6 +4,7 @@
 package evidence
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -43,6 +44,19 @@ func (l *DurableRuntimeEventLedger) Publish(runID, name, payloadDigest string, s
 	defer l.mu.Unlock()
 	if l.sealed {
 		return RuntimeEvent{}, fmt.Errorf("durable runtime ledger is sealed")
+	}
+	if len(l.events) == 0 {
+		if sequence != 1 {
+			return RuntimeEvent{}, fmt.Errorf("first durable runtime event sequence must be 1")
+		}
+	} else {
+		last := l.events[len(l.events)-1]
+		if runID != last.RunID {
+			return RuntimeEvent{}, fmt.Errorf("durable runtime ledger cannot mix run identities")
+		}
+		if sequence != last.Sequence+1 {
+			return RuntimeEvent{}, fmt.Errorf("durable runtime event sequence must be %d", last.Sequence+1)
+		}
 	}
 	event, err := canonicalRuntimeEvent(runID, name, payloadDigest, sequence)
 	if err != nil {
@@ -118,6 +132,12 @@ func (l *DurableRuntimeEventLedger) Verify() error {
 		if i == 0 && event.PreviousHash != "" {
 			return fmt.Errorf("ledger record %d has unexpected previous hash", i)
 		}
+		if i == 0 && event.Sequence != 1 {
+			return fmt.Errorf("ledger record %d must start at sequence 1", i)
+		}
+		if i > 0 && event.RunID != records[0].RunID {
+			return fmt.Errorf("ledger record %d belongs to a different run", i)
+		}
 		if i > 0 && event.Sequence != records[i-1].Sequence+1 {
 			return fmt.Errorf("ledger record %d sequence is not contiguous", i)
 		}
@@ -139,8 +159,17 @@ func (l *DurableRuntimeEventLedger) load() error {
 	if err != nil {
 		return fmt.Errorf("read durable runtime ledger: %w", err)
 	}
-	lines := splitLines(data)
+	if len(data) == 0 {
+		return nil
+	}
+	if data[len(data)-1] != '\n' {
+		return fmt.Errorf("durable runtime ledger has an incomplete final record (missing newline)")
+	}
+	lines := bytes.Split(data[:len(data)-1], []byte{'\n'})
 	for i, line := range lines {
+		if len(line) == 0 {
+			return fmt.Errorf("durable runtime ledger record %d is empty", i)
+		}
 		var event RuntimeEvent
 		if err := json.Unmarshal(line, &event); err != nil {
 			return fmt.Errorf("decode durable runtime ledger record %d: %w", i, err)
@@ -151,6 +180,12 @@ func (l *DurableRuntimeEventLedger) load() error {
 		}
 		if i == 0 && event.PreviousHash != "" {
 			return fmt.Errorf("durable runtime ledger record %d has unexpected previous hash", i)
+		}
+		if i == 0 && event.Sequence != 1 {
+			return fmt.Errorf("durable runtime ledger record %d must start at sequence 1", i)
+		}
+		if i > 0 && event.RunID != l.events[0].RunID {
+			return fmt.Errorf("durable runtime ledger record %d belongs to a different run", i)
 		}
 		if i > 0 && event.Sequence != l.events[i-1].Sequence+1 {
 			return fmt.Errorf("durable runtime ledger record %d sequence mismatch", i)
