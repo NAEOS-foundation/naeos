@@ -1143,7 +1143,6 @@ func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
 	}
 }
 
-
 type generationLifecycleRecorder struct {
 	started   bool
 	complete  bool
@@ -1155,7 +1154,7 @@ func (l *generationLifecycleRecorder) OnPipelineStart(string) {}
 func (l *generationLifecycleRecorder) OnPipelineComplete(string, int, string) {
 	l.complete = true
 }
-func (l *generationLifecycleRecorder) OnPipelineFailed(string, string) {}
+func (l *generationLifecycleRecorder) OnPipelineFailed(string, string)    {}
 func (l *generationLifecycleRecorder) OnArtifactGenerated(string, string) {}
 func (l *generationLifecycleRecorder) OnPipelineGenerated(_ string, _ int, status ArtifactWriteStatus, _ string) {
 	l.generated = true
