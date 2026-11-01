@@ -790,19 +790,19 @@ func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t 
 		Grant: grant, Policy: forged, Timestamp: time.Now().UTC(),
 	}
 	authorized := gateway.Authorize(req)
-	if authorized.Status != DecisionIndeterminate || authorized.DecisionID != "" {
-		t.Fatalf("forged policy must not produce an authorization decision, got %+v", authorized)
+	if authorized.Status != DecisionDeny || authorized.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged policy contents must not override the canonical snapshot; expected DENY, got %+v", authorized)
 	}
 	called := false
 	result, _ := gateway.ExecuteAtomic(req, authorized, func() error {
 		called = true
 		return nil
 	})
-	if called || result.Status != DecisionIndeterminate {
+	if called || result.Status != DecisionDeny {
 		t.Fatalf("forged policy must not reach side effect, called=%v result=%+v", called, result)
 	}
 	events := ledger.Query(map[string]string{"request_id": req.RequestID})
-	if len(events) != 1 || events[0].EventType != "POLICY_EVALUATION_FAILED" || events[0].DecisionID != "" {
-		t.Fatalf("expected only non-decision evaluation-failure evidence, got %+v", events)
+	if len(events) != 1 || events[0].EventType != "AUTHORIZATION_DECISION" || events[0].Decision != DecisionDeny {
+		t.Fatalf("expected canonical DENY decision evidence, got %+v", events)
 	}
 }
