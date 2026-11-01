@@ -384,7 +384,6 @@ func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 }
 
 
-
 func TestEvaluateRulesRejectsMalformedConditionGrammar(t *testing.T) {
 	e := NewEvaluator()
 	cases := []struct {
