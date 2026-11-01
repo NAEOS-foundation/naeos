@@ -152,7 +152,7 @@ func TestEvaluator_DeniesGrantPolicyMismatch(t *testing.T) {
 	}
 	grant := &Grant{
 		GrantID: "GRANT-A", AgentID: "agent-1", PolicyID: "POLICY-B", PolicyVersion: 1,
-		Capabilities: []Capability{"repository.read"}, Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+		Capabilities: []Capability{"repository.read"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour),
 	}
 	result := NewEvaluator(store).EvaluateAction(Action{AgentID: "agent-1", Capability: "repository.read"}, grant, policy, time.Now())
 	if result.Status != DecisionDeny || result.Reason != ReasonDeniedPolicyMismatch {
@@ -274,7 +274,7 @@ func TestEvaluator_RejectsForgedSameVersionPolicySnapshot(t *testing.T) {
 		GrantID: "GRANT-FORGED", AgentID: "agent-forged",
 		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 		Capabilities: []Capability{"production.delete"},
-		Status: "active", ExpiresAt: time.Now().Add(time.Hour),
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
 	}
 	result := NewEvaluator(store).EvaluateAction(
 		Action{AgentID: "agent-forged", Capability: "production.delete"},
