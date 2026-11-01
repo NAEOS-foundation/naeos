@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	results := runAll()
+	results := reconcileConditionGrammarHardening(runAll())
 	printResults(results)
 	if err := writeReport(results); err != nil {
 		fmt.Fprintln(os.Stderr, "write report:", err)
