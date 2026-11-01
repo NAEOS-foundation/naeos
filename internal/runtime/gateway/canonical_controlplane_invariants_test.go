@@ -4,7 +4,6 @@
 package gateway_test
 
 import (
-	"errors"
 	"sync/atomic"
 	"testing"
 
