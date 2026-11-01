@@ -132,7 +132,7 @@ func TestDecisionGateway_RequiresMatchingApprovalArtifactAndConsumesApproval(t *
 	}
 	grant := &Grant{
 		GrantID: "GRANT-APPROVAL", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1,
-		Capabilities: []Capability{"production.deploy"}, Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+		Capabilities: []Capability{"production.deploy"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour),
 	}
 	gateway := NewDecisionGateway(NewEvaluator(store), NewLedger())
 	action := Action{AgentID: "agent-1", Capability: "production.deploy", ArtifactHash: "sha256:approved"}
