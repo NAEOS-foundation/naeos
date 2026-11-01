@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
-	"github.com/NAEOS-foundation/naeos/pkg/engine"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
