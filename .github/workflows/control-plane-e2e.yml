@@ -35,7 +35,7 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
       - name: Install site dependencies
-        run: npm install --ignore-scripts --legacy-peer-deps
+        run: npm ci --ignore-scripts --legacy-peer-deps
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
@@ -81,7 +81,7 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
       - name: Install site dependencies
-        run: npm install --ignore-scripts --legacy-peer-deps
+        run: npm ci --ignore-scripts --legacy-peer-deps
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
@@ -107,7 +107,12 @@ jobs:
         run: node --test e2e/control-plane.e2e.test.mjs
 
   production-browser-e2e:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -116,7 +121,7 @@ jobs:
       - name: Checkout deployed main commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
@@ -124,7 +129,7 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
       - name: Install site dependencies
-        run: npm install --ignore-scripts --legacy-peer-deps
+        run: npm ci --ignore-scripts --legacy-peer-deps
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
