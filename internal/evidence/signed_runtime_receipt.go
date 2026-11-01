@@ -82,7 +82,7 @@ func canonicalSignedReceipt(signed SignedDurableRuntimeReceipt) ([]byte, error) 
 	return digest[:], nil
 }
 
- 
+
 // ParseEd25519PublicKey accepts raw, base64, or hexadecimal public key material.
 func ParseEd25519PublicKey(data []byte) (ed25519.PublicKey, error) {
 	if len(data) == ed25519.PublicKeySize {
