@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
-	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
 	"github.com/NAEOS-foundation/naeos/internal/schemaregistry"
 	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
@@ -1062,7 +1062,6 @@ func (legacyEvaluatorForContextTest) EvaluateRules(rules []policy.Rule, ctx map[
 	return []policy.EvaluationResult{{Passed: true}}, nil
 }
 
-
 type pipelineReviewerStub struct {
 	result *review.ReviewResult
 	err    error
@@ -1076,11 +1075,11 @@ func (r pipelineReviewerStub) ReviewArtifact(name, content string, rules []strin
 func TestRunReviewReportsExplicitStatesAndEnforcesMandatoryGate(t *testing.T) {
 	artifact := []engine.Artifact{{Path: "README.md", Content: []byte("# safe")}}
 	tests := []struct {
-		name       string
-		reviewer   review.Reviewer
-		artifacts  []engine.Artifact
-		wantState  ReviewState
-		wantErr    bool
+		name      string
+		reviewer  review.Reviewer
+		artifacts []engine.Artifact
+		wantState ReviewState
+		wantErr   bool
 	}{
 		{name: "pass", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusApproved}}, artifacts: artifact, wantState: ReviewStatePass},
 		{name: "fail", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusRejected}}, artifacts: artifact, wantState: ReviewStateFail, wantErr: true},
