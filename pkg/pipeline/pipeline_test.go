@@ -1163,7 +1163,7 @@ func (l *generationLifecycleRecorder) OnPipelineStart(string) {}
 func (l *generationLifecycleRecorder) OnPipelineComplete(string, int, string) {
 	l.complete = true
 }
-func (l *generationLifecycleRecorder) OnPipelineFailed(string, string) { l.failed = true }
+func (l *generationLifecycleRecorder) OnPipelineFailed(string, string)    { l.failed = true }
 func (l *generationLifecycleRecorder) OnArtifactGenerated(string, string) {}
 func (l *generationLifecycleRecorder) OnPipelineGenerated(_ string, _ int, status ArtifactWriteStatus, _ string) {
 	l.generated = true
@@ -1259,8 +1259,6 @@ func TestRunReviewCollectsOutcomesAfterFailure(t *testing.T) {
 		t.Fatal("review error leaked private reviewer diagnostics")
 	}
 }
-
-
 
 func TestRunContextCancellationStopsBeforeReviewAndArtifactWrites(t *testing.T) {
 	outputDir := t.TempDir()
