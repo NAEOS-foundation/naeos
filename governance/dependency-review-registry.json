@@ -17,6 +17,22 @@
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/692",
       "policy_version": "1.0.0",
       "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
+      "name": "go.yaml.in/yaml/v3",
+      "version": "3.0.5",
+      "upstream_source": "https://github.com/yaml/go-yaml/tree/v3",
+      "spdx_license": "Apache-2.0 AND MIT",
+      "checksum": "h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=",
+      "provenance": "https://proxy.golang.org/go.yaml.in/yaml/v3/@v/v3.0.5.zip",
+      "purpose": "YAML parsing and serialization dependency retained by the Go module graph",
+      "domains": ["general"],
+      "criticality": "low",
+      "reviewer": "Pending independent NAEOS maintainer review",
+      "review_reference": "https://pkg.go.dev/go.yaml.in/yaml/v3",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
     }
   ]
 }
