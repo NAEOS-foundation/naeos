@@ -762,20 +762,21 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			p.profile.EndStage("review")
 		}
 
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "generation", 3, "generate", "pipeline.artifacts_generated", artifactDigest(artifacts)); err != nil {
+			return result, fmt.Errorf("record generation evidence: %w", err)
+		}
+		result.CompletionStatus = "generated"
 		p.profileStageStart("write_artifacts")
 		writeStatus, writeErr := p.runWriteArtifacts(artifacts)
 		result.ArtifactWriteStatus = writeStatus
 		if writeErr != nil {
+			result.CompletionStatus = "failed"
 			p.profileStageEnd("write_artifacts", writeErr)
 			p.memSnapshot("write_artifacts")
 			return result, writeErr
 		}
 		p.profileStageEnd("write_artifacts", nil)
 		p.memSnapshot("write_artifacts")
-		result.CompletionStatus = "generated"
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "generation", 3, "generate", "pipeline.artifacts_generated", artifactDigest(artifacts)); err != nil {
-			return result, fmt.Errorf("record generation evidence: %w", err)
-		}
 		if writeStatus == ArtifactWriteWritten {
 			result.CompletionStatus = "written"
 			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 4, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
