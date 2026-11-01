@@ -67,6 +67,31 @@ func TestEvidenceVerifyBundleCommandRejectsTampering(t *testing.T) {
 	}
 }
 
+func TestEvidenceVerifyBundleCommandRejectsRecomputedDigestWithoutValidSignature(t *testing.T) {
+	bundle, public := signedTestEvidenceBundle(t)
+	bundle.ArtifactHash = "sha256:forged"
+	bundle.EvidenceDigest = testEvidenceDigest(t, bundle)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "evidence.json")
+	trustedPath := filepath.Join(dir, "trusted.pub")
+	writeTestEvidenceBundle(t, path, bundle)
+	writeTrustedEvidenceKey(t, trustedPath, public)
+
+	cmd := newEvidenceVerifyBundleCommand()
+	cmd.SetArgs([]string{"--input-file", path, "--trusted-public-key", trustedPath, "--output", "json"})
+	var out strings.Builder
+	cmd.SetOut(&out)
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected recomputed digest without a valid signature to fail")
+	}
+	for _, expected := range []string{`"digest_integrity": true`, `"signature_valid": false`, `"signer_trusted": true`} {
+		if !strings.Contains(out.String(), expected) {
+			t.Fatalf("output missing %q: %s", expected, out.String())
+		}
+	}
+}
+
 func TestEvidenceVerifyBundleCommandRequiresTrustedKey(t *testing.T) {
 	bundle, _ := signedTestEvidenceBundle(t)
 	path := filepath.Join(t.TempDir(), "evidence.json")
@@ -211,6 +236,9 @@ func writeTestEvidenceBundle(t *testing.T, path string, bundle controlplane.Evid
 func testEvidenceDigest(t *testing.T, bundle controlplane.EvidenceBundle) string {
 	t.Helper()
 	bundle.EvidenceDigest = ""
+	bundle.EvidenceSignature = ""
+	bundle.EvidencePublicKey = ""
+	bundle.EvidenceSignatureAlgorithm = ""
 	bundle.Verification.Issues = nil
 	data, err := json.Marshal(bundle)
 	if err != nil {
