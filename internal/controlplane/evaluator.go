@@ -207,7 +207,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message: fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
+			Message:   fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
 		}
 	}
 	active, err := e.store.Active(policyID)
@@ -216,7 +216,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message: fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
+			Message:   fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
 		}
 	}
 	// The caller-supplied policy is only a selector. Its contents are never
