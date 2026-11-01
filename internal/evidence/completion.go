@@ -88,6 +88,7 @@ func ValidateCompletion(store *EvidenceStore, runID string, requiredKinds []stri
 	expectedProvenance := map[string][2]string{
 		"intent":       {"run", "pipeline.start"},
 		"decision":     {"policy_eval", "pipeline.policy_decision"},
+		"generation":   {"generate", "pipeline.artifacts_generated"},
 		"execution":    {"write_artifacts", "pipeline.execution"},
 		"observation":  {"observation", "pipeline.observation"},
 		"verification": {"completion", "pipeline.verification"},
@@ -218,6 +219,7 @@ func ValidateCompletionWithRuntimeEvents(store *EvidenceStore, runtimeEvents *Ru
 	expectedNames := map[string]string{
 		"intent":       "pipeline.start",
 		"decision":     "pipeline.policy_decision",
+		"generation":   "pipeline.artifacts_generated",
 		"execution":    "pipeline.execution",
 		"observation":  "pipeline.observation",
 		"verification": "pipeline.verification",

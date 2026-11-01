@@ -240,7 +240,7 @@ func TestChainObserversNil(t *testing.T) {
 
 func TestPipelineRunWithObserver(t *testing.T) {
 	o := &captureObserver{}
-	p, err := New(Config{Observer: o})
+	p, err := New(Config{Observer: o, OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
