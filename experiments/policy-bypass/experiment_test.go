@@ -15,7 +15,7 @@ import (
 // governance fix lands, this test MUST change with it — the bypass flags below
 // are the live findings of the experiment, not a wish list.
 func TestPolicyBypassLandscape(t *testing.T) {
-	results := reconcileConditionGrammarHardening(runAll())
+	results := runAll()
 
 	// These are the currently reproduced governance findings. The oracle
 	// expectation is the security invariant (DENY); a known ALLOW is therefore
@@ -76,9 +76,12 @@ func TestPolicyBypassLandscape(t *testing.T) {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
 		}
 		if r.Scenario == "malformed policy rejected before activation" {
-			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
-				t.Errorf("malformed policy must be rejected before activation and deny by default: observed=%s verdict=%s evidence=%s",
+			if r.ObservedOutcome != OutcomeError || r.Verdict != VerdictPass {
+				t.Errorf("malformed policy must be rejected during registration: observed=%s verdict=%s evidence=%s",
 					r.ObservedOutcome, r.Verdict, r.Evidence)
+			}
+			if !strings.Contains(r.Evidence, "policy registration rejected malformed condition") {
+				t.Errorf("scenario must retain actual registration error evidence, got %q", r.Evidence)
 			}
 		}
 		// Runtime evaluator failures remain distinct from authorization decisions.
@@ -122,7 +125,7 @@ func TestPolicyBypassReport(t *testing.T) {
 
 func TestPolicyBypassScenarioNamesUnique(t *testing.T) {
 	names := map[string]bool{}
-	for _, r := range reconcileConditionGrammarHardening(runAll()) {
+	for _, r := range runAll() {
 		if names[r.Scenario] {
 			t.Errorf("duplicate scenario name %q", r.Scenario)
 		}
@@ -178,9 +181,9 @@ func TestPolicyBypassOracleIntegrity(t *testing.T) {
 // TestPolicyBypassDeterministic ensures the harness is a stable oracle:
 // re-running produces identical bypass decisions.
 func TestPolicyBypassDeterministic(t *testing.T) {
-	first := reconcileConditionGrammarHardening(runAll())
+	first := runAll()
 	for i := 0; i < 3; i++ {
-		next := reconcileConditionGrammarHardening(runAll())
+		next := runAll()
 		if len(next) != len(first) {
 			t.Fatalf("run length changed: %d vs %d", len(next), len(first))
 		}
