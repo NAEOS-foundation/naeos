@@ -35,4 +35,3 @@ Example:
 * [naeos marketplace profile](naeos_marketplace_profile.md)	 - Manage marketplace profiles
 * [naeos marketplace publish](naeos_marketplace_publish.md)	 - Publish a template, profile, or plugin to the marketplace
 * [naeos marketplace search](naeos_marketplace_search.md)	 - Search for templates
-

@@ -5,15 +5,20 @@ package version
 
 import (
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/internal/specification/parser"
 )
 
 func TestDefault(t *testing.T) {
 	v := Default()
-	if v.NEIRVersion != "0.1.0" {
-		t.Fatalf("expected NEIRVersion 0.1.0, got %s", v.NEIRVersion)
+	if v.NEIRVersion != CurrentNEIRVersion {
+		t.Fatalf("expected NEIRVersion %s, got %s", CurrentNEIRVersion, v.NEIRVersion)
 	}
-	if v.SchemaVersion != "1.0" {
-		t.Fatalf("expected SchemaVersion 1.0, got %s", v.SchemaVersion)
+	if v.SchemaVersion != parser.CurrentSpecVersion {
+		t.Fatalf("expected SchemaVersion %s, got %s", parser.CurrentSpecVersion, v.SchemaVersion)
+	}
+	if err := v.Validate(); err != nil {
+		t.Fatalf("Default() returned invalid version info: %v", err)
 	}
 }
 

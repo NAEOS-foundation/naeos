@@ -36,4 +36,3 @@ Example:
 * [naeos workspace list](naeos_workspace_list.md)	 - List workspace modules
 * [naeos workspace lock](naeos_workspace_lock.md)	 - Generate or update workspace lockfile
 * [naeos workspace remove](naeos_workspace_remove.md)	 - Remove a module from the workspace
-

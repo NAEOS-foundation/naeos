@@ -26,4 +26,3 @@ naeos supabase auth admin [flags]
 * [naeos supabase auth admin create](naeos_supabase_auth_admin_create.md)	 - Create a user (admin)
 * [naeos supabase auth admin delete](naeos_supabase_auth_admin_delete.md)	 - Delete a user (admin)
 * [naeos supabase auth admin list](naeos_supabase_auth_admin_list.md)	 - List all users (admin)
-

@@ -1,16 +1,79 @@
 # NAEOS Plugin SDK
 
+> **Status: in-repository / experimental.** This document describes the
+> current implementation, not a stable external Go SDK. The examples,
+> scaffold, and native plugin interface import `internal/pluginhost`; Go's
+> `internal` rule prevents an unrelated module from importing that package.
+> The generated project therefore expects a NAEOS source checkout and a local
+> `replace` directive. The WASM wire envelope now uses the public
+> `pkg/pluginapi/v1` DTO package, but host-side protocol compatibility,
+> manifest negotiation, and compatibility tests are still incomplete; do not
+> promise stability yet.
+
 ## Overview
 
-NAEOS plugins extend the platform by providing custom actions that can be executed during the generation pipeline or via the CLI. Plugins are Go packages that implement the `pluginhost.Plugin` interface and are compiled to WebAssembly (`GOOS=wasip1 GOARCH=wasm`) for sandboxed execution. In-process execution of native `.so` plugins is also supported via `pluginhost`.
+The current plugin host loads Go plugins implementing the internal
+`pluginhost.Plugin` interface. WASM modules receive one JSON request on stdin
+and return a JSON response on stdout; native `.so` loading is an
+in-process, platform-specific option. Neither the internal Go interface nor
+the current JSON-over-stdio shape is a versioned external extension API.
 
-The quickest way to start is the scaffold generator:
+For experiments inside a NAEOS checkout, the scaffold generator is available:
 
 ```bash
 naeos plugin init my-plugin
 ```
 
-This produces a complete WASM plugin project (`plugin.go`, `main.go` WASM entry, `naeos.yaml` manifest, tests, Makefile). See the official examples in `examples/plugins/` (`hello`, `spec-lint`, `artifact-stats`).
+This produces a project (`plugin.go`, `main.go` entry point, `naeos.yaml`,
+tests, Makefile) that imports `internal/pluginhost`. Its generated `go.mod`
+requires a local `replace` to a matching NAEOS checkout. See
+`examples/plugins/` for in-repository examples.
+
+## Current WASM wire format
+
+The host sends one JSON object on stdin using the public v1 envelope types
+from `pkg/pluginapi/v1` (`Request`, `Response`, `Manifest`):
+
+```json
+{
+  "protocol_version": "1.0",
+  "request_id": "8c50f92c",
+  "method": "execute",
+  "action": "ping",
+  "params": {}
+}
+```
+
+The plugin writes exactly one JSON response object to stdout (anything after
+the first object makes the response invalid). A successful response echoes
+the protocol version and request ID:
+
+```json
+{"protocol_version":"1.0","request_id":"8c50f92c","ok":true,"result":{"status":"ok"}}
+```
+
+A failed response uses a documented v1 error code finite set
+(`invalid_request`, `unsupported_version`, `invalid_params`, `denied`,
+`timeout`, `resource_limit`, `plugin_error`, `invalid_response`):
+
+```json
+{"protocol_version":"1.0","request_id":"8c50f92c","ok":false,"error":{"code":"invalid_params","message":"name is required"}}
+```
+
+Rules currently enforced by the host: request IDs are generated host-side and
+must be echoed untouched; stdout is reserved for exactly one response object
+(diagnostics go to stderr); oversized responses and uncorrelated or
+unversioned responses are rejected as structured host errors; elapsed-time
+measurement stays host-side. The exact protocol-version selection helper
+(`Manifest.SupportsProtocol`) exists in the public DTO package, but
+host-side manifest loading and negotiation are not implemented yet. This
+remains an experimental implementation detail until the compatibility policy
+is published.
+
+WASM execution currently uses wazero with a timeout and memory limit. The host
+does not configure filesystem preopens in the shown execution path. Review the
+runtime implementation and threat model before relying on any broader sandbox
+or isolation guarantee.
 
 ## Creating a Plugin
 
@@ -68,7 +131,11 @@ This produces a complete WASM plugin project (`plugin.go`, `main.go` WASM entry,
    GOOS=wasip1 GOARCH=wasm go build -o plugin.wasm .
    ```
 
-   The resulting `.wasm` file can be placed in the plugin directory configured via NAEOS (see `naeos plugin install`). Native in-process builds (`go build -buildmode=plugin -o plugin.so`) remain supported for development.
+   The resulting `.wasm` file can be installed with `naeos plugin install`.
+   The source still has to satisfy the Go `internal` import rule described
+   above. Native in-process builds
+   (`go build -buildmode=plugin -o plugin.so`) remain an
+   implementation-specific option for development.
 
 ## PluginContext
 
@@ -171,5 +238,6 @@ func TestMyPlugin(t *testing.T) {
 - `internal/pluginsdk/sandbox/sandbox.go` – plugin sandboxing.
 - `examples/plugins/README.md` – official example plugins.
 - `docs/NES-053-WASMPlugin.md` – WASM plugin sandbox specification.
+- `docs/architecture/PLUGIN-API-DESIGN.md` – proposed public protocol boundary; not implemented or stable.
 
 Happy hacking!

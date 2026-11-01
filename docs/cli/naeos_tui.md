@@ -25,4 +25,3 @@ Terminal user interface tools including the project wizard and live dashboard.
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos tui dashboard](naeos_tui_dashboard.md)	 - Live terminal dashboard
 * [naeos tui wizard](naeos_tui_wizard.md)	 - Interactive project wizard
-

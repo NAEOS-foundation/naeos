@@ -24,4 +24,3 @@ naeos marketplace install [name] [flags]
 ### SEE ALSO
 
 * [naeos marketplace](naeos_marketplace.md)	 - Browse and install templates, profiles, and plugins
-

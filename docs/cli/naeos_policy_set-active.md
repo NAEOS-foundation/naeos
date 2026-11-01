@@ -23,4 +23,3 @@ naeos policy set-active <policy-id> <version> [flags]
 ### SEE ALSO
 
 * [naeos policy](naeos_policy.md)	 - Manage governance policies
-

@@ -91,7 +91,8 @@ go test -bench=. -benchmem ./internal/generation/adapters/...
 ### Generate CLI Docs
 
 ```bash
-go run ./cmd/naeos/ docsgen
+# Keep home-based default paths portable in the generated reference.
+HOME='~' go run ./cmd/naeos/ docsgen
 # Output: docs/cli/*.md
 ```
 
@@ -272,10 +273,12 @@ naeos/
 
 ### Generating CLI Docs
 
-Docs are auto-generated from cobra command definitions:
+Docs are auto-generated from Cobra command definitions. Set `HOME` to the
+portable `~` placeholder so generated flag defaults do not include the
+maintainer's local home directory:
 
 ```bash
-go run ./cmd/naeos/ docsgen
+HOME='~' go run ./cmd/naeos/ docsgen
 git add docs/cli/
 git commit -m "docs: update CLI reference"
 ```

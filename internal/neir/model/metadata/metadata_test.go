@@ -24,8 +24,8 @@ func TestMetadata_ZeroValue(t *testing.T) {
 func TestMetadata_Full(t *testing.T) {
 	now := time.Now()
 	m := Metadata{
-		NEIRVersion:    "2.0",
-		SchemaVersion:  "1.0",
+		NEIRVersion:    "2.0.0",
+		SchemaVersion:  "0.5.0",
 		ProjectVersion: "0.1.0",
 		CreatedAt:      &now,
 		ModifiedAt:     &now,
@@ -33,8 +33,8 @@ func TestMetadata_Full(t *testing.T) {
 		Labels:         map[string]string{"team": "platform"},
 		Source:         &SourceRef{Kind: "file", Ref: "naeos.yaml"},
 	}
-	if m.NEIRVersion != "2.0" {
-		t.Errorf("expected 2.0, got %s", m.NEIRVersion)
+	if m.NEIRVersion != "2.0.0" {
+		t.Errorf("expected 2.0.0, got %s", m.NEIRVersion)
 	}
 	if len(m.Tags) != 2 {
 		t.Errorf("expected 2 tags, got %d", len(m.Tags))

@@ -57,4 +57,3 @@ naeos completion [bash|zsh|fish|powershell]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-

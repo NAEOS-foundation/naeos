@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -131,7 +132,7 @@ func TestValidateSpecMissingRequired(t *testing.T) {
 	}
 	found := false
 	for _, e := range result.Errors {
-		if e.Field == "project" {
+		if strings.Contains(e.Message, "project") {
 			found = true
 		}
 	}
@@ -196,7 +197,7 @@ func TestValidateSpecResolveRef(t *testing.T) {
 	}
 	found := false
 	for _, e := range result.Errors {
-		if e.Field == "service.name" {
+		if e.Field == "/service" && strings.Contains(e.Message, "name") {
 			found = true
 		}
 	}
@@ -205,15 +206,65 @@ func TestValidateSpecResolveRef(t *testing.T) {
 	}
 }
 
-func TestValidateNEIRValueStringEnum(t *testing.T) {
+func TestValidateJSONSchemaRejectsWrongTypes(t *testing.T) {
+	spec := map[string]any{"project": "demo", "modules": "not-an-array"}
+	result := ValidateJSONSchema(spec, loadTestSchema(t))
+	if result.Valid {
+		t.Fatal("expected wrong modules type to fail full schema validation")
+	}
+	found := false
+	for _, validationError := range result.Errors {
+		if validationError.Field == "/modules" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected type error at /modules, got %+v", result.Errors)
+	}
+}
+
+func TestValidateJSONSchemaAppliesDraft7Keywords(t *testing.T) {
 	schema := map[string]any{
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"$id":     "https://naeos.invalid/draft7-test.json",
+		"type":    "object",
+		"properties": map[string]any{
+			"name": map[string]any{"type": "string", "pattern": "^[a-z]+$"},
+		},
+		"required":             []any{"name"},
+		"additionalProperties": false,
+	}
+
+	result := ValidateJSONSchema(map[string]any{"name": "valid", "extra": true}, schema)
+	if result.Valid {
+		t.Fatal("expected draft-07 additionalProperties constraint to reject the document")
+	}
+}
+
+func TestValidateJSONSchemaFailsClosedOnExternalReference(t *testing.T) {
+	schema := map[string]any{
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"$id":     "https://naeos.invalid/external-ref-test.json",
+		"$ref":    "https://example.invalid/remote-schema.json",
+	}
+
+	result := ValidateJSONSchema(map[string]any{}, schema)
+	if result.Valid || len(result.Errors) == 0 {
+		t.Fatal("expected unresolved external reference to fail closed")
+	}
+}
+
+func TestValidateJSONSchemaRejectsInvalidEnum(t *testing.T) {
+	schema := map[string]any{
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type":    "object",
 		"properties": map[string]any{
 			"mode": map[string]any{"type": "string", "enum": []any{"a"}},
 		},
 	}
-	errs := validateNEIRValue("mode", "z", schema["properties"].(map[string]any)["mode"].(map[string]any), schema)
-	if len(errs) != 1 {
-		t.Fatalf("expected 1 error, got %d", len(errs))
+	result := ValidateJSONSchema(map[string]any{"mode": "z"}, schema)
+	if result.Valid || len(result.Errors) == 0 {
+		t.Fatalf("expected invalid enum to fail full schema validation: %+v", result.Errors)
 	}
 }
 

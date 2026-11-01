@@ -63,7 +63,9 @@ jobs:
           node --test e2e/control-plane.e2e.test.mjs
 
   cloudflare-worker-preview-browser-e2e:
-    if: github.event_name == 'pull_request'
+    # Fork PRs do not receive Cloudflare deployment secrets. Their local browser E2E
+    # job still runs, while the secret-dependent live preview check is skipped.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     permissions:
       contents: read

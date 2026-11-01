@@ -34,4 +34,3 @@ naeos events replay [flags]
 ### SEE ALSO
 
 * [naeos events](naeos_events.md)	 - Event sourcing commands for pipeline audit trail and replay
-

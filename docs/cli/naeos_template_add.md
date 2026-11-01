@@ -24,4 +24,3 @@ naeos template add [name] [content] [flags]
 ### SEE ALSO
 
 * [naeos template](naeos_template.md)	 - Manage generation templates, prompt library, and template marketplace
-

@@ -23,5 +23,4 @@ naeos verify report [flags]
 
 ### SEE ALSO
 
-* [naeos verify](naeos_verify.md)	 - Independently verify governance evidence
-
+* [naeos verify](naeos_verify.md)	 - Verify a specification using the existing NAEOS pipeline

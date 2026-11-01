@@ -21,4 +21,3 @@ Event sourcing commands for pipeline audit trail and replay
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos events list](naeos_events_list.md)	 - List events from a stored event file
 * [naeos events replay](naeos_events_replay.md)	 - Replay events to reconstruct pipeline state
-

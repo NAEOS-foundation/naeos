@@ -25,4 +25,3 @@ naeos marketplace plugin uninstall [name] [flags]
 ### SEE ALSO
 
 * [naeos marketplace plugin](naeos_marketplace_plugin.md)	 - Manage marketplace plugins
-

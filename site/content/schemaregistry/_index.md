@@ -1,30 +1,33 @@
 ---
 title: Schema Registry
-description: JSON Schema registry for the NEIR specification format — versioned schemas for validating NAEOS Engineering Intelligence Representation documents.
+description: Versioned JSON Schemas for validating NAEOS source specifications and serialized NEIR model documents.
 ---
 
 ## Overview
 
-The NEIR Schema Registry hosts versioned [JSON Schema](https://json-schema.org/) definitions for the NAEOS Engineering Intelligence Representation (NEIR) specification format. These schemas enable IDE autocompletion, validation, and tooling support for `.naeos.yaml` and `.naeos.json` files.
+The registry publishes separate [JSON Schemas](https://json-schema.org/) for NAEOS source specification files and serialized NEIR model documents. Use the input-spec schema for `.naeos.yaml` and `.naeos.json` source files. Use the NEIR model schema for JSON emitted by NAEOS.
 
 ## Latest Schema
 
-The current stable schema is **[v1](/schemaregistry/v1/neir.json)**.
+The current stable schemas are:
 
-| Version | Schema URL | Status |
-|---------|-----------|--------|
-| v1 | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | Stable |
-| latest | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) | Latest stable |
+- **Input specification:** [`/schemaregistry/spec/v1/spec.json`](/schemaregistry/spec/v1/spec.json)
+- **Serialized NEIR model:** [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json)
+
+| Contract | Versioned URL | Latest URL |
+|----------|---------------|------------|
+| Source input spec | [`/schemaregistry/spec/v1/spec.json`](/schemaregistry/spec/v1/spec.json) | [`/schemaregistry/spec/latest.json`](/schemaregistry/spec/latest.json) |
+| Serialized NEIR model | [`/schemaregistry/v1/neir.json`](/schemaregistry/v1/neir.json) | [`/schemaregistry/latest.json`](/schemaregistry/latest.json) |
 
 ## Usage
 
 ### Editor Integration
 
-Add a `$schema` field to your NEIR specification file:
+Add the input-spec `$schema` URI to your source file:
 
 ```yaml
 # naeos.yaml
-$schema: https://registry.naeos.dev/schemaregistry/latest.json
+$schema: https://registry.naeos.dev/schemaregistry/spec/latest.json
 project: my-project
 modules:
   - name: core
@@ -35,7 +38,7 @@ This enables IntelliSense and inline validation in editors like VS Code, JetBrai
 
 ### CLI Validation
 
-Use the NAEOS CLI to validate a spec against the registry schema:
+Use the NAEOS CLI to validate a source spec against the input schema:
 
 ```bash
 naeos schema validate spec.yaml
@@ -44,19 +47,20 @@ naeos schema validate spec.json --output json
 
 ### Programmatic Use
 
-Fetch the schema programmatically:
+Fetch the input-spec schema programmatically:
 
 ```bash
-curl -s https://registry.naeos.dev/schemaregistry/latest.json
+curl -s https://registry.naeos.dev/schemaregistry/spec/latest.json
 ```
 
 ## Versioning
 
-Schema versions follow the NEIR specification version. Backward-incompatible changes to the NEIR model produce a new schema version. Minor additions (new optional fields) are additive within a version.
+Input-spec schema versions and NEIR model schema versions are separate contracts. A change to one does not automatically version the other. Breaking changes require a new versioned path for the affected contract; the `latest` aliases point to the newest stable version.
 
-| NEIR Version | Schema Version | Notes |
-|-------------|---------------|-------|
-| 1.x | v1 | Initial stable schema |
+| Contract | Schema version | Notes |
+|----------|---------------|-------|
+| Input spec | v1 | Source YAML/JSON; `project` is a string (or legacy top-level `name`) |
+| NEIR model | v1 | Serialized model; `project` is an object |
 
 ## Schema Contents
 

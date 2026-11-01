@@ -32,4 +32,3 @@ naeos db connect [flags]
 ### SEE ALSO
 
 * [naeos db](naeos_db.md)	 - Database connection and migration management
-

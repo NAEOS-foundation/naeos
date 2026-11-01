@@ -32,4 +32,3 @@ Example:
 * [naeos ai enrich](naeos_ai_enrich.md)	 - Enrich a specification with AI-powered best practices
 * [naeos ai explain](naeos_ai_explain.md)	 - Explain a NAEOS concept
 * [naeos ai suggest](naeos_ai_suggest.md)	 - Get AI suggestions for improving a specification
-

@@ -138,7 +138,7 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 	}
 	ch := make(chan result, 1)
 	go func() {
-		v, err := plugin.Execute(req.Method, req.Params)
+		v, err := plugin.ExecuteContext(reqCtx, req.Method, req.Params)
 		ch <- result{v, err}
 	}()
 
@@ -149,18 +149,16 @@ func (s *Sandbox) execWASM(ctx context.Context, wasmPath string, req Request) (*
 			Error: fmt.Sprintf("wasm plugin execution timed out after %s", s.timeout),
 		}, nil
 	case r := <-ch:
+		if reqCtx.Err() != nil {
+			return &Response{
+				OK:    false,
+				Error: fmt.Sprintf("wasm plugin execution ended: %v", reqCtx.Err()),
+			}, nil
+		}
 		if r.err != nil {
 			return &Response{
 				OK:    false,
 				Error: fmt.Sprintf("wasm plugin error: %v", r.err),
-			}, nil
-		}
-		if wasmResp, ok := r.value.(*wasm.Response); ok {
-			return &Response{
-				OK:      wasmResp.OK,
-				Result:  wasmResp.Result,
-				Error:   wasmResp.Error,
-				Elapsed: wasmResp.Elapsed,
 			}, nil
 		}
 		return &Response{

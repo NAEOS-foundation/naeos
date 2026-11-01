@@ -31,4 +31,3 @@ naeos policy register [flags]
 ### SEE ALSO
 
 * [naeos policy](naeos_policy.md)	 - Manage governance policies
-

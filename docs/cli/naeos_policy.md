@@ -32,4 +32,3 @@ naeos policy [flags]
 * [naeos policy register](naeos_policy_register.md)	 - Register a governance policy from a JSON file
 * [naeos policy set-active](naeos_policy_set-active.md)	 - Set the active version of a governance policy
 * [naeos policy validate](naeos_policy_validate.md)	 - Validate a governance policy file
-

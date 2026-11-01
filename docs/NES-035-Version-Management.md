@@ -29,8 +29,8 @@ type VersionInfo struct {
 
 Field | Tipe | Deskripsi | Contoh
 ------|------|-----------|-------
-NEIRVersion | string | Versi model NEIR (SemVer) | "0.1.0"
-SchemaVersion | string | Versi skema spesifikasi | "1.0"
+NEIRVersion | string | Versi model NEIR menurut NES-023 (SemVer) | "2.0.0"
+SchemaVersion | string | Versi skema input spesifikasi yang diterima parser (SemVer) | "0.5.0"
 ProjectVersion | string | Versi proyek yang dihasilkan | "0.1.0"
 
 ### 5.2 SemVer
@@ -54,9 +54,11 @@ func Default() VersionInfo
 ```
 
 Mengembalikan VersionInfo dengan nilai default:
-- NEIRVersion: "0.1.0"
-- SchemaVersion: "1.0"
+- NEIRVersion: "2.0.0" (versi stabil NES-023)
+- SchemaVersion: "0.5.0" (parser.CurrentSpecVersion)
 - ProjectVersion: "0.1.0"
+
+Nilai default harus selalu lolos `VersionInfo.Validate()`.
 
 ### 6.2 ParseSemVer
 
@@ -75,8 +77,8 @@ Aturan:
 v, err := version.ParseSemVer("1.2.3")
 // v.Major=1, v.Minor=2, v.Patch=3
 
-v, err := version.ParseSemVer("v0.1.0")
-// v.Major=0, v.Minor=1, v.Patch=0
+v, err := version.ParseSemVer("v2.0.0")
+// v.Major=2, v.Minor=0, v.Patch=0
 
 v, err := version.ParseSemVer("invalid")
 // error: invalid semver format

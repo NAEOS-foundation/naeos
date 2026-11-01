@@ -28,4 +28,3 @@ naeos workspace lock [flags]
 ### SEE ALSO
 
 * [naeos workspace](naeos_workspace.md)	 - Manage multi-module workspaces
-

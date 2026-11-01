@@ -39,4 +39,3 @@ naeos search [flags]
 * [naeos search index](naeos_search_index.md)	 - Index a document
 * [naeos search list](naeos_search_list.md)	 - List all search indexes
 * [naeos search query](naeos_search_query.md)	 - Search for documents
-

@@ -4,6 +4,8 @@
 package scaffold
 
 import (
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -437,4 +439,23 @@ func containsSubstr(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// TestGeneratedGoFilesParse parses every generated Go file so template
+// syntax errors surface as test failures instead of broken plugins.
+func TestGeneratedGoFilesParse(t *testing.T) {
+	f := Files{Dir: t.TempDir(), Module: "example.com/test-plugin", Name: "test-plugin", Author: "tester", Desc: "test plugin"}
+	for name, source := range map[string]string{
+		"plugin.go":      f.pluginGo(),
+		"main.go":        f.wasmMainGo(),
+		"plugin_test.go": f.pluginTestGo(),
+	} {
+		path := filepath.Join(t.TempDir(), name)
+		if err := os.WriteFile(path, []byte(source), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+		if _, err := parser.ParseFile(token.NewFileSet(), path, source, parser.ParseComments); err != nil {
+			t.Errorf("generated %s does not parse: %v", name, err)
+		}
+	}
 }

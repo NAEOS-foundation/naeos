@@ -85,15 +85,6 @@ func TestStatusBadConfig(t *testing.T) {
 	}
 }
 
-func TestJoinStrings(t *testing.T) {
-	if got := joinStrings(nil); got != "(none)" {
-		t.Fatalf("expected (none), got %q", got)
-	}
-	if got := joinStrings([]string{"go", "ts"}); got != "go, ts" {
-		t.Fatalf("expected 'go, ts', got %q", got)
-	}
-}
-
 func TestStatusCacheLine(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")

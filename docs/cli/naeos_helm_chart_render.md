@@ -23,4 +23,3 @@ naeos helm chart render <dir> [flags]
 ### SEE ALSO
 
 * [naeos helm chart](naeos_helm_chart.md)	 - Create a new Helm chart
-

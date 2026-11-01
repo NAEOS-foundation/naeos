@@ -1,0 +1,229 @@
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package core
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/pprof"
+	"strings"
+	"time"
+
+	clihelpers "github.com/NAEOS-foundation/naeos/cmd/naeos/internal/clihelpers"
+	"github.com/spf13/cobra"
+
+	contextbundle "github.com/NAEOS-foundation/naeos/internal/context/bundle"
+	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
+)
+
+func NewRunCommand() *cobra.Command {
+	var configPath, input, inputFile, outputFormat, outputFile, profileOut, pprofAddr string
+	var languages []string
+	var dryRun, profiling bool
+
+	var cacheDir string
+
+	cmd := &cobra.Command{
+		Use:   "run",
+		Short: "Execute the NAEOS pipeline",
+		Long: `Execute the full NAEOS pipeline: parse, normalize, resolve, build NEIR, generate artifacts.
+
+Example:
+  naeos run --config config.yaml --input spec.yaml
+  naeos run --config config.yaml --input-file spec.yaml --output json
+  naeos run --config config.yaml --input spec.yaml --language go --language typescript
+  naeos run --config config.yaml --input spec.yaml --cache-dir .naeos/cache`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if pprofAddr != "" {
+				mux := http.NewServeMux()
+				mux.HandleFunc("/debug/pprof/", pprof.Index)
+				mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+				mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+				mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+				mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+				go func() {
+					fmt.Printf("pprof HTTP server listening on %s\n", pprofAddr)
+					srv := &http.Server{
+						Addr:              pprofAddr,
+						Handler:           mux,
+						ReadHeaderTimeout: 5 * time.Second,
+						ReadTimeout:       30 * time.Second,
+						WriteTimeout:      30 * time.Second,
+						IdleTimeout:       60 * time.Second,
+					}
+					_ = srv.ListenAndServe()
+				}()
+			}
+
+			inputValue, err := clihelpers.LoadInput(input, inputFile)
+			if err != nil {
+				return err
+			}
+
+			cfg, err := clihelpers.LoadPipelineConfig(configPath, clihelpers.CLIVerbose, languages, clihelpers.CLIDryRun || dryRun, cacheDir)
+			if err != nil {
+				return err
+			}
+			cfg.Profiling = profiling
+
+			p, err := pipeline.New(*cfg)
+			if err != nil {
+				return fmt.Errorf("failed to construct pipeline: %w", err)
+			}
+
+			result, err := p.Run(inputValue)
+			if err != nil {
+				return fmt.Errorf("pipeline run failed: %w", err)
+			}
+
+			if profileOut != "" && p.ProfileEnabled() {
+				if err := p.ProfileSave(profileOut); err != nil {
+					return fmt.Errorf("save profile: %w", err)
+				}
+				fmt.Printf("profile saved to %s\n", profileOut)
+			}
+
+			projectName := ""
+			if result.NEIR != nil && result.NEIR.Project != nil {
+				projectName = result.NEIR.Project.Name
+			}
+
+			bundle := contextbundle.NewGenerator(nil).GenerateFromNEIR(result.NEIR)
+
+			policyStatus := "not_configured"
+			if len(cfg.Policies) > 0 {
+				policyStatus = "evaluated"
+			}
+
+			artifactDetails := make([]map[string]any, 0, len(result.Artifacts))
+			artifactPaths := make(map[string]struct{}, len(result.Artifacts))
+			for _, artifact := range result.Artifacts {
+				artifactDetails = append(artifactDetails, map[string]any{
+					"path": artifact.Path,
+					"size": len(artifact.Content),
+				})
+				artifactPaths[artifact.Path] = struct{}{}
+			}
+			logicalArtifactCount := len(result.Artifacts)
+			materializedFileCount := 0
+			if !cfg.DryRun && cfg.OutputDir != "" {
+				materializedFileCount = len(artifactPaths)
+			}
+			artifactPathCollisions := logicalArtifactCount - len(artifactPaths)
+
+			pipelineStages := []string{
+				"[1/8] Specification",
+				"[2/8] NEIR",
+				"[3/8] Validation",
+				"[4/8] Policy",
+				"[5/8] AI Context",
+				"[6/8] AI Compilation",
+				"[7/8] Artifacts",
+				"[8/8] Evidence",
+			}
+
+			payload := map[string]any{
+				"pipeline":           cfg.Name,
+				"mode":               cfg.Mode,
+				"verbose":            cfg.Verbose,
+				"output_dir":         cfg.OutputDir,
+				"status":             "success",
+				"run_id":             result.RunID,
+				"specification_hash": result.SpecificationHash,
+				"neir_hash":          result.NEIRHash,
+				"project":            projectName,
+				"artifacts":          logicalArtifactCount,
+				"artifact_details":   artifactDetails,
+				"artifact_summary": map[string]any{
+					"logical_artifacts":  logicalArtifactCount,
+					"materialized_files": materializedFileCount,
+					"path_collisions":    artifactPathCollisions,
+				},
+				"tasks":          len(result.Tasks),
+				"execution_plan": result.Tasks,
+				"validation": map[string]any{
+					"status":   "passed",
+					"project":  projectName,
+					"modules":  len(result.NEIR.Modules),
+					"services": len(result.NEIR.Services),
+				},
+				"policy": map[string]any{
+					"status":  policyStatus,
+					"rules":   len(cfg.Policies),
+					"results": result.PolicyResults,
+				},
+				"context": bundle,
+				"evidence": map[string]any{
+					"review_count": len(result.Reviews),
+					"reviews":      result.Reviews,
+					"graph_nodes":  result.Graph.NodeCount(),
+					"graph_edges":  result.Graph.EdgeCount(),
+				},
+				"audit": map[string]any{
+					"status":                  "available",
+					"stages":                  []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
+					"artifact_count":          logicalArtifactCount,
+					"materialized_file_count": materializedFileCount,
+					"path_collisions":         artifactPathCollisions,
+					"task_count":              len(result.Tasks),
+				},
+				"stages": []string{
+					"specification",
+					"parse",
+					"normalize",
+					"resolve",
+					"neir",
+					"validate",
+					"policy",
+					"context",
+					"execution",
+					"artifacts",
+					"evidence",
+				},
+			}
+
+			if len(languages) > 0 {
+				payload["languages"] = languages
+			}
+			if cfg.DryRun {
+				payload["dry_run"] = true
+			}
+
+			rendered, err := clihelpers.RenderOutput(payload, outputFormat, func() []byte {
+				var out strings.Builder
+				fmt.Fprintf(&out, "pipeline=%s mode=%s verbose=%t output_dir=%s\n", projectName, cfg.Mode, cfg.Verbose, cfg.OutputDir)
+				out.WriteString("\n")
+				for _, stage := range pipelineStages {
+					out.WriteString(stage)
+					out.WriteString("\n")
+				}
+				out.WriteString("\n")
+				fmt.Fprintf(&out, "run_id=%s\n", result.RunID)
+				fmt.Fprintf(&out, "specification_hash=%s\n", result.SpecificationHash)
+				fmt.Fprintf(&out, "neir_hash=%s\n", result.NEIRHash)
+				fmt.Fprintf(&out, "artifacts=%d materialized_files=%d path_collisions=%d tasks=%d\n", logicalArtifactCount, materializedFileCount, artifactPathCollisions, len(result.Tasks))
+				return []byte(out.String())
+			})
+			if err != nil {
+				return err
+			}
+
+			return clihelpers.WriteOrPrint(cmd, rendered, outputFile)
+		},
+	}
+
+	cmd.Flags().StringVar(&configPath, "config", "", "path to JSON or YAML config file (auto-detected if omitted)")
+	cmd.Flags().StringVar(&input, "input", "", "specification input to process")
+	cmd.Flags().StringVar(&inputFile, "input-file", "", "path to a specification file")
+	cmd.Flags().StringVar(&outputFormat, "output", "text", "output format: text, json, or yaml")
+	cmd.Flags().StringVar(&outputFile, "output-file", "", "optional file path to write the formatted output")
+	cmd.Flags().StringArrayVar(&languages, "language", nil, "target language for code generation (go, typescript, python, java, rust)")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview artifacts without writing to disk")
+	cmd.Flags().BoolVar(&profiling, "profile", false, "enable pipeline profiling")
+	cmd.Flags().StringVar(&profileOut, "profile-out", "profile.json", "path to write profile JSON")
+	cmd.Flags().StringVar(&pprofAddr, "pprof", "", "pprof HTTP server address (e.g. :6060)")
+	cmd.Flags().StringVar(&cacheDir, "cache-dir", "", "enable pipeline caching using the given directory")
+	return cmd
+}

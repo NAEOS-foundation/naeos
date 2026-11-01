@@ -37,4 +37,3 @@ naeos export [flags]
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
 * [naeos export compose](naeos_export_compose.md)	 - Generate docker-compose.yaml and Dockerfile from spec
-

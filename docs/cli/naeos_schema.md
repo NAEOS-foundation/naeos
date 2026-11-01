@@ -12,7 +12,7 @@ the canonical schema, or query schema version information.
 
 Examples:
   naeos schema validate spec.yaml
-  naeos schema validate spec.yaml --registry https://registry.naeos.dev/schemaregistry/latest.json
+  naeos schema validate spec.yaml --registry https://registry.naeos.dev/schemaregistry/spec/latest.json
   naeos schema validate spec.json --output json
   naeos schema list
   naeos schema info
@@ -37,4 +37,3 @@ Examples:
 * [naeos schema info](naeos_schema_info.md)	 - Show schema registry information
 * [naeos schema list](naeos_schema_list.md)	 - List available schema versions in the registry
 * [naeos schema validate](naeos_schema_validate.md)	 - Validate a NEIR spec against the schema registry
-

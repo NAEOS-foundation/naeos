@@ -25,4 +25,3 @@ naeos schema list [flags]
 ### SEE ALSO
 
 * [naeos schema](naeos_schema.md)	 - NEIR schema registry operations
-

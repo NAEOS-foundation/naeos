@@ -23,4 +23,3 @@ naeos supabase auth user [flags]
 ### SEE ALSO
 
 * [naeos supabase auth](naeos_supabase_auth.md)	 - Supabase authentication management
-

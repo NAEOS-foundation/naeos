@@ -34,4 +34,3 @@ naeos observability siem [flags]
 ### SEE ALSO
 
 * [naeos observability](naeos_observability.md)	 - Observability and telemetry management
-

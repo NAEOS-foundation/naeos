@@ -14,7 +14,7 @@ Available templates:
   kubernetes     — Production-ready Kubernetes deployment
   supabase       — Supabase backend with pipeline + auth + storage
   hcl            — HCL format specification
- 
+
 Example:
   naeos init
   naeos init --template microservices
@@ -46,4 +46,3 @@ naeos init [flags]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-

@@ -20,7 +20,7 @@ Example:
 
 ```
   -h, --help                help for plugin
-      --plugin-dir string   plugin directory (default "/home/codespace/.naeos/plugins")
+      --plugin-dir string   plugin directory (default "~/.naeos/plugins")
 ```
 
 ### Options inherited from parent commands
@@ -45,4 +45,3 @@ Example:
 * [naeos plugin search](naeos_plugin_search.md)	 - Search for plugins in the registry
 * [naeos plugin test](naeos_plugin_test.md)	 - Test a plugin by loading, initializing, and checking health
 * [naeos plugin uninstall](naeos_plugin_uninstall.md)	 - Uninstall a plugin
-

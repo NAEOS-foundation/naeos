@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	cliai "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/ai"
 	"github.com/NAEOS-foundation/naeos/internal/ai"
 )
 
@@ -44,7 +45,7 @@ func TestEnrichStreamChunks(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	if err := enrichStream(context.Background(), svc, "project: test", &buf); err != nil {
+	if err := cliai.EnrichStream(context.Background(), svc, "project: test", &buf); err != nil {
 		t.Fatalf("enrichStream failed: %v", err)
 	}
 	if buf.String() != "Hello world\n" {
@@ -65,7 +66,7 @@ func TestEnrichStreamErrorEvent(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	err := enrichStream(context.Background(), svc, "project: test", &buf)
+	err := cliai.EnrichStream(context.Background(), svc, "project: test", &buf)
 	if err == nil {
 		t.Fatal("expected error from error event")
 	}
@@ -89,7 +90,7 @@ func TestEnrichStreamErrorEventRaw(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	err := enrichStream(context.Background(), svc, "project: test", &buf)
+	err := cliai.EnrichStream(context.Background(), svc, "project: test", &buf)
 	if err == nil {
 		t.Fatal("expected error from raw error event")
 	}
@@ -111,7 +112,7 @@ func TestEnrichStreamEOF(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	if err := enrichStream(context.Background(), svc, "project: test", &buf); err != nil {
+	if err := cliai.EnrichStream(context.Background(), svc, "project: test", &buf); err != nil {
 		t.Fatalf("enrichStream EOF failed: %v", err)
 	}
 	if buf.String() != "partial\n" {
@@ -133,7 +134,7 @@ func TestEnrichStreamInvalidChunk(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	if err := enrichStream(context.Background(), svc, "project: test", &buf); err != nil {
+	if err := cliai.EnrichStream(context.Background(), svc, "project: test", &buf); err != nil {
 		t.Fatalf("enrichStream failed: %v", err)
 	}
 	if buf.String() != "ok\n" {

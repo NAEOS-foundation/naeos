@@ -26,4 +26,3 @@ naeos auth create-role <name> [flags]
 ### SEE ALSO
 
 * [naeos auth](naeos_auth.md)	 - Authentication and authorization management
-

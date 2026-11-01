@@ -24,4 +24,3 @@ Manage marketplace profiles
 * [naeos marketplace profile list](naeos_marketplace_profile_list.md)	 - List available profiles
 * [naeos marketplace profile publish](naeos_marketplace_profile_publish.md)	 - Publish a profile from JSON file
 * [naeos marketplace profile search](naeos_marketplace_profile_search.md)	 - Search profiles
-

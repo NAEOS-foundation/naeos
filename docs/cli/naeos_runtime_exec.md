@@ -26,6 +26,8 @@ naeos runtime exec [flags]
   -h, --help                 help for exec
       --output string        output format: table or json (default "table")
       --resource string      target resource
+      --session-id string    persist the execution result into the named agent session
+      --store-path string    path to the agent session store JSON file
       --tool string          tool name (required)
 ```
 
@@ -40,4 +42,3 @@ naeos runtime exec [flags]
 ### SEE ALSO
 
 * [naeos runtime](naeos_runtime.md)	 - Runtime gateway for authorized agent execution
-

@@ -44,6 +44,13 @@ cmd/naeos/out/
 # Environment
 .env
 .env.local
+.env.*
+!.env.example
+/.naeos-api.token
+
+# Local executable backups
+/naeos.bak
+/naeos.bak2
 
 # Local test spec files
 naeos.yaml
@@ -69,6 +76,12 @@ supabase/.temp/
 # Generated
 cmd/naeos/naeos.lock
 cmd/naeos/spec.yaml
+
+# Local dependency-risk gate output (uploaded as CI artifact)
+dependency-risk-evidence.json
+
+# Local CLI run artifacts
+examples/demo-cli/.run/
 
 # Hugo build output
 documentation.o

@@ -400,18 +400,13 @@ func (w *wasmPluginAdapter) Initialize(_ *PluginContext) error {
 	return nil
 }
 func (w *wasmPluginAdapter) Execute(action string, params map[string]any) (any, error) {
-	resp, err := w.plugin.Execute(action, params)
-	if err != nil {
-		return nil, err
-	}
-	wasmResp, ok := resp.(*wasm.Response)
-	if !ok {
-		return resp, nil
-	}
-	if !wasmResp.OK {
-		return nil, naeoserr.New(naeoserr.ErrPlugin, wasmResp.Error)
-	}
-	return wasmResp.Result, nil
+	return w.ExecuteContext(context.Background(), action, params)
+}
+func (w *wasmPluginAdapter) ExecuteContext(ctx context.Context, action string, params map[string]any) (any, error) {
+	// The WASM adapter speaks the public pluginapi v1 envelope natively: it
+	// returns the decoded result or a structured host error. Raw protocol
+	// output never reaches callers here.
+	return w.plugin.ExecuteContext(ctx, action, params)
 }
 func (w *wasmPluginAdapter) Shutdown() error { return nil }
 
@@ -466,6 +461,9 @@ func (m *Manager) AuthorizeCapability(name, action string, required []string) er
 // If lazy loading is enabled and the plugin hasn't been loaded yet,
 // it loads and initializes the plugin first.
 func (m *Manager) Execute(ctx context.Context, name, action string, params map[string]any) (any, error) {
+	if ctx == nil {
+		return nil, naeoserr.New(naeoserr.ErrValidation, "plugin execution context must not be nil")
+	}
 	p, ok := m.Get(name)
 	if !ok {
 		if m.config.Lazy {
@@ -494,7 +492,12 @@ func (m *Manager) Execute(ctx context.Context, name, action string, params map[s
 	m.updateStateLocked(name, StateRunning, nil)
 	m.mu.Unlock()
 
-	result, err := m.sandbox.ExecuteWithTimeout(ctx, func() (any, error) {
+	result, err := m.sandbox.ExecuteWithContextTimeout(ctx, func(execCtx context.Context) (any, error) {
+		if executor, ok := p.(interface {
+			ExecuteContext(context.Context, string, map[string]any) (any, error)
+		}); ok {
+			return executor.ExecuteContext(execCtx, action, params)
+		}
 		return p.Execute(action, params)
 	})
 

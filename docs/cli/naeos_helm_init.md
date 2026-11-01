@@ -27,4 +27,3 @@ naeos helm init <name> [flags]
 ### SEE ALSO
 
 * [naeos helm](naeos_helm.md)	 - Helm chart scaffolding and validation
-

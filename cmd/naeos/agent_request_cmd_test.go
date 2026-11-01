@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/cmd/naeos/commands/kernel"
 	"github.com/NAEOS-foundation/naeos/internal/database"
 )
 
 func TestLoadReplayStoreDefaultsToInMemory(t *testing.T) {
-	store, closeStore, err := loadReplayStore("")
+	store, closeStore, err := kernel.LoadReplayStore("")
 	if err != nil {
 		t.Fatalf("load in-memory replay store: %v", err)
 	}
@@ -35,7 +36,7 @@ func TestLoadReplayStoreUsesConfiguredDurableDatabase(t *testing.T) {
 		t.Fatalf("save database connection: %v", err)
 	}
 
-	store, closeStore, err := loadReplayStore("replay-test")
+	store, closeStore, err := kernel.LoadReplayStore("replay-test")
 	if err != nil {
 		t.Fatalf("load durable replay store: %v", err)
 	}
@@ -51,7 +52,7 @@ func TestLoadReplayStoreUsesConfiguredDurableDatabase(t *testing.T) {
 
 	// Reopen through the same persisted connection configuration to prove the
 	// invocation identity survives process-local store recreation.
-	store2, closeStore2, err := loadReplayStore("replay-test")
+	store2, closeStore2, err := kernel.LoadReplayStore("replay-test")
 	if err != nil {
 		t.Fatalf("reopen durable replay store: %v", err)
 	}
@@ -71,7 +72,7 @@ func TestLoadReplayStoreUsesConfiguredDurableDatabase(t *testing.T) {
 }
 
 func TestAgentRequestCommandExposesReferenceAdapterAndDurableReplay(t *testing.T) {
-	cmd := newAgentRequestCommand()
+	cmd := kernel.NewAgentRequestCommand()
 
 	adapter, err := cmd.Flags().GetString("adapter")
 	if err != nil {
@@ -90,7 +91,7 @@ func TestAgentRequestCommandExposesReferenceAdapterAndDurableReplay(t *testing.T
 }
 
 func TestAgentRequestCommandRequiresExplicitAdapterPolicy(t *testing.T) {
-	cmd := newAgentRequestCommand()
+	cmd := kernel.NewAgentRequestCommand()
 
 	for _, flag := range []string{"allow-tool", "allow-action", "allow-environment", "allow-capability"} {
 		if cmd.Flags().Lookup(flag) == nil {

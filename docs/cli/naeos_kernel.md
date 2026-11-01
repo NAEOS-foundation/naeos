@@ -38,4 +38,3 @@ Example:
 * [naeos kernel publish](naeos_kernel_publish.md)	 - Publish an event to the kernel event bus
 * [naeos kernel services](naeos_kernel_services.md)	 - List registered kernel services
 * [naeos kernel subscribe](naeos_kernel_subscribe.md)	 - Subscribe to a kernel event topic and optionally publish a sample payload
-

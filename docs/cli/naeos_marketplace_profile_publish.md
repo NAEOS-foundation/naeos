@@ -24,4 +24,3 @@ naeos marketplace profile publish [file] [flags]
 ### SEE ALSO
 
 * [naeos marketplace profile](naeos_marketplace_profile.md)	 - Manage marketplace profiles
-

@@ -28,4 +28,3 @@ naeos cloud types [flags]
 ### SEE ALSO
 
 * [naeos cloud](naeos_cloud.md)	 - Cloud deployment commands
-

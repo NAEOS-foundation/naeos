@@ -26,4 +26,3 @@ naeos config resolve <config.json> [flags]
 ### SEE ALSO
 
 * [naeos config](naeos_config.md)	 - Resolve configuration from environment, files, secrets, and Vault
-

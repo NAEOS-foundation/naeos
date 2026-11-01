@@ -20,6 +20,7 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/security"
 	"github.com/NAEOS-foundation/naeos/internal/neir/model/service"
 	testingmodel "github.com/NAEOS-foundation/naeos/internal/neir/model/testing"
+	"github.com/NAEOS-foundation/naeos/internal/neir/version"
 	"github.com/NAEOS-foundation/naeos/internal/specification/resolver"
 )
 
@@ -58,10 +59,12 @@ func (b DefaultBuilder) build(resolved any) (*model.NEIR, error) {
 		return nil, naeoserr.New(naeoserr.ErrInternal, fmt.Sprintf("expected *resolver.ResolvedSpec, got %T", resolved))
 	}
 
+	versionInfo := version.Default()
 	neir := &model.NEIR{
 		Metadata: &metadata.Metadata{
-			NEIRVersion:   "0.1.0",
-			SchemaVersion: "1.0",
+			NEIRVersion:    versionInfo.NEIRVersion,
+			SchemaVersion:  versionInfo.SchemaVersion,
+			ProjectVersion: versionInfo.ProjectVersion,
 		},
 	}
 

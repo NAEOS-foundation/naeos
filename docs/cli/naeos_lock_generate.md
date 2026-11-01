@@ -31,4 +31,3 @@ naeos lock generate [flags]
 ### SEE ALSO
 
 * [naeos lock](naeos_lock.md)	 - Manage lock files for reproducible builds
-

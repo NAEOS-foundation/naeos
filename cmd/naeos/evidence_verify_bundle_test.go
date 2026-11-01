@@ -15,6 +15,7 @@ import (
 	"strings"
 	"testing"
 
+	evidencecmd "github.com/NAEOS-foundation/naeos/cmd/naeos/commands/evidence"
 	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
@@ -33,7 +34,7 @@ func TestEvidenceVerifyBundleCommandAcceptsValidBundle(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "evidence.json")
 	writeTestEvidenceBundle(t, path, bundle)
 
-	cmd := newEvidenceVerifyBundleCommand()
+	cmd := evidencecmd.NewEvidenceVerifyBundleCommand()
 	cmd.SetArgs([]string{"--input-file", path})
 	var out strings.Builder
 	cmd.SetOut(&out)
@@ -53,7 +54,7 @@ func TestEvidenceVerifyBundleCommandRejectsTampering(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "evidence.json")
 	writeTestEvidenceBundle(t, path, bundle)
 
-	cmd := newEvidenceVerifyBundleCommand()
+	cmd := evidencecmd.NewEvidenceVerifyBundleCommand()
 	cmd.SetArgs([]string{"--input-file", path})
 	if err := cmd.Execute(); err == nil {
 		t.Fatal("expected tampered bundle to fail verification")

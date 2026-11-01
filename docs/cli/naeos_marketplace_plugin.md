@@ -25,4 +25,3 @@ Manage marketplace plugins
 * [naeos marketplace plugin list](naeos_marketplace_plugin_list.md)	 - List available plugins
 * [naeos marketplace plugin search](naeos_marketplace_plugin_search.md)	 - Search plugins
 * [naeos marketplace plugin uninstall](naeos_marketplace_plugin_uninstall.md)	 - Uninstall a plugin
-
