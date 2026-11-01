@@ -368,7 +368,6 @@ func TestValidateDecisionRejectsTamperedGrantExpiry(t *testing.T) {
 	}
 }
 
-
 type recordingRuleEvaluator struct {
 	calls []string
 }
@@ -387,7 +386,7 @@ func (e *recordingRuleEvaluator) EvaluateRules(rules []policy.Rule, ctx map[stri
 func TestEvaluateRulePriorityControlsOrderButNotDecisionSeverity(t *testing.T) {
 	p := &policy.Policy{
 		ID: "priority-order", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionAllow,
 		Rules: []policy.PolicyRule{
 			{RuleID: "approval-late", Condition: "exists:approval_flag", Decision: policy.DecisionRequireApproval, Priority: 4},
@@ -416,7 +415,7 @@ func TestEvaluateRulePriorityControlsOrderButNotDecisionSeverity(t *testing.T) {
 func TestEvaluateDenyRuleWinsOverHigherPriorityAllowRule(t *testing.T) {
 	p := &policy.Policy{
 		ID: "deny-over-allow", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "repository", Action: "write"},
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
 		Default: policy.DecisionAllow,
 		Rules: []policy.PolicyRule{
 			{RuleID: "allow-first", Condition: "exists:allow_flag", Decision: policy.DecisionAllow, Priority: 1},
@@ -439,7 +438,7 @@ func TestEvaluateDenyRuleWinsOverHigherPriorityAllowRule(t *testing.T) {
 func TestEvaluatePolicyDefaultApprovalCannotBeDowngradedByAllowRule(t *testing.T) {
 	p := &policy.Policy{
 		ID: "approval-default", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionRequireApproval,
 		Rules: []policy.PolicyRule{
 			{RuleID: "allow-rule", Condition: "exists:ready", Decision: policy.DecisionAllow, Priority: 1},
@@ -458,12 +457,12 @@ func TestEvaluatePolicyDefaultApprovalCannotBeDowngradedByAllowRule(t *testing.T
 func TestEvaluateDenyWinsAcrossApplicablePolicies(t *testing.T) {
 	allow := &policy.Policy{
 		ID: "a-allow", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionAllow,
 	}
 	deny := &policy.Policy{
 		ID: "z-deny", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionDeny,
 	}
 	c := newTestPlane(t, allow, deny)
@@ -479,12 +478,12 @@ func TestEvaluateDenyWinsAcrossApplicablePolicies(t *testing.T) {
 func TestEvaluateEqualSeverityPolicyAttributionIsRegistrationOrderIndependent(t *testing.T) {
 	alpha := &policy.Policy{
 		ID: "alpha-policy", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionRequireApproval,
 	}
 	zeta := &policy.Policy{
 		ID: "zeta-policy", Version: "1.0.0",
-		Scope: policy.Scope{Resource: "deploy", Action: "run"},
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
 		Default: policy.DecisionRequireApproval,
 	}
 	for _, policies := range [][]*policy.Policy{{alpha, zeta}, {zeta, alpha}} {
