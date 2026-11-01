@@ -146,8 +146,8 @@ Example:
 					"write_status":       result.ArtifactWriteStatus,
 					"partial_write":      result.ArtifactWritePartial,
 				},
-				"tasks":                  len(result.Tasks),
-				"execution_plan":         result.Tasks,
+				"tasks":          len(result.Tasks),
+				"execution_plan": result.Tasks,
 				"validation": map[string]any{
 					"status":   "passed",
 					"project":  projectName,
@@ -159,7 +159,7 @@ Example:
 					"rules":   len(cfg.Policies),
 					"results": result.PolicyResults,
 				},
-				"context":                bundle,
+				"context": bundle,
 				"evidence": map[string]any{
 					"review_count": len(result.Reviews),
 					"reviews":      result.Reviews,
@@ -265,5 +265,3 @@ func summarizeArtifactWrites(paths []string, artifactsWritten int) (logicalArtif
 	pathCollisions = logicalArtifacts - len(allPaths)
 	return logicalArtifacts, materializedFiles, pathCollisions
 }
-
-
