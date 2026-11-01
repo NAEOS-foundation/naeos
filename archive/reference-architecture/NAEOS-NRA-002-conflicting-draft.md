@@ -1,3 +1,13 @@
+> **ARCHIVED — NON-CANONICAL WORKING DRAFT**
+>
+> This document is retained for historical traceability only. It is not an approved or normative NAEOS Reference Architecture and MUST NOT be used as implementation authority.
+>
+> The canonical Reference Architecture is [NAEOS-NRA-001](../../Reference%20Architecture/NAEOS-NRA-001.md). Validated technical requirements are governed by the Master Technical Specification, applicable Engineering Specifications, and accepted ADRs.
+>
+> The original document metadata and body below are preserved as historical source material. Its embedded `Document ID: NAEOS-NRA-001` and `Status: Stable` describe the original draft and do not establish current authority.
+
+---
+
 NAEOS Reference Architecture
 
 Document ID: NAEOS-NRA-001

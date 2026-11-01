@@ -233,3 +233,11 @@ flowchart TD
 - RBAC roles support hierarchy inheritance with deny override.
 - SSO providers (OIDC, SAML, LDAP) authenticate users correctly.
 - Role templates provide compliance-ready configurations.
+
+## 10. Authorization Failure Handling
+
+Failures to retrieve, resolve, or evaluate applicable policy are internal evaluation errors, not authorization grants and not a fourth external authorization decision. Examples include an unavailable policy service, unresolved policy version, insufficient required context, or evaluator error.
+
+For protected actions, these failures MUST fail closed before consequential side effects. They MUST NOT be converted into ALLOW or silently conflated with an explicit DENY. Preserve an internal diagnostic/audit record that distinguishes evaluation failure from a policy DENY while protecting sensitive context.
+
+When multiple valid policy outcomes conflict, apply the precedence defined by NAEOS-MTS-001: DENY > REQUIRE_APPROVAL > ALLOW. REQUIRE_APPROVAL is not executable authority; a valid approval and runtime revalidation are still required.
