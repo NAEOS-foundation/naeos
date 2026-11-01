@@ -737,7 +737,9 @@ func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *t
 	ledger := NewLedger()
 	root := t.TempDir()
 	blocker := filepath.Join(root, "not-a-directory")
-	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil { t.Fatal(err) }
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
 	policy := &Policy{ID: "POLICY-DURABLE", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
 	grant := &Grant{GrantID: "GRANT-DURABLE", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.read"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)}
@@ -746,7 +748,9 @@ func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *t
 	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
 		t.Fatalf("failed ledger commit must not return an authorization decision: %+v", result)
 	}
-	if len(ledger.Events()) != 0 { t.Fatalf("failed ledger commit must remain invisible: %+v", ledger.Events()) }
+	if len(ledger.Events()) != 0 {
+		t.Fatalf("failed ledger commit must remain invisible: %+v", ledger.Events())
+	}
 }
 
 func TestDecisionGateway_ExecuteAtomicDoesNotRunForIndeterminateEvaluation(t *testing.T) {
