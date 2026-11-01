@@ -280,7 +280,7 @@ func TestEvaluator_RejectsForgedSameVersionPolicySnapshot(t *testing.T) {
 		Action{AgentID: "agent-forged", Capability: "production.delete"},
 		grant, forged, time.Now(),
 	)
-	if result.Status != DecisionIndeterminate || result.Reason != ReasonEvaluationFailed {
-		t.Fatalf("forged same-version policy must be indeterminate, got %+v", result)
+	if result.Status != DecisionDeny || result.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged same-version policy must be evaluated against the canonical snapshot and denied, got %+v", result)
 	}
 }
