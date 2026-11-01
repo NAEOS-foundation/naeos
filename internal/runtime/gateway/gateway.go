@@ -62,20 +62,22 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	RequestID     string
-	InvocationID  string
-	Request       ToolRequest
-	Decision      control.Decision
-	PolicyID      string
-	PolicyVersion string
-	RuleID        string
-	Status        string // "completed", "denied", "failed", "unknown", "skipped"
-	Output        string
-	Hash          string // SHA-256 of output/payload
-	Duration      time.Duration
-	Timestamp     time.Time
-	Reasons       []string
-	Observation   *Observation
+	RequestID              string
+	InvocationID           string
+	Request                ToolRequest
+	Decision               control.Decision
+	PolicyID               string
+	PolicyVersion          string
+	RuleID                 string
+	CandidateDigest        string
+	CandidateDigestProfile string
+	Status                 string // "completed", "denied", "failed", "unknown", "skipped"
+	Output                 string
+	Hash                   string // SHA-256 of output/payload
+	Duration               time.Duration
+	Timestamp              time.Time
+	Reasons                []string
+	Observation            *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -289,29 +291,60 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		action = "execute"
 	}
 
-	// Evaluate against the control plane.
+	// Normalize the request before digesting so the digest matches the exact
+	// action/resource defaults used by the authorization and execution paths.
+	req.Resource = resource
+	req.Action = action
+	// Snapshot all candidate data before authorization. The sandbox must execute
+	// this isolated snapshot, not caller-owned maps/slices that may be mutated
+	// while policy evaluation or revalidation is in progress.
+	var snapshotErr error
+	req.Payload, snapshotErr = cloneCandidateMap(req.Payload)
+	if snapshotErr != nil {
+		return ExecutionResult{}, naeoserr.Wrapf(snapshotErr, naeoserr.ErrValidation, "candidate payload snapshot failed")
+	}
+	req.Context, snapshotErr = cloneCandidateMap(req.Context)
+	if snapshotErr != nil {
+		return ExecutionResult{}, naeoserr.Wrapf(snapshotErr, naeoserr.ErrValidation, "candidate context snapshot failed")
+	}
+
+	// Reserved digest metadata is owned by the gateway. Strip any caller
+	// attempt to pre-populate it before hashing or forwarding the request.
+	delete(req.Context, candidateDigestContextKeyV1)
+	delete(req.Context, candidateProfileContextKeyV1)
+	candidateDigest, digestErr := CandidateDigestV1(req)
+	if digestErr != nil {
+		return ExecutionResult{}, naeoserr.Wrapf(digestErr, naeoserr.ErrValidation, "candidate digest generation failed")
+	}
+	authorizationContext := candidateAuthorizationContextV1(req.Context, candidateDigest)
+
+	// Evaluate against the control plane. The digest and profile are injected
+	// by the gateway into the authorization identity and cannot be supplied by
+	// an untrusted adapter.
 	rec, err := g.controlPlane.Evaluate(control.Request{
 		Capability:  req.Capability,
 		Resource:    resource,
 		Action:      action,
 		Environment: req.Environment,
 		Actor:       req.Actor,
-		Context:     req.Context,
+		Context:     authorizationContext,
 	})
 	if err != nil {
 		return ExecutionResult{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "control plane evaluation failed")
 	}
 
 	result := ExecutionResult{
-		RequestID:     req.RequestID,
-		InvocationID:  req.InvocationID,
-		Request:       req,
-		Decision:      rec.Decision,
-		PolicyID:      rec.PolicyID,
-		PolicyVersion: rec.PolicyVersion,
-		RuleID:        rec.RuleID,
-		Timestamp:     time.Now().UTC(),
-		Reasons:       rec.Reasons,
+		RequestID:              req.RequestID,
+		InvocationID:           req.InvocationID,
+		Request:                req,
+		Decision:               rec.Decision,
+		PolicyID:               rec.PolicyID,
+		PolicyVersion:          rec.PolicyVersion,
+		RuleID:                 rec.RuleID,
+		CandidateDigest:        candidateDigest,
+		CandidateDigestProfile: CandidateDigestProfileV1,
+		Timestamp:              time.Now().UTC(),
+		Reasons:                rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
@@ -367,7 +400,7 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			Action:      action,
 			Environment: req.Environment,
 			Actor:       req.Actor,
-			Context:     req.Context,
+			Context:     authorizationContext,
 		}, rec)
 		if err != nil {
 			result.Status = "denied"
@@ -389,6 +422,20 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			g.record(result)
 			return result, nil
 		}
+	}
+
+	// Recompute immediately before execution. If any candidate argument changed
+	// after authorization, fail closed rather than executing an unapproved input.
+	currentDigest, digestErr := CandidateDigestV1(req)
+	if digestErr != nil || currentDigest != candidateDigest {
+		result.Status = "denied"
+		result.Output = "candidate changed or digest unavailable before execution"
+		result.Duration = time.Since(start)
+		g.record(result)
+		if digestErr != nil {
+			return result, naeoserr.Wrapf(digestErr, naeoserr.ErrPipeline, "candidate digest revalidation failed")
+		}
+		return result, naeoserr.New(naeoserr.ErrConflict, "candidate changed after authorization")
 	}
 
 	// Atomically consume the invocation identity immediately before the side
