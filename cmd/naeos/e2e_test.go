@@ -4,10 +4,14 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/NAEOS-foundation/naeos/pkg/engine"
+	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
 func TestStatusCommandShowsConfig(t *testing.T) {
@@ -305,5 +309,165 @@ func TestAutoDetectNaeosYaml(t *testing.T) {
 	}
 	if !strings.Contains(output, "naeos-yaml") {
 		t.Fatalf("expected naeos-yaml, got %q", output)
+	}
+}
+
+
+func runJSONCommand(t *testing.T, configPath, specPath string, extraArgs ...string) (map[string]any, string, error) {
+	t.Helper()
+	args := []string{"run", "--config", configPath, "--input-file", specPath, "--output", "json"}
+	args = append(args, extraArgs...)
+	output, err := executeCommand(NewRootCommand(), args...)
+	if err != nil {
+		return nil, output, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(output), &payload); err != nil {
+		t.Fatalf("decode run JSON output: %v; output=%q", err, output)
+	}
+	return payload, output, nil
+}
+
+func writeRunFixture(t *testing.T, outputDir string, includeOutputDir bool) (string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	specPath := filepath.Join(dir, "spec.yaml")
+	config := "pipeline:\n  name: cli-reporting\n  mode: development\n"
+	if includeOutputDir {
+		config += "  output_dir: " + outputDir + "\n"
+	}
+	if err := os.WriteFile(configPath, []byte(config), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	if err := os.WriteFile(specPath, []byte("project: cli-reporting-test\n"), 0o644); err != nil {
+		t.Fatalf("write spec: %v", err)
+	}
+	return configPath, specPath
+}
+
+func mapValue(t *testing.T, parent map[string]any, key string) map[string]any {
+	t.Helper()
+	value, ok := parent[key].(map[string]any)
+	if !ok {
+		t.Fatalf("expected %q to be an object, got %#v", key, parent[key])
+	}
+	return value
+}
+
+func TestRunJSONReportsActualWrittenArtifacts(t *testing.T) {
+	outputDir := filepath.Join(t.TempDir(), "out")
+	configPath, specPath := writeRunFixture(t, outputDir, true)
+
+	payload, _, err := runJSONCommand(t, configPath, specPath)
+	if err != nil {
+		t.Fatalf("run command: %v", err)
+	}
+	if payload["status"] != "success" || payload["completion_status"] != "written" {
+		t.Fatalf("unexpected completion payload: %#v", payload)
+	}
+	if payload["artifact_write_status"] != string(pipeline.ArtifactWriteWritten) {
+		t.Fatalf("unexpected artifact write status: %#v", payload["artifact_write_status"])
+	}
+	if payload["artifacts_written"].(float64) <= 0 {
+		t.Fatalf("expected artifacts_written > 0, got %#v", payload["artifacts_written"])
+	}
+
+	summary := mapValue(t, payload, "artifact_summary")
+	if summary["materialized_files"].(float64) <= 0 {
+		t.Fatalf("expected materialized_files > 0, got %#v", summary["materialized_files"])
+	}
+	if summary["artifacts_written"] != payload["artifacts_written"] {
+		t.Fatalf("summary write count does not match top-level count: %#v", summary)
+	}
+
+	actualFiles := 0
+	if err := filepath.WalkDir(outputDir, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !entry.IsDir() {
+			actualFiles++
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("walk output directory: %v", err)
+	}
+	if int(summary["materialized_files"].(float64)) != actualFiles {
+		t.Fatalf("materialized_files=%v, actual files=%d", summary["materialized_files"], actualFiles)
+	}
+}
+
+func TestRunJSONReportsGenerationOnlyWithoutOutputDirectory(t *testing.T) {
+	configPath, specPath := writeRunFixture(t, "", false)
+	payload, _, err := runJSONCommand(t, configPath, specPath)
+	if err != nil {
+		t.Fatalf("run command: %v", err)
+	}
+	if payload["completion_status"] != "generated" {
+		t.Fatalf("expected generated completion, got %#v", payload["completion_status"])
+	}
+	if payload["artifact_write_status"] != string(pipeline.ArtifactWriteSkippedNoOutput) {
+		t.Fatalf("expected skipped-no-output status, got %#v", payload["artifact_write_status"])
+	}
+	if payload["artifacts_written"].(float64) != 0 {
+		t.Fatalf("expected zero written artifacts, got %#v", payload["artifacts_written"])
+	}
+	if mapValue(t, payload, "artifact_summary")["materialized_files"].(float64) != 0 {
+		t.Fatal("generation-only run must report zero materialized files")
+	}
+}
+
+func TestRunJSONReportsDryRunAsGenerationOnly(t *testing.T) {
+	outputDir := filepath.Join(t.TempDir(), "dry-run-output")
+	configPath, specPath := writeRunFixture(t, outputDir, true)
+	payload, _, err := runJSONCommand(t, configPath, specPath, "--dry-run")
+	if err != nil {
+		t.Fatalf("run command: %v", err)
+	}
+	if payload["completion_status"] != "generated" {
+		t.Fatalf("expected generated completion, got %#v", payload["completion_status"])
+	}
+	if payload["artifact_write_status"] != string(pipeline.ArtifactWriteSkippedDryRun) {
+		t.Fatalf("expected dry-run write status, got %#v", payload["artifact_write_status"])
+	}
+	if payload["artifacts_written"].(float64) != 0 || mapValue(t, payload, "artifact_summary")["materialized_files"].(float64) != 0 {
+		t.Fatalf("dry-run must report no writes: %#v", payload["artifact_summary"])
+	}
+	if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
+		t.Fatalf("dry-run unexpectedly created output directory, stat err=%v", err)
+	}
+}
+
+func TestRunJSONWriteFailureDoesNotEmitSuccessPayload(t *testing.T) {
+	outputPath := filepath.Join(t.TempDir(), "not-a-directory")
+	if err := os.WriteFile(outputPath, []byte("block output directory"), 0o644); err != nil {
+		t.Fatalf("create blocking file: %v", err)
+	}
+	configPath, specPath := writeRunFixture(t, outputPath, true)
+	_, output, err := runJSONCommand(t, configPath, specPath)
+	if err == nil {
+		t.Fatal("expected artifact write failure")
+	}
+	if strings.Contains(output, "status") && strings.Contains(output, "success") {
+		t.Fatalf("failed write emitted a successful payload: %q", output)
+	}
+}
+
+func TestSummarizeArtifactWritesHandlesEmptyAndDuplicatePaths(t *testing.T) {
+	logical, materialized, collisions := summarizeArtifactWrites(nil, 0)
+	if logical != 0 || materialized != 0 || collisions != 0 {
+		t.Fatalf("empty artifacts summary=(%d,%d,%d), want (0,0,0)", logical, materialized, collisions)
+	}
+
+	paths := []string{"same.txt", "same.txt", "other.txt"}
+	logical, materialized, collisions = summarizeArtifactWrites(paths, 2)
+	if logical != 3 || materialized != 1 || collisions != 1 {
+		t.Fatalf("duplicate paths summary=(%d,%d,%d), want (3,1,1)", logical, materialized, collisions)
+	}
+
+	logical, materialized, collisions = summarizeArtifactWrites(paths, 99)
+	if logical != 3 || materialized != 2 || collisions != 1 {
+		t.Fatalf("clamped write count summary=(%d,%d,%d), want (3,2,1)", logical, materialized, collisions)
 	}
 }
