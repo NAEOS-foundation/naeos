@@ -1082,7 +1082,7 @@ func TestRunReviewReportsExplicitStatesAndEnforcesMandatoryGate(t *testing.T) {
 		wantErr   bool
 	}{
 		{name: "pass", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusApproved}}, artifacts: artifact, wantState: ReviewStatePass},
-		{name: "fail", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusRejected}}, artifacts: artifact, wantState: ReviewStateFail, wantErr: true},
+		{name: "fail", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusRejected, Summary: "sensitive reviewer context"}}, artifacts: artifact, wantState: ReviewStateFail, wantErr: true},
 		{name: "reviewer error", reviewer: pipelineReviewerStub{err: fmt.Errorf("sensitive reviewer detail")}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
 		{name: "nil result", reviewer: pipelineReviewerStub{}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
 		{name: "skipped", reviewer: pipelineReviewerStub{}, wantState: ReviewStateSkipped},
@@ -1098,8 +1098,8 @@ func TestRunReviewReportsExplicitStatesAndEnforcesMandatoryGate(t *testing.T) {
 			if len(outcomes) != 1 || outcomes[0].State != tc.wantState {
 				t.Fatalf("unexpected review outcomes: %#v, want state %s", outcomes, tc.wantState)
 			}
-			if tc.name == "reviewer error" && strings.Contains(outcomes[0].Summary, "sensitive reviewer detail") {
-				t.Fatal("review outcome leaked reviewer error details")
+			if strings.Contains(outcomes[0].Summary, "sensitive") {
+				t.Fatal("review outcome leaked sensitive reviewer diagnostics")
 			}
 		})
 	}
