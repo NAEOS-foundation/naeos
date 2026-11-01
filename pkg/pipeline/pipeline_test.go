@@ -113,6 +113,9 @@ func TestPipelineRunProducesResult(t *testing.T) {
 	if len(result.Tasks) == 0 {
 		t.Fatal("expected at least one planned task")
 	}
+	if result.ArtifactWriteStatus != ArtifactWriteSkippedNoOutput || result.CompletionStatus != "generated" {
+		t.Fatalf("generation without an output directory must not claim execution: write=%s completion=%q", result.ArtifactWriteStatus, result.CompletionStatus)
+	}
 }
 
 func TestPipelineUsesInjectedParser(t *testing.T) {
@@ -149,6 +152,8 @@ func TestPipelineWritesArtifactsToOutputDir(t *testing.T) {
 	if len(files) == 0 {
 		t.Fatal("expected output dir to contain generated files")
 	}
+	// A successful artifact write is the only path that reports written completion.
+	// Read the result in a separate run below to avoid changing the filesystem assertion.
 }
 
 func TestConfigFromFileJSON(t *testing.T) {
