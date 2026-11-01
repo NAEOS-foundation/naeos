@@ -77,8 +77,9 @@ func TestCanonicalControlPlaneAllowPermitsSideEffect(t *testing.T) {
 	}
 }
 
-func TestCanonicalControlPlaneEvaluatorFailureBlocksSideEffect(t *testing.T) {
-	cp, _ := realControlPlane(t, &policy.Policy{
+func TestCanonicalControlPlaneRejectsMalformedPolicyBeforeActivation(t *testing.T) {
+	reg := policy.NewRegistry()
+	err := reg.Register(&policy.Policy{
 		ID:      "invalid-policy",
 		Version: "1.0.0",
 		Scope:   policy.Scope{Resource: "ship", Action: "run"},
@@ -90,6 +91,10 @@ func TestCanonicalControlPlaneEvaluatorFailureBlocksSideEffect(t *testing.T) {
 			Priority:  1,
 		}},
 	})
+	if err == nil {
+		t.Fatal("malformed policy must be rejected before activation")
+	}
+	cp := control.New(reg)
 	sb := &countingSandbox{}
 	gw := gateway.New(cp, sb)
 
@@ -98,28 +103,21 @@ func TestCanonicalControlPlaneEvaluatorFailureBlocksSideEffect(t *testing.T) {
 		Action:  "run",
 		Context: map[string]any{"project": "naeos"},
 	})
-	if err == nil {
-		t.Fatal("expected evaluator failure to be surfaced as an internal error")
+	if err != nil {
+		t.Fatalf("malformed policy must be rejected at registration, not evaluation: %v", err)
 	}
-	var evaluationFailure *control.EvaluationFailure
-	if !errors.As(err, &evaluationFailure) {
-		t.Fatalf("expected typed EvaluationFailure, got %T: %v", err, err)
+	if result.Decision != control.DecisionDeny || result.Status != "denied" {
+		t.Fatalf("absence of an activated malformed policy must fail closed, got decision=%q status=%q", result.Decision, result.Status)
 	}
-	if evaluationFailure.PolicyID != "invalid-policy" || evaluationFailure.RuleID != "invalid" {
-		t.Fatalf("expected policy and rule attribution, got %+v", evaluationFailure)
-	}
-	if result.Decision != "" || result.Status != "failed" {
-		t.Fatalf("evaluation failure must remain a non-decision failed state, got decision=%q status=%q", result.Decision, result.Status)
-	}
-	if result.EvaluationFailure == nil || result.EvaluationFailure.Code != evaluationFailure.Code {
-		t.Fatalf("expected structured failure metadata in execution result, got %+v", result.EvaluationFailure)
+	if result.EvaluationFailure != nil {
+		t.Fatalf("registration rejection must not be represented as runtime evaluator failure: %+v", result.EvaluationFailure)
 	}
 	if got := atomic.LoadInt32(&sb.calls); got != 0 {
-		t.Fatalf("side effect executed after evaluator failure: sandbox calls=%d", got)
+		t.Fatalf("side effect executed after malformed policy rejection: sandbox calls=%d", got)
 	}
 	history := gw.History()
-	if len(history) != 1 || history[0].Decision != "" || history[0].Status != "failed" {
-		t.Fatalf("expected one failed non-decision history record, got %+v", history)
+	if len(history) != 1 || history[0].Decision != control.DecisionDeny || history[0].Status != "denied" {
+		t.Fatalf("expected one fail-closed denial history record, got %+v", history)
 	}
 }
 
