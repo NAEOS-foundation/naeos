@@ -258,3 +258,29 @@ func TestEvaluator_ReportsIndeterminateWhenEvaluationCannotBeCompleted(t *testin
 		t.Fatalf("nil policy must be indeterminate, got %+v", got)
 	}
 }
+
+func TestEvaluator_RejectsForgedSameVersionPolicySnapshot(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-FORGED", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status: "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	result := NewEvaluator(store).EvaluateAction(
+		Action{AgentID: "agent-forged", Capability: "production.delete"},
+		grant, forged, time.Now(),
+	)
+	if result.Status != DecisionIndeterminate || result.Reason != ReasonEvaluationFailed {
+		t.Fatalf("forged same-version policy must be indeterminate, got %+v", result)
+	}
+}
