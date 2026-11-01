@@ -98,6 +98,9 @@ func Validate(p *Policy) error {
 		if !r.Decision.Valid() {
 			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid rule decision %q on rule %s", r.Decision, r.RuleID))
 		}
+		if err := validateCondition(r.Condition); err != nil {
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid condition on rule %s: %v", r.RuleID, err))
+		}
 	}
 	return nil
 }
