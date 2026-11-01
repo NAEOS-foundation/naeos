@@ -859,6 +859,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err := checkContext("completion_event", result); err != nil {
 			return result, err
 		}
+		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
+			return nil, err
+		}
+		if err := checkContext("completion_event", result); err != nil {
+			return result, err
+		}
+
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
 		eventName := "pipeline.generated"
 		if writeStatus == ArtifactWriteWritten {
@@ -872,13 +879,6 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			"graph_edges": execGraph.EdgeCount(),
 		}); err != nil {
 			p.warn("failed to emit %s event", eventName, "error", err)
-		}
-
-		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
-			return nil, err
-		}
-		if err := checkContext("return", result); err != nil {
-			return result, err
 		}
 
 		return result, nil
