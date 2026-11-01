@@ -1261,29 +1261,73 @@ func TestRunReviewCollectsOutcomesAfterFailure(t *testing.T) {
 }
 
 
+
 func TestRunContextCancellationStopsBeforeReviewAndArtifactWrites(t *testing.T) {
 	outputDir := t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	observer := &generationLifecycleRecorder{}
-	reviewer := &pipelineReviewerSequence{results: []*review.ReviewResult{{Status: review.StatusApproved}}}
-	p, err := New(Config{OutputDir: outputDir, Observer: observer, Reviewer: reviewer, Hooks: &Hooks{
-		AfterGenerate: []HookFunc{func(*HookContext) error { close(entered); <-release; return nil }},
-	}})
-	if err != nil { t.Fatal(err) }
-	done := make(chan error, 1)
-	go func() { _, runErr := p.RunContext(ctx, "project: cancel-test\nmodules:\n  - name: core\n    path: ./core"); done <- runErr }()
+	reviewer := &pipelineReviewerSequence{
+		results: []*review.ReviewResult{{Status: review.StatusApproved}},
+	}
+	p, err := New(Config{
+		OutputDir: outputDir,
+		Observer:  observer,
+		Reviewer:  reviewer,
+		Hooks: &Hooks{
+			AfterGenerate: []HookFunc{
+				func(*HookContext) error {
+					close(entered)
+					<-release
+					return nil
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	type runResult struct {
+		result *Result
+		err    error
+	}
+	done := make(chan runResult, 1)
+	go func() {
+		result, runErr := p.RunContext(ctx, "project: cancel-test\nmodules:\n  - name: core\n    path: ./core")
+		done <- runResult{result: result, err: runErr}
+	}()
+
 	<-entered
 	cancel()
 	close(release)
-	if err := <-done; !errors.Is(err, context.Canceled) { t.Fatalf("expected context.Canceled, got %v", err) }
-	if reviewer.calls != 0 { t.Fatalf("reviewer called after cancellation: %d", reviewer.calls) }
+
+	run := <-done
+	if !errors.Is(run.err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", run.err)
+	}
+	if run.result == nil {
+		t.Fatal("expected partial result to report cancellation status")
+	}
+	if run.result.CompletionStatus != "failed" || run.result.ArtifactWriteStatus != ArtifactWriteCanceled {
+		t.Fatalf("unexpected canceled result status: completion=%q write=%q", run.result.CompletionStatus, run.result.ArtifactWriteStatus)
+	}
+	if reviewer.calls != 0 {
+		t.Fatalf("review must not start after generation observes cancellation, got %d calls", reviewer.calls)
+	}
 	entries, err := os.ReadDir(outputDir)
-	if err != nil { t.Fatal(err) }
-	if len(entries) != 0 { t.Fatalf("canceled run wrote artifacts: %v", entries) }
-	if observer.complete || !observer.failed { t.Fatalf("unexpected observer lifecycle: %+v", observer) }
+	if err != nil {
+		t.Fatalf("read output directory: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("canceled run must not write artifacts, found %v", entries)
+	}
+	if observer.complete || !observer.failed {
+		t.Fatalf("canceled run must emit failure, not completion: %+v", observer)
+	}
 }
 
 func TestRunContextCanceledBeforeStart(t *testing.T) {
@@ -1291,10 +1335,17 @@ func TestRunContextCanceledBeforeStart(t *testing.T) {
 	cancel()
 	observer := &generationLifecycleRecorder{}
 	p, err := New(Config{Observer: observer})
-	if err != nil { t.Fatal(err) }
-	_, err = p.RunContext(ctx, "project: canceled")
-	if !errors.Is(err, context.Canceled) { t.Fatalf("expected context.Canceled, got %v", err) }
-	if observer.complete || !observer.failed { t.Fatalf("unexpected observer lifecycle: %+v", observer) }
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	_, runErr := p.RunContext(ctx, "project: canceled")
+	if !errors.Is(runErr, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", runErr)
+	}
+	if observer.complete || !observer.failed {
+		t.Fatalf("canceled run must not emit successful completion: %+v", observer)
+	}
 }
 
 func TestRunWriteArtifactsStopsWhenContextCanceled(t *testing.T) {
@@ -1302,9 +1353,14 @@ func TestRunWriteArtifactsStopsWhenContextCanceled(t *testing.T) {
 	cancel()
 	dir := t.TempDir()
 	p := &Pipeline{outputDirValue: dir}
-	status, written, err := p.runWriteArtifacts(ctx, []engine.Artifact{{Path: "must-not-exist.txt", Content: []byte("content")}})
+
+	status, written, err := p.runWriteArtifacts(ctx, []engine.Artifact{
+		{Path: "must-not-exist.txt", Content: []byte("content")},
+	})
 	if !errors.Is(err, context.Canceled) || status != ArtifactWriteCanceled || written != 0 {
 		t.Fatalf("unexpected canceled write: status=%s written=%d err=%v", status, written, err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "must-not-exist.txt")); !os.IsNotExist(err) { t.Fatalf("unexpected artifact on disk, stat err=%v", err) }
+	if _, err := os.Stat(filepath.Join(dir, "must-not-exist.txt")); !os.IsNotExist(err) {
+		t.Fatalf("unexpected artifact on disk, stat err=%v", err)
+	}
 }
