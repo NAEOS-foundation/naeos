@@ -164,8 +164,8 @@ var ErrPolicyVersionNotFound = fmt.Errorf("policy version not found")
 func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionResult {
 	if e == nil || e.store == nil {
 		return DecisionResult{
-			Status:    DecisionDeny,
-			Reason:    ReasonNoPolicyFound,
+			Status:    DecisionIndeterminate,
+			Reason:    ReasonEvaluationFailed,
 			Requested: action.Capability,
 			Message:   "policy evaluator unavailable",
 		}
@@ -175,8 +175,8 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 		policy, err := e.store.Version(ctx.PolicyID, ctx.PolicyVersion)
 		if err != nil {
 			return DecisionResult{
-				Status:    DecisionDeny,
-				Reason:    ReasonNoPolicyFound,
+				Status:    DecisionIndeterminate,
+				Reason:    ReasonEvaluationFailed,
 				PolicyID:  ctx.PolicyID,
 				Requested: action.Capability,
 				Message:   err.Error(),
@@ -188,8 +188,8 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 	policy := ctx.Policy
 	if policy == nil {
 		return DecisionResult{
-			Status:    DecisionDeny,
-			Reason:    ReasonNoPolicyFound,
+			Status:    DecisionIndeterminate,
+			Reason:    ReasonEvaluationFailed,
 			PolicyID:  ctx.PolicyID,
 			Requested: action.Capability,
 			Message:   "policy is nil",
@@ -356,11 +356,13 @@ func containsCapability(values []Capability, target Capability) bool {
 func (e *Evaluator) EvaluateAction(action Action, grant *Grant, policy *Policy, now time.Time) DecisionResult {
 	action = normalizeRequest(action)
 	ctx := AuthorizationContext{
-		PolicyID:      policy.ID,
-		PolicyVersion: policy.Version,
-		Grant:         grant,
-		Policy:        policy,
-		Now:           now,
+		Grant:  grant,
+		Policy: policy,
+		Now:    now,
+	}
+	if policy != nil {
+		ctx.PolicyID = policy.ID
+		ctx.PolicyVersion = policy.Version
 	}
 	if ctx.PolicyID == "" && policy != nil {
 		ctx.PolicyID = policy.ID
