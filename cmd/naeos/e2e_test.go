@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NAEOS-foundation/naeos/pkg/engine"
 	"github.com/NAEOS-foundation/naeos/pkg/pipeline"
 )
 
