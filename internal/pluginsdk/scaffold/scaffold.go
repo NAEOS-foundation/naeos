@@ -23,7 +23,7 @@ type Files struct {
 func (f Files) goMod() string {
 	return fmt.Sprintf(`module %s
 
-go 1.25.0
+go 1.26.10
 
 require github.com/NAEOS-foundation/naeos v0.0.0
 
@@ -270,7 +270,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.26.10'
       - name: Test
         run: go test -v -race ./...
       - name: Build (WASM)

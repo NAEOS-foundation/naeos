@@ -47,4 +47,4 @@ No network, credentials, LLM API key, or external service is required.
 
 ## Scope
 
-This is a deterministic in-process control-plane experiment. It does not claim that a deployed SandBase Harness session or a production end-to-end pilot has passed. External integration evidence must be collected separately.
+This is a deterministic in-process control-plane experiment. It does not claim external validation or a production end-to-end pilot. Any future external integration evidence must be collected separately.

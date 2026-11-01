@@ -29,7 +29,7 @@ func TestGoMod(t *testing.T) {
 	if !strings.Contains(content, "module github.com/test/plugin") {
 		t.Error("expected module declaration")
 	}
-	if !strings.Contains(content, "go 1.25.0") {
+	if !strings.Contains(content, "go 1.26.10") {
 		t.Error("expected go version")
 	}
 }
@@ -136,6 +136,9 @@ func TestCIYML(t *testing.T) {
 	}
 	if !strings.Contains(content, "GOOS=wasip1") {
 		t.Error("expected WASM build")
+	}
+	if !strings.Contains(content, "go-version: '1.26.10'") {
+		t.Error("expected Go toolchain version 1.26.10")
 	}
 	if !strings.Contains(content, "buildmode=plugin") {
 		t.Error("expected plugin build mode")
