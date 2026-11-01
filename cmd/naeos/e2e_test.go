@@ -444,12 +444,22 @@ func TestRunJSONWriteFailureDoesNotEmitSuccessPayload(t *testing.T) {
 		t.Fatalf("create blocking file: %v", err)
 	}
 	configPath, specPath := writeRunFixture(t, outputPath, true)
-	_, output, err := runJSONCommand(t, configPath, specPath)
+	output, err := executeCommand(NewRootCommand(), "run", "--config", configPath, "--input-file", specPath, "--output", "json")
 	if err == nil {
 		t.Fatal("expected artifact write failure")
 	}
-	if strings.Contains(output, "status") && strings.Contains(output, "success") {
-		t.Fatalf("failed write emitted a successful payload: %q", output)
+	var payload map[string]any
+	if decodeErr := json.Unmarshal([]byte(output), &payload); decodeErr != nil {
+		t.Fatalf("expected structured failure payload, got %q (decode error: %v)", output, decodeErr)
+	}
+	if payload["status"] != "failed" || payload["completion_status"] != "failed" {
+		t.Fatalf("failed run was not represented as failed: %#v", payload)
+	}
+	if payload["artifact_write_status"] != string(pipeline.ArtifactWriteFailed) {
+		t.Fatalf("expected failed artifact write status, got %#v", payload["artifact_write_status"])
+	}
+	if payload["artifacts_written"].(float64) != 0 || payload["artifact_write_partial"] != false {
+		t.Fatalf("unexpected failed-write counts: %#v", payload)
 	}
 }
 
