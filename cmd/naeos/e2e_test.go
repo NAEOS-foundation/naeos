@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -452,5 +453,15 @@ func TestSummarizeArtifactWritesHandlesEmptyAndDuplicatePaths(t *testing.T) {
 	logical, materialized, collisions = summarizeArtifactWrites(paths, 99)
 	if logical != 3 || materialized != 2 || collisions != 1 {
 		t.Fatalf("clamped write count summary=(%d,%d,%d), want (3,2,1)", logical, materialized, collisions)
+	}
+}
+
+
+func TestRunCommandStatusReflectsPipelineError(t *testing.T) {
+	if got := runCommandStatus(nil); got != "success" {
+		t.Fatalf("successful run status=%q, want success", got)
+	}
+	if got := runCommandStatus(errors.New("artifact write failed")); got != "failed" {
+		t.Fatalf("failed run status=%q, want failed", got)
 	}
 }
