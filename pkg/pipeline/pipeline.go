@@ -147,11 +147,11 @@ type PipelineObserver interface {
 type ReviewState string
 
 const (
-	ReviewStatePass           ReviewState = "PASS"
-	ReviewStateFail           ReviewState = "FAIL"
-	ReviewStateError          ReviewState = "ERROR"
-	ReviewStateSkipped        ReviewState = "SKIPPED"
-	ReviewStateNotConfigured  ReviewState = "NOT_CONFIGURED"
+	ReviewStatePass          ReviewState = "PASS"
+	ReviewStateFail          ReviewState = "FAIL"
+	ReviewStateError         ReviewState = "ERROR"
+	ReviewStateSkipped       ReviewState = "SKIPPED"
+	ReviewStateNotConfigured ReviewState = "NOT_CONFIGURED"
 )
 
 type ReviewOutcome struct {
@@ -163,11 +163,11 @@ type ReviewOutcome struct {
 type ArtifactWriteStatus string
 
 const (
-	ArtifactWriteWritten          ArtifactWriteStatus = "WRITTEN"
-	ArtifactWriteSkippedDryRun    ArtifactWriteStatus = "SKIPPED_DRY_RUN"
-	ArtifactWriteSkippedNoOutput  ArtifactWriteStatus = "SKIPPED_NO_OUTPUT_DIR"
-	ArtifactWriteSkippedEmpty    ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
-	ArtifactWriteFailed           ArtifactWriteStatus = "FAILED"
+	ArtifactWriteWritten         ArtifactWriteStatus = "WRITTEN"
+	ArtifactWriteSkippedDryRun   ArtifactWriteStatus = "SKIPPED_DRY_RUN"
+	ArtifactWriteSkippedNoOutput ArtifactWriteStatus = "SKIPPED_NO_OUTPUT_DIR"
+	ArtifactWriteSkippedEmpty   ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
+	ArtifactWriteFailed          ArtifactWriteStatus = "FAILED"
 )
 
 type Result struct {
