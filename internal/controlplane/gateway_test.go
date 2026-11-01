@@ -764,3 +764,47 @@ func TestDecisionGateway_ExecuteAtomicDoesNotRunForIndeterminateEvaluation(t *te
 		t.Fatalf("indeterminate evaluation must not execute or create a decision-shaped event: called=%t result=%+v event=%+v", called, got, event)
 	}
 }
+
+func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL-GATEWAY", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-CANONICAL-GATEWAY", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-FORGED-POLICY", AgentID: "agent-forged",
+		Action: Action{AgentID: "agent-forged", Capability: "production.delete", ArtifactHash: "sha256:forged"},
+		Grant:  grant, Policy: forged, Timestamp: time.Now().UTC(),
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionDeny || authorized.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged policy contents must not override the canonical snapshot; expected DENY, got %+v", authorized)
+	}
+	called := false
+	result, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called || result.Status != DecisionDeny {
+		t.Fatalf("forged policy must not reach side effect, called=%v result=%+v", called, result)
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 2 ||
+		events[0].EventType != "AUTHORIZATION_DECISION" || events[0].Decision != DecisionDeny ||
+		events[1].EventType != "EXECUTION_BLOCKED" || events[1].Decision != DecisionDeny {
+		t.Fatalf("expected canonical DENY and blocked-execution evidence, got %+v", events)
+	}
+}
