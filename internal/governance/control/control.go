@@ -193,11 +193,11 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	return worstRec, nil
 }
 
-// evaluatePolicy evaluates all rules of a single policy and derives a
-// decision per the following deterministic semantics:
-//   - any failing rule -> DENY
-//   - otherwise, if any rule or the policy default requires approval -> REQUIRE_APPROVAL
-//   - otherwise -> the policy default (ALLOW by default)
+// evaluatePolicy evaluates every rule in deterministic priority order. Priority
+// controls evaluation order and failure attribution only; it never overrides
+// decision severity. A failed rule remains a fail-closed DENY. When all rules
+// pass, the strictest of the policy default and all rule decisions wins:
+// DENY > REQUIRE_APPROVAL > ALLOW.
 func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord, error) {
 	rec := DecisionRecord{
 		PolicyID:      pol.ID,
@@ -213,16 +213,29 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 	ctx["environment"] = req.Environment
 	ctx["actor"] = req.Actor
 
+	rules := append([]policy.PolicyRule(nil), pol.Rules...)
+	sort.SliceStable(rules, func(i, j int) bool {
+		if rules[i].Priority != rules[j].Priority {
+			return rules[i].Priority < rules[j].Priority
+		}
+		if rules[i].RuleID != rules[j].RuleID {
+			return rules[i].RuleID < rules[j].RuleID
+		}
+		if rules[i].Condition != rules[j].Condition {
+			return rules[i].Condition < rules[j].Condition
+		}
+		return rules[i].Decision < rules[j].Decision
+	})
+
 	type scored struct {
 		ruleID  string
 		dec     policy.Decision
-		prio    int
 		passed  bool
 		message string
 	}
 
 	var results []scored
-	for _, r := range pol.Rules {
+	for _, r := range rules {
 		er, err := c.evaluator.EvaluateRules([]policy.Rule{{
 			RuleID:    r.RuleID,
 			Condition: r.Condition,
@@ -241,56 +254,65 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 		results = append(results, scored{
 			ruleID:  r.RuleID,
 			dec:     r.Decision,
-			prio:    r.Priority,
 			passed:  er[0].Passed,
 			message: er[0].Message,
 		})
 	}
 
-	// Sort by priority descending so highest-priority rules are considered
-	// first when aggregating.
-	sort.SliceStable(results, func(i, j int) bool {
-		return results[i].prio > results[j].prio
-	})
-
 	rec.Reasons = []string{fmt.Sprintf("policy %s v%s matched", pol.ID, pol.Version)}
 
-	// Any failing rule denies the request.
-	for _, s := range results {
-		if !s.passed {
+	// A failed rule denies regardless of its configured action. The first
+	// failure is stable because rules were evaluated by priority then RuleID.
+	for _, result := range results {
+		if !result.passed {
 			rec.Decision = DecisionDeny
-			rec.RuleID = s.ruleID
-			rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s failed: %s", s.ruleID, s.message))
+			rec.RuleID = result.ruleID
+			rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s failed: %s", result.ruleID, result.message))
 			return DecisionDeny, rec, nil
 		}
 	}
 
-	// Otherwise, highest-priority passing rule determines the outcome.
-	if len(results) > 0 {
-		top := results[0]
-		rec.RuleID = top.ruleID
-		rec.Decision = top.dec
-		rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s %s", top.ruleID, top.dec))
-		return top.dec, rec, nil
+	// Priority does not resolve conflicts. Aggregate all passing rule outcomes
+	// with the policy default using the global decision-severity ordering.
+	selected := pol.Default
+	selectedRuleID := ""
+	for _, result := range results {
+		if rank(result.dec) > rank(selected) {
+			selected = result.dec
+			selectedRuleID = result.ruleID
+		}
 	}
-
-	// No rules: fall back to the policy default.
-	rec.Decision = pol.Default
-	rec.Reasons = append(rec.Reasons, fmt.Sprintf("no rules, policy default %s", pol.Default))
-	return pol.Default, rec, nil
+	rec.Decision = selected
+	rec.RuleID = selectedRuleID
+	if selectedRuleID == "" {
+		rec.Reasons = append(rec.Reasons, fmt.Sprintf("policy default %s is the strictest outcome", selected))
+	} else {
+		rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s contributes strictest outcome %s", selectedRuleID, selected))
+	}
+	return selected, rec, nil
 }
 
-// stricter returns the stricter of two decision records, taking the source
-// policy/version for the strictest decision. Order: DENY > REQUIRE_APPROVAL >
-// ALLOW.
+// stricter returns the higher-severity decision. Equal-severity outcomes use
+// a stable policy/version/rule identity tie-break, independent of registry
+// iteration or policy registration order. Order: DENY > REQUIRE_APPROVAL > ALLOW.
 func stricter(a, b DecisionRecord, bDec policy.Decision) DecisionRecord {
 	aRank := rank(a.Decision)
 	bRank := rank(bDec)
-	if bRank >= aRank {
+	if bRank > aRank || (bRank == aRank && decisionSourceLess(b, a)) {
 		b.Decision = bDec
 		return b
 	}
 	return a
+}
+
+func decisionSourceLess(a, b DecisionRecord) bool {
+	if a.PolicyID != b.PolicyID {
+		return a.PolicyID < b.PolicyID
+	}
+	if a.PolicyVersion != b.PolicyVersion {
+		return a.PolicyVersion < b.PolicyVersion
+	}
+	return a.RuleID < b.RuleID
 }
 
 func rank(d Decision) int {
