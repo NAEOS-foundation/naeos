@@ -72,9 +72,9 @@ Example:
 				return fmt.Errorf("failed to construct pipeline: %w", err)
 			}
 
-			result, err := p.Run(inputValue)
-			if err != nil {
-				return fmt.Errorf("pipeline run failed: %w", err)
+			result, runErr := p.Run(inputValue)
+			if runErr != nil && result == nil {
+				return fmt.Errorf("pipeline run failed: %w", runErr)
 			}
 
 			if profileOut != "" && p.ProfileEnabled() {
@@ -118,12 +118,16 @@ Example:
 				"[8/8] Evidence",
 			}
 
+			commandStatus := "success"
+			if runErr != nil {
+				commandStatus = "failed"
+			}
 			payload := map[string]any{
 				"pipeline":           cfg.Name,
 				"mode":               cfg.Mode,
 				"verbose":            cfg.Verbose,
 				"output_dir":         cfg.OutputDir,
-				"status":                "success",
+				"status":                commandStatus,
 				"completion_status":    result.CompletionStatus,
 				"artifact_write_status": result.ArtifactWriteStatus,
 				"artifacts_written":     result.ArtifactsWritten,
@@ -215,7 +219,13 @@ Example:
 				return err
 			}
 
-			return writeOrPrint(cmd, rendered, outputFile)
+			if err := writeOrPrint(cmd, rendered, outputFile); err != nil {
+				return err
+			}
+			if runErr != nil {
+				return fmt.Errorf("pipeline run failed: %w", runErr)
+			}
+			return nil
 		},
 	}
 
