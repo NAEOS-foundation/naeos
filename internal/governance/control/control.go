@@ -38,6 +38,34 @@ type Request struct {
 	Context     map[string]any
 }
 
+// EvaluationFailure represents an internal inability to determine a policy outcome.
+// It is not an authorization decision and must never be treated as DENY or ALLOW.
+type EvaluationFailure struct {
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
+	Stage         string
+	Code          string
+	Timestamp     time.Time
+	cause         error
+}
+
+func (e *EvaluationFailure) Error() string {
+	if e == nil {
+		return "policy evaluation failed"
+	}
+	return "policy evaluation failed"
+}
+
+// Unwrap exposes the evaluator cause to trusted internal callers. Callers must
+// avoid returning the cause directly to agents or external API clients.
+func (e *EvaluationFailure) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.cause
+}
+
 // DecisionRecord is durable evidence of a single authorization decision.
 type DecisionRecord struct {
 	Request       Request
@@ -132,24 +160,25 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	if c.grantTTL > 0 {
 		worstRec.ExpiresAt = now.Add(c.grantTTL)
 	}
-	var evalErrors []string
-
 	for _, pol := range policies {
 		outcome, rec, evalErr := c.evaluatePolicy(pol, req)
+		if evalErr != nil {
+			// An evaluator failure is an internal indeterminate state, not a
+			// policy decision. Do not mint a grant digest or append a decision.
+			return DecisionRecord{}, &EvaluationFailure{
+				PolicyID:      pol.ID,
+				PolicyVersion: pol.Version,
+				RuleID:        rec.RuleID,
+				Stage:         "rule_evaluation",
+				Code:          "policy_evaluator_error",
+				Timestamp:     time.Now().UTC(),
+				cause:         evalErr,
+			}
+		}
 		rec.Request = req
 		rec.Timestamp = time.Now().UTC()
 		rec.Deterministic = true
 		worstRec = stricter(worstRec, rec, outcome)
-		if evalErr != nil {
-			evalErrors = append(evalErrors, fmt.Sprintf("governance evaluator error: %v", evalErr))
-		}
-	}
-
-	if len(evalErrors) > 0 {
-		// Evaluator failure is itself a governance decision: never fall back
-		// to a policy default or allow execution after an evaluation error.
-		worstRec.Decision = DecisionDeny
-		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
 	}
 	// The strictest policy record may replace worstRec, so restore the
 	// configured grant lifetime before binding the final authorization identity.
@@ -202,13 +231,9 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 			Enabled:   true,
 		}}, ctx)
 		if err != nil {
-			rec.Decision = DecisionDeny
 			rec.RuleID = r.RuleID
-			rec.Reasons = []string{
-				fmt.Sprintf("policy %s v%s matched", pol.ID, pol.Version),
-				fmt.Sprintf("rule %s evaluation error: %v", r.RuleID, err),
-			}
-			return DecisionDeny, rec, err
+			rec.Reasons = []string{fmt.Sprintf("policy %s v%s evaluation failed", pol.ID, pol.Version)}
+			return "", rec, err
 		}
 		if len(er) == 0 {
 			continue
