@@ -4,8 +4,8 @@
 package control
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -192,17 +192,24 @@ func TestEvaluateEvaluatorErrorFailsClosed(t *testing.T) {
 	c.evaluator = errorEvaluator{}
 
 	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Context: map[string]any{"project": "naeos"}})
-	if err != nil {
-		t.Fatalf("expected evaluator failure to become a recorded DENY, got error: %v", err)
+	if err == nil {
+		t.Fatal("expected evaluator failure to remain an internal error")
 	}
-	if rec.Decision != DecisionDeny {
-		t.Fatalf("expected DENY on evaluator error, got %s", rec.Decision)
+	if rec.Decision != "" {
+		t.Fatalf("evaluation failure must not be represented as a policy decision, got %s", rec.Decision)
 	}
-	if rec.RuleID != "must-evaluate" {
-		t.Fatalf("expected failing rule attribution, got %s", rec.RuleID)
+	var failure *EvaluationFailure
+	if !errors.As(err, &failure) {
+		t.Fatalf("expected typed EvaluationFailure, got %T: %v", err, err)
 	}
-	if len(rec.Reasons) < 2 || !strings.Contains(rec.Reasons[len(rec.Reasons)-1], "governance evaluator error") {
-		t.Fatalf("expected evaluator error in decision evidence, got %#v", rec.Reasons)
+	if failure.PolicyID != "deploy-policy" || failure.PolicyVersion != "1.0.0" || failure.RuleID != "must-evaluate" {
+		t.Fatalf("expected policy/rule attribution, got %+v", failure)
+	}
+	if failure.Stage != "rule_evaluation" || failure.Code != "policy_evaluator_error" || failure.Timestamp.IsZero() {
+		t.Fatalf("expected structured failure metadata, got %+v", failure)
+	}
+	if got := c.ListDecisions(); len(got) != 0 {
+		t.Fatalf("evaluation failure must not be recorded as a decision, got %d records", len(got))
 	}
 }
 
