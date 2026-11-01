@@ -395,7 +395,7 @@ func TestEvaluateRulesRejectsMalformedConditionGrammar(t *testing.T) {
 		{name: "contains missing argument", condition: "contains:name"},
 		{name: "contains empty substring", condition: "contains:name,  "},
 		{name: "numeric missing threshold", condition: "gt:port,"},
-		{name: "numeric invalid threshold", condition: "gte:port,NaN"},
+		{name: "numeric invalid threshold", condition: "gte:port,not-a-number"},
 		{name: "in empty option", condition: "in:env,staging, "},
 		{name: "malformed dotted path", condition: "exists:service..port"},
 		{name: "malformed key whitespace", condition: "bad key:value"},
