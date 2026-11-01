@@ -166,7 +166,7 @@ const (
 	ArtifactWriteWritten         ArtifactWriteStatus = "WRITTEN"
 	ArtifactWriteSkippedDryRun   ArtifactWriteStatus = "SKIPPED_DRY_RUN"
 	ArtifactWriteSkippedNoOutput ArtifactWriteStatus = "SKIPPED_NO_OUTPUT_DIR"
-	ArtifactWriteSkippedEmpty   ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
+	ArtifactWriteSkippedEmpty    ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
 	ArtifactWriteFailed          ArtifactWriteStatus = "FAILED"
 )
 
