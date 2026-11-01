@@ -837,7 +837,7 @@ The highest-precedence applicable outcome governs the request. This precedence i
 
 REQUIRE_APPROVAL is not an authorization grant. Execution remains blocked until a valid approval is obtained, bound to the relevant decision and artifact where applicable, and revalidated at the consequential runtime enforcement boundary.
 
-35. Policy Evaluation Failure
+34.1 Policy Evaluation Failure
 
 A policy evaluation failure is an internal evaluation state, not a fourth externally valid authorization decision.
 
