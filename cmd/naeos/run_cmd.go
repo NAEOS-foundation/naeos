@@ -118,10 +118,7 @@ Example:
 				"[8/8] Evidence",
 			}
 
-			commandStatus := "success"
-			if runErr != nil {
-				commandStatus = "failed"
-			}
+			commandStatus := runCommandStatus(runErr)
 			payload := map[string]any{
 				"pipeline":           cfg.Name,
 				"mode":               cfg.Mode,
@@ -264,4 +261,12 @@ func summarizeArtifactWrites(paths []string, artifactsWritten int) (logicalArtif
 	materializedFiles = len(writtenPaths)
 	pathCollisions = logicalArtifacts - len(allPaths)
 	return logicalArtifacts, materializedFiles, pathCollisions
+}
+
+
+func runCommandStatus(runErr error) string {
+	if runErr != nil {
+		return "failed"
+	}
+	return "success"
 }
