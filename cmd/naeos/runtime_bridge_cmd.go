@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -13,6 +14,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -133,8 +135,8 @@ func newRuntimeBridgeCommand() *cobra.Command {
 			}
 
 			durableMode := evidenceLedgerPath != "" || evidenceReceiptPath != "" || evidenceRunID != "" || evidenceTrustedPublicKey != ""
-			var signingKey []byte
-			var trustedPublicKey []byte
+			var signingKey ed25519.PrivateKey
+			var trustedPublicKey ed25519.PublicKey
 			var durableLedger *evidence.DurableRuntimeEventLedger
 			sequence := 1
 			if durableMode {
