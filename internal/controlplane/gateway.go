@@ -321,6 +321,9 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 // policy-store execution lock. Policy updates cannot commit until the side effect
 // callback returns, closing the in-process check-to-side-effect race.
 func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionResult, sideEffect func() error) (DecisionResult, LedgerEvent) {
+	if result.Status == DecisionIndeterminate {
+		return result, LedgerEvent{}
+	}
 	if g == nil {
 		result.Status = DecisionDeny
 		result.Reason = ReasonDeniedStalePolicy
