@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/hex"
@@ -116,6 +117,58 @@ func appendRuntimeEvidence(path string, data []byte) error {
 	return nil
 }
 
+func verifyDurableRuntimeEvidenceFile(path string, ledger *evidence.DurableRuntimeEventLedger, runID string, trustedKey ed25519.PublicKey, issuer, keyID string) error {
+	if ledger == nil {
+		return fmt.Errorf("durable runtime ledger is required for evidence reconciliation")
+	}
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		if len(ledger.Records()) == 0 {
+			return nil
+		}
+		return fmt.Errorf("durable runtime evidence file is missing while ledger contains events")
+	}
+	if err != nil {
+		return fmt.Errorf("read persisted runtime evidence for recovery: %w", err)
+	}
+	events := ledger.Records()
+	if len(data) == 0 {
+		if len(events) == 0 {
+			return nil
+		}
+		return fmt.Errorf("persisted runtime evidence is empty while ledger contains events")
+	}
+	if data[len(data)-1] != '\n' {
+		return fmt.Errorf("persisted runtime evidence has an incomplete final JSONL record")
+	}
+	lines := bytes.Split(data[:len(data)-1], []byte{'\n'})
+	if len(lines) != len(events) {
+		return fmt.Errorf("runtime evidence and durable ledger event counts differ: evidence=%d ledger=%d", len(lines), len(events))
+	}
+	seenInvocations := make(map[string]struct{}, len(lines))
+	for i, line := range lines {
+		if len(line) == 0 {
+			return fmt.Errorf("persisted runtime evidence record %d is empty", i)
+		}
+		var runtimeEvidence gateway.RuntimeEvidence
+		if err := json.Unmarshal(line, &runtimeEvidence); err != nil {
+			return fmt.Errorf("decode persisted runtime evidence record %d: %w", i, err)
+		}
+		if err := gateway.VerifyRuntimeEvidenceWithPublicKey(runtimeEvidence, trustedKey, issuer, keyID); err != nil {
+			return fmt.Errorf("persisted runtime evidence record %d failed trusted verification: %w", i, err)
+		}
+		event := events[i]
+		if event.RunID != runID || event.Sequence != i+1 || event.Name != "runtime.execution_evidence" || event.PayloadDigest != runtimeEvidence.EvidenceDigest {
+			return fmt.Errorf("persisted runtime evidence record %d does not match its durable ledger event", i)
+		}
+		if _, exists := seenInvocations[runtimeEvidence.InvocationID]; exists {
+			return fmt.Errorf("persisted runtime evidence contains duplicate invocation %q", runtimeEvidence.InvocationID)
+		}
+		seenInvocations[runtimeEvidence.InvocationID] = struct{}{}
+	}
+	return nil
+}
+
 func newRuntimeBridgeCommand() *cobra.Command {
 	var root string
 	var replayDB, evidenceFile, evidenceSigningKey, evidenceIssuer, evidenceKeyID string
@@ -176,6 +229,9 @@ func newRuntimeBridgeCommand() *cobra.Command {
 					if record.RunID != evidenceRunID {
 						return fmt.Errorf("existing durable runtime ledger belongs to another run")
 					}
+				}
+				if err := verifyDurableRuntimeEvidenceFile(evidenceFile, durableLedger, evidenceRunID, trustedPublicKey, evidenceIssuer, evidenceKeyID); err != nil {
+					return fmt.Errorf("reconcile persisted runtime evidence before recovery: %w", err)
 				}
 				sequence = len(records) + 1
 				if _, err := os.Stat(evidenceReceiptPath); err == nil {
