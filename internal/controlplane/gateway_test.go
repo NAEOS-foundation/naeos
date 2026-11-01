@@ -733,6 +733,7 @@ func TestDecisionGateway_EvaluationFailureIsNotAuthorizationDecisionAndCannotExe
 }
 
 func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *testing.T) {
+	store := NewPolicyStore()
 	ledger := NewLedger()
 	root := t.TempDir()
 	blocker := filepath.Join(root, "not-a-directory")
