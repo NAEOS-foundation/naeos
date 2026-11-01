@@ -367,3 +367,133 @@ func TestValidateDecisionRejectsTamperedGrantExpiry(t *testing.T) {
 		t.Fatal("expected tampered grant expiry to be rejected")
 	}
 }
+
+type recordingRuleEvaluator struct {
+	calls []string
+}
+
+func (e *recordingRuleEvaluator) Evaluate(ctx map[string]any) error {
+	return policy.NewEvaluator().Evaluate(ctx)
+}
+
+func (e *recordingRuleEvaluator) EvaluateRules(rules []policy.Rule, ctx map[string]any) ([]policy.EvaluationResult, error) {
+	if len(rules) > 0 {
+		e.calls = append(e.calls, rules[0].RuleID)
+	}
+	return policy.NewEvaluator().EvaluateRules(rules, ctx)
+}
+
+func TestEvaluateRulePriorityControlsOrderButNotDecisionSeverity(t *testing.T) {
+	p := &policy.Policy{
+		ID: "priority-order", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionAllow,
+		Rules: []policy.PolicyRule{
+			{RuleID: "approval-late", Condition: "exists:approval_flag", Decision: policy.DecisionRequireApproval, Priority: 4},
+			{RuleID: "allow-first", Condition: "exists:allow_flag", Decision: policy.DecisionAllow, Priority: 1},
+		},
+	}
+	c := newTestPlane(t, p)
+	evaluator := &recordingRuleEvaluator{}
+	c.evaluator = evaluator
+
+	rec, err := c.Evaluate(Request{
+		Resource: "deploy", Action: "run",
+		Context: map[string]any{"allow_flag": true, "approval_flag": true},
+	})
+	if err != nil {
+		t.Fatalf("unexpected evaluation error: %v", err)
+	}
+	if rec.Decision != DecisionRequireApproval || rec.RuleID != "approval-late" {
+		t.Fatalf("lower-priority ALLOW must not override REQUIRE_APPROVAL: %+v", rec)
+	}
+	if fmt.Sprint(evaluator.calls) != "[allow-first approval-late]" {
+		t.Fatalf("rules must be evaluated by ascending numeric priority: %v", evaluator.calls)
+	}
+}
+
+func TestEvaluateDenyRuleWinsOverHigherPriorityAllowRule(t *testing.T) {
+	p := &policy.Policy{
+		ID: "deny-over-allow", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "repository", Action: "write"},
+		Default: policy.DecisionAllow,
+		Rules: []policy.PolicyRule{
+			{RuleID: "allow-first", Condition: "exists:allow_flag", Decision: policy.DecisionAllow, Priority: 1},
+			{RuleID: "deny-later", Condition: "exists:deny_flag", Decision: policy.DecisionDeny, Priority: 4},
+		},
+	}
+	c := newTestPlane(t, p)
+	rec, err := c.Evaluate(Request{
+		Resource: "repository", Action: "write",
+		Context: map[string]any{"allow_flag": true, "deny_flag": true},
+	})
+	if err != nil {
+		t.Fatalf("unexpected evaluation error: %v", err)
+	}
+	if rec.Decision != DecisionDeny || rec.RuleID != "deny-later" {
+		t.Fatalf("lower-priority DENY must override ALLOW: %+v", rec)
+	}
+}
+
+func TestEvaluatePolicyDefaultApprovalCannotBeDowngradedByAllowRule(t *testing.T) {
+	p := &policy.Policy{
+		ID: "approval-default", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionRequireApproval,
+		Rules: []policy.PolicyRule{
+			{RuleID: "allow-rule", Condition: "exists:ready", Decision: policy.DecisionAllow, Priority: 1},
+		},
+	}
+	c := newTestPlane(t, p)
+	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run", Context: map[string]any{"ready": true}})
+	if err != nil {
+		t.Fatalf("unexpected evaluation error: %v", err)
+	}
+	if rec.Decision != DecisionRequireApproval || rec.RuleID != "" {
+		t.Fatalf("rule ALLOW must not downgrade policy default REQUIRE_APPROVAL: %+v", rec)
+	}
+}
+
+func TestEvaluateDenyWinsAcrossApplicablePolicies(t *testing.T) {
+	allow := &policy.Policy{
+		ID: "a-allow", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionAllow,
+	}
+	deny := &policy.Policy{
+		ID: "z-deny", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionDeny,
+	}
+	c := newTestPlane(t, allow, deny)
+	rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run"})
+	if err != nil {
+		t.Fatalf("unexpected evaluation error: %v", err)
+	}
+	if rec.Decision != DecisionDeny || rec.PolicyID != "z-deny" {
+		t.Fatalf("DENY must win across applicable policies: %+v", rec)
+	}
+}
+
+func TestEvaluateEqualSeverityPolicyAttributionIsRegistrationOrderIndependent(t *testing.T) {
+	alpha := &policy.Policy{
+		ID: "alpha-policy", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionRequireApproval,
+	}
+	zeta := &policy.Policy{
+		ID: "zeta-policy", Version: "1.0.0",
+		Scope:   policy.Scope{Resource: "deploy", Action: "run"},
+		Default: policy.DecisionRequireApproval,
+	}
+	for _, policies := range [][]*policy.Policy{{alpha, zeta}, {zeta, alpha}} {
+		c := newTestPlane(t, policies...)
+		rec, err := c.Evaluate(Request{Resource: "deploy", Action: "run"})
+		if err != nil {
+			t.Fatalf("unexpected evaluation error: %v", err)
+		}
+		if rec.Decision != DecisionRequireApproval || rec.PolicyID != "alpha-policy" {
+			t.Fatalf("equal-severity attribution must be stable across registration order: %+v", rec)
+		}
+	}
+}
