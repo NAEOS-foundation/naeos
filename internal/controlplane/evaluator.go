@@ -375,24 +375,13 @@ func (e *Evaluator) EvaluateAction(action Action, grant *Grant, policy *Policy, 
 		Grant: grant,
 		Now:   now,
 	}
-	if grant != nil {
+	if policy != nil {
+		// Policy ID/version are selectors only; policy contents are untrusted.
+		ctx.PolicyID = policy.ID
+		ctx.PolicyVersion = policy.Version
+	} else if grant != nil {
 		ctx.PolicyID = grant.PolicyID
 		ctx.PolicyVersion = grant.PolicyVersion
-	}
-	if policy != nil {
-		if ctx.PolicyID != "" && (policy.ID != ctx.PolicyID || policy.Version != ctx.PolicyVersion) {
-			return DecisionResult{
-				Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
-				PolicyID: ctx.PolicyID, Requested: action.Capability,
-				Message: "supplied policy reference does not match the grant policy reference",
-			}
-		}
-		if ctx.PolicyID == "" {
-			ctx.PolicyID = policy.ID
-			ctx.PolicyVersion = policy.Version
-		}
-		// Keep only the reference. Evaluate resolves policy contents from the store.
-		ctx.Policy = &Policy{ID: policy.ID, Version: policy.Version}
 	}
 	return e.Evaluate(ctx, action)
 }
