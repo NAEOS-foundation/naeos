@@ -176,6 +176,7 @@ const (
 	ArtifactWriteSkippedNoOutput ArtifactWriteStatus = "SKIPPED_NO_OUTPUT_DIR"
 	ArtifactWriteSkippedEmpty    ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
 	ArtifactWriteFailed          ArtifactWriteStatus = "FAILED"
+	ArtifactWriteCanceled        ArtifactWriteStatus = "CANCELED"
 )
 
 type Result struct {
@@ -695,12 +696,26 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			return nil, fmt.Errorf("context canceled: %w", err)
 		}
 
+		checkContext := func(stage string, current *Result) error {
+			if err := ctx.Err(); err != nil {
+				if current != nil {
+					current.CompletionStatus = "failed"
+					current.ArtifactWriteStatus = ArtifactWriteCanceled
+				}
+				return fmt.Errorf("pipeline canceled before %s: %w", stage, err)
+			}
+			return nil
+		}
+
 		p.profileStageStart("validate")
 		result, err := p.runValidate(input)
 		p.profileStageEnd("validate", err)
 		p.memSnapshot("validate")
 		if err != nil {
 			return nil, err
+		}
+		if err := checkContext("build_graph", result); err != nil {
+			return result, err
 		}
 		p.materializeNEIR(result.NEIR)
 		if p.profile != nil {
@@ -712,6 +727,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profileStageEnd("build_graph", nil)
 		p.memSnapshot("build_graph")
 		result.Graph = execGraph
+		if err := checkContext("policy_eval", result); err != nil {
+			return result, err
+		}
 		if p.profile != nil {
 			p.profile.EndStage("build_graph")
 		}
@@ -728,6 +746,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if policyErr != nil {
 			return nil, policyErr
 		}
+		if err := checkContext("schedule", result); err != nil {
+			return result, err
+		}
 
 		p.profileStageStart("schedule")
 		tasks, err := p.runSchedule(result)
@@ -735,6 +756,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.memSnapshot("schedule")
 		if err != nil {
 			return nil, err
+		}
+		if err := checkContext("generate", result); err != nil {
+			return result, err
 		}
 		if p.profile != nil {
 			p.profile.EndStage("schedule")
@@ -758,6 +782,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 		p.profileStageEnd("generate", nil)
 		p.memSnapshot("generate")
+		if err := checkContext("review", result); err != nil {
+			return result, err
+		}
 
 		p.profileStageStart("review")
 		reviews, reviewOutcomes, reviewErr := p.runReview(artifacts)
@@ -765,6 +792,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.memSnapshot("review")
 		result.Reviews = reviews
 		result.ReviewOutcomes = reviewOutcomes
+		if err := checkContext("write_artifacts", result); err != nil {
+			return result, err
+		}
 		if reviewErr != nil {
 			return result, reviewErr
 		}
@@ -777,7 +807,7 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 		result.CompletionStatus = "generated"
 		p.profileStageStart("write_artifacts")
-		writeStatus, writtenCount, writeErr := p.runWriteArtifacts(artifacts)
+		writeStatus, writtenCount, writeErr := p.runWriteArtifacts(ctx, artifacts)
 		result.ArtifactWriteStatus = writeStatus
 		result.ArtifactsWritten = writtenCount
 		result.ArtifactWritePartial = writeErr != nil && writtenCount > 0
@@ -1097,7 +1127,10 @@ func (p *Pipeline) runReview(artifacts []engine.Artifact) ([]*review.ReviewResul
 	return reviews, outcomes, errors.Join(reviewErrors...)
 }
 
-func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) (ArtifactWriteStatus, int, error) {
+func (p *Pipeline) runWriteArtifacts(ctx context.Context, artifacts []engine.Artifact) (ArtifactWriteStatus, int, error) {
+	if err := ctx.Err(); err != nil {
+		return ArtifactWriteCanceled, 0, fmt.Errorf("pipeline canceled before artifact write: %w", err)
+	}
 	outputDir := p.outputDirValue
 	if len(artifacts) == 0 {
 		return ArtifactWriteSkippedEmpty, 0, nil
@@ -1112,12 +1145,18 @@ func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) (ArtifactWrite
 	p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
 	written := 0
 	for _, artifact := range artifacts {
+		if err := ctx.Err(); err != nil {
+			return ArtifactWriteCanceled, written, fmt.Errorf("pipeline canceled before artifact %q: %w", artifact.Path, err)
+		}
 		if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
 			return ArtifactWriteFailed, written, fmt.Errorf("invalid artifact path: %w", err)
 		}
 		artifactPath := filepath.Join(outputDir, artifact.Path)
 		if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
 			return ArtifactWriteFailed, written, fmt.Errorf("create artifact dir: %w", err)
+		}
+		if err := ctx.Err(); err != nil {
+			return ArtifactWriteCanceled, written, fmt.Errorf("pipeline canceled before writing artifact %q: %w", artifact.Path, err)
 		}
 		if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
 			return ArtifactWriteFailed, written, fmt.Errorf("write artifact %s: %w", artifact.Path, err)

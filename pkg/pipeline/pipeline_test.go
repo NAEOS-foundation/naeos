@@ -4,7 +4,9 @@
 package pipeline
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1130,7 +1132,7 @@ func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
 			}
 			p := &Pipeline{}
 			tc.configure(p, dir)
-			got, written, err := p.runWriteArtifacts(tc.artifacts)
+			got, written, err := p.runWriteArtifacts(context.Background(), tc.artifacts)
 			if got != tc.want || (err != nil) != tc.wantErr {
 				t.Fatalf("runWriteArtifacts=(%s,%d,%v), want (%s, err=%v)", got, written, err, tc.want, tc.wantErr)
 			}
@@ -1151,6 +1153,7 @@ func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
 
 type generationLifecycleRecorder struct {
 	started   bool
+	failed    bool
 	complete  bool
 	generated bool
 	status    ArtifactWriteStatus
@@ -1160,7 +1163,7 @@ func (l *generationLifecycleRecorder) OnPipelineStart(string) {}
 func (l *generationLifecycleRecorder) OnPipelineComplete(string, int, string) {
 	l.complete = true
 }
-func (l *generationLifecycleRecorder) OnPipelineFailed(string, string)    {}
+func (l *generationLifecycleRecorder) OnPipelineFailed(string, string) { l.failed = true }
 func (l *generationLifecycleRecorder) OnArtifactGenerated(string, string) {}
 func (l *generationLifecycleRecorder) OnPipelineGenerated(_ string, _ int, status ArtifactWriteStatus, _ string) {
 	l.generated = true
@@ -1198,7 +1201,7 @@ func TestRunWriteArtifactsReportsPartialWriteCount(t *testing.T) {
 		{Path: "first.txt", Content: []byte("written")},
 		{Path: "blocked/second.txt", Content: []byte("cannot write")},
 	}
-	status, written, err := p.runWriteArtifacts(artifacts)
+	status, written, err := p.runWriteArtifacts(context.Background(), artifacts)
 	if err == nil || status != ArtifactWriteFailed {
 		t.Fatalf("expected failed write status, got status=%s err=%v", status, err)
 	}
@@ -1255,4 +1258,53 @@ func TestRunReviewCollectsOutcomesAfterFailure(t *testing.T) {
 	if strings.Contains(err.Error(), "private reviewer detail") {
 		t.Fatal("review error leaked private reviewer diagnostics")
 	}
+}
+
+
+func TestRunContextCancellationStopsBeforeReviewAndArtifactWrites(t *testing.T) {
+	outputDir := t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	observer := &generationLifecycleRecorder{}
+	reviewer := &pipelineReviewerSequence{results: []*review.ReviewResult{{Status: review.StatusApproved}}}
+	p, err := New(Config{OutputDir: outputDir, Observer: observer, Reviewer: reviewer, Hooks: &Hooks{
+		AfterGenerate: []HookFunc{func(*HookContext) error { close(entered); <-release; return nil }},
+	}})
+	if err != nil { t.Fatal(err) }
+	done := make(chan error, 1)
+	go func() { _, runErr := p.RunContext(ctx, "project: cancel-test\nmodules:\n  - name: core\n    path: ./core"); done <- runErr }()
+	<-entered
+	cancel()
+	close(release)
+	if err := <-done; !errors.Is(err, context.Canceled) { t.Fatalf("expected context.Canceled, got %v", err) }
+	if reviewer.calls != 0 { t.Fatalf("reviewer called after cancellation: %d", reviewer.calls) }
+	entries, err := os.ReadDir(outputDir)
+	if err != nil { t.Fatal(err) }
+	if len(entries) != 0 { t.Fatalf("canceled run wrote artifacts: %v", entries) }
+	if observer.complete || !observer.failed { t.Fatalf("unexpected observer lifecycle: %+v", observer) }
+}
+
+func TestRunContextCanceledBeforeStart(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	observer := &generationLifecycleRecorder{}
+	p, err := New(Config{Observer: observer})
+	if err != nil { t.Fatal(err) }
+	_, err = p.RunContext(ctx, "project: canceled")
+	if !errors.Is(err, context.Canceled) { t.Fatalf("expected context.Canceled, got %v", err) }
+	if observer.complete || !observer.failed { t.Fatalf("unexpected observer lifecycle: %+v", observer) }
+}
+
+func TestRunWriteArtifactsStopsWhenContextCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	dir := t.TempDir()
+	p := &Pipeline{outputDirValue: dir}
+	status, written, err := p.runWriteArtifacts(ctx, []engine.Artifact{{Path: "must-not-exist.txt", Content: []byte("content")}})
+	if !errors.Is(err, context.Canceled) || status != ArtifactWriteCanceled || written != 0 {
+		t.Fatalf("unexpected canceled write: status=%s written=%d err=%v", status, written, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "must-not-exist.txt")); !os.IsNotExist(err) { t.Fatalf("unexpected artifact on disk, stat err=%v", err) }
 }
