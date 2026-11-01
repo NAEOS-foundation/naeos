@@ -773,14 +773,13 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.profileStageEnd("write_artifacts", nil)
 		p.memSnapshot("write_artifacts")
 		result.CompletionStatus = "generated"
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "generation", 3, "generate", "pipeline.artifacts_generated", artifactDigest(artifacts)); err != nil {
+			return result, fmt.Errorf("record generation evidence: %w", err)
+		}
 		if writeStatus == ArtifactWriteWritten {
 			result.CompletionStatus = "written"
-			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 6, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 				return result, fmt.Errorf("record execution evidence: %w", err)
-			}
-		} else {
-			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "generation", 3, "generate", "pipeline.artifacts_generated", artifactDigest(artifacts)); err != nil {
-				return result, fmt.Errorf("record generation evidence: %w", err)
 			}
 		}
 
@@ -801,14 +800,18 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			return result, err
 		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
-		if err := p.emitKernelEvent("pipeline.run", map[string]any{
+		eventName := "pipeline.generated"
+		if writeStatus == ArtifactWriteWritten {
+			eventName = "pipeline.run"
+		}
+		if err := p.emitKernelEvent(eventName, map[string]any{
 			"artifacts":   len(artifacts),
 			"tasks":       len(tasks),
 			"reviews":     len(reviews),
 			"graph_nodes": execGraph.NodeCount(),
 			"graph_edges": execGraph.EdgeCount(),
 		}); err != nil {
-			p.warn("failed to emit pipeline.run event", "error", err)
+			p.warn("failed to emit %s event", eventName, "error", err)
 		}
 
 		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
