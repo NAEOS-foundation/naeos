@@ -764,3 +764,45 @@ func TestDecisionGateway_ExecuteAtomicDoesNotRunForIndeterminateEvaluation(t *te
 		t.Fatalf("indeterminate evaluation must not execute or create a decision-shaped event: called=%t result=%+v event=%+v", called, got, event)
 	}
 }
+
+func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL-GATEWAY", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-CANONICAL-GATEWAY", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status: "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-FORGED-POLICY", AgentID: "agent-forged",
+		Action: Action{AgentID: "agent-forged", Capability: "production.delete", ArtifactHash: "sha256:forged"},
+		Grant: grant, Policy: forged, Timestamp: time.Now().UTC(),
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionIndeterminate || authorized.DecisionID != "" {
+		t.Fatalf("forged policy must not produce an authorization decision, got %+v", authorized)
+	}
+	called := false
+	result, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called || result.Status != DecisionIndeterminate {
+		t.Fatalf("forged policy must not reach side effect, called=%v result=%+v", called, result)
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 1 || events[0].EventType != "POLICY_EVALUATION_FAILED" || events[0].DecisionID != "" {
+		t.Fatalf("expected only non-decision evaluation-failure evidence, got %+v", events)
+	}
+}
