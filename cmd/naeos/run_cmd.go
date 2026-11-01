@@ -243,7 +243,6 @@ Example:
 	return cmd
 }
 
-
 func summarizeArtifactWrites(paths []string, artifactsWritten int) (logicalArtifacts, materializedFiles, pathCollisions int) {
 	logicalArtifacts = len(paths)
 	if artifactsWritten < 0 {
