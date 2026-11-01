@@ -45,8 +45,17 @@ func NewDecisionGateway(e *Evaluator, l *Ledger) *DecisionGateway {
 
 // Authorize decides whether a requested action may proceed.
 func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
-	if g == nil || g.Evaluator == nil {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "gateway or evaluator unavailable"}
+	if g == nil {
+		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "gateway unavailable"}
+	}
+	if g.Evaluator == nil {
+		if req.Timestamp.IsZero() { req.Timestamp = time.Now().UTC() }
+		if req.RequestID == "" { req.RequestID = controlPlaneID("REQ") }
+		return g.recordEvaluationFailure(req, DecisionResult{
+			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+			RequestID: req.RequestID, AgentID: req.AgentID, Requested: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, Message: "policy evaluator unavailable",
+		})
 	}
 	if req.Timestamp.IsZero() {
 		req.Timestamp = time.Now().UTC()
