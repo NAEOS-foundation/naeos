@@ -7,6 +7,7 @@ import (
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -79,4 +80,20 @@ func canonicalSignedReceipt(signed SignedDurableRuntimeReceipt) ([]byte, error) 
 	// NAEOS artifact type with an identical JSON representation.
 	digest := sha256.Sum256(append([]byte("naeos:signed-durable-runtime-receipt:v1:"), data...))
 	return digest[:], nil
+}
+
+ 
+// ParseEd25519PublicKey accepts raw, base64, or hexadecimal public key material.
+func ParseEd25519PublicKey(data []byte) (ed25519.PublicKey, error) {
+	if len(data) == ed25519.PublicKeySize {
+		return ed25519.PublicKey(append([]byte(nil), data...)), nil
+	}
+	text := strings.TrimSpace(string(data))
+	if decoded, err := base64.StdEncoding.DecodeString(text); err == nil && len(decoded) == ed25519.PublicKeySize {
+		return ed25519.PublicKey(decoded), nil
+	}
+	if decoded, err := hex.DecodeString(text); err == nil && len(decoded) == ed25519.PublicKeySize {
+		return ed25519.PublicKey(decoded), nil
+	}
+	return nil, fmt.Errorf("unsupported Ed25519 public key encoding")
 }
