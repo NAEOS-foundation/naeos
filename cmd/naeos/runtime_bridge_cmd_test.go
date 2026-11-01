@@ -143,3 +143,32 @@ func TestFilesystemObserverDoesNotClaimUnsupportedActionObserved(t *testing.T) {
 		t.Fatalf("unsupported observation must preserve invocation identity: %+v", obs)
 	}
 }
+
+func TestAppendRuntimeEvidenceSyncsJSONLRecord(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "runtime-evidence.jsonl")
+	if err := appendRuntimeEvidence(path, []byte(`{"evidence_digest":"sha256:test"}`)); err != nil {
+		t.Fatalf("append runtime evidence: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read runtime evidence: %v", err)
+	}
+	if string(data) != "{\"evidence_digest\":\"sha256:test\"}\n" {
+		t.Fatalf("runtime evidence record = %q", string(data))
+	}
+}
+
+func TestWriteAtomicRuntimeReceiptPersistsCompleteRecord(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "runtime-receipt.json")
+	want := []byte("{\"receipt_id\":\"receipt-test\"}\n")
+	if err := writeAtomicRuntimeReceipt(path, want); err != nil {
+		t.Fatalf("write runtime receipt: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read runtime receipt: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("runtime receipt = %q, want %q", got, want)
+	}
+}

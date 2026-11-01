@@ -59,6 +59,16 @@ func (l *DurableRuntimeEventLedger) Publish(runID, name, payloadDigest string, s
 	return event, nil
 }
 
+// IsSealed reports whether this process has closed the ledger for further writes.
+func (l *DurableRuntimeEventLedger) IsSealed() bool {
+	if l == nil {
+		return false
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.sealed
+}
+
 // Seal prevents subsequent writes.
 func (l *DurableRuntimeEventLedger) Seal() {
 	if l != nil {
