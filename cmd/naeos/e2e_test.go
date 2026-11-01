@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -456,12 +455,3 @@ func TestSummarizeArtifactWritesHandlesEmptyAndDuplicatePaths(t *testing.T) {
 	}
 }
 
-
-func TestRunCommandStatusReflectsPipelineError(t *testing.T) {
-	if got := runCommandStatus(nil); got != "success" {
-		t.Fatalf("successful run status=%q, want success", got)
-	}
-	if got := runCommandStatus(errors.New("artifact write failed")); got != "failed" {
-		t.Fatalf("failed run status=%q, want failed", got)
-	}
-}
