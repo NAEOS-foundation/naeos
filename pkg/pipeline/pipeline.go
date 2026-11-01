@@ -144,6 +144,32 @@ type PipelineObserver interface {
 	OnArtifactGenerated(name string, path string)
 }
 
+type ReviewState string
+
+const (
+	ReviewStatePass           ReviewState = "PASS"
+	ReviewStateFail           ReviewState = "FAIL"
+	ReviewStateError          ReviewState = "ERROR"
+	ReviewStateSkipped        ReviewState = "SKIPPED"
+	ReviewStateNotConfigured  ReviewState = "NOT_CONFIGURED"
+)
+
+type ReviewOutcome struct {
+	Artifact string      `json:"artifact,omitempty"`
+	State    ReviewState `json:"state"`
+	Summary  string      `json:"summary,omitempty"`
+}
+
+type ArtifactWriteStatus string
+
+const (
+	ArtifactWriteWritten          ArtifactWriteStatus = "WRITTEN"
+	ArtifactWriteSkippedDryRun    ArtifactWriteStatus = "SKIPPED_DRY_RUN"
+	ArtifactWriteSkippedNoOutput  ArtifactWriteStatus = "SKIPPED_NO_OUTPUT_DIR"
+	ArtifactWriteSkippedEmpty    ArtifactWriteStatus = "SKIPPED_EMPTY_OUTPUT"
+	ArtifactWriteFailed           ArtifactWriteStatus = "FAILED"
+)
+
 type Result struct {
 	RunID                string
 	Source               string
@@ -154,6 +180,9 @@ type Result struct {
 	Tasks                []scheduler.Task
 	Graph                *graph.PlannerGraph
 	Reviews              []*review.ReviewResult
+	ReviewOutcomes       []ReviewOutcome
+	ArtifactWriteStatus  ArtifactWriteStatus
+	CompletionStatus     string
 	PolicyResults        []policy.EvaluationResult
 	GovernanceMode       string
 	GovernanceStatus     string
@@ -721,23 +750,38 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		p.memSnapshot("generate")
 
 		p.profileStageStart("review")
-		reviews := p.runReview(artifacts)
-		p.profileStageEnd("review", nil)
+		reviews, reviewOutcomes, reviewErr := p.runReview(artifacts)
+		p.profileStageEnd("review", reviewErr)
 		p.memSnapshot("review")
 		result.Reviews = reviews
+		result.ReviewOutcomes = reviewOutcomes
+		if reviewErr != nil {
+			return result, reviewErr
+		}
 		if p.profile != nil {
 			p.profile.EndStage("review")
 		}
 
 		p.profileStageStart("write_artifacts")
-		writeErr := p.runWriteArtifacts(artifacts)
-		p.profileStageEnd("write_artifacts", writeErr)
-		p.memSnapshot("write_artifacts")
+		writeStatus, writeErr := p.runWriteArtifacts(artifacts)
+		result.ArtifactWriteStatus = writeStatus
 		if writeErr != nil {
-			return nil, writeErr
+			p.profileStageEnd("write_artifacts", writeErr)
+			p.memSnapshot("write_artifacts")
+			return result, writeErr
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
-			return nil, fmt.Errorf("record execution evidence: %w", err)
+		p.profileStageEnd("write_artifacts", nil)
+		p.memSnapshot("write_artifacts")
+		result.CompletionStatus = "generated"
+		if writeStatus == ArtifactWriteWritten {
+			result.CompletionStatus = "written"
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 3, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+				return result, fmt.Errorf("record execution evidence: %w", err)
+			}
+		} else {
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "generation", 3, "generate", "pipeline.artifacts_generated", artifactDigest(artifacts)); err != nil {
+				return result, fmt.Errorf("record generation evidence: %w", err)
+			}
 		}
 
 		result.Tasks = tasks
@@ -745,12 +789,16 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 4, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
 			return nil, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 5, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
-			return nil, fmt.Errorf("record verification evidence: %w", err)
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 5, "verification", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
+			return result, fmt.Errorf("record verification evidence: %w", err)
 		}
 		runtimeObserver.Seal()
-		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID); err != nil {
-			return nil, err
+		requiredKinds := append([]string(nil), requiredRunEvidenceKinds...)
+		if writeStatus == ArtifactWriteWritten {
+			requiredKinds = append(requiredKinds, "execution")
+		}
+		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID, requiredKinds); err != nil {
+			return result, err
 		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
 		if err := p.emitKernelEvent("pipeline.run", map[string]any{
@@ -804,7 +852,7 @@ func (p *Pipeline) memSnapshot(label string) {
 	}
 }
 
-var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
+var requiredRunEvidenceKinds = []string{"intent", "decision", "generation", "observation", "verification"}
 
 func appendRunEvidence(builder *evidence.RuntimeEvidenceBuilder, observer *evidence.IndependentRuntimeObserver, runID, kind string, sequence int, stage, event, payloadDigest string) error {
 	if builder == nil || observer == nil {
@@ -834,8 +882,8 @@ func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, rev
 	return evidence.ComputeArtifactHash(data)
 }
 
-func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, runID string) error {
-	completion := evidence.ValidateCompletionWithRuntimeLedger(store, runtimeLedger, runID, requiredRunEvidenceKinds)
+func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, runID string, requiredKinds []string) error {
+	completion := evidence.ValidateCompletionWithRuntimeLedger(store, runtimeLedger, runID, requiredKinds)
 	if !completion.Complete {
 		return fmt.Errorf("run completion blocked: incomplete evidence contract: %v", completion.Missing)
 	}
@@ -976,44 +1024,76 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 	return artifacts, nil
 }
 
-func (p *Pipeline) runReview(artifacts []engine.Artifact) []*review.ReviewResult {
+// runReview treats every configured artifact review as a mandatory gate. Advisory
+// reviewers must be modeled explicitly before they can be allowed to fail open.
+func (p *Pipeline) runReview(artifacts []engine.Artifact) ([]*review.ReviewResult, []ReviewOutcome, error) {
 	p.logVerbose("reviewing %d artifacts", len(artifacts))
+	if len(artifacts) == 0 {
+		return nil, []ReviewOutcome{{State: ReviewStateSkipped, Summary: "no artifacts to review"}}, nil
+	}
+	if p.reviewer == nil {
+		return nil, []ReviewOutcome{{State: ReviewStateNotConfigured, Summary: "mandatory reviewer is not configured"}}, fmt.Errorf("mandatory artifact reviewer is not configured")
+	}
 	var reviews []*review.ReviewResult
+	var outcomes []ReviewOutcome
 	for _, artifact := range artifacts {
 		rules := reviewRulesForArtifact(artifact.Path)
 		r, err := p.reviewer.ReviewArtifact(artifact.Path, string(artifact.Content), rules)
-		if err == nil && r != nil {
-			reviews = append(reviews, r)
+		if err != nil {
+			outcomes = append(outcomes, ReviewOutcome{Artifact: artifact.Path, State: ReviewStateError, Summary: fmt.Sprintf("reviewer returned %T", err)})
+			return reviews, outcomes, fmt.Errorf("mandatory review failed for artifact %q: reviewer error (%T)", artifact.Path, err)
+		}
+		if r == nil {
+			outcomes = append(outcomes, ReviewOutcome{Artifact: artifact.Path, State: ReviewStateError, Summary: "reviewer returned no result"})
+			return reviews, outcomes, fmt.Errorf("mandatory review failed for artifact %q: nil reviewer result", artifact.Path)
+		}
+		reviews = append(reviews, r)
+		state := ReviewStateFail
+		switch r.Status {
+		case review.StatusApproved:
+			state = ReviewStatePass
+		case review.StatusRejected, review.StatusChanges:
+			state = ReviewStateFail
+		default:
+			state = ReviewStateError
+		}
+		outcomes = append(outcomes, ReviewOutcome{Artifact: artifact.Path, State: state, Summary: r.Summary})
+		if state != ReviewStatePass {
+			return reviews, outcomes, fmt.Errorf("mandatory review did not pass for artifact %q: status %q", artifact.Path, r.Status)
 		}
 	}
-	return reviews
+	return reviews, outcomes, nil
 }
 
-func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) error {
+func (p *Pipeline) runWriteArtifacts(artifacts []engine.Artifact) (ArtifactWriteStatus, error) {
 	outputDir := p.outputDirValue
-	if outputDir == "" || p.dryRun {
-		if p.dryRun {
-			p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
-		}
-		return nil
+	if len(artifacts) == 0 {
+		return ArtifactWriteSkippedEmpty, nil
+	}
+	if p.dryRun {
+		p.logVerbose("dry-run: skipping write of %d artifacts", len(artifacts))
+		return ArtifactWriteSkippedDryRun, nil
+	}
+	if outputDir == "" {
+		return ArtifactWriteSkippedNoOutput, nil
 	}
 	p.logVerbose("writing %d artifacts to %s", len(artifacts), outputDir)
 	for _, artifact := range artifacts {
 		if _, err := securityext.ValidateFilePath(filepath.Join(outputDir, artifact.Path), outputDir); err != nil {
-			return fmt.Errorf("invalid artifact path: %w", err)
+			return ArtifactWriteFailed, fmt.Errorf("invalid artifact path: %w", err)
 		}
 		artifactPath := filepath.Join(outputDir, artifact.Path)
 		if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
-			return fmt.Errorf("create artifact dir: %w", err)
+			return ArtifactWriteFailed, fmt.Errorf("create artifact dir: %w", err)
 		}
 		if err := os.WriteFile(artifactPath, artifact.Content, 0o600); err != nil {
-			return fmt.Errorf("write artifact %s: %w", artifact.Path, err)
+			return ArtifactWriteFailed, fmt.Errorf("write artifact %s: %w", artifact.Path, err)
 		}
 		if p.observer != nil {
 			p.observer.OnArtifactGenerated(artifact.Path, artifactPath)
 		}
 	}
-	return nil
+	return ArtifactWriteWritten, nil
 }
 
 func (p *Pipeline) runNotify(pipelineID string, startTime time.Time, result *Result, err error) {
