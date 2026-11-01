@@ -101,7 +101,7 @@ func TestPolicyBypassReport(t *testing.T) {
 	reportPath = filepath.Join(t.TempDir(), "EXPERIMENT-REPORT.md")
 	defer func() { reportPath = orig }()
 
-	results := reconcileConditionGrammarHardening(runAll())
+	results := runAll()
 	if err := writeReport(results); err != nil {
 		t.Fatal(err)
 	}
