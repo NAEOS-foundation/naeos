@@ -1130,9 +1130,15 @@ func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
 			}
 			p := &Pipeline{}
 			tc.configure(p, dir)
-			got, err := p.runWriteArtifacts(tc.artifacts)
+			got, written, err := p.runWriteArtifacts(tc.artifacts)
 			if got != tc.want || (err != nil) != tc.wantErr {
-				t.Fatalf("runWriteArtifacts=(%s,%v), want (%s, err=%v)", got, err, tc.want, tc.wantErr)
+				t.Fatalf("runWriteArtifacts=(%s,%d,%v), want (%s, err=%v)", got, written, err, tc.want, tc.wantErr)
+			}
+			if tc.name == "successful write" && written != 1 {
+				t.Fatalf("expected one written artifact, got %d", written)
+			}
+			if tc.name != "successful write" && written != 0 {
+				t.Fatalf("expected zero written artifacts, got %d", written)
 			}
 			if tc.name == "successful write" {
 				if _, err := os.Stat(filepath.Join(dir, "nested", "output.txt")); err != nil {
@@ -1179,5 +1185,74 @@ func TestPipelineObserverDistinguishesGenerationFromWrittenCompletion(t *testing
 	}
 	if obs.status != ArtifactWriteSkippedNoOutput {
 		t.Fatalf("expected no-output status, got %s", obs.status)
+	}
+}
+
+func TestRunWriteArtifactsReportsPartialWriteCount(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "blocked"), []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	p := &Pipeline{outputDirValue: dir}
+	artifacts := []engine.Artifact{
+		{Path: "first.txt", Content: []byte("written")},
+		{Path: "blocked/second.txt", Content: []byte("cannot write")},
+	}
+	status, written, err := p.runWriteArtifacts(artifacts)
+	if err == nil || status != ArtifactWriteFailed {
+		t.Fatalf("expected failed write status, got status=%s err=%v", status, err)
+	}
+	if written != 1 {
+		t.Fatalf("expected exactly one partial write, got %d", written)
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "first.txt")); statErr != nil {
+		t.Fatalf("expected first artifact to exist: %v", statErr)
+	}
+}
+
+type pipelineReviewerSequence struct {
+	results []*review.ReviewResult
+	errors  []error
+	calls   int
+}
+
+func (r *pipelineReviewerSequence) Review(any) error { return nil }
+func (r *pipelineReviewerSequence) ReviewArtifact(name, content string, rules []string) (*review.ReviewResult, error) {
+	i := r.calls
+	r.calls++
+	if i < len(r.errors) && r.errors[i] != nil {
+		return nil, r.errors[i]
+	}
+	if i < len(r.results) {
+		return r.results[i], nil
+	}
+	return nil, nil
+}
+
+func TestRunReviewCollectsOutcomesAfterFailure(t *testing.T) {
+	reviewer := &pipelineReviewerSequence{
+		errors:  []error{fmt.Errorf("private reviewer detail"), nil},
+		results: []*review.ReviewResult{nil, {Status: review.StatusApproved}},
+	}
+	p := &Pipeline{reviewer: reviewer}
+	artifacts := []engine.Artifact{
+		{Path: "first.md", Content: []byte("first")},
+		{Path: "second.md", Content: []byte("second")},
+	}
+	reviews, outcomes, err := p.runReview(artifacts)
+	if err == nil {
+		t.Fatal("expected mandatory review to fail")
+	}
+	if reviewer.calls != 2 {
+		t.Fatalf("expected both artifacts to be reviewed, got %d calls", reviewer.calls)
+	}
+	if len(outcomes) != 2 || outcomes[0].State != ReviewStateError || outcomes[1].State != ReviewStatePass {
+		t.Fatalf("expected ERROR then PASS outcomes, got %#v", outcomes)
+	}
+	if len(reviews) != 1 {
+		t.Fatalf("expected only successful reviewer result to be retained, got %d", len(reviews))
+	}
+	if strings.Contains(err.Error(), "private reviewer detail") {
+		t.Fatal("review error leaked private reviewer diagnostics")
 	}
 }
