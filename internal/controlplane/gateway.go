@@ -49,8 +49,12 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "gateway unavailable"}
 	}
 	if g.Evaluator == nil {
-		if req.Timestamp.IsZero() { req.Timestamp = time.Now().UTC() }
-		if req.RequestID == "" { req.RequestID = controlPlaneID("REQ") }
+		if req.Timestamp.IsZero() {
+			req.Timestamp = time.Now().UTC()
+		}
+		if req.RequestID == "" {
+			req.RequestID = controlPlaneID("REQ")
+		}
 		return g.recordEvaluationFailure(req, DecisionResult{
 			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
 			RequestID: req.RequestID, AgentID: req.AgentID, Requested: req.Action.Capability,
@@ -135,7 +139,7 @@ func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result D
 		Timestamp: req.Timestamp, RequestID: req.RequestID,
 		AgentID: req.AgentID, Capability: req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash, EventType: "POLICY_EVALUATION_FAILED",
-		Reason: ReasonEvaluationFailed,
+		Reason:   ReasonEvaluationFailed,
 		Metadata: map[string]string{"failure_message": result.Message},
 	})
 	if event.ID == "" {
