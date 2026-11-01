@@ -547,7 +547,7 @@ func TestPipelineObserverRunLifecycle(t *testing.T) {
 		complete bool
 	}
 	obs := &lifecycleRecorder{}
-	p, err := New(Config{Observer: obs})
+	p, err := New(Config{Observer: obs, OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("create pipeline failed: %v", err)
 	}
@@ -1140,5 +1140,45 @@ func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+
+type generationLifecycleRecorder struct {
+	started   bool
+	complete  bool
+	generated bool
+	status    ArtifactWriteStatus
+}
+
+func (l *generationLifecycleRecorder) OnPipelineStart(string) {}
+func (l *generationLifecycleRecorder) OnPipelineComplete(string, int, string) {
+	l.complete = true
+}
+func (l *generationLifecycleRecorder) OnPipelineFailed(string, string) {}
+func (l *generationLifecycleRecorder) OnArtifactGenerated(string, string) {}
+func (l *generationLifecycleRecorder) OnPipelineGenerated(_ string, _ int, status ArtifactWriteStatus, _ string) {
+	l.generated = true
+	l.status = status
+}
+
+func TestPipelineObserverDistinguishesGenerationFromWrittenCompletion(t *testing.T) {
+	obs := &generationLifecycleRecorder{}
+	p, err := New(Config{Observer: obs})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	result, err := p.Run("project: observer-generation\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if result.CompletionStatus != "generated" {
+		t.Fatalf("expected generation-only status, got %q", result.CompletionStatus)
+	}
+	if !obs.generated || obs.complete {
+		t.Fatalf("generation-only run must not emit complete observer event: %+v", obs)
+	}
+	if obs.status != ArtifactWriteSkippedNoOutput {
+		t.Fatalf("expected no-output status, got %s", obs.status)
 	}
 }
