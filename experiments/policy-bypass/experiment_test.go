@@ -81,8 +81,12 @@ func TestPolicyBypassLandscape(t *testing.T) {
 					r.ObservedOutcome, r.Verdict, r.Evidence)
 			}
 		}
-		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
-			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
+		// An evaluator error is the expected safe outcome for the dedicated
+		// evaluator-failure scenario. VerdictPass means the experiment oracle
+		// matched; it does not mean authorization succeeded. Unexpected errors
+		// must still fail the scenario.
+		if r.ObservedOutcome == OutcomeError && r.ExpectedOutcome != OutcomeError && r.Verdict == VerdictPass {
+			t.Errorf("unexpected evaluator error must not satisfy a governance scenario: %q", r.Scenario)
 		}
 	}
 	t.Logf("known findings: %v", gotFailures)
