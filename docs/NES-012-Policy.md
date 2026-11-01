@@ -88,7 +88,7 @@ DENY > REQUIRE_APPROVAL > ALLOW
 
 Precedence yang sama berlaku saat menggabungkan hasil beberapa policy yang berlaku. Jika beberapa policy menghasilkan tingkat keputusan yang sama, atribusi policy dipilih secara deterministik berdasarkan `policy_id`, `policy_version`, lalu `rule_id` secara leksikografis. Urutan registrasi atau iterasi map tidak boleh mengubah hasil maupun atribusinya.
 
-Dengan demikian, priority hanya mengatur urutan evaluasi dan atribusi kegagalan; priority bukan mekanisme conflict resolution.
+Untuk beberapa rule dengan severity yang sama, rule pertama menurut urutan evaluasi dicatat sebagai atribusi hasil; pemilihan atribusi ini tidak mengubah keputusan. Dengan demikian, priority hanya mengatur urutan evaluasi dan atribusi rule yang deterministik; priority bukan mekanisme conflict resolution.
 
 ## 6. Workflow
 
