@@ -700,7 +700,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			if err := ctx.Err(); err != nil {
 				if current != nil {
 					current.CompletionStatus = "failed"
-					current.ArtifactWriteStatus = ArtifactWriteCanceled
+					if current.ArtifactWriteStatus == "" {
+						current.ArtifactWriteStatus = ArtifactWriteCanceled
+					}
 				}
 				return fmt.Errorf("pipeline canceled before %s: %w", stage, err)
 			}
@@ -817,7 +819,10 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		writeStatus, writtenCount, writeErr := p.runWriteArtifacts(ctx, artifacts)
 		result.ArtifactWriteStatus = writeStatus
 		result.ArtifactsWritten = writtenCount
-		result.ArtifactWritePartial = writeErr != nil && writtenCount > 0
+		result.ArtifactWritePartial = writeErr != nil && writtenCount > 0 && writtenCount < len(artifacts)
+		if err := checkContext("completion_evidence", result); err != nil {
+			return result, err
+		}
 		if writeErr != nil {
 			result.CompletionStatus = "failed"
 			p.profileStageEnd("write_artifacts", writeErr)
@@ -851,6 +856,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID, requiredKinds); err != nil {
 			return result, err
 		}
+		if err := checkContext("completion_event", result); err != nil {
+			return result, err
+		}
 		p.logVerbose("pipeline complete: %d artifacts, %d tasks, %d reviews", len(artifacts), len(tasks), len(reviews))
 		eventName := "pipeline.generated"
 		if writeStatus == ArtifactWriteWritten {
@@ -868,6 +876,9 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 
 		if err := p.executeHooks(p.getHookFuncs().AfterRun, "run"); err != nil {
 			return nil, err
+		}
+		if err := checkContext("return", result); err != nil {
+			return result, err
 		}
 
 		return result, nil
