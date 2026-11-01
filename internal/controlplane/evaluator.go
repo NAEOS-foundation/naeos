@@ -200,7 +200,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message: fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
+			Message:   fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
 		}
 	}
 	active, err := e.store.Active(policyID)
@@ -209,7 +209,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message: fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
+			Message:   fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
 		}
 	}
 	if ctx.Policy != nil && !reflect.DeepEqual(ctx.Policy, canonical) {
@@ -217,7 +217,7 @@ func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionRe
 			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
 			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message: "supplied policy contents do not match the canonical policy-store snapshot",
+			Message:   "supplied policy contents do not match the canonical policy-store snapshot",
 		}
 	}
 	ctx.Policy = canonical
