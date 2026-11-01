@@ -38,6 +38,9 @@ func CreateDurableRuntimeReceipt(ledger *DurableRuntimeEventLedger, runID string
 	if runID == "" {
 		return DurableRuntimeReceipt{}, fmt.Errorf("run identity is required")
 	}
+	if !ledger.IsSealed() {
+		return DurableRuntimeReceipt{}, fmt.Errorf("durable runtime ledger must be sealed before receipt creation")
+	}
 	events := ledger.Records()
 	if len(events) == 0 {
 		return DurableRuntimeReceipt{}, fmt.Errorf("cannot receipt an empty runtime ledger")
@@ -79,6 +82,9 @@ func VerifyDurableRuntimeReceipt(receipt DurableRuntimeReceipt, ledger *DurableR
 	}
 	if receipt.Version != DurableRuntimeReceiptVersion {
 		return fmt.Errorf("unsupported durable runtime receipt version %q", receipt.Version)
+	}
+	if !ledger.IsSealed() {
+		return fmt.Errorf("durable runtime ledger must be sealed before receipt verification")
 	}
 	if receipt.RunID != runID || runID == "" {
 		return fmt.Errorf("durable runtime receipt run mismatch")
