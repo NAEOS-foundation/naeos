@@ -777,26 +777,28 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 		}
 		p.profileStageEnd("write_artifacts", nil)
 		p.memSnapshot("write_artifacts")
+		sequence := 4
+		requiredKinds := []string{"intent", "decision", "generation"}
 		if writeStatus == ArtifactWriteWritten {
 			result.CompletionStatus = "written"
-			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", 4, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
+			if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "execution", sequence, "write_artifacts", "pipeline.execution", artifactDigest(artifacts)); err != nil {
 				return result, fmt.Errorf("record execution evidence: %w", err)
 			}
+			requiredKinds = append(requiredKinds, "execution")
+			sequence++
 		}
-
 		result.Tasks = tasks
 		result.Artifacts = artifacts
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", 5, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
-			return nil, fmt.Errorf("record observation evidence: %w", err)
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "observation", sequence, "observation", "pipeline.observation", observationDigest(tasks, artifacts, reviews)); err != nil {
+			return result, fmt.Errorf("record observation evidence: %w", err)
 		}
-		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", 6, "verification", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
+		requiredKinds = append(requiredKinds, "observation")
+		sequence++
+		if err := appendRunEvidence(evidenceBuilder, runtimeObserver, pipelineID, "verification", sequence, "completion", "pipeline.verification", verificationDigest(tasks, artifacts, reviews)); err != nil {
 			return result, fmt.Errorf("record verification evidence: %w", err)
 		}
+		requiredKinds = append(requiredKinds, "verification")
 		runtimeObserver.Seal()
-		requiredKinds := append([]string(nil), requiredRunEvidenceKinds...)
-		if writeStatus == ArtifactWriteWritten {
-			requiredKinds = append(requiredKinds, "execution")
-		}
 		if err := validateRunCompletion(runEvidence, runtimeObserver.Ledger(), pipelineID, requiredKinds); err != nil {
 			return result, err
 		}
@@ -856,7 +858,7 @@ func (p *Pipeline) memSnapshot(label string) {
 	}
 }
 
-var requiredRunEvidenceKinds = []string{"intent", "decision", "generation", "observation", "verification"}
+var requiredRunEvidenceKinds = []string{"intent", "decision", "execution", "observation", "verification"}
 
 func appendRunEvidence(builder *evidence.RuntimeEvidenceBuilder, observer *evidence.IndependentRuntimeObserver, runID, kind string, sequence int, stage, event, payloadDigest string) error {
 	if builder == nil || observer == nil {
@@ -886,8 +888,12 @@ func verificationDigest(tasks []scheduler.Task, artifacts []engine.Artifact, rev
 	return evidence.ComputeArtifactHash(data)
 }
 
-func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, runID string, requiredKinds []string) error {
-	completion := evidence.ValidateCompletionWithRuntimeLedger(store, runtimeLedger, runID, requiredKinds)
+func validateRunCompletion(store *evidence.EvidenceStore, runtimeLedger *evidence.RuntimeEventLedger, runID string, requiredKinds ...[]string) error {
+	kinds := requiredRunEvidenceKinds
+	if len(requiredKinds) > 0 {
+		kinds = requiredKinds[0]
+	}
+	completion := evidence.ValidateCompletionWithRuntimeLedger(store, runtimeLedger, runID, kinds)
 	if !completion.Complete {
 		return fmt.Errorf("run completion blocked: incomplete evidence contract: %v", completion.Missing)
 	}
