@@ -103,7 +103,7 @@ func TestRuntimeBridgeAuthenticatedDurableEvidenceLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(evidenceFile, append(tampered, '\\n'), 0o600); err != nil {
+	if err := os.WriteFile(evidenceFile, append(tampered, '\n'), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-durable-test", publicKey, "naeos-runtime", "test-key-1"); err == nil {
@@ -123,7 +123,7 @@ func TestRuntimeBridgeEvidenceRecoveryRejectsOrphanAndMissingRecords(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(evidenceFile, []byte("{}\\n"), 0o600); err != nil {
+	if err := os.WriteFile(evidenceFile, []byte("{}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-1", publicKey, "issuer", "key-1"); err == nil {
