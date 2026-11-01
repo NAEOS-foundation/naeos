@@ -96,13 +96,12 @@ func TestDecisionGateway_DeniesProtectedCapabilityAndRecordsBlock(t *testing.T) 
 	}
 }
 
-func TestDecisionGateway_DeniesWhenGatewayEvaluatorIsUnavailable(t *testing.T) {
+func TestDecisionGateway_ReportsIndeterminateWhenGatewayEvaluatorIsUnavailable(t *testing.T) {
 	var gateway *DecisionGateway
 	result := gateway.Authorize(AuthorizeRequest{})
-	if result.Status != DecisionDeny {
-		t.Fatalf("expected DENY for unavailable gateway, got %s", result.Status)
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("expected indeterminate result without decision ID, got %+v", result)
 	}
-
 }
 
 func TestDecisionGateway_RejectsForgedExecutionDecision(t *testing.T) {
@@ -708,4 +707,43 @@ func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestT
 	if event.EventType != "EXECUTION_BLOCKED" {
 		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
 	}
+}
+
+func TestDecisionGateway_EvaluationFailureIsNotAuthorizationDecisionAndCannotExecute(t *testing.T) {
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-INDETERMINATE", AgentID: "agent-1",
+		Action: Action{AgentID: "agent-1", Capability: "repository.write"},
+		Grant: &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "missing", PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)},
+		Policy: &Policy{ID: "missing", Version: 1, Status: "active"},
+		Timestamp: time.Now().UTC(),
+	}
+	result, event := gateway.Execute(req)
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("expected indeterminate evaluation without decision ID, got %+v", result)
+	}
+	if event.ID != "" {
+		t.Fatalf("evaluation failure must not produce an execution event, got %+v", event)
+	}
+	events := ledger.Events()
+	if len(events) != 1 || events[0].EventType != "POLICY_EVALUATION_FAILED" || events[0].Decision != "" || events[0].DecisionID != "" {
+		t.Fatalf("evaluation failure must be recorded separately from a decision: %+v", events)
+	}
+}
+
+func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *testing.T) {
+	ledger := NewLedger()
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil { t.Fatal(err) }
+	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+	policy := &Policy{ID: "POLICY-DURABLE", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
+	grant := &Grant{GrantID: "GRANT-DURABLE", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.read"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)}
+	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	result := gateway.Authorize(AuthorizeRequest{RequestID: "REQ-DURABLE", AgentID: "agent-1", Action: Action{AgentID: "agent-1", Capability: "repository.read"}, Grant: grant, Policy: policy, Timestamp: time.Now().UTC()})
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("failed ledger commit must not return an authorization decision: %+v", result)
+	}
+	if len(ledger.Events()) != 0 { t.Fatalf("failed ledger commit must remain invisible: %+v", ledger.Events()) }
 }
