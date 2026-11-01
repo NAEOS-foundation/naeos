@@ -390,6 +390,17 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			Context:     req.Context,
 		}, rec)
 		if err != nil {
+			var evaluationFailure *control.EvaluationFailure
+			if errors.As(err, &evaluationFailure) {
+				result.Decision = ""
+				result.Status = "failed"
+				result.Output = "policy evaluation failed during authorization revalidation"
+				result.Reasons = []string{"policy evaluation failed"}
+				result.EvaluationFailure = evaluationFailure
+				result.Duration = time.Since(start)
+				g.record(result)
+				return result, naeoserr.Wrapf(err, naeoserr.ErrInternal, "authorization revalidation evaluation failed")
+			}
 			result.Status = "denied"
 			result.Output = "authorization invalidated before execution"
 			result.Duration = time.Since(start)
