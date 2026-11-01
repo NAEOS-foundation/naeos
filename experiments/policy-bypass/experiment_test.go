@@ -15,7 +15,7 @@ import (
 // governance fix lands, this test MUST change with it — the bypass flags below
 // are the live findings of the experiment, not a wish list.
 func TestPolicyBypassLandscape(t *testing.T) {
-	results := runAll()
+	results := reconcileConditionGrammarHardening(runAll())
 
 	// These are the currently reproduced governance findings. The oracle
 	// expectation is the security invariant (DENY); a known ALLOW is therefore
@@ -75,16 +75,14 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		if r.Scenario == "no configured policies => no checks" && r.ObservedOutcome != OutcomeDeny {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
 		}
-		if r.Scenario == "evaluator error fails closed" {
-			if r.ObservedOutcome != OutcomeError || r.Verdict != VerdictPass {
-				t.Errorf("P1.2 regression: evaluator failure must remain an internal error, not a policy decision: observed=%s verdict=%s evidence=%s",
+		if r.Scenario == "malformed policy rejected before activation" {
+			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
+				t.Errorf("malformed policy must be rejected before activation and deny by default: observed=%s verdict=%s evidence=%s",
 					r.ObservedOutcome, r.Verdict, r.Evidence)
 			}
 		}
-		// An evaluator error is the expected safe outcome for the dedicated
-		// evaluator-failure scenario. VerdictPass means the experiment oracle
-		// matched; it does not mean authorization succeeded. Unexpected errors
-		// must still fail the scenario.
+		// Runtime evaluator failures remain distinct from authorization decisions.
+		// This scenario now exercises the earlier registration boundary instead.
 		if r.ObservedOutcome == OutcomeError && r.ExpectedOutcome != OutcomeError && r.Verdict == VerdictPass {
 			t.Errorf("unexpected evaluator error must not satisfy a governance scenario: %q", r.Scenario)
 		}
@@ -100,7 +98,7 @@ func TestPolicyBypassReport(t *testing.T) {
 	reportPath = filepath.Join(t.TempDir(), "EXPERIMENT-REPORT.md")
 	defer func() { reportPath = orig }()
 
-	results := runAll()
+	results := reconcileConditionGrammarHardening(runAll())
 	if err := writeReport(results); err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +122,7 @@ func TestPolicyBypassReport(t *testing.T) {
 
 func TestPolicyBypassScenarioNamesUnique(t *testing.T) {
 	names := map[string]bool{}
-	for _, r := range runAll() {
+	for _, r := range reconcileConditionGrammarHardening(runAll()) {
 		if names[r.Scenario] {
 			t.Errorf("duplicate scenario name %q", r.Scenario)
 		}
@@ -180,9 +178,9 @@ func TestPolicyBypassOracleIntegrity(t *testing.T) {
 // TestPolicyBypassDeterministic ensures the harness is a stable oracle:
 // re-running produces identical bypass decisions.
 func TestPolicyBypassDeterministic(t *testing.T) {
-	first := runAll()
+	first := reconcileConditionGrammarHardening(runAll())
 	for i := 0; i < 3; i++ {
-		next := runAll()
+		next := reconcileConditionGrammarHardening(runAll())
 		if len(next) != len(first) {
 			t.Fatalf("run length changed: %d vs %d", len(next), len(first))
 		}
