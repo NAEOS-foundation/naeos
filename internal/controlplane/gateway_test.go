@@ -780,7 +780,7 @@ func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t 
 		GrantID: "GRANT-CANONICAL-GATEWAY", AgentID: "agent-forged",
 		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 		Capabilities: []Capability{"production.delete"},
-		Status: "active", ExpiresAt: time.Now().Add(time.Hour),
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
 	}
 	ledger := NewLedger()
 	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
