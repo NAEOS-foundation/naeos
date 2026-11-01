@@ -740,10 +740,22 @@ func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *t
 	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
 	policy := &Policy{ID: "POLICY-DURABLE", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
 	grant := &Grant{GrantID: "GRANT-DURABLE", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.read"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)}
-	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
 	result := gateway.Authorize(AuthorizeRequest{RequestID: "REQ-DURABLE", AgentID: "agent-1", Action: Action{AgentID: "agent-1", Capability: "repository.read"}, Grant: grant, Policy: policy, Timestamp: time.Now().UTC()})
 	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
 		t.Fatalf("failed ledger commit must not return an authorization decision: %+v", result)
 	}
 	if len(ledger.Events()) != 0 { t.Fatalf("failed ledger commit must remain invisible: %+v", ledger.Events()) }
+}
+
+func TestDecisionGateway_ExecuteAtomicDoesNotRunForIndeterminateEvaluation(t *testing.T) {
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-ATOMIC-INDETERMINATE", AgentID: "agent-1", Action: Action{AgentID: "agent-1", Capability: "repository.write"}}
+	result := DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed}
+	called := false
+	got, event := gateway.ExecuteAtomic(req, result, func() error { called = true; return nil })
+	if called || got.Status != DecisionIndeterminate || event.ID != "" {
+		t.Fatalf("indeterminate evaluation must not execute or create a decision-shaped event: called=%t result=%+v event=%+v", called, got, event)
+	}
 }
