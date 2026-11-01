@@ -15,10 +15,10 @@ type Capability string
 type DecisionStatus string
 
 const (
-	DecisionAllow   DecisionStatus = "ALLOW"
-	DecisionDeny    DecisionStatus = "DENY"
+	DecisionAllow         DecisionStatus = "ALLOW"
+	DecisionDeny          DecisionStatus = "DENY"
 	DecisionPending       DecisionStatus = "REQUIRE_APPROVAL"
-	DecisionUnknown       DecisionStatus = "UNKNOWN" // execution outcome is unresolved
+	DecisionUnknown       DecisionStatus = "UNKNOWN"       // execution outcome is unresolved
 	DecisionIndeterminate DecisionStatus = "INDETERMINATE" // policy outcome could not be evaluated
 )
 
