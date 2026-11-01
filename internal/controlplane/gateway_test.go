@@ -132,7 +132,7 @@ func TestDecisionGateway_RequiresMatchingApprovalArtifactAndConsumesApproval(t *
 	}
 	grant := &Grant{
 		GrantID: "GRANT-APPROVAL", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1,
-		Capabilities: []Capability{"production.deploy"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour),
+		Capabilities: []Capability{"production.deploy"}, Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
 	}
 	gateway := NewDecisionGateway(NewEvaluator(store), NewLedger())
 	action := Action{AgentID: "agent-1", Capability: "production.deploy", ArtifactHash: "sha256:approved"}
@@ -787,7 +787,7 @@ func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t 
 	req := AuthorizeRequest{
 		RequestID: "REQ-FORGED-POLICY", AgentID: "agent-forged",
 		Action: Action{AgentID: "agent-forged", Capability: "production.delete", ArtifactHash: "sha256:forged"},
-		Grant: grant, Policy: forged, Timestamp: time.Now().UTC(),
+		Grant:  grant, Policy: forged, Timestamp: time.Now().UTC(),
 	}
 	authorized := gateway.Authorize(req)
 	if authorized.Status != DecisionDeny || authorized.Reason != ReasonDeniedByPolicy {
