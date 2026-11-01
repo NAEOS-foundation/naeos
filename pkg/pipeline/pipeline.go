@@ -771,11 +771,18 @@ func (p *Pipeline) RunContext(ctx context.Context, input string) (*Result, error
 			artifacts = result.Artifacts
 		} else {
 			var genErr error
-			artifacts, genErr = p.runGenerate(result)
+			artifacts, genErr = p.runGenerate(ctx, result)
 			if genErr != nil {
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					_ = checkContext("review", result)
+					return result, fmt.Errorf("pipeline canceled during generate: %w", ctxErr)
+				}
 				return nil, genErr
 			}
 			result.Artifacts = artifacts
+			if err := checkContext("review", result); err != nil {
+				return result, err
+			}
 			if p.cache != nil {
 				p.cache.Set(p.cache.HashSpec(input), result)
 			}
@@ -1028,9 +1035,15 @@ func (p *Pipeline) runSchedule(result *Result) ([]scheduler.Task, error) {
 	return tasks, nil
 }
 
-func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
+func (p *Pipeline) runGenerate(ctx context.Context, result *Result) ([]engine.Artifact, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("pipeline canceled before generate: %w", err)
+	}
 	if err := p.executeHooks(p.getHookFuncs().BeforeGenerate, "generate"); err != nil {
 		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("pipeline canceled during generate setup: %w", err)
 	}
 
 	p.logVerbose("generating artifacts")
@@ -1044,6 +1057,9 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 				if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
 					return nil, err
 				}
+				if err := ctx.Err(); err != nil {
+					return nil, fmt.Errorf("pipeline canceled after cached generation: %w", err)
+				}
 				return arts.Artifacts, nil
 			}
 		}
@@ -1053,6 +1069,9 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("pipeline canceled after generation: %w", err)
+	}
 
 	p.logVerbose("running language adapters")
 	adapterArtifacts, err := adapters.GenerateForNEIR(result.NEIR)
@@ -1060,9 +1079,15 @@ func (p *Pipeline) runGenerate(result *Result) ([]engine.Artifact, error) {
 		return nil, fmt.Errorf("adapter generation failed: %w", err)
 	}
 	artifacts = append(artifacts, adapterArtifacts...)
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("pipeline canceled after adapter generation: %w", err)
+	}
 
 	if err := p.executeHooks(p.getHookFuncs().AfterGenerate, "generate"); err != nil {
 		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("pipeline canceled after generation hooks: %w", err)
 	}
 
 	if p.stageCache != nil && result.NEIR != nil {
