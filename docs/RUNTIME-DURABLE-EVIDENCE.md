@@ -95,3 +95,12 @@ and must be reconciled explicitly.
 Legacy `--evidence-file` operation remains available for compatibility but
 does not provide a durable sealed-ledger receipt unless the complete set of
 authenticated durable-evidence options is configured.
+
+
+## Governed side-effect and evidence-persistence failure
+
+A successful governed side effect is not rolled back if the subsequent runtime-evidence append or ledger sync fails. The bridge returns an error and does not claim that the evidence record or completion receipt exists. The side effect may already be externally visible.
+
+The invocation remains consumed by replay protection, so blindly retrying the same invocation is denied rather than executing it a second time. This is a fail-closed retry boundary, not transactional rollback or arbitrary external exactly-once execution. Operators must inspect the target resource and reconcile the missing evidence before starting a new governed invocation.
+
+The runtime bridge test suite injects a deterministic evidence-file append failure after a successful filesystem write and asserts that the side effect remains while a same-invocation retry is rejected.
