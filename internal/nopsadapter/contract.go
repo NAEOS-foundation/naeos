@@ -300,11 +300,23 @@ func ValidateResponse(response Response, request Request) error {
 			return fmt.Errorf("finding %q has unsupported confidence", finding.ID)
 		}
 		if finding.Location != nil {
-			if _, exists := sourcePaths[finding.Location.Path]; !exists {
+			var sourceFile *SourceFile
+			for fileIndex := range request.Source.Files {
+				if request.Source.Files[fileIndex].Path == finding.Location.Path {
+					sourceFile = &request.Source.Files[fileIndex]
+					break
+				}
+			}
+			if sourceFile == nil {
 				return fmt.Errorf("finding %q references a file outside the supplied snapshot", finding.ID)
 			}
-			if finding.Location.StartLine < 1 || finding.Location.EndLine < finding.Location.StartLine {
-				return fmt.Errorf("finding %q has an invalid line range", finding.ID)
+			lineCount := strings.Count(sourceFile.Content, "\n")
+			if len(sourceFile.Content) > 0 && !strings.HasSuffix(sourceFile.Content, "\n") {
+				lineCount++
+			}
+			if finding.Location.StartLine < 1 || finding.Location.EndLine < finding.Location.StartLine ||
+				finding.Location.EndLine > lineCount {
+				return fmt.Errorf("finding %q has a line range outside the supplied source file", finding.ID)
 			}
 		}
 	}
