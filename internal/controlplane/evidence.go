@@ -45,6 +45,9 @@ type EvidenceVerification struct {
 	ExecutionConsistent   bool     `json:"execution_consistent"`
 	ObservationConsistent bool     `json:"observation_consistent"`
 	LedgerIntegrity       bool     `json:"ledger_integrity"`
+	DigestIntegrity       bool     `json:"digest_integrity"`
+	SignatureValid        bool     `json:"signature_valid"`
+	SignerTrusted         bool     `json:"signer_trusted"`
 	Issues                []string `json:"issues,omitempty"`
 }
 
@@ -158,12 +161,13 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 	}
 
 	expected, err := evidenceDigest(bundle)
-	if err != nil || expected != bundle.EvidenceDigest {
-		verification.LedgerIntegrity = false
+	verification.DigestIntegrity = err == nil && expected == bundle.EvidenceDigest
+	verification.LedgerIntegrity = verification.DigestIntegrity
+	if !verification.DigestIntegrity {
 		verification.Issues = append(verification.Issues, "evidence digest mismatch")
 	}
-	if !verifyEvidenceSignature(bundle) {
-		verification.LedgerIntegrity = false
+	verification.SignatureValid = verifyEvidenceSignature(bundle)
+	if !verification.SignatureValid {
 		verification.Issues = append(verification.Issues, "evidence signature invalid or missing")
 	}
 	if len(verification.Issues) > 0 {
@@ -318,17 +322,18 @@ func VerifyEvidenceWithTrustedKey(bundle EvidenceBundle, trusted ed25519.PublicK
 	v := VerifyEvidence(bundle)
 	if len(trusted) != ed25519.PublicKeySize {
 		v.Result = "FAIL"
-		v.LedgerIntegrity = false
+		v.SignerTrusted = false
 		v.Issues = append(v.Issues, "trusted evidence signing key is missing or invalid")
 		return v
 	}
 	encoded := base64.RawStdEncoding.EncodeToString(trusted)
 	if bundle.EvidencePublicKey != encoded {
 		v.Result = "FAIL"
-		v.LedgerIntegrity = false
+		v.SignerTrusted = false
 		v.Issues = append(v.Issues, "evidence signer is not the configured trust anchor")
 		return v
 	}
+	v.SignerTrusted = true
 	if len(v.Issues) == 0 {
 		v.Result = "PASS"
 	}
