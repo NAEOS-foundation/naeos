@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -170,5 +171,69 @@ func TestWriteAtomicRuntimeReceiptPersistsCompleteRecord(t *testing.T) {
 	}
 	if string(got) != string(want) {
 		t.Fatalf("runtime receipt = %q, want %q", got, want)
+	}
+}
+
+
+func TestRuntimeBridgeSideEffectPersistsWhenEvidencePersistenceFails(t *testing.T) {
+	root := t.TempDir()
+	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
+	request := map[string]any{
+		"request_id":    "req-evidence-persist-failure",
+		"invocation_id": "inv-evidence-persist-failure",
+		"actor":         "test",
+		"tool":          "filesystem",
+		"action":        "write",
+		"resource":      "filesystem",
+		"payload": map[string]any{
+			"path":    "persisted-before-evidence.txt",
+			"content": "side effect completed",
+		},
+	}
+
+	result, err := gw.AuthorizeFromAdapter("json", request)
+	if err != nil {
+		t.Fatalf("governed side effect: %v", err)
+	}
+	if result.Status != "completed" {
+		t.Fatalf("side effect status = %q, want completed: %+v", result.Status, result)
+	}
+
+	runtimeEvidence, err := gateway.BuildRuntimeEvidence(result)
+	if err != nil {
+		t.Fatalf("build runtime evidence: %v", err)
+	}
+	evidenceData, err := json.Marshal(runtimeEvidence)
+	if err != nil {
+		t.Fatalf("marshal runtime evidence: %v", err)
+	}
+
+	// An existing directory at the evidence-file path deterministically makes
+	// the post-side-effect append fail without relying on permissions or disk state.
+	evidencePath := filepath.Join(t.TempDir(), "evidence-is-a-directory")
+	if err := os.Mkdir(evidencePath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendRuntimeEvidence(evidencePath, evidenceData); err == nil {
+		t.Fatal("expected evidence persistence to fail")
+	}
+
+	artifactPath := filepath.Join(root, "persisted-before-evidence.txt")
+	artifact, err := os.ReadFile(artifactPath)
+	if err != nil {
+		t.Fatalf("side effect must remain after evidence persistence failure: %v", err)
+	}
+	if string(artifact) != "side effect completed" {
+		t.Fatalf("persisted side effect = %q", artifact)
+	}
+
+	// Replay protection prevents a blind retry from executing the same
+	// invocation again. This does not roll back the first side effect.
+	retry, err := gw.AuthorizeFromAdapter("json", request)
+	if err != nil {
+		t.Fatalf("retry should return a governed denial: %v", err)
+	}
+	if retry.Status != "denied" || retry.Output != "invocation already consumed" {
+		t.Fatalf("retry result = %+v, want replay denial", retry)
 	}
 }
