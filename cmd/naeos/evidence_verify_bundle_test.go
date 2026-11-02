@@ -247,3 +247,32 @@ func testEvidenceDigest(t *testing.T, bundle controlplane.EvidenceBundle) string
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:])
 }
+
+func TestEvidenceVerifyBundleCommandRejectsAlteredSignatureBytes(t *testing.T) {
+	bundle, public := signedTestEvidenceBundle(t)
+	signature, err := base64.RawStdEncoding.DecodeString(bundle.EvidenceSignature)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signature[0] ^= 0xff
+	bundle.EvidenceSignature = base64.RawStdEncoding.EncodeToString(signature)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "evidence.json")
+	trustedPath := filepath.Join(dir, "trusted.pub")
+	writeTestEvidenceBundle(t, path, bundle)
+	writeTrustedEvidenceKey(t, trustedPath, public)
+
+	cmd := newEvidenceVerifyBundleCommand()
+	cmd.SetArgs([]string{"--input-file", path, "--trusted-public-key", trustedPath, "--output", "json"})
+	var out strings.Builder
+	cmd.SetOut(&out)
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected altered signature bytes to fail verification")
+	}
+	for _, expected := range []string{`"digest_integrity": true`, `"signature_valid": false`, `"signer_trusted": true`} {
+		if !strings.Contains(out.String(), expected) {
+			t.Fatalf("output missing %q: %s", expected, out.String())
+		}
+	}
+}
