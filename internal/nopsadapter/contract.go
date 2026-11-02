@@ -280,10 +280,6 @@ func ValidateResponse(response Response, request Request) error {
 		return fmt.Errorf("completed NOPS response is missing provider provenance")
 	}
 
-	sourcePaths := make(map[string]struct{}, len(request.Source.Files))
-	for _, file := range request.Source.Files {
-		sourcePaths[file.Path] = struct{}{}
-	}
 	for i, finding := range response.Analysis.Findings {
 		if finding.ID == "" || finding.Title == "" || finding.Description == "" ||
 			finding.Recommendation == "" {
