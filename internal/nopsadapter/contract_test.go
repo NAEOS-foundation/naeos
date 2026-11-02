@@ -134,7 +134,7 @@ func TestValidateResponseRejectsUnboundFindingsAndMissingFindings(t *testing.T) 
 			Findings: []Finding{{
 				ID: "finding-1", Severity: "high", Confidence: "high",
 				Title: "Out-of-snapshot finding", Description: "Not bound to input",
-				Location: &Location{Path: "secrets.env", StartLine: 1, EndLine: 1},
+				Location:       &Location{Path: "secrets.env", StartLine: 1, EndLine: 1},
 				Recommendation: "Do not accept",
 			}},
 		},
