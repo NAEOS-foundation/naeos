@@ -77,11 +77,8 @@ func TestVerifyEvidenceSeparatesDigestSignatureAndSignerTrust(t *testing.T) {
 	if err := signEvidenceBundle(&bundle); err != nil { t.Fatal(err) }
 
 	valid := VerifyEvidence(bundle)
-	if !valid.DigestIntegrity || !valid.SignatureValid || valid.LedgerIntegrity {
-		// LedgerIntegrity is the bundle-level digest integrity proxy in this verifier.
-		if !valid.DigestIntegrity || !valid.SignatureValid || !valid.LedgerIntegrity {
-			t.Fatalf("valid digest/signature should be separate from signer trust: %+v", valid)
-		}
+	if !valid.DigestIntegrity || !valid.SignatureValid || !valid.LedgerIntegrity {
+		t.Fatalf("valid digest/signature and embedded ledger-chain status should pass independently: %+v", valid)
 	}
 	if valid.SignerTrusted {
 		t.Fatal("generic verification without an explicit trust anchor must not report trusted signer")
@@ -93,14 +90,14 @@ func TestVerifyEvidenceSeparatesDigestSignatureAndSignerTrust(t *testing.T) {
 	if err != nil { t.Fatal(err) }
 	staleSignature.EvidenceDigest = newDigest
 	stale := VerifyEvidence(staleSignature)
-	if !stale.DigestIntegrity || stale.SignatureValid || stale.LedgerIntegrity {
-		t.Fatalf("recomputed digest with stale signature should preserve digest integrity and fail signature: %+v", stale)
+	if !stale.DigestIntegrity || stale.SignatureValid || !stale.LedgerIntegrity {
+		t.Fatalf("recomputed digest with stale signature should preserve digest and ledger statuses but fail signature: %+v", stale)
 	}
 
 	badDigest := bundle
 	badDigest.EvidenceDigest = "sha256:invalid"
 	badDigestResult := VerifyEvidence(badDigest)
-	if badDigestResult.DigestIntegrity || !badDigestResult.SignatureValid || badDigestResult.LedgerIntegrity {
-		t.Fatalf("digest mismatch must not be conflated with signature validity: %+v", badDigestResult)
+	if badDigestResult.DigestIntegrity || !badDigestResult.SignatureValid || !badDigestResult.LedgerIntegrity {
+		t.Fatalf("digest mismatch must not be conflated with signature or ledger-chain status: %+v", badDigestResult)
 	}
 }
