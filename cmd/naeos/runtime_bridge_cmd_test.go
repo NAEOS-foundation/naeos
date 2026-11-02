@@ -174,7 +174,6 @@ func TestWriteAtomicRuntimeReceiptPersistsCompleteRecord(t *testing.T) {
 	}
 }
 
-
 func TestRuntimeBridgeSideEffectPersistsWhenEvidencePersistenceFails(t *testing.T) {
 	root := t.TempDir()
 	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
