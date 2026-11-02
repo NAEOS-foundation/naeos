@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/NAEOS-foundation/naeos/internal/evidence"
+	"github.com/NAEOS-foundation/naeos/internal/runtime/gateway"
 )
 
 func TestRuntimeBridgeAuthenticatedDurableEvidenceLifecycle(t *testing.T) {
@@ -63,17 +64,23 @@ func TestRuntimeBridgeAuthenticatedDurableEvidenceLifecycle(t *testing.T) {
 	if !bytes.HasSuffix(evidenceData, []byte("\n")) {
 		t.Fatal("evidence file must contain a complete synced JSONL record")
 	}
-	var runtimeEvidence map[string]any
+	var runtimeEvidence gateway.RuntimeEvidence
 	if err := json.Unmarshal(bytes.TrimSpace(evidenceData), &runtimeEvidence); err != nil {
 		t.Fatalf("decode runtime evidence: %v", err)
 	}
-	if runtimeEvidence["signature"] == nil {
+	if runtimeEvidence.Signature == nil {
 		t.Fatal("authenticated durable mode must sign each runtime evidence record")
+	}
+	if err := gateway.VerifyRuntimeEvidenceWithPublicKey(runtimeEvidence, publicKey, "naeos-runtime", "test-key-1"); err != nil {
+		t.Fatalf("verify exact persisted runtime evidence: %v", err)
 	}
 
 	ledger, err := evidence.NewDurableRuntimeEventLedger(ledgerFile)
 	if err != nil {
 		t.Fatalf("reload durable ledger: %v", err)
+	}
+	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-durable-test", publicKey, "naeos-runtime", "test-key-1"); err != nil {
+		t.Fatalf("reconcile persisted evidence after restart: %v", err)
 	}
 	ledger.Seal()
 	var signed evidence.SignedDurableRuntimeReceipt
@@ -89,5 +96,46 @@ func TestRuntimeBridgeAuthenticatedDurableEvidenceLifecycle(t *testing.T) {
 	}
 	if len(ledger.Records()) != 1 {
 		t.Fatalf("durable ledger event count = %d, want 1", len(ledger.Records()))
+	}
+
+	runtimeEvidence.ExecutionStatus = "tampered"
+	tampered, err := json.Marshal(runtimeEvidence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(evidenceFile, append(tampered, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-durable-test", publicKey, "naeos-runtime", "test-key-1"); err == nil {
+		t.Fatal("tampered persisted runtime evidence must fail trusted recovery verification")
+	}
+}
+
+func TestRuntimeBridgeEvidenceRecoveryRejectsOrphanAndMissingRecords(t *testing.T) {
+	dir := t.TempDir()
+	evidenceFile := filepath.Join(dir, "runtime.jsonl")
+	ledgerFile := filepath.Join(dir, "events.jsonl")
+	ledger, err := evidence.NewDurableRuntimeEventLedger(ledgerFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(evidenceFile, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-1", publicKey, "issuer", "key-1"); err == nil {
+		t.Fatal("orphan evidence record must fail recovery reconciliation")
+	}
+	if err := os.Remove(evidenceFile); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.Publish("run-1", "runtime.execution_evidence", "sha256:missing", 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyDurableRuntimeEvidenceFile(evidenceFile, ledger, "run-1", publicKey, "issuer", "key-1"); err == nil {
+		t.Fatal("missing evidence record for ledger event must fail recovery reconciliation")
 	}
 }

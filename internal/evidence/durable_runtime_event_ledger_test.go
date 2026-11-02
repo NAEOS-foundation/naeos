@@ -4,6 +4,8 @@
 package evidence
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -137,4 +139,87 @@ func TestDurableRuntimeEventLedgerRejectsLateWrite(t *testing.T) {
 	if _, err := ledger.Publish("run-1", "pipeline.start", "payload", 1); err == nil {
 		t.Fatal("expected sealed ledger to reject write")
 	}
+}
+
+func TestDurableRuntimeEventLedgerEnforcesRunAndSequence(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-events.jsonl")
+	ledger, err := NewDurableRuntimeEventLedger(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.Publish("run-1", "started", "sha256:a", 1); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, runID string
+		sequence    int
+	}{
+		{name: "foreign run", runID: "run-2", sequence: 2},
+		{name: "sequence gap", runID: "run-1", sequence: 3},
+		{name: "duplicate sequence", runID: "run-1", sequence: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ledger.Publish(tc.runID, "next", "sha256:b", tc.sequence); err == nil {
+				t.Fatalf("expected %s to be rejected", tc.name)
+			}
+		})
+	}
+	if len(ledger.Records()) != 1 {
+		t.Fatalf("rejected writes changed ledger length: %d", len(ledger.Records()))
+	}
+}
+
+func TestDurableRuntimeEventLedgerRejectsValidJSONWithoutTerminalNewline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-events.jsonl")
+	ledger, err := NewDurableRuntimeEventLedger(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.Publish("run-1", "started", "sha256:a", 1); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 || data[len(data)-1] != '\n' {
+		t.Fatal("test setup expected a newline-terminated journal")
+	}
+	if err := os.WriteFile(path, data[:len(data)-1], 0o640); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDurableRuntimeEventLedger(path); err == nil {
+		t.Fatal("expected a valid JSON record without terminal newline to fail closed")
+	}
+}
+
+func TestDurableRuntimeEventLedgerLoadRejectsForeignRunWithValidChain(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-events.jsonl")
+	first, err := canonicalRuntimeEvent("run-1", "started", "sha256:a", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first.EventHash = hashDurableRuntimeEvent(first)
+	second, err := canonicalRuntimeEvent("run-2", "continued", "sha256:b", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second.PreviousHash = first.EventHash
+	second.EventHash = hashDurableRuntimeEvent(second)
+	data := []byte(fmt.Sprintf("%s\n%s\n", mustMarshalRuntimeEvent(t, first), mustMarshalRuntimeEvent(t, second)))
+	if err := os.WriteFile(path, data, 0o640); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDurableRuntimeEventLedger(path); err == nil {
+		t.Fatal("expected mixed-run journal to fail even with a valid hash chain")
+	}
+}
+
+func mustMarshalRuntimeEvent(t *testing.T, event RuntimeEvent) []byte {
+	t.Helper()
+	data, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }
