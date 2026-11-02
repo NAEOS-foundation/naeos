@@ -65,16 +65,20 @@ func TestVerifyEvidenceRejectsRehashedForgery(t *testing.T) {
 func TestVerifyEvidenceSeparatesDigestSignatureAndSignerTrust(t *testing.T) {
 	bundle := EvidenceBundle{
 		SchemaVersion: "1.1",
-		RequestID: "req-separation",
-		DecisionID: "dec-separation",
-		AgentID: "agent-separation",
+		RequestID:     "req-separation",
+		DecisionID:    "dec-separation",
+		AgentID:       "agent-separation",
 		DecisionEvent: LedgerEvent{RequestID: "req-separation", DecisionID: "dec-separation", AgentID: "agent-separation"},
-		Verification: EvidenceVerification{Result: "PASS", DecisionConsistent: true, ExecutionConsistent: true, LedgerIntegrity: true},
+		Verification:  EvidenceVerification{Result: "PASS", DecisionConsistent: true, ExecutionConsistent: true, LedgerIntegrity: true},
 	}
 	digest, err := evidenceDigest(bundle)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	bundle.EvidenceDigest = digest
-	if err := signEvidenceBundle(&bundle); err != nil { t.Fatal(err) }
+	if err := signEvidenceBundle(&bundle); err != nil {
+		t.Fatal(err)
+	}
 
 	valid := VerifyEvidence(bundle)
 	if !valid.DigestIntegrity || !valid.SignatureValid || !valid.LedgerIntegrity {
