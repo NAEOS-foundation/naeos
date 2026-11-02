@@ -60,10 +60,9 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 				result = controlplane.VerifyEvidenceWithTrustedKey(bundle, publicKey)
 			}
 
-			digestIntegrity := !hasVerificationIssue(result.Issues, "evidence digest mismatch")
-			signatureValid := !hasVerificationIssue(result.Issues, "evidence signature invalid or missing")
-			signerTrusted := !hasVerificationIssue(result.Issues, "trusted evidence signing key is missing or invalid") &&
-				!hasVerificationIssue(result.Issues, "evidence signer is not the configured trust anchor")
+			digestIntegrity := result.DigestIntegrity
+			signatureValid := result.SignatureValid
+			signerTrusted := result.SignerTrusted
 
 			if outputFmt == "json" {
 				payload := map[string]interface{}{
