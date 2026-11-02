@@ -162,7 +162,10 @@ func VerifyEvidence(bundle EvidenceBundle) EvidenceVerification {
 
 	expected, err := evidenceDigest(bundle)
 	verification.DigestIntegrity = err == nil && expected == bundle.EvidenceDigest
-	verification.LedgerIntegrity = verification.DigestIntegrity
+	// VerifyEvidence receives only a serialized bundle; it cannot recompute the
+	// source ledger hash chain. Preserve the chain-integrity assertion embedded
+	// in the signed bundle separately from the bundle digest check.
+	verification.LedgerIntegrity = bundle.Verification.LedgerIntegrity
 	if !verification.DigestIntegrity {
 		verification.Issues = append(verification.Issues, "evidence digest mismatch")
 	}
