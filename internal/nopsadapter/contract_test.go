@@ -80,13 +80,10 @@ func TestValidateRequestEnforcesFileAndPayloadLimits(t *testing.T) {
 }
 
 func TestDecodeRequestRejectsUnknownFieldsAndTrailingJSON(t *testing.T) {
-	request := testRequest()
 	encoded := `{"contract":"naeos.nops-engineering-intelligence","contract_version":"0.1.0","request_id":"r","created_at":"2026-11-02T08:00:00Z","capability":"code.audit","source":{"revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","files":[{"path":"x.go","sha256":"` + strings.Repeat("0", 64) + `","content":""}]},"unexpected":true}`
 	if _, err := DecodeRequest([]byte(encoded), DefaultLimits()); err == nil {
 		t.Fatal("expected unknown field to be rejected")
 	}
-	_ = request
-
 	if _, err := DecodeRequest([]byte("{} {}"), DefaultLimits()); err == nil {
 		t.Fatal("expected trailing JSON value to be rejected")
 	}
@@ -117,6 +114,11 @@ func TestValidateResponseCorrelatesRequestAndSource(t *testing.T) {
 	response.Source.Revision = strings.Repeat("c", 40)
 	if err := ValidateResponse(response, request); err == nil {
 		t.Fatal("expected stale source revision to be rejected")
+	}
+	response.Source.Revision = request.Source.Revision
+	response.Analysis.Findings[0].Location.EndLine = 2
+	if err := ValidateResponse(response, request); err == nil {
+		t.Fatal("expected line range beyond supplied file to be rejected")
 	}
 }
 
