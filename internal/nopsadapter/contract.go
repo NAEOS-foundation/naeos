@@ -22,14 +22,14 @@ const (
 	ContractName    = "naeos.nops-engineering-intelligence"
 	ContractVersion = "0.1.0"
 
-	CapabilityCodeAudit       = "code.audit"
-	CapabilityDeploymentCheck = "deployment.analyze"
+	CapabilityCodeAudit        = "code.audit"
+	CapabilityDeploymentCheck  = "deployment.analyze"
 	CapabilityRefactorProposal = "refactor.propose"
 
-	DefaultMaxFiles       = 64
-	DefaultMaxFileBytes   = 1 << 20
+	DefaultMaxFiles        = 64
+	DefaultMaxFileBytes    = 1 << 20
 	DefaultMaxPayloadBytes = 4 << 20
-	DefaultMaxPathBytes   = 512
+	DefaultMaxPathBytes    = 512
 )
 
 var (
@@ -51,8 +51,8 @@ type Request struct {
 }
 
 type Source struct {
-	Repository string      `json:"repository,omitempty"`
-	Revision   string      `json:"revision"`
+	Repository string       `json:"repository,omitempty"`
+	Revision   string       `json:"revision"`
 	Files      []SourceFile `json:"files"`
 }
 
@@ -176,14 +176,14 @@ func ValidateRequest(request Request, limits Limits) error {
 
 // Finding is an advisory, source-bound NOPS finding.
 type Finding struct {
-	ID             string   `json:"id"`
-	Category       string   `json:"category"`
-	Severity       string   `json:"severity"`
-	Title          string   `json:"title"`
-	Description    string   `json:"description"`
+	ID             string    `json:"id"`
+	Category       string    `json:"category"`
+	Severity       string    `json:"severity"`
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
 	Location       *Location `json:"location,omitempty"`
-	Recommendation string   `json:"recommendation"`
-	Confidence     string   `json:"confidence"`
+	Recommendation string    `json:"recommendation"`
+	Confidence     string    `json:"confidence"`
 }
 
 type Location struct {
@@ -193,14 +193,14 @@ type Location struct {
 }
 
 type Response struct {
-	Contract        string           `json:"contract"`
-	ContractVersion string           `json:"contract_version"`
-	RequestID       string           `json:"request_id"`
-	Capability      string           `json:"capability"`
-	Status          string           `json:"status"`
-	Source          ResponseSource   `json:"source"`
+	Contract        string            `json:"contract"`
+	ContractVersion string            `json:"contract_version"`
+	RequestID       string            `json:"request_id"`
+	Capability      string            `json:"capability"`
+	Status          string            `json:"status"`
+	Source          ResponseSource    `json:"source"`
 	Analysis        *ResponseAnalysis `json:"analysis,omitempty"`
-	ResultDigest    string           `json:"result_digest"`
+	ResultDigest    string            `json:"result_digest"`
 }
 
 type ResponseSource struct {
