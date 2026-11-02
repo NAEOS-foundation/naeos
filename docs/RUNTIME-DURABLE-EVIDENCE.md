@@ -43,18 +43,33 @@ derive trust by accepting a public key embedded in the evidence artifact.
   --evidence-key-id key-2026-11-01
 ```
 
-The ledger is verified before accepting an existing journal. If a completion
-receipt already exists, the bridge verifies its ledger digest, run identity,
-issuer, key ID, and Ed25519 signature against the configured trust anchor, then
-refuses to append to that completed run. If the process stopped before receipt
-creation, the same run ID can resume from the next event sequence, provided the
-existing journal verifies and the completion receipt is absent.
+The ledger is verified before accepting an existing journal. It enforces one
+run identity and contiguous sequences starting at 1. A journal must contain
+complete newline-terminated JSONL records; a final record without its newline,
+an empty line, a truncated record, a mixed run, a duplicate sequence, or a
+sequence gap fails closed.
+
+Before recovery, the bridge verifies every persisted runtime evidence record's
+digest and Ed25519 signature against the independently configured trusted key,
+issuer, and key ID, then compares the evidence digest and sequence to the
+corresponding durable ledger event. Orphan records, missing records, duplicate
+invocations, and evidence/ledger divergence fail closed. The bridge does not
+silently repair or skip inconsistent records; an operator must investigate and
+reconcile them explicitly.
+
+If a completion receipt already exists, the bridge verifies its ledger digest,
+run identity, issuer, key ID, and Ed25519 signature against the configured trust
+anchor, then refuses to append to that completed run. If the process stopped
+before receipt creation and both evidence and ledger are consistent, the same
+run ID can resume from the next event sequence.
 
 Each evidence record is appended and synced before its corresponding durable
-ledger event is published. The bridge does not emit a successful response for
-an evidence write or sync failure. A failure after the governed side effect
-cannot undo that side effect; it means the run has no successful evidence
-completion and must be reconciled explicitly.
+ledger event is published. A crash between those writes can leave an orphan
+evidence record; recovery detects the divergence and fails closed rather than
+claiming completion. The bridge does not emit a successful response for an
+evidence write or sync failure. A failure after the governed side effect cannot
+undo that side effect; it means the run has no successful evidence completion
+and must be reconciled explicitly.
 
 ## Verification boundaries and operational assumptions
 
