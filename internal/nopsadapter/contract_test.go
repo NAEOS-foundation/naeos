@@ -101,7 +101,7 @@ func TestValidateResponseCorrelatesRequestAndSource(t *testing.T) {
 			Findings: []Finding{{
 				ID: "finding-1", Category: "security", Severity: "medium",
 				Title: "Example", Description: "Evidence-backed detail",
-				Location: &Location{Path: "pkg/demo.go", StartLine: 1, EndLine: 1},
+				Location:       &Location{Path: "pkg/demo.go", StartLine: 1, EndLine: 1},
 				Recommendation: "Review the source", Confidence: "medium",
 			}},
 		},
