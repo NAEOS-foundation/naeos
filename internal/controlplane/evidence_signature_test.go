@@ -91,7 +91,9 @@ func TestVerifyEvidenceSeparatesDigestSignatureAndSignerTrust(t *testing.T) {
 	staleSignature := bundle
 	staleSignature.PolicyID = "mutated"
 	newDigest, err := evidenceDigest(staleSignature)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	staleSignature.EvidenceDigest = newDigest
 	stale := VerifyEvidence(staleSignature)
 	if !stale.DigestIntegrity || stale.SignatureValid || !stale.LedgerIntegrity {
