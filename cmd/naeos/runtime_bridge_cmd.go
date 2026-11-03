@@ -313,7 +313,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 						}
 						if durableMode {
 							if err := appendRuntimeEvidence(evidenceFile, evidenceData); err != nil {
-								return newExitCodeError(ExitCodeExecutionFailure, fmt.Sprintf("persist runtime evidence: %v", err))
+								return newExitCodeError(ExitCodeExecutionFailure, "persist runtime evidence: %v", err)
 							}
 							if _, err := durableLedger.Publish(evidenceRunID, "runtime.execution_evidence", runtimeEvidence.EvidenceDigest, sequence); err != nil {
 								return fmt.Errorf("persist durable runtime evidence event: %w", err)
@@ -343,7 +343,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				}
 			}
 			if err := in.Err(); err != nil {
-				return newExitCodeError(ExitCodeExecutionFailure, fmt.Sprintf("read bridge input: %v", err))
+				return newExitCodeError(ExitCodeExecutionFailure, "read bridge input: %v", err)
 			}
 			if durableMode {
 				durableLedger.Seal()
