@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -109,11 +108,3 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 	return cmd
 }
 
-func hasVerificationIssue(issues []string, fragment string) bool {
-	for _, issue := range issues {
-		if strings.Contains(issue, fragment) {
-			return true
-		}
-	}
-	return false
-}
