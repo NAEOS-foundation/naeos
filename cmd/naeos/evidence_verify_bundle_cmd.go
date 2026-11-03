@@ -107,4 +107,3 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
-
