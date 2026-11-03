@@ -97,14 +97,14 @@ Key evidence includes `spec.yaml`, `inspect.json`, `validate.json`, `invalid-pol
 
 ## 5. Verify independently
 
-For a canonical exported `EvidenceBundle`:
+For a canonical exported `EvidenceBundle`, obtain the Ed25519 public key from an operator-controlled trust channel, not from the bundle itself:
 
 ```bash
-naeos evidence verify-bundle --input-file evidence.json
-naeos evidence verify-bundle --input-file evidence.json --output json
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub --output json
 ```
 
-The verifier is read-only. It does not contact the control plane, re-run policy, or execute an action. It validates decision/execution bindings and recomputes the SHA-256 evidence digest.
+The verifier is read-only. It does not contact the control plane, re-run policy, or execute an action. It separately reports digest integrity, signature validity, and whether the signer matches the supplied trust anchor. Missing trust configuration fails closed.
 
 See [P1.11 — Independent Verifier CLI](control-plane/p1-11-independent-verifier-cli.md).
 
@@ -172,6 +172,7 @@ Artifact path collisions:
 
 Independent verification:
 PASS / FAIL / NOT RUN
+Trust anchor source:
 
 Governance experiment:
 PASS / FAIL / NOT RUN

@@ -29,6 +29,29 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Validate and generate Go import graph
+        run: |
+          set -euo pipefail
+          bash -n scripts/internal-import-graph.sh
+          graph="$RUNNER_TEMP/naeos-import-graph.tsv"
+          bash scripts/internal-import-graph.sh > "$graph"
+          test -s "$graph"
+          LC_ALL=C sort -c "$graph"
+          awk -F '\t' -v module="github.com/NAEOS-foundation/naeos" -v prefix="github.com/NAEOS-foundation/naeos/" '
+            NF != 2 { exit 1 }
+            !($1 == module || index($1, prefix) == 1) { exit 1 }
+            !($2 == module || index($2, prefix) == 1) { exit 1 }
+            END { if (NR == 0) exit 1 }
+          ' "$graph"
+          echo "Import graph edges: $(wc -l < "$graph")"
+          head -n 20 "$graph"
+          echo "NAEOS_IMPORT_GRAPH=$graph" >> "$GITHUB_ENV"
+      - name: Upload Go import graph artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: naeos-go-import-graph-${{ github.sha }}
+          path: ${{ runner.temp }}/naeos-import-graph.tsv
+          if-no-files-found: error
       - name: golangci-lint
         uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa
         with:
@@ -55,6 +78,27 @@ jobs:
         run: go test -race -count=1 -timeout 300s ./...
       - name: Vet
         run: go vet ./...
+
+
+  control-plane-golden-path:
+    name: P1.6 Control Plane Golden Path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run P1.6 golden path and verify side effects
+        env:
+          NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR: ${{ runner.temp }}/naeos-p1-6-golden-path
+        run: |
+          set -euo pipefail
+          bash ./examples/control-plane-golden-path/run-demo.sh
+          test -s "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/result.json"
+          test -s "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/allow-side-effect.json"
+          test ! -e "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/deny-side-effect.json"
+          jq -e '.allow.decision == "ALLOW" and .allow.side_effect_observed == true and .allow.evidence_recorded == true and .allow.verification == "PASS" and .deny.decision == "DENY" and .deny.side_effect_observed == false and .deny.evidence_recorded == true and .deny.verification == "PASS"' "$NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR/result.json"
 
   canonical-demo:
     name: Canonical CLI Demo
@@ -440,6 +484,7 @@ jobs:
     needs:
       - lint
       - test
+      - control-plane-golden-path
       - canonical-demo
       - governance-lifecycle
       - day2-atomic-execution
@@ -463,6 +508,7 @@ jobs:
           LINT: ${{ needs.lint.result }}
           TEST: ${{ needs.test.result }}
           CANONICAL_DEMO: ${{ needs['canonical-demo'].result }}
+          CONTROL_PLANE_GOLDEN_PATH: ${{ needs['control-plane-golden-path'].result }}
           GOVERNANCE: ${{ needs['governance-lifecycle'].result }}
           DAY2_ATOMIC: ${{ needs['day2-atomic-execution'].result }}
           LEVEL3: ${{ needs['level3-evidence'].result }}
@@ -481,7 +527,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
+          for result in "$LINT" "$TEST" "$CONTROL_PLANE_GOLDEN_PATH" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
           test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"

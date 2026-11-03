@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"sync"
 	"time"
@@ -25,25 +26,53 @@ func NewPolicyStore() *PolicyStore {
 	}
 }
 
-// Set stores a policy as the active policy and tracks versions.
+// Set stores an immutable snapshot of a policy as the active version.
+// Callers cannot mutate stored policy state through the input pointer.
 func (ps *PolicyStore) Set(policy *Policy) error {
 	if policy == nil {
 		return fmt.Errorf("policy must not be nil")
 	}
-	if policy.ID == "" {
+	candidate := clonePolicy(policy)
+	if candidate.ID == "" {
 		return fmt.Errorf("policy ID is required")
 	}
-	if policy.Version <= 0 {
+	if candidate.Version <= 0 {
 		return fmt.Errorf("policy version must be greater than zero")
 	}
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	ps.current[policy.ID] = policy
-	if _, ok := ps.byVersion[policy.ID]; !ok {
-		ps.byVersion[policy.ID] = make(map[int]*Policy)
+
+	if current, ok := ps.current[candidate.ID]; ok {
+		switch {
+		case candidate.Version < current.Version:
+			return fmt.Errorf("policy version rollback is not allowed: %s v%d is active", candidate.ID, current.Version)
+		case candidate.Version == current.Version:
+			if !reflect.DeepEqual(current, candidate) {
+				return fmt.Errorf("policy contents changed without incrementing policy version: %s v%d", candidate.ID, candidate.Version)
+			}
+			return nil
+		}
 	}
-	ps.byVersion[policy.ID][policy.Version] = policy
+	if _, ok := ps.byVersion[candidate.ID]; !ok {
+		ps.byVersion[candidate.ID] = make(map[int]*Policy)
+	}
+	ps.current[candidate.ID] = candidate
+	ps.byVersion[candidate.ID][candidate.Version] = candidate
 	return nil
+}
+
+// clonePolicy copies all mutable fields so policy snapshots cannot be changed
+// through slices or pointers retained by callers.
+func clonePolicy(policy *Policy) *Policy {
+	if policy == nil {
+		return nil
+	}
+	cloned := *policy
+	cloned.AllowedCapabilities = append([]Capability(nil), policy.AllowedCapabilities...)
+	cloned.DeniedCapabilities = append([]Capability(nil), policy.DeniedCapabilities...)
+	cloned.ProtectedCapabilities = append([]Capability(nil), policy.ProtectedCapabilities...)
+	cloned.ApprovalRequired = append([]Capability(nil), policy.ApprovalRequired...)
+	return &cloned
 }
 
 // Active returns the active policy for the given policy ID.
@@ -57,7 +86,7 @@ func (ps *PolicyStore) Active(policyID string) (*Policy, error) {
 	if policy.Status != "active" {
 		return nil, fmt.Errorf("%w: %s (status=%s)", ErrPolicyInactive, policyID, policy.Status)
 	}
-	return policy, nil
+	return clonePolicy(policy), nil
 }
 
 // Version returns a specific policy version.
@@ -72,7 +101,7 @@ func (ps *PolicyStore) Version(policyID string, version int) (*Policy, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s v%d", ErrPolicyVersionNotFound, policyID, version)
 	}
-	return policy, nil
+	return clonePolicy(policy), nil
 }
 
 // WithExecutionLock validates the active policy and executes fn while policy updates are excluded.
@@ -96,7 +125,7 @@ func (ps *PolicyStore) WithExecutionLock(policyID string, version int, fn func(*
 	if policy.Version != version {
 		return fmt.Errorf("%w: %s v%d is not active", ErrPolicyVersionNotFound, policyID, version)
 	}
-	return fn(policy)
+	return fn(clonePolicy(policy))
 }
 
 // Evaluator evaluates a request against an active policy and grant.
@@ -135,48 +164,64 @@ var ErrPolicyVersionNotFound = fmt.Errorf("policy version not found")
 func (e *Evaluator) Evaluate(ctx AuthorizationContext, action Action) DecisionResult {
 	if e == nil || e.store == nil {
 		return DecisionResult{
-			Status:    DecisionDeny,
-			Reason:    ReasonNoPolicyFound,
+			Status:    DecisionIndeterminate,
+			Reason:    ReasonEvaluationFailed,
 			Requested: action.Capability,
 			Message:   "policy evaluator unavailable",
 		}
 	}
 
-	if ctx.Policy == nil {
-		policy, err := e.store.Version(ctx.PolicyID, ctx.PolicyVersion)
-		if err != nil {
+	policyID, policyVersion := ctx.PolicyID, ctx.PolicyVersion
+	if ctx.Policy != nil {
+		if policyID == "" {
+			policyID = ctx.Policy.ID
+		}
+		if policyVersion == 0 {
+			policyVersion = ctx.Policy.Version
+		}
+		if ctx.Policy.ID != policyID || ctx.Policy.Version != policyVersion {
 			return DecisionResult{
-				Status:    DecisionDeny,
-				Reason:    ReasonNoPolicyFound,
-				PolicyID:  ctx.PolicyID,
-				Requested: action.Capability,
-				Message:   err.Error(),
+				Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+				PolicyID: policyID, Requested: action.Capability,
+				Message: "supplied policy reference does not match the requested policy selector",
 			}
 		}
-		ctx.Policy = policy
 	}
-
-	policy := ctx.Policy
-	if policy == nil {
+	if ctx.Grant != nil {
+		if policyID == "" {
+			policyID = ctx.Grant.PolicyID
+		}
+		if policyVersion == 0 {
+			policyVersion = ctx.Grant.PolicyVersion
+		}
+	}
+	canonical, err := e.store.Version(policyID, policyVersion)
+	if err != nil {
 		return DecisionResult{
-			Status:    DecisionDeny,
-			Reason:    ReasonNoPolicyFound,
-			PolicyID:  ctx.PolicyID,
+			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+			PolicyID: policyID, Requested: action.Capability, Message: err.Error(),
+		}
+	}
+	if canonical.Status != "active" {
+		return DecisionResult{
+			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
+			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
 			Requested: action.Capability,
-			Message:   "policy is nil",
+			Message:   fmt.Sprintf("policy %s v%d is not active", canonical.ID, canonical.Version),
 		}
 	}
-
-	if policy.Status != "active" {
+	active, err := e.store.Active(policyID)
+	if err != nil || active.Version != policyVersion {
 		return DecisionResult{
-			Status:        DecisionDeny,
-			Reason:        ReasonDeniedStalePolicy,
-			PolicyID:      policy.ID,
-			PolicyVersion: policy.Version,
-			Requested:     action.Capability,
-			Message:       fmt.Sprintf("policy %s v%d is not active", policy.ID, policy.Version),
+			Status: DecisionDeny, Reason: ReasonDeniedStalePolicy,
+			PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+			Requested: action.Capability,
+			Message:   fmt.Sprintf("policy %s v%d is not the active policy version", canonical.ID, canonical.Version),
 		}
 	}
+	// The caller-supplied policy is only a selector. Its contents are never
+	// evaluated; authorization always uses the immutable PolicyStore snapshot.
+	policy := canonical
 
 	if ctx.Grant != nil && !ctx.Grant.IsValid(ctx.Now) {
 		return DecisionResult{
@@ -327,17 +372,16 @@ func containsCapability(values []Capability, target Capability) bool {
 func (e *Evaluator) EvaluateAction(action Action, grant *Grant, policy *Policy, now time.Time) DecisionResult {
 	action = normalizeRequest(action)
 	ctx := AuthorizationContext{
-		PolicyID:      policy.ID,
-		PolicyVersion: policy.Version,
-		Grant:         grant,
-		Policy:        policy,
-		Now:           now,
+		Grant: grant,
+		Now:   now,
 	}
-	if ctx.PolicyID == "" && policy != nil {
+	if policy != nil {
+		// Policy ID/version are selectors only; policy contents are untrusted.
 		ctx.PolicyID = policy.ID
-	}
-	if ctx.PolicyVersion == 0 && policy != nil {
 		ctx.PolicyVersion = policy.Version
+	} else if grant != nil {
+		ctx.PolicyID = grant.PolicyID
+		ctx.PolicyVersion = grant.PolicyVersion
 	}
 	return e.Evaluate(ctx, action)
 }

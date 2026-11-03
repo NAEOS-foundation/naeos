@@ -52,6 +52,7 @@ func main() {
 
 	evaluator := controlplane.NewEvaluator(store)
 	ledger := controlplane.NewLedger()
+	ledger.SetPersistencePath(filepath.Join(outputDir, "ledger.json"))
 	gateway := controlplane.NewDecisionGateway(evaluator, ledger)
 	verifier := controlplane.NewSessionVerifier(ledger, evaluator)
 
@@ -104,7 +105,7 @@ func main() {
 	}
 	events := ledger.Query(map[string]string{"request_id": requestID})
 	executionEvidence := evidence.EventType == "EXECUTION_ALLOWED"
-	pass := observed && executionEvidence && len(events) == 2 && active.Version == currentPolicy && verifier.VerifySession(agentID).Result == "PASS"
+	pass := observed && executionEvidence && hasEvent(events, "EXECUTION_STARTED") && len(events) == 3 && active.Version == currentPolicy && verifier.VerifySession(agentID).Result == "PASS"
 
 	out := result{
 		RunID:                   requestID,
@@ -113,7 +114,7 @@ func main() {
 		InitialDecision:         string(authorized.Status),
 		ExecutionDecision:       string(executed.Status),
 		SideEffectObserved:      observed,
-		ExecutionEvidence:       executionEvidence && len(events) == 2,
+		ExecutionEvidence:       executionEvidence && hasEvent(events, "EXECUTION_STARTED") && len(events) == 3,
 		Verification:            boolStatus(pass),
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
@@ -145,6 +146,15 @@ func policy(updatedAt time.Time, version int) *controlplane.Policy {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func hasEvent(events []controlplane.LedgerEvent, eventType string) bool {
+	for _, event := range events {
+		if event.EventType == eventType {
+			return true
+		}
+	}
+	return false
 }
 
 func boolStatus(ok bool) string {

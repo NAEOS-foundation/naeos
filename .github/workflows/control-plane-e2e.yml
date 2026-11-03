@@ -5,6 +5,10 @@ on:
     branches: [main, fix/control-plane-auth-signed-off-20261012]
     paths:
       - "site/**"
+      - "Dockerfile.control-plane"
+      - "go.mod"
+      - "internal/controlplane/**"
+      - "internal/runtime/gateway/**"
       - ".github/workflows/control-plane-e2e.yml"
   workflow_run:
     workflows: ["Website"]

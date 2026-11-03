@@ -175,3 +175,112 @@ func TestEvaluator_DeniesGrantAgentMismatch(t *testing.T) {
 		t.Fatalf("expected agent mismatch deny, got %s (%s)", result.Status, result.Reason)
 	}
 }
+
+func TestPolicyStoreIsolatesPolicySnapshots(t *testing.T) {
+	store := NewPolicyStore()
+	input := &Policy{
+		ID: "POLICY-IMMUTABLE", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(input); err != nil {
+		t.Fatal(err)
+	}
+
+	// Mutating the caller-owned input must not mutate the stored snapshot.
+	input.AllowedCapabilities[0] = "repository.write"
+	input.AllowedCapabilities = append(input.AllowedCapabilities, "production.delete")
+
+	active, err := store.Active("POLICY-IMMUTABLE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active.AllowedCapabilities) != 1 || active.AllowedCapabilities[0] != "repository.read" {
+		t.Fatalf("stored policy changed through input pointer: %+v", active.AllowedCapabilities)
+	}
+
+	// Mutating returned snapshots must not mutate active or historical policy.
+	active.AllowedCapabilities[0] = "production.delete"
+	active.Status = "inactive"
+	historical, err := store.Version("POLICY-IMMUTABLE", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(historical.AllowedCapabilities) != 1 || historical.AllowedCapabilities[0] != "repository.read" || historical.Status != "active" {
+		t.Fatalf("stored policy changed through returned snapshot: %+v", historical)
+	}
+}
+
+func TestPolicyStoreRejectsVersionReuseAndRollback(t *testing.T) {
+	store := NewPolicyStore()
+	v1 := &Policy{
+		ID: "POLICY-VERSIONED", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(v1); err != nil {
+		t.Fatal(err)
+	}
+
+	mutatedV1 := clonePolicy(v1)
+	mutatedV1.AllowedCapabilities = []Capability{"production.delete"}
+	if err := store.Set(mutatedV1); err == nil {
+		t.Fatal("expected same-version policy mutation to be rejected")
+	}
+
+	v2 := clonePolicy(v1)
+	v2.Version = 2
+	v2.AllowedCapabilities = []Capability{"repository.write"}
+	if err := store.Set(v2); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Set(v1); err == nil {
+		t.Fatal("expected policy version rollback to be rejected")
+	}
+
+	active, err := store.Active("POLICY-VERSIONED")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if active.Version != 2 || len(active.AllowedCapabilities) != 1 || active.AllowedCapabilities[0] != "repository.write" {
+		t.Fatalf("unexpected active policy after rejected updates: %+v", active)
+	}
+}
+
+func TestEvaluator_ReportsIndeterminateWhenEvaluationCannotBeCompleted(t *testing.T) {
+	action := Action{AgentID: "agent-1", Capability: "repository.read"}
+	if got := NewEvaluator().EvaluateAction(action, nil, nil, time.Now()); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("unavailable evaluator must be indeterminate, got %+v", got)
+	}
+	store := NewPolicyStore()
+	if got := NewEvaluator(store).Evaluate(AuthorizationContext{PolicyID: "missing", PolicyVersion: 1}, action); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("missing policy version must be indeterminate, got %+v", got)
+	}
+	if got := NewEvaluator(store).EvaluateAction(action, nil, nil, time.Now()); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("nil policy must be indeterminate, got %+v", got)
+	}
+}
+
+func TestEvaluator_RejectsForgedSameVersionPolicySnapshot(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-FORGED", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	result := NewEvaluator(store).EvaluateAction(
+		Action{AgentID: "agent-forged", Capability: "production.delete"},
+		grant, forged, time.Now(),
+	)
+	if result.Status != DecisionDeny || result.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged same-version policy must be evaluated against the canonical snapshot and denied, got %+v", result)
+	}
+}
