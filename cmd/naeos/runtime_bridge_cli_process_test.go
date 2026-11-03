@@ -60,7 +60,7 @@ func TestRuntimeBridgeCLIProcessContract(t *testing.T) {
 		if _, ok := response["result"]; !ok {
 			t.Fatalf("JSON response lacks result field: %#v", response)
 		}
-		if stderr == "" || !bytes.Contains(stderr, []byte("DENY")) {
+		if len(stderr) == 0 || !bytes.Contains(stderr, []byte("DENY")) {
 			t.Fatalf("stderr must identify policy denial, got %q", stderr)
 		}
 		if _, err := os.Stat(filepath.Join(filesystemRoot, "contract-artifact.txt")); !os.IsNotExist(err) {
@@ -81,7 +81,7 @@ func TestRuntimeBridgeCLIProcessContract(t *testing.T) {
 		if len(bytes.TrimSpace(stdout)) != 0 {
 			t.Fatalf("persistence failure must not emit a success response, stdout=%q", stdout)
 		}
-		if stderr == "" || !bytes.Contains(stderr, []byte("persist runtime evidence")) {
+		if len(stderr) == 0 || !bytes.Contains(stderr, []byte("persist runtime evidence")) {
 			t.Fatalf("stderr must identify persistence failure, got %q", stderr)
 		}
 		if _, err := os.Stat(filepath.Join(filesystemRoot, "contract-artifact.txt")); !os.IsNotExist(err) {
