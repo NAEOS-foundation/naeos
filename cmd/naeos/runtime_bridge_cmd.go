@@ -322,14 +322,14 @@ func newRuntimeBridgeCommand() *cobra.Command {
 						} else {
 							file, openErr := os.OpenFile(evidenceFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 							if openErr != nil {
-								return openErr
+								return newExitCodeError(ExitCodeExecutionFailure, "persist runtime evidence: %v", openErr)
 							}
 							if _, writeErr := file.Write(append(evidenceData, '\n')); writeErr != nil {
 								_ = file.Close()
-								return writeErr
+								return newExitCodeError(ExitCodeExecutionFailure, "persist runtime evidence: %v", writeErr)
 							}
 							if closeErr := file.Close(); closeErr != nil {
-								return closeErr
+								return newExitCodeError(ExitCodeExecutionFailure, "persist runtime evidence: %v", closeErr)
 							}
 						}
 					}
