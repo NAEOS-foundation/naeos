@@ -263,12 +263,19 @@ func newRuntimeBridgeCommand() *cobra.Command {
 
 			in := bufio.NewScanner(cmd.InOrStdin())
 			out := cmd.OutOrStdout()
+			processExitCode := 0
 			for in.Scan() {
 				var raw map[string]any
 				if err := json.Unmarshal(in.Bytes(), &raw); err != nil {
 					return fmt.Errorf("invalid bridge request: %w", err)
 				}
 				result, err := gw.AuthorizeFromAdapter("json", raw)
+				if result.Decision == control.DecisionDeny && processExitCode == 0 {
+					processExitCode = ExitCodePolicyDeny
+				}
+				if err != nil || result.Status == "failed" {
+					processExitCode = ExitCodeExecutionFailure
+				}
 				response := map[string]any{"result": result}
 				if err != nil {
 					response["error"] = err.Error()
@@ -306,7 +313,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 						}
 						if durableMode {
 							if err := appendRuntimeEvidence(evidenceFile, evidenceData); err != nil {
-								return err
+								return newExitCodeError(ExitCodeExecutionFailure, "persist runtime evidence: %v", err)
 							}
 							if _, err := durableLedger.Publish(evidenceRunID, "runtime.execution_evidence", runtimeEvidence.EvidenceDigest, sequence); err != nil {
 								return fmt.Errorf("persist durable runtime evidence event: %w", err)
@@ -336,7 +343,7 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				}
 			}
 			if err := in.Err(); err != nil {
-				return err
+				return newExitCodeError(ExitCodeExecutionFailure, "read bridge input: %v", err)
 			}
 			if durableMode {
 				durableLedger.Seal()
@@ -359,6 +366,12 @@ func newRuntimeBridgeCommand() *cobra.Command {
 				if err := writeAtomicRuntimeReceipt(evidenceReceiptPath, append(receiptData, '\n')); err != nil {
 					return err
 				}
+			}
+			if processExitCode == ExitCodeExecutionFailure {
+				return newExitCodeError(ExitCodeExecutionFailure, "bridge execution or persistence failed")
+			}
+			if processExitCode == ExitCodePolicyDeny {
+				return newExitCodeError(ExitCodePolicyDeny, "bridge policy decision: DENY")
 			}
 			return nil
 		},
