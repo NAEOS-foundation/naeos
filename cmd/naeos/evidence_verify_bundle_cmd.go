@@ -108,12 +108,3 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
 }
-
-func hasVerificationIssue(issues []string, fragment string) bool {
-	for _, issue := range issues {
-		if strings.Contains(issue, fragment) {
-			return true
-		}
-	}
-	return false
-}
