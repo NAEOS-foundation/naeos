@@ -29,9 +29,7 @@ const decisions: Decision[] = [
   { id: "DEC-91A41", action: "production.deploy", agent: "release-agent-02", policy: "production/change-v4", status: "ESCALATE", age: "9 min ago", reason: "Production deployment requires explicit human approval.", capability: "production.deploy" },
 ];
 
-const CONTROL_PLANE_ENDPOINT =
-  process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
-  (process.env.NODE_ENV === "production" ? "https://naeos-control-plane-production.up.railway.app" : "");
+const CONTROL_PLANE_ENDPOINT = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL || "";
 
 export default function ControlPlaneDashboard({ lang }: Props) {
   const id = lang === "id";

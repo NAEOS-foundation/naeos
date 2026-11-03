@@ -51,11 +51,13 @@ jobs:
         run: node --test --experimental-strip-types app/api/social/draft/publisher.test.ts
       - name: Verify external publisher boundary
         run: node --test --experimental-strip-types app/api/social/draft/external-publisher.test.ts
+      - name: Verify Control Plane upstream isolation
+        run: node --test --experimental-strip-types app/api/control-plane/decision/upstream.test.ts
       - name: Verify LinkedIn publisher adapter
         run: node --test --experimental-strip-types app/api/social/draft/linkedin-publisher.test.ts
       - name: Build
         env:
-          NEXT_PUBLIC_CONTROL_PLANE_API_URL: https://naeos-control-plane-production.up.railway.app
+          NEXT_PUBLIC_CONTROL_PLANE_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://naeos-control-plane-production.up.railway.app' || '' }}
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local

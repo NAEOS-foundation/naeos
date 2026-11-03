@@ -289,6 +289,34 @@ test("Policy Change Proof is localized in Indonesian and drives the same states"
   }
 });
 
+test("Control Plane proxy fails closed when the environment has no upstream", async () => {
+  const { page, pageErrors } = await openPage("/en/control-plane");
+  try {
+    const response = await page.evaluate(async () => {
+      const result = await fetch("/api/control-plane/decision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agent_id: "preview-isolation-test",
+          capability: "repository.read",
+          artifact_hash: "sha256:preview-isolation-test",
+        }),
+      });
+      return { status: result.status, body: await result.json() };
+    });
+
+    assert.equal(response.status, 503, "an unconfigured preview must not forward requests upstream");
+    assert.match(
+      response.body.message || "",
+      /upstream is not configured for this environment/i,
+      "the proxy must explain that the environment has no configured upstream",
+    );
+    assert.deepEqual(pageErrors, [], "the preview isolation check should not throw browser errors");
+  } finally {
+    await page.close();
+  }
+});
+
 test("Control Plane live demo gates evaluation until an endpoint is configured", async () => {
   const { page, pageErrors } = await openPage("/en/control-plane");
   try {

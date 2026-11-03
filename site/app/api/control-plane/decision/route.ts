@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { resolveControlPlaneUpstream } from "./upstream";
 
-const CONTROL_PLANE_API_URL =
-  "https://naeos-control-plane-production.up.railway.app";
 const MAX_REQUEST_BYTES = 8 * 1024;
 
 export const dynamic = "force-dynamic";
@@ -12,6 +11,7 @@ export const revalidate = 0;
 
 type ControlPlaneEnv = CloudflareEnv & {
   NAEOS_CONTROLPLANE_API_TOKEN?: string;
+  NAEOS_CONTROLPLANE_UPSTREAM_URL?: string;
 };
 
 export async function POST(request: Request) {
@@ -49,12 +49,24 @@ export async function POST(request: Request) {
   }
 
   let token: string | undefined;
+  let upstreamUrl: string | null = null;
   try {
     const context = await getCloudflareContext({ async: true });
     const env = context.env as ControlPlaneEnv;
     token = env.NAEOS_CONTROLPLANE_API_TOKEN;
+    upstreamUrl = resolveControlPlaneUpstream(env.NAEOS_CONTROLPLANE_UPSTREAM_URL);
   } catch {
     token = undefined;
+    upstreamUrl = null;
+  }
+
+  // Fail closed: PR previews without an explicit upstream must never fall back
+  // to the production Control Plane.
+  if (!upstreamUrl) {
+    return Response.json(
+      { message: "Control Plane upstream is not configured for this environment." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   if (!token?.trim()) {
@@ -65,7 +77,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const upstream = await fetch(`${CONTROL_PLANE_API_URL}/api/control-plane/decision`, {
+    const upstream = await fetch(`${upstreamUrl}/api/control-plane/decision`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
