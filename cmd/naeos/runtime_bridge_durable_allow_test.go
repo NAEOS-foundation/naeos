@@ -26,13 +26,13 @@ func TestRuntimeBridgeDurableAllowLifecycleWithRealSideEffectAndRecovery(t *test
 	}
 
 	request := map[string]any{
-		"request_id": "req-ws3-durable-allow",
+		"request_id":    "req-ws3-durable-allow",
 		"invocation_id": "inv-ws3-durable-allow",
-		"actor": "test",
-		"tool": "filesystem",
-		"action": "write",
-		"resource": "filesystem",
-		"payload": map[string]any{"path": "allow-artifact.txt", "content": "authorized durable side effect"},
+		"actor":         "test",
+		"tool":          "filesystem",
+		"action":        "write",
+		"resource":      "filesystem",
+		"payload":       map[string]any{"path": "allow-artifact.txt", "content": "authorized durable side effect"},
 	}
 	gw := newRuntimeBridgeGateway(bridgeAllowControlPlane{}, root, gateway.NewInMemoryInvocationStore())
 	result, err := gw.AuthorizeFromAdapter("json", request)
