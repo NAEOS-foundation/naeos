@@ -27,6 +27,23 @@ func (s *stubControlPlane) Evaluate(req control.Request) (control.DecisionRecord
 	}, nil
 }
 
+type failingEvaluationControlPlane struct {
+	failure *control.EvaluationFailure
+}
+
+func (c failingEvaluationControlPlane) Evaluate(control.Request) (control.DecisionRecord, error) {
+	return control.DecisionRecord{}, c.failure
+}
+
+type evaluationFailureSandbox struct {
+	calls int
+}
+
+func (s *evaluationFailureSandbox) Execute(ToolRequest) (string, error) {
+	s.calls++
+	return "must not execute", nil
+}
+
 type stubSandbox struct {
 	output string
 	err    error
@@ -103,6 +120,43 @@ func TestAdapterPrivilegeBoundaryAllowsExplicitGrant(t *testing.T) {
 	}
 	if sb.Count() != 1 {
 		t.Fatalf("expected one sandbox call, got %d", sb.Count())
+	}
+}
+
+func TestGatewayEvaluationFailureIsNotRecordedAsDecisionOrExecuted(t *testing.T) {
+	failure := &control.EvaluationFailure{
+		PolicyID:      "deploy-policy",
+		PolicyVersion: "1.0.0",
+		RuleID:        "must-evaluate",
+		Stage:         "rule_evaluation",
+		Code:          "policy_evaluator_error",
+	}
+	sb := &evaluationFailureSandbox{}
+	gw := New(failingEvaluationControlPlane{failure: failure}, sb)
+
+	result, err := gw.Authorize(ToolRequest{
+		RequestID: "req-evaluation-failure",
+		Tool:      "deploy",
+		Action:    "run",
+	})
+	if err == nil {
+		t.Fatal("expected evaluation failure to be surfaced")
+	}
+	if result.Status != "failed" {
+		t.Fatalf("expected failed execution status, got %q", result.Status)
+	}
+	if result.Decision != "" {
+		t.Fatalf("evaluation failure must not be represented as a policy decision, got %q", result.Decision)
+	}
+	if result.EvaluationFailure == nil || result.EvaluationFailure.Code != "policy_evaluator_error" {
+		t.Fatalf("expected structured evaluation failure evidence, got %+v", result.EvaluationFailure)
+	}
+	if sb.calls != 0 {
+		t.Fatalf("evaluation failure reached sandbox: %d calls", sb.calls)
+	}
+	history := gw.History()
+	if len(history) != 1 || history[0].Status != "failed" || history[0].Decision != "" {
+		t.Fatalf("expected one non-decision failure history record, got %+v", history)
 	}
 }
 
@@ -989,6 +1043,46 @@ func TestGatewayRevalidationNonAllowAndErrorFailClosed(t *testing.T) {
 				t.Fatalf("non-ALLOW/error revalidation reached sandbox: %d calls", sb.Count())
 			}
 		})
+	}
+}
+
+func TestGatewayEvaluationFailureDuringRevalidationIsNotDecision(t *testing.T) {
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+	sb := &countingSandbox{}
+	failure := &control.EvaluationFailure{
+		PolicyID:      "p1",
+		PolicyVersion: "2.0.0",
+		RuleID:        "revalidation-rule",
+		Stage:         "rule_evaluation",
+		Code:          "policy_evaluator_error",
+	}
+	gw := New(cp, sb)
+	gw.controlPlane = invariantAuditRevalidator{
+		stubControlPlane: cp,
+		decision:         control.DecisionAllow,
+		err:              failure,
+	}
+
+	result, err := gw.Authorize(ToolRequest{
+		RequestID: "req-revalidation-evaluation-failure",
+		Tool:      "filesystem",
+		Action:    "write",
+	})
+	if err == nil {
+		t.Fatal("expected indeterminate revalidation to be surfaced")
+	}
+	if result.Status != "failed" || result.Decision != "" {
+		t.Fatalf("expected failed non-decision result, got status=%q decision=%q", result.Status, result.Decision)
+	}
+	if result.EvaluationFailure == nil || result.EvaluationFailure.Code != failure.Code {
+		t.Fatalf("expected structured evaluation failure, got %+v", result.EvaluationFailure)
+	}
+	if sb.Count() != 0 {
+		t.Fatalf("revalidation failure reached sandbox: %d calls", sb.Count())
+	}
+	history := gw.History()
+	if len(history) != 1 || history[0].Decision != "" || history[0].Status != "failed" {
+		t.Fatalf("expected non-decision failure history, got %+v", history)
 	}
 }
 

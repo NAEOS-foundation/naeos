@@ -22,14 +22,17 @@ import (
 )
 
 type requestFile struct {
-	PolicyVersion   string   `json:"policy_version"`
-	SchemaVersion   string   `json:"schema_version"`
-	Ecosystem       string   `json:"ecosystem"`
-	Name            string   `json:"name"`
-	VersionChange   string   `json:"version_change"`
-	Paths           []string `json:"paths"`
-	Evidence        bool     `json:"evidence_available"`
-	KnownDependency bool     `json:"known_dependency"`
+	PolicyVersion       string   `json:"policy_version"`
+	SchemaVersion       string   `json:"schema_version"`
+	Ecosystem           string   `json:"ecosystem"`
+	Name                string   `json:"name"`
+	Version             string   `json:"version"`
+	VersionChange       string   `json:"version_change"`
+	Paths               []string `json:"paths"`
+	Evidence            bool     `json:"evidence_available"`
+	KnownDependency     bool     `json:"known_dependency"`
+	ReviewedCriticality string   `json:"-"`
+	ReviewedDomains     []string `json:"-"`
 }
 
 type policyFile struct {
@@ -58,25 +61,29 @@ func run() error {
 		return errors.New("unsupported dependency-risk policy version")
 	}
 
-	requestPath := os.Getenv("NAEOS_DEPENDENCY_RISK_REQUEST")
-	var req requestFile
-	if requestPath == "" {
-		req, err = deriveRequest()
-		if err != nil {
-			return err
+	if os.Getenv("NAEOS_DEPENDENCY_RISK_REQUEST") != "" {
+		return errors.New("NAEOS_DEPENDENCY_RISK_REQUEST is disabled: dependency decisions must be derived from the diff and trusted merge-base registry")
+	}
+	req, err := deriveRequest()
+	if err != nil {
+		return err
+	}
+	baseSHA := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
+	registry, registryErr := loadTrustedDependencyReviewRegistry(baseSHA)
+	var reviewReference string
+	registryStatus := "unavailable_or_invalid"
+	if registryErr == nil {
+		registryStatus = "loaded"
+		if record, ok := findReviewedDependency(registry, req.Ecosystem, req.Name, req.Version); ok && verifiedDependencyLockEvidence(record) {
+			reviewReference = record.ReviewReference
+			req.KnownDependency = true
+			req.ReviewedCriticality = record.Criticality
+			req.ReviewedDomains = record.Domains
+		} else {
+			req.KnownDependency = false
 		}
 	} else {
-		requestPath, err = safeRelativePath(requestPath)
-		if err != nil {
-			return fmt.Errorf("invalid request path: %w", err)
-		}
-		requestBytes, err := os.ReadFile(requestPath) //nolint:gosec // validated as workspace-relative above
-		if err != nil {
-			return fmt.Errorf("read request: %w", err)
-		}
-		if err := json.Unmarshal(requestBytes, &req); err != nil {
-			return fmt.Errorf("parse request: %w", err)
-		}
+		req.KnownDependency = false
 	}
 	if req.PolicyVersion == "" {
 		req.PolicyVersion = policy.PolicyVersion
@@ -89,18 +96,23 @@ func run() error {
 	}
 
 	result := dependencyrisk.Classify(dependencyrisk.Request{
-		Ecosystem:         req.Ecosystem,
-		Name:              req.Name,
-		VersionChange:     dependencyrisk.VersionChange(req.VersionChange),
-		Paths:             req.Paths,
-		EvidenceAvailable: req.Evidence,
-		KnownDependency:   req.KnownDependency,
+		Ecosystem:           req.Ecosystem,
+		Name:                req.Name,
+		VersionChange:       dependencyrisk.VersionChange(req.VersionChange),
+		Paths:               req.Paths,
+		EvidenceAvailable:   req.Evidence,
+		KnownDependency:     req.KnownDependency,
+		ReviewedCriticality: dependencyrisk.Criticality(req.ReviewedCriticality),
+		ReviewedDomains:     toDependencyDomains(req.ReviewedDomains),
 	})
 	evidence := struct {
-		PolicyID      string                `json:"policy_id"`
-		PolicyVersion string                `json:"policy_version"`
-		Result        dependencyrisk.Result `json:"result"`
-	}{policy.PolicyID, policy.PolicyVersion, result}
+		PolicyID               string                `json:"policy_id"`
+		PolicyVersion          string                `json:"policy_version"`
+		RegistrySourceRevision string                `json:"registry_source_revision"`
+		RegistryStatus         string                `json:"registry_status"`
+		ReviewReference        string                `json:"review_reference,omitempty"`
+		Result                 dependencyrisk.Result `json:"result"`
+	}{policy.PolicyID, policy.PolicyVersion, baseSHA, registryStatus, reviewReference, result}
 
 	out := os.Getenv("NAEOS_DEPENDENCY_RISK_OUTPUT")
 	if out == "" {
@@ -267,8 +279,16 @@ func deriveNPMRequest(base, path string) (requestFile, bool, error) {
 			if ook && nok && ov == nv {
 				continue
 			}
-			candidate := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: name, Paths: dependencyUsagePathsNPM(name), Evidence: automaticEvidenceAvailable(), KnownDependency: ook && nok}
-			if candidate.KnownDependency {
+			record, reviewed := trustedReviewRecord(os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA"), "npm", name, nv)
+			reviewed = reviewed && verifiedDependencyLockEvidence(record)
+			candidate := requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "npm", Name: name, Version: nv, Paths: dependencyUsagePathsNPM(name), Evidence: automaticEvidenceAvailable(), KnownDependency: reviewed}
+			if reviewed {
+				candidate.ReviewedCriticality = record.Criticality
+				candidate.ReviewedDomains = record.Domains
+			}
+			if candidate.KnownDependency && !ook {
+				candidate.VersionChange = "major"
+			} else if candidate.KnownDependency {
 				candidate.VersionChange = npmVersionChange(ov, nv)
 			} else {
 				candidate.VersionChange = "unknown"
@@ -328,17 +348,34 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 	for _, name := range names {
 		oldVersion, oldOK := oldv[name]
 		newVersion, newOK := newv[name]
+		record, reviewed := trustedReviewRecord(os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA"), "go", name, newVersion)
+		reviewed = reviewed && verifiedDependencyLockEvidence(record)
 		candidate := requestFile{
-			PolicyVersion:   "1.0.0",
-			SchemaVersion:   "1.0.0",
-			Ecosystem:       "go",
-			Name:            name,
+			PolicyVersion: "1.0.0",
+			SchemaVersion: "1.0.0",
+			Ecosystem:     "go",
+			Name:          name,
+			Version:       newVersion,
+			ReviewedCriticality: func() string {
+				if reviewed {
+					return record.Criticality
+				}
+				return ""
+			}(),
+			ReviewedDomains: func() []string {
+				if reviewed {
+					return record.Domains
+				}
+				return nil
+			}(),
 			Paths:           dependencyUsagePaths(name),
 			Evidence:        automaticEvidenceAvailable(),
-			KnownDependency: oldOK && newOK,
+			KnownDependency: reviewed,
 		}
 		if oldOK && newOK {
 			candidate.VersionChange = versionChange(oldVersion, newVersion)
+		} else if candidate.KnownDependency && newOK {
+			candidate.VersionChange = "major"
 		} else {
 			candidate.VersionChange = "unknown"
 		}
@@ -349,6 +386,25 @@ func selectHighestRiskRequest(oldv, newv map[string]string) requestFile {
 		}
 	}
 	return best
+}
+
+func verifiedDependencyLockEvidence(record dependencyReviewRecord) bool {
+	switch strings.ToLower(record.Ecosystem) {
+	case "go":
+		data, err := os.ReadFile("go.sum")
+		return err == nil && checksumPresentInGoSum(data, record)
+	default:
+		// Ecosystems without an implemented lockfile verifier remain fail-closed.
+		return false
+	}
+}
+
+func toDependencyDomains(values []string) []dependencyrisk.Domain {
+	out := make([]dependencyrisk.Domain, 0, len(values))
+	for _, value := range values {
+		out = append(out, dependencyrisk.Domain(value))
+	}
+	return out
 }
 
 func automaticEvidenceAvailable() bool {
@@ -376,12 +432,14 @@ func dependencyUsagePaths(name string) []string {
 
 func requestRiskRank(req requestFile) int {
 	result := dependencyrisk.Classify(dependencyrisk.Request{
-		Ecosystem:         req.Ecosystem,
-		Name:              req.Name,
-		VersionChange:     dependencyrisk.VersionChange(req.VersionChange),
-		Paths:             req.Paths,
-		EvidenceAvailable: req.Evidence,
-		KnownDependency:   req.KnownDependency,
+		Ecosystem:           req.Ecosystem,
+		Name:                req.Name,
+		VersionChange:       dependencyrisk.VersionChange(req.VersionChange),
+		Paths:               req.Paths,
+		EvidenceAvailable:   req.Evidence,
+		KnownDependency:     req.KnownDependency,
+		ReviewedCriticality: dependencyrisk.Criticality(req.ReviewedCriticality),
+		ReviewedDomains:     toDependencyDomains(req.ReviewedDomains),
 	})
 
 	decisionRank := map[dependencyrisk.Decision]int{
@@ -396,7 +454,13 @@ func requestRiskRank(req requestFile) int {
 		dependencyrisk.Critical: 30,
 	}
 
-	return decisionRank[result.Decision]*100 + criticalityRank[result.Criticality]
+	versionRank := map[dependencyrisk.VersionChange]int{
+		dependencyrisk.Unknown: 40,
+		dependencyrisk.Major:   30,
+		dependencyrisk.Minor:   20,
+		dependencyrisk.Patch:   10,
+	}
+	return decisionRank[result.Decision]*100 + criticalityRank[result.Criticality] + versionRank[dependencyrisk.VersionChange(req.VersionChange)]
 }
 
 func versionChange(oldv, newv string) string {

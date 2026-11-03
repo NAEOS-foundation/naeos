@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.0.0",
+  "records": [
+    {
+      "ecosystem": "go",
+      "name": "github.com/gowebpki/jcs",
+      "version": "1.0.2",
+      "upstream_source": "https://github.com/gowebpki/jcs",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:IY0Iv76ThSvocWinl2rphYmGLhMufS3ZD1giKqkI6ps=",
+      "provenance": "https://proxy.golang.org/github.com/gowebpki/jcs/@v/v1.0.2.mod",
+      "purpose": "JSON canonicalization (RFC 8785) for candidate digest in execution gateway authorization",
+      "domains": ["general", "runtime"],
+      "criticality": "low",
+      "reviewer": "NAEOS maintainers",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/692",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    }
+  ]
+}

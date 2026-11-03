@@ -102,7 +102,7 @@ This classification is a review aid, not an instruction to move every item. Keep
 ### Phase 2 reference audit findings
 
 - `.run/generated` is referenced in `docs/EXTERNAL-VALIDATION-CASE-STUDY-001.md` and two `brand/marketing/` assets. These references describe generated output, so ignoring it does not remove the documented workflow; however, whether its tracked contents are needed for reproducibility must be checked before deletion.
-- `Reference Architecture/NAEOS-NRA-001.md` and `Reference Architecture/NAEOS-NRA-002.md` both contain NAEOS-NRA-001 identity text. Treat this as a separate document-authority review; do not rename or consolidate either file as part of a general cleanup without resolving the apparent identifier overlap.
+- The document-authority review resolved the duplicate identity: `Reference Architecture/NAEOS-NRA-001.md` remains canonical; `Reference Architecture/NAEOS-NRA-002.md` is archived as a non-canonical historical draft. Its original metadata is retained only for traceability.
 - The root has multiple roadmap/planning artifacts with explicit authority distinctions. Preserve those distinctions and avoid creating a second canonical roadmap.
 - No root Markdown files are moved in this phase. The next structural PR should move only low-risk partner/marketing records after the full inbound-link and workflow search is complete.
 

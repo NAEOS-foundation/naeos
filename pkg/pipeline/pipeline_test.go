@@ -4,12 +4,16 @@
 package pipeline
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/NAEOS-foundation/naeos/internal/generation/engine"
 	"github.com/NAEOS-foundation/naeos/internal/governance/policy"
 	"github.com/NAEOS-foundation/naeos/internal/governance/review"
 	"github.com/NAEOS-foundation/naeos/internal/profiling"
@@ -111,6 +115,9 @@ func TestPipelineRunProducesResult(t *testing.T) {
 	if len(result.Tasks) == 0 {
 		t.Fatal("expected at least one planned task")
 	}
+	if result.ArtifactWriteStatus != ArtifactWriteSkippedNoOutput || result.CompletionStatus != "generated" {
+		t.Fatalf("generation without an output directory must not claim execution: write=%s completion=%q", result.ArtifactWriteStatus, result.CompletionStatus)
+	}
 }
 
 func TestPipelineUsesInjectedParser(t *testing.T) {
@@ -135,9 +142,12 @@ func TestPipelineWritesArtifactsToOutputDir(t *testing.T) {
 		t.Fatalf("create pipeline failed: %v", err)
 	}
 
-	_, err = p.Run("sample specification")
+	result, err := p.Run("sample specification")
 	if err != nil {
 		t.Fatalf("Run returned error: %v", err)
+	}
+	if result.ArtifactWriteStatus != ArtifactWriteWritten || result.CompletionStatus != "written" {
+		t.Fatalf("successful write must report written completion: write=%s completion=%q", result.ArtifactWriteStatus, result.CompletionStatus)
 	}
 
 	files, err := os.ReadDir(outputDir)
@@ -539,7 +549,7 @@ func TestPipelineObserverRunLifecycle(t *testing.T) {
 		complete bool
 	}
 	obs := &lifecycleRecorder{}
-	p, err := New(Config{Observer: obs})
+	p, err := New(Config{Observer: obs, OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("create pipeline failed: %v", err)
 	}
@@ -1052,4 +1062,303 @@ func (legacyEvaluatorForContextTest) Evaluate(ctx map[string]any) error {
 
 func (legacyEvaluatorForContextTest) EvaluateRules(rules []policy.Rule, ctx map[string]any) ([]policy.EvaluationResult, error) {
 	return []policy.EvaluationResult{{Passed: true}}, nil
+}
+
+type pipelineReviewerStub struct {
+	result *review.ReviewResult
+	err    error
+}
+
+func (r pipelineReviewerStub) Review(input any) error { return nil }
+func (r pipelineReviewerStub) ReviewArtifact(name, content string, rules []string) (*review.ReviewResult, error) {
+	return r.result, r.err
+}
+
+func TestRunReviewReportsExplicitStatesAndEnforcesMandatoryGate(t *testing.T) {
+	artifact := []engine.Artifact{{Path: "README.md", Content: []byte("# safe")}}
+	tests := []struct {
+		name      string
+		reviewer  review.Reviewer
+		artifacts []engine.Artifact
+		wantState ReviewState
+		wantErr   bool
+	}{
+		{name: "pass", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusApproved}}, artifacts: artifact, wantState: ReviewStatePass},
+		{name: "fail", reviewer: pipelineReviewerStub{result: &review.ReviewResult{Status: review.StatusRejected, Summary: "sensitive reviewer context"}}, artifacts: artifact, wantState: ReviewStateFail, wantErr: true},
+		{name: "reviewer error", reviewer: pipelineReviewerStub{err: fmt.Errorf("sensitive reviewer detail")}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
+		{name: "nil result", reviewer: pipelineReviewerStub{}, artifacts: artifact, wantState: ReviewStateError, wantErr: true},
+		{name: "skipped", reviewer: pipelineReviewerStub{}, wantState: ReviewStateSkipped},
+		{name: "not configured", reviewer: nil, artifacts: artifact, wantState: ReviewStateNotConfigured, wantErr: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &Pipeline{reviewer: tc.reviewer}
+			_, outcomes, err := p.runReview(tc.artifacts)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("runReview error=%v, wantErr=%v", err, tc.wantErr)
+			}
+			if len(outcomes) != 1 || outcomes[0].State != tc.wantState {
+				t.Fatalf("unexpected review outcomes: %#v, want state %s", outcomes, tc.wantState)
+			}
+			if strings.Contains(outcomes[0].Summary, "sensitive") {
+				t.Fatal("review outcome leaked sensitive reviewer diagnostics")
+			}
+		})
+	}
+}
+
+func TestRunWriteArtifactsReportsAccurateStatuses(t *testing.T) {
+	artifact := []engine.Artifact{{Path: "nested/output.txt", Content: []byte("content")}}
+	tests := []struct {
+		name      string
+		configure func(*Pipeline, string)
+		artifacts []engine.Artifact
+		want      ArtifactWriteStatus
+		wantErr   bool
+	}{
+		{name: "dry run", configure: func(p *Pipeline, _ string) { p.dryRun = true }, artifacts: artifact, want: ArtifactWriteSkippedDryRun},
+		{name: "output directory absent", configure: func(*Pipeline, string) {}, artifacts: artifact, want: ArtifactWriteSkippedNoOutput},
+		{name: "empty output", configure: func(p *Pipeline, dir string) { p.outputDirValue = dir }, want: ArtifactWriteSkippedEmpty},
+		{name: "write error", configure: func(p *Pipeline, dir string) { p.outputDirValue = filepath.Join(dir, "file") }, artifacts: artifact, want: ArtifactWriteFailed, wantErr: true},
+		{name: "successful write", configure: func(p *Pipeline, dir string) { p.outputDirValue = dir }, artifacts: artifact, want: ArtifactWriteWritten},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if tc.name == "write error" {
+				if err := os.WriteFile(filepath.Join(dir, "file"), []byte("not a directory"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			p := &Pipeline{}
+			tc.configure(p, dir)
+			got, written, err := p.runWriteArtifacts(context.Background(), tc.artifacts)
+			if got != tc.want || (err != nil) != tc.wantErr {
+				t.Fatalf("runWriteArtifacts=(%s,%d,%v), want (%s, err=%v)", got, written, err, tc.want, tc.wantErr)
+			}
+			if tc.name == "successful write" && written != 1 {
+				t.Fatalf("expected one written artifact, got %d", written)
+			}
+			if tc.name != "successful write" && written != 0 {
+				t.Fatalf("expected zero written artifacts, got %d", written)
+			}
+			if tc.name == "successful write" {
+				if _, err := os.Stat(filepath.Join(dir, "nested", "output.txt")); err != nil {
+					t.Fatalf("expected artifact to be written: %v", err)
+				}
+			}
+		})
+	}
+}
+
+type generationLifecycleRecorder struct {
+	started   bool
+	failed    bool
+	complete  bool
+	generated bool
+	status    ArtifactWriteStatus
+}
+
+func (l *generationLifecycleRecorder) OnPipelineStart(string) {}
+func (l *generationLifecycleRecorder) OnPipelineComplete(string, int, string) {
+	l.complete = true
+}
+func (l *generationLifecycleRecorder) OnPipelineFailed(string, string)    { l.failed = true }
+func (l *generationLifecycleRecorder) OnArtifactGenerated(string, string) {}
+func (l *generationLifecycleRecorder) OnPipelineGenerated(_ string, _ int, status ArtifactWriteStatus, _ string) {
+	l.generated = true
+	l.status = status
+}
+
+func TestPipelineObserverDistinguishesGenerationFromWrittenCompletion(t *testing.T) {
+	obs := &generationLifecycleRecorder{}
+	p, err := New(Config{Observer: obs})
+	if err != nil {
+		t.Fatalf("create pipeline failed: %v", err)
+	}
+	result, err := p.Run("project: observer-generation\nmodules:\n  - name: core\n    path: ./core")
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if result.CompletionStatus != "generated" {
+		t.Fatalf("expected generation-only status, got %q", result.CompletionStatus)
+	}
+	if !obs.generated || obs.complete {
+		t.Fatalf("generation-only run must not emit complete observer event: %+v", obs)
+	}
+	if obs.status != ArtifactWriteSkippedNoOutput {
+		t.Fatalf("expected no-output status, got %s", obs.status)
+	}
+}
+
+func TestRunWriteArtifactsReportsPartialWriteCount(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "blocked"), []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	p := &Pipeline{outputDirValue: dir}
+	artifacts := []engine.Artifact{
+		{Path: "first.txt", Content: []byte("written")},
+		{Path: "blocked/second.txt", Content: []byte("cannot write")},
+	}
+	status, written, err := p.runWriteArtifacts(context.Background(), artifacts)
+	if err == nil || status != ArtifactWriteFailed {
+		t.Fatalf("expected failed write status, got status=%s err=%v", status, err)
+	}
+	if written != 1 {
+		t.Fatalf("expected exactly one partial write, got %d", written)
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "first.txt")); statErr != nil {
+		t.Fatalf("expected first artifact to exist: %v", statErr)
+	}
+}
+
+type pipelineReviewerSequence struct {
+	results []*review.ReviewResult
+	errors  []error
+	calls   int
+}
+
+func (r *pipelineReviewerSequence) Review(any) error { return nil }
+func (r *pipelineReviewerSequence) ReviewArtifact(name, content string, rules []string) (*review.ReviewResult, error) {
+	i := r.calls
+	r.calls++
+	if i < len(r.errors) && r.errors[i] != nil {
+		return nil, r.errors[i]
+	}
+	if i < len(r.results) {
+		return r.results[i], nil
+	}
+	return nil, nil
+}
+
+func TestRunReviewCollectsOutcomesAfterFailure(t *testing.T) {
+	reviewer := &pipelineReviewerSequence{
+		errors:  []error{fmt.Errorf("private reviewer detail"), nil},
+		results: []*review.ReviewResult{nil, {Status: review.StatusApproved}},
+	}
+	p := &Pipeline{reviewer: reviewer}
+	artifacts := []engine.Artifact{
+		{Path: "first.md", Content: []byte("first")},
+		{Path: "second.md", Content: []byte("second")},
+	}
+	reviews, outcomes, err := p.runReview(artifacts)
+	if err == nil {
+		t.Fatal("expected mandatory review to fail")
+	}
+	if reviewer.calls != 2 {
+		t.Fatalf("expected both artifacts to be reviewed, got %d calls", reviewer.calls)
+	}
+	if len(outcomes) != 2 || outcomes[0].State != ReviewStateError || outcomes[1].State != ReviewStatePass {
+		t.Fatalf("expected ERROR then PASS outcomes, got %#v", outcomes)
+	}
+	if len(reviews) != 1 {
+		t.Fatalf("expected only successful reviewer result to be retained, got %d", len(reviews))
+	}
+	if strings.Contains(err.Error(), "private reviewer detail") {
+		t.Fatal("review error leaked private reviewer diagnostics")
+	}
+}
+
+func TestRunContextCancellationStopsBeforeReviewAndArtifactWrites(t *testing.T) {
+	outputDir := t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	observer := &generationLifecycleRecorder{}
+	reviewer := &pipelineReviewerSequence{
+		results: []*review.ReviewResult{{Status: review.StatusApproved}},
+	}
+	p, err := New(Config{
+		OutputDir: outputDir,
+		Observer:  observer,
+		Reviewer:  reviewer,
+		Hooks: &Hooks{
+			AfterGenerate: []HookFunc{
+				func(*HookContext) error {
+					close(entered)
+					<-release
+					return nil
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	type runResult struct {
+		result *Result
+		err    error
+	}
+	done := make(chan runResult, 1)
+	go func() {
+		result, runErr := p.RunContext(ctx, "project: cancel-test\nmodules:\n  - name: core\n    path: ./core")
+		done <- runResult{result: result, err: runErr}
+	}()
+
+	<-entered
+	cancel()
+	close(release)
+
+	run := <-done
+	if !errors.Is(run.err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", run.err)
+	}
+	if run.result == nil {
+		t.Fatal("expected partial result to report cancellation status")
+	}
+	if run.result.CompletionStatus != "failed" || run.result.ArtifactWriteStatus != ArtifactWriteCanceled {
+		t.Fatalf("unexpected canceled result status: completion=%q write=%q", run.result.CompletionStatus, run.result.ArtifactWriteStatus)
+	}
+	if reviewer.calls != 0 {
+		t.Fatalf("review must not start after generation observes cancellation, got %d calls", reviewer.calls)
+	}
+	entries, err := os.ReadDir(outputDir)
+	if err != nil {
+		t.Fatalf("read output directory: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("canceled run must not write artifacts, found %v", entries)
+	}
+	if observer.complete || !observer.failed {
+		t.Fatalf("canceled run must emit failure, not completion: %+v", observer)
+	}
+}
+
+func TestRunContextCanceledBeforeStart(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	observer := &generationLifecycleRecorder{}
+	p, err := New(Config{Observer: observer})
+	if err != nil {
+		t.Fatalf("create pipeline: %v", err)
+	}
+
+	_, runErr := p.RunContext(ctx, "project: canceled")
+	if !errors.Is(runErr, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", runErr)
+	}
+	if observer.complete || !observer.failed {
+		t.Fatalf("canceled run must not emit successful completion: %+v", observer)
+	}
+}
+
+func TestRunWriteArtifactsStopsWhenContextCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	dir := t.TempDir()
+	p := &Pipeline{outputDirValue: dir}
+
+	status, written, err := p.runWriteArtifacts(ctx, []engine.Artifact{
+		{Path: "must-not-exist.txt", Content: []byte("content")},
+	})
+	if !errors.Is(err, context.Canceled) || status != ArtifactWriteCanceled || written != 0 {
+		t.Fatalf("unexpected canceled write: status=%s written=%d err=%v", status, written, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "must-not-exist.txt")); !os.IsNotExist(err) {
+		t.Fatalf("unexpected artifact on disk, stat err=%v", err)
+	}
 }
