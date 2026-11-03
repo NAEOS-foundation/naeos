@@ -103,7 +103,7 @@ func TestVerifyEvidenceSeparatesDigestSignatureAndSignerTrust(t *testing.T) {
 	badDigest := bundle
 	badDigest.EvidenceDigest = "sha256:invalid"
 	badDigestResult := VerifyEvidence(badDigest)
-	if badDigestResult.DigestIntegrity || !badDigestResult.SignatureValid || !badDigestResult.LedgerIntegrity {
-		t.Fatalf("digest mismatch must not be conflated with signature or ledger-chain status: %+v", badDigestResult)
+	if badDigestResult.DigestIntegrity || badDigestResult.SignatureValid || !badDigestResult.LedgerIntegrity {
+		t.Fatalf("digest mismatch must fail digest and signature checks without changing the embedded ledger-chain status: %+v", badDigestResult)
 	}
 }
