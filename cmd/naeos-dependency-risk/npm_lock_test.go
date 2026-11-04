@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"strconv"
 	"testing"
 )
 
@@ -33,13 +34,20 @@ func TestChecksumPresentInNPMLock(t *testing.T) {
 	}
 }
 
-func TestChecksumPresentInNPMLockFailsClosedOnV1(t *testing.T) {
-	record := dependencyReviewRecord{Ecosystem: "npm", Name: "wrangler", Version: "4.156.0", Checksum: "sha512-" + strings.Repeat("A", 86) + "=="}
+func TestChecksumPresentInNPMLockFailsClosedOnUnsupportedVersions(t *testing.T) {
+	checksum := "sha512-" + strings.Repeat("A", 86) + "=="
+	record := dependencyReviewRecord{Ecosystem: "npm", Name: "wrangler", Version: "4.156.0", Checksum: checksum}
 	path := filepath.Join(t.TempDir(), "package-lock.json")
-	if err := os.WriteFile(path, []byte(`{"lockfileVersion":1,"dependencies":{"wrangler":{"version":"4.156.0","integrity":"`+record.Checksum+`"}}}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if checksumPresentInNPMLock(path, record) {
-		t.Fatal("lockfile v1 must fail closed")
+
+	for _, version := range []int{0, 1, 4, -1} {
+		t.Run("lockfileVersion_"+strconv.Itoa(version), func(t *testing.T) {
+			lock := `{"lockfileVersion":` + strconv.Itoa(version) + `, "packages":{"node_modules/wrangler":{"name":"wrangler","version":"4.156.0","integrity":"` + checksum + `"}}}`
+			if err := os.WriteFile(path, []byte(lock), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if checksumPresentInNPMLock(path, record) {
+				t.Fatalf("lockfile version %d must fail closed", version)
+			}
+		})
 	}
 }
