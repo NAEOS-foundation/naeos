@@ -29,9 +29,7 @@ const decisions: Decision[] = [
   { id: "DEC-91A41", action: "production.deploy", agent: "release-agent-02", policy: "production/change-v4", status: "ESCALATE", age: "9 min ago", reason: "Production deployment requires explicit human approval.", capability: "production.deploy" },
 ];
 
-const CONTROL_PLANE_ENDPOINT =
-  process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
-  (process.env.NODE_ENV === "production" ? "https://naeos-control-plane-production.up.railway.app" : "");
+const CONTROL_PLANE_ENDPOINT = "";
 
 export default function ControlPlaneDashboard({ lang }: Props) {
   const id = lang === "id";
@@ -45,7 +43,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
     if (!CONTROL_PLANE_ENDPOINT) return;
     let cancelled = false;
     const endpoint = CONTROL_PLANE_ENDPOINT.endsWith("/") ? CONTROL_PLANE_ENDPOINT.slice(0, -1) : CONTROL_PLANE_ENDPOINT;
-    fetch(endpoint + "/api/control-plane/runs", { cache: "no-store" })
+    fetch("/api/control-plane/runs", { cache: "no-store" })
       .then(async (response) => { if (!response.ok) throw new Error("HTTP " + response.status); return (await response.json()) as RunsResponse; })
       .then((payload) => { if (!cancelled) setRuns(payload.runs ?? []); })
       .catch(() => { if (!cancelled) setRuns([]); });
@@ -56,7 +54,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
     if (!CONTROL_PLANE_ENDPOINT) return;
     let cancelled = false;
     setEvidenceState("loading");
-    fetch(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence`, { cache: "no-store" })
+    fetch("/api/control-plane/evidence", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return (await response.json()) as EvidenceResponse;
@@ -141,7 +139,7 @@ export default function ControlPlaneDashboard({ lang }: Props) {
                 <div><dt>Agent</dt><dd>{selected.agent}</dd></div><div><dt>Policy</dt><dd>{selected.policy}</dd></div><div><dt>Capability</dt><dd>{selected.capability}</dd></div><div><dt>Reason</dt><dd>{selected.reason}</dd></div>
               </dl>
               <div className="decision-chain"><span>Request</span><b>→</b><span>Policy</span><b>→</b><span>Decision</span><b>→</b><span>Evidence</span></div>
-              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" disabled={!selectedHasLiveEvidence || !CONTROL_PLANE_ENDPOINT} onClick={() => window.open(`${CONTROL_PLANE_ENDPOINT.replace(/\/$/, "")}/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>{id ? "Lihat Evidence" : "View Evidence"}</button><button type="button" className="btn btn-secondary btn-sm" disabled title={id ? "Navigasi policy belum tersedia" : "Policy navigation is not available yet"}>{id ? "Lihat Policy" : "View Policy"}</button></div>
+              <div className="decision-detail-actions"><button type="button" className="btn btn-secondary btn-sm" disabled={!selectedHasLiveEvidence || !CONTROL_PLANE_ENDPOINT} onClick={() => window.open(`/api/control-plane/evidence?decision_id=${encodeURIComponent(selected.id)}`, "_blank", "noopener,noreferrer")}>{id ? "Lihat Evidence" : "View Evidence"}</button><button type="button" className="btn btn-secondary btn-sm" disabled title={id ? "Navigasi policy belum tersedia" : "Policy navigation is not available yet"}>{id ? "Lihat Policy" : "View Policy"}</button></div>
             </div>
           </div>
           <div className="control-plane-run" id="control-plane-runs">
