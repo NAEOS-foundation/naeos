@@ -29,7 +29,7 @@ const decisions: Decision[] = [
   { id: "DEC-91A41", action: "production.deploy", agent: "release-agent-02", policy: "production/change-v4", status: "ESCALATE", age: "9 min ago", reason: "Production deployment requires explicit human approval.", capability: "production.deploy" },
 ];
 
-const CONTROL_PLANE_ENDPOINT = "";
+const CONTROL_PLANE_ENDPOINT = "/";
 
 export default function ControlPlaneDashboard({ lang }: Props) {
   const id = lang === "id";
@@ -42,7 +42,6 @@ export default function ControlPlaneDashboard({ lang }: Props) {
   useEffect(() => {
     if (!CONTROL_PLANE_ENDPOINT) return;
     let cancelled = false;
-    const endpoint = CONTROL_PLANE_ENDPOINT.endsWith("/") ? CONTROL_PLANE_ENDPOINT.slice(0, -1) : CONTROL_PLANE_ENDPOINT;
     fetch("/api/control-plane/runs", { cache: "no-store" })
       .then(async (response) => { if (!response.ok) throw new Error("HTTP " + response.status); return (await response.json()) as RunsResponse; })
       .then((payload) => { if (!cancelled) setRuns(payload.runs ?? []); })
