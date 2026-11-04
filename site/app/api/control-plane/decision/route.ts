@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-const CONTROL_PLANE_API_URL = "https://naeos-control-plane-production.up.railway.app";
+
 const MAX_REQUEST_BYTES = 8 * 1024;
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,9 @@ function errorResponse(message: string, status: number) {
   );
 }
 
-async function readBoundedBody(request: Request): Promise<
+async function readBoundedBody(
+  request: Request,
+): Promise<
   | { ok: true; body: string }
   | { ok: false; status: 400 | 413; message: string }
 > {
@@ -114,51 +116,13 @@ export async function POST(request: Request) {
 
   let token: string | undefined;
   let configuredUrl: string | undefined;
-};
-
-export async function POST(request: Request) {
-  const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-    return Response.json(
-      { message: "Request payload is too large." },
-      { status: 413, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  let body: unknown;
-  let rawBody: string;
-  try {
-    rawBody = await request.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
-      return Response.json(
-        { message: "Request payload is too large." },
-        { status: 413, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-    body = JSON.parse(rawBody);
-  } catch {
-    return Response.json(
-      { message: "A valid JSON request body is required." },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json(
-      { message: "A JSON object is required." },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  let token: string | undefined;
   try {
     const context = await getCloudflareContext({ async: true });
     const env = context.env as ControlPlaneEnv;
     token = env.NAEOS_CONTROLPLANE_API_TOKEN;
     configuredUrl = env.NAEOS_CONTROLPLANE_API_URL;
   } catch {
-    // Missing runtime context must fail closed; never fall back to a hard-coded
-    // production upstream or a browser-provided credential.
+    // Missing runtime context must fail closed; no hard-coded upstream fallback.
   }
 
   if (!token?.trim()) {
@@ -170,8 +134,9 @@ export async function POST(request: Request) {
     return errorResponse("Control Plane upstream is not configured correctly.", 503);
   }
 
+  let upstream: Response;
   try {
-    const upstream = await fetch(
+    upstream = await fetch(
       new URL("/api/control-plane/decision", upstreamUrl).toString(),
       {
         method: "POST",
@@ -185,41 +150,16 @@ export async function POST(request: Request) {
       },
     );
   } catch {
-    token = undefined;
-  }
-
-  if (!token?.trim()) {
-    return Response.json(
-      { message: "Control Plane server authentication is not configured." },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  try {
-    const upstream = await fetch(`${CONTROL_PLANE_API_URL}/api/control-plane/decision`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token.trim()}`,
-      },
-      body: rawBody,
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
-    const payload = await upstream.text();
-    return new Response(payload, {
-      status: upstream.status,
-      headers: {
-        "Content-Type": upstream.headers.get("content-type") ?? "application/json",
-        "Cache-Control": "no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch {
     return errorResponse("Control Plane upstream is unavailable.", 502);
-    return Response.json(
-      { message: "Control Plane upstream is unavailable." },
-      { status: 502, headers: { "Cache-Control": "no-store" } },
-    );
   }
+
+  const payload = await upstream.text();
+  return new Response(payload, {
+    status: upstream.status,
+    headers: {
+      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
