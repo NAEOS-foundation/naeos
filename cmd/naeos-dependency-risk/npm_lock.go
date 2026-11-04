@@ -31,7 +31,7 @@ func checksumPresentInNPMLock(lockPath string, record dependencyReviewRecord) bo
 			Integrity string `json:"integrity"`
 		} `json:"packages"`
 	}
-	if err := json.Unmarshal(data, &lock); err != nil || lock.LockfileVersion < 2 || lock.Packages == nil {
+	if err := json.Unmarshal(data, &lock); err != nil || (lock.LockfileVersion != 2 && lock.LockfileVersion != 3) || lock.Packages == nil {
 		return false
 	}
 	moduleSuffix := "node_modules/" + record.Name
