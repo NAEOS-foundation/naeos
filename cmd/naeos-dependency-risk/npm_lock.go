@@ -24,9 +24,9 @@ func checksumPresentInNPMLock(lockPath string, record dependencyReviewRecord) bo
 	}
 	var lock struct {
 		LockfileVersion int `json:"lockfileVersion"`
-		Packages map[string]struct {
-			Name string `json:"name"`
-			Version string `json:"version"`
+		Packages        map[string]struct {
+			Name      string `json:"name"`
+			Version   string `json:"version"`
 			Integrity string `json:"integrity"`
 		} `json:"packages"`
 	}
