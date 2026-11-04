@@ -6,8 +6,8 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
 	"testing"
 )
 
