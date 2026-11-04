@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -35,7 +36,7 @@ func checksumPresentInNPMLock(lockPath string, record dependencyReviewRecord) bo
 	}
 	moduleSuffix := "node_modules/" + record.Name
 	for packagePath, entry := range lock.Packages {
-		if !(packagePath == moduleSuffix || strings.HasSuffix(packagePath, "/"+moduleSuffix)) {
+		if packagePath != moduleSuffix && !strings.HasSuffix(packagePath, "/"+moduleSuffix) {
 			continue
 		}
 		if entry.Version != record.Version || (entry.Name != "" && entry.Name != record.Name) {
@@ -53,7 +54,7 @@ func checksumPresentInNPMLock(lockPath string, record dependencyReviewRecord) bo
 // npmLockPaths returns dependency lockfiles present in the working tree.
 // It is called only after the diff's base SHA has been supplied by CI.
 func npmLockPaths(base string) ([]string, error) {
-	out, err := exec.Command("git", "diff", "--name-only", base+"...HEAD").Output() //nolint:gosec // base is supplied by trusted CI
+	out, err := exec.CommandContext(context.Background(), "git", "diff", "--name-only", base+"...HEAD").Output() //nolint:gosec // base is supplied by trusted CI
 	if err != nil {
 		return nil, err
 	}
