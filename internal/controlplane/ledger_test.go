@@ -69,3 +69,37 @@ func TestLedgerPersistenceRejectsTampering(t *testing.T) {
 		t.Fatal("expected tampered ledger to be rejected")
 	}
 }
+
+
+func TestLedgerMetadataIsDefensivelyCopied(t *testing.T) {
+	metadata := map[string]string{"policy_id": "policy-a", "policy_version": "1"}
+	ledger := NewLedger()
+	returned := ledger.Append(LedgerEvent{
+		Timestamp: time.Now().UTC(), AgentID: "agent-1",
+		EventType: "AUTHORIZATION_DECISION", DecisionID: "DEC-1",
+		Decision: DecisionAllow, Metadata: metadata,
+	})
+
+	metadata["policy_id"] = "policy-mutated-input"
+	returned.Metadata["policy_version"] = "999"
+
+	canonical, ok := ledger.Decision("DEC-1")
+	if !ok {
+		t.Fatal("expected canonical decision")
+	}
+	if canonical.Metadata["policy_id"] != "policy-a" || canonical.Metadata["policy_version"] != "1" {
+		t.Fatalf("ledger metadata changed through input or Append result: %#v", canonical.Metadata)
+	}
+
+	events := ledger.Events()
+	events[0].Metadata["policy_id"] = "mutated-events"
+	agentEvents := ledger.EventsForAgent("agent-1")
+	agentEvents[0].Metadata["policy_id"] = "mutated-agent-events"
+	queryEvents := ledger.Query(map[string]string{"decision_id": "DEC-1"})
+	queryEvents[0].Metadata["policy_id"] = "mutated-query"
+
+	canonical, ok = ledger.Decision("DEC-1")
+	if !ok || canonical.Metadata["policy_id"] != "policy-a" {
+		t.Fatalf("ledger metadata changed through snapshot accessors: %#v", canonical.Metadata)
+	}
+}
