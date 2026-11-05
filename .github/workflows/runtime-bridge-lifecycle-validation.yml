@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "cmd/naeos/runtime_bridge_*.go"
+      - "cmd/naeos/evidence_verify_bundle*.go"
       - "internal/evidence/durable_runtime_event_ledger*.go"
       - ".github/workflows/runtime-bridge-lifecycle-validation.yml"
   workflow_dispatch:
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - "cmd/naeos/runtime_bridge_*.go"
+      - "cmd/naeos/evidence_verify_bundle*.go"
       - "internal/evidence/durable_runtime_event_ledger*.go"
       - ".github/workflows/runtime-bridge-lifecycle-validation.yml"
 
@@ -46,6 +48,14 @@ jobs:
           go test -count=1 -v ./cmd/naeos \
             -run '^(TestRuntimeBridgeAuthenticatedDurableEvidenceLifecycle|TestRuntimeBridgeEvidenceRecoveryRejectsOrphanAndMissingRecords|TestRuntimeBridgeSideEffectPersistsWhenEvidencePersistenceFails|TestRuntimeBridgeGatewayRejectsReplayBeforeSecondWrite)$' \
             2>&1 | tee "${RUNNER_TEMP}/runtime-bridge-validation/runtime-bridge-tests.log"
+      - name: Run EvidenceBundle verifier CLI adversarial tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/runtime-bridge-validation"
+          go test -count=1 -v ./cmd/naeos \
+            -run '^TestEvidenceVerifyBundleCommand' \
+            2>&1 | tee "${RUNNER_TEMP}/runtime-bridge-validation/evidence-verify-bundle-tests.log"
       - name: Publish validation scope
         if: always()
         run: |

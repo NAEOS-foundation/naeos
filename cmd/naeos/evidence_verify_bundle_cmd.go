@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -60,10 +59,9 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 				result = controlplane.VerifyEvidenceWithTrustedKey(bundle, publicKey)
 			}
 
-			digestIntegrity := !hasVerificationIssue(result.Issues, "evidence digest mismatch")
-			signatureValid := !hasVerificationIssue(result.Issues, "evidence signature invalid or missing")
-			signerTrusted := !hasVerificationIssue(result.Issues, "trusted evidence signing key is missing or invalid") &&
-				!hasVerificationIssue(result.Issues, "evidence signer is not the configured trust anchor")
+			digestIntegrity := result.DigestIntegrity
+			signatureValid := result.SignatureValid
+			signerTrusted := result.SignerTrusted
 
 			if outputFmt == "json" {
 				payload := map[string]interface{}{
@@ -108,13 +106,4 @@ func newEvidenceVerifyBundleCommand() *cobra.Command {
 	cmd.Flags().StringVar(&trustedPublicKeyFile, "trusted-public-key", "", "operator-trusted Ed25519 public key (raw, base64, or hex)")
 	cmd.Flags().StringVar(&outputFmt, "output", "table", "output format: table or json")
 	return cmd
-}
-
-func hasVerificationIssue(issues []string, fragment string) bool {
-	for _, issue := range issues {
-		if strings.Contains(issue, fragment) {
-			return true
-		}
-	}
-	return false
 }
