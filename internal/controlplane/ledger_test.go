@@ -70,7 +70,6 @@ func TestLedgerPersistenceRejectsTampering(t *testing.T) {
 	}
 }
 
-
 func TestLedgerMetadataIsDefensivelyCopied(t *testing.T) {
 	metadata := map[string]string{"policy_id": "policy-a", "policy_version": "1"}
 	ledger := NewLedger()

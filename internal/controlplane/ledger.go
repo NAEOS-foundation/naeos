@@ -294,7 +294,6 @@ func (l *Ledger) HasExecution(decisionID string) bool {
 	return false
 }
 
-
 // cloneLedgerEvent returns a value copy with independently owned metadata.
 func cloneLedgerEvent(event LedgerEvent) LedgerEvent {
 	if event.Metadata != nil {
