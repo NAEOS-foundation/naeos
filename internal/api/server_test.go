@@ -1392,7 +1392,6 @@ func (m *unhealthyDB) Rollback(version int) error                             { 
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
 
-
 func TestAuthEnabledWithoutJWTSecretFailsClosed(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: true})
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/specs", nil)

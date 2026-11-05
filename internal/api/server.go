@@ -553,14 +553,12 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 				s.writeError(w, http.StatusUnauthorized, "JWT authentication is not configured")
 				return
 			}
-			if s.jwt != nil {
-				claims, err := s.jwt.Validate(token)
-				if err != nil {
-					s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
-					return
-				}
-				userID = claims.Sub
+			claims, err := s.jwt.Validate(token)
+			if err != nil {
+				s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
+				return
 			}
+			userID = claims.Sub
 
 			// RBAC check
 			if s.authManager != nil {

@@ -154,7 +154,6 @@ func TestListenersReturnsCopy(t *testing.T) {
 	}
 }
 
-
 func TestValidateRejectsAuthWithoutJWTSecret(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Auth = Auth{Enabled: true}
