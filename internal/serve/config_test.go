@@ -42,8 +42,13 @@ listeners:
   - addr: ":9443"
     name: api
     api: true
+    tls_cert: "cert.pem"
+    tls_key: "key.pem"
   - addr: "127.0.0.1:9444"
     name: dashboard
+auth:
+  enabled: true
+  jwt_secret: "test-secret"
 shutdown_timeout: "45s"
 log_level: "debug"
 api_keys:
@@ -63,8 +68,11 @@ api_keys:
 	if cfg.Listeners[1].Addr != "127.0.0.1:9444" {
 		t.Fatalf("unexpected second listener: %s", cfg.Listeners[1].Addr)
 	}
-	if cfg.Listeners[0].IsTLS() {
-		t.Fatal("expected first listener to have TLS disabled")
+	if !cfg.Listeners[0].IsTLS() {
+		t.Fatal("expected first listener to have TLS enabled")
+	}
+	if !cfg.Auth.Enabled || cfg.Auth.JWTSecret != "test-secret" {
+		t.Fatal("expected secure auth configuration to be loaded")
 	}
 	if cfg.LogLevel != "debug" {
 		t.Fatalf("unexpected log level %s", cfg.LogLevel)
