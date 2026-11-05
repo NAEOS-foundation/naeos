@@ -393,6 +393,8 @@ func verifiedDependencyLockEvidence(record dependencyReviewRecord) bool {
 	case "go":
 		data, err := os.ReadFile("go.sum")
 		return err == nil && checksumPresentInGoSum(data, record)
+	case "npm":
+		return verifiedNPMDependencyLockEvidence(os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA"), record)
 	default:
 		// Ecosystems without an implemented lockfile verifier remain fail-closed.
 		return false
