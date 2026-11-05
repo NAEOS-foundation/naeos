@@ -277,3 +277,8 @@ jobs:
             - Added Indonesian blog post (if missing)
           branch: blog/${{ github.ref_name }}
           delete-branch: true
+
+  publish-container:
+    name: Publish Container
+    needs: release
+    uses: ./.github/workflows/release-goreleaser.yml

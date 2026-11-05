@@ -2,7 +2,9 @@
 
 ## Overview
 
-NAEOS plugins extend the platform by providing custom actions that can be executed during the generation pipeline or via the CLI. Plugins are Go packages that implement the `pluginhost.Plugin` interface and are compiled to WebAssembly (`GOOS=wasip1 GOARCH=wasm`) for sandboxed execution. In-process execution of native `.so` plugins is also supported via `pluginhost`.
+NAEOS plugins extend the platform by providing custom actions that can be executed during the generation pipeline or via the CLI. Plugins are Go packages that implement the `pluginhost.Plugin` interface and are compiled to WebAssembly (`GOOS=wasip1 GOARCH=wasm`) for sandboxed execution. In-process execution of native `.so` plugins is also supported via `pluginhost`; native plugins are trusted code, not sandboxed code.
+
+Only install native plugins from sources you trust. They execute inside the NAEOS process with its operating-system permissions. Plugin path checks, call limits, and execution timeouts do not isolate native code or guarantee that a timed-out plugin stops running. Use WASM for third-party plugins that require the WebAssembly sandbox boundary.
 
 The quickest way to start is the scaffold generator:
 

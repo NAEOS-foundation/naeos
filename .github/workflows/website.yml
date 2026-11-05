@@ -38,7 +38,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install dependencies
-        run: npm install --ignore-scripts --legacy-peer-deps
+        run: npm ci --ignore-scripts --legacy-peer-deps
       - name: Typecheck
         run: npm run typecheck
       - name: Verify social policy gate
