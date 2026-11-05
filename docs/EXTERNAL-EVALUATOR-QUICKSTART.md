@@ -66,7 +66,7 @@ Specification
   → Traceable Evidence
 ```
 
-A successful run does not by itself establish production readiness, customer adoption, enterprise compliance, or security of every external agent integration.
+A successful run does not by itself establish production readiness, customer adoption, enterprise compliance, or security of every external AI-agent integration.
 
 ## 5. Record the result
 
@@ -83,13 +83,15 @@ Then open an **External Validation Report** issue using the repository issue for
 
 ## 6. Independent verification
 
-For a canonical serialized `EvidenceBundle`, use:
+For a canonical serialized `EvidenceBundle`, obtain the Ed25519 public key from the operator's trust store or another independently controlled channel:
 
 ```bash
-naeos evidence verify-bundle --input-file evidence.json
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub
 ```
 
-P1.11 is read-only and independent of the live control plane. It verifies the evidence record; it does not re-run policy or execute an action.
+P1.11 is read-only and independent of the live control plane. It checks digest integrity, embedded signature validity, decision/execution bindings, and signer identity against the supplied trust anchor. Missing trust configuration fails closed.
+
+Record the trust-anchor source and verification output with the evaluation evidence. Do not use the public key copied from the EvidenceBundle as the trust anchor.
 
 ## 7. What makes a useful evaluation
 
