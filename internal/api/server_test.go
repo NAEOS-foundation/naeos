@@ -1391,3 +1391,20 @@ func (m *unhealthyDB) MigrateContext(ctx context.Context, migrations []database.
 func (m *unhealthyDB) Rollback(version int) error                             { return nil }
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
+
+
+func TestAuthEnabledWithoutJWTSecretFailsClosed(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: true})
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/specs", nil)
+	req.Header.Set("Authorization", "Bearer arbitrary-token")
+	w := httptest.NewRecorder()
+
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 when JWT secret is missing, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "JWT authentication is not configured") {
+		t.Fatalf("expected fail-closed error, got %q", w.Body.String())
+	}
+}

@@ -17,8 +17,8 @@ func TestDefaultConfig(t *testing.T) {
 	if len(cfg.Listeners) != 1 {
 		t.Fatalf("expected 1 listener, got %d", len(cfg.Listeners))
 	}
-	if cfg.Listeners[0].Addr != ":8080" {
-		t.Fatalf("expected :8080, got %s", cfg.Listeners[0].Addr)
+	if cfg.Listeners[0].Addr != "127.0.0.1:8080" {
+		t.Fatalf("expected 127.0.0.1:8080, got %s", cfg.Listeners[0].Addr)
 	}
 	if !cfg.Listeners[0].API {
 		t.Fatal("expected default listener to be an API listener")
@@ -151,5 +151,31 @@ func TestListenersReturnsCopy(t *testing.T) {
 	got[0].Addr = ":9999"
 	if srv.cfg.Listeners[0].Addr == ":9999" {
 		t.Fatal("Listeners should return a copy, not a live reference")
+	}
+}
+
+
+func TestValidateRejectsAuthWithoutJWTSecret(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Auth = Auth{Enabled: true}
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected validation error when auth is enabled without jwt_secret")
+	}
+}
+
+func TestValidateRejectsNonLoopbackAPIWithoutAuthAndTLS(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Listeners = []Listener{{Addr: ":8080", API: true}}
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected validation error for non-loopback API without auth and TLS")
+	}
+}
+
+func TestValidateAllowsNonLoopbackAPIWithAuthAndTLS(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Listeners = []Listener{{Addr: ":8443", API: true, TLSCert: "cert.pem", TLSKey: "key.pem"}}
+	cfg.Auth = Auth{Enabled: true, JWTSecret: "test-secret"}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected secure non-loopback API config to validate: %v", err)
 	}
 }
