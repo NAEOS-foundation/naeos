@@ -1405,5 +1405,22 @@ func TestAuthEnabledWithoutJWTSecretFailsClosed(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "JWT authentication is not configured") {
 		t.Fatalf("expected fail-closed error, got %q", w.Body.String())
+func TestHandlePipelinesRequiresTenantContextWhenAuthEnabled(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: true, JWTSecret: "test-secret"})
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/pipelines", nil)
+	w := httptest.NewRecorder()
+
+	s.handlePipelines(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when tenant context is missing, got %d", w.Code)
+	}
+}
+
+func TestRoutePermissionDynamicSchemaDeleteUsesConfigWrite(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	perm, ok := s.routePermission("/api/v1/schemas/customer/v1.0.0", http.MethodDelete)
+	if !ok || perm.Resource != auth.ResourceConfig || perm.Action != auth.ActionWrite {
+		t.Fatalf("expected config-write permission for schema delete, got %+v, ok=%v", perm, ok)
 	}
 }

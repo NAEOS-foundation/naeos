@@ -215,7 +215,8 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 		return result, LedgerEvent{}
 	}
 	canonical, ok := g.Ledger.Decision(result.DecisionID)
-	if !ok || canonical.Decision != DecisionAllow ||
+	if !ok || canonical.EventHash == "" || canonical.EventHash != hashLedgerEvent(canonical) ||
+		canonical.Decision != DecisionAllow ||
 		canonical.RequestID != result.RequestID ||
 		canonical.AgentID != req.AgentID ||
 		canonical.Capability != req.Action.Capability ||
