@@ -38,6 +38,7 @@ func TestLoadConfigValidYAML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "server.yaml")
 	content := `
+# Non-loopback API listener uses TLS and JWT authentication.
 listeners:
   - addr: ":9443"
     name: api
