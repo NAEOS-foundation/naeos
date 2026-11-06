@@ -24,15 +24,29 @@ type Tenant struct {
 type Workspace struct {
 	mu      sync.RWMutex
 	tenants map[string]*Tenant
+	members map[string]map[string]struct{}
 }
 
 func New() *Workspace {
 	return &Workspace{
 		tenants: make(map[string]*Tenant),
+		members: make(map[string]map[string]struct{}),
 	}
 }
 
 func (w *Workspace) CreateTenant(id, name, plan string) (*Tenant, error) {
+	return w.createTenant(id, name, plan, "")
+}
+
+// CreateTenantForUser creates a tenant and grants initial membership to its creator.
+func (w *Workspace) CreateTenantForUser(id, name, plan, userID string) (*Tenant, error) {
+	if userID == "" {
+		return nil, naeoserr.New(naeoserr.ErrValidation, "tenant creator user ID must not be empty")
+	}
+	return w.createTenant(id, name, plan, userID)
+}
+
+func (w *Workspace) createTenant(id, name, plan, creatorUserID string) (*Tenant, error) {
 	if id == "" {
 		return nil, naeoserr.New(naeoserr.ErrValidation, "tenant ID must not be empty")
 	}
@@ -58,6 +72,10 @@ func (w *Workspace) CreateTenant(id, name, plan string) (*Tenant, error) {
 	}
 
 	w.tenants[id] = t
+	w.members[id] = make(map[string]struct{})
+	if creatorUserID != "" {
+		w.members[id][creatorUserID] = struct{}{}
+	}
 	return t, nil
 }
 
@@ -118,4 +136,64 @@ func (w *Workspace) TenantCount() int {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return len(w.tenants)
+}
+
+
+// AddMember grants a user membership in an active tenant.
+func (w *Workspace) AddMember(tenantID, userID string) error {
+	if tenantID == "" || userID == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "tenant ID and user ID are required")
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	tenant, ok := w.tenants[tenantID]
+	if !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("tenant %q not found", tenantID))
+	}
+	if !tenant.Active {
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("tenant %q is deactivated", tenantID))
+	}
+	if w.members[tenantID] == nil {
+		w.members[tenantID] = make(map[string]struct{})
+	}
+	w.members[tenantID][userID] = struct{}{}
+	return nil
+}
+
+// IsMember reports whether userID belongs to an active tenant.
+func (w *Workspace) IsMember(tenantID, userID string) bool {
+	if tenantID == "" || userID == "" {
+		return false
+	}
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	tenant, ok := w.tenants[tenantID]
+	if !ok || !tenant.Active {
+		return false
+	}
+	_, ok = w.members[tenantID][userID]
+	return ok
+}
+
+// SingleTenantForUser returns a tenant only when the user has exactly one active membership.
+func (w *Workspace) SingleTenantForUser(userID string) (string, bool) {
+	if userID == "" {
+		return "", false
+	}
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	var found string
+	for tenantID, members := range w.members {
+		tenant, ok := w.tenants[tenantID]
+		if !ok || !tenant.Active {
+			continue
+		}
+		if _, member := members[userID]; member {
+			if found != "" {
+				return "", false
+			}
+			found = tenantID
+		}
+	}
+	return found, found != ""
 }

@@ -143,3 +143,29 @@ func TestOverwriteVersion(t *testing.T) {
 		t.Errorf("expected overwritten schema, got %s", entry.Schema)
 	}
 }
+
+
+func TestTenantScopedSchemaAccess(t *testing.T) {
+	r := New()
+	if err := r.RegisterForTenant("customer", "v1.0.0", "{\"type\":\"string\"}", "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RegisterForTenant("customer", "v2.0.0", "{\"type\":\"number\"}", "tenant-b"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.GetForTenant("customer", "v2.0.0", "tenant-a"); err == nil {
+		t.Fatal("tenant-a must not read tenant-b schema version")
+	}
+	if versions, err := r.VersionsForTenant("customer", "tenant-a"); err != nil || len(versions) != 1 || versions[0] != "v1.0.0" {
+		t.Fatalf("unexpected tenant-a versions: %v, err=%v", versions, err)
+	}
+	if names := r.ListForTenant("tenant-a"); len(names) != 1 || names[0] != "customer" {
+		t.Fatalf("unexpected tenant-a schema names: %v", names)
+	}
+	if err := r.DeleteForTenant("customer", "v2.0.0", "tenant-a"); err == nil {
+		t.Fatal("tenant-a must not delete tenant-b schema version")
+	}
+	if err := r.DeleteForTenant("customer", "v1.0.0", "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
+}
