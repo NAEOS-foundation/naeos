@@ -2054,8 +2054,6 @@ func (s *Server) handleSchemas(w http.ResponseWriter, r *http.Request) {
 				versions, err = s.schemas.VersionsForTenant(name, tenantFilter)
 			}
 			if s.Auth != nil && s.Auth.Enabled {
-				versions, err = s.schemas.VersionsForTenant(name, tenantFilter)
-			}
 			if err != nil {
 				continue
 			}
