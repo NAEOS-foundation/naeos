@@ -180,7 +180,6 @@ func (r *Registry) latest(versions map[string]*SchemaEntry) (*SchemaEntry, error
 	return versions[latest], nil
 }
 
-
 // GetForTenant retrieves a schema version only when it belongs to tenantID.
 func (r *Registry) GetForTenant(name, version, tenantID string) (*SchemaEntry, error) {
 	r.mu.RLock()

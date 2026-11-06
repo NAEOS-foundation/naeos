@@ -144,7 +144,6 @@ func TestOverwriteVersion(t *testing.T) {
 	}
 }
 
-
 func TestTenantScopedSchemaAccess(t *testing.T) {
 	r := New()
 	if err := r.RegisterForTenant("customer", "v1.0.0", "{\"type\":\"string\"}", "tenant-a"); err != nil {

@@ -138,7 +138,6 @@ func (w *Workspace) TenantCount() int {
 	return len(w.tenants)
 }
 
-
 // AddMember grants a user membership in an active tenant.
 func (w *Workspace) AddMember(tenantID, userID string) error {
 	if tenantID == "" || userID == "" {

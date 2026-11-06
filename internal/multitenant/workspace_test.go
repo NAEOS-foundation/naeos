@@ -101,7 +101,6 @@ func TestCreateTenantValidations(t *testing.T) {
 	}
 }
 
-
 func TestTenantMembershipAndSingleTenantResolution(t *testing.T) {
 	w := New()
 	if _, err := w.CreateTenantForUser("tenant-a", "Tenant A", "free", "user-1"); err != nil {

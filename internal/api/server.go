@@ -392,8 +392,6 @@ func defaultRoutePermissions() map[string]auth.RoutePermission {
 	}
 }
 
-
-
 // routePermission resolves static and dynamic API paths to a least-privilege RBAC requirement.
 func (s *Server) routePermission(path, method string) (auth.RoutePermission, bool) {
 	perm, ok := s.routePerms[path]
