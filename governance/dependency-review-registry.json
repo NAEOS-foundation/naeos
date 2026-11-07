@@ -30,6 +30,7 @@
       "checksum": "h1:zWNoFqq/lSuYQRim3dUXlXeA0IqwuZGicdG5ZTfY5j4=",
       "provenance": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.3.info",
       "purpose": "General-purpose compression and decompression library used as an indirect Go dependency; updated to remediate a reported vulnerability in the prior version",
+      "purpose": "General-purpose compression and decompression indirect Go dependency; reviewed for the exact version to remediate a reported vulnerability in the prior version",
       "domains": [
         "general",
         "runtime"
@@ -37,6 +38,7 @@
       "criticality": "low",
       "reviewer": "Bayu Priatno (NAEOS maintainer)",
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758#issuecomment-6705873688",
       "policy_version": "1.0.0",
       "schema_version": "1.0.0"
     }

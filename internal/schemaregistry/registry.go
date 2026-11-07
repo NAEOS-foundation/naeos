@@ -80,6 +80,7 @@ func (r *Registry) RegisterForTenant(name, version, schema, tenantID string) err
 		UpdatedAt: now,
 		TenantID:  tenantID,
 	}
+	r.schemas[tenantID][name][version] = &SchemaEntry{Name: name, Version: version, Schema: schema, CreatedAt: now, UpdatedAt: now, TenantID: tenantID}
 	return nil
 }
 
