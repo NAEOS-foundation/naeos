@@ -201,7 +201,9 @@ func TestTenantRegistryAllowsSameNameVersionAcrossTenantsAndReturnsCopies(t *tes
 		t.Fatalf("tenant-b entry unexpectedly changed: %+v", storedB)
 	}
 
-	if err := r.RegisterForTenant("shared", "v1.0.0", `{"type":"boolean"}`, "tenant-a"); err != nil { t.Fatal(err) }
+	if err := r.RegisterForTenant("shared", "v1.0.0", `{"type":"boolean"}`, "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
 	updatedA, err := r.GetForTenant("shared", "v1.0.0", "tenant-a")
 	if err != nil || updatedA.Schema != `{"type":"boolean"}` {
 		t.Fatalf("tenant-a update failed: entry=%+v err=%v", updatedA, err)
