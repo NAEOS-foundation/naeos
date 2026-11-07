@@ -34,7 +34,6 @@
         "general",
         "runtime"
       ],
-      "domains": ["general", "runtime"],
       "criticality": "low",
       "reviewer": "Bayu Priatno (NAEOS maintainer)",
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758#issuecomment-6705873688",
