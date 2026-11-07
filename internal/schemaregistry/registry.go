@@ -45,28 +45,42 @@ func (r *Registry) Register(name, version, schema string) error {
 
 // RegisterForTenant adds or updates a schema version within a tenant scope.
 func (r *Registry) RegisterForTenant(name, version, schema, tenantID string) error {
-	if name == "" { return naeoserr.New(naeoserr.ErrValidation, "schema name must not be empty") }
-	if version == "" { return naeoserr.New(naeoserr.ErrValidation, "schema version must not be empty") }
-	if schema == "" { return naeoserr.New(naeoserr.ErrValidation, "schema body must not be empty") }
-	if !semver.IsValid(version) { return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid semver version: %q", version)) }
+	if name == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "schema name must not be empty")
+	}
+	if version == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "schema version must not be empty")
+	}
+	if schema == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "schema body must not be empty")
+	}
+	if !semver.IsValid(version) {
+		return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid semver version: %q", version))
+	}
 
 	now := time.Now()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.schemas[tenantID] == nil { r.schemas[tenantID] = make(map[string]map[string]*SchemaEntry) }
-	if r.schemas[tenantID][name] == nil { r.schemas[tenantID][name] = make(map[string]*SchemaEntry) }
+	if r.schemas[tenantID] == nil {
+		r.schemas[tenantID] = make(map[string]map[string]*SchemaEntry)
+	}
+	if r.schemas[tenantID][name] == nil {
+		r.schemas[tenantID][name] = make(map[string]*SchemaEntry)
+	}
 	if existing := r.schemas[tenantID][name][version]; existing != nil {
 		existing.Schema = schema
 		existing.UpdatedAt = now
 		return nil
 	}
-	r.schemas[tenantID][name][version] = &SchemaEntry{Name:name, Version:version, Schema:schema, CreatedAt:now, UpdatedAt:now, TenantID:tenantID}
+	r.schemas[tenantID][name][version] = &SchemaEntry{Name: name, Version: version, Schema: schema, CreatedAt: now, UpdatedAt: now, TenantID: tenantID}
 	return nil
 }
 
 // cloneEntry ensures callers cannot mutate registry-owned state.
 func cloneEntry(entry *SchemaEntry) *SchemaEntry {
-	if entry == nil { return nil }
+	if entry == nil {
+		return nil
+	}
 	copy := *entry
 	return &copy
 }
@@ -80,17 +94,25 @@ func (r *Registry) getForTenant(name, version, tenantID string) (*SchemaEntry, e
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
 	if version == "" {
 		var latest *SchemaEntry
 		for _, entry := range versions {
-			if latest == nil || semver.Compare(entry.Version, latest.Version) > 0 { latest = entry }
+			if latest == nil || semver.Compare(entry.Version, latest.Version) > 0 {
+				latest = entry
+			}
 		}
-		if latest == nil { return nil, naeoserr.New(naeoserr.ErrNotFound, "no versions found") }
+		if latest == nil {
+			return nil, naeoserr.New(naeoserr.ErrNotFound, "no versions found")
+		}
 		return cloneEntry(latest), nil
 	}
 	entry, ok := versions[version]
-	if !ok { return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version)) }
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version))
+	}
 	return cloneEntry(entry), nil
 }
 
@@ -101,7 +123,9 @@ func (r *Registry) listForTenant(tenantID string) []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	names := make([]string, 0, len(r.schemas[tenantID]))
-	for name := range r.schemas[tenantID] { names = append(names, name) }
+	for name := range r.schemas[tenantID] {
+		names = append(names, name)
+	}
 	sort.Strings(names)
 	return names
 }
@@ -113,10 +137,14 @@ func (r *Registry) versionsForTenant(name, tenantID string) ([]string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
 	out := make([]string, 0, len(versions))
-	for v := range versions { out = append(out, v) }
-	sort.Slice(out, func(i,j int) bool { return semver.Compare(out[i],out[j]) > 0 })
+	for v := range versions {
+		out = append(out, v)
+	}
+	sort.Slice(out, func(i, j int) bool { return semver.Compare(out[i], out[j]) > 0 })
 	return out, nil
 }
 
@@ -127,11 +155,19 @@ func (r *Registry) deleteForTenant(name, version, tenantID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
-	if _, ok := versions[version]; !ok { return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version)) }
+	if !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
+	if _, ok := versions[version]; !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version))
+	}
 	delete(versions, version)
-	if len(versions) == 0 { delete(r.schemas[tenantID], name) }
-	if len(r.schemas[tenantID]) == 0 { delete(r.schemas, tenantID) }
+	if len(versions) == 0 {
+		delete(r.schemas[tenantID], name)
+	}
+	if len(r.schemas[tenantID]) == 0 {
+		delete(r.schemas, tenantID)
+	}
 	return nil
 }
 
