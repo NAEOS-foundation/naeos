@@ -173,23 +173,43 @@ func TestTenantRegistryAllowsSameNameVersionAcrossTenantsAndReturnsCopies(t *tes
 	r := New()
 	const schemaA = `{"type":"string"}`
 	const schemaB = `{"type":"number"}`
-	if err := r.RegisterForTenant("shared", "v1.0.0", schemaA, "tenant-a"); err != nil { t.Fatal(err) }
-	if err := r.RegisterForTenant("shared", "v1.0.0", schemaB, "tenant-b"); err != nil { t.Fatalf("tenants must independently register identical name/version: %v", err) }
+	if err := r.RegisterForTenant("shared", "v1.0.0", schemaA, "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RegisterForTenant("shared", "v1.0.0", schemaB, "tenant-b"); err != nil {
+		t.Fatalf("tenants must independently register identical name/version: %v", err)
+	}
 
 	entryA, err := r.GetForTenant("shared", "v1.0.0", "tenant-a")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	entryA.TenantID = "tenant-b"
 	entryA.Schema = schemaB
 	storedA, err := r.GetForTenant("shared", "v1.0.0", "tenant-a")
-	if err != nil { t.Fatal(err) }
-	if storedA.TenantID != "tenant-a" || storedA.Schema != schemaA { t.Fatalf("caller mutated stored tenant-a entry: %+v", storedA) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storedA.TenantID != "tenant-a" || storedA.Schema != schemaA {
+		t.Fatalf("caller mutated stored tenant-a entry: %+v", storedA)
+	}
 	storedB, err := r.GetForTenant("shared", "v1.0.0", "tenant-b")
-	if err != nil { t.Fatal(err) }
-	if storedB.TenantID != "tenant-b" || storedB.Schema != schemaB { t.Fatalf("tenant-b entry unexpectedly changed: %+v", storedB) }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if storedB.TenantID != "tenant-b" || storedB.Schema != schemaB {
+		t.Fatalf("tenant-b entry unexpectedly changed: %+v", storedB)
+	}
 
-	if err := r.RegisterForTenant("shared", "v1.0.0", `{"type":"boolean"}`, "tenant-a"); err != nil { t.Fatal(err) }
+	if err := r.RegisterForTenant("shared", "v1.0.0", `{"type":"boolean"}`, "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
 	updatedA, err := r.GetForTenant("shared", "v1.0.0", "tenant-a")
-	if err != nil || updatedA.Schema != `{"type":"boolean"}` { t.Fatalf("tenant-a update failed: entry=%+v err=%v", updatedA, err) }
+	if err != nil || updatedA.Schema != `{"type":"boolean"}` {
+		t.Fatalf("tenant-a update failed: entry=%+v err=%v", updatedA, err)
+	}
 	stillB, err := r.GetForTenant("shared", "v1.0.0", "tenant-b")
-	if err != nil || stillB.Schema != schemaB { t.Fatalf("tenant-a update leaked into tenant-b: entry=%+v err=%v", stillB, err) }
+	if err != nil || stillB.Schema != schemaB {
+		t.Fatalf("tenant-a update leaked into tenant-b: entry=%+v err=%v", stillB, err)
+	}
 }
