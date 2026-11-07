@@ -146,7 +146,7 @@ func safeRelativePath(value string) (string, error) {
 	return clean, nil
 }
 
-var requireLine = regexp.MustCompile(`^[+-]\s*([^\s]+)\s+v?([^\s]+)`)
+var requireLine = regexp.MustCompile(`^[+-]\s*([^\s]+)\s+(v[^\s]+)`)
 
 func deriveRequest() (requestFile, error) {
 	base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
