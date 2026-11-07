@@ -41,7 +41,7 @@ type dependencyReviewRecord struct {
 	SchemaVersion   string   `json:"schema_version"`
 }
 
-var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64})$`)
+var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64}|sha512-[A-Za-z0-9+/]{86}==)$`)
 var spdxTokens = regexp.MustCompile(`[()]|[^[:space:]()]+`)
 
 // parseDependencyReviewRegistry rejects malformed or incomplete records. The
@@ -73,7 +73,7 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 		if !strings.HasPrefix(record.UpstreamSource, "https://") || !strings.HasPrefix(record.Provenance, "https://") || !strings.HasPrefix(record.ReviewReference, "https://") {
 			return registry, fmt.Errorf("dependency review record %d has invalid upstream source", i)
 		}
-		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) {
+		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) || (strings.EqualFold(record.Ecosystem, "npm") && !strings.HasPrefix(record.Checksum, "sha512-")) {
 			return registry, fmt.Errorf("dependency review record %d has invalid SPDX license or checksum", i)
 		}
 		switch record.Criticality {
