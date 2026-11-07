@@ -825,9 +825,7 @@ The Policy Engine should perform:
 
 34. Policy Conflict Resolution
 
-NAEOS must define deterministic conflict resolution.
-
-Recommended initial rule:
+NAEOS resolves conflicting applicable policy outcomes using the following deterministic precedence:
 
 DENY
   >
@@ -835,9 +833,24 @@ REQUIRE_APPROVAL
   >
 ALLOW
 
-This provides a conservative default.
+The highest-precedence applicable outcome governs the request. This precedence is evaluated over the applicable policy set and must not depend on agent or LLM reasoning.
 
-However, the exact precedence model must eventually be formalized as an ADR before production use.
+REQUIRE_APPROVAL is not an authorization grant. Execution remains blocked until a valid approval is obtained, bound to the relevant decision and artifact where applicable, and revalidated at the consequential runtime enforcement boundary.
+
+34.1 Policy Evaluation Failure
+
+A policy evaluation failure is an internal evaluation state, not a fourth externally valid authorization decision.
+
+Examples include:
+
+- policy registry or policy service unavailable
+- applicable policy version cannot be resolved
+- required authorization context is malformed, missing, or insufficient
+- policy evaluator returns an error or cannot determine a result
+
+These conditions must remain distinguishable from an explicit DENY in internal diagnostics and audit metadata. They must not be converted into ALLOW, silently represented as DENY, or exposed as a fourth policy decision. For protected actions, the system must fail closed and prevent consequential side effects until authorization can be established.
+
+A failure record should preserve, where available, the request identifier, evaluation stage, policy references, evaluator version, error classification, timestamp, and correlation metadata. Sensitive context must not be copied into diagnostics without appropriate protection.
 
 ---
 
