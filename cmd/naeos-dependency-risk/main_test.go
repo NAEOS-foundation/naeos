@@ -5,6 +5,13 @@ package main
 
 import "testing"
 
+func TestRequireLinePreservesGoVersionPrefix(t *testing.T) {
+	match := requireLine.FindStringSubmatch("- github.com/klauspost/compress v1.18.5 // indirect")
+	if len(match) != 3 || match[2] != "v1.18.5" {
+		t.Fatalf("requireLine match = %#v, want version v1.18.5", match)
+	}
+}
+
 func TestSelectHighestRiskRequestRejectsNewDependency(t *testing.T) {
 	req := selectHighestRiskRequest(
 		map[string]string{"safe": "v1.2.3"},
