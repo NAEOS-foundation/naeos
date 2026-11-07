@@ -65,3 +65,17 @@ func TestSurfaceMixed(t *testing.T) {
 		t.Fatalf("expected mixed surface, got %s", got)
 	}
 }
+
+func TestClassifyDependencyRiskCLITestRequiresPolicyReview(t *testing.T) {
+	r := Classify(Request{
+		Paths:             []string{"cmd/naeos-dependency-risk/npm_lock_evidence_test.go"},
+		Additions:         170,
+		EvidenceAvailable: true,
+	})
+	if len(r.Domains) != 1 || r.Domains[0] != Policy {
+		t.Fatalf("expected dependency risk CLI test to map to policy domain, got domains=%+v", r.Domains)
+	}
+	if r.Criticality != High || r.Risk != Risk("high") || r.Decision != RequireReview {
+		t.Fatalf("expected high-risk change requiring review, got %+v", r)
+	}
+}
