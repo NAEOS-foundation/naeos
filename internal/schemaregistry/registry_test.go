@@ -187,7 +187,9 @@ func TestTenantRegistryAllowsSameNameVersionAcrossTenantsAndReturnsCopies(t *tes
 	entryA.TenantID = "tenant-b"
 	entryA.Schema = schemaB
 	storedA, err := r.GetForTenant("shared", "v1.0.0", "tenant-a")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if storedA.TenantID != "tenant-a" || storedA.Schema != schemaA {
 		t.Fatalf("caller mutated stored tenant-a entry: %+v", storedA)
 	}
