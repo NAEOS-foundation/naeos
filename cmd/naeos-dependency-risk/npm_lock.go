@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,6 +55,9 @@ func checksumPresentInNPMLock(lockPath string, record dependencyReviewRecord) bo
 // npmLockPaths returns dependency lockfiles present in the working tree.
 // It is called only after the diff's base SHA has been supplied by CI.
 func npmLockPaths(base string) ([]string, error) {
+	if strings.TrimSpace(base) == "" {
+		return nil, errors.New("base SHA is required")
+	}
 	out, err := exec.CommandContext(context.Background(), "git", "diff", "--name-only", base+"...HEAD").Output() //nolint:gosec // base is supplied by trusted CI
 	if err != nil {
 		return nil, err
