@@ -137,7 +137,9 @@ func (r *Registry) versionsForTenant(name, tenantID string) ([]string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
 	out := make([]string, 0, len(versions))
 	for v := range versions {
 		out = append(out, v)
