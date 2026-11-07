@@ -2,7 +2,7 @@ name: Control Plane Browser E2E
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/control-plane-auth-signed-off-20261012]
     paths:
       - "site/**"
       - "Dockerfile.control-plane"
@@ -63,7 +63,8 @@ jobs:
           node --test e2e/control-plane.e2e.test.mjs
 
   cloudflare-worker-preview-browser-e2e:
-    if: github.event_name == 'pull_request'
+    # Fork PRs cannot access Cloudflare credentials; local PR browser E2E still runs.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read

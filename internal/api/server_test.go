@@ -1391,3 +1391,23 @@ func (m *unhealthyDB) MigrateContext(ctx context.Context, migrations []database.
 func (m *unhealthyDB) Rollback(version int) error                             { return nil }
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
+
+func TestHandlePipelinesRequiresTenantContextWhenAuthEnabled(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: true, JWTSecret: "test-secret"})
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/pipelines", nil)
+	w := httptest.NewRecorder()
+
+	s.handlePipelines(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when tenant context is missing, got %d", w.Code)
+	}
+}
+
+func TestRoutePermissionDynamicSchemaDeleteUsesConfigWrite(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	perm, ok := s.routePermission("/api/v1/schemas/customer/v1.0.0", http.MethodDelete)
+	if !ok || perm.Resource != auth.ResourceConfig || perm.Action != auth.ActionWrite {
+		t.Fatalf("expected config-write permission for schema delete, got %+v, ok=%v", perm, ok)
+	}
+}
