@@ -72,6 +72,14 @@ func (r *Registry) RegisterForTenant(name, version, schema, tenantID string) err
 		existing.UpdatedAt = now
 		return nil
 	}
+	r.schemas[tenantID][name][version] = &SchemaEntry{
+		Name:      name,
+		Version:   version,
+		Schema:    schema,
+		CreatedAt: now,
+		UpdatedAt: now,
+		TenantID:  tenantID,
+	}
 	r.schemas[tenantID][name][version] = &SchemaEntry{Name: name, Version: version, Schema: schema, CreatedAt: now, UpdatedAt: now, TenantID: tenantID}
 	return nil
 }
@@ -117,7 +125,9 @@ func (r *Registry) getForTenant(name, version, tenantID string) (*SchemaEntry, e
 }
 
 // List returns schema names in the legacy, unscoped namespace.
-func (r *Registry) List() []string { return r.listForTenant("") }
+func (r *Registry) List() []string {
+	return r.listForTenant("")
+}
 
 func (r *Registry) listForTenant(tenantID string) []string {
 	r.mu.RLock()
@@ -131,7 +141,9 @@ func (r *Registry) listForTenant(tenantID string) []string {
 }
 
 // Versions returns all versions for a schema in the legacy, unscoped namespace.
-func (r *Registry) Versions(name string) ([]string, error) { return r.versionsForTenant(name, "") }
+func (r *Registry) Versions(name string) ([]string, error) {
+	return r.versionsForTenant(name, "")
+}
 
 func (r *Registry) versionsForTenant(name, tenantID string) ([]string, error) {
 	r.mu.RLock()
@@ -149,7 +161,9 @@ func (r *Registry) versionsForTenant(name, tenantID string) ([]string, error) {
 }
 
 // Delete removes a specific schema version from the legacy, unscoped namespace.
-func (r *Registry) Delete(name, version string) error { return r.deleteForTenant(name, version, "") }
+func (r *Registry) Delete(name, version string) error {
+	return r.deleteForTenant(name, version, "")
+}
 
 func (r *Registry) deleteForTenant(name, version, tenantID string) error {
 	r.mu.Lock()
@@ -177,7 +191,9 @@ func (r *Registry) GetForTenant(name, version, tenantID string) (*SchemaEntry, e
 }
 
 // ListForTenant returns schema names registered for tenantID.
-func (r *Registry) ListForTenant(tenantID string) []string { return r.listForTenant(tenantID) }
+func (r *Registry) ListForTenant(tenantID string) []string {
+	return r.listForTenant(tenantID)
+}
 
 // VersionsForTenant returns only versions belonging to tenantID.
 func (r *Registry) VersionsForTenant(name, tenantID string) ([]string, error) {
