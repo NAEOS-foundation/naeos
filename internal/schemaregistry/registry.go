@@ -94,7 +94,9 @@ func (r *Registry) getForTenant(name, version, tenantID string) (*SchemaEntry, e
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
+	if !ok {
+		return nil, naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
 	if version == "" {
 		var latest *SchemaEntry
 		for _, entry := range versions {
@@ -151,8 +153,12 @@ func (r *Registry) deleteForTenant(name, version, tenantID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	versions, ok := r.schemas[tenantID][name]
-	if !ok { return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name)) }
-	if _, ok := versions[version]; !ok { return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version)) }
+	if !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q not found", name))
+	}
+	if _, ok := versions[version]; !ok {
+		return naeoserr.New(naeoserr.ErrNotFound, fmt.Sprintf("schema %q version %q not found", name, version))
+	}
 	delete(versions, version)
 	if len(versions) == 0 {
 		delete(r.schemas[tenantID], name)
