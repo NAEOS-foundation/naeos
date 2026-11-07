@@ -50,10 +50,7 @@ func run() error {
 		return fmt.Errorf("get repository root: %w", err)
 	}
 
-	baseSHA, err := baseRevision(ctx, root)
-	if err != nil {
-		return err
-	}
+	baseSHA := baseRevision(ctx, root)
 	baseline := make(findingSet)
 	if baseSHA != "" {
 		baseDir, cleanup, err := addBaseWorktree(ctx, root, baseSHA)
@@ -90,19 +87,19 @@ func run() error {
 	return nil
 }
 
-func baseRevision(ctx context.Context, root string) (string, error) {
+func baseRevision(ctx context.Context, root string) string {
 	base := strings.TrimSpace(os.Getenv("BASE_SHA"))
 	if base != "" && strings.Trim(base, "0") != "" {
-		return base, nil
+		return base
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD^")
 	cmd.Dir = root
 	output, err := cmd.Output()
 	if err != nil {
-		return "", nil
+		return ""
 	}
-	return strings.TrimSpace(string(output)), nil
+	return strings.TrimSpace(string(output))
 }
 
 func addBaseWorktree(ctx context.Context, root, revision string) (string, func(), error) {
@@ -138,11 +135,7 @@ func scan(ctx context.Context, root string) (findingSet, error) {
 		return nil, err
 	}
 
-	scanner := strings.TrimSpace(os.Getenv("GOVULNCHECK"))
-	if scanner == "" {
-		scanner = "govulncheck"
-	}
-	cmd := exec.CommandContext(ctx, scanner, "-format=json", "./...")
+	cmd := exec.CommandContext(ctx, "govulncheck", "-format=json", "./...")
 	cmd.Dir = root
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

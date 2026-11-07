@@ -251,7 +251,8 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
-          GOVULNCHECK="$(go env GOPATH)/bin/govulncheck" go run ./cmd/naeos-govulncheck
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          go run ./cmd/naeos-govulncheck
 
   coverage:
     name: Coverage
