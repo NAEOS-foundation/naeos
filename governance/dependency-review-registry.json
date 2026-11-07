@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.0.0",
+  "records": [
+    {
+      "ecosystem": "go",
+      "name": "github.com/gowebpki/jcs",
+      "version": "1.0.2",
+      "upstream_source": "https://github.com/gowebpki/jcs",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:IY0Iv76ThSvocWinl2rphYmGLhMufS3ZD1giKqkI6ps=",
+      "provenance": "https://proxy.golang.org/github.com/gowebpki/jcs/@v/v1.0.2.mod",
+      "purpose": "JSON canonicalization (RFC 8785) for candidate digest in execution gateway authorization",
+      "domains": [
+        "general",
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "NAEOS maintainers",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/692",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
+      "name": "github.com/klauspost/compress",
+      "version": "v1.20.3",
+      "upstream_source": "https://github.com/klauspost/compress",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:zWNoFqq/lSuYQRim3dUXlXeA0IqwuZGicdG5ZTfY5j4=",
+      "provenance": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.3.info",
+      "purpose": "General-purpose compression and decompression library used as an indirect Go dependency; updated to remediate a reported vulnerability in the prior version",
+      "purpose": "General-purpose compression and decompression indirect Go dependency; reviewed for the exact version to remediate a reported vulnerability in the prior version",
+      "domains": [
+        "general",
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "Bayu Priatno (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758#issuecomment-6705873688",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    }
+  ]
+}

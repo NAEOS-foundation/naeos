@@ -174,6 +174,15 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if event.EventType == "EXECUTION_RECONCILED" {
+		return LedgerEvent{}
+	}
+	return l.appendLocked(event)
+}
+
+// appendLocked appends an event while the caller holds l.mu.
+func (l *Ledger) appendLocked(event LedgerEvent) LedgerEvent {
+	event = cloneLedgerEvent(event)
 	nextID := l.nextID + 1
 	if event.ID == "" {
 		event.ID = fmt.Sprintf("EVT-%05d", nextID)
@@ -197,7 +206,7 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 	l.nextID = nextID
 	l.events = append(l.events, event)
 	l.lastPersistenceError = nil
-	return event
+	return cloneLedgerEvent(event)
 }
 
 func hashLedgerEvent(event LedgerEvent) string {
@@ -211,7 +220,9 @@ func (l *Ledger) Events() []LedgerEvent {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	out := make([]LedgerEvent, len(l.events))
-	copy(out, l.events)
+	for i, event := range l.events {
+		out[i] = cloneLedgerEvent(event)
+	}
 	return out
 }
 
@@ -222,7 +233,7 @@ func (l *Ledger) EventsForAgent(agentID string) []LedgerEvent {
 	out := make([]LedgerEvent, 0)
 	for _, event := range l.events {
 		if event.AgentID == agentID {
-			out = append(out, event)
+			out = append(out, cloneLedgerEvent(event))
 		}
 	}
 	return out
@@ -263,59 +274,34 @@ func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	for i := len(l.events) - 1; i >= 0; i-- {
 		event := l.events[i]
 		if event.EventType == "AUTHORIZATION_DECISION" && event.DecisionID == decisionID {
-			return event, true
+			return cloneLedgerEvent(event), true
 		}
 	}
 	return LedgerEvent{}, false
 }
 
-// HasExecution reports whether a decision already produced an execution event.
+// HasExecution reports whether a decision has started execution or has a recorded execution outcome.
 func (l *Ledger) HasExecution(decisionID string) bool {
 	if l == nil || decisionID == "" {
 		return false
 	}
 	for _, event := range l.Events() {
-		if event.DecisionID == decisionID && event.EventType == "EXECUTION_ALLOWED" {
+		if event.DecisionID == decisionID &&
+			(event.EventType == "EXECUTION_STARTED" || event.EventType == "EXECUTION_ALLOWED" || event.EventType == "EXECUTION_UNKNOWN") {
 			return true
 		}
 	}
 	return false
 }
 
-// VerificationSummary is the result of a session verification against the evidence ledger.
-type VerificationSummary struct {
-	AgentID                string   `json:"agent_id"`
-	Result                 string   `json:"result"`
-	PolicyCompliant        bool     `json:"policy_compliant"`
-	Unauthorized           int      `json:"unauthorized"`
-	BlockedAttempts        int      `json:"blocked_attempts"`
-	UnauthorizedExecutions int      `json:"unauthorized_executions"`
-	Issues                 []string `json:"issues,omitempty"`
-}
-
-// VerifySession inspects ledger events for unauthorized or blocked actions.
-func (l *Ledger) VerifySession(agentID string) VerificationSummary {
-	summary := VerificationSummary{
-		AgentID:         agentID,
-		Result:          "PASS",
-		PolicyCompliant: true,
-		Issues:          []string{},
-	}
-	for _, event := range l.EventsForAgent(agentID) {
-		if event.Decision == DecisionDeny || event.EventType == "EXECUTION_BLOCKED" {
-			summary.BlockedAttempts++
-			summary.Issues = append(summary.Issues, fmt.Sprintf("blocked attempt %s for %s: %s", event.ID, event.Capability, event.Reason))
+// cloneLedgerEvent returns a value copy with independently owned metadata.
+func cloneLedgerEvent(event LedgerEvent) LedgerEvent {
+	if event.Metadata != nil {
+		metadata := make(map[string]string, len(event.Metadata))
+		for key, value := range event.Metadata {
+			metadata[key] = value
 		}
-		if event.EventType == "EXECUTION_ALLOWED" && event.Decision != DecisionAllow {
-			summary.Unauthorized++
-			summary.UnauthorizedExecutions++
-			summary.PolicyCompliant = false
-			summary.Result = "FAIL"
-			summary.Issues = append(summary.Issues, fmt.Sprintf("unauthorized execution evidence %s for %s", event.ID, event.Capability))
-		}
+		event.Metadata = metadata
 	}
-	if summary.PolicyCompliant && len(summary.Issues) == 0 {
-		summary.Issues = nil
-	}
-	return summary
+	return event
 }

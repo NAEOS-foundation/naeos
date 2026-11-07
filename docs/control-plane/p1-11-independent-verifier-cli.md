@@ -2,28 +2,33 @@
 
 ## Purpose
 
-P1.11 adds a verifier-facing CLI that validates a serialized control-plane EvidenceBundle without contacting the control plane, evaluating policy, or executing an action.
+P1.11 provides a read-only verifier for serialized control-plane EvidenceBundle records. It does not contact the control plane, evaluate policy, or execute actions.
 
 Trust boundary:
 
-EvidenceBundle JSON -> verifier -> PASS / FAIL
+EvidenceBundle JSON + operator trust anchor -> verifier -> PASS / FAIL
 
 ## Command
 
-`naeos evidence verify-bundle --input-file evidence.json`
+Supply the public key through an independent trusted channel; do not trust the key merely because it is embedded in the bundle.
 
-JSON output:
+```bash
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub
+naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub --output json
+```
 
-`naeos evidence verify-bundle --input-file evidence.json --output json`
-
-The command reads one canonical EvidenceBundle, validates decision identity and execution bindings, recomputes the SHA-256 evidence digest, and exits successfully only when verification returns PASS.
+The trusted public key accepts raw, base64, or hexadecimal Ed25519 key material. Missing or malformed trust configuration fails closed. The verifier compares the bundle's embedded public key with the operator-supplied trust anchor and verifies the signature.
 
 ## Verification semantics
 
-The verifier uses the canonical `controlplane.VerifyEvidence` contract. It does not re-run policy evaluation. This keeps verification separate from authorization and execution.
+The verifier uses `controlplane.VerifyEvidenceWithTrustedKey`. It reports three separate properties:
 
-A valid executed ALLOW bundle must contain matching execution evidence. A tampered artifact hash, decision identity, execution binding, or evidence digest produces FAIL and a non-zero process exit.
+- **Digest integrity:** recomputed canonical SHA-256 digest matches the bundle.
+- **Signature validity:** the embedded Ed25519 signature verifies over the digest.
+- **Signer trusted:** the embedded public key exactly matches the independently supplied trust anchor.
+
+Decision and execution bindings are checked independently. A valid self-contained signature is not sufficient for PASS if the signer is not trusted by the operator.
 
 ## Scope
 
-P1.11 is a local verifier for exported canonical evidence. It does not provide remote evidence retrieval, distributed trust, signature verification, or enterprise compliance attestation.
+P1.11 is a local verifier for exported canonical evidence. It does not provide remote evidence retrieval, trust-store distribution or rotation, production KMS, or enterprise compliance attestation.

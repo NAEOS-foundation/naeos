@@ -4,6 +4,9 @@
 package controlplane
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -93,13 +96,12 @@ func TestDecisionGateway_DeniesProtectedCapabilityAndRecordsBlock(t *testing.T) 
 	}
 }
 
-func TestDecisionGateway_DeniesWhenGatewayEvaluatorIsUnavailable(t *testing.T) {
+func TestDecisionGateway_ReportsIndeterminateWhenGatewayEvaluatorIsUnavailable(t *testing.T) {
 	var gateway *DecisionGateway
 	result := gateway.Authorize(AuthorizeRequest{})
-	if result.Status != DecisionDeny {
-		t.Fatalf("expected DENY for unavailable gateway, got %s", result.Status)
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("expected indeterminate result without decision ID, got %+v", result)
 	}
-
 }
 
 func TestDecisionGateway_RejectsForgedExecutionDecision(t *testing.T) {
@@ -359,7 +361,450 @@ func TestDecisionGateway_ExecuteAtomicSerializesPolicyChangeWithSideEffect(t *te
 		t.Fatalf("expected policy v2 after commit, got v%d", active.Version)
 	}
 	events := ledger.Query(map[string]string{"request_id": req.RequestID})
-	if len(events) != 2 || events[1].EventType != "EXECUTION_ALLOWED" {
-		t.Fatalf("expected authorization then execution evidence, got %#v", events)
+	if len(events) != 3 || events[1].EventType != "EXECUTION_STARTED" || events[2].EventType != "EXECUTION_ALLOWED" {
+		t.Fatalf("expected authorization, durable execution intent, and execution receipt, got %#v", events)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenSideEffectReturnsError(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-UNKNOWN-ERROR", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-UNKNOWN-ERROR", AgentID: "agent-unknown-error", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-UNKNOWN-ERROR", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:unknown-error"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		return fmt.Errorf("upstream timed out after submitting write")
+	})
+	if result.Status != DecisionUnknown || result.Reason != ReasonExecutionOutcomeUnknown {
+		t.Fatalf("expected UNKNOWN execution outcome, got %s (%s)", result.Status, result.Message)
+	}
+	if event.EventType != "EXECUTION_UNKNOWN" || event.Decision != DecisionUnknown {
+		t.Fatalf("expected EXECUTION_UNKNOWN evidence, got %+v", event)
+	}
+	verifier := NewSessionVerifier(ledger, NewEvaluator(store))
+	if got := verifier.VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+		t.Fatalf("expected session verification UNKNOWN pending reconciliation, got %+v", got)
+	}
+	if got := verifier.Verify(grant.AgentID, req.Action, grant, policy); got.Status != DecisionUnknown {
+		t.Fatalf("expected action verification UNKNOWN pending reconciliation, got %+v", got)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicPreservesUnknownWhenReceiptPersistenceFails(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-UNKNOWN-RECEIPT", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-UNKNOWN-RECEIPT", AgentID: "agent-unknown-receipt", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	root := t.TempDir()
+	ledgerPath := filepath.Join(root, "ledger.json")
+	ledger := NewLedger()
+	ledger.SetPersistencePath(ledgerPath)
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-UNKNOWN-RECEIPT", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:unknown-receipt"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sideEffectCommitted := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		// The execution intent has already been durably recorded. Simulate the
+		// persistence target becoming unavailable before the final receipt.
+		ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+		sideEffectCommitted = true
+		return nil
+	})
+	if !sideEffectCommitted {
+		t.Fatal("expected side effect to have run after its intent was persisted")
+	}
+	if result.Status != DecisionUnknown || result.Reason != ReasonExecutionOutcomeUnknown {
+		t.Fatalf("expected UNKNOWN after receipt persistence failure, got %s (%s)", result.Status, result.Message)
+	}
+	if event.ID != "" {
+		t.Fatalf("expected no durable receipt to be returned, got %+v", event)
+	}
+	if got := ledger.PersistenceError(); got == nil {
+		t.Fatal("expected ledger persistence error to be observable")
+	}
+
+	// The same authorization must not be replayed while its start remains unresolved.
+	retryCalled := false
+	retry, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+		retryCalled = true
+		return nil
+	})
+	if retryCalled || retry.Status != DecisionDeny {
+		t.Fatalf("expected unresolved execution replay to be blocked, called=%t status=%s", retryCalled, retry.Status)
+	}
+
+	// Reload from the last durable snapshot: the unmatched intent must survive
+	// restart and prevent a false PASS even though the final receipt is absent.
+	reloaded, err := LoadLedger(ledgerPath)
+	if err != nil {
+		t.Fatalf("load durable ledger snapshot: %v", err)
+	}
+	verifyUnknown := func(candidate *Ledger) {
+		t.Helper()
+		if got := NewSessionVerifier(candidate, NewEvaluator(store)).VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+			t.Fatalf("expected session verifier to preserve UNKNOWN, got %+v", got)
+		}
+		if got := candidate.VerifySession(grant.AgentID); got.Result != "UNKNOWN" || got.PolicyCompliant {
+			t.Fatalf("expected ledger verifier to preserve UNKNOWN, got %+v", got)
+		}
+		if got := NewSessionVerifier(candidate, NewEvaluator(store)).Verify(grant.AgentID, req.Action, grant, policy); got.Status != DecisionUnknown {
+			t.Fatalf("expected action verifier to preserve UNKNOWN, got %+v", got)
+		}
+	}
+	verifyUnknown(reloaded)
+
+	// A later successful append must carry the unmatched intent forward, not
+	// erase uncertainty merely because the ledger can write again.
+	ledger.SetPersistencePath(ledgerPath)
+	if event := ledger.Append(LedgerEvent{Timestamp: now.Add(time.Second), AgentID: grant.AgentID, EventType: "RECONCILIATION_CHECKPOINT"}); event.ID == "" {
+		t.Fatal("expected subsequent ledger append to succeed")
+	}
+	reloaded, err = LoadLedger(ledgerPath)
+	if err != nil {
+		t.Fatalf("reload ledger after subsequent append: %v", err)
+	}
+	verifyUnknown(reloaded)
+}
+
+func TestDecisionGateway_ExecuteAtomicDoesNotRunSideEffectWithoutDurableIntent(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{ID: "POLICY-INTENT-FAIL", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.write"}}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{GrantID: "GRANT-INTENT-FAIL", AgentID: "agent-intent-fail", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-INTENT-FAIL", AgentID: grant.AgentID, Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:intent-fail"}, Grant: grant, Policy: policy, Timestamp: now}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected ALLOW authorization, got %s (%s)", authorized.Status, authorized.Message)
+	}
+
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+	sideEffectCalled := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		sideEffectCalled = true
+		return nil
+	})
+	if sideEffectCalled {
+		t.Fatal("side effect must not run when its execution intent cannot be durably recorded")
+	}
+	if result.Status != DecisionDeny || event.ID != "" {
+		t.Fatalf("expected fail-closed DENY without a receipt, got status=%s event=%+v", result.Status, event)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicRevalidatesGrantBeforeSideEffect(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Grant)
+		reason DecisionReason
+	}{
+		{
+			name:   "revoked after authorization",
+			mutate: func(g *Grant) { g.Revoked = true },
+			reason: ReasonDeniedByGrant,
+		},
+		{
+			name:   "agent binding changed after authorization",
+			mutate: func(g *Grant) { g.AgentID = "other-agent" },
+			reason: ReasonDeniedAgentMismatch,
+		},
+		{
+			name:   "capability removed after authorization",
+			mutate: func(g *Grant) { g.Capabilities = []Capability{"repository.read"} },
+			reason: ReasonDeniedByScope,
+		},
+		{
+			name:   "policy binding changed after authorization",
+			mutate: func(g *Grant) { g.PolicyID = "OTHER-POLICY" },
+			reason: ReasonDeniedPolicyMismatch,
+		},
+		{
+			name:   "policy version changed after authorization",
+			mutate: func(g *Grant) { g.PolicyVersion = 99 },
+			reason: ReasonDeniedVersionMismatch,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			now := time.Now().UTC()
+			store := NewPolicyStore()
+			policy := &Policy{
+				ID: "POLICY-GRANT-REVALIDATION", Version: 1, Status: "active",
+				AllowedCapabilities: []Capability{"repository.write"},
+			}
+			if err := store.Set(policy); err != nil {
+				t.Fatal(err)
+			}
+			grant := &Grant{
+				GrantID: "GRANT-REVALIDATION", AgentID: "agent-revalidation",
+				PolicyID: policy.ID, PolicyVersion: policy.Version,
+				Capabilities: []Capability{"repository.write"}, Status: "active",
+				CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+			}
+			ledger := NewLedger()
+			gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+			req := AuthorizeRequest{
+				RequestID: "REQ-GRANT-REVALIDATION", AgentID: "agent-revalidation",
+				Action: Action{AgentID: "agent-revalidation", Capability: "repository.write", ArtifactHash: "sha256:grant-revalidation"},
+				Grant:  grant, Policy: policy, Timestamp: now,
+			}
+			authorized := gateway.Authorize(req)
+			if authorized.Status != DecisionAllow {
+				t.Fatalf("expected initial ALLOW, got %s (%s)", authorized.Status, authorized.Message)
+			}
+			tc.mutate(grant)
+
+			called := false
+			result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+				called = true
+				return nil
+			})
+			if called {
+				t.Fatal("side effect must not run after grant validity or binding changes")
+			}
+			if result.Status != DecisionDeny || result.Reason != tc.reason {
+				t.Fatalf("expected DENY (%s), got %s (%s)", tc.reason, result.Status, result.Reason)
+			}
+			if event.EventType != "EXECUTION_BLOCKED" {
+				t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+			}
+		})
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicRejectsGrantThatExpiresAfterAuthorization(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{
+		ID: "POLICY-GRANT-EXPIRY", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-GRANT-EXPIRY", AgentID: "agent-grant-expiry",
+		PolicyID: policy.ID, PolicyVersion: policy.Version,
+		Capabilities: []Capability{"repository.write"}, Status: "active",
+		CreatedAt: now, ExpiresAt: now.Add(30 * time.Millisecond),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-GRANT-EXPIRY", AgentID: "agent-grant-expiry",
+		Action: Action{AgentID: "agent-grant-expiry", Capability: "repository.write", ArtifactHash: "sha256:grant-expiry"},
+		Grant:  grant, Policy: policy, Timestamp: now,
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected initial ALLOW, got %s (%s)", authorized.Status, authorized.Message)
+	}
+	time.Sleep(time.Until(grant.ExpiresAt) + 10*time.Millisecond)
+
+	called := false
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called {
+		t.Fatal("side effect must not run after the grant expires")
+	}
+	if result.Status != DecisionDeny || result.Reason != ReasonDeniedByGrant {
+		t.Fatalf("expected expired-grant DENY, got %s (%s)", result.Status, result.Reason)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicRejectsExpiredApprovalDespiteStaleRequestTimestamp(t *testing.T) {
+	now := time.Now().UTC()
+	store := NewPolicyStore()
+	policy := &Policy{
+		ID: "POLICY-APPROVAL-EXPIRY", Version: 1, Status: "active",
+		ApprovalRequired:    []Capability{"repository.write"},
+		AllowedCapabilities: []Capability{"repository.write"},
+	}
+	if err := store.Set(policy); err != nil {
+		t.Fatal(err)
+	}
+	grant := &Grant{
+		GrantID: "GRANT-APPROVAL-EXPIRY", AgentID: "agent-approval-expiry",
+		PolicyID: policy.ID, PolicyVersion: policy.Version,
+		Capabilities: []Capability{"repository.write"}, Status: "active",
+		CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-APPROVAL-EXPIRY", AgentID: grant.AgentID,
+		Action: Action{AgentID: grant.AgentID, Capability: "repository.write", ArtifactHash: "sha256:approval-expiry"},
+		Grant:  grant, Policy: policy, Timestamp: now,
+	}
+	pending := gateway.Authorize(req)
+	if pending.Status != DecisionPending {
+		t.Fatalf("expected pending authorization, got %s (%s)", pending.Status, pending.Message)
+	}
+	expiresAt := time.Now().UTC().Add(time.Second)
+	approval, err := gateway.RequestApproval(pending, "reviewer-expiry", expiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gateway.Approve(approval.ID, "approved before expiry", "sha256:approval-expiry", time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Until(expiresAt) + 10*time.Millisecond)
+
+	// A caller-supplied historical timestamp must not make an expired approval valid.
+	req.DecisionID = pending.DecisionID
+	req.ApprovalID = approval.ID
+	called := false
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionAllow {
+		t.Fatalf("expected historical authorization evaluation to produce ALLOW before execution boundary, got %s (%s)", authorized.Status, authorized.Message)
+	}
+	result, event := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called {
+		t.Fatal("side effect must not run with an approval that has expired at execution time")
+	}
+	if result.Status != DecisionDeny {
+		t.Fatalf("expected expired approval DENY, got %s (%s)", result.Status, result.Message)
+	}
+	if event.EventType != "EXECUTION_BLOCKED" {
+		t.Fatalf("expected EXECUTION_BLOCKED, got %s", event.EventType)
+	}
+}
+
+func TestDecisionGateway_EvaluationFailureIsNotAuthorizationDecisionAndCannotExecute(t *testing.T) {
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-INDETERMINATE", AgentID: "agent-1",
+		Action:    Action{AgentID: "agent-1", Capability: "repository.write"},
+		Grant:     &Grant{GrantID: "GRANT-1", AgentID: "agent-1", PolicyID: "missing", PolicyVersion: 1, Capabilities: []Capability{"repository.write"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)},
+		Policy:    &Policy{ID: "missing", Version: 1, Status: "active"},
+		Timestamp: time.Now().UTC(),
+	}
+	result, event := gateway.Execute(req)
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("expected indeterminate evaluation without decision ID, got %+v", result)
+	}
+	if event.ID != "" {
+		t.Fatalf("evaluation failure must not produce an execution event, got %+v", event)
+	}
+	events := ledger.Events()
+	if len(events) != 1 || events[0].EventType != "POLICY_EVALUATION_FAILED" || events[0].Decision != "" || events[0].DecisionID != "" {
+		t.Fatalf("evaluation failure must be recorded separately from a decision: %+v", events)
+	}
+}
+
+func TestDecisionGateway_DoesNotAuthorizeWhenDecisionLedgerPersistenceFails(t *testing.T) {
+	store := NewPolicyStore()
+	ledger := NewLedger()
+	root := t.TempDir()
+	blocker := filepath.Join(root, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("block"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ledger.SetPersistencePath(filepath.Join(blocker, "ledger.json"))
+	policy := &Policy{ID: "POLICY-DURABLE", Version: 1, Status: "active", AllowedCapabilities: []Capability{"repository.read"}}
+	grant := &Grant{GrantID: "GRANT-DURABLE", AgentID: "agent-1", PolicyID: policy.ID, PolicyVersion: 1, Capabilities: []Capability{"repository.read"}, Status: "active", ExpiresAt: time.Now().Add(time.Hour)}
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	result := gateway.Authorize(AuthorizeRequest{RequestID: "REQ-DURABLE", AgentID: "agent-1", Action: Action{AgentID: "agent-1", Capability: "repository.read"}, Grant: grant, Policy: policy, Timestamp: time.Now().UTC()})
+	if result.Status != DecisionIndeterminate || result.DecisionID != "" {
+		t.Fatalf("failed ledger commit must not return an authorization decision: %+v", result)
+	}
+	if len(ledger.Events()) != 0 {
+		t.Fatalf("failed ledger commit must remain invisible: %+v", ledger.Events())
+	}
+}
+
+func TestDecisionGateway_ExecuteAtomicDoesNotRunForIndeterminateEvaluation(t *testing.T) {
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(), ledger)
+	req := AuthorizeRequest{RequestID: "REQ-ATOMIC-INDETERMINATE", AgentID: "agent-1", Action: Action{AgentID: "agent-1", Capability: "repository.write"}}
+	result := DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed}
+	called := false
+	got, event := gateway.ExecuteAtomic(req, result, func() error { called = true; return nil })
+	if called || got.Status != DecisionIndeterminate || event.ID != "" {
+		t.Fatalf("indeterminate evaluation must not execute or create a decision-shaped event: called=%t result=%+v event=%+v", called, got, event)
+	}
+}
+
+func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL-GATEWAY", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-CANONICAL-GATEWAY", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	ledger := NewLedger()
+	gateway := NewDecisionGateway(NewEvaluator(store), ledger)
+	req := AuthorizeRequest{
+		RequestID: "REQ-FORGED-POLICY", AgentID: "agent-forged",
+		Action: Action{AgentID: "agent-forged", Capability: "production.delete", ArtifactHash: "sha256:forged"},
+		Grant:  grant, Policy: forged, Timestamp: time.Now().UTC(),
+	}
+	authorized := gateway.Authorize(req)
+	if authorized.Status != DecisionDeny || authorized.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged policy contents must not override the canonical snapshot; expected DENY, got %+v", authorized)
+	}
+	called := false
+	result, _ := gateway.ExecuteAtomic(req, authorized, func() error {
+		called = true
+		return nil
+	})
+	if called || result.Status != DecisionDeny {
+		t.Fatalf("forged policy must not reach side effect, called=%v result=%+v", called, result)
+	}
+	events := ledger.Query(map[string]string{"request_id": req.RequestID})
+	if len(events) != 2 ||
+		events[0].EventType != "AUTHORIZATION_DECISION" || events[0].Decision != DecisionDeny ||
+		events[1].EventType != "EXECUTION_BLOCKED" || events[1].Decision != DecisionDeny {
+		t.Fatalf("expected canonical DENY and blocked-execution evidence, got %+v", events)
 	}
 }

@@ -57,8 +57,9 @@ func (s *controlPlaneSecurity) originAllowed(origin string) bool {
 }
 
 func (s *controlPlaneSecurity) authorize(r *http.Request) bool {
+	// Fail closed: absent server-side configuration must never disable auth.
 	if s.token == "" {
-		return true
+		return false
 	}
 	const prefix = "Bearer "
 	return strings.HasPrefix(r.Header.Get("Authorization"), prefix) &&
