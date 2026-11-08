@@ -23,6 +23,42 @@
     },
     {
       "ecosystem": "go",
+      "name": "github.com/nats-io/nats.go",
+      "version": "v1.55.0",
+      "upstream_source": "https://github.com/nats-io/nats.go",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:Ng8QKHdvdHIWoaiq0+d/aH1BWkxvcJxWJ0Y/9BPKx3M=",
+      "provenance": "https://proxy.golang.org/github.com/nats-io/nats.go/@v/v1.55.0.info",
+      "purpose": "NATS Go client used by internal/broker/nats_real.go for broker connections, publishing, and subscriptions",
+      "domains": [
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/742#pullrequestreview-5818334644",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
+      "name": "github.com/nats-io/nkeys",
+      "version": "v0.4.16",
+      "upstream_source": "https://github.com/nats-io/nkeys",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:rd5oAuLOb8mnAycB0xleuEBNS1pVVnN0fv/FF34Eypg=",
+      "provenance": "https://proxy.golang.org/github.com/nats-io/nkeys/@v/v0.4.16.info",
+      "purpose": "Indirect NATS dependency providing the key handling functionality used by github.com/nats-io/nats.go",
+      "domains": [
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/742#pullrequestreview-5818334644",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
       "name": "github.com/klauspost/compress",
       "version": "v1.20.3",
       "upstream_source": "https://github.com/klauspost/compress",
