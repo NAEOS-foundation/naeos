@@ -384,11 +384,53 @@ func defaultRoutePermissions() map[string]auth.RoutePermission {
 		"/api/v1/ai/compile/stream":    {Resource: auth.ResourceAI, Action: auth.ActionWrite},
 		"/api/v1/config/schema":        {Resource: auth.ResourceConfig, Action: auth.ActionRead},
 		"/api/v1/schemas":              {Resource: auth.ResourceConfig, Action: auth.ActionRead},
+		"/api/v1/pipelines":            {Resource: auth.ResourcePipeline, Action: auth.ActionRead},
 		"/api/v1/version":              {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 		"/api/v1/health":               {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 		"/api/v1/tenants":              {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 		"/api/v1/tenants/":             {Resource: auth.ResourceAdmin, Action: auth.ActionRead},
 	}
+}
+
+// routePermission resolves static and dynamic API paths to a least-privilege RBAC requirement.
+func (s *Server) routePermission(path, method string) (auth.RoutePermission, bool) {
+	perm, ok := s.routePerms[path]
+	if !ok {
+		switch {
+		case strings.HasPrefix(path, "/api/v1/schemas/"):
+			perm = auth.RoutePermission{Resource: auth.ResourceConfig, Action: auth.ActionRead}
+			ok = true
+		case strings.HasPrefix(path, "/api/v1/profiles/"):
+			perm = auth.RoutePermission{Resource: auth.ResourceProfile, Action: auth.ActionRead}
+			ok = true
+		case strings.HasPrefix(path, "/api/v1/plugins/"):
+			perm = auth.RoutePermission{Resource: auth.ResourcePlugin, Action: auth.ActionRead}
+			ok = true
+		case strings.HasPrefix(path, "/api/v1/tenants/"):
+			perm = auth.RoutePermission{Resource: auth.ResourceAdmin, Action: auth.ActionAdmin}
+			ok = true
+		}
+	}
+	if !ok {
+		return auth.RoutePermission{}, false
+	}
+	if perm.Resource == auth.ResourceAdmin {
+		perm.Action = auth.ActionAdmin
+		return perm, true
+	}
+	switch method {
+	case http.MethodGet, http.MethodHead:
+		perm.Action = auth.ActionRead
+	case http.MethodPost, http.MethodPut, http.MethodPatch:
+		perm.Action = auth.ActionWrite
+	case http.MethodDelete:
+		if perm.Resource == auth.ResourceConfig {
+			perm.Action = auth.ActionWrite
+		} else {
+			perm.Action = auth.ActionDelete
+		}
+	}
+	return perm, true
 }
 
 // SetWebSocketServer attaches a WebSocket server to the API server.
@@ -549,32 +591,33 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 				return
 			}
 			token = strings.TrimPrefix(token, "Bearer ")
-			if s.jwt != nil {
-				claims, err := s.jwt.Validate(token)
-				if err != nil {
-					s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
-					return
-				}
-				userID = claims.Sub
+			if s.jwt == nil {
+				s.writeError(w, http.StatusUnauthorized, "JWT authentication is not configured")
+				return
 			}
+			claims, err := s.jwt.Validate(token)
+			if err != nil {
+				s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
+				return
+			}
+			userID = claims.Sub
 
 			// RBAC check
 			if s.authManager != nil {
-				perm, ok := s.routePerms[r.URL.Path]
-				if ok {
-					var user *auth.User
-					if userID != "" {
-						var exists bool
-						user, exists = s.authManager.GetUser(userID)
-						if !exists {
-							s.writeError(w, http.StatusForbidden, "user not found")
-							return
-						}
-					}
-					if user != nil && !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
-						s.writeError(w, http.StatusForbidden, "insufficient permissions")
+				perm, ok := s.routePermission(r.URL.Path, r.Method)
+				user, exists := s.authManager.GetUser(userID)
+				if userID == "" || !exists {
+					s.writeError(w, http.StatusForbidden, "user not found")
+					return
+				}
+				if !ok {
+					if !s.authManager.RBAC().HasPermission(user, auth.ResourceAdmin, auth.ActionAdmin) {
+						s.writeError(w, http.StatusForbidden, "route permission not configured")
 						return
 					}
+				} else if !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
+					s.writeError(w, http.StatusForbidden, "insufficient permissions")
+					return
 				}
 			}
 		}
@@ -586,14 +629,16 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 			if s.tenantWorkspace != nil {
 				tenantID := r.Header.Get("X-Tenant-ID")
 				if tenantID == "" {
-					if user, exists := s.authManager.GetUser(userID); exists && len(user.Roles) > 0 {
-						tenantID = user.Roles[0]
+					if singleTenantID, ok := s.tenantWorkspace.SingleTenantForUser(userID); ok {
+						tenantID = singleTenantID
 					}
 				}
 				if tenantID != "" {
-					if _, err := s.tenantWorkspace.GetTenant(tenantID); err == nil {
-						r = r.WithContext(context.WithValue(r.Context(), TenantContextKey, tenantID))
+					if !s.tenantWorkspace.IsMember(tenantID, userID) {
+						s.writeError(w, http.StatusForbidden, "user is not a member of the requested tenant")
+						return
 					}
+					r = r.WithContext(context.WithValue(r.Context(), TenantContextKey, tenantID))
 				}
 			}
 		}
@@ -1939,6 +1984,10 @@ func (s *Server) handlePipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tenantFilter, _ := r.Context().Value(TenantContextKey).(string)
+	if s.Auth != nil && s.Auth.Enabled && tenantFilter == "" {
+		s.writeError(w, http.StatusForbidden, "tenant context required")
+		return
+	}
 
 	s.pipelinesMu.RLock()
 	filtered := make([]pipelineRun, 0, len(s.pipelines))
@@ -1983,19 +2032,29 @@ func (s *Server) handlePipelines(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSchemas(w http.ResponseWriter, r *http.Request) {
 	tenantFilter, _ := r.Context().Value(TenantContextKey).(string)
+	if s.Auth != nil && s.Auth.Enabled && tenantFilter == "" {
+		s.writeError(w, http.StatusForbidden, "tenant context required")
+		return
+	}
 
 	switch r.Method {
 	case "GET":
 		names := s.schemas.List()
+		if s.Auth != nil && s.Auth.Enabled {
+			names = s.schemas.ListForTenant(tenantFilter)
+		}
 		result := make([]map[string]any, 0, len(names))
 		for _, name := range names {
 			if tenantFilter != "" {
-				entry, err := s.schemas.Get(name, "")
+				entry, err := s.schemas.GetForTenant(name, "", tenantFilter)
 				if err != nil || entry.TenantID != tenantFilter {
 					continue
 				}
 			}
 			versions, err := s.schemas.Versions(name)
+			if s.Auth != nil && s.Auth.Enabled {
+				versions, err = s.schemas.VersionsForTenant(name, tenantFilter)
+			}
 			if err != nil {
 				continue
 			}
@@ -2022,11 +2081,20 @@ func (s *Server) handleSchemas(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusBadRequest, "name, version, and schema are required")
 			return
 		}
-		if err := s.schemas.Register(req.Name, req.Version, req.Schema); err != nil {
+		var registerErr error
+		if s.Auth != nil && s.Auth.Enabled {
+			registerErr = s.schemas.RegisterForTenant(req.Name, req.Version, req.Schema, tenantFilter)
+		} else {
+			registerErr = s.schemas.Register(req.Name, req.Version, req.Schema)
+		}
+		if err := registerErr; err != nil {
 			s.writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		entry, err := s.schemas.Get(req.Name, req.Version)
+		if s.Auth != nil && s.Auth.Enabled {
+			entry, err = s.schemas.GetForTenant(req.Name, req.Version, tenantFilter)
+		}
 		if err != nil {
 			s.writeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -2039,6 +2107,10 @@ func (s *Server) handleSchemas(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSchemaByPath(w http.ResponseWriter, r *http.Request) {
 	tenantFilter, _ := r.Context().Value(TenantContextKey).(string)
+	if s.Auth != nil && s.Auth.Enabled && tenantFilter == "" {
+		s.writeError(w, http.StatusForbidden, "tenant context required")
+		return
+	}
 
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/schemas/")
 	parts := strings.SplitN(path, "/", 2)
@@ -2054,6 +2126,9 @@ func (s *Server) handleSchemaByPath(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		entry, err := s.schemas.Get(name, version)
+		if s.Auth != nil && s.Auth.Enabled {
+			entry, err = s.schemas.GetForTenant(name, version, tenantFilter)
+		}
 		if err != nil {
 			s.writeError(w, http.StatusNotFound, err.Error())
 			return
@@ -2080,7 +2155,13 @@ func (s *Server) handleSchemaByPath(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusBadRequest, "version is required for deletion")
 			return
 		}
-		if err := s.schemas.Delete(name, version); err != nil {
+		var deleteErr error
+		if s.Auth != nil && s.Auth.Enabled {
+			deleteErr = s.schemas.DeleteForTenant(name, version, tenantFilter)
+		} else {
+			deleteErr = s.schemas.Delete(name, version)
+		}
+		if err := deleteErr; err != nil {
 			s.writeError(w, http.StatusNotFound, err.Error())
 			return
 		}
@@ -2185,7 +2266,18 @@ func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		id := fmt.Sprintf("tenant-%d", time.Now().UnixNano())
-		tenant, err := s.tenantWorkspace.CreateTenant(id, req.Name, req.Plan)
+		var tenant *multitenant.Tenant
+		var err error
+		if s.Auth != nil && s.Auth.Enabled {
+			userID, _ := r.Context().Value(UserContextKey).(string)
+			if userID == "" {
+				s.writeError(w, http.StatusUnauthorized, "authenticated user required")
+				return
+			}
+			tenant, err = s.tenantWorkspace.CreateTenantForUser(id, req.Name, req.Plan, userID)
+		} else {
+			tenant, err = s.tenantWorkspace.CreateTenant(id, req.Name, req.Plan)
+		}
 		if err != nil {
 			s.writeError(w, http.StatusConflict, err.Error())
 			return
