@@ -11,7 +11,10 @@
       "checksum": "h1:IY0Iv76ThSvocWinl2rphYmGLhMufS3ZD1giKqkI6ps=",
       "provenance": "https://proxy.golang.org/github.com/gowebpki/jcs/@v/v1.0.2.mod",
       "purpose": "JSON canonicalization (RFC 8785) for candidate digest in execution gateway authorization",
-      "domains": ["general", "runtime"],
+      "domains": [
+        "general",
+        "runtime"
+      ],
       "criticality": "low",
       "reviewer": "NAEOS maintainers",
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/692",
@@ -31,6 +34,238 @@
       "criticality": "low",
       "reviewer": "NAEOS maintainers",
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/692",
+      "name": "github.com/nats-io/nats.go",
+      "version": "v1.55.0",
+      "upstream_source": "https://github.com/nats-io/nats.go",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:Ng8QKHdvdHIWoaiq0+d/aH1BWkxvcJxWJ0Y/9BPKx3M=",
+      "provenance": "https://proxy.golang.org/github.com/nats-io/nats.go/@v/v1.55.0.info",
+      "purpose": "NATS Go client used by internal/broker/nats_real.go for broker connections, publishing, and subscriptions",
+      "domains": [
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/742#pullrequestreview-5818334644",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
+      "name": "github.com/nats-io/nkeys",
+      "version": "v0.4.16",
+      "upstream_source": "https://github.com/nats-io/nkeys",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:rd5oAuLOb8mnAycB0xleuEBNS1pVVnN0fv/FF34Eypg=",
+      "provenance": "https://proxy.golang.org/github.com/nats-io/nkeys/@v/v0.4.16.info",
+      "purpose": "Indirect NATS dependency providing the key handling functionality used by github.com/nats-io/nats.go",
+      "domains": [
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/742#pullrequestreview-5818334644",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "go",
+      "name": "github.com/klauspost/compress",
+      "version": "v1.20.3",
+      "upstream_source": "https://github.com/klauspost/compress",
+      "spdx_license": "Apache-2.0",
+      "checksum": "h1:zWNoFqq/lSuYQRim3dUXlXeA0IqwuZGicdG5ZTfY5j4=",
+      "provenance": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.3.info",
+      "purpose": "General-purpose compression and decompression library used as an indirect Go dependency; updated to remediate a reported vulnerability in the prior version",
+      "purpose": "General-purpose compression and decompression indirect Go dependency; reviewed for the exact version to remediate a reported vulnerability in the prior version",
+      "domains": [
+        "general",
+        "runtime"
+      ],
+      "criticality": "low",
+      "reviewer": "Bayu Priatno (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758#issuecomment-6705873688",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "wrangler",
+      "version": "4.156.0",
+      "upstream_source": "https://github.com/cloudflare/workers-sdk",
+      "spdx_license": "MIT OR Apache-2.0",
+      "checksum": "sha512-kVLAShuLiNgE3jcrmXcymDf/iPKDPrSxACe5ueugW/33HeNB9E9CkKYchudCeBwgmsnl4k+1zt4NO7vqb/fRuQ==",
+      "provenance": "https://registry.npmjs.org/wrangler/-/wrangler-4.156.0.tgz",
+      "purpose": "Cloudflare Wrangler CLI used by infra/ws-worker for local development and deployment; not bundled into the worker runtime",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workerd-darwin-64",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-lsEx0i7nR0PNG/erUFFHmQmiidEhLfDE5uQmAL9421/y4/ycuxDDOSaxu3VGGYFFPK5sduyUeMmjIlX4CwOBFg==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workerd-darwin-64/-/workerd-darwin-64-1.20261023.1.tgz",
+      "purpose": "Darwin x64 workerd binary distributed as optional Wrangler local-development tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workerd-darwin-arm64",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-5e79fHgabdDD8EgmjOhJ1S+xMsf6DbC7fL7IgTBizMnzOp0P2isDn7pYmUxI9AJZE9FVQ4RUilH/I36YNg+GQQ==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workerd-darwin-arm64/-/workerd-darwin-arm64-1.20261023.1.tgz",
+      "purpose": "Darwin arm64 workerd binary distributed as optional Wrangler local-development tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workerd-linux-64",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-VHQ6jKFSihjR2+x1buby8XTdBLLJztVnYiB7OLOTYO8aDXB+c1Rd2410PdgFuFYc4AgFEk6PCJLyCLL5L1KBnw==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workerd-linux-64/-/workerd-linux-64-1.20261023.1.tgz",
+      "purpose": "Linux x64 workerd binary distributed as optional Wrangler local-development tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workerd-linux-arm64",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-ilpRHzfDN8YFRM5CLRKuFw40x/LJBS89yVdhdQmxehlVDuBqjKpJB++zPFbTgKRRFaNupgnXc8RHktXAIhgCmQ==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workerd-linux-arm64/-/workerd-linux-arm64-1.20261023.1.tgz",
+      "purpose": "Linux arm64 workerd binary distributed as optional Wrangler local-development tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workerd-windows-64",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-279WLVjNsMycAwr0EZNiNEf0l2SY6NUtsN80NwZzbTHzakmiN+WSx4w38muxPm+PAU0oSPPAPXKVD+H6Hya8xw==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workerd-windows-64/-/workerd-windows-64-1.20261023.1.tgz",
+      "purpose": "Windows x64 workerd binary distributed as optional Wrangler local-development tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@cloudflare/workers-types",
+      "version": "5.20261030.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "MIT OR Apache-2.0",
+      "checksum": "sha512-oKHewMzKBtXq3dWiYL9GpHFnBfg8juBOir9PPREMPT8G2MHotAxIBIQ2w1rpO1xCN9etRlAxJaeoQbMGSlXqlQ==",
+      "provenance": "https://registry.npmjs.org/@cloudflare/workers-types/-/workers-types-5.20261030.1.tgz",
+      "purpose": "TypeScript declarations for Cloudflare Workers APIs used during worker type-checking",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "miniflare",
+      "version": "5.20261023.3-beta",
+      "upstream_source": "https://github.com/cloudflare/workers-sdk",
+      "spdx_license": "MIT",
+      "checksum": "sha512-thdXzlktu5GE1o/BlmMAPeJ0Cu6Tu5LpMbRlyfRrpVvMRrhd6p52TMqcITCZZLVzt1UO92VGBkLDhLOpryUAyQ==",
+      "provenance": "https://registry.npmjs.org/miniflare/-/miniflare-5.20261023.3-beta.tgz",
+      "purpose": "Cloudflare Workers simulator used by Wrangler for local development and testing",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "undici",
+      "version": "7.30.1",
+      "upstream_source": "https://github.com/nodejs/undici",
+      "spdx_license": "MIT",
+      "checksum": "sha512-03KrMbjIFDWQR5RNPrSw3bd1r12JpyFQl9/yxjUbJtqkjmllqC5lFjZh6ujeuJCKr8EOQvRW872Oy/az+nLYxg==",
+      "provenance": "https://registry.npmjs.org/undici/-/undici-7.30.1.tgz",
+      "purpose": "HTTP client used by Cloudflare development and deployment tooling",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "workerd",
+      "version": "1.20261023.1",
+      "upstream_source": "https://github.com/cloudflare/workerd",
+      "spdx_license": "Apache-2.0",
+      "checksum": "sha512-NeofJFyaYNpqKpFRJW3ApuonaerPd6/JWlfTtLDYf2A6ygqrDEFnYgEXmc0hhOxqnJsSM+kXJN6VebPojzRrsg==",
+      "provenance": "https://registry.npmjs.org/workerd/-/workerd-1.20261023.1.tgz",
+      "purpose": "Cloudflare Workers runtime used locally by Wrangler for development and testing",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6725004691",
       "policy_version": "1.0.0",
       "schema_version": "1.0.0"
     }
