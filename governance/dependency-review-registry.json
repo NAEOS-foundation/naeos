@@ -77,6 +77,24 @@
       "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/758#issuecomment-6705873688",
       "policy_version": "1.0.0",
       "schema_version": "1.0.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "wrangler",
+      "version": "4.156.0",
+      "upstream_source": "https://github.com/cloudflare/workers-sdk",
+      "spdx_license": "MIT OR Apache-2.0",
+      "checksum": "sha512-kVLAShuLiNgE3jcrmXcymDf/iPKDPrSxACe5ueugW/33HeNB9E9CkKYchudCeBwgmsnl4k+1zt4NO7vqb/fRuQ==",
+      "provenance": "https://registry.npmjs.org/wrangler/-/wrangler-4.156.0.tgz",
+      "purpose": "Cloudflare Wrangler CLI used by infra/ws-worker for local development and deployment; not bundled into the worker runtime",
+      "domains": [
+        "deployment_ci"
+      ],
+      "criticality": "medium",
+      "reviewer": "bayu911-source (NAEOS maintainer)",
+      "review_reference": "https://github.com/NAEOS-foundation/naeos/pull/743#issuecomment-6724607750",
+      "policy_version": "1.0.0",
+      "schema_version": "1.0.0"
     }
   ]
 }
