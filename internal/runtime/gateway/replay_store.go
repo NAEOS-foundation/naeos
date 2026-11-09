@@ -47,9 +47,10 @@ func (s *InMemoryInvocationStore) Claim(invocationID string) (bool, error) {
 // replicas. Consumed IDs are retained until explicitly purged; this avoids
 // silently reopening a replay window after process restart.
 type DatabaseInvocationStore struct {
-	db   database.Database
-	once sync.Once
-	err  error
+	db database.Database
+
+	initMu       sync.Mutex
+	tableReady   bool
 }
 
 func NewDatabaseInvocationStore(db database.Database) *DatabaseInvocationStore {
@@ -57,23 +58,42 @@ func NewDatabaseInvocationStore(db database.Database) *DatabaseInvocationStore {
 }
 
 func (s *DatabaseInvocationStore) ensureTable() error {
-	s.once.Do(func() {
-		if s.db == nil {
-			s.err = fmt.Errorf("invocation store database is nil")
-			return
-		}
-		_, s.err = s.db.Exec(`CREATE TABLE IF NOT EXISTS naeos_invocation_replay (
-			invocation_id VARCHAR(255) PRIMARY KEY,
-			consumed_at BIGINT NOT NULL
-		)`)
-	})
-	return s.err
+	s.initMu.Lock()
+	defer s.initMu.Unlock()
+
+	if s.tableReady {
+		return nil
+	}
+	if s.db == nil {
+		return fmt.Errorf("invocation store database is nil")
+	}
+	if _, err := s.db.Exec(`CREATE TABLE IF NOT EXISTS naeos_invocation_replay (
+		invocation_id VARCHAR(255) PRIMARY KEY,
+		consumed_at BIGINT NOT NULL
+	)`); err != nil {
+		// Do not cache transient initialization failures. A later claim may
+		// succeed after the database becomes available.
+		return err
+	}
+	s.tableReady = true
+	return nil
 }
 
 func (s *DatabaseInvocationStore) Claim(invocationID string) (bool, error) {
 	if invocationID == "" {
 		return false, fmt.Errorf("invocation id is required")
 	}
+	if s.db == nil {
+		return false, fmt.Errorf("invocation store database is nil")
+	}
+
+	// RealSupabase REST mode ignores Exec arguments and therefore cannot safely
+	// execute the parameterized replay claim. Fail closed rather than silently
+	// dropping the invocation ID or interpolating it into SQL.
+	if restModeDB, ok := s.db.(interface{ IsRESTMode() bool }); ok && restModeDB.IsRESTMode() {
+		return false, fmt.Errorf("durable invocation replay is unsupported in Supabase REST mode; use a direct database connection")
+	}
+
 	if err := s.ensureTable(); err != nil {
 		return false, err
 	}
