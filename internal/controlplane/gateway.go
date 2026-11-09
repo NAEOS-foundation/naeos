@@ -139,8 +139,14 @@ func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result D
 		Timestamp: req.Timestamp, RequestID: req.RequestID,
 		AgentID: req.AgentID, Capability: req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash, EventType: "POLICY_EVALUATION_FAILED",
-		Reason:   ReasonEvaluationFailed,
-		Metadata: map[string]string{"failure_message": result.Message},
+		Reason: ReasonEvaluationFailed,
+		Metadata: map[string]string{
+			"failure_code":  "policy_evaluation_failed",
+			"failure_stage": "policy_evaluation",
+			"failure_message": result.Message,
+			"policy_id":      result.PolicyID,
+			"policy_version": fmt.Sprintf("%d", result.PolicyVersion),
+		},
 	})
 	if event.ID == "" {
 		result.Message = "policy evaluation failed; failure evidence could not be persisted"
