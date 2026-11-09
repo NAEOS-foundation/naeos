@@ -115,6 +115,9 @@ func TestComplianceReportSOC2(t *testing.T) {
 	if !strings.Contains(output, "Compliance Report: SOC 2 Type II") {
 		t.Fatalf("expected SOC 2 report header, got %q", output)
 	}
+	if !strings.Contains(output, "8 indeterminate") || !strings.Contains(output, "[INDETERMINATE]") {
+		t.Fatalf("expected conservative indeterminate statuses, got %q", output)
+	}
 }
 
 func TestComplianceReportUnsupportedFramework(t *testing.T) {
@@ -195,8 +198,8 @@ func TestComplianceVerifyTampered(t *testing.T) {
 
 	root := NewRootCommand()
 	output, err := executeCommand(root, "compliance", "verify", "--audit-file", filepath.Join(dir, "audit.log"))
-	if err != nil {
-		t.Fatalf("compliance verify failed: %v", err)
+	if err == nil {
+		t.Fatalf("expected compliance verify to fail on hash-chain violations; output=%q", output)
 	}
 	if !strings.Contains(output, "violation") {
 		t.Fatalf("expected hash chain violation, got %q", output)
