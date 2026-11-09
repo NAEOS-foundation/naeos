@@ -10,8 +10,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/NAEOS-foundation/naeos/internal/database"
 	_ "modernc.org/sqlite"
+
+	"github.com/NAEOS-foundation/naeos/internal/database"
 )
 
 // sqliteInvocationDB uses a real file-backed SQLite database while embedding
