@@ -26,21 +26,21 @@ jobs:
           ls -d "$GITHUB_WORKSPACE"/site/.open-next 2>/dev/null && echo "WORKSPACE_SITE_OPENNEXT_EXISTS"
           ls -d .open-next && echo "CWD_OPENNEXT_EXISTS"
       - name: Upload A - site/.open-next/
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: A-site-opennext
           path: site/.open-next/
           if-no-files-found: error
           retention-days: 1
       - name: Upload B - .open-next/
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: B-opennext
           path: .open-next/
           if-no-files-found: error
           retention-days: 1
       - name: Upload C - absolute path
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: C-absolute
           path: ${{ github.workspace }}/site/.open-next/
@@ -49,7 +49,7 @@ jobs:
       - name: Archive tar.gz
         run: tar -czf ../naeos-test.tar.gz -C .open-next .
       - name: Upload D - tarball repo root
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: D-tarball
           path: naeos-test.tar.gz
