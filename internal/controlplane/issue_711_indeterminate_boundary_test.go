@@ -84,7 +84,15 @@ func TestDecisionGateway_IndeterminateEvaluationIsAuditedAndCannotExecute(t *tes
 				t.Fatalf("failure evidence must retain request correlation, got %+v", failure)
 			}
 			if failure.Metadata["failure_message"] == "" {
-				t.Fatal("expected structured failure classification metadata")
+				t.Fatal("expected failure message metadata")
+			}
+			if failure.Metadata["failure_code"] != "policy_evaluation_failed" ||
+				failure.Metadata["failure_stage"] != "policy_evaluation" {
+				t.Fatalf("expected structured failure classification, got %+v", failure.Metadata)
+			}
+			if failure.Metadata["policy_id"] != policy.ID ||
+				failure.Metadata["policy_version"] != "7" {
+				t.Fatalf("expected policy attribution in failure metadata, got %+v", failure.Metadata)
 			}
 			if strings.Contains(failure.Metadata["failure_message"], "must-not-appear-in-failure-metadata") {
 				t.Fatal("failure metadata leaked private action payload")
