@@ -143,7 +143,7 @@ func DomainsForPaths(paths []string) []Domain {
 	seen := map[Domain]bool{}
 	for _, path := range paths {
 		switch {
-		case hasPrefix(path, "internal/governance/"), hasPrefix(path, "governance/"), hasPrefix(path, "constitution/"), hasPrefix(path, "policy/"):
+		case hasPrefix(path, "internal/governance/"), hasPrefix(path, "governance/"), hasPrefix(path, "constitution/"), hasPrefix(path, "policy/"), hasPrefix(path, "cmd/naeos-dependency-risk/"):
 			seen[Policy] = true
 		case hasPrefix(path, "internal/security/"), hasPrefix(path, "security/"):
 			seen[Security] = true

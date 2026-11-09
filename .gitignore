@@ -11,7 +11,7 @@
 # Test binary
 *.test
 
-# Output of go coverage
+# Output of Go coverage
 *.out
 *.prof
 
@@ -82,11 +82,16 @@ site/.next/
 site/.vercel/
 site/.open-next/
 site/tsconfig.tsbuildinfo
+
 # Generated output
 examples/demo-cli/generated/
+examples/demo-cli/.run/generated/
 examples/todo-api/generated/
 examples/todo-api/.run/
 generated/
+
+# Local Wrangler state/cache (never commit)
+.wrangler/
 
 # Policy bypass experiment artifacts
 experiments/policy-bypass/policy-bypass
