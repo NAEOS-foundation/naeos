@@ -28,32 +28,32 @@ func TestEvaluator_EvaluationFailuresRemainIndeterminate(t *testing.T) {
 		ctx       AuthorizationContext
 	}{
 		{
-			name: "evaluator unavailable",
+			name:      "evaluator unavailable",
 			evaluator: nil,
-			ctx: AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: activePolicy.Version, Now: now},
+			ctx:       AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: activePolicy.Version, Now: now},
 		},
 		{
-			name: "policy store unavailable",
+			name:      "policy store unavailable",
 			evaluator: NewEvaluator(),
-			ctx: AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: activePolicy.Version, Now: now},
+			ctx:       AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: activePolicy.Version, Now: now},
 		},
 		{
-			name: "missing policy selector",
+			name:      "missing policy selector",
 			evaluator: NewEvaluator(store),
-			ctx: AuthorizationContext{Now: now},
+			ctx:       AuthorizationContext{Now: now},
 		},
 		{
-			name: "unresolved policy version",
+			name:      "unresolved policy version",
 			evaluator: NewEvaluator(store),
-			ctx: AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: 99, Now: now},
+			ctx:       AuthorizationContext{PolicyID: activePolicy.ID, PolicyVersion: 99, Now: now},
 		},
 		{
-			name: "malformed supplied policy reference",
+			name:      "malformed supplied policy reference",
 			evaluator: NewEvaluator(store),
 			ctx: AuthorizationContext{
 				PolicyID: activePolicy.ID, PolicyVersion: activePolicy.Version,
 				Policy: &Policy{ID: "POLICY-TAMPERED", Version: 1, Status: "active"},
-				Now: now,
+				Now:    now,
 			},
 		},
 	}
@@ -80,9 +80,9 @@ func TestEvaluator_PolicyOutcomesRemainExplicit(t *testing.T) {
 	now := time.Now().UTC()
 	policy := &Policy{
 		ID: "POLICY-711-OUTCOMES", Version: 1, Status: "active",
-		AllowedCapabilities: []Capability{"repository.read", "repository.write"},
-		DeniedCapabilities: []Capability{"repository.delete"},
-		ApprovalRequired: []Capability{"repository.write"},
+		AllowedCapabilities:  []Capability{"repository.read", "repository.write"},
+		DeniedCapabilities:   []Capability{"repository.delete"},
+		ApprovalRequired:     []Capability{"repository.write"},
 	}
 	store := NewPolicyStore()
 	if err := store.Set(policy); err != nil {
@@ -92,7 +92,7 @@ func TestEvaluator_PolicyOutcomesRemainExplicit(t *testing.T) {
 		GrantID: "GRANT-711-OUTCOMES", AgentID: "agent-711",
 		PolicyID: policy.ID, PolicyVersion: policy.Version,
 		Capabilities: []Capability{"repository.read", "repository.write", "repository.delete"},
-		Status: "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour),
+		Status:       "active", CreatedAt: now, ExpiresAt: now.Add(time.Hour),
 	}
 	evaluator := NewEvaluator(store)
 
