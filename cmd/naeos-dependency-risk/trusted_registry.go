@@ -43,7 +43,7 @@ func loadTrustedReview(base, policyVersion string, req requestFile, now time.Tim
 	if !trustedGitObjectID.MatchString(strings.TrimSpace(base)) {
 		return nil, errors.New("trusted base revision must be a full hexadecimal Git object ID")
 	}
-	// #nosec G204 -- base is validated as a full Git object ID; arguments are passed without a shell.
+	// #nosec G702 -- base is validated as a full Git object ID; git and the registry path are fixed, and arguments are passed without a shell.
 	raw, err := exec.CommandContext(context.Background(), "git", "show", base+":"+trustedReviewRegistryPath).Output()
 	if err != nil {
 		return nil, fmt.Errorf("read trusted registry from base revision %s: %w", base, err)
