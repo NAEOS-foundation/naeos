@@ -49,8 +49,8 @@ func (s *InMemoryInvocationStore) Claim(invocationID string) (bool, error) {
 type DatabaseInvocationStore struct {
 	db database.Database
 
-	initMu       sync.Mutex
-	tableReady   bool
+	initMu     sync.Mutex
+	tableReady bool
 }
 
 func NewDatabaseInvocationStore(db database.Database) *DatabaseInvocationStore {

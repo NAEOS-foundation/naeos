@@ -125,7 +125,7 @@ type restModeInvocationDB struct {
 	database.Database
 }
 
-func (d *restModeInvocationDB) Name() string { return "supabase" }
+func (d *restModeInvocationDB) Name() string     { return "supabase" }
 func (d *restModeInvocationDB) IsRESTMode() bool { return true }
 func (d *restModeInvocationDB) Exec(string, ...any) (database.Result, error) {
 	return database.Result{}, fmt.Errorf("Exec must not be reached in REST mode")
