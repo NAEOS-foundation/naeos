@@ -94,6 +94,8 @@ func TestRegistryValidate(t *testing.T) {
 		{name: "bad default", p: &Policy{ID: "x", Version: "1.0.0", Default: Decision("MAYBE")}, valid: false},
 		{name: "bad rule decision", p: &Policy{ID: "x", Version: "1.0.0", Default: DecisionAllow, Rules: []PolicyRule{{RuleID: "r", Decision: Decision("NOPE")}}}, valid: false},
 		{name: "missing rule id", p: &Policy{ID: "x", Version: "1.0.0", Default: DecisionAllow, Rules: []PolicyRule{{Decision: DecisionAllow}}}, valid: false},
+		{name: "malformed rule condition", p: &Policy{ID: "x", Version: "1.0.0", Default: DecisionAllow, Rules: []PolicyRule{{RuleID: "r", Condition: "gt:port,not-a-number", Decision: DecisionDeny}}}, valid: false},
+		{name: "missing rule condition", p: &Policy{ID: "x", Version: "1.0.0", Default: DecisionAllow, Rules: []PolicyRule{{RuleID: "r", Decision: DecisionDeny}}}, valid: false},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

@@ -13,7 +13,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
-| **Versi Platform** | v3.6.0 (status repositori) |
+| **Versi Platform** | v3.7.1 (versi rilis saat ini) |
 
 ---
 
@@ -479,4 +479,4 @@ Dengan lisensi Apache 2.0, arsitektur netral vendor, dan ekosistem yang terus be
 
 *NAEOS OSS — "Engineering With Discipline"*
 
-*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos; software release baseline v3.6.0; engineering milestone P1.11) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*
+*Dokumen ini disusun berdasarkan state proyek nyata (repo NAEOS-foundation/naeos; software release baseline v3.7.1; engineering milestone P1.11) dan ditujukan sebagai bahan publikasi, evaluasi teknis, dan diskusi adopsi. Seluruh klaim teknis dapat diverifikasi di dokumentasi resmi proyek (docs/NES-*, specification/, constitution/).*

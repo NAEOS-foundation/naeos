@@ -226,6 +226,22 @@ Acceptance for this runtime boundary:
 - durable replay must be exercised with --replay-db when restart/cross-worker recovery is claimed.
 
 The canonical runtime receipt is intentionally distinct from sandbox stdout. A successful stdout message is not evidence unless the independently observed artifact is also bound to the same invocation digest.
+
+For authenticated evidence validation, provide an Ed25519 private key to the bridge. The key file may contain a raw 32-byte seed, a raw 64-byte private key, base64, or hexadecimal encoding:
+
+~~~bash
+./naeos runtime bridge \
+  --filesystem-root /tmp/naeos-runtime \
+  --evidence-file /tmp/naeos-runtime-evidence.jsonl \
+  --evidence-signing-key /secure/naeos-runtime-ed25519.key \
+  --evidence-issuer naeos-runtime \
+  --evidence-key-id key-2026-01 \
+  < /tmp/naeos-request.jsonl
+~~~
+
+Authenticated receipts contain an Ed25519 signature over the canonical receipt including its evidence digest. A verifier with the independently trusted public key must verify both the digest and the signature. Recomputing a public SHA-256 digest after editing a receipt is therefore insufficient to forge valid evidence.
+
+The trust model is explicit: the receipt's `issuer` and `key_id` are metadata only until a verifier maps them to a trusted public key. A production verifier must pin or otherwise authenticate that public key; an untrusted public key supplied with the receipt does not establish authenticity.
 ## 12. Evidence boundaries
 
 This runbook establishes a reproducible technical evaluation of the repository path. It does not establish:

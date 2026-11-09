@@ -4,7 +4,7 @@ name: Website
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/control-plane-auth-signed-off-20261012]
     paths:
       - 'site/**'
       - '.github/workflows/website.yml'
@@ -62,7 +62,7 @@ jobs:
       - name: Archive OpenNext build
         run: tar -czf ../naeos-site-opennext.tar.gz -C .open-next .
       - name: Upload build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: naeos-site-opennext
           # Archive OpenNext build into a tarball so upload-artifact does not
@@ -86,17 +86,15 @@ jobs:
             ID=$(npx wrangler kv namespace create NEWSLETTER_KV 2>/dev/null | grep -oE '"[a-f0-9]{32}"' | head -n1 | tr -d '"' || true)
           fi
           if [ -n "$ID" ]; then
-            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]'               < wrangler.jsonc > wrangler.jsonc.tmp
+            jq --arg id "$ID" '.kv_namespaces = [{ "binding": "NEWSLETTER_KV", "id": $id }]' < wrangler.jsonc > wrangler.jsonc.tmp
             mv wrangler.jsonc.tmp wrangler.jsonc
             echo "Newsletter KV namespace bound: $ID"
           else
             echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
           fi
       - name: Preview on Cloudflare Workers
-        # Every PR gets an isolated Worker Preview; production remains main-only.
-        # Dependabot pull requests do not receive repository secrets.
-        # Build and validation still run; preview is reserved for trusted PRs.
-        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+        # Fork PRs cannot access repository secrets; validation still runs, preview only on trusted same-repo PRs.
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -244,3 +244,43 @@ func TestPolicyStoreRejectsVersionReuseAndRollback(t *testing.T) {
 		t.Fatalf("unexpected active policy after rejected updates: %+v", active)
 	}
 }
+
+func TestEvaluator_ReportsIndeterminateWhenEvaluationCannotBeCompleted(t *testing.T) {
+	action := Action{AgentID: "agent-1", Capability: "repository.read"}
+	if got := NewEvaluator().EvaluateAction(action, nil, nil, time.Now()); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("unavailable evaluator must be indeterminate, got %+v", got)
+	}
+	store := NewPolicyStore()
+	if got := NewEvaluator(store).Evaluate(AuthorizationContext{PolicyID: "missing", PolicyVersion: 1}, action); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("missing policy version must be indeterminate, got %+v", got)
+	}
+	if got := NewEvaluator(store).EvaluateAction(action, nil, nil, time.Now()); got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed {
+		t.Fatalf("nil policy must be indeterminate, got %+v", got)
+	}
+}
+
+func TestEvaluator_RejectsForgedSameVersionPolicySnapshot(t *testing.T) {
+	store := NewPolicyStore()
+	canonical := &Policy{
+		ID: "POLICY-CANONICAL", Version: 1, Status: "active",
+		AllowedCapabilities: []Capability{"repository.read"},
+	}
+	if err := store.Set(canonical); err != nil {
+		t.Fatal(err)
+	}
+	forged := clonePolicy(canonical)
+	forged.AllowedCapabilities = append(forged.AllowedCapabilities, "production.delete")
+	grant := &Grant{
+		GrantID: "GRANT-FORGED", AgentID: "agent-forged",
+		PolicyID: canonical.ID, PolicyVersion: canonical.Version,
+		Capabilities: []Capability{"production.delete"},
+		Status:       "active", ExpiresAt: time.Now().Add(time.Hour),
+	}
+	result := NewEvaluator(store).EvaluateAction(
+		Action{AgentID: "agent-forged", Capability: "production.delete"},
+		grant, forged, time.Now(),
+	)
+	if result.Status != DecisionDeny || result.Reason != ReasonDeniedByPolicy {
+		t.Fatalf("forged same-version policy must be evaluated against the canonical snapshot and denied, got %+v", result)
+	}
+}
