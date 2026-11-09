@@ -80,9 +80,9 @@ func TestEvaluator_PolicyOutcomesRemainExplicit(t *testing.T) {
 	now := time.Now().UTC()
 	policy := &Policy{
 		ID: "POLICY-711-OUTCOMES", Version: 1, Status: "active",
-		AllowedCapabilities:  []Capability{"repository.read", "repository.write"},
-		DeniedCapabilities:   []Capability{"repository.delete"},
-		ApprovalRequired:     []Capability{"repository.write"},
+		AllowedCapabilities: []Capability{"repository.read", "repository.write"},
+		DeniedCapabilities:  []Capability{"repository.delete"},
+		ApprovalRequired:    []Capability{"repository.write"},
 	}
 	store := NewPolicyStore()
 	if err := store.Set(policy); err != nil {
