@@ -135,6 +135,21 @@ func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result D
 		result.Message = "policy evaluation failed; failure evidence ledger unavailable"
 		return result
 	}
+
+	// The evaluator may not populate attribution for operational failures
+	// (e.g. unavailable evaluator or unresolved policy version). Fall back to
+	// the policy supplied in the request so failure evidence remains correlated.
+	policyID := result.PolicyID
+	policyVersion := result.PolicyVersion
+	if req.Policy != nil {
+		if policyID == "" {
+			policyID = req.Policy.ID
+		}
+		if policyVersion == 0 {
+			policyVersion = req.Policy.Version
+		}
+	}
+
 	event := g.Ledger.Append(LedgerEvent{
 		Timestamp: req.Timestamp, RequestID: req.RequestID,
 		AgentID: req.AgentID, Capability: req.Action.Capability,
@@ -144,8 +159,8 @@ func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result D
 			"failure_code":    "policy_evaluation_failed",
 			"failure_stage":   "policy_evaluation",
 			"failure_message": result.Message,
-			"policy_id":       result.PolicyID,
-			"policy_version":  fmt.Sprintf("%d", result.PolicyVersion),
+			"policy_id":       policyID,
+			"policy_version":  fmt.Sprintf("%d", policyVersion),
 		},
 	})
 	if event.ID == "" {
