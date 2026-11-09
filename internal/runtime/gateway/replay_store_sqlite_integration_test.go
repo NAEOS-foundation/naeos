@@ -141,3 +141,39 @@ func TestDatabaseInvocationStoreFailsClosedForSupabaseREST(t *testing.T) {
 		t.Fatal("REST mode claim must not be reported successful")
 	}
 }
+
+type transientInitFailureDB struct {
+	database.Database
+	delegate *sharedDurableInvocationDB
+	mu       sync.Mutex
+	failed   bool
+}
+
+func (d *transientInitFailureDB) Name() string { return "sqlite" }
+
+func (d *transientInitFailureDB) Exec(query string, args ...any) (database.Result, error) {
+	d.mu.Lock()
+	if !d.failed {
+		d.failed = true
+		d.mu.Unlock()
+		return database.Result{}, fmt.Errorf("temporary database unavailable")
+	}
+	d.mu.Unlock()
+	return d.delegate.Exec(query, args...)
+}
+
+func TestDatabaseInvocationStoreRetriesTransientTableInitialization(t *testing.T) {
+	db := &transientInitFailureDB{delegate: newSharedDurableInvocationDB()}
+	store := NewDatabaseInvocationStore(db)
+
+	if claimed, err := store.Claim("retry-init-invocation"); err == nil || claimed {
+		t.Fatal("expected first claim to fail on transient initialization error")
+	}
+	claimed, err := store.Claim("retry-init-invocation")
+	if err != nil {
+		t.Fatalf("claim after transient initialization failure: %v", err)
+	}
+	if !claimed {
+		t.Fatal("expected claim to succeed after initialization retry")
+	}
+}
