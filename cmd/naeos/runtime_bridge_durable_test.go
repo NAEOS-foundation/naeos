@@ -139,3 +139,13 @@ func TestRuntimeBridgeEvidenceRecoveryRejectsOrphanAndMissingRecords(t *testing.
 		t.Fatal("missing evidence record for ledger event must fail recovery reconciliation")
 	}
 }
+
+func TestSyncRuntimeReceiptDirectory(t *testing.T) {
+	dir := t.TempDir()
+	if err := syncRuntimeReceiptDirectory(dir); err != nil {
+		t.Fatalf("sync receipt directory: %v", err)
+	}
+	if err := syncRuntimeReceiptDirectory(filepath.Join(dir, "missing")); err == nil {
+		t.Fatal("syncing a missing receipt directory must fail")
+	}
+}
