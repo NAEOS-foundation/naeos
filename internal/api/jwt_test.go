@@ -4,6 +4,8 @@
 package api
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -36,6 +38,36 @@ func TestJWTGenerateAndValidate(t *testing.T) {
 
 	if validated.Name != "Test User" {
 		t.Errorf("expected name 'Test User', got %s", validated.Name)
+	}
+}
+
+func TestJWTRejectsUnsupportedHeaderAlgorithm(t *testing.T) {
+	validator := NewJWTValidator("test-secret-key")
+	claims := &JWTClaims{
+		Sub:       "user-123",
+		Name:      "Test User",
+		ExpiresAt: time.Now().Add(time.Hour).Unix(),
+		IssuedAt:  time.Now().Unix(),
+	}
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		t.Fatalf("marshal claims: %v", err)
+	}
+	payload := base64.RawURLEncoding.EncodeToString(claimsJSON)
+
+	for _, algorithm := range []string{"none", "RS256", "HS384"} {
+		t.Run(algorithm, func(t *testing.T) {
+			headerJSON, err := json.Marshal(map[string]string{"alg": algorithm, "typ": "JWT"})
+			if err != nil {
+				t.Fatalf("marshal header: %v", err)
+			}
+			header := base64.RawURLEncoding.EncodeToString(headerJSON)
+			signingInput := header + "." + payload
+			token := signingInput + "." + validator.sign(signingInput)
+			if _, err := validator.Validate(token); err == nil {
+				t.Fatalf("Validate() accepted header algorithm %q", algorithm)
+			}
+		})
 	}
 }
 

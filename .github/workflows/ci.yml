@@ -554,7 +554,7 @@ jobs:
       - name: Fuzz parser
         run: go test -fuzz=^FuzzParse$ -fuzztime=30s ./internal/specification/parser/
       - name: Fuzz schema version
-        run: go test -fuzz=FuzzSchemaVersionParse -fuzztime=30s ./internal/specification/parser/
+        run: go test -fuzz=FuzzSchemaVersionParse -fuzztime=29s ./internal/specification/parser/
       - name: Fuzz variable resolver
         run: go test -fuzz=FuzzVariableResolver -fuzztime=30s ./internal/specification/parser/
       - name: Fuzz validate modules

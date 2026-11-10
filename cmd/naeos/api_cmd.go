@@ -93,9 +93,22 @@ func newAPICommand() *cobra.Command {
 		Short: "Start NAEOS REST API server",
 		Long:  `Start the NAEOS REST API server for external integrations and web dashboard.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			issuer := os.Getenv("NAEOS_API_JWKS_ISSUER")
+			audience := os.Getenv("NAEOS_API_JWKS_AUDIENCE")
+			jwksURL := os.Getenv("NAEOS_API_JWKS_URL")
+			serviceAuthConfigured := issuer != "" || audience != "" || jwksURL != ""
+			var serviceJWKS *api.JWKSValidator
+			if serviceAuthConfigured {
+				var err error
+				serviceJWKS, err = api.NewJWKSValidator(issuer, audience, jwksURL)
+				if err != nil {
+					return err
+				}
+			}
 			auth := &api.AuthConfig{
-				Enabled:   apiAuth,
-				JWTSecret: apiSecret,
+				Enabled:     apiAuth || serviceAuthConfigured,
+				JWTSecret:   apiSecret,
+				ServiceJWKS: serviceJWKS,
 			}
 
 			server := api.NewServer(":"+apiPort, auth)

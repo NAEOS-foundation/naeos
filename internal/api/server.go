@@ -42,44 +42,46 @@ import (
 
 // Server is the main HTTP API server for the NAEOS platform.
 type Server struct {
-	Addr             string
-	Router           *http.ServeMux
-	server           *http.Server
-	Auth             *AuthConfig
-	CORS             *CORSConfig
-	MaxBodySize      int64
-	Limiter          *RateLimiter
-	TenantLimiter    *RateLimiter
-	APIKeys          map[string]*RateLimiter
-	apiKeysMu        sync.RWMutex
-	jwt              *JWTValidator
-	authManager      *auth.Manager
-	routePerms       map[string]auth.RoutePermission
-	parser           parser.Parser
-	compiler         *compiler.Compiler
-	bundle           *contextbundle.Generator
-	store            *artifacts.Store
-	pipelines        []pipelineRun
-	pipelinesMu      sync.RWMutex
-	pipelinesFile    string
-	pipelineJobs     map[string]*pipelineJob
-	jobsMu           sync.RWMutex
-	deployments      []cloudDeployment
-	deployMu         sync.RWMutex
-	plugins          *pluginhost.Manager
-	metrics          *monitoring.Metrics
-	metricsRegistry  *monitoring.Registry
-	auditor          audit.Auditor
-	memoryAuditor    *audit.MemoryAuditor
-	wsServer         *naeosws.Server
-	mcpServer        *mcp.Server
-	db               database.Database
-	profiles         *profiles.Registry
-	profileSubs      map[string]*profiles.Subscription
-	schemas          *schemaregistry.Registry
-	profileSubMu     sync.Mutex
-	pipelineObserver pipeline.PipelineObserver
-	tenantWorkspace  *multitenant.Workspace
+	Addr                 string
+	Router               *http.ServeMux
+	server               *http.Server
+	Auth                 *AuthConfig
+	CORS                 *CORSConfig
+	MaxBodySize          int64
+	Limiter              *RateLimiter
+	TenantLimiter        *RateLimiter
+	APIKeys              map[string]*RateLimiter
+	apiKeysMu            sync.RWMutex
+	jwt                  *JWTValidator
+	repositoryAPIBase    string
+	repositoryHTTPClient *http.Client
+	authManager          *auth.Manager
+	routePerms           map[string]auth.RoutePermission
+	parser               parser.Parser
+	compiler             *compiler.Compiler
+	bundle               *contextbundle.Generator
+	store                *artifacts.Store
+	pipelines            []pipelineRun
+	pipelinesMu          sync.RWMutex
+	pipelinesFile        string
+	pipelineJobs         map[string]*pipelineJob
+	jobsMu               sync.RWMutex
+	deployments          []cloudDeployment
+	deployMu             sync.RWMutex
+	plugins              *pluginhost.Manager
+	metrics              *monitoring.Metrics
+	metricsRegistry      *monitoring.Registry
+	auditor              audit.Auditor
+	memoryAuditor        *audit.MemoryAuditor
+	wsServer             *naeosws.Server
+	mcpServer            *mcp.Server
+	db                   database.Database
+	profiles             *profiles.Registry
+	profileSubs          map[string]*profiles.Subscription
+	schemas              *schemaregistry.Registry
+	profileSubMu         sync.Mutex
+	pipelineObserver     pipeline.PipelineObserver
+	tenantWorkspace      *multitenant.Workspace
 }
 
 type multiAuditor struct {
@@ -130,8 +132,9 @@ type cloudDeployment struct {
 
 // AuthConfig holds authentication settings for the API server.
 type AuthConfig struct {
-	JWTSecret string
-	Enabled   bool
+	JWTSecret   string
+	Enabled     bool
+	ServiceJWKS *JWKSValidator
 }
 
 // CORSConfig holds Cross-Origin Resource Sharing settings.
@@ -297,6 +300,9 @@ func (s *Server) setupRoutes() {
 
 	// Health
 	s.Router.HandleFunc("/api/v1/health", s.handleHealth)
+
+	// Read-only service integration
+	s.Router.HandleFunc("/api/v1/repositories/", s.handleRepositoryMetadata)
 
 	// Spec endpoints
 	s.Router.HandleFunc("/api/v1/specs", s.handleSpecs)
@@ -584,45 +590,73 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 
 		// Auth
 		var userID string
-		if s.Auth.Enabled && r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" {
+		serviceIdentity := false
+		if s.Auth.Enabled && (r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" || (r.URL.Path == "/api/v1/health" && isRS256Token(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")))) {
 			token := r.Header.Get("Authorization")
 			if token == "" {
 				s.writeError(w, http.StatusUnauthorized, "authorization required")
 				return
 			}
 			token = strings.TrimPrefix(token, "Bearer ")
-			if s.jwt == nil {
-				s.writeError(w, http.StatusUnauthorized, "JWT authentication is not configured")
-				return
-			}
-			claims, err := s.jwt.Validate(token)
-			if err != nil {
-				s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
-				return
-			}
-			userID = claims.Sub
-
-			// RBAC check
-			if s.authManager != nil {
-				perm, ok := s.routePermission(r.URL.Path, r.Method)
-				user, exists := s.authManager.GetUser(userID)
-				if userID == "" || !exists {
-					s.writeError(w, http.StatusForbidden, "user not found")
+			if isRS256Token(token) {
+				if s.Auth.ServiceJWKS == nil {
+					s.writeError(w, http.StatusUnauthorized, "service JWT authentication is not configured")
 					return
 				}
-				if !ok {
-					if !s.authManager.RBAC().HasPermission(user, auth.ResourceAdmin, auth.ActionAdmin) {
-						s.writeError(w, http.StatusForbidden, "route permission not configured")
+				claims, err := s.Auth.ServiceJWKS.Validate(r.Context(), token)
+				if err != nil {
+					s.writeError(w, http.StatusUnauthorized, "invalid service token")
+					return
+				}
+				if r.Method != http.MethodGet || !isRepositoryMetadataPath(r.URL.Path) {
+					s.writeError(w, http.StatusForbidden, "service identity is restricted to read-only repository metadata")
+					return
+				}
+				if !hasJWTClaimScope(claims, "naeos:repository:read") {
+					s.writeError(w, http.StatusForbidden, "required service scope is missing")
+					return
+				}
+				serviceIdentity = true
+				userID = claims.Sub
+				r = r.WithContext(context.WithValue(r.Context(), serviceIdentityContextKey{}, true))
+			} else {
+				if strings.HasPrefix(r.URL.Path, "/api/v1/repositories/") {
+					s.writeError(w, http.StatusForbidden, "repository metadata requires a service identity")
+					return
+				}
+				if s.jwt == nil {
+					s.writeError(w, http.StatusUnauthorized, "JWT authentication is not configured")
+					return
+				}
+				claims, err := s.jwt.Validate(token)
+				if err != nil {
+					s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
+					return
+				}
+				userID = claims.Sub
+
+				// RBAC check
+				if s.authManager != nil {
+					perm, ok := s.routePermission(r.URL.Path, r.Method)
+					user, exists := s.authManager.GetUser(userID)
+					if userID == "" || !exists {
+						s.writeError(w, http.StatusForbidden, "user not found")
 						return
 					}
-				} else if !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
-					s.writeError(w, http.StatusForbidden, "insufficient permissions")
-					return
+					if !ok {
+						if !s.authManager.RBAC().HasPermission(user, auth.ResourceAdmin, auth.ActionAdmin) {
+							s.writeError(w, http.StatusForbidden, "route permission not configured")
+							return
+						}
+					} else if !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
+						s.writeError(w, http.StatusForbidden, "insufficient permissions")
+						return
+					}
 				}
 			}
 		}
 
-		if userID != "" {
+		if userID != "" && !serviceIdentity {
 			r = r.WithContext(context.WithValue(r.Context(), UserContextKey, userID))
 
 			// Resolve tenant from user metadata (X-Tenant-ID header or user attribute)
