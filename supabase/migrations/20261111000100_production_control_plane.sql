@@ -1,18 +1,22 @@
 -- NAEOS Production Control Plane private persistence schema.
 -- Apply only to an isolated staging project during P4. Never run against production
 -- until the P5 cutover gate, backup proof, and explicit operator approval are complete.
+-- The runtime connects with a dedicated LOGIN role that is granted membership in
+-- naeos_control_plane_runtime. Do not use the Supabase service_role API key as a
+-- PostgreSQL login credential. Provision the LOGIN role password through a secret manager.
 
-DO $$
+DO $
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
-    RAISE EXCEPTION 'required Supabase role service_role is missing';
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'naeos_control_plane_runtime') THEN
+    CREATE ROLE naeos_control_plane_runtime
+      NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOBYPASSRLS;
   END IF;
 END
-$$;
+$;
 
 CREATE SCHEMA IF NOT EXISTS naeos_control_plane;
 REVOKE ALL ON SCHEMA naeos_control_plane FROM PUBLIC;
-GRANT USAGE ON SCHEMA naeos_control_plane TO service_role;
+GRANT USAGE ON SCHEMA naeos_control_plane TO naeos_control_plane_runtime;
 
 CREATE TABLE naeos_control_plane.policy_versions (
   policy_id TEXT NOT NULL,
@@ -205,18 +209,39 @@ ALTER TABLE naeos_control_plane.approvals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE naeos_control_plane.ledger_head ENABLE ROW LEVEL SECURITY;
 ALTER TABLE naeos_control_plane.ledger_events ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON ALL TABLES IN SCHEMA naeos_control_plane FROM PUBLIC;
-REVOKE ALL ON ALL FUNCTIONS IN SCHEMA naeos_control_plane FROM PUBLIC;
-GRANT SELECT, INSERT ON naeos_control_plane.policy_versions TO service_role;
-GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.active_policies TO service_role;
-GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.grants TO service_role;
-GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.approvals TO service_role;
-GRANT SELECT ON naeos_control_plane.ledger_events TO service_role;
-GRANT EXECUTE ON FUNCTION naeos_control_plane.append_ledger_event(JSONB, TEXT, TEXT) TO service_role;
+-- The runtime group is NOBYPASSRLS. Explicit policies and table grants jointly
+-- constrain it; browser roles and Supabase service_role receive no access.
+CREATE POLICY control_plane_policy_versions_runtime
+  ON naeos_control_plane.policy_versions
+  FOR SELECT TO naeos_control_plane_runtime USING (TRUE);
+CREATE POLICY control_plane_policy_versions_insert
+  ON naeos_control_plane.policy_versions
+  FOR INSERT TO naeos_control_plane_runtime WITH CHECK (TRUE);
+CREATE POLICY control_plane_active_policies_runtime
+  ON naeos_control_plane.active_policies
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_grants_runtime
+  ON naeos_control_plane.grants
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_approvals_runtime
+  ON naeos_control_plane.approvals
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_ledger_events_read
+  ON naeos_control_plane.ledger_events
+  FOR SELECT TO naeos_control_plane_runtime USING (TRUE);
 
-REVOKE ALL ON SCHEMA naeos_control_plane FROM anon, authenticated;
-REVOKE ALL ON ALL TABLES IN SCHEMA naeos_control_plane FROM anon, authenticated;
-REVOKE ALL ON ALL FUNCTIONS IN SCHEMA naeos_control_plane FROM anon, authenticated;
+REVOKE ALL ON SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL TABLES IN SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane REVOKE ALL ON TABLES FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane REVOKE ALL ON FUNCTIONS FROM PUBLIC;
+GRANT SELECT, INSERT ON naeos_control_plane.policy_versions TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.active_policies TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.grants TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.approvals TO naeos_control_plane_runtime;
+GRANT SELECT ON naeos_control_plane.ledger_events TO naeos_control_plane_runtime;
+GRANT EXECUTE ON FUNCTION naeos_control_plane.append_ledger_event(JSONB, TEXT, TEXT) TO naeos_control_plane_runtime;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane
+  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane
+  REVOKE ALL ON FUNCTIONS FROM PUBLIC, anon, authenticated, service_role;
