@@ -156,10 +156,12 @@ BEGIN
   IF p_event IS NULL OR jsonb_typeof(p_event) <> 'object' THEN
     RAISE EXCEPTION 'ledger event must be a JSON object';
   END IF;
-  IF p_event_hash IS NULL OR p_event_hash !~ '^[0-9a-f]{64}
+  IF p_event_hash IS NULL OR p_event_hash !~ '^[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION 'event hash must be a lowercase 64-character SHA-256 hex digest';
+  END IF;
+  IF coalesce(p_event->>'event_hash', '') <> p_event_hash THEN
     RAISE EXCEPTION 'event payload hash does not match supplied hash';
   END IF;
-
   SELECT * INTO STRICT v_head
   FROM naeos_control_plane.ledger_head
   WHERE singleton = TRUE
