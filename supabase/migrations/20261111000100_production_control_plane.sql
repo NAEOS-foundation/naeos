@@ -4,6 +4,9 @@
 -- The runtime connects with a dedicated LOGIN role that is granted membership in
 -- naeos_control_plane_runtime. Do not use the Supabase service_role API key as a
 -- PostgreSQL login credential. Provision the LOGIN role password through a secret manager.
+-- Example (run separately through a secure admin session; never commit the password):
+--   CREATE ROLE naeos_control_plane_login LOGIN INHERIT PASSWORD '<managed-secret>';
+--   GRANT naeos_control_plane_runtime TO naeos_control_plane_login;
 
 DO $
 BEGIN
@@ -21,11 +24,13 @@ GRANT USAGE ON SCHEMA naeos_control_plane TO naeos_control_plane_runtime;
 CREATE TABLE naeos_control_plane.policy_versions (
   policy_id TEXT NOT NULL,
   version INTEGER NOT NULL CHECK (version > 0),
-  status TEXT NOT NULL CHECK (status IN ('active', 'inactive', 'superseded')),
   policy JSONB NOT NULL CHECK (jsonb_typeof(policy) = 'object'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (policy_id, version)
 );
+
+COMMENT ON TABLE naeos_control_plane.policy_versions IS
+  'Immutable policy snapshots; active_policies is authoritative for active-version selection.';
 
 CREATE TABLE naeos_control_plane.active_policies (
   policy_id TEXT PRIMARY KEY,
@@ -151,8 +156,100 @@ BEGIN
   IF p_event IS NULL OR jsonb_typeof(p_event) <> 'object' THEN
     RAISE EXCEPTION 'ledger event must be a JSON object';
   END IF;
-  IF p_event_hash IS NULL OR length(p_event_hash) <> 64 THEN
-    RAISE EXCEPTION 'event hash must be a 64-character SHA-256 hex digest';
+  IF p_event_hash IS NULL OR p_event_hash !~ '^[0-9a-f]{64}
+  IF coalesce(p_event->>'event_hash', '') <> p_event_hash THEN
+    RAISE EXCEPTION 'event payload hash does not match supplied hash';
+  END IF;
+
+  SELECT * INTO STRICT v_head
+  FROM naeos_control_plane.ledger_head
+  WHERE singleton = TRUE
+  FOR UPDATE;
+
+  IF coalesce(p_event->>'previous_hash', '') <> v_head.event_hash
+     OR coalesce(p_previous_hash, '') <> v_head.event_hash THEN
+    RAISE EXCEPTION 'ledger predecessor mismatch';
+  END IF;
+
+  v_event_id := p_event->>'id';
+  IF v_event_id IS NULL OR v_event_id = '' THEN
+    RAISE EXCEPTION 'ledger event id is required';
+  END IF;
+
+  v_sequence := v_head.last_sequence + 1;
+
+  INSERT INTO naeos_control_plane.ledger_events (
+    sequence, event_id, occurred_at, request_id, decision_id, execution_id,
+    agent_id, event_type, previous_hash, event_hash, event_payload
+  ) VALUES (
+    v_sequence,
+    v_event_id,
+    (p_event->>'timestamp')::TIMESTAMPTZ,
+    coalesce(p_event->>'request_id', ''),
+    coalesce(p_event->>'decision_id', ''),
+    coalesce(p_event->>'execution_id', ''),
+    coalesce(p_event->>'agent_id', ''),
+    coalesce(p_event->>'event_type', ''),
+    coalesce(p_event->>'previous_hash', ''),
+    p_event_hash,
+    p_event
+  );
+
+  UPDATE naeos_control_plane.ledger_head
+  SET last_sequence = v_sequence, event_hash = p_event_hash
+  WHERE singleton = TRUE;
+
+  RETURN v_sequence;
+END
+$$;
+
+-- Enable RLS as defense in depth. The private schema is not intended for browser access;
+-- the dedicated backend service_role is the only runtime role granted access.
+ALTER TABLE naeos_control_plane.policy_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE naeos_control_plane.active_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE naeos_control_plane.grants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE naeos_control_plane.approvals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE naeos_control_plane.ledger_head ENABLE ROW LEVEL SECURITY;
+ALTER TABLE naeos_control_plane.ledger_events ENABLE ROW LEVEL SECURITY;
+
+-- The runtime group is NOBYPASSRLS. Explicit policies and table grants jointly
+-- constrain it; browser roles and Supabase service_role receive no access.
+CREATE POLICY control_plane_policy_versions_runtime
+  ON naeos_control_plane.policy_versions
+  FOR SELECT TO naeos_control_plane_runtime USING (TRUE);
+CREATE POLICY control_plane_policy_versions_insert
+  ON naeos_control_plane.policy_versions
+  FOR INSERT TO naeos_control_plane_runtime WITH CHECK (TRUE);
+CREATE POLICY control_plane_active_policies_runtime
+  ON naeos_control_plane.active_policies
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_grants_runtime
+  ON naeos_control_plane.grants
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_approvals_runtime
+  ON naeos_control_plane.approvals
+  FOR ALL TO naeos_control_plane_runtime USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY control_plane_ledger_events_read
+  ON naeos_control_plane.ledger_events
+  FOR SELECT TO naeos_control_plane_runtime USING (TRUE);
+
+REVOKE ALL ON SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL TABLES IN SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA naeos_control_plane FROM PUBLIC, anon, authenticated, service_role;
+
+GRANT SELECT, INSERT ON naeos_control_plane.policy_versions TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.active_policies TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.grants TO naeos_control_plane_runtime;
+GRANT SELECT, INSERT, UPDATE ON naeos_control_plane.approvals TO naeos_control_plane_runtime;
+GRANT SELECT ON naeos_control_plane.ledger_events TO naeos_control_plane_runtime;
+GRANT EXECUTE ON FUNCTION naeos_control_plane.append_ledger_event(JSONB, TEXT, TEXT) TO naeos_control_plane_runtime;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane
+  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA naeos_control_plane
+  REVOKE ALL ON FUNCTIONS FROM PUBLIC, anon, authenticated, service_role;
+ THEN
+    RAISE EXCEPTION 'event hash must be a lowercase 64-character SHA-256 hex digest';
   END IF;
   IF coalesce(p_event->>'event_hash', '') <> p_event_hash THEN
     RAISE EXCEPTION 'event payload hash does not match supplied hash';
