@@ -160,3 +160,17 @@ func TestServiceJWTIsRestrictedToAllowlistedReadOnlyRepositoryRoute(t *testing.T
 		t.Fatalf("service JWT reached a user route: status=%d body=%s", w.Code, w.Body.String())
 	}
 }
+
+func TestJWKSValidatorDoesNotFollowRedirects(t *testing.T) {
+	validator, err := NewJWKSValidator("https://issuer.example", "naeos-core", "https://issuer.example/jwks")
+	if err != nil {
+		t.Fatalf("create JWKS validator: %v", err)
+	}
+	if validator.client.CheckRedirect == nil {
+		t.Fatal("JWKS client must define an explicit redirect policy")
+	}
+	request := httptest.NewRequest(http.MethodGet, "https://attacker.example/jwks", nil)
+	if err := validator.client.CheckRedirect(request, nil); err != http.ErrUseLastResponse {
+		t.Fatalf("redirect policy error = %v, want %v", err, http.ErrUseLastResponse)
+	}
+}

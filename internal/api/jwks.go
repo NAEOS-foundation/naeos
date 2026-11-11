@@ -112,7 +112,14 @@ func NewJWKSValidator(issuer, audience, endpoint string) (*JWKSValidator, error)
 		issuer:   issuer,
 		audience: audience,
 		url:      endpoint,
-		client:   &http.Client{Timeout: 5 * time.Second},
+		client: &http.Client{
+			Timeout: 5 * time.Second,
+			// The configured JWKS URL is a trust anchor. Do not follow redirects
+			// to a different endpoint when fetching signing keys.
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
 	}, nil
 }
 
