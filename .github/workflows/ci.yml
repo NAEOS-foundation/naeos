@@ -119,8 +119,8 @@ jobs:
       - name: Compile generated Go output
         run: |
           set -euo pipefail
-          gen="$NAEOS_DEMO_OUT/generated"
-          test -f "$gen/go.mod" || { echo "generator produced no go.mod"; exit 1; }
+          gen="$NAEOS_DEMO_OUT/generated/go"
+          test -f "$gen/go.mod" || { echo "generator produced no Go module at $gen"; exit 1; }
           cp "$PWD/go.sum" "$gen/go.sum"
           cd "$gen"
           GOFLAGS=-mod=mod go build ./...
