@@ -82,7 +82,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          CHECK_NAME: Workers Builds: naeos
+          CHECK_NAME: 'Workers Builds: naeos'
         shell: bash
         run: |
           set -euo pipefail
