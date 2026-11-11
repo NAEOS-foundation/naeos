@@ -3,6 +3,14 @@ name: External Validation
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/external-validation.sh'
+      - 'examples/demo-cli/**'
+      - 'cmd/**'
+      - 'internal/generation/**'
+      - '.github/workflows/external-validation.yml'
   workflow_dispatch:
 
 permissions:
