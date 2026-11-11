@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 60); do
-            result="$(gh api "repos/${GH_REPO}/commits/${HEAD_SHA}/check-runs" --jq '[.check_runs[] | select(.name == env.CHECK_NAME)] | sort_by(.started_at // .created_at) | last // {} | [.status // "missing", .conclusion // ""] | @tsv')"
+            result="$(gh api "repos/${GH_REPO}/commits/${HEAD_SHA}/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == env.CHECK_NAME)] | sort_by(.started_at // .created_at) | last // {} | [.status // "missing", .conclusion // ""] | @tsv')"
             status="$(cut -f1 <<< "$result")"
             conclusion="$(cut -f2 <<< "$result")"
             echo "Workers Builds: naeos: status=${status}, conclusion=${conclusion} (attempt ${attempt}/60)"
