@@ -102,7 +102,10 @@ func (s *DatabaseInvocationStore) Claim(invocationID string) (bool, error) {
 	switch s.db.Name() {
 	case "mysql":
 		query = "INSERT IGNORE INTO naeos_invocation_replay (invocation_id, consumed_at) VALUES (?, ?)"
-	case "postgresql", "sqlite", "supabase":
+	case "postgresql", "supabase":
+		// pgx uses PostgreSQL-native positional placeholders ($1, $2).
+		query = "INSERT INTO naeos_invocation_replay (invocation_id, consumed_at) VALUES ($1, $2) ON CONFLICT (invocation_id) DO NOTHING"
+	case "sqlite":
 		query = "INSERT INTO naeos_invocation_replay (invocation_id, consumed_at) VALUES (?, ?) ON CONFLICT (invocation_id) DO NOTHING"
 	default:
 		return false, fmt.Errorf("unsupported database for durable invocation replay: %s", s.db.Name())
