@@ -856,19 +856,28 @@ func (s *Server) handleRepository(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	requestURL := "https://api.github.com/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+	// Keep the provider authority fixed; validated repository segments cannot
+	// influence the destination host or scheme.
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/", nil)
 	if err != nil {
 		s.writeError(w, http.StatusBadGateway, "repository provider request failed")
 		return
 	}
+	req.URL.Path = "/repos/" + owner + "/" + name
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "naeos-core-api")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	if token := strings.TrimSpace(os.Getenv("GITHUB_TOKEN")); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			// Never forward service credentials to a redirect destination.
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		s.writeError(w, http.StatusBadGateway, "repository provider unavailable")
 		return
