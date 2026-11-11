@@ -113,9 +113,10 @@ REQUIRED_FILES=(
   "$OUTPUT_DIR/context.md"
   "$OUTPUT_DIR/context.json"
   "$OUTPUT_DIR/run.json"
-  "$GENERATED_DIR/README.md"
-  "$GENERATED_DIR/go.mod"
-  "$GENERATED_DIR/package.json"
+  "$GENERATED_DIR/go/README.md"
+  "$GENERATED_DIR/go/go.mod"
+  "$GENERATED_DIR/typescript/README.md"
+  "$GENERATED_DIR/typescript/package.json"
 )
 
 for required_file in "${REQUIRED_FILES[@]}"; do
