@@ -4,6 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile.control-plane
     image: naeos-core:local
+    command: ["/usr/local/bin/naeos", "api", "--port", "8080", "--auth", "--secret", "${NAEOS_API_JWT_SECRET:-}"]
+    environment:
+      NAEOS_API_JWKS_ISSUER: ${NAEOS_API_JWKS_ISSUER:-}
+      NAEOS_API_JWKS_AUDIENCE: ${NAEOS_API_JWKS_AUDIENCE:-}
+      NAEOS_API_JWKS_URL: ${NAEOS_API_JWKS_URL:-}
+      NAEOS_GITHUB_ALLOWED_REPOSITORIES: ${NAEOS_GITHUB_ALLOWED_REPOSITORIES:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      NAEOS_ENCRYPTION_KEY: ${NAEOS_ENCRYPTION_KEY:-}
+      NAEOS_API_ADMIN_USER: ${NAEOS_API_ADMIN_USER:-admin}
     ports:
       - "8081:8080"
     restart: unless-stopped
