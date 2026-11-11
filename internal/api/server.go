@@ -8,8 +8,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -53,6 +55,7 @@ type Server struct {
 	APIKeys          map[string]*RateLimiter
 	apiKeysMu        sync.RWMutex
 	jwt              *JWTValidator
+	serviceJWKS      *JWKSValidator
 	authManager      *auth.Manager
 	routePerms       map[string]auth.RoutePermission
 	parser           parser.Parser
@@ -119,6 +122,8 @@ type pipelineJob struct {
 	Error     string `json:"error,omitempty"`
 }
 
+type serviceAuthContextKey struct{}
+
 type cloudDeployment struct {
 	ID        string              `json:"id"`
 	Provider  cloud.CloudProvider `json:"provider"`
@@ -130,8 +135,9 @@ type cloudDeployment struct {
 
 // AuthConfig holds authentication settings for the API server.
 type AuthConfig struct {
-	JWTSecret string
-	Enabled   bool
+	JWTSecret   string
+	Enabled     bool
+	ServiceJWKS *JWKSValidator
 }
 
 // CORSConfig holds Cross-Origin Resource Sharing settings.
@@ -213,6 +219,9 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 
 	if authCfg != nil && authCfg.JWTSecret != "" {
 		s.jwt = NewJWTValidator(authCfg.JWTSecret)
+	}
+	if authCfg != nil {
+		s.serviceJWKS = authCfg.ServiceJWKS
 	}
 	s.bundle = contextbundle.NewGenerator(s.compiler)
 	s.mcpServer = mcp.NewServer(s.compiler, s.bundle)
@@ -303,6 +312,7 @@ func (s *Server) setupRoutes() {
 	s.Router.HandleFunc("/api/v1/specs/validate", s.handleSpecValidate)
 	s.Router.HandleFunc("/api/v1/specs/compile", s.handleSpecCompile)
 	s.Router.HandleFunc("/api/v1/specs/visualize", s.handleSpecVisualize)
+	s.Router.HandleFunc("/api/v1/repositories/", s.handleRepository)
 
 	// Pipeline endpoints
 	s.Router.HandleFunc("/api/v1/pipeline/run", s.handlePipelineRun)
@@ -361,6 +371,7 @@ func (s *Server) setupRoutes() {
 func defaultRoutePermissions() map[string]auth.RoutePermission {
 	return map[string]auth.RoutePermission{
 		"/api/v1/specs":                {Resource: auth.ResourceSpec, Action: auth.ActionRead},
+		"/api/v1/repositories/":        {Resource: auth.ResourceAdmin, Action: auth.ActionAdmin},
 		"/api/v1/specs/validate":       {Resource: auth.ResourceSpec, Action: auth.ActionWrite},
 		"/api/v1/specs/compile":        {Resource: auth.ResourceSpec, Action: auth.ActionWrite},
 		"/api/v1/specs/visualize":      {Resource: auth.ResourceSpec, Action: auth.ActionRead},
@@ -397,6 +408,9 @@ func (s *Server) routePermission(path, method string) (auth.RoutePermission, boo
 	perm, ok := s.routePerms[path]
 	if !ok {
 		switch {
+		case strings.HasPrefix(path, "/api/v1/repositories/"):
+			perm = auth.RoutePermission{Resource: auth.ResourceAdmin, Action: auth.ActionAdmin}
+			ok = true
 		case strings.HasPrefix(path, "/api/v1/schemas/"):
 			perm = auth.RoutePermission{Resource: auth.ResourceConfig, Action: auth.ActionRead}
 			ok = true
@@ -584,26 +598,60 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 
 		// Auth
 		var userID string
-		if s.Auth.Enabled && r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" {
+		var serviceToken bool
+		userAuthEnabled := s.Auth != nil && s.Auth.Enabled
+		serviceRepositoryRoute := strings.HasPrefix(r.URL.Path, "/api/v1/repositories/")
+		if (userAuthEnabled || serviceRepositoryRoute) && r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" {
 			token := r.Header.Get("Authorization")
 			if token == "" {
-				s.writeError(w, http.StatusUnauthorized, "authorization required")
+				if serviceRepositoryRoute {
+					s.writeError(w, http.StatusUnauthorized, "service JWT is required for repository access")
+				} else {
+					s.writeError(w, http.StatusUnauthorized, "authorization required")
+				}
 				return
 			}
 			token = strings.TrimPrefix(token, "Bearer ")
-			if s.jwt == nil {
+			var claims *JWTClaims
+			var err error
+			serviceToken = isRS256Token(token)
+			if serviceRepositoryRoute {
+				if s.serviceJWKS == nil {
+					s.writeError(w, http.StatusUnauthorized, "service JWT authentication is not configured")
+					return
+				}
+				if !serviceToken {
+					s.writeError(w, http.StatusUnauthorized, "service JWT is required for repository access")
+					return
+				}
+				claims, err = s.serviceJWKS.Validate(r.Context(), token)
+				if err != nil {
+					s.writeError(w, http.StatusUnauthorized, "invalid bearer token")
+					return
+				}
+				userID = claims.Sub
+				if r.Method != http.MethodGet || !hasJWTClaimScope(claims, "naeos:repository:read") {
+					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
+					return
+				}
+			} else if serviceToken {
+				s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
+				return
+			} else if s.jwt != nil {
+				claims, err = s.jwt.Validate(token)
+			} else {
 				s.writeError(w, http.StatusUnauthorized, "JWT authentication is not configured")
 				return
 			}
-			claims, err := s.jwt.Validate(token)
 			if err != nil {
-				s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
+				s.writeError(w, http.StatusUnauthorized, "invalid bearer token")
 				return
 			}
-			userID = claims.Sub
-
-			// RBAC check
-			if s.authManager != nil {
+			if !serviceRepositoryRoute {
+				userID = claims.Sub
+			}
+			if !serviceRepositoryRoute && s.authManager != nil {
+				// User JWTs continue through the existing user and role checks.
 				perm, ok := s.routePermission(r.URL.Path, r.Method)
 				user, exists := s.authManager.GetUser(userID)
 				if userID == "" || !exists {
@@ -620,10 +668,14 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					return
 				}
 			}
+
 		}
 
 		if userID != "" {
 			r = r.WithContext(context.WithValue(r.Context(), UserContextKey, userID))
+			if serviceToken {
+				r = r.WithContext(context.WithValue(r.Context(), serviceAuthContextKey{}, true))
+			}
 
 			// Resolve tenant from user metadata (X-Tenant-ID header or user attribute)
 			if s.tenantWorkspace != nil {
@@ -763,6 +815,132 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		"uptime":   time.Since(startTime).String(),
 		"database": dbStatus,
 	})
+}
+
+func (s *Server) handleRepository(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if s.serviceJWKS == nil {
+		s.writeError(w, http.StatusServiceUnavailable, "service authentication is not configured")
+		return
+	}
+	serviceIdentity, _ := r.Context().Value(serviceAuthContextKey{}).(bool)
+	if !serviceIdentity {
+		s.writeError(w, http.StatusForbidden, "service JWT is required for repository access")
+		return
+	}
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/repositories/"), "/")
+	if len(parts) != 2 || !validRepositorySegment(parts[0]) || !validRepositorySegment(parts[1]) {
+		s.writeError(w, http.StatusBadRequest, "repository path must be owner/name")
+		return
+	}
+	owner, name := parts[0], parts[1]
+	repository := strings.ToLower(owner + "/" + name)
+	userID, _ := r.Context().Value(UserContextKey).(string)
+	if !repositoryAllowed(repository, os.Getenv("NAEOS_GITHUB_ALLOWED_REPOSITORIES")) {
+		if s.auditor != nil {
+			_ = s.auditor.Log(audit.AuditEvent{
+				UserID: userID, Action: "repository.read.denied", Resource: "repository", ResourceID: repository,
+				IP: r.RemoteAddr, UserAgent: r.UserAgent(), Status: "failure", Details: "repository not in allowlist",
+			})
+		}
+		s.writeError(w, http.StatusForbidden, "repository is not enabled for service access")
+		return
+	}
+	if userID == "" {
+		s.writeError(w, http.StatusUnauthorized, "authenticated service identity is required")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	requestURL := "https://api.github.com/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+	if err != nil {
+		s.writeError(w, http.StatusBadGateway, "repository provider request failed")
+		return
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "naeos-core-api")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	if token := strings.TrimSpace(os.Getenv("GITHUB_TOKEN")); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	if err != nil {
+		s.writeError(w, http.StatusBadGateway, "repository provider unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		s.writeError(w, http.StatusNotFound, "repository not found")
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		s.writeError(w, http.StatusBadGateway, "repository provider returned an unsuccessful status")
+		return
+	}
+	var githubRepo struct {
+		ID            int64     `json:"id"`
+		Name          string    `json:"name"`
+		FullName      string    `json:"full_name"`
+		Description   string    `json:"description"`
+		Private       bool      `json:"private"`
+		Archived      bool      `json:"archived"`
+		DefaultBranch string    `json:"default_branch"`
+		OpenIssues    int       `json:"open_issues_count"`
+		Stars         int       `json:"stargazers_count"`
+		Forks         int       `json:"forks_count"`
+		SizeKB        int       `json:"size"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
+		URL           string    `json:"html_url"`
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	if err != nil || json.Unmarshal(body, &githubRepo) != nil || githubRepo.FullName == "" {
+		s.writeError(w, http.StatusBadGateway, "repository provider returned an invalid response")
+		return
+	}
+	if s.auditor != nil {
+		if err := s.auditor.Log(audit.AuditEvent{
+			UserID: userID, Action: "repository.read", Resource: "repository", ResourceID: repository,
+			IP: r.RemoteAddr, UserAgent: r.UserAgent(), Status: "success", Details: "read-only GitHub metadata lookup",
+		}); err != nil {
+			s.writeError(w, http.StatusInternalServerError, "repository access could not be audited")
+			return
+		}
+	}
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"id": strconv.FormatInt(githubRepo.ID, 10), "name": githubRepo.Name, "full_name": githubRepo.FullName,
+		"owner": owner, "description": githubRepo.Description, "private": githubRepo.Private,
+		"archived": githubRepo.Archived, "default_branch": githubRepo.DefaultBranch,
+		"open_issues": githubRepo.OpenIssues, "stars": githubRepo.Stars, "forks": githubRepo.Forks,
+		"size_kb": githubRepo.SizeKB, "created_at": githubRepo.CreatedAt, "updated_at": githubRepo.UpdatedAt, "url": githubRepo.URL,
+	})
+}
+
+func validRepositorySegment(value string) bool {
+	if value == "" || value == "." || value == ".." {
+		return false
+	}
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func repositoryAllowed(repository, allowlist string) bool {
+	for _, item := range strings.Split(allowlist, ",") {
+		if strings.ToLower(strings.TrimSpace(item)) == repository && repository != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) handleSpecs(w http.ResponseWriter, r *http.Request) {

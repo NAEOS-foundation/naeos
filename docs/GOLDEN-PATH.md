@@ -55,6 +55,9 @@ A Golden Path run is successful only when all of these are true:
 6. `run.json` contains `run_id`, `specification_hash`, `neir_hash`, validation, policy, context, audit, and stage metadata.
 7. Expected generated project files exist.
 8. A summary is written under the isolated run directory.
+9. `artifact_summary.path_collisions` is zero, so every logical artifact has a unique output path.
+
+The demo reports logical artifacts, materialized files, and path collisions separately. A nonzero `path_collisions` value means multiple generated artifacts target the same path; the final file cannot represent every logical artifact. The script fails and prints the duplicate paths so the issue is visible and reproducible.
 
 ### What you just proved
 

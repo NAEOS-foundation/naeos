@@ -5,6 +5,7 @@ package adapters
 
 import (
 	"context"
+	"path"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -106,21 +107,17 @@ func generateSequential(neir *model.NEIR, languages []language.Language) ([]engi
 }
 
 func generateParallel(neir *model.NEIR, languages []language.Language) ([]engine.Artifact, error) {
-	var mu sync.Mutex
-	var allArtifacts []engine.Artifact
+	byLanguage := make([][]engine.Artifact, len(languages))
 
 	g, _ := errgroup.WithContext(context.Background())
-	for _, lang := range languages {
-		lang := lang
+	for i, lang := range languages {
+		i, lang := i, lang
 		g.Go(func() error {
 			adapter, ok := Get(lang)
 			if !ok {
 				return nil
 			}
-			artifacts := generateWithAdapter(adapter, neir)
-			mu.Lock()
-			allArtifacts = append(allArtifacts, artifacts...)
-			mu.Unlock()
+			byLanguage[i] = namespaceArtifacts(generateWithAdapter(adapter, neir), lang)
 			return nil
 		})
 	}
@@ -128,7 +125,23 @@ func generateParallel(neir *model.NEIR, languages []language.Language) ([]engine
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	var allArtifacts []engine.Artifact
+	for _, artifacts := range byLanguage {
+		allArtifacts = append(allArtifacts, artifacts...)
+	}
 	return allArtifacts, nil
+}
+
+// namespaceArtifacts gives each adapter an independent project root when a
+// specification targets multiple languages. Adapter outputs commonly include
+// root-level files such as README.md and Dockerfile; leaving those paths shared
+// makes concurrent generation overwrite files nondeterministically.
+func namespaceArtifacts(artifacts []engine.Artifact, lang language.Language) []engine.Artifact {
+	root := string(lang)
+	for i := range artifacts {
+		artifacts[i].Path = path.Join(root, artifacts[i].Path)
+	}
+	return artifacts
 }
 
 func resolveLanguages(neir *model.NEIR) []language.Language {
