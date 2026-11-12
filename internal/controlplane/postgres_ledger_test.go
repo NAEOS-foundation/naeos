@@ -32,21 +32,40 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	config, err := pgxpool.ParseConfig(databaseURL)
-	if err != nil {
-		t.Fatalf("parse test database URL: %v", err)
-	}
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		t.Fatalf("create test database pool: %v", err)
 	}
-	defer pool.Close()
+	defer func() {
+		if pool != nil {
+			pool.Close()
+		}
+	}()
 	if err := pool.Ping(ctx); err != nil {
 		t.Fatalf("ping test database: %v", err)
 	}
 	store, err := NewPostgresLedger(pool)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	var canReadHead, canUpdateHead, canInsertLedger, canUpdateLedger, canDeleteLedger bool
+	err = pool.QueryRow(ctx, `SELECT
+		has_table_privilege(current_user, 'naeos_control_plane.ledger_head', 'SELECT'),
+		has_table_privilege(current_user, 'naeos_control_plane.ledger_head', 'UPDATE'),
+		has_table_privilege(current_user, 'naeos_control_plane.ledger_events', 'INSERT'),
+		has_table_privilege(current_user, 'naeos_control_plane.ledger_events', 'UPDATE'),
+		has_table_privilege(current_user, 'naeos_control_plane.ledger_events', 'DELETE')`).Scan(
+		&canReadHead, &canUpdateHead, &canInsertLedger, &canUpdateLedger, &canDeleteLedger)
+	if err != nil {
+		t.Fatalf("inspect runtime table privileges: %v", err)
+	}
+	if canReadHead || canUpdateHead {
+		t.Fatalf("runtime must not access ledger_head directly: SELECT=%t UPDATE=%t", canReadHead, canUpdateHead)
+	}
+	if canInsertLedger || canUpdateLedger || canDeleteLedger {
+		t.Fatalf("runtime must not mutate ledger_events directly: INSERT=%t UPDATE=%t DELETE=%t",
+			canInsertLedger, canUpdateLedger, canDeleteLedger)
 	}
 
 	const count = 12
@@ -78,9 +97,9 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	}
 	sorted := append([]int64(nil), sequences...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
-	for i := 1; i < len(sorted); i++ {
-		if sorted[i] != sorted[i-1]+1 {
-			t.Fatalf("concurrent append sequence is not contiguous: %v", sorted)
+	for i, sequence := range sorted {
+		if sequence != int64(i+1) {
+			t.Fatalf("concurrent append sequence is not contiguous from 1: %v", sorted)
 		}
 	}
 
@@ -88,7 +107,28 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load and verify ledger after concurrent appends: %v", err)
 	}
-	if len(events) < count {
-		t.Fatalf("loaded %d events; expected at least %d", len(events), count)
+	if len(events) != count {
+		t.Fatalf("loaded %d events; expected exactly %d in isolated database", len(events), count)
+	}
+
+	// Simulate a process restart by closing the original pool and loading
+	// the committed ledger through a fresh connection pool.
+	pool.Close()
+	pool = nil
+	restartedPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create restarted database pool: %v", err)
+	}
+	defer restartedPool.Close()
+	restartedStore, err := NewPostgresLedger(restartedPool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restartedEvents, err := restartedStore.Load(ctx)
+	if err != nil {
+		t.Fatalf("reload ledger after pool restart: %v", err)
+	}
+	if len(restartedEvents) != count {
+		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), count)
 	}
 }
