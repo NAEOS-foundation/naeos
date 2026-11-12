@@ -30,7 +30,9 @@ func TestPostgresRepositoriesRejectUnavailableAndCanceledContexts(t *testing.T) 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
 	db, _, err := sqlmock.New()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer db.Close()
 	if err := NewPostgresPolicyRepository(db).PutVersion(canceled, &Policy{ID: "p", Version: 1}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("policy canceled error = %v", err)
@@ -45,7 +47,9 @@ func TestPostgresRepositoriesRejectUnavailableAndCanceledContexts(t *testing.T) 
 
 func TestPostgresApprovalRepositoryTransitionUsesCompareAndSet(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer db.Close()
 
 	now := time.Date(2026, 11, 12, 10, 0, 0, 0, time.UTC)
@@ -67,9 +71,13 @@ func TestPostgresApprovalRepositoryTransitionUsesCompareAndSet(t *testing.T) {
 			"reviewer", "approved", now.Add(-time.Minute), expires, now, "", ""))
 
 	got, err := repo.Transition(context.Background(), "approval-1", "pending", "approved", now)
-	if err != nil { t.Fatalf("Transition: %v", err) }
+	if err != nil {
+		t.Fatalf("Transition: %v", err)
+	}
 	if got.Status != "approved" || !got.ApprovedAt.Equal(now) {
 		t.Fatalf("Transition returned %+v", got)
 	}
-	if err := mock.ExpectationsWereMet(); err != nil { t.Fatal(err) }
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
 }
