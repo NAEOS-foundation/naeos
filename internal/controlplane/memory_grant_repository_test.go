@@ -128,19 +128,19 @@ func TestMemoryGrantRepositoryValidationErrorsAndContext(t *testing.T) {
 		t.Fatalf("empty reason error = %v, want conflict", err)
 	}
 
-	cancelled, cancel := context.WithCancel(ctx)
+	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	if err := repo.Create(cancelled, grantRepositoryFixture()); !errors.Is(err, context.Canceled) {
-		t.Fatalf("cancelled Create error = %v", err)
+	if err := repo.Create(canceled, grantRepositoryFixture()); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled Create error = %v", err)
 	}
-	if _, err := repo.Get(cancelled, "grant"); !errors.Is(err, context.Canceled) {
-		t.Fatalf("cancelled Get error = %v", err)
+	if _, err := repo.Get(canceled, "grant"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled Get error = %v", err)
 	}
-	if _, err := repo.GetByAgent(cancelled, "agent"); !errors.Is(err, context.Canceled) {
-		t.Fatalf("cancelled GetByAgent error = %v", err)
+	if _, err := repo.GetByAgent(canceled, "agent"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled GetByAgent error = %v", err)
 	}
-	if err := repo.Revoke(cancelled, "grant", "reason", time.Now()); !errors.Is(err, context.Canceled) {
-		t.Fatalf("cancelled Revoke error = %v", err)
+	if err := repo.Revoke(canceled, "grant", "reason", time.Now()); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled Revoke error = %v", err)
 	}
 
 	var unavailable *MemoryGrantRepository
@@ -179,4 +179,3 @@ func TestMemoryGrantRepositoryReturnsDefensiveCopies(t *testing.T) {
 		t.Fatalf("stored grant changed through returned copy: %+v", got2)
 	}
 }
-
