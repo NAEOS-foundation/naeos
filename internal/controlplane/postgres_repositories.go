@@ -36,7 +36,7 @@ func (r *PostgresPolicyRepository) PutVersion(ctx context.Context, policy *Polic
 	snapshot := clonePolicy(policy)
 	payload, err := json.Marshal(snapshot)
 	if err != nil {
-		return fmt.Errorf("%w: encode policy: %v", ErrRepositoryIntegrity, err)
+		return fmt.Errorf("%w: encode policy: %w", ErrRepositoryIntegrity, err)
 	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -69,11 +69,11 @@ func (r *PostgresPolicyRepository) PutVersion(ctx context.Context, policy *Polic
 	}
 	var existing Policy
 	if err = json.Unmarshal(existingJSON, &existing); err != nil {
-		return fmt.Errorf("%w: decode stored policy: %v", ErrRepositoryIntegrity, err)
+		return fmt.Errorf("%w: decode stored policy: %w", ErrRepositoryIntegrity, err)
 	}
 	existingCanonical, marshalErr := json.Marshal(&existing)
 	if marshalErr != nil {
-		return fmt.Errorf("%w: re-encode stored policy: %v", ErrRepositoryIntegrity, marshalErr)
+		return fmt.Errorf("%w: re-encode stored policy: %w", ErrRepositoryIntegrity, marshalErr)
 	}
 	if !bytes.Equal(existingCanonical, payload) {
 		return ErrRepositoryConflict
@@ -113,7 +113,7 @@ func (r *PostgresPolicyRepository) Active(ctx context.Context, policyID string) 
 	}
 	var policy Policy
 	if err := json.Unmarshal(payload, &policy); err != nil {
-		return nil, fmt.Errorf("%w: decode active policy: %v", ErrRepositoryIntegrity, err)
+		return nil, fmt.Errorf("%w: decode active policy: %w", ErrRepositoryIntegrity, err)
 	}
 	if policy.Status != "active" {
 		return nil, ErrRepositoryConflict
@@ -138,7 +138,7 @@ func (r *PostgresPolicyRepository) Version(ctx context.Context, policyID string,
 	}
 	var policy Policy
 	if err := json.Unmarshal(payload, &policy); err != nil {
-		return nil, fmt.Errorf("%w: decode policy version: %v", ErrRepositoryIntegrity, err)
+		return nil, fmt.Errorf("%w: decode policy version: %w", ErrRepositoryIntegrity, err)
 	}
 	if policy.ID != policyID || policy.Version != version {
 		return nil, ErrRepositoryIntegrity
@@ -182,7 +182,7 @@ func (r *PostgresGrantRepository) Create(ctx context.Context, grant Grant) error
 	}
 	payload, err := json.Marshal(cloneGrant(grant))
 	if err != nil {
-		return fmt.Errorf("%w: encode grant: %v", ErrRepositoryIntegrity, err)
+		return fmt.Errorf("%w: encode grant: %w", ErrRepositoryIntegrity, err)
 	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -246,7 +246,7 @@ func (r *PostgresGrantRepository) get(ctx context.Context, column, value string)
 	}
 	var grant Grant
 	if err := json.Unmarshal(payload, &grant); err != nil {
-		return Grant{}, fmt.Errorf("%w: decode grant: %v", ErrRepositoryIntegrity, err)
+		return Grant{}, fmt.Errorf("%w: decode grant: %w", ErrRepositoryIntegrity, err)
 	}
 	if grant.GrantID == "" || grant.AgentID == "" {
 		return Grant{}, ErrRepositoryIntegrity
@@ -279,7 +279,7 @@ func (r *PostgresGrantRepository) Revoke(ctx context.Context, grantID, reason st
 	}
 	var grant Grant
 	if err := json.Unmarshal(payload, &grant); err != nil {
-		return fmt.Errorf("%w: decode grant: %v", ErrRepositoryIntegrity, err)
+		return fmt.Errorf("%w: decode grant: %w", ErrRepositoryIntegrity, err)
 	}
 	if grant.Revoked || grant.Status != "active" {
 		return ErrRepositoryConflict
@@ -291,7 +291,7 @@ func (r *PostgresGrantRepository) Revoke(ctx context.Context, grantID, reason st
 	grant.RevokedAt = &revokedAt
 	updated, err := json.Marshal(grant)
 	if err != nil {
-		return fmt.Errorf("%w: encode revoked grant: %v", ErrRepositoryIntegrity, err)
+		return fmt.Errorf("%w: encode revoked grant: %w", ErrRepositoryIntegrity, err)
 	}
 	_, err = tx.ExecContext(ctx, `UPDATE naeos_control_plane.grants
 		SET status = 'revoked', revoked_at = $2, grant_payload = $3::jsonb
@@ -462,12 +462,12 @@ func postgresRepositoryError(err error) error {
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "23505":
-			return fmt.Errorf("%w: %v", ErrRepositoryConflict, err)
+			return fmt.Errorf("%w: %w", ErrRepositoryConflict, err)
 		case "23503", "23514", "22P02":
-			return fmt.Errorf("%w: %v", ErrRepositoryIntegrity, err)
+			return fmt.Errorf("%w: %w", ErrRepositoryIntegrity, err)
 		}
 	}
-	return fmt.Errorf("%w: %v", ErrRepositoryUnavailable, err)
+	return fmt.Errorf("%w: %w", ErrRepositoryUnavailable, err)
 }
 
 var (
