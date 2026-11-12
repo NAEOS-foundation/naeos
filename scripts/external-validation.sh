@@ -42,9 +42,10 @@ demo = os.path.join(out, "demo")
 required = [
     "spec.yaml", "inspect.json", "validate.json", "invalid-policy.log",
     "context.md", "context.json", "run.json", "summary.md",
-    os.path.join("generated", "README.md"),
-    os.path.join("generated", "go.mod"),
-    os.path.join("generated", "package.json"),
+    os.path.join("generated", "go", "README.md"),
+    os.path.join("generated", "go", "go.mod"),
+    os.path.join("generated", "typescript", "README.md"),
+    os.path.join("generated", "typescript", "package.json"),
 ]
 checks = []
 

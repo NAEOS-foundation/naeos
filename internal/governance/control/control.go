@@ -38,6 +38,34 @@ type Request struct {
 	Context     map[string]any
 }
 
+// EvaluationFailure represents an internal inability to determine a policy outcome.
+// It is not an authorization decision and must never be treated as DENY or ALLOW.
+type EvaluationFailure struct {
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
+	Stage         string
+	Code          string
+	Timestamp     time.Time
+	cause         error
+}
+
+func (e *EvaluationFailure) Error() string {
+	if e == nil {
+		return "policy evaluation failed"
+	}
+	return "policy evaluation failed"
+}
+
+// Unwrap exposes the evaluator cause to trusted internal callers. Callers must
+// avoid returning the cause directly to agents or external API clients.
+func (e *EvaluationFailure) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.cause
+}
+
 // DecisionRecord is durable evidence of a single authorization decision.
 type DecisionRecord struct {
 	Request       Request
@@ -132,24 +160,25 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	if c.grantTTL > 0 {
 		worstRec.ExpiresAt = now.Add(c.grantTTL)
 	}
-	var evalErrors []string
-
 	for _, pol := range policies {
 		outcome, rec, evalErr := c.evaluatePolicy(pol, req)
+		if evalErr != nil {
+			// An evaluator failure is an internal indeterminate state, not a
+			// policy decision. Do not mint a grant digest or append a decision.
+			return DecisionRecord{}, &EvaluationFailure{
+				PolicyID:      pol.ID,
+				PolicyVersion: pol.Version,
+				RuleID:        rec.RuleID,
+				Stage:         "rule_evaluation",
+				Code:          "policy_evaluator_error",
+				Timestamp:     time.Now().UTC(),
+				cause:         evalErr,
+			}
+		}
 		rec.Request = req
 		rec.Timestamp = time.Now().UTC()
 		rec.Deterministic = true
 		worstRec = stricter(worstRec, rec, outcome)
-		if evalErr != nil {
-			evalErrors = append(evalErrors, fmt.Sprintf("governance evaluator error: %v", evalErr))
-		}
-	}
-
-	if len(evalErrors) > 0 {
-		// Evaluator failure is itself a governance decision: never fall back
-		// to a policy default or allow execution after an evaluation error.
-		worstRec.Decision = DecisionDeny
-		worstRec.Reasons = append(worstRec.Reasons, evalErrors...)
 	}
 	// The strictest policy record may replace worstRec, so restore the
 	// configured grant lifetime before binding the final authorization identity.
@@ -164,11 +193,11 @@ func (c *ControlPlane) Evaluate(req Request) (DecisionRecord, error) {
 	return worstRec, nil
 }
 
-// evaluatePolicy evaluates all rules of a single policy and derives a
-// decision per the following deterministic semantics:
-//   - any failing rule -> DENY
-//   - otherwise, if any rule or the policy default requires approval -> REQUIRE_APPROVAL
-//   - otherwise -> the policy default (ALLOW by default)
+// evaluatePolicy evaluates every rule in deterministic priority order. Priority
+// controls evaluation order and failure attribution only; it never overrides
+// decision severity. A failed rule remains a fail-closed DENY. When all rules
+// pass, the strictest of the policy default and all rule decisions wins:
+// DENY > REQUIRE_APPROVAL > ALLOW.
 func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.Decision, DecisionRecord, error) {
 	rec := DecisionRecord{
 		PolicyID:      pol.ID,
@@ -184,16 +213,29 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 	ctx["environment"] = req.Environment
 	ctx["actor"] = req.Actor
 
+	rules := append([]policy.PolicyRule(nil), pol.Rules...)
+	sort.SliceStable(rules, func(i, j int) bool {
+		if rules[i].Priority != rules[j].Priority {
+			return rules[i].Priority < rules[j].Priority
+		}
+		if rules[i].RuleID != rules[j].RuleID {
+			return rules[i].RuleID < rules[j].RuleID
+		}
+		if rules[i].Condition != rules[j].Condition {
+			return rules[i].Condition < rules[j].Condition
+		}
+		return rules[i].Decision < rules[j].Decision
+	})
+
 	type scored struct {
 		ruleID  string
 		dec     policy.Decision
-		prio    int
 		passed  bool
 		message string
 	}
 
 	var results []scored
-	for _, r := range pol.Rules {
+	for _, r := range rules {
 		er, err := c.evaluator.EvaluateRules([]policy.Rule{{
 			RuleID:    r.RuleID,
 			Condition: r.Condition,
@@ -202,13 +244,9 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 			Enabled:   true,
 		}}, ctx)
 		if err != nil {
-			rec.Decision = DecisionDeny
 			rec.RuleID = r.RuleID
-			rec.Reasons = []string{
-				fmt.Sprintf("policy %s v%s matched", pol.ID, pol.Version),
-				fmt.Sprintf("rule %s evaluation error: %v", r.RuleID, err),
-			}
-			return DecisionDeny, rec, err
+			rec.Reasons = []string{fmt.Sprintf("policy %s v%s evaluation failed", pol.ID, pol.Version)}
+			return "", rec, err
 		}
 		if len(er) == 0 {
 			continue
@@ -216,56 +254,65 @@ func (c *ControlPlane) evaluatePolicy(pol *policy.Policy, req Request) (policy.D
 		results = append(results, scored{
 			ruleID:  r.RuleID,
 			dec:     r.Decision,
-			prio:    r.Priority,
 			passed:  er[0].Passed,
 			message: er[0].Message,
 		})
 	}
 
-	// Sort by priority descending so highest-priority rules are considered
-	// first when aggregating.
-	sort.SliceStable(results, func(i, j int) bool {
-		return results[i].prio > results[j].prio
-	})
-
 	rec.Reasons = []string{fmt.Sprintf("policy %s v%s matched", pol.ID, pol.Version)}
 
-	// Any failing rule denies the request.
-	for _, s := range results {
-		if !s.passed {
+	// A failed rule denies regardless of its configured action. The first
+	// failure is stable because rules were evaluated by priority then RuleID.
+	for _, result := range results {
+		if !result.passed {
 			rec.Decision = DecisionDeny
-			rec.RuleID = s.ruleID
-			rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s failed: %s", s.ruleID, s.message))
+			rec.RuleID = result.ruleID
+			rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s failed: %s", result.ruleID, result.message))
 			return DecisionDeny, rec, nil
 		}
 	}
 
-	// Otherwise, highest-priority passing rule determines the outcome.
-	if len(results) > 0 {
-		top := results[0]
-		rec.RuleID = top.ruleID
-		rec.Decision = top.dec
-		rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s %s", top.ruleID, top.dec))
-		return top.dec, rec, nil
+	// Priority does not resolve conflicts. Aggregate all passing rule outcomes
+	// with the policy default using the global decision-severity ordering.
+	selected := pol.Default
+	selectedRuleID := ""
+	for _, result := range results {
+		if rank(result.dec) > rank(selected) {
+			selected = result.dec
+			selectedRuleID = result.ruleID
+		}
 	}
-
-	// No rules: fall back to the policy default.
-	rec.Decision = pol.Default
-	rec.Reasons = append(rec.Reasons, fmt.Sprintf("no rules, policy default %s", pol.Default))
-	return pol.Default, rec, nil
+	rec.Decision = selected
+	rec.RuleID = selectedRuleID
+	if selectedRuleID == "" {
+		rec.Reasons = append(rec.Reasons, fmt.Sprintf("policy default %s is the strictest outcome", selected))
+	} else {
+		rec.Reasons = append(rec.Reasons, fmt.Sprintf("rule %s contributes strictest outcome %s", selectedRuleID, selected))
+	}
+	return selected, rec, nil
 }
 
-// stricter returns the stricter of two decision records, taking the source
-// policy/version for the strictest decision. Order: DENY > REQUIRE_APPROVAL >
-// ALLOW.
+// stricter returns the higher-severity decision. Equal-severity outcomes use
+// a stable policy/version/rule identity tie-break, independent of registry
+// iteration or policy registration order. Order: DENY > REQUIRE_APPROVAL > ALLOW.
 func stricter(a, b DecisionRecord, bDec policy.Decision) DecisionRecord {
 	aRank := rank(a.Decision)
 	bRank := rank(bDec)
-	if bRank >= aRank {
+	if bRank > aRank || (bRank == aRank && decisionSourceLess(b, a)) {
 		b.Decision = bDec
 		return b
 	}
 	return a
+}
+
+func decisionSourceLess(a, b DecisionRecord) bool {
+	if a.PolicyID != b.PolicyID {
+		return a.PolicyID < b.PolicyID
+	}
+	if a.PolicyVersion != b.PolicyVersion {
+		return a.PolicyVersion < b.PolicyVersion
+	}
+	return a.RuleID < b.RuleID
 }
 
 func rank(d Decision) int {

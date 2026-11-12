@@ -5,6 +5,7 @@ package serve
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -58,7 +59,7 @@ func (o Observability) IsEnabled() bool {
 // LoadConfig and validated by Validate.
 type Config struct {
 	// Listeners are the network endpoints to open. When empty, a default
-	// ":8080" API listener is used.
+	// loopback-only "127.0.0.1:8080" API listener is used.
 	Listeners []Listener `yaml:"listeners" json:"listeners"`
 	// Auth applies to every API listener unless overridden per-listener.
 	Auth Auth `yaml:"auth,omitempty" json:"auth,omitempty"`
@@ -80,7 +81,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Listeners: []Listener{
-			{Addr: ":8080", Name: "api", API: true},
+			{Addr: "127.0.0.1:8080", Name: "api", API: true},
 		},
 		ShutdownTimeout: "30s",
 		ReadTimeout:     "15s",
@@ -115,9 +116,21 @@ func (c *Config) Validate() error {
 	if len(c.Listeners) == 0 {
 		c.Listeners = DefaultConfig().Listeners
 	}
+	if c.Auth.Enabled && strings.TrimSpace(c.Auth.JWTSecret) == "" {
+		return naeoserr.New(naeoserr.ErrValidation, "server config: auth.enabled requires a non-empty jwt_secret")
+	}
 	for _, l := range c.Listeners {
 		if strings.TrimSpace(l.Addr) == "" {
 			return naeoserr.New(naeoserr.ErrValidation, "server config: listener addr is required")
+		}
+		host, _, err := net.SplitHostPort(l.Addr)
+		if err != nil {
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("server config: listener %q must be a valid host:port", l.Addr))
+		}
+		ip := net.ParseIP(host)
+		loopback := host == "localhost" || strings.HasSuffix(host, ".localhost") || (ip != nil && ip.IsLoopback())
+		if l.API && !loopback && (!c.Auth.Enabled || strings.TrimSpace(c.Auth.JWTSecret) == "" || !l.IsTLS()) {
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("server config: non-loopback API listener %q requires JWT auth with a secret and TLS", l.Addr))
 		}
 		if l.IsTLS() && (l.TLSCert == "" || l.TLSKey == "") {
 			return naeoserr.New(naeoserr.ErrValidation,

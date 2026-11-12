@@ -10,6 +10,13 @@ import (
 	"testing"
 )
 
+func TestRequireLinePreservesGoVersionPrefix(t *testing.T) {
+	match := requireLine.FindStringSubmatch("- github.com/klauspost/compress v1.18.5 // indirect")
+	if len(match) != 3 || match[2] != "v1.18.5" {
+		t.Fatalf("requireLine match = %#v, want version v1.18.5", match)
+	}
+}
+
 func TestSelectHighestRiskRequestRejectsNewDependency(t *testing.T) {
 	req := selectHighestRiskRequest(
 		map[string]string{"safe": "v1.2.3"},
@@ -25,7 +32,7 @@ func TestSelectHighestRiskRequestRejectsUnknownAmongExisting(t *testing.T) {
 		map[string]string{"safe": "v1.2.3", "broken": "not-a-version"},
 		map[string]string{"safe": "v1.2.4", "broken": "still-invalid"},
 	)
-	if req.Name != "broken" || req.VersionChange != "unknown" || !req.KnownDependency {
+	if req.Name != "broken" || req.VersionChange != "unknown" || req.KnownDependency {
 		t.Fatalf("unknown version change must dominate aggregate: %+v", req)
 	}
 }
@@ -35,7 +42,7 @@ func TestSelectHighestRiskRequestSelectsMajorOverPatch(t *testing.T) {
 		map[string]string{"safe": "v1.2.3", "major": "v1.2.3"},
 		map[string]string{"safe": "v1.2.4", "major": "v2.0.0"},
 	)
-	if req.Name != "major" || req.VersionChange != "major" || !req.KnownDependency {
+	if req.Name != "major" || req.VersionChange != "major" || req.KnownDependency {
 		t.Fatalf("major change must dominate patch change: %+v", req)
 	}
 }
@@ -45,7 +52,7 @@ func TestSelectHighestRiskRequestAllowsAllSafeChangesToRemainPatch(t *testing.T)
 		map[string]string{"one": "v1.2.3", "two": "v2.4.1"},
 		map[string]string{"one": "v1.2.4", "two": "v2.4.2"},
 	)
-	if req.VersionChange != "patch" || !req.KnownDependency {
+	if req.VersionChange != "patch" || req.KnownDependency {
 		t.Fatalf("all-patch changes should remain patch: %+v", req)
 	}
 }

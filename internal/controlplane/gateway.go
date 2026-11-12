@@ -45,30 +45,45 @@ func NewDecisionGateway(e *Evaluator, l *Ledger) *DecisionGateway {
 
 // Authorize decides whether a requested action may proceed.
 func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
-	if g == nil || g.Evaluator == nil {
-		return DecisionResult{
-			Status: DecisionDeny,
-			Reason: DecisionReason("gateway unavailable"),
-		}
+	if g == nil {
+		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "gateway unavailable"}
 	}
-
-	if req.Policy == nil {
-		return DecisionResult{
-			Status: DecisionDeny,
-			Reason: DecisionReason("policy missing"),
+	if g.Evaluator == nil {
+		if req.Timestamp.IsZero() {
+			req.Timestamp = time.Now().UTC()
 		}
-	}
-	if req.Grant == nil {
-		return DecisionResult{
-			Status: DecisionDeny,
-			Reason: DecisionReason("grant missing"),
+		if req.RequestID == "" {
+			req.RequestID = controlPlaneID("REQ")
 		}
+		return g.recordEvaluationFailure(req, DecisionResult{
+			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+			RequestID: req.RequestID, AgentID: req.AgentID, Requested: req.Action.Capability,
+			ArtifactHash: req.Action.ArtifactHash, Message: "policy evaluator unavailable",
+		})
 	}
 	if req.Timestamp.IsZero() {
 		req.Timestamp = time.Now().UTC()
 	}
 	if req.RequestID == "" {
 		req.RequestID = controlPlaneID("REQ")
+	}
+	if req.Policy == nil {
+		return g.recordEvaluationFailure(req, DecisionResult{
+			Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed,
+			RequestID: req.RequestID, AgentID: req.AgentID,
+			Requested: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+			Message: "policy unavailable",
+		})
+	}
+	if req.Grant == nil {
+		result := DecisionResult{
+			Status: DecisionDeny, Reason: ReasonDeniedByGrant,
+			RequestID: req.RequestID, AgentID: req.AgentID,
+			Requested: req.Action.Capability, PolicyID: req.Policy.ID,
+			PolicyVersion: req.Policy.Version, ArtifactHash: req.Action.ArtifactHash,
+			Message: "grant missing",
+		}
+		return g.recordAuthorizationDecision(req, result)
 	}
 	effectiveNow := req.Context.Now
 	if effectiveNow.IsZero() {
@@ -79,6 +94,9 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 	result.RequestID = req.RequestID
 	result.AgentID = req.AgentID
 	result.ArtifactHash = req.Action.ArtifactHash
+	if result.Status == DecisionIndeterminate {
+		return g.recordEvaluationFailure(req, result)
+	}
 	if req.DecisionID == "" {
 		result.DecisionID = controlPlaneID("DEC")
 	} else {
@@ -104,31 +122,84 @@ func (g *DecisionGateway) Authorize(req AuthorizeRequest) DecisionResult {
 			result.Message = "approval is missing, expired, consumed, or not bound to this artifact"
 		}
 	}
-	if g.Ledger != nil {
-		policyID := "unknown"
-		grantID := "unknown"
-		if req.Policy != nil {
+	return g.recordAuthorizationDecision(req, result)
+}
+
+// recordEvaluationFailure records an operational evaluation failure without
+// minting an authorization decision or a decision ID.
+func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result DecisionResult) DecisionResult {
+	result.Status = DecisionIndeterminate
+	result.DecisionID = ""
+	result.Reason = ReasonEvaluationFailed
+	if g == nil || g.Ledger == nil {
+		result.Message = "policy evaluation failed; failure evidence ledger unavailable"
+		return result
+	}
+
+	// The evaluator may not populate attribution for operational failures
+	// (e.g. unavailable evaluator or unresolved policy version). Fall back to
+	// the policy supplied in the request so failure evidence remains correlated.
+	policyID := result.PolicyID
+	policyVersion := result.PolicyVersion
+	if req.Policy != nil {
+		if policyID == "" {
 			policyID = req.Policy.ID
 		}
-		if req.Grant != nil {
-			grantID = req.Grant.GrantID
+		if policyVersion == 0 {
+			policyVersion = req.Policy.Version
 		}
-		g.Ledger.Append(LedgerEvent{
-			Timestamp:    req.Timestamp,
-			RequestID:    req.RequestID,
-			DecisionID:   result.DecisionID,
-			AgentID:      req.AgentID,
-			Capability:   req.Action.Capability,
-			ArtifactHash: req.Action.ArtifactHash,
-			EventType:    "AUTHORIZATION_DECISION",
-			Decision:     result.Status,
-			Reason:       result.Reason,
-			Metadata: map[string]string{
-				"policy_id":      policyID,
-				"policy_version": fmt.Sprintf("%d", result.PolicyVersion),
-				"grant_id":       grantID,
-			},
-		})
+	}
+
+	event := g.Ledger.Append(LedgerEvent{
+		Timestamp: req.Timestamp, RequestID: req.RequestID,
+		AgentID: req.AgentID, Capability: req.Action.Capability,
+		ArtifactHash: req.Action.ArtifactHash, EventType: "POLICY_EVALUATION_FAILED",
+		Reason: ReasonEvaluationFailed,
+		Metadata: map[string]string{
+			"failure_code":    "policy_evaluation_failed",
+			"failure_stage":   "policy_evaluation",
+			"failure_message": result.Message,
+			"policy_id":       policyID,
+			"policy_version":  fmt.Sprintf("%d", policyVersion),
+		},
+	})
+	if event.ID == "" {
+		result.Message = "policy evaluation failed; failure evidence could not be persisted"
+	}
+	return result
+}
+
+// recordAuthorizationDecision returns no usable decision if the ledger cannot
+// commit its authorization record.
+func (g *DecisionGateway) recordAuthorizationDecision(req AuthorizeRequest, result DecisionResult) DecisionResult {
+	if g == nil || g.Ledger == nil {
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
+		result.Message = "authorization ledger unavailable"
+		return result
+	}
+	policyID, grantID := "unknown", "unknown"
+	if req.Policy != nil {
+		policyID = req.Policy.ID
+	}
+	if req.Grant != nil {
+		grantID = req.Grant.GrantID
+	}
+	event := g.Ledger.Append(LedgerEvent{
+		Timestamp: req.Timestamp, RequestID: req.RequestID,
+		DecisionID: result.DecisionID, AgentID: req.AgentID,
+		Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+		EventType: "AUTHORIZATION_DECISION", Decision: result.Status, Reason: result.Reason,
+		Metadata: map[string]string{
+			"policy_id": policyID, "policy_version": fmt.Sprintf("%d", result.PolicyVersion), "grant_id": grantID,
+		},
+	})
+	if event.ID == "" {
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
+		result.Message = "authorization decision could not be durably recorded"
 	}
 	return result
 }
@@ -158,11 +229,15 @@ func (g *DecisionGateway) ExecuteDecision(req AuthorizeRequest, result DecisionR
 }
 
 func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionResult) (DecisionResult, LedgerEvent) {
+	if result.Status == DecisionIndeterminate {
+		return result, LedgerEvent{}
+	}
 	if g.Ledger == nil {
 		return result, LedgerEvent{}
 	}
 	canonical, ok := g.Ledger.Decision(result.DecisionID)
-	if !ok || canonical.Decision != DecisionAllow ||
+	if !ok || canonical.EventHash == "" || canonical.EventHash != hashLedgerEvent(canonical) ||
+		canonical.Decision != DecisionAllow ||
 		canonical.RequestID != result.RequestID ||
 		canonical.AgentID != req.AgentID ||
 		canonical.Capability != req.Action.Capability ||
@@ -281,24 +356,27 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 // policy-store execution lock. Policy updates cannot commit until the side effect
 // callback returns, closing the in-process check-to-side-effect race.
 func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionResult, sideEffect func() error) (DecisionResult, LedgerEvent) {
+	if result.Status == DecisionIndeterminate {
+		return result, LedgerEvent{}
+	}
 	if g == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
 		result.Message = "atomic execution boundary unavailable"
-		return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		return result, LedgerEvent{}
 	}
 	if g.Ledger == nil || g.Evaluator == nil || g.Evaluator.store == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
-		result.Message = "atomic execution boundary unavailable"
-		if g.Ledger == nil {
-			return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
+		result.Message = "atomic execution dependencies unavailable"
+		// Persist an operational failure when the ledger is available. Never
+		// manufacture an authorization DENY for missing execution infrastructure.
+		if g.Ledger != nil {
+			g.recordEvaluationFailure(req, result)
 		}
-		return result, g.Ledger.Append(LedgerEvent{
-			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
-			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
-			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
-		})
+		return result, LedgerEvent{}
 	}
 	if sideEffect == nil {
 		result.Status = DecisionDeny

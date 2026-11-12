@@ -1392,29 +1392,38 @@ func (m *unhealthyDB) Rollback(version int) error                             { 
 func (m *unhealthyDB) RollbackContext(ctx context.Context, version int) error { return nil }
 func (m *unhealthyDB) HealthCheck() error                                     { return fmt.Errorf("connection refused") }
 
-func TestSandBaseAuthorizationHandlerRouteIsRegistered(t *testing.T) {
-	s := NewServer(":8080", &AuthConfig{Enabled: true, JWTSecret: "unrelated-user-jwt-secret"})
-	s.SetSandBaseAuthorizationHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		if r.Header.Get("Authorization") != "Bearer sandbase-test-token" {
-			http.Error(w, "missing SandBase bearer token", http.StatusUnauthorized)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"decision":"allow"}`))
-	}))
-
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/integrations/sandbase/authorize", nil)
-	req.Header.Set("Authorization", "Bearer sandbase-test-token")
+func TestHandlePipelinesRequiresTenantContextWhenAuthEnabled(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: true, JWTSecret: "test-secret"})
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/pipelines", nil)
 	w := httptest.NewRecorder()
-	s.Handler().ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected registered SandBase route to reach its own bearer-auth handler, got %d: %s", w.Code, w.Body.String())
+
+	s.handlePipelines(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 when tenant context is missing, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), `"decision":"allow"`) {
-		t.Fatalf("expected handler response, got %s", w.Body.String())
+}
+
+func TestRoutePermissionDynamicSchemaDeleteUsesConfigWrite(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	perm, ok := s.routePermission("/api/v1/schemas/customer/v1.0.0", http.MethodDelete)
+	if !ok || perm.Resource != auth.ResourceConfig || perm.Action != auth.ActionWrite {
+		t.Fatalf("expected config-write permission for schema delete, got %+v, ok=%v", perm, ok)
+	}
+}
+
+func TestAuthEnabledWithoutJWTSecretFailsClosed(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: true})
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/specs", nil)
+	req.Header.Set("Authorization", "Bearer arbitrary-token")
+	w := httptest.NewRecorder()
+
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 when JWT secret is missing, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "JWT authentication is not configured") {
+		t.Fatalf("expected fail-closed error, got %q", w.Body.String())
 	}
 }

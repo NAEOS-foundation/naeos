@@ -26,6 +26,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
 
+  /api/v1/repositories/{owner}/{name}:
+    get:
+      operationId: getAllowedRepositoryMetadata
+      summary: Read allowlisted GitHub repository metadata for NAEOS service clients
+      description: Requires an RS256 service JWT with the naeos:repository:read scope. The repository must also be present in NAEOS_GITHUB_ALLOWED_REPOSITORIES.
+      security:
+        - serviceBearer: []
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[A-Za-z0-9_.-]+$' }
+        - name: name
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[A-Za-z0-9_.-]+$' }
+      responses:
+        "200":
+          description: Read-only repository metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: { type: boolean, const: true }
+                  data:
+                    type: object
+                    required: [id, name, full_name, owner, private, archived, default_branch, open_issues, stars, forks, size_kb, url]
+                    properties:
+                      id: { type: string }
+                      name: { type: string }
+                      full_name: { type: string }
+                      owner: { type: string }
+                      description: { type: string }
+                      private: { type: boolean }
+                      archived: { type: boolean }
+                      default_branch: { type: string }
+                      open_issues: { type: integer }
+                      stars: { type: integer }
+                      forks: { type: integer }
+                      size_kb: { type: integer }
+                      created_at: { type: string, format: date-time }
+                      updated_at: { type: string, format: date-time }
+                      url: { type: string, format: uri }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502":
+          description: GitHub provider unavailable or returned an invalid response
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
   /api/v1/specs:
     get:
       operationId: listSpecs
@@ -566,6 +619,11 @@ paths:
                 $ref: "#/components/schemas/ReadyzResponse"
 
 components:
+  securitySchemes:
+    serviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     PageParam:
       name: page
@@ -592,6 +650,18 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid service JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Missing service scope or repository not allowlisted
       content:
         application/json:
           schema:

@@ -475,4 +475,4 @@ Under Apache License 2.0, with a vendor-neutral architecture and a growing ecosy
 
 *NAEOS OSS — "Engineering With Discipline"*
 
-*This document is based on the actual state of the project (NAEOS-foundation/naeos repository; software release baseline v3.6.0; engineering milestone P1.11) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*
+*This document is based on the actual state of the project (NAEOS-foundation/naeos repository; software release baseline v3.7.1; engineering milestone P1.11) and is intended for publication, technical evaluation, and adoption discussions. All technical claims can be verified in the official project documentation (docs/NES-*, specification/, constitution/).*

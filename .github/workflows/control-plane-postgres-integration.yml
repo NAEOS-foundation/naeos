@@ -1,0 +1,81 @@
+name: Control Plane PostgreSQL Integration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/control-plane-postgres-integration.yml'
+      - 'internal/controlplane/**'
+      - 'supabase/migrations/**'
+      - 'go.mod'
+      - 'go.sum'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/control-plane-postgres-integration.yml'
+      - 'internal/controlplane/**'
+      - 'supabase/migrations/**'
+      - 'go.mod'
+      - 'go.sum'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: control-plane-postgres-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-ledger-integration:
+    name: PostgreSQL Ledger Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Create Supabase-compatible roles and isolated test database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          psql "postgres://postgres@localhost:5432/postgres?sslmode=disable" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN;
+          CREATE DATABASE naeos_control_plane_test;
+          SQL
+      - name: Apply Control Plane migrations to ephemeral PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/naeos_control_plane_test?sslmode=disable"
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261111000100_production_control_plane.sql
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261111000200_control_plane_ledger_head_reader.sql
+          psql "$db" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE naeos_control_plane_login LOGIN INHERIT PASSWORD 'ephemeral-ci-only';
+          GRANT naeos_control_plane_runtime TO naeos_control_plane_login;
+          SQL
+      - name: Run PostgreSQL ledger integration test
+        env:
+          NAEOS_CONTROLPLANE_TEST_DATABASE_URL: postgres://naeos_control_plane_login:ephemeral-ci-only@localhost:5432/naeos_control_plane_test?sslmode=disable
+        run: go test -race -count=1 -timeout 120s -run '^TestPostgresLedgerIntegrationConcurrentAppendAndReload$' ./internal/controlplane/
