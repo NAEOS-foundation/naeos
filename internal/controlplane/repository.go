@@ -12,10 +12,10 @@ import (
 // Repository errors are intentionally distinct: callers must not interpret an
 // infrastructure or integrity failure as an authorization denial.
 var (
-	ErrRepositoryNotFound = errors.New("repository record not found")
-	ErrRepositoryConflict = errors.New("repository state conflict")
+	ErrRepositoryNotFound    = errors.New("repository record not found")
+	ErrRepositoryConflict    = errors.New("repository state conflict")
 	ErrRepositoryUnavailable = errors.New("repository unavailable")
-	ErrRepositoryIntegrity = errors.New("repository integrity failure")
+	ErrRepositoryIntegrity   = errors.New("repository integrity failure")
 )
 
 // LedgerRepository is the context-aware persistence boundary for canonical
