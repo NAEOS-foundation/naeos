@@ -360,23 +360,23 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 		return result, LedgerEvent{}
 	}
 	if g == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
 		result.Message = "atomic execution boundary unavailable"
-		return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		return result, LedgerEvent{}
 	}
 	if g.Ledger == nil || g.Evaluator == nil || g.Evaluator.store == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
-		result.Message = "atomic execution boundary unavailable"
-		if g.Ledger == nil {
-			return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
+		result.Message = "atomic execution dependencies unavailable"
+		// Persist an operational failure when the ledger is available. Never
+		// manufacture an authorization DENY for missing execution infrastructure.
+		if g.Ledger != nil {
+			g.recordEvaluationFailure(req, result)
 		}
-		return result, g.Ledger.Append(LedgerEvent{
-			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
-			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
-			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
-		})
+		return result, LedgerEvent{}
 	}
 	if sideEffect == nil {
 		result.Status = DecisionDeny
