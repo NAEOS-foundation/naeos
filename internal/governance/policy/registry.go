@@ -38,7 +38,9 @@ type Scope struct {
 }
 
 // PolicyRule is a deterministic guard attached to a policy. When the rule's
-// condition passes it contributes its Decision to the policy outcome.
+// condition passes it contributes its Decision to the policy outcome. A failed
+// condition produces a fail-closed DENY; priority controls evaluation order,
+// while decision severity resolves conflicts.
 type PolicyRule struct {
 	RuleID    string
 	Condition string   // evaluated using the evaluator condition syntax
@@ -95,6 +97,9 @@ func Validate(p *Policy) error {
 		}
 		if !r.Decision.Valid() {
 			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid rule decision %q on rule %s", r.Decision, r.RuleID))
+		}
+		if err := validateCondition(r.Condition); err != nil {
+			return naeoserr.New(naeoserr.ErrValidation, fmt.Sprintf("invalid condition on rule %s: %v", r.RuleID, err))
 		}
 	}
 	return nil

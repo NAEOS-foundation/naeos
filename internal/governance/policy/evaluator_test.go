@@ -382,3 +382,82 @@ func TestEvaluateNumericRulesRejectNonFiniteOperands(t *testing.T) {
 		})
 	}
 }
+
+func TestEvaluateRulesRejectsMalformedConditionGrammar(t *testing.T) {
+	e := NewEvaluator()
+	cases := []struct {
+		name      string
+		condition string
+	}{
+		{name: "missing separator", condition: "production"},
+		{name: "empty key", condition: ":production"},
+		{name: "empty value", condition: "env:"},
+		{name: "contains missing argument", condition: "contains:name"},
+		{name: "contains empty substring", condition: "contains:name,  "},
+		{name: "numeric missing threshold", condition: "gt:port,"},
+		{name: "numeric invalid threshold", condition: "gte:port,not-a-number"},
+		{name: "in empty option", condition: "in:env,staging, "},
+		{name: "malformed dotted path", condition: "exists:service..port"},
+		{name: "malformed key whitespace", condition: "bad key:value"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := map[string]any{"env": "production", "port": 8080, "name": "testing"}
+			_, err := e.EvaluateRules([]Rule{{RuleID: tc.name, Condition: tc.condition, Enabled: true}}, ctx)
+			if err == nil {
+				t.Fatalf("malformed condition %q must be rejected", tc.condition)
+			}
+			result := evaluateRule(Rule{RuleID: tc.name, Condition: tc.condition, Enabled: true}, ctx)
+			if result.Passed {
+				t.Fatalf("malformed condition %q must never pass", tc.condition)
+			}
+		})
+	}
+}
+
+func TestValidateConditionAcceptsSupportedGrammar(t *testing.T) {
+	conditions := []string{
+		"exists:project",
+		"not_empty:name",
+		"contains:name,test",
+		"gt:port,0",
+		"lt:count,10",
+		"gte:version,1.2",
+		"lte:count,10",
+		"in:env,staging,production",
+		"env:production",
+		"architecture.pattern:hexagonal",
+	}
+	for _, condition := range conditions {
+		if err := validateCondition(condition); err != nil {
+			t.Errorf("valid condition %q rejected: %v", condition, err)
+		}
+	}
+}
+
+func FuzzValidateConditionGrammar(f *testing.F) {
+	for _, seed := range []string{
+		"",
+		"missing-separator",
+		"contains:key",
+		"contains:key,",
+		"gt:value,NaN",
+		"in:env,",
+		"exists:project",
+		"env:production",
+		"gt:port,0",
+	} {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, condition string) {
+		if err := validateCondition(condition); err != nil {
+			result := evaluateRule(
+				Rule{RuleID: "fuzz", Condition: condition, Enabled: true},
+				map[string]any{"env": "production", "port": 8080, "key": "value"},
+			)
+			if result.Passed {
+				t.Fatalf("invalid condition %q passed evaluation", condition)
+			}
+		}
+	})
+}

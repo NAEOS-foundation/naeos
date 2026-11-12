@@ -41,8 +41,8 @@ type dependencyReviewRecord struct {
 	SchemaVersion   string   `json:"schema_version"`
 }
 
-var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64})$`)
-var spdxIdentifierPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.+-]*$`)
+var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64}|sha512-[A-Za-z0-9+/]{86}==)$`)
+var spdxTokens = regexp.MustCompile(`[()]|[^[:space:]()]+`)
 
 // parseDependencyReviewRegistry rejects malformed or incomplete records. The
 // caller must supply bytes loaded from the trusted merge-base, never the PR tree.
@@ -73,7 +73,7 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 		if !strings.HasPrefix(record.UpstreamSource, "https://") || !strings.HasPrefix(record.Provenance, "https://") || !strings.HasPrefix(record.ReviewReference, "https://") {
 			return registry, fmt.Errorf("dependency review record %d has invalid upstream source", i)
 		}
-		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) {
+		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) || (strings.EqualFold(record.Ecosystem, "npm") && !strings.HasPrefix(record.Checksum, "sha512-")) {
 			return registry, fmt.Errorf("dependency review record %d has invalid SPDX license or checksum", i)
 		}
 		switch record.Criticality {
@@ -99,29 +99,103 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 	return registry, nil
 }
 
+func normalizeDependencyVersion(ecosystem, version string) string {
+	version = strings.TrimSpace(version)
+	if strings.EqualFold(strings.TrimSpace(ecosystem), "go") {
+		// go.mod/go.sum use the leading "v" required by Go module versions,
+		// while trusted registry records may store the equivalent bare semver.
+		return strings.TrimPrefix(version, "v")
+	}
+	return version
+}
+
 func checksumPresentInGoSum(data []byte, record dependencyReviewRecord) bool {
 	if !strings.EqualFold(record.Ecosystem, "go") {
 		return false
 	}
+	expectedVersion := normalizeDependencyVersion(record.Ecosystem, record.Version)
 	for _, line := range strings.Split(string(data), "\n") {
 		fields := strings.Fields(line)
-		if len(fields) == 3 && fields[0] == record.Name && fields[1] == record.Version && fields[2] == record.Checksum {
+		if len(fields) == 3 &&
+			fields[0] == record.Name &&
+			normalizeDependencyVersion(record.Ecosystem, fields[1]) == expectedVersion &&
+			fields[2] == record.Checksum {
 			return true
 		}
 	}
 	return false
 }
 
+// validSPDXLicense accepts a deliberately bounded SPDX expression grammar.
+// Only explicitly reviewed license identifiers are accepted; LicenseRef and
+// WITH exceptions remain unsupported until their provenance is modeled.
 func validSPDXLicense(value string) bool {
-	if !spdxIdentifierPattern.MatchString(value) {
+	tokens := spdxTokens.FindAllString(strings.TrimSpace(value), -1)
+	if len(tokens) == 0 {
 		return false
 	}
-	switch value {
+	parser := spdxExpressionParser{tokens: tokens}
+	return parser.parseOr() && parser.pos == len(parser.tokens)
+}
+
+type spdxExpressionParser struct {
+	tokens []string
+	pos    int
+}
+
+func (p *spdxExpressionParser) parseOr() bool {
+	if !p.parseAnd() {
+		return false
+	}
+	for p.consume("OR") {
+		if !p.parseAnd() {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *spdxExpressionParser) parseAnd() bool {
+	if !p.parsePrimary() {
+		return false
+	}
+	for p.consume("AND") {
+		if !p.parsePrimary() {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *spdxExpressionParser) parsePrimary() bool {
+	if p.consume("(") {
+		if !p.parseOr() || !p.consume(")") {
+			return false
+		}
+		return true
+	}
+	if p.pos >= len(p.tokens) {
+		return false
+	}
+	identifier := p.tokens[p.pos]
+	if identifier == ")" || identifier == "(" || identifier == "AND" || identifier == "OR" {
+		return false
+	}
+	p.pos++
+	switch identifier {
 	case "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "BSD-0-Clause", "ISC", "MPL-2.0", "LGPL-2.1-only", "LGPL-3.0-only", "GPL-2.0-only", "GPL-3.0-only", "Unlicense", "CC0-1.0", "Zlib", "EPL-2.0", "Unicode-3.0":
 		return true
 	default:
 		return false
 	}
+}
+
+func (p *spdxExpressionParser) consume(token string) bool {
+	if p.pos >= len(p.tokens) || p.tokens[p.pos] != token {
+		return false
+	}
+	p.pos++
+	return true
 }
 
 func validDependencyDomain(value string) bool {
@@ -135,7 +209,9 @@ func validDependencyDomain(value string) bool {
 
 func findReviewedDependency(registry dependencyReviewRegistry, ecosystem, name, version string) (dependencyReviewRecord, bool) {
 	for _, record := range registry.Records {
-		if strings.EqualFold(record.Ecosystem, ecosystem) && record.Name == name && record.Version == version {
+		if strings.EqualFold(record.Ecosystem, ecosystem) &&
+			record.Name == name &&
+			normalizeDependencyVersion(ecosystem, record.Version) == normalizeDependencyVersion(ecosystem, version) {
 			return record, true
 		}
 	}

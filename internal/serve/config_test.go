@@ -17,8 +17,8 @@ func TestDefaultConfig(t *testing.T) {
 	if len(cfg.Listeners) != 1 {
 		t.Fatalf("expected 1 listener, got %d", len(cfg.Listeners))
 	}
-	if cfg.Listeners[0].Addr != ":8080" {
-		t.Fatalf("expected :8080, got %s", cfg.Listeners[0].Addr)
+	if cfg.Listeners[0].Addr != "127.0.0.1:8080" {
+		t.Fatalf("expected 127.0.0.1:8080, got %s", cfg.Listeners[0].Addr)
 	}
 	if !cfg.Listeners[0].API {
 		t.Fatal("expected default listener to be an API listener")
@@ -38,12 +38,18 @@ func TestLoadConfigValidYAML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "server.yaml")
 	content := `
+# Non-loopback API listener uses TLS and JWT authentication.
 listeners:
   - addr: ":9443"
     name: api
     api: true
+    tls_cert: "cert.pem"
+    tls_key: "key.pem"
   - addr: "127.0.0.1:9444"
     name: dashboard
+auth:
+  enabled: true
+  jwt_secret: "test-secret"
 shutdown_timeout: "45s"
 log_level: "debug"
 api_keys:
@@ -63,8 +69,11 @@ api_keys:
 	if cfg.Listeners[1].Addr != "127.0.0.1:9444" {
 		t.Fatalf("unexpected second listener: %s", cfg.Listeners[1].Addr)
 	}
-	if cfg.Listeners[0].IsTLS() {
-		t.Fatal("expected first listener to have TLS disabled")
+	if !cfg.Listeners[0].IsTLS() {
+		t.Fatal("expected first listener to have TLS enabled")
+	}
+	if !cfg.Auth.Enabled || cfg.Auth.JWTSecret != "test-secret" {
+		t.Fatal("expected secure auth configuration to be loaded")
 	}
 	if cfg.LogLevel != "debug" {
 		t.Fatalf("unexpected log level %s", cfg.LogLevel)
@@ -151,5 +160,30 @@ func TestListenersReturnsCopy(t *testing.T) {
 	got[0].Addr = ":9999"
 	if srv.cfg.Listeners[0].Addr == ":9999" {
 		t.Fatal("Listeners should return a copy, not a live reference")
+	}
+}
+
+func TestValidateRejectsAuthWithoutJWTSecret(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Auth = Auth{Enabled: true}
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected validation error when auth is enabled without jwt_secret")
+	}
+}
+
+func TestValidateRejectsNonLoopbackAPIWithoutAuthAndTLS(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Listeners = []Listener{{Addr: ":8080", API: true}}
+	if err := cfg.Validate(); err == nil {
+		t.Fatal("expected validation error for non-loopback API without auth and TLS")
+	}
+}
+
+func TestValidateAllowsNonLoopbackAPIWithAuthAndTLS(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Listeners = []Listener{{Addr: ":8443", API: true, TLSCert: "cert.pem", TLSKey: "key.pem"}}
+	cfg.Auth = Auth{Enabled: true, JWTSecret: "test-secret"}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected secure non-loopback API config to validate: %v", err)
 	}
 }

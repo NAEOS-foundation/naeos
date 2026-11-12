@@ -16,7 +16,7 @@ Thank you for your interest in contributing to NAEOS!
 
 ### Prerequisites
 
-- Go 1.26.6 or later
+- Go 1.26.10 or later
 - Git
 - golangci-lint (required — runs in CI and blocks PRs)
 
@@ -65,6 +65,9 @@ go tool cover -html=coverage.out
 
 # Integration-tagged E2E tests
 go test -tags=integration -race -count=1 -timeout 120s ./pkg/pipeline/ -run "TestEndToEnd"
+
+# Real NATS broker integration test (start a NATS server first)
+NAEOS_NATS_TEST_URL=nats://127.0.0.1:4222 go test -tags=integration -race -count=1 -timeout 30s ./internal/broker/ -run TestRealNATSIntegration
 ```
 
 ### Lint

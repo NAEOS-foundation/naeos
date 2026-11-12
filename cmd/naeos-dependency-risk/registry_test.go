@@ -67,3 +67,67 @@ func TestChecksumMustMatchTrustedGoSumEntry(t *testing.T) {
 		t.Fatal("mismatched checksum must not match")
 	}
 }
+
+func TestValidSPDXLicenseExpressions(t *testing.T) {
+	cases := []struct {
+		expression string
+		want       bool
+	}{
+		{"Apache-2.0", true},
+		{"Apache-2.0 AND MIT", true},
+		{"MIT OR Apache-2.0", true},
+		{"(MIT OR Apache-2.0) AND BSD-3-Clause", true},
+		{"Apache-2.0 AND (MIT OR ISC)", true},
+		{"", false},
+		{"Apache 2.0", false},
+		{"Apache-2.0 AND", false},
+		{"AND Apache-2.0", false},
+		{"Apache-2.0 OR OR MIT", false},
+		{"Apache-2.0 MIT", false},
+		{"Apache-2.0 AND Unknown-License", false},
+		{"LicenseRef-Proprietary", false},
+		{"Apache-2.0 WITH LLVM-exception", false},
+		{"(Apache-2.0 AND MIT", false},
+		{"Apache-2.0 AND MIT)", false},
+		{"Apache-2.0; MIT", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.expression, func(t *testing.T) {
+			if got := validSPDXLicense(tc.expression); got != tc.want {
+				t.Fatalf("validSPDXLicense(%q) = %v, want %v", tc.expression, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseDependencyReviewRegistryAcceptsSPDXExpression(t *testing.T) {
+	input := strings.Replace(validRegistryJSON(), `"spdx_license":"Apache-2.0"`, `"spdx_license":"Apache-2.0 AND MIT"`, 1)
+	if _, err := parseDependencyReviewRegistry([]byte(input)); err != nil {
+		t.Fatalf("expected valid SPDX expression to be accepted: %v", err)
+	}
+}
+
+func TestGoDependencyVersionNormalizationMatchesRegistryAndGoSum(t *testing.T) {
+	input := strings.Replace(validRegistryJSON(), `"version":"v1.2.3"`, `"version":"1.2.3"`, 1)
+	registry, err := parseDependencyReviewRegistry([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := registry.Records[0]
+	if _, ok := findReviewedDependency(registry, "go", record.Name, "v1.2.3"); !ok {
+		t.Fatal("Go module v-prefix must normalize when matching a trusted registry record")
+	}
+	line := record.Name + " v1.2.3 " + record.Checksum + "\n"
+	if !checksumPresentInGoSum([]byte(line), record) {
+		t.Fatal("Go sum v-prefix must normalize when matching the trusted checksum")
+	}
+}
+
+func TestNPMDependencyVersionMatchingRemainsExact(t *testing.T) {
+	registry := dependencyReviewRegistry{Records: []dependencyReviewRecord{{
+		Ecosystem: "npm", Name: "example-package", Version: "1.2.3",
+	}}}
+	if _, ok := findReviewedDependency(registry, "npm", "example-package", "v1.2.3"); ok {
+		t.Fatal("npm version matching must remain exact and must not apply Go normalization")
+	}
+}
