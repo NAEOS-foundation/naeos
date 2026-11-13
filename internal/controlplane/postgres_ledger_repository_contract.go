@@ -22,7 +22,7 @@ func (l *PostgresLedger) Decision(ctx context.Context, decisionID string) (Ledge
 	}
 	events, err := l.LoadVerified(ctx)
 	if err != nil {
-		return LedgerEvent{}, fmt.Errorf("%w: verify ledger for decision lookup: %w", ErrRepositoryUnavailable, err)
+		return LedgerEvent{}, fmt.Errorf("verify ledger for decision lookup: %w", err)
 	}
 	for index := len(events) - 1; index >= 0; index-- {
 		event := events[index]
@@ -41,7 +41,7 @@ func (l *PostgresLedger) HasExecution(ctx context.Context, decisionID string) (b
 	}
 	events, err := l.LoadVerified(ctx)
 	if err != nil {
-		return false, fmt.Errorf("%w: verify ledger for execution lookup: %w", ErrRepositoryUnavailable, err)
+		return false, fmt.Errorf("verify ledger for execution lookup: %w", err)
 	}
 	for _, event := range events {
 		if event.DecisionID == decisionID &&
