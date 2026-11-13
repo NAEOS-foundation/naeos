@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -130,5 +131,57 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	}
 	if len(restartedEvents) != count {
 		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), count)
+	}
+
+	// Verify that the chain is checked against the authoritative head, not
+	// merely against its own event sequence and predecessor hashes.
+	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
+	if adminURL == "" {
+		t.Skip("set NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL to verify ledger-head tampering")
+	}
+	adminPool, err := pgxpool.New(ctx, adminURL)
+	if err != nil {
+		t.Fatalf("create isolated admin test pool: %v", err)
+	}
+	defer adminPool.Close()
+	if err := adminPool.Ping(ctx); err != nil {
+		t.Fatalf("ping isolated admin test database: %v", err)
+	}
+
+	var originalSequence int64
+	var originalHash string
+	if err := adminPool.QueryRow(ctx, `SELECT last_sequence, event_hash
+		FROM naeos_control_plane.ledger_head WHERE singleton = TRUE`).Scan(&originalSequence, &originalHash); err != nil {
+		t.Fatalf("read original ledger head for tamper test: %v", err)
+	}
+	if originalSequence != int64(count) || originalHash != restartedEvents[len(restartedEvents)-1].EventHash {
+		t.Fatalf("unexpected original ledger head: sequence=%d hash=%s", originalSequence, originalHash)
+	}
+
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1 WHERE singleton = TRUE`, originalSequence+1); err != nil {
+		t.Fatalf("tamper isolated ledger head sequence: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); !errors.Is(err, ErrRepositoryIntegrity) {
+		t.Fatalf("Load after ledger-head sequence tampering = %v, want ErrRepositoryIntegrity", err)
+	}
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1, event_hash = $2 WHERE singleton = TRUE`, originalSequence, originalHash); err != nil {
+		t.Fatalf("restore isolated ledger head after sequence test: %v", err)
+	}
+
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET event_hash = 'tampered' WHERE singleton = TRUE`); err != nil {
+		t.Fatalf("tamper isolated ledger head hash: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); !errors.Is(err, ErrRepositoryIntegrity) {
+		t.Fatalf("Load after ledger-head hash tampering = %v, want ErrRepositoryIntegrity", err)
+	}
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1, event_hash = $2 WHERE singleton = TRUE`, originalSequence, originalHash); err != nil {
+		t.Fatalf("restore isolated ledger head after hash test: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); err != nil {
+		t.Fatalf("Load after restoring authoritative ledger head: %v", err)
 	}
 }
