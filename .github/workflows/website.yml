@@ -62,7 +62,7 @@ jobs:
       - name: Archive OpenNext build
         run: tar -czf ../naeos-site-opennext.tar.gz -C .open-next .
       - name: Upload build artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: naeos-site-opennext
           # Archive OpenNext build into a tarball so upload-artifact does not
@@ -93,6 +93,11 @@ jobs:
             echo "::warning::Could not resolve or create NEWSLETTER_KV namespace; deploying without it."
           fi
       - name: Preview on Cloudflare Workers
+        # Every PR gets an isolated Worker Preview; production remains main-only.
+        # Dependabot pull requests do not receive repository secrets.
+        # Build and validation still run; preview is reserved for trusted PRs.
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0
         # Fork PRs cannot access repository secrets; validation still runs, preview only on trusted same-repo PRs.
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
@@ -105,7 +110,7 @@ jobs:
       - name: Deploy to Cloudflare Workers
         # Production deploys run only from the protected main branch.
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

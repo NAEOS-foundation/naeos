@@ -412,8 +412,30 @@ func writeAtomicRuntimeReceipt(path string, data []byte) error {
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("close runtime receipt: %w", err)
 	}
-	if err := os.Rename(tmp, filepath.Clean(path)); err != nil {
+	cleanPath := filepath.Clean(path)
+	if err := os.Rename(tmp, cleanPath); err != nil {
 		return fmt.Errorf("commit runtime receipt: %w", err)
+	}
+	// Sync the containing directory so the rename's directory entry is durable
+	// across a crash or power loss, not only the receipt file's contents.
+	if err := syncRuntimeReceiptDirectory(filepath.Dir(cleanPath)); err != nil {
+		return fmt.Errorf("sync runtime receipt directory after commit: %w", err)
+	}
+	return nil
+}
+
+// syncRuntimeReceiptDirectory flushes directory metadata after an atomic rename.
+func syncRuntimeReceiptDirectory(path string) error {
+	dir, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("open runtime receipt directory: %w", err)
+	}
+	if err := dir.Sync(); err != nil {
+		_ = dir.Close()
+		return fmt.Errorf("sync runtime receipt directory: %w", err)
+	}
+	if err := dir.Close(); err != nil {
+		return fmt.Errorf("close runtime receipt directory: %w", err)
 	}
 	return nil
 }

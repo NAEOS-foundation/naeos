@@ -99,13 +99,27 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 	return registry, nil
 }
 
+func normalizeDependencyVersion(ecosystem, version string) string {
+	version = strings.TrimSpace(version)
+	if strings.EqualFold(strings.TrimSpace(ecosystem), "go") {
+		// go.mod/go.sum use the leading "v" required by Go module versions,
+		// while trusted registry records may store the equivalent bare semver.
+		return strings.TrimPrefix(version, "v")
+	}
+	return version
+}
+
 func checksumPresentInGoSum(data []byte, record dependencyReviewRecord) bool {
 	if !strings.EqualFold(record.Ecosystem, "go") {
 		return false
 	}
+	expectedVersion := normalizeDependencyVersion(record.Ecosystem, record.Version)
 	for _, line := range strings.Split(string(data), "\n") {
 		fields := strings.Fields(line)
-		if len(fields) == 3 && fields[0] == record.Name && fields[1] == record.Version && fields[2] == record.Checksum {
+		if len(fields) == 3 &&
+			fields[0] == record.Name &&
+			normalizeDependencyVersion(record.Ecosystem, fields[1]) == expectedVersion &&
+			fields[2] == record.Checksum {
 			return true
 		}
 	}
@@ -195,7 +209,9 @@ func validDependencyDomain(value string) bool {
 
 func findReviewedDependency(registry dependencyReviewRegistry, ecosystem, name, version string) (dependencyReviewRecord, bool) {
 	for _, record := range registry.Records {
-		if strings.EqualFold(record.Ecosystem, ecosystem) && record.Name == name && record.Version == version {
+		if strings.EqualFold(record.Ecosystem, ecosystem) &&
+			record.Name == name &&
+			normalizeDependencyVersion(ecosystem, record.Version) == normalizeDependencyVersion(ecosystem, version) {
 			return record, true
 		}
 	}
