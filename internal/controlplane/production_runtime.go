@@ -20,12 +20,12 @@ import (
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
 type ProductionRuntime struct {
-	pool       *pgxpool.Pool
-	sqlDB      *sql.DB
-	Policies   *PostgresPolicyRepository
-	Grants     *PostgresGrantRepository
-	Approvals  *PostgresApprovalRepository
-	Ledger     *PostgresLedger
+	pool      *pgxpool.Pool
+	sqlDB     *sql.DB
+	Policies  *PostgresPolicyRepository
+	Grants    *PostgresGrantRepository
+	Approvals *PostgresApprovalRepository
+	Ledger    *PostgresLedger
 }
 
 // OpenProductionRuntime validates the connection contract, opens bounded pools,
@@ -56,7 +56,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 		}
 	}()
 	if err := pool.Ping(ctx); err != nil {
-		return nil, fmt.Errorf("Control Plane PostgreSQL ping failed: %w", err)
+		return nil, fmt.Errorf("control plane PostgreSQL ping failed: %w", err)
 	}
 	if err := verifyControlPlaneSchema(ctx, pool); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 	if err := sqlDB.PingContext(ctx); err != nil {
 		_ = sqlDB.Close()
-		return nil, fmt.Errorf("Control Plane SQL repository ping failed: %w", err)
+		return nil, fmt.Errorf("control plane SQL repository ping failed: %w", err)
 	}
 
 	ledger, err := NewPostgresLedger(pool)
@@ -83,10 +83,10 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 	cleanup = false
 	return &ProductionRuntime{
 		pool: pool, sqlDB: sqlDB,
-		Policies: NewPostgresPolicyRepository(sqlDB),
-		Grants: NewPostgresGrantRepository(sqlDB),
+		Policies:  NewPostgresPolicyRepository(sqlDB),
+		Grants:    NewPostgresGrantRepository(sqlDB),
 		Approvals: NewPostgresApprovalRepository(sqlDB),
-		Ledger: ledger,
+		Ledger:    ledger,
 	}, nil
 }
 
@@ -105,18 +105,18 @@ func (r *ProductionRuntime) Close() {
 
 func validateProductionDatabaseURL(raw string) error {
 	if strings.TrimSpace(raw) == "" {
-		return errors.New("Control Plane DATABASE_URL is required")
+		return errors.New("control plane DATABASE_URL is required")
 	}
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.Host == "" {
-		return errors.New("Control Plane DATABASE_URL must be a valid PostgreSQL URL")
+		return errors.New("control plane DATABASE_URL must be a valid PostgreSQL URL")
 	}
 	sslmode := strings.ToLower(u.Query().Get("sslmode"))
 	switch sslmode {
 	case "require", "verify-ca", "verify-full":
 		return nil
 	default:
-		return errors.New("Control Plane DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
+		return errors.New("control plane DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
 	}
 }
 
@@ -133,10 +133,10 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	if err := pool.QueryRow(ctx, required).Scan(
 		&policyVersions, &activePolicies, &grants, &approvals, &ledgerEvents, &appendFn, &headFn,
 	); err != nil {
-		return errors.New("Control Plane schema compatibility check failed")
+		return errors.New("control plane schema compatibility check failed")
 	}
 	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerEvents || !appendFn || !headFn {
-		return errors.New("Control Plane schema is missing required tables or functions")
+		return errors.New("control plane schema is missing required tables or functions")
 	}
 	return nil
 }
