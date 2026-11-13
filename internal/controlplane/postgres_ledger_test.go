@@ -119,12 +119,37 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	if exists, err := store.HasExecution(ctx, decisionID); err != nil || exists {
 		t.Fatalf("HasExecution before execution intent = (%t, %v), want false", exists, err)
 	}
-	if _, _, err := store.Append(ctx, LedgerEvent{
-		ID: controlPlaneID("PGEXECUTION"), DecisionID: decisionID,
-		ExecutionID: controlPlaneID("PGEXECUTIONID"), AgentID: "integration-test",
-		EventType: "EXECUTION_STARTED",
-	}); err != nil {
-		t.Fatalf("append execution intent: %v", err)
+	// Race two independent execution claims for the same decision. The
+	// database ledger-head lock must make this a single-winner operation.
+	const competingClaims = 2
+	claimErrors := make([]error, competingClaims)
+	var claimWG sync.WaitGroup
+	for i := 0; i < competingClaims; i++ {
+		claimWG.Add(1)
+		go func(index int) {
+			defer claimWG.Done()
+			_, _, claimErrors[index] = store.Append(ctx, LedgerEvent{
+				ID: controlPlaneID("PGEXECUTION"), DecisionID: decisionID,
+				ExecutionID: controlPlaneID("PGEXECUTIONID"), AgentID: "integration-test",
+				EventType: "EXECUTION_STARTED",
+				Metadata: map[string]string{"claim": fmt.Sprintf("%d", index)},
+			})
+		}(i)
+	}
+	claimWG.Wait()
+	successes, conflicts := 0, 0
+	for _, claimErr := range claimErrors {
+		switch {
+		case claimErr == nil:
+			successes++
+		case errors.Is(claimErr, ErrRepositoryConflict):
+			conflicts++
+		default:
+			t.Fatalf("unexpected concurrent execution claim error: %v", claimErr)
+		}
+	}
+	if successes != 1 || conflicts != 1 {
+		t.Fatalf("concurrent execution claims: successes=%d conflicts=%d, want exactly one each", successes, conflicts)
 	}
 	if exists, err := store.HasExecution(ctx, decisionID); err != nil || !exists {
 		t.Fatalf("HasExecution after execution intent = (%t, %v), want true", exists, err)
