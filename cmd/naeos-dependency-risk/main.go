@@ -147,6 +147,173 @@ func safeRelativePath(value string) (string, error) {
 }
 
 var requireLine = regexp.MustCompile(`^[+-]\s*([^\s]+)\s+(v[^\s]+)`)
+var goDirective = regexp.MustCompile(`(?m)^go\s+([0-9]+\.[0-9]+\.[0-9]+)\s*// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package main
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+
+	"golang.org/x/mod/semver"
+
+	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
+)
+
+type requestFile struct {
+	PolicyVersion       string   `json:"policy_version"`
+	SchemaVersion       string   `json:"schema_version"`
+	Ecosystem           string   `json:"ecosystem"`
+	Name                string   `json:"name"`
+	Version             string   `json:"version"`
+	VersionChange       string   `json:"version_change"`
+	Paths               []string `json:"paths"`
+	Evidence            bool     `json:"evidence_available"`
+	KnownDependency     bool     `json:"known_dependency"`
+	ReviewedCriticality string   `json:"-"`
+	ReviewedDomains     []string `json:"-"`
+}
+
+type policyFile struct {
+	PolicyID      string `json:"policy_id"`
+	PolicyVersion string `json:"policy_version"`
+	SchemaVersion string `json:"schema_version"`
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	policyBytes, err := os.ReadFile("governance/dependency-risk-policy.json")
+	if err != nil {
+		return fmt.Errorf("read policy: %w", err)
+	}
+	var policy policyFile
+	if err := json.Unmarshal(policyBytes, &policy); err != nil {
+		return fmt.Errorf("parse policy: %w", err)
+	}
+	if policy.PolicyID == "" || policy.PolicyVersion != "1.0.0" || policy.SchemaVersion != "1.0.0" {
+		return errors.New("unsupported dependency-risk policy version")
+	}
+
+	if os.Getenv("NAEOS_DEPENDENCY_RISK_REQUEST") != "" {
+		return errors.New("NAEOS_DEPENDENCY_RISK_REQUEST is disabled: dependency decisions must be derived from the diff and trusted merge-base registry")
+	}
+	req, err := deriveRequest()
+	if err != nil {
+		return err
+	}
+	baseSHA := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
+	registry, registryErr := loadTrustedDependencyReviewRegistry(baseSHA)
+	var reviewReference string
+	registryStatus := "unavailable_or_invalid"
+	if registryErr == nil {
+		registryStatus = "loaded"
+		if record, ok := findReviewedDependency(registry, req.Ecosystem, req.Name, req.Version); ok && verifiedDependencyLockEvidence(record) {
+			reviewReference = record.ReviewReference
+			req.KnownDependency = true
+			req.ReviewedCriticality = record.Criticality
+			req.ReviewedDomains = record.Domains
+		} else {
+			req.KnownDependency = false
+		}
+	} else {
+		req.KnownDependency = false
+	}
+	if req.PolicyVersion == "" {
+		req.PolicyVersion = policy.PolicyVersion
+	}
+	if req.SchemaVersion == "" {
+		req.SchemaVersion = policy.SchemaVersion
+	}
+	if req.PolicyVersion != policy.PolicyVersion || req.SchemaVersion != policy.SchemaVersion {
+		return errors.New("request policy/schema version is unsupported")
+	}
+
+	result := dependencyrisk.Classify(dependencyrisk.Request{
+		Ecosystem:           req.Ecosystem,
+		Name:                req.Name,
+		VersionChange:       dependencyrisk.VersionChange(req.VersionChange),
+		Paths:               req.Paths,
+		EvidenceAvailable:   req.Evidence,
+		KnownDependency:     req.KnownDependency,
+		ReviewedCriticality: dependencyrisk.Criticality(req.ReviewedCriticality),
+		ReviewedDomains:     toDependencyDomains(req.ReviewedDomains),
+	})
+	evidence := struct {
+		PolicyID               string                `json:"policy_id"`
+		PolicyVersion          string                `json:"policy_version"`
+		RegistrySourceRevision string                `json:"registry_source_revision"`
+		RegistryStatus         string                `json:"registry_status"`
+		ReviewReference        string                `json:"review_reference,omitempty"`
+		Result                 dependencyrisk.Result `json:"result"`
+	}{policy.PolicyID, policy.PolicyVersion, baseSHA, registryStatus, reviewReference, result}
+
+	out := os.Getenv("NAEOS_DEPENDENCY_RISK_OUTPUT")
+	if out == "" {
+		out = "dependency-risk-evidence.json"
+	}
+	out, err = safeRelativePath(out)
+	if err != nil {
+		return fmt.Errorf("invalid output path: %w", err)
+	}
+	data, err := json.MarshalIndent(evidence, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode evidence: %w", err)
+	}
+	data = append(data, '\n')
+	// The output path is constrained by safeRelativePath before filesystem access.
+	if err := os.WriteFile(out, data, 0o600); err != nil { //nolint:gosec // validated as workspace-relative above
+		return fmt.Errorf("write evidence: %w", err)
+	}
+	fmt.Printf("dependency risk: decision=%s risk=%s criticality=%s output=%s\n", result.Decision, result.Risk, result.Criticality, out)
+	if result.Decision == dependencyrisk.Deny {
+		return errors.New("dependency risk policy denied the change")
+	}
+	return nil
+}
+
+func safeRelativePath(value string) (string, error) {
+	clean := filepath.Clean(value)
+	if clean == "." || filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return "", errors.New("path must be relative and remain within the workspace")
+	}
+	return clean, nil
+}
+
+)
+
+func deriveGoToolchainRequest(baseModule, currentModule string) (requestFile, bool) {
+	oldMatch := goDirective.FindStringSubmatch(baseModule)
+	newMatch := goDirective.FindStringSubmatch(currentModule)
+	if len(oldMatch) != 2 || len(newMatch) != 2 || oldMatch[1] == newMatch[1] {
+		return requestFile{}, false
+	}
+	change := versionChange(oldMatch[1], newMatch[1])
+	if change == "unknown" {
+		return requestFile{}, false
+	}
+	return requestFile{
+		PolicyVersion: "1.0.0", SchemaVersion: "1.0.0",
+		Ecosystem: "go-toolchain", Name: "go", Version: newMatch[1],
+		VersionChange: change, Paths: []string{"internal/runtime/engine"},
+		KnownDependency: true,
+	}, true
+}
 
 func deriveRequest() (requestFile, error) {
 	base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
@@ -217,6 +384,13 @@ func deriveRequest() (requestFile, error) {
 	}
 	sort.Strings(names)
 	if len(names) == 0 {
+		baseModule, baseErr := gitShowFile(base, "go.mod")
+		if baseErr == nil {
+			if toolchain, changed := deriveGoToolchainRequest(string(baseModule), moduleContent); changed {
+				toolchain.Evidence = automaticEvidenceAvailable()
+				return toolchain, nil
+			}
+		}
 		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}, nil
 	}
 
