@@ -75,7 +75,8 @@ jobs:
           CREATE ROLE naeos_control_plane_login LOGIN INHERIT PASSWORD 'ephemeral-ci-only';
           GRANT naeos_control_plane_runtime TO naeos_control_plane_login;
           SQL
-      - name: Run PostgreSQL ledger integration test
+      - name: Run PostgreSQL ledger and repository integration tests
         env:
           NAEOS_CONTROLPLANE_TEST_DATABASE_URL: postgres://naeos_control_plane_login:ephemeral-ci-only@localhost:5432/naeos_control_plane_test?sslmode=disable
-        run: go test -race -count=1 -timeout 120s -run '^TestPostgresLedgerIntegrationConcurrentAppendAndReload$' ./internal/controlplane/
+        run: go test -race -count=1 -timeout 120s -run '^TestPostgres(LedgerIntegrationConcurrentAppendAndReload|RepositoriesIntegrationLifecycleAndSingleUse)
+ ./internal/controlplane/
