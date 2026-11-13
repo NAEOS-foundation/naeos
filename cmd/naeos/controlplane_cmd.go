@@ -27,7 +27,7 @@ func newControlPlanePreflightCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "preflight",
 		Short: "Validate DATABASE_URL, TLS, PostgreSQL connectivity, and private schema",
-		Long: "Open the dedicated Control Plane PostgreSQL repositories and verify that the expected private schema and ledger functions are installed. This command performs read-only connectivity and schema checks; it does not apply migrations or modify production data.",
+		Long:  "Open the dedicated Control Plane PostgreSQL repositories and verify that the expected private schema and ledger functions are installed. This command performs read-only connectivity and schema checks; it does not apply migrations or modify production data.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			databaseURL := os.Getenv("DATABASE_URL")
