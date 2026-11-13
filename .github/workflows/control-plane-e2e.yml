@@ -99,7 +99,7 @@ jobs:
           required=false
           while IFS= read -r file; do
             case "$file" in
-              site/*|.github/workflows/website.yml|.github/workflows/control-plane-e2e.yml|wrangler.jsonc|wrangler.toml)
+              site/*|.github/workflows/website.yml|wrangler.jsonc|wrangler.toml)
                 required=true
                 break
                 ;;
