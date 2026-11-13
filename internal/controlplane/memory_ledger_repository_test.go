@@ -59,7 +59,7 @@ func TestMemoryLedgerRepositoryConcurrentAppendSequences(t *testing.T) {
 			defer wg.Done()
 			<-start
 			_, sequences[index], errs[index] = repo.Append(context.Background(), LedgerEvent{
-				ID: "event-" + time.Now().UTC().Format("150405.000000000") + string(rune('a'+index)),
+				ID:      "event-" + time.Now().UTC().Format("150405.000000000") + string(rune('a'+index)),
 				AgentID: "agent", EventType: "TEST_EVENT",
 			})
 		}(i)
