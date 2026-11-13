@@ -39,7 +39,9 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 	if err != nil {
 		return nil, errors.New("parse Control Plane DATABASE_URL: invalid PostgreSQL URL")
 	}
-	cfg.MaxConns = 8
+	// The runtime uses two drivers over one DATABASE_URL. Split the total
+	// connection budget evenly so the combined maximum remains eight.
+	cfg.MaxConns = 4
 	cfg.MinConns = 0
 	cfg.MaxConnLifetime = 30 * time.Minute
 	cfg.MaxConnIdleTime = 5 * time.Minute
@@ -66,7 +68,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 	if err != nil {
 		return nil, fmt.Errorf("open Control Plane SQL repositories: %w", err)
 	}
-	sqlDB.SetMaxOpenConns(8)
+	sqlDB.SetMaxOpenConns(4)
 	sqlDB.SetMaxIdleConns(2)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
