@@ -132,7 +132,7 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 				ID: controlPlaneID("PGEXECUTION"), DecisionID: decisionID,
 				ExecutionID: controlPlaneID("PGEXECUTIONID"), AgentID: "integration-test",
 				EventType: "EXECUTION_STARTED",
-				Metadata: map[string]string{"claim": fmt.Sprintf("%d", index)},
+				Metadata:  map[string]string{"claim": fmt.Sprintf("%d", index)},
 			})
 		}(i)
 	}
