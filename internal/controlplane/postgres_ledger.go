@@ -84,6 +84,10 @@ func (l *PostgresLedger) Append(ctx context.Context, event LedgerEvent) (LedgerE
 		if err != nil {
 			_ = tx.Rollback(ctx)
 			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "P0001" &&
+				pgErr.Message == "execution already claimed for decision" {
+				return LedgerEvent{}, 0, fmt.Errorf("%w: %s", ErrRepositoryConflict, pgErr.Message)
+			}
 			if attempt+1 < maxPredecessorRetries && errors.As(err, &pgErr) &&
 				pgErr.Code == "P0001" && pgErr.Message == "ledger predecessor mismatch" {
 				continue
