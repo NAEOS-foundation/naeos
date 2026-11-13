@@ -10,8 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 	"github.com/spf13/cobra"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 func newControlPlaneCommand() *cobra.Command {
@@ -38,9 +39,9 @@ func newControlPlanePreflightCommand() *cobra.Command {
 			if err != nil {
 				// Avoid echoing a connection URL, which may contain credentials.
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					return fmt.Errorf("Control Plane preflight timed out or was canceled")
+					return fmt.Errorf("control plane preflight timed out or was canceled")
 				}
-				return fmt.Errorf("Control Plane preflight failed: %w", err)
+				return fmt.Errorf("control plane preflight failed: %w", err)
 			}
 			defer runtime.Close()
 			fmt.Fprintln(cmd.OutOrStdout(), "Control Plane PostgreSQL connectivity and schema checks passed.")
