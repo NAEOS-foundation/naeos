@@ -69,6 +69,7 @@ jobs:
     permissions:
       contents: read
       issues: read
+      pull-requests: read
     defaults:
       run:
         working-directory: site
@@ -87,7 +88,23 @@ jobs:
         run: npm install --no-save playwright
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Detect whether this PR changes the deployed Worker site
+        id: preview_scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          changed_files="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')"
+          if printf '%s\\n' "$changed_files" | grep -Eq '^(site/|\\.github/workflows/(website|control-plane-e2e)\\.yml$|wrangler\\.(jsonc|toml)$)'; then
+            echo "required=true" >> "$GITHUB_OUTPUT"
+            echo "Worker preview E2E is required for site/deployment changes."
+          else
+            echo "required=false" >> "$GITHUB_OUTPUT"
+            echo "No Worker site/deployment files changed; local browser E2E remains required."
+          fi
       - name: Wait for Cloudflare Worker preview
+        if: steps.preview_scope.outputs.required == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -105,6 +122,7 @@ jobs:
           echo "Cloudflare Worker preview did not become reachable in 10 minutes." >&2
           exit 1
       - name: Run real browser E2E against Cloudflare Worker preview
+        if: steps.preview_scope.outputs.required == 'true'
         run: node --test e2e/control-plane.e2e.test.mjs
 
   production-browser-e2e:
