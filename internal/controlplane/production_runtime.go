@@ -165,7 +165,7 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
-\t\tif err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
+		if err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
