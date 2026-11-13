@@ -1,0 +1,37 @@
+name: Handoff Interoperability Contract
+
+on:
+  pull_request:
+    paths:
+      - "tests/interop/**"
+      - ".github/workflows/handoff-interop.yml"
+      - "go.mod"
+      - "go.sum"
+  push:
+    branches:
+      - "test/handoff-interop-harness-001"
+    paths:
+      - "tests/interop/**"
+      - ".github/workflows/handoff-interop.yml"
+      - "go.mod"
+      - "go.sum"
+
+permissions:
+  contents: read
+
+jobs:
+  contract-tests:
+    name: Mock contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run contract tests
+        run: go test -race -count=1 -v ./tests/interop
