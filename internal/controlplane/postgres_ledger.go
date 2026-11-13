@@ -102,15 +102,27 @@ func (l *PostgresLedger) Append(ctx context.Context, event LedgerEvent) (LedgerE
 // sequence gap, broken predecessor, or event-hash mismatch fails closed.
 func (l *PostgresLedger) Load(ctx context.Context) ([]LedgerEvent, error) {
 	if l == nil || l.pool == nil {
-		return nil, fmt.Errorf("postgres ledger unavailable")
+		return nil, fmt.Errorf("%w: postgres ledger pool is missing", ErrRepositoryUnavailable)
 	}
-	rows, err := l.pool.Query(ctx, `SELECT sequence, event_payload
+
+	// Read events and the authoritative head from one repeatable-read snapshot.
+	// Without a shared snapshot, a concurrent append between the two reads could
+	// make a healthy ledger appear inconsistent (or hide a stale head).
+	tx, err := l.pool.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel:   pgx.RepeatableRead,
+		AccessMode: pgx.ReadOnly,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: begin ledger verification: %w", ErrRepositoryUnavailable, err)
+	}
+	defer func() { _ = tx.Rollback(context.Background()) }()
+
+	rows, err := tx.Query(ctx, `SELECT sequence, event_payload
 		FROM naeos_control_plane.ledger_events
 		ORDER BY sequence ASC`)
 	if err != nil {
-		return nil, fmt.Errorf("query ledger events: %w", err)
+		return nil, fmt.Errorf("%w: query ledger events: %w", ErrRepositoryUnavailable, err)
 	}
-	defer rows.Close()
 
 	events := make([]LedgerEvent, 0)
 	var expectedSequence int64 = 1
@@ -119,30 +131,55 @@ func (l *PostgresLedger) Load(ctx context.Context) ([]LedgerEvent, error) {
 		var sequence int64
 		var payload []byte
 		if err := rows.Scan(&sequence, &payload); err != nil {
-			return nil, fmt.Errorf("scan ledger event: %w", err)
+			rows.Close()
+			return nil, fmt.Errorf("%w: scan ledger event: %w", ErrRepositoryUnavailable, err)
 		}
 		if sequence != expectedSequence {
-			return nil, fmt.Errorf("ledger sequence gap: got %d, want %d", sequence, expectedSequence)
+			rows.Close()
+			return nil, fmt.Errorf("%w: ledger sequence gap: got %d, want %d", ErrRepositoryIntegrity, sequence, expectedSequence)
 		}
 		var event LedgerEvent
 		if err := json.Unmarshal(payload, &event); err != nil {
-			return nil, fmt.Errorf("decode ledger event at sequence %d: %w", sequence, err)
+			rows.Close()
+			return nil, fmt.Errorf("%w: decode ledger event at sequence %d: %v", ErrRepositoryIntegrity, sequence, err)
 		}
 		if event.ID == "" || event.Timestamp.IsZero() || event.EventHash == "" {
-			return nil, fmt.Errorf("invalid ledger event at sequence %d", sequence)
+			rows.Close()
+			return nil, fmt.Errorf("%w: invalid ledger event at sequence %d", ErrRepositoryIntegrity, sequence)
 		}
 		if event.PreviousHash != previousHash {
-			return nil, fmt.Errorf("ledger predecessor mismatch at sequence %d", sequence)
+			rows.Close()
+			return nil, fmt.Errorf("%w: ledger predecessor mismatch at sequence %d", ErrRepositoryIntegrity, sequence)
 		}
 		if event.EventHash != hashLedgerEvent(event) {
-			return nil, fmt.Errorf("ledger event hash mismatch at sequence %d", sequence)
+			rows.Close()
+			return nil, fmt.Errorf("%w: ledger event hash mismatch at sequence %d", ErrRepositoryIntegrity, sequence)
 		}
 		events = append(events, cloneLedgerEvent(event))
 		previousHash = event.EventHash
 		expectedSequence++
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate ledger events: %w", err)
+	rowsErr := rows.Err()
+	rows.Close()
+	if rowsErr != nil {
+		return nil, fmt.Errorf("%w: iterate ledger events: %w", ErrRepositoryUnavailable, rowsErr)
+	}
+
+	var headSequence int64
+	var headHash string
+	if err := tx.QueryRow(ctx, `SELECT last_sequence, event_hash
+		FROM naeos_control_plane.read_ledger_head()`).Scan(&headSequence, &headHash); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("%w: authoritative ledger head is missing", ErrRepositoryIntegrity)
+		}
+		return nil, fmt.Errorf("%w: read authoritative ledger head: %w", ErrRepositoryUnavailable, err)
+	}
+	if headSequence != int64(len(events)) || headHash != previousHash {
+		return nil, fmt.Errorf("%w: ledger head mismatch: head=(%d,%s), events=(%d,%s)",
+			ErrRepositoryIntegrity, headSequence, headHash, len(events), previousHash)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("%w: commit ledger verification snapshot: %w", ErrRepositoryUnavailable, err)
 	}
 	return events, nil
 }
