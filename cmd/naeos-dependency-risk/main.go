@@ -72,7 +72,9 @@ func run() error {
 	registry, registryErr := loadTrustedDependencyReviewRegistry(baseSHA)
 	var reviewReference string
 	registryStatus := "unavailable_or_invalid"
-	if registryErr == nil {
+	if req.Ecosystem == "go-toolchain" {
+		registryStatus = "not_applicable_toolchain_directive"
+	} else if registryErr == nil {
 		registryStatus = "loaded"
 		if record, ok := findReviewedDependency(registry, req.Ecosystem, req.Name, req.Version); ok && verifiedDependencyLockEvidence(record) {
 			reviewReference = record.ReviewReference
