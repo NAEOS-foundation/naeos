@@ -34,7 +34,7 @@ func TestProductionHealthHandlerIsNarrowAndFailClosed(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusNotFound {
-			t.Errorf("production health handler exposed %q: status %d, want 404", path, response.Code, http.StatusNotFound)
+			t.Errorf("production health handler exposed %q: status %d, want 404", path, response.Code)
 		}
 	}
 }
