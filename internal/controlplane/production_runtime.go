@@ -127,8 +127,8 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		to_regclass('naeos_control_plane.grants') IS NOT NULL,
 		to_regclass('naeos_control_plane.approvals') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_events') IS NOT NULL,
-		to_regclass('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
-		to_regclass('naeos_control_plane.read_ledger_head()') IS NOT NULL`
+		to_regprocedure('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
+		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL`
 	var policyVersions, activePolicies, grants, approvals, ledgerEvents, appendFn, headFn bool
 	if err := pool.QueryRow(ctx, required).Scan(
 		&policyVersions, &activePolicies, &grants, &approvals, &ledgerEvents, &appendFn, &headFn,
