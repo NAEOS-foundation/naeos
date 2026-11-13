@@ -104,12 +104,42 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 		}
 	}
 
+	decisionID := controlPlaneID("PGDECISION")
+	decisionEvent, _, err := store.Append(ctx, LedgerEvent{
+		ID: controlPlaneID("PGDECISIONEVENT"), DecisionID: decisionID,
+		AgentID: "integration-test", EventType: "AUTHORIZATION_DECISION", Decision: DecisionAllow,
+	})
+	if err != nil {
+		t.Fatalf("append canonical decision event: %v", err)
+	}
+	canonicalDecision, err := store.Decision(ctx, decisionID)
+	if err != nil || canonicalDecision.ID != decisionEvent.ID {
+		t.Fatalf("Decision = (%+v, %v), want canonical decision event", canonicalDecision, err)
+	}
+	if exists, err := store.HasExecution(ctx, decisionID); err != nil || exists {
+		t.Fatalf("HasExecution before execution intent = (%t, %v), want false", exists, err)
+	}
+	if _, _, err := store.Append(ctx, LedgerEvent{
+		ID: controlPlaneID("PGEXECUTION"), DecisionID: decisionID,
+		ExecutionID: controlPlaneID("PGEXECUTIONID"), AgentID: "integration-test",
+		EventType: "EXECUTION_STARTED",
+	}); err != nil {
+		t.Fatalf("append execution intent: %v", err)
+	}
+	if exists, err := store.HasExecution(ctx, decisionID); err != nil || !exists {
+		t.Fatalf("HasExecution after execution intent = (%t, %v), want true", exists, err)
+	}
+	if _, err := store.Decision(ctx, "missing-decision"); !errors.Is(err, ErrRepositoryNotFound) {
+		t.Fatalf("missing Decision error = %v, want ErrRepositoryNotFound", err)
+	}
+
+	expectedLedgerEvents := count + 2
 	events, err := store.Load(ctx)
 	if err != nil {
 		t.Fatalf("load and verify ledger after concurrent appends: %v", err)
 	}
-	if len(events) != count {
-		t.Fatalf("loaded %d events; expected exactly %d in isolated database", len(events), count)
+	if len(events) != expectedLedgerEvents {
+		t.Fatalf("loaded %d events; expected exactly %d in isolated database", len(events), expectedLedgerEvents)
 	}
 
 	// Simulate a process restart by closing the original pool and loading
@@ -129,8 +159,8 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reload ledger after pool restart: %v", err)
 	}
-	if len(restartedEvents) != count {
-		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), count)
+	if len(restartedEvents) != expectedLedgerEvents {
+		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), expectedLedgerEvents)
 	}
 
 	// Verify that the chain is checked against the authoritative head, not
@@ -154,7 +184,7 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 		FROM naeos_control_plane.ledger_head WHERE singleton = TRUE`).Scan(&originalSequence, &originalHash); err != nil {
 		t.Fatalf("read original ledger head for tamper test: %v", err)
 	}
-	if originalSequence != int64(count) || originalHash != restartedEvents[len(restartedEvents)-1].EventHash {
+	if originalSequence != int64(expectedLedgerEvents) || originalHash != restartedEvents[len(restartedEvents)-1].EventHash {
 		t.Fatalf("unexpected original ledger head: sequence=%d hash=%s", originalSequence, originalHash)
 	}
 
