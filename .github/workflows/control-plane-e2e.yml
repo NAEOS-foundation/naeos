@@ -96,11 +96,19 @@ jobs:
         run: |
           set -euo pipefail
           changed_files="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')"
-          if printf '%s\\n' "$changed_files" | grep -Eq '^(site/|\\.github/workflows/(website|control-plane-e2e)\\.yml$|wrangler\\.(jsonc|toml)$)'; then
-            echo "required=true" >> "$GITHUB_OUTPUT"
+          required=false
+          while IFS= read -r file; do
+            case "$file" in
+              site/*|.github/workflows/website.yml|.github/workflows/control-plane-e2e.yml|wrangler.jsonc|wrangler.toml)
+                required=true
+                break
+                ;;
+            esac
+          done <<< "$changed_files"
+          echo "required=$required" >> "$GITHUB_OUTPUT"
+          if [ "$required" = true ]; then
             echo "Worker preview E2E is required for site/deployment changes."
           else
-            echo "required=false" >> "$GITHUB_OUTPUT"
             echo "No Worker site/deployment files changed; local browser E2E remains required."
           fi
       - name: Wait for Cloudflare Worker preview
