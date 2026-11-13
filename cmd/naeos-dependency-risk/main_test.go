@@ -95,3 +95,17 @@ func TestNPMVersionChange(t *testing.T) {
 		})
 	}
 }
+
+func TestDeriveGoToolchainRequestPatchDirective(t *testing.T) {
+	request, changed := deriveGoToolchainRequest("module example.com/naeos\n\ngo 1.26.10\n", "module example.com/naeos\n\ngo 1.26.11\n")
+	if !changed || request.Ecosystem != "go-toolchain" || request.Name != "go" || request.VersionChange != "patch" || !request.KnownDependency {
+		t.Fatalf("expected a known Go toolchain patch classification: changed=%v request=%+v", changed, request)
+	}
+}
+
+func TestDeriveGoToolchainRequestNoChange(t *testing.T) {
+	_, changed := deriveGoToolchainRequest("module example.com/naeos\n\ngo 1.26.11\n", "module example.com/naeos\n\ngo 1.26.11\n")
+	if changed {
+		t.Fatal("same Go directive should not be classified as a toolchain change")
+	}
+}
