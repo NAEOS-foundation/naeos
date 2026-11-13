@@ -1,6 +1,7 @@
 {
   "schema_version": "1.0.0",
   "policy_version": "1.0.0",
+  "records": []
   "records": [
     {
       "ecosystem": "go",
