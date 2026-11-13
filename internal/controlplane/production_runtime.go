@@ -37,7 +37,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("parse Control Plane DATABASE_URL: invalid PostgreSQL URL")
+		return nil, errors.New("parse Control Plane DATABASE_URL: invalid PostgreSQL URL")
 	}
 	cfg.MaxConns = 8
 	cfg.MinConns = 0
@@ -133,7 +133,7 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	if err := pool.QueryRow(ctx, required).Scan(
 		&policyVersions, &activePolicies, &grants, &approvals, &ledgerEvents, &appendFn, &headFn,
 	); err != nil {
-		return fmt.Errorf("Control Plane schema compatibility check failed")
+		return errors.New("Control Plane schema compatibility check failed")
 	}
 	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerEvents || !appendFn || !headFn {
 		return errors.New("Control Plane schema is missing required tables or functions")
@@ -161,7 +161,7 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
-		if err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
+		if err := r.sqlDB.PingContext(ctx); err != nil {\n\t\t\thttp.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)\n\t\t\treturn\n\t\t}\n\t\tif err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
