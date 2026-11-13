@@ -80,14 +80,14 @@ func TestGatewayObservationFailureBlocksCompletion(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected observation failure to fail closed")
 	}
-	if result.Status != "failed" {
-		t.Fatalf("expected failed, got %s", result.Status)
+	if result.Status != "unknown" {
+		t.Fatalf("expected unknown outcome, got %s", result.Status)
 	}
 	if result.Observation == nil || result.Observation.Observed {
 		t.Fatalf("expected negative observation to be retained, got %#v", result.Observation)
 	}
 	if len(gw.History()) != 1 {
-		t.Fatalf("expected failed result in history, got %d entries", len(gw.History()))
+		t.Fatalf("expected unknown result in history, got %d entries", len(gw.History()))
 	}
 }
 
@@ -101,8 +101,8 @@ func TestGatewayObserverErrorFailsClosed(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected observer error to fail closed")
 	}
-	if result.Status != "failed" {
-		t.Fatalf("expected failed, got %s", result.Status)
+	if result.Status != "unknown" {
+		t.Fatalf("expected unknown outcome, got %s", result.Status)
 	}
 }
 

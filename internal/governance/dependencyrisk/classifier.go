@@ -46,12 +46,14 @@ const General Domain = "general"
 const UnknownDomain Domain = "unknown"
 
 type Request struct {
-	Ecosystem         string
-	Name              string
-	VersionChange     VersionChange
-	Paths             []string
-	EvidenceAvailable bool
-	KnownDependency   bool
+	Ecosystem           string
+	Name                string
+	VersionChange       VersionChange
+	Paths               []string
+	EvidenceAvailable   bool
+	KnownDependency     bool
+	ReviewedCriticality Criticality
+	ReviewedDomains     []Domain
 }
 
 type Result struct {
@@ -68,6 +70,18 @@ type Result struct {
 // Classify is deterministic. Unknown impact or unavailable evidence fails closed.
 func Classify(req Request) Result {
 	domains := DomainsForDependency(req.Name, req.Paths)
+	domainSet := make(map[Domain]bool, len(domains)+len(req.ReviewedDomains))
+	for _, domain := range domains {
+		domainSet[domain] = true
+	}
+	for _, domain := range req.ReviewedDomains {
+		domainSet[domain] = true
+	}
+	domains = domains[:0]
+	for domain := range domainSet {
+		domains = append(domains, domain)
+	}
+	sort.Slice(domains, func(i, j int) bool { return domains[i] < domains[j] })
 	criticality := criticalityFor(req, domains)
 	gates, decision := gatesFor(criticality)
 	risk := Risk(criticality)
@@ -124,6 +138,19 @@ func criticalityFor(req Request, domains []Domain) Criticality {
 	}
 	if req.VersionChange == Unknown {
 		return Criticality("unknown")
+	}
+	if req.ReviewedCriticality != "" {
+		switch req.ReviewedCriticality {
+		case Low, Medium, High, Critical:
+			for _, d := range domains {
+				if (d == Policy || d == Security || d == AuditEvidence || d == Runtime || d == DeploymentCI) && req.ReviewedCriticality != Critical && req.ReviewedCriticality != High {
+					return High
+				}
+			}
+			return req.ReviewedCriticality
+		default:
+			return Criticality("unknown")
+		}
 	}
 	for _, d := range domains {
 		if d == UnknownDomain {

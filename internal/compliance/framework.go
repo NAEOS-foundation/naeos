@@ -4,7 +4,6 @@
 package compliance
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/audit"
@@ -84,22 +83,33 @@ var Frameworks = map[Framework]*FrameworkDef{
 }
 
 type ComplianceReport struct {
-	Framework       Framework
-	GeneratedAt     time.Time
-	TotalControls   int
-	PassedControls  int
-	FailedControls  int
-	NotApplicable   int
-	ControlStatuses []ControlStatus
-	Evidence        []Evidence
+	Framework             Framework
+	GeneratedAt           time.Time
+	TotalControls         int
+	PassedControls        int
+	FailedControls        int
+	NotApplicable         int
+	IndeterminateControls int
+	ControlStatuses       []ControlStatus
+	Evidence              []Evidence
 }
 
 type ControlStatus struct {
 	ControlID string
-	Passed    bool
+	Status    ControlAssessment
+	Passed    bool // Deprecated compatibility field; true only when Status is PASS.
 	Finding   string
 	Evidence  []string
 }
+
+// ControlAssessment is the evidence-based result of assessing a control.
+type ControlAssessment string
+
+const (
+	AssessmentPass          ControlAssessment = "PASS"
+	AssessmentFail          ControlAssessment = "FAIL"
+	AssessmentIndeterminate ControlAssessment = "INDETERMINATE"
+)
 
 type Evidence struct {
 	Type        string
@@ -124,57 +134,35 @@ func GenerateReport(framework Framework, events []audit.AuditEvent) *ComplianceR
 	for _, c := range def.Controls {
 		status := evaluateControl(c, events)
 		report.ControlStatuses = append(report.ControlStatuses, status)
-		if status.Passed {
+		switch status.Status {
+		case AssessmentPass:
 			report.PassedControls++
-		} else {
+		case AssessmentFail:
 			report.FailedControls++
+		case AssessmentIndeterminate:
+			report.IndeterminateControls++
 		}
 
-		if status.ControlID != "" {
-			report.Evidence = append(report.Evidence, Evidence{
-				Type:        "audit-log",
-				Description: fmt.Sprintf("Control %s: %s", c.ID, c.Title),
-				Source:      "naeos audit log",
-				Timestamp:   time.Now(),
-			})
-		}
 	}
 
 	return report
 }
 
+// evaluateControl deliberately does not infer compliance from the mere presence
+// of audit events. Audit records can demonstrate activity, but they cannot by
+// themselves establish that organizational or technical controls are designed,
+// implemented, and operating effectively. Therefore these controls remain
+// indeterminate until control-specific, independently verifiable evidence is
+// available.
 func evaluateControl(c Control, events []audit.AuditEvent) ControlStatus {
-	switch c.ID {
-	case "CC6.1", "164.312(a)(1)", "Art. 32":
-		for _, e := range events {
-			if e.Resource == "user" && e.Action == "create" {
-				return ControlStatus{ControlID: c.ID, Passed: true, Finding: "User access controls are in place"}
-			}
-		}
-		return ControlStatus{ControlID: c.ID, Passed: false, Finding: "No user access events found — implement access controls"}
-	case "CC7.1", "164.308(a)(6)":
-		for _, e := range events {
-			if e.Status == "failed" || e.Status == "error" {
-				return ControlStatus{ControlID: c.ID, Passed: true, Finding: "System operations monitored with incident detection"}
-			}
-		}
-		return ControlStatus{ControlID: c.ID, Passed: false, Finding: "No incident monitoring detected"}
-	case "CC4.1", "164.308(a)(8)":
-		if len(events) > 0 {
-			return ControlStatus{ControlID: c.ID, Passed: true, Finding: "Audit trail present with monitoring activities"}
-		}
-		return ControlStatus{ControlID: c.ID, Passed: false, Finding: "No audit events detected"}
-	case "Art. 17":
-		for _, e := range events {
-			if e.Action == "delete" && e.Resource == "user" {
-				return ControlStatus{ControlID: c.ID, Passed: true, Finding: "User deletion (right to erasure) supported"}
-			}
-		}
-		return ControlStatus{ControlID: c.ID, Passed: false, Finding: "No user deletion events — verify right to erasure"}
-	default:
-		if len(events) > 0 {
-			return ControlStatus{ControlID: c.ID, Passed: true, Finding: "General compliance evidence available"}
-		}
-		return ControlStatus{ControlID: c.ID, Passed: false, Finding: "No evidence collected"}
+	status := ControlStatus{
+		ControlID: c.ID,
+		Status:    AssessmentIndeterminate,
+		Passed:    false,
+		Finding:   "Audit-log events alone are insufficient to assess this control; provide control-specific, verifiable evidence",
 	}
+	if len(events) == 0 {
+		status.Finding = "No audit-log evidence available; control assessment is indeterminate"
+	}
+	return status
 }

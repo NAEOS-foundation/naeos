@@ -1,6 +1,8 @@
 // Copyright 2025 NAEOS contributors
 // SPDX-License-Identifier: Apache-2.0
 
+import { rmSync } from "node:fs";
+import { resolve } from "node:path";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -60,7 +62,20 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Clear potentially stale Turbopack metadata before production builds. This avoids
+// reusing cache entries whose referenced .sst files were not restored by CI/CD.
+const configForPhase = (phase: string): NextConfig => {
+  if (phase === "phase-production-build") {
+    rmSync(resolve(process.cwd(), ".next/cache/turbopack"), {
+      recursive: true,
+      force: true,
+    });
+  }
+
+  return nextConfig;
+};
+
+export default configForPhase;
 
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 initOpenNextCloudflareForDev();

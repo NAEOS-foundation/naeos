@@ -116,6 +116,48 @@ Do not treat a field as present or authoritative unless the evaluated commit act
 - execution identifier;
 - reconstruction notes.
 
+## Issue #600 — Adopter Golden Path Acceptance Matrix
+
+Use this matrix to report the seven scenarios required by [P3.1 — External Adopter Golden Path Validation](https://github.com/NAEOS-foundation/naeos/issues/600). This matrix defines what an evaluator must observe; it does **not** assert that every scenario is currently implemented or available in every deployment.
+
+Before testing a scenario, confirm that the evaluated commit exposes a documented, supported workflow for it. If it does not, record `BLOCKED` or `NOT TESTED` with the missing prerequisite. Do not simulate success with a mock and report it as a production control.
+
+| ID | Scenario | Minimum expected observation | Required evidence |
+|---|---|---|---|
+| GP-01 | ALLOW executes successfully | An allowed request reaches execution and produces an independently verifiable execution result. An ALLOW decision alone is insufficient. | Decision/policy identity, execution ID, execution event or result, EvidenceBundle, independent verifier result. |
+| GP-02 | DENY is blocked | A denied request does not execute the protected action. | Deny decision, relevant policy/version, absence of successful execution evidence for the request, verifier output. |
+| GP-03 | REQUIRE_APPROVAL waits for approval | The protected action remains blocked while approval is pending; any post-approval execution is recorded separately. | Pending approval state, action/execution state before approval, approval identity and transition if supported, resulting evidence. |
+| GP-04 | Policy mutation invalidates stale authorization | An authorization issued under the prior policy cannot be reused after a documented policy change when the supported contract requires invalidation. | Before/after policy version or digest, original authorization, mutation event, attempted reuse result, correlated logs/evidence. |
+| GP-05 | Replay is blocked | Replaying the same protected request/authorization artifact is rejected or otherwise prevented according to the documented replay contract. | Original request/authorization identifier, replay attempt, result, relevant nonce/expiry/replay-state evidence if exposed. |
+| GP-06 | Runtime isolation prevents adapter bypass | An adapter cannot reach or invoke the protected execution path while bypassing the required gateway/policy boundary. | Isolation configuration, attempted bypass path, runtime/network/process observations, logs and outcome. |
+| GP-07 | Successful execution has independently observable evidence | A reviewer can correlate the successful execution to its decision and verify the produced evidence without relying solely on the initiating process's claim. | Decision/request/execution IDs, raw correlation events, EvidenceBundle, independent verifier output, reviewer notes. |
+
+### Per-scenario result record
+
+Copy one record for each GP-01 through GP-07:
+
+```text
+Scenario ID:
+Evaluated commit:
+Supported documented workflow:
+Preconditions met: YES / NO
+Expected behavior:
+Actual behavior:
+Result: VERIFIED / PARTIAL / FAILED / BLOCKED / AMBIGUOUS / NOT TESTED
+Evidence paths or artifact references:
+Independent verification command and exit status:
+Deviation / failure reproduction:
+```
+
+### Cross-scenario integrity checks
+
+- Record the exact commit SHA, environment, and deployed artifact/build identity for every run when available; a source commit alone does not prove which artifact was executed.
+- Do not combine evidence from different commits or deployed artifacts without labeling the boundary.
+- Preserve both successful and failed attempts. Do not infer a blocked action from a DENY decision alone; observe the execution boundary.
+- A skipped or unavailable workflow is not a pass. Use `BLOCKED` when a required prerequisite prevents execution and `NOT TESTED` when the scenario was not attempted.
+- For each `VERIFIED` result, identify the artifact and independent check that support it.
+- The exit criterion for Issue #600 remains unmet until at least one external team completes the Golden Path and independently confirms the observed controls.
+
 ## Cross-Mission Submission
 Use this structure for every mission:
 ```text
