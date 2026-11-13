@@ -32,11 +32,11 @@ jobs:
       - name: Run governance lifecycle
         run: |
           set -o pipefail
-          go run ./experiments/governance-lifecycle 2>&1 | tee governance-lifecycle.json
+          go run ./experiments/governance-lifecycle 2> governance-lifecycle.stderr | tee governance-lifecycle.json
       - name: Run handoff governance
         run: |
           set -o pipefail
-          go run ./experiments/handoff-governance 2>&1 | tee handoff-governance.json
+          go run ./experiments/handoff-governance 2> handoff-governance.stderr | tee handoff-governance.json
       - name: Run plugin capability boundary
         run: |
           set -o pipefail
@@ -74,4 +74,6 @@ jobs:
             p0-evidence-record.json
             governance-lifecycle.json
             handoff-governance.json
+            governance-lifecycle.stderr
+            handoff-governance.stderr
             plugin-capability.txt
