@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -103,12 +104,67 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 		}
 	}
 
+	decisionID := controlPlaneID("PGDECISION")
+	decisionEvent, _, err := store.Append(ctx, LedgerEvent{
+		ID: controlPlaneID("PGDECISIONEVENT"), DecisionID: decisionID,
+		AgentID: "integration-test", EventType: "AUTHORIZATION_DECISION", Decision: DecisionAllow,
+	})
+	if err != nil {
+		t.Fatalf("append canonical decision event: %v", err)
+	}
+	canonicalDecision, err := store.Decision(ctx, decisionID)
+	if err != nil || canonicalDecision.ID != decisionEvent.ID {
+		t.Fatalf("Decision = (%+v, %v), want canonical decision event", canonicalDecision, err)
+	}
+	if exists, err := store.HasExecution(ctx, decisionID); err != nil || exists {
+		t.Fatalf("HasExecution before execution intent = (%t, %v), want false", exists, err)
+	}
+	// Race two independent execution claims for the same decision. The
+	// database ledger-head lock must make this a single-winner operation.
+	const competingClaims = 2
+	claimErrors := make([]error, competingClaims)
+	var claimWG sync.WaitGroup
+	for i := 0; i < competingClaims; i++ {
+		claimWG.Add(1)
+		go func(index int) {
+			defer claimWG.Done()
+			_, _, claimErrors[index] = store.Append(ctx, LedgerEvent{
+				ID: controlPlaneID("PGEXECUTION"), DecisionID: decisionID,
+				ExecutionID: controlPlaneID("PGEXECUTIONID"), AgentID: "integration-test",
+				EventType: "EXECUTION_STARTED",
+				Metadata:  map[string]string{"claim": fmt.Sprintf("%d", index)},
+			})
+		}(i)
+	}
+	claimWG.Wait()
+	successes, conflicts := 0, 0
+	for _, claimErr := range claimErrors {
+		switch {
+		case claimErr == nil:
+			successes++
+		case errors.Is(claimErr, ErrRepositoryConflict):
+			conflicts++
+		default:
+			t.Fatalf("unexpected concurrent execution claim error: %v", claimErr)
+		}
+	}
+	if successes != 1 || conflicts != 1 {
+		t.Fatalf("concurrent execution claims: successes=%d conflicts=%d, want exactly one each", successes, conflicts)
+	}
+	if exists, err := store.HasExecution(ctx, decisionID); err != nil || !exists {
+		t.Fatalf("HasExecution after execution intent = (%t, %v), want true", exists, err)
+	}
+	if _, err := store.Decision(ctx, "missing-decision"); !errors.Is(err, ErrRepositoryNotFound) {
+		t.Fatalf("missing Decision error = %v, want ErrRepositoryNotFound", err)
+	}
+
+	expectedLedgerEvents := count + 2
 	events, err := store.Load(ctx)
 	if err != nil {
 		t.Fatalf("load and verify ledger after concurrent appends: %v", err)
 	}
-	if len(events) != count {
-		t.Fatalf("loaded %d events; expected exactly %d in isolated database", len(events), count)
+	if len(events) != expectedLedgerEvents {
+		t.Fatalf("loaded %d events; expected exactly %d in isolated database", len(events), expectedLedgerEvents)
 	}
 
 	// Simulate a process restart by closing the original pool and loading
@@ -128,7 +184,59 @@ func TestPostgresLedgerIntegrationConcurrentAppendAndReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reload ledger after pool restart: %v", err)
 	}
-	if len(restartedEvents) != count {
-		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), count)
+	if len(restartedEvents) != expectedLedgerEvents {
+		t.Fatalf("restart recovered %d events; expected %d", len(restartedEvents), expectedLedgerEvents)
+	}
+
+	// Verify that the chain is checked against the authoritative head, not
+	// merely against its own event sequence and predecessor hashes.
+	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
+	if adminURL == "" {
+		t.Skip("set NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL to verify ledger-head tampering")
+	}
+	adminPool, err := pgxpool.New(ctx, adminURL)
+	if err != nil {
+		t.Fatalf("create isolated admin test pool: %v", err)
+	}
+	defer adminPool.Close()
+	if err := adminPool.Ping(ctx); err != nil {
+		t.Fatalf("ping isolated admin test database: %v", err)
+	}
+
+	var originalSequence int64
+	var originalHash string
+	if err := adminPool.QueryRow(ctx, `SELECT last_sequence, event_hash
+		FROM naeos_control_plane.ledger_head WHERE singleton = TRUE`).Scan(&originalSequence, &originalHash); err != nil {
+		t.Fatalf("read original ledger head for tamper test: %v", err)
+	}
+	if originalSequence != int64(expectedLedgerEvents) || originalHash != restartedEvents[len(restartedEvents)-1].EventHash {
+		t.Fatalf("unexpected original ledger head: sequence=%d hash=%s", originalSequence, originalHash)
+	}
+
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1 WHERE singleton = TRUE`, originalSequence+1); err != nil {
+		t.Fatalf("tamper isolated ledger head sequence: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); !errors.Is(err, ErrRepositoryIntegrity) {
+		t.Fatalf("Load after ledger-head sequence tampering = %v, want ErrRepositoryIntegrity", err)
+	}
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1, event_hash = $2 WHERE singleton = TRUE`, originalSequence, originalHash); err != nil {
+		t.Fatalf("restore isolated ledger head after sequence test: %v", err)
+	}
+
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET event_hash = 'tampered' WHERE singleton = TRUE`); err != nil {
+		t.Fatalf("tamper isolated ledger head hash: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); !errors.Is(err, ErrRepositoryIntegrity) {
+		t.Fatalf("Load after ledger-head hash tampering = %v, want ErrRepositoryIntegrity", err)
+	}
+	if _, err := adminPool.Exec(ctx, `UPDATE naeos_control_plane.ledger_head
+		SET last_sequence = $1, event_hash = $2 WHERE singleton = TRUE`, originalSequence, originalHash); err != nil {
+		t.Fatalf("restore isolated ledger head after hash test: %v", err)
+	}
+	if _, err := restartedStore.Load(ctx); err != nil {
+		t.Fatalf("Load after restoring authoritative ledger head: %v", err)
 	}
 }

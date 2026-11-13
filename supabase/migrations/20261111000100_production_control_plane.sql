@@ -197,6 +197,21 @@ BEGIN
     RAISE EXCEPTION 'ledger event id is required';
   END IF;
 
+  -- The ledger-head row lock serializes all appenders. Claim a decision's
+  -- single-use execution slot while holding that lock so concurrent callers
+  -- cannot both observe "no execution" and append separate start intents.
+  -- Later outcome/reconciliation events remain appendable for that same intent.
+  IF p_event->>'event_type' = 'EXECUTION_STARTED'
+     AND coalesce(p_event->>'decision_id', '') <> ''
+     AND EXISTS (
+       SELECT 1
+       FROM naeos_control_plane.ledger_events AS existing
+       WHERE existing.decision_id = p_event->>'decision_id'
+         AND existing.event_type IN ('EXECUTION_STARTED', 'EXECUTION_ALLOWED', 'EXECUTION_UNKNOWN')
+     ) THEN
+    RAISE EXCEPTION 'execution already claimed for decision';
+  END IF;
+
   v_sequence := v_head.last_sequence + 1;
 
   INSERT INTO naeos_control_plane.ledger_events (

@@ -128,3 +128,50 @@ func TestMemoryApprovalRepositoryContextAndUnavailable(t *testing.T) {
 		t.Fatalf("unavailable Get error = %v", err)
 	}
 }
+
+func TestMemoryApprovalRepositoryConcurrentConsumeSingleUse(t *testing.T) {
+	ctx := context.Background()
+	repo := NewMemoryApprovalRepository(NewApprovalStore())
+	approval := approvalRepositoryFixture()
+	if err := repo.Create(ctx, approval); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if _, err := repo.Transition(ctx, approval.ID, "pending", "approved", now); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			_, err := repo.Transition(ctx, approval.ID, "approved", "consumed", now.Add(time.Second))
+			results <- err
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(results)
+
+	successes, conflicts := 0, 0
+	for err := range results {
+		if err == nil {
+			successes++
+		} else if errors.Is(err, ErrRepositoryConflict) {
+			conflicts++
+		} else {
+			t.Fatalf("unexpected consume error: %v", err)
+		}
+	}
+	if successes != 1 || conflicts != 1 {
+		t.Fatalf("consume winners=%d conflicts=%d; want exactly one winner", successes, conflicts)
+	}
+	final, err := repo.Get(ctx, approval.ID)
+	if err != nil || final.Status != "consumed" {
+		t.Fatalf("final approval = (%+v, %v), want consumed", final, err)
+	}
+}

@@ -21,7 +21,7 @@ var (
 // LedgerRepository is the context-aware persistence boundary for canonical
 // append-only control-plane evidence. Append returns only after commit.
 type LedgerRepository interface {
-	Append(context.Context, LedgerEvent) (LedgerEvent, uint64, error)
+	Append(context.Context, LedgerEvent) (LedgerEvent, int64, error)
 	LoadVerified(context.Context) ([]LedgerEvent, error)
 	Decision(context.Context, string) (LedgerEvent, error)
 	HasExecution(context.Context, string) (bool, error)
