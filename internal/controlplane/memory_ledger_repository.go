@@ -31,6 +31,10 @@ func (r *MemoryLedgerRepository) Append(ctx context.Context, event LedgerEvent) 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if event.EventType == "EXECUTION_STARTED" && event.DecisionID != "" && r.ledger.HasExecution(event.DecisionID) {
+		return LedgerEvent{}, 0, ErrRepositoryConflict
+	}
+
 	stored := r.ledger.Append(event)
 	if stored.ID == "" {
 		if err := r.ledger.PersistenceError(); err != nil {
