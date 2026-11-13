@@ -161,7 +161,11 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
-		if err := r.sqlDB.PingContext(ctx); err != nil {\n\t\t\thttp.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)\n\t\t\treturn\n\t\t}\n\t\tif err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
+		if err := r.sqlDB.PingContext(ctx); err != nil {
+			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
+			return
+		}
+\t\tif err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
