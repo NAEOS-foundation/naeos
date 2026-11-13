@@ -7,7 +7,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -132,5 +131,4 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	if err != nil || final.Status != "consumed" {
 		t.Fatalf("final approval = (%+v, %v)", final, err)
 	}
-	_ = fmt.Sprintf("%s", suffix) // retain suffix as a diagnostic-friendly test identity
 }
