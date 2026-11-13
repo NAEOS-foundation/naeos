@@ -141,7 +141,7 @@ func (l *PostgresLedger) Load(ctx context.Context) ([]LedgerEvent, error) {
 		var event LedgerEvent
 		if err := json.Unmarshal(payload, &event); err != nil {
 			rows.Close()
-			return nil, fmt.Errorf("%w: decode ledger event at sequence %d: %v", ErrRepositoryIntegrity, sequence, err)
+			return nil, fmt.Errorf("%w: decode ledger event at sequence %d: %w", ErrRepositoryIntegrity, sequence, err)
 		}
 		if event.ID == "" || event.Timestamp.IsZero() || event.EventHash == "" {
 			rows.Close()
