@@ -4,6 +4,7 @@
 package gateway_test
 
 import (
+	"errors"
 	"sync/atomic"
 	"testing"
 
@@ -97,14 +98,28 @@ func TestCanonicalControlPlaneEvaluatorFailureBlocksSideEffect(t *testing.T) {
 		Action:  "run",
 		Context: map[string]any{"project": "naeos"},
 	})
-	if err != nil {
-		t.Fatalf("unexpected gateway error: %v", err)
+	if err == nil {
+		t.Fatal("expected evaluator failure to be surfaced as an internal error")
 	}
-	if result.Decision != control.DecisionDeny || result.Status != "denied" {
-		t.Fatalf("expected evaluator failure to become DENY, got decision=%s status=%s reasons=%v", result.Decision, result.Status, result.Reasons)
+	var evaluationFailure *control.EvaluationFailure
+	if !errors.As(err, &evaluationFailure) {
+		t.Fatalf("expected typed EvaluationFailure, got %T: %v", err, err)
+	}
+	if evaluationFailure.PolicyID != "invalid-policy" || evaluationFailure.RuleID != "invalid" {
+		t.Fatalf("expected policy and rule attribution, got %+v", evaluationFailure)
+	}
+	if result.Decision != "" || result.Status != "failed" {
+		t.Fatalf("evaluation failure must remain a non-decision failed state, got decision=%q status=%q", result.Decision, result.Status)
+	}
+	if result.EvaluationFailure == nil || result.EvaluationFailure.Code != evaluationFailure.Code {
+		t.Fatalf("expected structured failure metadata in execution result, got %+v", result.EvaluationFailure)
 	}
 	if got := atomic.LoadInt32(&sb.calls); got != 0 {
 		t.Fatalf("side effect executed after evaluator failure: sandbox calls=%d", got)
+	}
+	history := gw.History()
+	if len(history) != 1 || history[0].Decision != "" || history[0].Status != "failed" {
+		t.Fatalf("expected one failed non-decision history record, got %+v", history)
 	}
 }
 

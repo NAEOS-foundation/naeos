@@ -76,13 +76,17 @@ func TestPolicyBypassLandscape(t *testing.T) {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
 		}
 		if r.Scenario == "evaluator error fails closed" {
-			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
-				t.Errorf("P1.2 regression: evaluator failure must become DENY: observed=%s verdict=%s evidence=%s",
+			if r.ObservedOutcome != OutcomeError || r.Verdict != VerdictPass {
+				t.Errorf("P1.2 regression: evaluator failure must remain an internal error, not a policy decision: observed=%s verdict=%s evidence=%s",
 					r.ObservedOutcome, r.Verdict, r.Evidence)
 			}
 		}
-		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
-			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
+		// An evaluator error is the expected safe outcome for the dedicated
+		// evaluator-failure scenario. VerdictPass means the experiment oracle
+		// matched; it does not mean authorization succeeded. Unexpected errors
+		// must still fail the scenario.
+		if r.ObservedOutcome == OutcomeError && r.ExpectedOutcome != OutcomeError && r.Verdict == VerdictPass {
+			t.Errorf("unexpected evaluator error must not satisfy a governance scenario: %q", r.Scenario)
 		}
 	}
 	t.Logf("known findings: %v", gotFailures)
