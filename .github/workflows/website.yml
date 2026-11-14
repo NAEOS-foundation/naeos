@@ -55,7 +55,7 @@ jobs:
         run: node --test --experimental-strip-types app/api/social/draft/linkedin-publisher.test.ts
       - name: Build
         env:
-          NEXT_PUBLIC_CONTROL_PLANE_API_URL: https://naeos-control-plane-production.up.railway.app
+          NEXT_PUBLIC_CONTROL_PLANE_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://naeos-control-plane-production.up.railway.app' || '' }}
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
@@ -113,4 +113,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: site
-          command: deploy
+          command: deploy --var NAEOS_CONTROLPLANE_API_URL:https://naeos-control-plane-production.up.railway.app
