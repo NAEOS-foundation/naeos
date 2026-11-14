@@ -35,6 +35,11 @@ func (r *ProductionRuntime) ConfigureIdentity(cfg ProductionIdentityConfig) erro
 	if err != nil {
 		return errors.New("control plane identity trust configuration is invalid")
 	}
+	warmupCtx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	defer cancel()
+	if err := validator.Warmup(warmupCtx); err != nil {
+		return errors.New("control plane JWKS endpoint could not be initialized")
+	}
 	r.identity = validator
 	r.gateway = NewRepositoryDecisionGateway(r.Policies, r.Grants, r.Approvals, r.Ledger)
 	return nil
