@@ -286,11 +286,13 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (crypto.PublicKey, 
 			if errX != nil || errY != nil || len(xBytes) != 32 || len(yBytes) != 32 {
 				continue
 			}
-			x, y := new(big.Int).SetBytes(xBytes), new(big.Int).SetBytes(yBytes)
-			if !elliptic.P256().IsOnCurve(x, y) {
+			// crypto/ecdh validates that the encoded point is on the P-256 curve.
+			encodedPoint := append(append([]byte(nil), xBytes...), yBytes...)
+			ecdhKey, err := ecdh.P256().NewPublicKey(encodedPoint)
+			if err != nil {
 				continue
 			}
-			keys[item.Kid] = &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}
+			keys[item.Kid] = ecdhKey.ECDSA()
 		}
 	}
 	if len(keys) == 0 {
