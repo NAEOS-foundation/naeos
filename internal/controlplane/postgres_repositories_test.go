@@ -81,3 +81,41 @@ func TestPostgresApprovalRepositoryTransitionUsesCompareAndSet(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+func TestPostgresGrantRepositoryRejectsExpiredGrantWithDefaultCreatedAt(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	grant := Grant{
+		GrantID: "grant-expired", AgentID: "agent-expired", PolicyID: "policy-1",
+		PolicyVersion: 1, Capabilities: []Capability{"repo.read"}, Status: "active",
+		ExpiresAt: time.Now().UTC().Add(-time.Minute),
+	}
+	if err := NewPostgresGrantRepository(db).Create(context.Background(), grant); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("Create expired grant error = %v; want ErrRepositoryConflict", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expired grant unexpectedly reached the database: %v", err)
+	}
+}
+
+func TestPostgresApprovalRepositoryRejectsExpiredApprovalWithDefaultCreatedAt(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	approval := Approval{
+		ID: "approval-expired", DecisionID: "decision-1", Approver: "reviewer",
+		Status: "pending", ExpiresAt: time.Now().UTC().Add(-time.Minute),
+	}
+	if err := NewPostgresApprovalRepository(db).Create(context.Background(), approval); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("Create expired approval error = %v; want ErrRepositoryConflict", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("expired approval unexpectedly reached the database: %v", err)
+	}
+}

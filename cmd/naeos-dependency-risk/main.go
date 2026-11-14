@@ -72,7 +72,9 @@ func run() error {
 	registry, registryErr := loadTrustedDependencyReviewRegistry(baseSHA)
 	var reviewReference string
 	registryStatus := "unavailable_or_invalid"
-	if registryErr == nil {
+	if req.Ecosystem == "go-toolchain" {
+		registryStatus = "not_applicable_toolchain_directive"
+	} else if registryErr == nil {
 		registryStatus = "loaded"
 		if record, ok := findReviewedDependency(registry, req.Ecosystem, req.Name, req.Version); ok && verifiedDependencyLockEvidence(record) {
 			reviewReference = record.ReviewReference
@@ -147,6 +149,25 @@ func safeRelativePath(value string) (string, error) {
 }
 
 var requireLine = regexp.MustCompile(`^[+-]\s*([^\s]+)\s+(v[^\s]+)`)
+var goDirective = regexp.MustCompile(`(?m)^go\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$`)
+
+func deriveGoToolchainRequest(baseModule, currentModule string) (requestFile, bool) {
+	oldMatch := goDirective.FindStringSubmatch(baseModule)
+	newMatch := goDirective.FindStringSubmatch(currentModule)
+	if len(oldMatch) != 2 || len(newMatch) != 2 || oldMatch[1] == newMatch[1] {
+		return requestFile{}, false
+	}
+	change := versionChange(oldMatch[1], newMatch[1])
+	if change == "unknown" {
+		return requestFile{}, false
+	}
+	return requestFile{
+		PolicyVersion: "1.0.0", SchemaVersion: "1.0.0",
+		Ecosystem: "go-toolchain", Name: "go", Version: newMatch[1],
+		VersionChange: change, Paths: []string{"internal/runtime/engine"},
+		KnownDependency: true,
+	}, true
+}
 
 func deriveRequest() (requestFile, error) {
 	base := os.Getenv("NAEOS_DEPENDENCY_RISK_BASE_SHA")
@@ -217,6 +238,14 @@ func deriveRequest() (requestFile, error) {
 	}
 	sort.Strings(names)
 	if len(names) == 0 {
+		baseModule, baseErr := gitShowFile(base, "go.mod")
+		currentModule, currentErr := os.ReadFile("go.mod")
+		if baseErr == nil && currentErr == nil {
+			if toolchain, changed := deriveGoToolchainRequest(string(baseModule), string(currentModule)); changed {
+				toolchain.Evidence = automaticEvidenceAvailable()
+				return toolchain, nil
+			}
+		}
 		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "go", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}, nil
 	}
 
