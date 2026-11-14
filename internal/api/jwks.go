@@ -292,7 +292,7 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (crypto.PublicKey, 
 			encodedPoint[0] = 4 // SEC 1 uncompressed point encoding.
 			copy(encodedPoint[1:1+len(xBytes)], xBytes)
 			copy(encodedPoint[1+len(xBytes):], yBytes)
-			ecdhKey, err := ecdh.P256().NewPublicKey(encodedPoint)
+			_, err := ecdh.P256().NewPublicKey(encodedPoint)
 			if err != nil {
 				continue
 			}
