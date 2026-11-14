@@ -25,6 +25,7 @@ func SaveSession(session *Session) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
+	//nolint:gosec // user auth tokens are intentionally persisted with mode 0600.
 	data, err := json.MarshalIndent(session, "", "  ")
 	if err != nil {
 		return err
