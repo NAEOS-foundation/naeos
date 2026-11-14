@@ -102,6 +102,7 @@ func saveLedgerEvents(path string, events []LedgerEvent) error {
 		return fmt.Errorf("marshal ledger: %w", err)
 	}
 	dir := filepath.Dir(path)
+	// #nosec G703 -- persistencePath is an operator-configured local snapshot path; callers choose the trusted destination.
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("create ledger directory: %w", err)
 	}
