@@ -618,6 +618,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 			var claims *JWTClaims
 			var err error
 			serviceToken = isRS256Token(token)
+			supabaseToken := isES256Token(token)
 			if serviceRepositoryRoute {
 				if s.serviceJWKS == nil {
 					s.writeError(w, http.StatusUnauthorized, "service JWT authentication is not configured")
@@ -637,7 +638,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
 					return
 				}
-			} else if serviceToken {
+			} else if serviceToken || supabaseToken {
 				if s.supabaseAuth == nil {
 					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
 					return
