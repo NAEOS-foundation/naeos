@@ -56,8 +56,9 @@ type Client struct {
 	http       *http.Client
 	authToken  string
 	mu         sync.RWMutex
-	sessionMu  sync.Mutex
-	session    *Session
+	sessionMu      sync.Mutex
+	session        *Session
+	persistSession bool
 }
 
 func DefaultConfigPath() string {
@@ -129,6 +130,14 @@ func (c *Client) SetSession(session *Session) {
 	c.SetAuthToken(copy.AccessToken)
 }
 
+// SetPersistedSession marks a restored CLI session for disk updates after refresh.
+func (c *Client) SetPersistedSession(session *Session) {
+	c.SetSession(session)
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	c.persistSession = session != nil
+}
+
 // AuthSession returns a copy of the current Supabase user session.
 func (c *Client) AuthSession() *Session {
 	c.sessionMu.Lock()
@@ -160,8 +169,10 @@ func (c *Client) refreshSessionIfNeeded() error {
 	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
 	c.session = session
 	c.SetAuthToken(session.AccessToken)
-	if err := SaveSession(session); err != nil {
-		return fmt.Errorf("save refreshed Supabase session: %w", err)
+	if c.persistSession {
+		if err := SaveSession(session); err != nil {
+			return fmt.Errorf("save refreshed Supabase session: %w", err)
+		}
 	}
 	return nil
 }
