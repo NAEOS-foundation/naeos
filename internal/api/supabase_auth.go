@@ -35,7 +35,7 @@ type SupabaseClaims struct {
 	AppRoles []string
 }
 
-// SupabaseAuth validates Supabase access tokens (RS256, asymmetric signing
+// SupabaseAuth validates Supabase access tokens (RS256 or ES256 asymmetric signing
 // keys) against the project JWKS endpoint and exposes the identity claims
 // needed for RBAC provisioning.
 type SupabaseAuth struct {
