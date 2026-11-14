@@ -126,7 +126,7 @@ func newAPICommand() *cobra.Command {
 					return err
 				}
 			}
- 
+
 			var supabaseAuth *api.SupabaseAuth
 			supabaseAuthConfigured := false
 			if apiAuth {
