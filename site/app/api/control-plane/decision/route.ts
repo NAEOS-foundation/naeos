@@ -125,13 +125,15 @@ export async function POST(request: Request) {
     // Missing runtime context must fail closed; no hard-coded upstream fallback.
   }
 
-  if (!token?.trim()) {
-    return errorResponse("Control Plane server authentication is not configured.", 503);
-  }
-
+  // Resolve the environment boundary before checking credentials. An unconfigured
+  // preview must report unavailable and must never be mistaken for a production proxy.
   const upstreamUrl = getUpstreamUrl(configuredUrl);
   if (!upstreamUrl) {
     return errorResponse("Control Plane upstream is not configured correctly.", 503);
+  }
+
+  if (!token?.trim()) {
+    return errorResponse("Control Plane server authentication is not configured.", 503);
   }
 
   let upstream: Response;
