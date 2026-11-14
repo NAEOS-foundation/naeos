@@ -4,7 +4,6 @@
 package supabase
 
 import (
-	"fmt"
 	"net/url"
 	"time"
 
