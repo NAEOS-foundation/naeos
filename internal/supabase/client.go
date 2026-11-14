@@ -52,10 +52,10 @@ type Config struct {
 }
 
 type Client struct {
-	config     *Config
-	http       *http.Client
-	authToken  string
-	mu         sync.RWMutex
+	config         *Config
+	http           *http.Client
+	authToken      string
+	mu             sync.RWMutex
 	sessionMu      sync.Mutex
 	session        *Session
 	persistSession bool
