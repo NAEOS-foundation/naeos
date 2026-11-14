@@ -122,6 +122,7 @@ func (c *Client) SetSession(session *Session) {
 	defer c.sessionMu.Unlock()
 	if session == nil {
 		c.session = nil
+		c.persistSession = false
 		c.SetAuthToken("")
 		return
 	}
