@@ -235,13 +235,14 @@ func newSupabaseAuthAccessTokenCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if _, err := client.GetUser(); err != nil {
-				return fmt.Errorf("refresh or validate Supabase session: %w", err)
-			}
 			session := client.AuthSession()
 			if session == nil || session.AccessToken == "" {
 				return fmt.Errorf("not signed in; run 'naeos supabase auth signin' first")
 			}
+			if _, err := client.GetUser(); err != nil {
+				return fmt.Errorf("refresh or validate Supabase session: %w", err)
+			}
+			session = client.AuthSession()
 			_, err = fmt.Fprintln(cmd.OutOrStdout(), session.AccessToken)
 			return err
 		},
