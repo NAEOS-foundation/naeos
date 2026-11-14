@@ -13,7 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/api"\n\t"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/NAEOS-foundation/naeos/internal/api"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -26,6 +27,8 @@ type ProductionRuntime struct {
 	Grants    *PostgresGrantRepository
 	Approvals *PostgresApprovalRepository
 	Ledger    *PostgresLedger
+	identity  productionTokenValidator
+	gateway   *RepositoryDecisionGateway
 }
 
 // OpenProductionRuntime validates the connection contract, opens bounded pools,
