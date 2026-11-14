@@ -7,8 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
-	"time"\n\t"syscall"
+	"os/signal"
+	"time"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
