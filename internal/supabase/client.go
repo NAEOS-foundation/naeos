@@ -52,10 +52,12 @@ type Config struct {
 }
 
 type Client struct {
-	config    *Config
-	http      *http.Client
-	authToken string
-	mu        sync.RWMutex
+	config     *Config
+	http       *http.Client
+	authToken  string
+	mu         sync.RWMutex
+	sessionMu  sync.Mutex
+	session    *Session
 }
 
 func DefaultConfigPath() string {
@@ -116,6 +118,57 @@ func (c *Client) SetAuthToken(token string) {
 	c.authToken = token
 }
 
+// SetSession stores the current Supabase user session in memory.
+func (c *Client) SetSession(session *Session) {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if session == nil {
+		c.session = nil
+		c.SetAuthToken("")
+		return
+	}
+	copy := *session
+	c.session = &copy
+	c.SetAuthToken(copy.AccessToken)
+}
+
+// AuthSession returns a copy of the current Supabase user session.
+func (c *Client) AuthSession() *Session {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if c.session == nil {
+		return nil
+	}
+	copy := *c.session
+	return &copy
+}
+
+func (c *Client) refreshSessionIfNeeded() error {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if c.session == nil || c.session.RefreshToken == "" ||
+		(c.session.ExpiresAt.IsZero() || time.Until(c.session.ExpiresAt) > time.Minute) {
+		return nil
+	}
+	body, err := c.do(http.MethodPost, "/auth/v1/token?grant_type=refresh_token",
+		map[string]string{"apikey": c.config.AnonKey},
+		map[string]string{"refresh_token": c.session.RefreshToken})
+	if err != nil {
+		return fmt.Errorf("refresh Supabase session: %w", err)
+	}
+	session, err := jsonUnmarshal[Session](body)
+	if err != nil {
+		return err
+	}
+	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
+	c.session = session
+	c.SetAuthToken(session.AccessToken)
+	if err := SaveSession(session); err != nil {
+		return fmt.Errorf("save refreshed Supabase session: %w", err)
+	}
+	return nil
+}
+
 func (c *Client) AuthToken() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -168,6 +221,11 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 }
 
 func (c *Client) doAuth(method, path string, body any) ([]byte, error) {
+	if path != "/auth/v1/token?grant_type=refresh_token" {
+		if err := c.refreshSessionIfNeeded(); err != nil {
+			return nil, err
+		}
+	}
 	headers := map[string]string{
 		"apikey": c.config.AnonKey,
 	}
