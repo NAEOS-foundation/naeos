@@ -19,12 +19,6 @@ const (
 	supabaseRoleAnon          = "anon"
 )
 
-// supabaseAppMetadataRoleKey is the app_metadata key operators set in Supabase
-// to grant NAEOS RBAC roles to a user. app_metadata is only writable through
-// the Supabase admin API (service role), never by end users, so it is the only
-// metadata source trusted for role mapping.
-const supabaseAppMetadataRoleKey = "naeos_roles"
-
 // defaultSupabaseRBACRole is granted when a Supabase user presents no usable
 // NAEOS role mapping.
 const defaultSupabaseRBACRole = "viewer"
