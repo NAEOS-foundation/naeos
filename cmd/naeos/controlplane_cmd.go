@@ -13,8 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 	"github.com/spf13/cobra"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 func newControlPlaneCommand() *cobra.Command {
