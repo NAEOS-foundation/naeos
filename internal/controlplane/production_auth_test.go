@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
@@ -109,6 +110,27 @@ func TestProductionHandlerDoesNotExposeDemoRoutes(t *testing.T) {
 		if response.Code != http.StatusNotFound {
 			t.Errorf("route %q returned %d; want 404", path, response.Code)
 		}
+	}
+}
+
+func TestProductionAuthorizationUsesServerControlledTimestamp(t *testing.T) {
+	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "agent-gateway"}, nil)
+	req.Timestamp = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("authorization status = %d; want 200; body=%s", response.Code, response.Body.String())
+	}
+	ledger, ok := runtime.gateway.Ledger.(*repositoryGatewayTestLedger)
+	if !ok {
+		t.Fatalf("ledger type = %T; want repositoryGatewayTestLedger", runtime.gateway.Ledger)
+	}
+	events, err := ledger.LoadVerified(context.Background())
+	if err != nil {
+		t.Fatalf("LoadVerified: %v", err)
+	}
+	if len(events) != 1 || events[0].Timestamp.Before(time.Now().UTC().Add(-5*time.Second)) {
+		t.Fatalf("ledger event timestamp = %+v; caller-supplied past timestamp must be ignored", events)
 	}
 }
 
