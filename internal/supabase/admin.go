@@ -41,7 +41,7 @@ type APIInfo struct {
 func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
 	path := "/v1/projects/" + c.config.ProjectRef + "/database/query"
 	params := QueryParams{Query: query}
-	data, err := c.doManagement("POST", path, nil, params)
+	data, err := c.doManagement("POST", path, params)
 	if err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrCloud, "execute SQL")
 	}
@@ -55,7 +55,7 @@ func (c *Client) ExecuteSQL(query string) (*QueryResult, error) {
 }
 
 func (c *Client) GetRoles() ([]Role, error) {
-	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/database/roles", nil, nil)
+	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/database/roles", nil)
 	if err != nil {
 		return nil, err
 	}
