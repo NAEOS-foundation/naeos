@@ -122,7 +122,7 @@ func (c *Client) UploadFile(bucket, localPath, remotePath string) error {
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
+	req.Header.Set("Authorization", "Bearer "+c.userAccessToken())
 	req.Header.Set("apikey", c.config.AnonKey)
 
 	resp, err := c.http.Do(req)
@@ -145,7 +145,7 @@ func (c *Client) DownloadFile(bucket, remotePath, localPath string) error {
 		return naeoserr.Wrapf(err, naeoserr.ErrNetwork, "create request")
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
+	req.Header.Set("Authorization", "Bearer "+c.userAccessToken())
 	req.Header.Set("apikey", c.config.AnonKey)
 
 	resp, err := c.http.Do(req)
