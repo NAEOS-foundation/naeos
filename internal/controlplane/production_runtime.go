@@ -13,9 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NAEOS-foundation/naeos/internal/api"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/NAEOS-foundation/naeos/internal/api"
 )
 
 type productionTokenValidator interface {
