@@ -6,9 +6,9 @@ package api
 import (
 	"context"
 	"crypto"
-	"crypto/rsa"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
