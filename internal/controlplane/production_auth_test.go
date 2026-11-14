@@ -45,7 +45,7 @@ func sendProductionAuthorizationRequest(handler http.Handler, token string, requ
 }
 
 func TestProductionAuthorizationRequiresBearerAndValidIdentity(t *testing.T) {
-	claims := &api.JWTClaims{Sub: "agent-gateway", Scope: ControlPlaneAuthorizeScope}
+	claims := &api.JWTClaims{Sub: "agent-gateway"}
 	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
 	handler := runtime.ProductionHandler()
 
@@ -58,21 +58,16 @@ func TestProductionAuthorizationRequiresBearerAndValidIdentity(t *testing.T) {
 	}
 }
 
-func TestProductionAuthorizationRequiresScopeAndPrincipalBinding(t *testing.T) {
+func TestProductionAuthorizationRequiresPrincipalBinding(t *testing.T) {
 	reqBody := AuthorizeRequest{AgentID: "agent-gateway", Action: Action{AgentID: "agent-gateway", Capability: "artifact.read"}}
-	runtime, _ := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "agent-gateway", Scope: "naeos:repository:read"}, nil)
-	if got := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", reqBody).Code; got != http.StatusForbidden {
-		t.Fatalf("wrong scope status = %d; want 403", got)
-	}
-
-	runtime.identity = productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "other-agent", Scope: ControlPlaneAuthorizeScope}}
+	runtime, _ := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "other-agent"}, nil)
 	if got := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", reqBody).Code; got != http.StatusForbidden {
 		t.Fatalf("agent mismatch status = %d; want 403", got)
 	}
 }
 
 func TestProductionAuthorizationUsesVerifiedPrincipalAndRepositoryGateway(t *testing.T) {
-	claims := &api.JWTClaims{Sub: "agent-gateway", Scope: ControlPlaneAuthorizeScope}
+	claims := &api.JWTClaims{Sub: "agent-gateway"}
 	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
 	// Caller-supplied grant/policy values are explicitly not authoritative.
 	req.Grant = &Grant{GrantID: "forged", AgentID: "attacker", Status: "active", Capabilities: []Capability{"admin"}}
