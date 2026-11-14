@@ -64,6 +64,14 @@ type serviceJWTHeader struct {
 }
 
 func isRS256Token(token string) bool {
+	return hasJWTAlgorithm(token, "RS256")
+}
+
+func isES256Token(token string) bool {
+	return hasJWTAlgorithm(token, "ES256")
+}
+
+func hasJWTAlgorithm(token, algorithm string) bool {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return false
@@ -73,7 +81,7 @@ func isRS256Token(token string) bool {
 		return false
 	}
 	var header serviceJWTHeader
-	return json.Unmarshal(encoded, &header) == nil && header.Alg == "RS256"
+	return json.Unmarshal(encoded, &header) == nil && header.Alg == algorithm
 }
 
 func hasJWTClaimScope(claims *JWTClaims, expected string) bool {
