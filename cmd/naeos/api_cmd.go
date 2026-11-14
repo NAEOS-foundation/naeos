@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -66,6 +67,26 @@ func attachDatabase(server *api.Server) error {
 // apiAdminUserEnv overrides the RBAC user ID seeded when JWT auth is enabled.
 const apiAdminUserEnv = "NAEOS_API_ADMIN_USER"
 
+// supabaseAuthEnv derives the Supabase Auth issuer, audience, and JWKS URL
+// from the environment. SUPABASE_URL is the single required variable; the
+// other values have safe defaults matching the Supabase Auth defaults.
+func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
+	baseURL := strings.TrimSuffix(strings.TrimSpace(os.Getenv("SUPABASE_URL")), "/")
+	if baseURL == "" {
+		return "", "", "", false
+	}
+	issuer = baseURL + "/auth/v1"
+	jwksURL = issuer + "/.well-known/jwks.json"
+	if explicit := strings.TrimSpace(os.Getenv("SUPABASE_JWKS_URL")); explicit != "" {
+		jwksURL = explicit
+	}
+	audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	if audience == "" {
+		audience = "authenticated"
+	}
+	return issuer, audience, jwksURL, true
+}
+
 // registerAPIAuth attaches an auth manager seeded with an admin user so that a
 // JWT whose "sub" matches the configured admin user can use protected routes.
 func registerAPIAuth(server *api.Server) error {
@@ -105,17 +126,32 @@ func newAPICommand() *cobra.Command {
 					return err
 				}
 			}
+
+			var supabaseAuth *api.SupabaseAuth
+			supabaseAuthConfigured := false
+			if apiAuth {
+				if sIssuer, sAudience, sJWKSURL, ok := supabaseAuthEnv(); ok {
+					var err error
+					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
+					if err != nil {
+						return err
+					}
+					supabaseAuthConfigured = true
+				}
+			}
+
 			auth := &api.AuthConfig{
 				Enabled:     apiAuth,
 				JWTSecret:   apiSecret,
 				ServiceJWKS: serviceJWKS,
+				Supabase:    supabaseAuth,
 			}
 
 			server := api.NewServer(":"+apiPort, auth)
 			if err := attachDatabase(server); err != nil {
 				return err
 			}
-			if apiAuth && apiSecret != "" {
+			if apiAuth && (apiSecret != "" || supabaseAuthConfigured) {
 				if err := registerAPIAuth(server); err != nil {
 					return err
 				}

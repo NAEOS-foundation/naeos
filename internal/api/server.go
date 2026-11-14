@@ -55,6 +55,7 @@ type Server struct {
 	apiKeysMu        sync.RWMutex
 	jwt              *JWTValidator
 	serviceJWKS      *JWKSValidator
+	supabaseAuth     *SupabaseAuth
 	authManager      *auth.Manager
 	routePerms       map[string]auth.RoutePermission
 	parser           parser.Parser
@@ -137,6 +138,8 @@ type AuthConfig struct {
 	JWTSecret   string
 	Enabled     bool
 	ServiceJWKS *JWKSValidator
+	// Supabase accepts RS256 Supabase Auth tokens for non-repository routes.
+	Supabase *SupabaseAuth
 }
 
 // CORSConfig holds Cross-Origin Resource Sharing settings.
@@ -221,6 +224,7 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 	}
 	if authCfg != nil {
 		s.serviceJWKS = authCfg.ServiceJWKS
+		s.supabaseAuth = authCfg.Supabase
 	}
 	s.bundle = contextbundle.NewGenerator(s.compiler)
 	s.mcpServer = mcp.NewServer(s.compiler, s.bundle)
@@ -614,6 +618,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 			var claims *JWTClaims
 			var err error
 			serviceToken = isRS256Token(token)
+			supabaseToken := isES256Token(token)
 			if serviceRepositoryRoute {
 				if s.serviceJWKS == nil {
 					s.writeError(w, http.StatusUnauthorized, "service JWT authentication is not configured")
@@ -633,9 +638,18 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
 					return
 				}
-			} else if serviceToken {
-				s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
-				return
+			} else if serviceToken || supabaseToken {
+				if s.supabaseAuth == nil {
+					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
+					return
+				}
+				var supaClaims *SupabaseClaims
+				claims, supaClaims, err = s.supabaseAuth.Validate(r.Context(), token)
+				if err != nil {
+					s.writeError(w, http.StatusUnauthorized, "invalid bearer token")
+					return
+				}
+				s.ensureSupabaseUser(supaClaims)
 			} else if s.jwt != nil {
 				claims, err = s.jwt.Validate(token)
 			} else {

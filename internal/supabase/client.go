@@ -52,10 +52,13 @@ type Config struct {
 }
 
 type Client struct {
-	config    *Config
-	http      *http.Client
-	authToken string
-	mu        sync.RWMutex
+	config         *Config
+	http           *http.Client
+	authToken      string
+	mu             sync.RWMutex
+	sessionMu      sync.Mutex
+	session        *Session
+	persistSession bool
 }
 
 func DefaultConfigPath() string {
@@ -100,9 +103,6 @@ func NewClient(cfg *Config) *Client {
 			Timeout: 30 * time.Second,
 		},
 	}
-	if cfg.AccessToken != "" {
-		c.SetAuthToken(cfg.AccessToken)
-	}
 	return c
 }
 
@@ -116,10 +116,79 @@ func (c *Client) SetAuthToken(token string) {
 	c.authToken = token
 }
 
+// SetSession stores the current Supabase user session in memory.
+func (c *Client) SetSession(session *Session) {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if session == nil {
+		c.session = nil
+		c.persistSession = false
+		c.SetAuthToken("")
+		return
+	}
+	copy := *session
+	c.session = &copy
+	c.SetAuthToken(copy.AccessToken)
+}
+
+// SetPersistedSession marks a restored CLI session for disk updates after refresh.
+func (c *Client) SetPersistedSession(session *Session) {
+	c.SetSession(session)
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	c.persistSession = session != nil
+}
+
+// AuthSession returns a copy of the current Supabase user session.
+func (c *Client) AuthSession() *Session {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if c.session == nil {
+		return nil
+	}
+	copy := *c.session
+	return &copy
+}
+
+func (c *Client) refreshSessionIfNeeded() error {
+	c.sessionMu.Lock()
+	defer c.sessionMu.Unlock()
+	if c.session == nil || c.session.RefreshToken == "" ||
+		(!c.session.ExpiresAt.IsZero() && time.Until(c.session.ExpiresAt) > time.Minute) {
+		return nil
+	}
+	body, err := c.do(http.MethodPost, "/auth/v1/token?grant_type=refresh_token",
+		map[string]string{"apikey": c.config.AnonKey},
+		map[string]string{"refresh_token": c.session.RefreshToken})
+	if err != nil {
+		return fmt.Errorf("refresh Supabase session: %w", err)
+	}
+	session, err := jsonUnmarshal[Session](body)
+	if err != nil {
+		return err
+	}
+	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
+	c.session = session
+	c.SetAuthToken(session.AccessToken)
+	if c.persistSession {
+		if err := SaveSession(session); err != nil {
+			return fmt.Errorf("save refreshed Supabase session: %w", err)
+		}
+	}
+	return nil
+}
+
 func (c *Client) AuthToken() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.authToken
+}
+
+func (c *Client) userAccessToken() string {
+	if token := c.AuthToken(); token != "" {
+		return token
+	}
+	return c.config.AnonKey
 }
 
 func (c *Client) do(method, path string, headers map[string]string, body any) ([]byte, error) {
@@ -168,20 +237,28 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 }
 
 func (c *Client) doAuth(method, path string, body any) ([]byte, error) {
+	if path != "/auth/v1/token?grant_type=refresh_token" &&
+		path != "/auth/v1/token?grant_type=password" {
+		if err := c.refreshSessionIfNeeded(); err != nil {
+			return nil, err
+		}
+	}
 	headers := map[string]string{
-		"apikey": c.config.AnonKey,
+		"apikey":        c.config.AnonKey,
+		"Authorization": "Bearer " + c.userAccessToken(),
 	}
 	return c.do(method, path, headers, body)
 }
 
 func (c *Client) doAdmin(method, path string, body any) ([]byte, error) {
 	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
+		"apikey":        c.config.ServiceRoleKey,
+		"Authorization": "Bearer " + c.config.ServiceRoleKey,
 	}
 	return c.do(method, path, headers, body)
 }
 
-func (c *Client) doManagement(method, path string, headers map[string]string, body any) ([]byte, error) {
+func (c *Client) doManagement(method, path string, body any) ([]byte, error) {
 	baseURL := c.managementURL()
 	fullURL := baseURL + path
 
@@ -202,12 +279,8 @@ func (c *Client) doManagement(method, path string, headers map[string]string, bo
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	if token := c.AuthToken(); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v)
+	if c.config.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.config.AccessToken)
 	}
 
 	resp, err := c.http.Do(req)
