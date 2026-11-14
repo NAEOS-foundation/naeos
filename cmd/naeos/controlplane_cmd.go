@@ -7,15 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
+	"github.com/spf13/cobra"
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 	"syscall"
-
-	"github.com/spf13/cobra"
-
-	"github.com/NAEOS-foundation/naeos/internal/controlplane"
+	"time"
 )
 
 func newControlPlaneCommand() *cobra.Command {
