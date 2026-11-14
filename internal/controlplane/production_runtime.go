@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/NAEOS-foundation/naeos/internal/api"\n\t"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -153,7 +153,7 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 		_, _ = w.Write([]byte(`{"status":"live"}`))
 	})
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.pool == nil || r.sqlDB == nil {
+		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
