@@ -3,13 +3,11 @@
 The NAEOS API can validate Supabase Auth access tokens when started with
 `naeos api --auth` and `SUPABASE_URL` is configured.
 
-## Signing key requirement
+## Supported signing keys
 
-This integration currently accepts **RS256 tokens signed with an RSA key of at
-least 2048 bits**. Configure the Supabase project's Auth signing key accordingly.
-It does not accept ES256 or HS256 tokens. Supabase documents ES256 as a supported
-and recommended signing algorithm, so projects using that default must choose an
-RSA signing key before using this integration. See the
+The integration accepts asymmetric JWT signing keys published by Supabase:
+**RS256** with RSA keys of at least 2048 bits, and **ES256** with P-256 keys.
+It does not accept HS256 tokens. Supabase recommends ES256, as published by Supabase. See the
 [Supabase signing keys guide](https://supabase.com/docs/guides/auth/signing-keys).
 
 ## Configuration
@@ -27,10 +25,10 @@ The project URL and JWKS endpoint must use HTTPS. The configured URL is a trust
 anchor; the validator does not follow redirects.
 
 Start the API with `naeos api --auth`. The configured audience, issuer,
-expiration, not-before time, and RS256 signature are validated. Tokens with
+expiration, not-before time, and asymmetric signature are validated. Tokens with
 `role` other than `authenticated` are rejected. Repository routes continue
-to require the separate service-to-service JWT configuration and repository
-allowlist.
+to require the separate RS256 service-to-service JWT configuration and
+repository allowlist.
 
 ## NAEOS role mapping
 
