@@ -1,44 +1,95 @@
-# Supabase Auth for the NAEOS API
+# Supabase Auth with the NAEOS API
 
-The NAEOS API can validate Supabase Auth access tokens when started with
-`naeos api --auth` and `SUPABASE_URL` is configured.
+NAEOS validates Supabase Auth access tokens on protected API routes. The
+integration uses Supabase for sign-in and session issuance, then maps signed
+user identity and trusted NAEOS roles into the NAEOS API authorization layer.
 
-## Supported signing keys
+## 1. Configure the API
 
-The integration accepts asymmetric JWT signing keys published by Supabase:
-**RS256** with RSA keys of at least 2048 bits, and **ES256** with P-256 keys.
-It does not accept HS256 tokens. Supabase recommends ES256, as published by Supabase. See the
-[Supabase signing keys guide](https://supabase.com/docs/guides/auth/signing-keys).
+Set `SUPABASE_URL` to the project URL in the API service environment, then
+start the API with authentication enabled:
 
-## Configuration
+```sh
+SUPABASE_URL=https://<project-ref>.supabase.co naeos api --auth
+```
 
-Set these variables in the API service environment:
+The API derives issuer `<SUPABASE_URL>/auth/v1` and JWKS URL
+`<issuer>/.well-known/jwks.json`. `SUPABASE_JWKS_URL` and
+`SUPABASE_AUTH_AUDIENCE` can override those defaults. The configured URLs
+must use HTTPS.
 
-- `SUPABASE_URL`: project URL, such as `https://<project-ref>.supabase.co`.
-  The API derives issuer `<SUPABASE_URL>/auth/v1` and JWKS URL
-  `<issuer>/.well-known/jwks.json`.
-- `SUPABASE_JWKS_URL`: optional override for the JWKS URL.
-- `SUPABASE_AUTH_AUDIENCE`: optional audience override; defaults to
-  `authenticated`.
+The API validates issuer, audience, expiry, not-before time, token role,
+subject, and signature. It accepts Supabase asymmetric **RS256** (RSA keys of
+at least 2048 bits) and **ES256** (P-256) signing keys. HS256 is not supported.
+Repository routes retain their separate RS256 service-token and repository
+allowlist checks.
 
-The project URL and JWKS endpoint must use HTTPS. The configured URL is a trust
-anchor; the validator does not follow redirects.
+## 2. Sign in and call the API
 
-Start the API with `naeos api --auth`. The configured audience, issuer,
-expiration, not-before time, and asymmetric signature are validated. Tokens with
-`role` other than `authenticated` are rejected. Repository routes continue
-to require the separate RS256 service-to-service JWT configuration and
-repository allowlist.
+For a browser or application client, use the Supabase client SDK with the
+project publishable key. The SDK handles the sign-in flow and session refresh.
+Pass its access token to NAEOS as a bearer token:
 
-## NAEOS role mapping
+```ts
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+if (error) throw error;
 
-NAEOS reads role names only from signed `app_metadata.naeos_roles`. This claim
-must be managed through a trusted Supabase administrative path; do not put
-authorization roles in user-editable `user_metadata`. Only role names present
-in NAEOS's RBAC registry are accepted. When there is no valid mapped role, the
-user receives the `viewer` role.
+const response = await fetch(`${NAEOS_API_URL}/api/v1/profiles`, {
+  headers: {
+    Authorization: `Bearer ${data.session.access_token}`,
+  },
+});
+```
 
-Supabase embeds metadata in access tokens, so a role change takes effect when
-the user presents a refreshed token. Supabase documents the distinction between
-`app_metadata` and `user_metadata` in its
-[JWT claims reference](https://supabase.com/docs/guides/auth/jwt-fields).
+The same API accepts access tokens issued through any configured Supabase Auth
+provider. Do not send the Supabase publishable key as the bearer token.
+
+For the NAEOS CLI, configure the same project and sign in:
+
+```sh
+naeos supabase init --project-ref <project-ref> --anon-key "$SUPABASE_PUBLISHABLE_KEY"
+naeos supabase auth signin --email <email> --password '<password>'
+```
+
+The CLI saves the user session separately under `~/.naeos/supabase/session.json`
+with mode `0600`, refreshes it when an auth request finds it near expiry, and
+clears it after sign-out. To intentionally print the current bearer token for
+another client, run `naeos supabase auth access-token`; treat stdout as a
+credential and keep it out of logs and shell history.
+
+## 3. Map Supabase users to NAEOS roles
+
+NAEOS trusts roles only from the signed
+`app_metadata.naeos_roles` claim. It ignores `user_metadata` for
+authorization, filters role names against the NAEOS RBAC registry, and grants
+`viewer` if there is no valid NAEOS role.
+
+Use the CLI admin operation to preserve existing app metadata while setting
+the NAEOS roles:
+
+```sh
+naeos supabase auth admin set-naeos-roles \
+  --user-id <supabase-user-id> \
+  --role developer
+```
+
+This command requires the Supabase service-role key in the local CLI
+configuration. Keep that key in a trusted admin environment only; it is never
+needed by the NAEOS API or browser clients. A user must refresh their Supabase
+session before the updated app metadata appears in their access token.
+
+## Session and revocation behavior
+
+The NAEOS API verifies JWTs locally using the project's public JWKS. A token
+already issued by Supabase can therefore remain usable at NAEOS until its
+expiration, even after Supabase sign-out or session revocation. Keep access
+token lifetimes appropriate for the application. The validator caches JWKS for
+five minutes and does not follow redirects when fetching keys.
+
+Supabase references:
+- [Signing keys](https://supabase.com/docs/guides/auth/signing-keys)
+- [JWT claims](https://supabase.com/docs/guides/auth/jwt-fields)
+- [User sessions](https://supabase.com/docs/guides/auth/sessions)
