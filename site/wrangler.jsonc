@@ -33,5 +33,9 @@
     }
   ],
   "kv_namespaces": [],
-  "previews": {}
+  "previews": {
+    "vars": {
+      "NAEOS_CONTROLPLANE_API_URL": ""
+    }
+  }
 }
