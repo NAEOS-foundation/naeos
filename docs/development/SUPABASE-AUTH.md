@@ -50,9 +50,14 @@ provider. Do not send the Supabase publishable key as the bearer token.
 For the NAEOS CLI, configure the same project and sign in:
 
 ```sh
-naeos supabase init --project-ref <project-ref> --anon-key "$SUPABASE_PUBLISHABLE_KEY"
+naeos supabase init --project-ref <project-ref> \
+  --anon-key "$SUPABASE_PUBLISHABLE_KEY" \
+  --service-role-key "$SUPABASE_SERVICE_ROLE_KEY"
 naeos supabase auth signin --email <email> --password '<password>'
 ```
+
+The publishable key is used for sign-in. Add the service-role key only in a
+trusted admin environment if you will assign roles with the CLI.
 
 The CLI saves the user session separately under `~/.naeos/supabase/session.json`
 with mode `0600`, refreshes it when an auth request finds it near expiry, and
