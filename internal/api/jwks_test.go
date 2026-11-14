@@ -6,15 +6,11 @@ package api
 import (
 	"context"
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -44,7 +40,7 @@ func newTestJWKSValidator(t *testing.T) (*JWKSValidator, *rsa.PrivateKey) {
 	if err != nil {
 		t.Fatalf("create JWKS validator: %v", err)
 	}
-	validator.keys = map[string]crypto.PublicKey{"test-key": &key.PublicKey}
+	validator.keys = map[string]*rsa.PublicKey{"test-key": &key.PublicKey}
 	validator.fetched = time.Now()
 	return validator, key
 }
@@ -176,113 +172,5 @@ func TestJWKSValidatorDoesNotFollowRedirects(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "https://attacker.example/jwks", nil)
 	if err := validator.client.CheckRedirect(request, nil); err != http.ErrUseLastResponse {
 		t.Fatalf("redirect policy error = %v, want %v", err, http.ErrUseLastResponse)
-	}
-}
-
-func TestJWKSValidatorWarmupAcceptsCachedTrustedKeyset(t *testing.T) {
-	validator, _ := newTestJWKSValidator(t)
-	if err := validator.Warmup(context.Background()); err != nil {
-		t.Fatalf("Warmup with an initialized keyset: %v", err)
-	}
-}
-
-func TestJWKSValidatorDoesNotRefreshForUnknownKidWithinCacheTTL(t *testing.T) {
-	validator, _ := newTestJWKSValidator(t)
-	requests := 0
-	validator.client.Transport = roundTripFunc(func(*http.Request) (*http.Response, error) {
-		requests++
-		return nil, errors.New("unexpected network fetch")
-	})
-	for i := 0; i < 2; i++ {
-		if _, err := validator.key(context.Background(), "attacker-controlled-kid"); err == nil {
-			t.Fatal("unknown kid was trusted")
-		}
-	}
-	if requests != 0 {
-		t.Fatalf("JWKS network refreshes = %d; want 0 while cache is fresh", requests)
-	}
-}
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
-	return f(request)
-}
-
-func TestJWKSValidatorValidatesES256SupabaseStyleToken(t *testing.T) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatalf("generate ES256 key: %v", err)
-	}
-	validator, err := NewJWKSValidator("https://issuer.example", "naeos-control-plane", "https://issuer.example/.well-known/jwks.json")
-	if err != nil {
-		t.Fatalf("create validator: %v", err)
-	}
-	validator.keys = map[string]crypto.PublicKey{"ec-key": &key.PublicKey}
-	validator.fetched = time.Now()
-
-	header, err := json.Marshal(serviceJWTHeader{Alg: "ES256", Kid: "ec-key"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	claims := defaultTestServiceClaims()
-	claims.Audience = []string{"naeos-control-plane"}
-	payload, err := json.Marshal(claims)
-	if err != nil {
-		t.Fatal(err)
-	}
-	unsigned := base64.RawURLEncoding.EncodeToString(header) + "." + base64.RawURLEncoding.EncodeToString(payload)
-	digest := sha256.Sum256([]byte(unsigned))
-	r, s, err := ecdsa.Sign(rand.Reader, key, digest[:])
-	if err != nil {
-		t.Fatalf("sign ES256 token: %v", err)
-	}
-	signature := make([]byte, 64)
-	r.FillBytes(signature[:32])
-	s.FillBytes(signature[32:])
-	token := unsigned + "." + base64.RawURLEncoding.EncodeToString(signature)
-
-	verified, err := validator.Validate(context.Background(), token)
-	if err != nil {
-		t.Fatalf("Validate ES256: %v", err)
-	}
-	if verified.Sub != claims.Subject {
-		t.Fatalf("verified subject = %q; want %q", verified.Sub, claims.Subject)
-	}
-}
-
-func TestJWKSValidatorWarmupLoadsES256JWKFromEndpoint(t *testing.T) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatalf("generate ES256 key: %v", err)
-	}
-	x := make([]byte, 32)
-	y := make([]byte, 32)
-	key.X.FillBytes(x)
-	key.Y.FillBytes(y)
-	document, err := json.Marshal(serviceJWKS{Keys: []serviceJWK{{
-		Kty: "EC", Use: "sig", Alg: "ES256", Kid: "ec-key", Crv: "P-256",
-		X: base64.RawURLEncoding.EncodeToString(x), Y: base64.RawURLEncoding.EncodeToString(y),
-	}}})
-	if err != nil {
-		t.Fatalf("marshal JWKS: %v", err)
-	}
-	validator, err := NewJWKSValidator("https://issuer.example", "naeos-control-plane", "https://issuer.example/.well-known/jwks.json")
-	if err != nil {
-		t.Fatalf("create validator: %v", err)
-	}
-	validator.client.Transport = roundTripFunc(func(request *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Header:     make(http.Header),
-			Body:       io.NopCloser(strings.NewReader(string(document))),
-			Request:    request,
-		}, nil
-	})
-	if err := validator.Warmup(context.Background()); err != nil {
-		t.Fatalf("Warmup: %v", err)
-	}
-	if _, ok := validator.keys["ec-key"].(*ecdsa.PublicKey); !ok {
-		t.Fatalf("loaded JWKS key type = %T; want *ecdsa.PublicKey", validator.keys["ec-key"])
 	}
 }

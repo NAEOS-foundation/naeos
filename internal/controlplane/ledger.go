@@ -102,7 +102,6 @@ func saveLedgerEvents(path string, events []LedgerEvent) error {
 		return fmt.Errorf("marshal ledger: %w", err)
 	}
 	dir := filepath.Dir(path)
-	// #nosec G703 -- persistencePath is an operator-configured local snapshot path; callers choose the trusted destination.
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("create ledger directory: %w", err)
 	}
@@ -127,7 +126,6 @@ func saveLedgerEvents(path string, events []LedgerEvent) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("close ledger snapshot: %w", err)
 	}
-	// #nosec G703 -- tmpName is created in the same operator-configured directory and path is the configured snapshot destination.
 	if err := os.Rename(tmpName, path); err != nil {
 		return fmt.Errorf("commit ledger snapshot: %w", err)
 	}

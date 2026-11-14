@@ -15,13 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-
-	"github.com/NAEOS-foundation/naeos/internal/api"
 )
-
-type productionTokenValidator interface {
-	Validate(context.Context, string) (*api.JWTClaims, error)
-}
 
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
@@ -32,8 +26,6 @@ type ProductionRuntime struct {
 	Grants    *PostgresGrantRepository
 	Approvals *PostgresApprovalRepository
 	Ledger    *PostgresLedger
-	identity  productionTokenValidator
-	gateway   *RepositoryDecisionGateway
 }
 
 // OpenProductionRuntime validates the connection contract, opens bounded pools,
@@ -161,7 +153,7 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 		_, _ = w.Write([]byte(`{"status":"live"}`))
 	})
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil {
+		if r == nil || r.pool == nil || r.sqlDB == nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
