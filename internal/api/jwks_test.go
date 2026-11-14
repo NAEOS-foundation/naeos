@@ -10,7 +10,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
+	"encoding/json"\n\t"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -173,4 +173,35 @@ func TestJWKSValidatorDoesNotFollowRedirects(t *testing.T) {
 	if err := validator.client.CheckRedirect(request, nil); err != http.ErrUseLastResponse {
 		t.Fatalf("redirect policy error = %v, want %v", err, http.ErrUseLastResponse)
 	}
+}
+
+
+func TestJWKSValidatorWarmupAcceptsCachedTrustedKeyset(t *testing.T) {
+	validator, _ := newTestJWKSValidator(t)
+	if err := validator.Warmup(context.Background()); err != nil {
+		t.Fatalf("Warmup with an initialized keyset: %v", err)
+	}
+}
+
+func TestJWKSValidatorDoesNotRefreshForUnknownKidWithinCacheTTL(t *testing.T) {
+	validator, _ := newTestJWKSValidator(t)
+	requests := 0
+	validator.client.Transport = roundTripFunc(func(*http.Request) (*http.Response, error) {
+		requests++
+		return nil, errors.New("unexpected network fetch")
+	})
+	for i := 0; i < 2; i++ {
+		if _, err := validator.key(context.Background(), "attacker-controlled-kid"); err == nil {
+			t.Fatal("unknown kid was trusted")
+		}
+	}
+	if requests != 0 {
+		t.Fatalf("JWKS network refreshes = %d; want 0 while cache is fresh", requests)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return f(request)
 }
