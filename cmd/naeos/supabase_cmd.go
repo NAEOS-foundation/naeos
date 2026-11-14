@@ -52,7 +52,7 @@ func getSupabaseClient() (*supabase.Client, error) {
 		return nil, fmt.Errorf("load Supabase session: %w", err)
 	}
 	if session != nil {
-		client.SetSession(session)
+		client.SetPersistedSession(session)
 	}
 	return client, nil
 }
@@ -210,6 +210,10 @@ func newSupabaseAuthSigninCommand() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("signin failed: %w", err)
 			}
+			if err := supabase.SaveSession(session); err != nil {
+				return fmt.Errorf("save Supabase session: %w", err)
+			}
+			client.SetPersistedSession(session)
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Signed in as: %s\n", session.User.Email)
 			fmt.Fprintln(cmd.OutOrStdout(), "Session saved with restricted local file permissions.")
@@ -262,6 +266,9 @@ func newSupabaseAuthSignoutCommand() *cobra.Command {
 
 			if err := client.SignOut(); err != nil {
 				return fmt.Errorf("signout failed: %w", err)
+			}
+			if err := supabase.ClearSession(); err != nil {
+				return fmt.Errorf("clear local Supabase session: %w", err)
 			}
 
 			fmt.Fprintln(cmd.OutOrStdout(), "Signed out.")
