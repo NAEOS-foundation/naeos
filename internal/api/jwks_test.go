@@ -179,7 +179,6 @@ func TestJWKSValidatorDoesNotFollowRedirects(t *testing.T) {
 	}
 }
 
-
 func TestJWKSValidatorWarmupAcceptsCachedTrustedKeyset(t *testing.T) {
 	validator, _ := newTestJWKSValidator(t)
 	if err := validator.Warmup(context.Background()); err != nil {
