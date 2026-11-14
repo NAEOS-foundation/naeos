@@ -225,7 +225,8 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 }
 
 func (c *Client) doAuth(method, path string, body any) ([]byte, error) {
-	if path != "/auth/v1/token?grant_type=refresh_token" {
+	if path != "/auth/v1/token?grant_type=refresh_token" &&
+		path != "/auth/v1/token?grant_type=password" {
 		if err := c.refreshSessionIfNeeded(); err != nil {
 			return nil, err
 		}
