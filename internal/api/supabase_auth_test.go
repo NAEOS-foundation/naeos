@@ -17,7 +17,6 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
-
 	"testing"
 	"time"
 
@@ -240,7 +239,6 @@ func TestSupabaseAuthValidate(t *testing.T) {
 		t.Fatal("expected expired token rejection")
 	}
 }
-
 
 func TestServerSupabaseES256AuthFlow(t *testing.T) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
