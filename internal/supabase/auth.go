@@ -26,9 +26,9 @@ type SignUpResponse struct {
 }
 
 type Session struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	ExpiresIn    int       `json:"expires_in"`
 	RefreshToken string    `json:"refresh_token"`
 	ExpiresAt    time.Time `json:"expires_at,omitempty"`
 	User         User      `json:"user"`
