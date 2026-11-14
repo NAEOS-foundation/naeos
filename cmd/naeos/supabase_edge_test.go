@@ -86,7 +86,7 @@ func TestSupabaseAuthSigninSuccess(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(supabase.Session{
 			AccessToken:  strings.Repeat("t", 30),
 			RefreshToken: strings.Repeat("r", 30),
-			User:        supabase.User{ID: "u1", Email: "me@example.com"},
+			User:         supabase.User{ID: "u1", Email: "me@example.com"},
 		})
 	})
 
