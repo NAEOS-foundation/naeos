@@ -7,7 +7,6 @@ on:
       - '.github/workflows/external-validation-crewai.yml'
       - 'docs/EXTERNAL-VALIDATION.md'
       - 'experiments/aip-execution-evidence/**'
-      - 'experiments/sandbase-policy-freshness/**'
   workflow_dispatch:
 
 permissions:
