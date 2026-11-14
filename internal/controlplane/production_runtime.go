@@ -18,6 +18,10 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+type productionTokenValidator interface {
+	Validate(context.Context, string) (*api.JWTClaims, error)
+}
+
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
 type ProductionRuntime struct {
