@@ -81,9 +81,6 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 	}
 	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
 	c.SetSession(session)
-	if err := SaveSession(session); err != nil {
-		return nil, fmt.Errorf("save Supabase session: %w", err)
-	}
 	return session, nil
 }
 
@@ -93,9 +90,6 @@ func (c *Client) SignOut() error {
 		return naeoserr.Wrapf(err, naeoserr.ErrAuth, "sign out")
 	}
 	c.SetSession(nil)
-	if err := ClearSession(); err != nil {
-		return fmt.Errorf("clear local Supabase session: %w", err)
-	}
 	return nil
 }
 
@@ -122,9 +116,6 @@ func (c *Client) RefreshToken(refreshToken string) (*Session, error) {
 	}
 	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
 	c.SetSession(session)
-	if err := SaveSession(session); err != nil {
-		return nil, fmt.Errorf("save refreshed Supabase session: %w", err)
-	}
 	return session, nil
 }
 
