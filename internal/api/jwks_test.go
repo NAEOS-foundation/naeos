@@ -13,6 +13,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -248,5 +249,41 @@ func TestJWKSValidatorValidatesES256SupabaseStyleToken(t *testing.T) {
 	}
 	if verified.Sub != claims.Subject {
 		t.Fatalf("verified subject = %q; want %q", verified.Sub, claims.Subject)
+	}
+}
+
+func TestJWKSValidatorWarmupLoadsES256JWKFromEndpoint(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ES256 key: %v", err)
+	}
+	x := make([]byte, 32)
+	y := make([]byte, 32)
+	key.X.FillBytes(x)
+	key.Y.FillBytes(y)
+	document, err := json.Marshal(serviceJWKS{Keys: []serviceJWK{{
+		Kty: "EC", Use: "sig", Alg: "ES256", Kid: "ec-key", Crv: "P-256",
+		X: base64.RawURLEncoding.EncodeToString(x), Y: base64.RawURLEncoding.EncodeToString(y),
+	}}})
+	if err != nil {
+		t.Fatalf("marshal JWKS: %v", err)
+	}
+	validator, err := NewJWKSValidator("https://issuer.example", "naeos-control-plane", "https://issuer.example/.well-known/jwks.json")
+	if err != nil {
+		t.Fatalf("create validator: %v", err)
+	}
+	validator.client.Transport = roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(string(document))),
+			Request:    request,
+		}, nil
+	})
+	if err := validator.Warmup(context.Background()); err != nil {
+		t.Fatalf("Warmup: %v", err)
+	}
+	if _, ok := validator.keys["ec-key"].(*ecdsa.PublicKey); !ok {
+		t.Fatalf("loaded JWKS key type = %T; want *ecdsa.PublicKey", validator.keys["ec-key"])
 	}
 }
