@@ -7,7 +7,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ecdh"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
