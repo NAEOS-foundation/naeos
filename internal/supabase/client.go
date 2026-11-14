@@ -215,10 +215,6 @@ func (c *Client) do(method, path string, headers map[string]string, body any) ([
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrNetwork, "request")
@@ -258,7 +254,7 @@ func (c *Client) doAdmin(method, path string, body any) ([]byte, error) {
 	return c.do(method, path, headers, body)
 }
 
-func (c *Client) doManagement(method, path string, headers map[string]string, body any) ([]byte, error) {
+func (c *Client) doManagement(method, path string, body any) ([]byte, error) {
 	baseURL := c.managementURL()
 	fullURL := baseURL + path
 
