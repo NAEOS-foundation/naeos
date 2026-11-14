@@ -7,6 +7,8 @@ import (
 	"context"
 	"crypto"
 	"crypto/rand"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
@@ -41,7 +43,7 @@ func newTestJWKSValidator(t *testing.T) (*JWKSValidator, *rsa.PrivateKey) {
 	if err != nil {
 		t.Fatalf("create JWKS validator: %v", err)
 	}
-	validator.keys = map[string]*rsa.PublicKey{"test-key": &key.PublicKey}
+	validator.keys = map[string]crypto.PublicKey{"test-key": &key.PublicKey}
 	validator.fetched = time.Now()
 	return validator, key
 }
@@ -205,4 +207,46 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
 	return f(request)
+}
+
+func TestJWKSValidatorValidatesES256SupabaseStyleToken(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ES256 key: %v", err)
+	}
+	validator, err := NewJWKSValidator("https://issuer.example", "naeos-control-plane", "https://issuer.example/.well-known/jwks.json")
+	if err != nil {
+		t.Fatalf("create validator: %v", err)
+	}
+	validator.keys = map[string]crypto.PublicKey{"ec-key": &key.PublicKey}
+	validator.fetched = time.Now()
+
+	header, err := json.Marshal(serviceJWTHeader{Alg: "ES256", Kid: "ec-key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims := defaultTestServiceClaims()
+	claims.Audience = []string{"naeos-control-plane"}
+	payload, err := json.Marshal(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unsigned := base64.RawURLEncoding.EncodeToString(header) + "." + base64.RawURLEncoding.EncodeToString(payload)
+	digest := sha256.Sum256([]byte(unsigned))
+	r, s, err := ecdsa.Sign(rand.Reader, key, digest[:])
+	if err != nil {
+		t.Fatalf("sign ES256 token: %v", err)
+	}
+	signature := make([]byte, 64)
+	r.FillBytes(signature[:32])
+	s.FillBytes(signature[32:])
+	token := unsigned + "." + base64.RawURLEncoding.EncodeToString(signature)
+
+	verified, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate ES256: %v", err)
+	}
+	if verified.Sub != claims.Subject {
+		t.Fatalf("verified subject = %q; want %q", verified.Sub, claims.Subject)
+	}
 }
