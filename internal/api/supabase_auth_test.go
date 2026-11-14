@@ -257,7 +257,7 @@ func TestServerSupabaseAuthFlow(t *testing.T) {
 	ts := httptest.NewServer(server.Handler())
 	t.Cleanup(ts.Close)
 
-	get := func(token string, path string) *http.Response {
+	getStatus := func(token string, path string) int {
 		req, err := http.NewRequest(http.MethodGet, ts.URL+path, nil)
 		if err != nil {
 			t.Fatalf("new request: %v", err)
@@ -269,23 +269,23 @@ func TestServerSupabaseAuthFlow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("do request: %v", err)
 		}
-		t.Cleanup(func() { _ = resp.Body.Close() })
-		return resp
+		defer resp.Body.Close()
+		return resp.StatusCode
 	}
 
 	// No token → unauthorized.
-	if resp := get("", "/api/v1/profiles"); resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("no-token status = %d, want 401", resp.StatusCode)
+	if status := getStatus("", "/api/v1/profiles"); status != http.StatusUnauthorized {
+		t.Errorf("no-token status = %d, want 401", status)
 	}
 
 	// Viewer token → viewer-provisioned user can read profiles.
-	if resp := get(viewerToken, "/api/v1/profiles"); resp.StatusCode != http.StatusOK {
-		t.Errorf("viewer token status = %d, want 200", resp.StatusCode)
+	if status := getStatus(viewerToken, "/api/v1/profiles"); status != http.StatusOK {
+		t.Errorf("viewer token status = %d, want 200", status)
 	}
 
 	// Admin token → admin route accessible.
-	if resp := get(adminToken, "/api/v1/version"); resp.StatusCode != http.StatusOK {
-		t.Errorf("admin token status = %d, want 200", resp.StatusCode)
+	if status := getStatus(adminToken, "/api/v1/version"); status != http.StatusOK {
+		t.Errorf("admin token status = %d, want 200", status)
 	}
 
 	// Provisioned identities exist in the auth manager with mapped roles.
