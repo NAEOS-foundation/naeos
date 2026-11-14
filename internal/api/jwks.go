@@ -6,6 +6,9 @@ package api
 import (
 	"context"
 	"crypto"
+	"crypto/ecdh"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
@@ -20,12 +23,14 @@ import (
 	"time"
 )
 
+var ErrJWKSKeyNotTrusted = errors.New("service JWT key is not trusted")
+
 const (
 	serviceJWKSCacheTTL = 5 * time.Minute
 	serviceJWKSMaxBytes = 1 << 20
 )
 
-// JWKSValidator accepts only RS256 service JWTs signed by the configured
+// JWKSValidator accepts RS256 and ES256 service JWTs signed by the configured
 // issuer. It validates audience, expiry, not-before, and service scopes.
 type JWKSValidator struct {
 	issuer   string
@@ -33,7 +38,7 @@ type JWKSValidator struct {
 	url      string
 	client   *http.Client
 	mu       sync.Mutex
-	keys     map[string]*rsa.PublicKey
+	keys     map[string]crypto.PublicKey
 	fetched  time.Time
 }
 
@@ -44,6 +49,9 @@ type serviceJWK struct {
 	Kid string `json:"kid"`
 	N   string `json:"n"`
 	E   string `json:"e"`
+	Crv string `json:"crv"`
+	X   string `json:"x"`
+	Y   string `json:"y"`
 }
 
 type serviceJWKS struct {
@@ -133,7 +141,7 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		return nil, errors.New("malformed service JWT header")
 	}
 	var header serviceJWTHeader
-	if err := json.Unmarshal(headerBytes, &header); err != nil || header.Alg != "RS256" || header.Kid == "" {
+	if err := json.Unmarshal(headerBytes, &header); err != nil || (header.Alg != "RS256" && header.Alg != "ES256") || header.Kid == "" {
 		return nil, errors.New("unsupported service JWT header")
 	}
 	key, err := v.key(ctx, header.Kid)
@@ -145,7 +153,26 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		return nil, errors.New("malformed service JWT signature")
 	}
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
-	if err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature); err != nil {
+	var verifyErr error
+	switch header.Alg {
+	case "RS256":
+		publicKey, ok := key.(*rsa.PublicKey)
+		if !ok {
+			return nil, errors.New("JWT algorithm does not match trusted key type")
+		}
+		verifyErr = rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, digest[:], signature)
+	case "ES256":
+		publicKey, ok := key.(*ecdsa.PublicKey)
+		if !ok || len(signature) != 64 {
+			return nil, errors.New("JWT algorithm does not match trusted key type or signature size")
+		}
+		r := new(big.Int).SetBytes(signature[:32])
+		s := new(big.Int).SetBytes(signature[32:])
+		if !ecdsa.Verify(publicKey, digest[:], r, s) {
+			verifyErr = errors.New("invalid ES256 signature")
+		}
+	}
+	if verifyErr != nil {
 		return nil, errors.New("invalid service JWT signature")
 	}
 	claimBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
@@ -195,13 +222,14 @@ func serviceAudienceContains(raw json.RawMessage, expected string) bool {
 	return false
 }
 
-func (v *JWKSValidator) key(ctx context.Context, kid string) (*rsa.PublicKey, error) {
+func (v *JWKSValidator) key(ctx context.Context, kid string) (crypto.PublicKey, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if time.Since(v.fetched) < serviceJWKSCacheTTL && v.keys != nil {
 		if key := v.keys[kid]; key != nil {
 			return key, nil
 		}
+		return nil, ErrJWKSKeyNotTrusted
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.url, nil)
 	if err != nil {
@@ -223,28 +251,57 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (*rsa.PublicKey, er
 	if err := json.Unmarshal(body, &document); err != nil {
 		return nil, errors.New("JWKS response invalid")
 	}
-	keys := make(map[string]*rsa.PublicKey)
+	keys := make(map[string]crypto.PublicKey)
 	for _, item := range document.Keys {
-		if item.Kty != "RSA" || (item.Use != "" && item.Use != "sig") || (item.Alg != "" && item.Alg != "RS256") || item.Kid == "" {
+		if (item.Use != "" && item.Use != "sig") || item.Kid == "" {
 			continue
 		}
-		modulus, errN := base64.RawURLEncoding.DecodeString(item.N)
-		exponent, errE := base64.RawURLEncoding.DecodeString(item.E)
-		if errN != nil || errE != nil || len(modulus) < 256 || len(exponent) == 0 || len(exponent) > 4 {
-			continue
+		switch item.Kty {
+		case "RSA":
+			if item.Alg != "" && item.Alg != "RS256" {
+				continue
+			}
+			modulus, errN := base64.RawURLEncoding.DecodeString(item.N)
+			exponent, errE := base64.RawURLEncoding.DecodeString(item.E)
+			if errN != nil || errE != nil || len(modulus) < 256 || len(exponent) == 0 || len(exponent) > 4 {
+				continue
+			}
+			modulusInt := new(big.Int).SetBytes(modulus)
+			if modulusInt.BitLen() < 2048 {
+				continue
+			}
+			e := 0
+			for _, b := range exponent {
+				e = e<<8 | int(b)
+			}
+			if e < 3 || e%2 == 0 {
+				continue
+			}
+			keys[item.Kid] = &rsa.PublicKey{N: modulusInt, E: e}
+		case "EC":
+			if (item.Alg != "" && item.Alg != "ES256") || item.Crv != "P-256" {
+				continue
+			}
+			xBytes, errX := base64.RawURLEncoding.DecodeString(item.X)
+			yBytes, errY := base64.RawURLEncoding.DecodeString(item.Y)
+			if errX != nil || errY != nil || len(xBytes) != 32 || len(yBytes) != 32 {
+				continue
+			}
+			// crypto/ecdh validates that the encoded point is on the P-256 curve.
+			encodedPoint := make([]byte, 1+len(xBytes)+len(yBytes))
+			encodedPoint[0] = 4 // SEC 1 uncompressed point encoding.
+			copy(encodedPoint[1:1+len(xBytes)], xBytes)
+			copy(encodedPoint[1+len(xBytes):], yBytes)
+			_, err := ecdh.P256().NewPublicKey(encodedPoint)
+			if err != nil {
+				continue
+			}
+			keys[item.Kid] = &ecdsa.PublicKey{
+				Curve: elliptic.P256(),
+				X:     new(big.Int).SetBytes(xBytes),
+				Y:     new(big.Int).SetBytes(yBytes),
+			}
 		}
-		modulusInt := new(big.Int).SetBytes(modulus)
-		if modulusInt.BitLen() < 2048 {
-			continue
-		}
-		e := 0
-		for _, b := range exponent {
-			e = e<<8 | int(b)
-		}
-		if e < 3 || e%2 == 0 {
-			continue
-		}
-		keys[item.Kid] = &rsa.PublicKey{N: modulusInt, E: e}
 	}
 	if len(keys) == 0 {
 		return nil, errors.New("JWKS contains no acceptable signing keys")
@@ -253,5 +310,15 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (*rsa.PublicKey, er
 	if key := keys[kid]; key != nil {
 		return key, nil
 	}
-	return nil, errors.New("service JWT key is not trusted")
+	return nil, ErrJWKSKeyNotTrusted
+}
+
+// Warmup fetches and validates the configured JWKS before a production server becomes ready.
+// The sentinel for an intentionally unknown probe kid means the keyset itself was loaded.
+func (v *JWKSValidator) Warmup(ctx context.Context) error {
+	_, err := v.key(ctx, "NAEOS-JWKS-WARMUP-UNKNOWN-KID")
+	if errors.Is(err, ErrJWKSKeyNotTrusted) {
+		return nil
+	}
+	return err
 }
