@@ -6,12 +6,15 @@ package api
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 
@@ -235,6 +238,85 @@ func TestSupabaseAuthValidate(t *testing.T) {
 	}
 	if _, _, err := sa.Validate(context.Background(), expiredToken); err == nil {
 		t.Fatal("expected expired token rejection")
+	}
+}
+
+
+func TestServerSupabaseES256AuthFlow(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ECDSA key: %v", err)
+	}
+	const issuer = "https://ref.supabase.co/auth/v1"
+	const audience = "authenticated"
+	const kid = "es256-test-key"
+	coordinate := func(value *big.Int) string {
+		encoded := make([]byte, 32)
+		value.FillBytes(encoded)
+		return base64.RawURLEncoding.EncodeToString(encoded)
+	}
+	jwksDoc, err := json.Marshal(map[string]any{
+		"keys": []map[string]any{{
+			"kty": "EC", "use": "sig", "alg": "ES256", "kid": kid, "crv": "P-256",
+			"x": coordinate(key.X), "y": coordinate(key.Y),
+		}},
+	})
+	if err != nil {
+		t.Fatalf("marshal JWKS: %v", err)
+	}
+	jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jwksDoc)
+	}))
+	defer jwksServer.Close()
+	validator := &JWKSValidator{
+		issuer: issuer, audience: audience, url: jwksServer.URL,
+		client: &http.Client{Timeout: 5 * time.Second},
+	}
+	supabaseAuth := &SupabaseAuth{validator: validator}
+
+	header, err := json.Marshal(map[string]string{"alg": "ES256", "kid": kid, "typ": "JWT"})
+	if err != nil {
+		t.Fatalf("marshal JWT header: %v", err)
+	}
+	payload, err := json.Marshal(map[string]any{
+		"iss": issuer, "aud": audience, "sub": "supa-es256", "role": "authenticated",
+		"exp": time.Now().Add(time.Hour).Unix(), "iat": time.Now().Unix(),
+	})
+	if err != nil {
+		t.Fatalf("marshal JWT claims: %v", err)
+	}
+	encodedHeader := base64.RawURLEncoding.EncodeToString(header)
+	encodedPayload := base64.RawURLEncoding.EncodeToString(payload)
+	signingInput := encodedHeader + "." + encodedPayload
+	digest := sha256.Sum256([]byte(signingInput))
+	r, s, err := ecdsa.Sign(rand.Reader, key, digest[:])
+	if err != nil {
+		t.Fatalf("sign ES256 JWT: %v", err)
+	}
+	signature := make([]byte, 64)
+	r.FillBytes(signature[:32])
+	s.FillBytes(signature[32:])
+	token := signingInput + "." + base64.RawURLEncoding.EncodeToString(signature)
+
+	server := NewServer(":0", &AuthConfig{Enabled: true, Supabase: supabaseAuth})
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/profiles", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("do request: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("ES256 Supabase user status = %d, want 200", resp.StatusCode)
+	}
+	if user, ok := server.authManager.GetUser("supa-es256"); !ok || user.ID != "supa-es256" {
+		t.Fatalf("ES256 Supabase identity was not provisioned: user=%+v exists=%v", user, ok)
 	}
 }
 
