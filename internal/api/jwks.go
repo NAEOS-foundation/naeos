@@ -253,5 +253,6 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (*rsa.PublicKey, er
 	if key := keys[kid]; key != nil {
 		return key, nil
 	}
-	return nil, errors.New("service JWT key is not trusted")
+	return nil, ErrJWKSKeyNotTrusted
 }
+\n// Warmup fetches and validates the configured JWKS before a production server becomes ready.\n// The sentinel for an intentionally unknown probe kid means the keyset itself was loaded.\nfunc (v *JWKSValidator) Warmup(ctx context.Context) error {\n\t_, err := v.key(ctx, "NAEOS-JWKS-WARMUP-UNKNOWN-KID")\n\tif errors.Is(err, ErrJWKSKeyNotTrusted) {\n\t\treturn nil\n\t}\n\treturn err\n}\n
