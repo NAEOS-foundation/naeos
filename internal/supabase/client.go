@@ -102,9 +102,6 @@ func NewClient(cfg *Config) *Client {
 			Timeout: 30 * time.Second,
 		},
 	}
-	if cfg.AccessToken != "" {
-		c.SetAuthToken(cfg.AccessToken)
-	}
 	return c
 }
 
@@ -147,7 +144,7 @@ func (c *Client) refreshSessionIfNeeded() error {
 	c.sessionMu.Lock()
 	defer c.sessionMu.Unlock()
 	if c.session == nil || c.session.RefreshToken == "" ||
-		(c.session.ExpiresAt.IsZero() || time.Until(c.session.ExpiresAt) > time.Minute) {
+		(!c.session.ExpiresAt.IsZero() && time.Until(c.session.ExpiresAt) > time.Minute) {
 		return nil
 	}
 	body, err := c.do(http.MethodPost, "/auth/v1/token?grant_type=refresh_token",
@@ -173,6 +170,13 @@ func (c *Client) AuthToken() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.authToken
+}
+
+func (c *Client) userAccessToken() string {
+	if token := c.AuthToken(); token != "" {
+		return token
+	}
+	return c.config.AnonKey
 }
 
 func (c *Client) do(method, path string, headers map[string]string, body any) ([]byte, error) {
@@ -227,14 +231,16 @@ func (c *Client) doAuth(method, path string, body any) ([]byte, error) {
 		}
 	}
 	headers := map[string]string{
-		"apikey": c.config.AnonKey,
+		"apikey":        c.config.AnonKey,
+		"Authorization": "Bearer " + c.userAccessToken(),
 	}
 	return c.do(method, path, headers, body)
 }
 
 func (c *Client) doAdmin(method, path string, body any) ([]byte, error) {
 	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
+		"apikey":        c.config.ServiceRoleKey,
+		"Authorization": "Bearer " + c.config.ServiceRoleKey,
 	}
 	return c.do(method, path, headers, body)
 }
@@ -260,8 +266,8 @@ func (c *Client) doManagement(method, path string, headers map[string]string, bo
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	if token := c.AuthToken(); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	if c.config.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.config.AccessToken)
 	}
 
 	for k, v := range headers {
