@@ -8,6 +8,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/ecdh"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
@@ -287,12 +288,19 @@ func (v *JWKSValidator) key(ctx context.Context, kid string) (crypto.PublicKey, 
 				continue
 			}
 			// crypto/ecdh validates that the encoded point is on the P-256 curve.
-			encodedPoint := append(append([]byte(nil), xBytes...), yBytes...)
+			encodedPoint := make([]byte, 1+len(xBytes)+len(yBytes))
+			encodedPoint[0] = 4 // SEC 1 uncompressed point encoding.
+			copy(encodedPoint[1:1+len(xBytes)], xBytes)
+			copy(encodedPoint[1+len(xBytes):], yBytes)
 			ecdhKey, err := ecdh.P256().NewPublicKey(encodedPoint)
 			if err != nil {
 				continue
 			}
-			keys[item.Kid] = ecdhKey.ECDSA()
+			keys[item.Kid] = &ecdsa.PublicKey{
+				Curve: elliptic.P256(),
+				X:     new(big.Int).SetBytes(xBytes),
+				Y:     new(big.Int).SetBytes(yBytes),
+			}
 		}
 	}
 	if len(keys) == 0 {
