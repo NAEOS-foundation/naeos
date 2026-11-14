@@ -25,7 +25,7 @@ const (
 	serviceJWKSMaxBytes = 1 << 20
 )
 
-// JWKSValidator accepts only RS256 service JWTs signed by the configured
+// JWKSValidator accepts RS256 and ES256 service JWTs signed by the configured
 // issuer. It validates audience, expiry, not-before, and service scopes.
 type JWKSValidator struct {
 	issuer   string
