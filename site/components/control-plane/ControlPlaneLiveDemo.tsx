@@ -22,9 +22,6 @@ type DecisionResponse = {
 
 type Props = { lang: "en" | "id" };
 
-const PUBLIC_CONTROL_PLANE_ENDPOINT =
-  "https://naeos-control-plane-production.up.railway.app";
-
 const ALLOW_CAPABILITY = "repository.read";
 const DENY_CAPABILITY = "production.deploy";
 
@@ -35,9 +32,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   useEffect(() => {
     setHydrated(true);
   }, []);
-  const configuredEndpoint =
-    process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
-    (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
+  const configuredEndpoint = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL || "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
   // Never prefill credentials from NEXT_PUBLIC_* build variables; they are browser-visible.
   // User-entered tokens are transient and intended only for manually configured endpoints.
@@ -74,14 +69,16 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
 
     try {
       const normalizedEndpoint = endpoint.replace(/\/$/, "");
-      const usesProductionProxy = normalizedEndpoint === PUBLIC_CONTROL_PLANE_ENDPOINT;
-      const decisionUrl = usesProductionProxy
+      // The build-time configured endpoint uses the same-origin server proxy.
+      // Custom endpoints are called directly and may use a transient user token.
+      const usesServerProxy = Boolean(configuredEndpoint) && normalizedEndpoint === configuredEndpoint;
+      const decisionUrl = usesServerProxy
         ? "/api/control-plane/decision"
         : normalizedEndpoint + "/api/control-plane/decision";
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       // The production same-origin proxy supplies its server-held credential.
       // Never forward a browser-entered token to the production proxy.
-      if (!usesProductionProxy && token.trim()) {
+      if (!usesServerProxy && token.trim()) {
         headers.Authorization = `Bearer ${token.trim()}`;
       }
       const response = await fetch(decisionUrl, {
