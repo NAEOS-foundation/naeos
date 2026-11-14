@@ -126,9 +126,9 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 		authorization.Grant = nil
 		authorization.Policy = nil
 		authorization.Context = AuthorizationContext{}
-		if authorization.Timestamp.IsZero() {
-			authorization.Timestamp = time.Now().UTC()
-		}
+		// Authorization time is server-controlled. A caller-supplied timestamp could
+		// backdate grant validity or approval expiry checks.
+		authorization.Timestamp = time.Now().UTC()
 
 		result, err := r.gateway.Authorize(req.Context(), authorization)
 		if err != nil && result.Status == DecisionIndeterminate {
