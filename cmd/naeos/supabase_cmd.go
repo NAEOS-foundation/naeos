@@ -46,7 +46,15 @@ func getSupabaseClient() (*supabase.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return supabase.NewClient(cfg), nil
+	client := supabase.NewClient(cfg)
+	session, err := supabase.LoadSession()
+	if err != nil {
+		return nil, fmt.Errorf("load Supabase session: %w", err)
+	}
+	if session != nil {
+		client.SetSession(session)
+	}
+	return client, nil
 }
 
 // --- init ---
@@ -142,6 +150,7 @@ func newSupabaseAuthCommand() *cobra.Command {
 
 	cmd.AddCommand(newSupabaseAuthSignupCommand())
 	cmd.AddCommand(newSupabaseAuthSigninCommand())
+	cmd.AddCommand(newSupabaseAuthAccessTokenCommand())
 	cmd.AddCommand(newSupabaseAuthSignoutCommand())
 	cmd.AddCommand(newSupabaseAuthUserCommand())
 	cmd.AddCommand(newSupabaseAuthAdminCommand())
@@ -203,7 +212,7 @@ func newSupabaseAuthSigninCommand() *cobra.Command {
 			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Signed in as: %s\n", session.User.Email)
-			fmt.Fprintf(cmd.OutOrStdout(), "Access token: %s\n", session.AccessToken[:20]+"...")
+			fmt.Fprintln(cmd.OutOrStdout(), "Session saved with restricted local file permissions.")
 			return nil
 		},
 	}
@@ -213,6 +222,30 @@ func newSupabaseAuthSigninCommand() *cobra.Command {
 	_ = cmd.MarkFlagRequired("email")
 	_ = cmd.MarkFlagRequired("password")
 	return cmd
+}
+
+func newSupabaseAuthAccessTokenCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "access-token",
+		Short: "Print the current Supabase access token for use with NAEOS API requests",
+		Long:  "Prints the current access token to stdout. Treat the output as a password; avoid terminal logs and shell history.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getSupabaseClient()
+			if err != nil {
+				return err
+			}
+			if _, err := client.GetUser(); err != nil {
+				return fmt.Errorf("refresh or validate Supabase session: %w", err)
+			}
+			session := client.AuthSession()
+			if session == nil || session.AccessToken == "" {
+				return fmt.Errorf("not signed in; run 'naeos supabase auth signin' first")
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), session.AccessToken)
+			return err
+		},
+	}
 }
 
 func newSupabaseAuthSignoutCommand() *cobra.Command {
@@ -275,6 +308,7 @@ func newSupabaseAuthAdminCommand() *cobra.Command {
 
 	cmd.AddCommand(newSupabaseAuthAdminListCommand())
 	cmd.AddCommand(newSupabaseAuthAdminCreateCommand())
+	cmd.AddCommand(newSupabaseAuthAdminSetRolesCommand())
 	cmd.AddCommand(newSupabaseAuthAdminDeleteCommand())
 
 	return cmd
@@ -338,6 +372,43 @@ func newSupabaseAuthAdminCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&password, "password", "", "user password (required)")
 	_ = cmd.MarkFlagRequired("email")
 	_ = cmd.MarkFlagRequired("password")
+	return cmd
+}
+
+func newSupabaseAuthAdminSetRolesCommand() *cobra.Command {
+	var userID string
+	var roles []string
+	cmd := &cobra.Command{
+		Use:   "set-naeos-roles",
+		Short: "Set NAEOS RBAC roles in a user's trusted app_metadata",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getSupabaseClient()
+			if err != nil {
+				return err
+			}
+			user, err := client.AdminGetUserByID(userID)
+			if err != nil {
+				return fmt.Errorf("load Supabase user: %w", err)
+			}
+			metadata := make(map[string]any, len(user.AppMetadata)+1)
+			for key, value := range user.AppMetadata {
+				metadata[key] = value
+			}
+			metadata["naeos_roles"] = roles
+			updated, err := client.AdminUpdateUserAppMetadata(userID, metadata)
+			if err != nil {
+				return fmt.Errorf("set NAEOS roles: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Updated NAEOS roles for %s: %s\n", updated.ID, strings.Join(roles, ", "))
+			fmt.Fprintln(cmd.OutOrStdout(), "The user must refresh their Supabase session before the new roles appear in access tokens.")
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&userID, "user-id", "", "Supabase user ID (required)")
+	cmd.Flags().StringSliceVar(&roles, "role", nil, "NAEOS RBAC role; repeat the flag for multiple roles")
+	_ = cmd.MarkFlagRequired("user-id")
+	_ = cmd.MarkFlagRequired("role")
 	return cmd
 }
 
