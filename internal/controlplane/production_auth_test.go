@@ -116,3 +116,12 @@ func TestProductionHandlerDoesNotExposeDemoRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestProductionAuthorizationCapabilityDeniedByCanonicalGrant(t *testing.T) {
+	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "agent-gateway"}, nil)
+	req.Action.Capability = "admin"
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("ungranted capability status = %d; want 403; body=%s", response.Code, response.Body.String())
+	}
+}
