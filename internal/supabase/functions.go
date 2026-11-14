@@ -85,9 +85,7 @@ func (c *Client) InvokeFunction(slug string, body map[string]any) ([]byte, error
 	headers := map[string]string{
 		"apikey": c.config.AnonKey,
 	}
-	if token := c.AuthToken(); token != "" {
-		headers["Authorization"] = "Bearer " + token
-	}
+	headers["Authorization"] = "Bearer " + c.userAccessToken()
 	return c.do("POST", "/functions/v1/"+slug, headers, body)
 }
 
