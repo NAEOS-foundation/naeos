@@ -173,12 +173,14 @@ func (r *PostgresGrantRepository) Create(ctx context.Context, grant Grant) error
 		return ErrRepositoryUnavailable
 	}
 	if grant.GrantID == "" || grant.AgentID == "" || grant.PolicyID == "" || grant.PolicyVersion < 1 ||
-		len(grant.Capabilities) == 0 || grant.Status != "active" || grant.Revoked ||
-		(!grant.CreatedAt.IsZero() && !grant.ExpiresAt.IsZero() && !grant.CreatedAt.Before(grant.ExpiresAt)) {
+		len(grant.Capabilities) == 0 || grant.Status != "active" || grant.Revoked {
 		return ErrRepositoryConflict
 	}
 	if grant.CreatedAt.IsZero() {
 		grant.CreatedAt = time.Now().UTC()
+	}
+	if !grant.ExpiresAt.IsZero() && !grant.CreatedAt.Before(grant.ExpiresAt) {
+		return ErrRepositoryConflict
 	}
 	payload, err := json.Marshal(cloneGrant(grant))
 	if err != nil {
@@ -320,12 +322,14 @@ func (r *PostgresApprovalRepository) Create(ctx context.Context, approval Approv
 	if r == nil || r.db == nil {
 		return ErrRepositoryUnavailable
 	}
-	if approval.ID == "" || approval.DecisionID == "" || approval.Approver == "" || approval.Status != "pending" ||
-		(!approval.ExpiresAt.IsZero() && !approval.CreatedAt.IsZero() && !approval.CreatedAt.Before(approval.ExpiresAt)) {
+	if approval.ID == "" || approval.DecisionID == "" || approval.Approver == "" || approval.Status != "pending" {
 		return ErrRepositoryConflict
 	}
 	if approval.CreatedAt.IsZero() {
 		approval.CreatedAt = time.Now().UTC()
+	}
+	if !approval.ExpiresAt.IsZero() && !approval.CreatedAt.Before(approval.ExpiresAt) {
+		return ErrRepositoryConflict
 	}
 	var expires any
 	if !approval.ExpiresAt.IsZero() {
