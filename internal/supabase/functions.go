@@ -33,7 +33,7 @@ type DeployFunctionParams struct {
 }
 
 func (c *Client) ListFunctions() ([]EdgeFunction, error) {
-	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/functions", nil, nil)
+	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/functions", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *Client) DeployFunction(slug, name, entrypoint, body string, verifyJWT, 
 		VerifyJWT:  verifyJWT,
 		ImportMap:  importMap,
 	}
-	data, err := c.doManagement("POST", "/v1/projects/"+c.config.ProjectRef+"/functions", nil, params)
+	data, err := c.doManagement("POST", "/v1/projects/"+c.config.ProjectRef+"/functions", params)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *Client) DeployFunction(slug, name, entrypoint, body string, verifyJWT, 
 }
 
 func (c *Client) DeleteFunction(slug string) error {
-	_, err := c.doManagement("DELETE", "/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, nil, nil)
+	_, err := c.doManagement("DELETE", "/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, nil)
 	if err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "delete function")
 	}
