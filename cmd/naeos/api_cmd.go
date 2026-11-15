@@ -108,12 +108,25 @@ func registerAPIAuth(server *api.Server) error {
 	return nil
 }
 
+func validateAPISecretSeparation(jwtSecret, encryptionKey string) error {
+	if jwtSecret != "" && jwtSecret == encryptionKey {
+		return fmt.Errorf("NAEOS_API_JWT_SECRET and NAEOS_ENCRYPTION_KEY must be different")
+	}
+	return nil
+}
+
 func newAPICommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
 		Short: "Start NAEOS REST API server",
 		Long:  `Start the NAEOS REST API server for external integrations and web dashboard.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if apiAuth {
+				if err := validateAPISecretSeparation(apiSecret, os.Getenv("NAEOS_ENCRYPTION_KEY")); err != nil {
+					return err
+				}
+			}
+
 			issuer := os.Getenv("NAEOS_API_JWKS_ISSUER")
 			audience := os.Getenv("NAEOS_API_JWKS_AUDIENCE")
 			jwksURL := os.Getenv("NAEOS_API_JWKS_URL")

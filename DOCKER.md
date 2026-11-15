@@ -3,6 +3,8 @@
 Copy `.env.example` to `.env`. Generate two different random values (for
 example, with `openssl rand -hex 32`) and set `NAEOS_API_JWT_SECRET` and
 `NAEOS_ENCRYPTION_KEY`. Compose refuses to start if either value is empty.
+The API also refuses to start with authentication enabled if the two values
+are identical.
 Keep `.env` private; users with access to the Docker daemon can inspect
 container environment variables. Configure the RS256 JWKS issuer, audience,
 and URL, and set `NAEOS_GITHUB_ALLOWED_REPOSITORIES` to the exact repositories
@@ -16,7 +18,8 @@ docker compose build naeos-core
 docker compose up -d naeos-core
 ```
 
-The API listens on `http://localhost:8081`. Compose enables user auth and
+The API listens on `http://127.0.0.1:8081`, bound to the local machine only.
+Compose enables user auth and
 passes the JWT secret, service verifier, and repository allowlist into the
 container. The `naeos api --secret` flag remains available for direct CLI use;
 the Docker service reads `NAEOS_API_JWT_SECRET` from its environment instead
