@@ -274,13 +274,29 @@ jobs:
   supabase-integration:
     name: Supabase Integration
     runs-on: ubuntu-latest
-    if: github.repository == 'NAEOS-foundation/naeos' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: >-
+      github.repository == 'NAEOS-foundation/naeos' &&
+      (
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name == github.repository) ||
+        (github.event_name != 'pull_request' &&
+         github.ref == 'refs/heads/main')
+      )
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version-file: go.mod
           cache: true
+      - name: Require staging target before remote integration
+        env:
+          SUPABASE_INTEGRATION_ENV: ${{ vars.SUPABASE_INTEGRATION_ENV }}
+        run: |
+          set -euo pipefail
+          if [ "${SUPABASE_INTEGRATION_ENV:-}" != "staging" ]; then
+            echo "Supabase integration is blocked: set repository variable SUPABASE_INTEGRATION_ENV=staging before running remote tests."
+            exit 1
+          fi
       - name: Supabase integration tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -530,12 +546,17 @@ jobs:
           LEGAL_EVIDENCE: ${{ needs['legal-evidence-gate'].result }}
           MERGE_BASE: ${{ needs['merge-base-freshness'].result }}
           EVENT_NAME: ${{ github.event_name }}
+          SUPABASE_REQUIRED: ${{ github.repository == 'NAEOS-foundation/naeos' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) }}
         run: |
           set -euo pipefail
           for result in "$LINT" "$TEST" "$CONTROL_PLANE_GOLDEN_PATH" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
-          test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
+          if [ "$SUPABASE_REQUIRED" = "true" ]; then
+            test "$SUPABASE" = "success"
+          else
+            test "$SUPABASE" = "success" || test "$SUPABASE" = "skipped"
+          fi
           test "$LEGAL_EVIDENCE" = "success"
           if [ "$EVENT_NAME" = "pull_request" ]; then
             test "$MERGE_BASE" = "success"
