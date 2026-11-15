@@ -143,52 +143,55 @@ func validateProductionDatabaseURL(raw string) error {
 
 // verifyControlPlaneRuntimeRole rejects admin, BYPASSRLS, and non-login
 // connections. The application must authenticate as a dedicated LOGIN role
-// that inherits only the NOLOGIN/NOBYPASSRLS Control Plane runtime group.
+// that inherits the NOLOGIN/NOBYPASSRLS Control Plane runtime group only.
 func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) error {
 	const query = `SELECT
 		login_role.rolcanlogin,
 		login_role.rolsuper,
 		login_role.rolcreatedb,
 		login_role.rolcreaterole,
+		login_role.rolreplication,
 		login_role.rolbypassrls,
 		login_role.rolinherit,
 		runtime_role.rolcanlogin,
 		runtime_role.rolsuper,
 		runtime_role.rolcreatedb,
 		runtime_role.rolcreaterole,
+		runtime_role.rolreplication,
 		runtime_role.rolbypassrls,
 		runtime_role.rolinherit,
 		pg_catalog.pg_has_role(login_role.oid, runtime_role.oid, 'MEMBER'),
 		current_user = session_user,
 		NOT EXISTS (
 			SELECT 1
-			FROM pg_catalog.pg_roles privileged_role
-			WHERE privileged_role.rolname IN ('service_role', 'supabase_admin', 'postgres')
-			  AND pg_catalog.pg_has_role(login_role.oid, privileged_role.oid, 'MEMBER')
+			FROM pg_catalog.pg_roles inherited_role
+			WHERE inherited_role.oid <> login_role.oid
+			  AND inherited_role.oid <> runtime_role.oid
+			  AND pg_catalog.pg_has_role(login_role.oid, inherited_role.oid, 'MEMBER')
 		)
 	FROM pg_catalog.pg_roles login_role
 	JOIN pg_catalog.pg_roles runtime_role
 	  ON runtime_role.rolname = 'naeos_control_plane_runtime'
 	WHERE login_role.rolname = session_user`
 	var (
-		login, loginSuper, loginCreateDB, loginCreateRole, loginBypassRLS, loginInherit      bool
-		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS, groupInherit bool
-		member, sameRole, noPrivilegedMembership                                             bool
+		login, loginSuper, loginCreateDB, loginCreateRole, loginReplication, loginBypassRLS, loginInherit bool
+		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupReplication, groupBypassRLS, groupInherit bool
+		member, sameRole, noAdditionalMembership bool
 	)
 	if pool == nil {
 		return errors.New("control plane DATABASE_URL must use the dedicated least-privilege runtime role")
 	}
 	if err := pool.QueryRow(ctx, query).Scan(
-		&login, &loginSuper, &loginCreateDB, &loginCreateRole, &loginBypassRLS, &loginInherit,
-		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupBypassRLS, &groupInherit,
-		&member, &sameRole, &noPrivilegedMembership,
+		&login, &loginSuper, &loginCreateDB, &loginCreateRole, &loginReplication, &loginBypassRLS, &loginInherit,
+		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupReplication, &groupBypassRLS, &groupInherit,
+		&member, &sameRole, &noAdditionalMembership,
 	); err != nil {
 		return errors.New("control plane DATABASE_URL runtime role verification failed")
 	}
-	if !login || loginSuper || loginCreateDB || loginCreateRole || loginBypassRLS || !loginInherit ||
-		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupBypassRLS || !groupInherit ||
-		!member || !sameRole || !noPrivilegedMembership {
-		return errors.New("control plane DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without privileged role membership")
+	if !login || loginSuper || loginCreateDB || loginCreateRole || loginReplication || loginBypassRLS || !loginInherit ||
+		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupReplication || groupBypassRLS || !groupInherit ||
+		!member || !sameRole || !noAdditionalMembership {
+		return errors.New("control plane DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without additional role memberships")
 	}
 	return nil
 }
