@@ -171,7 +171,7 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 	  ON runtime_role.rolname = 'naeos_control_plane_runtime'
 	WHERE login_role.rolname = session_user`
 	var (
-		login, loginSuper, loginCreateDB, loginCreateRole, loginBypassRLS, loginInherit bool
+		login, loginSuper, loginCreateDB, loginCreateRole, loginBypassRLS, loginInherit      bool
 		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS, groupInherit bool
 		member, sameRole, noPrivilegedMembership                                             bool
 	)
