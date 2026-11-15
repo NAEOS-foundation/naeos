@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP on
 
+BEGIN;
+
 DO $assert_privileges$
 DECLARE
   v_table TEXT;
@@ -91,11 +93,15 @@ SET ROLE naeos_identity_test_admin_login;
 
 INSERT INTO naeos_identity.organizations (id, name, slug) VALUES
   ('22222222-2222-4222-8222-222222222222', 'Test Organization A', 'test-organization-a'),
-  ('77777777-7777-4777-8777-777777777777', 'Test Organization B', 'test-organization-b');
+  ('77777777-7777-4777-8777-777777777777', 'Test Organization B', 'test-organization-b'),
+  ('88888888-8888-4888-8888-888888888888', 'Suspended Organization', 'suspended-organization', 'suspended');
 
 INSERT INTO naeos_identity.workspaces (id, organization_id, name, slug) VALUES
   ('33333333-3333-4333-8333-333333333333',
-   '22222222-2222-4222-8222-222222222222', 'Test Workspace A', 'test-workspace-a');
+   '22222222-2222-4222-8222-222222222222', 'Test Workspace A', 'test-workspace-a'),
+  ('99999999-9999-4999-8999-999999999999',
+   '22222222-2222-4222-8222-222222222222',
+   'Suspended Workspace', 'suspended-workspace', 'suspended');
 
 INSERT INTO naeos_identity.role_capabilities (role_definition_id, capability_key)
 SELECT id, capability_key
@@ -118,6 +124,18 @@ VALUES
    '33333333-3333-4333-8333-333333333333',
    'https://issuer.example/auth/v1',
    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+   'active'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+   '88888888-8888-4888-8888-888888888888',
+   NULL,
+   'https://issuer.example/auth/v1',
+   '11111111-1111-4111-8111-111111111111',
+   'active'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+   '22222222-2222-4222-8222-222222222222',
+   '99999999-9999-4999-8999-999999999999',
+   'https://issuer.example/auth/v1',
+   '11111111-1111-4111-8111-111111111111',
    'active');
 
 INSERT INTO naeos_identity.role_assignments (membership_id, role_definition_id)
@@ -207,10 +225,10 @@ VALUES
 
 RESET ROLE;
 SET ROLE naeos_identity_test_runtime_login;
-SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', false);
-SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', false);
-SELECT set_config('naeos.issuer', 'https://issuer.example/auth/v1', false);
-SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', false);
+SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', true);
+SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', true);
+SELECT set_config('naeos.issuer', 'https://issuer.example/auth/v1', true);
+SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', true);
 
 DO $assert_runtime_tenant_scope$
 BEGIN
@@ -225,11 +243,38 @@ BEGIN
 END
 $assert_runtime_tenant_scope$;
 
+-- Suspended organizations and workspaces must fail closed even when the
+-- principal has an otherwise-active membership row.
+SELECT set_config('naeos.organization_id', '88888888-8888-4888-8888-888888888888', true);
+SELECT set_config('naeos.workspace_id', '', true);
+DO $assert_suspended_organization_denial$
+BEGIN
+  IF (SELECT count(*) FROM naeos_identity.organizations) <> 0
+     OR (SELECT count(*) FROM naeos_identity.memberships) <> 0 THEN
+    RAISE EXCEPTION 'suspended organization must deny runtime identity reads';
+  END IF;
+END
+$assert_suspended_organization_denial$;
+
+SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', true);
+SELECT set_config('naeos.workspace_id', '99999999-9999-4999-8999-999999999999', true);
+DO $assert_suspended_workspace_denial$
+BEGIN
+  IF (SELECT count(*) FROM naeos_identity.workspaces) <> 0
+     OR (SELECT count(*) FROM naeos_identity.memberships) <> 0 THEN
+    RAISE EXCEPTION 'suspended workspace must deny runtime identity reads';
+  END IF;
+END
+$assert_suspended_workspace_denial$;
+
+SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', true);
+SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', true);
+
 -- A caller cannot use a tenant context for another organization to read data
 -- without an active membership matching the verified issuer/subject context.
 -- This simulates a trusted backend setting the context after token validation.
-SELECT set_config('naeos.organization_id', '77777777-7777-4777-8777-777777777777', false);
-SELECT set_config('naeos.workspace_id', '', false);
+SELECT set_config('naeos.organization_id', '77777777-7777-4777-8777-777777777777', true);
+SELECT set_config('naeos.workspace_id', '', true);
 DO $assert_cross_tenant_read_denial$
 BEGIN
   IF (SELECT count(*) FROM naeos_identity.organizations) <> 0
@@ -242,8 +287,8 @@ BEGIN
 END
 $assert_cross_tenant_read_denial$;
 
-SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', false);
-SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', false);
+SELECT set_config('naeos.organization_id', '22222222-2222-4222-8222-222222222222', true);
+SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', true);
 
 INSERT INTO naeos_identity.audit_events
   (issuer, actor_subject, organization_id, workspace_id, action,
@@ -257,7 +302,7 @@ VALUES
    'tenant-runtime-audit-valid', 'success');
 
 -- An active workspace member without the audit capability must see no audit rows.
-SELECT set_config('naeos.subject', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', false);
+SELECT set_config('naeos.subject', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', true);
 DO $assert_audit_read_requires_capability$
 BEGIN
   IF (SELECT count(*) FROM naeos_identity.audit_events) <> 0 THEN
@@ -267,7 +312,7 @@ END
 $assert_audit_read_requires_capability$;
 
 -- Workspace administrator can read only its workspace audit events.
-SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', false);
+SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', true);
 DO $assert_workspace_admin_audit_read$
 BEGIN
   IF (SELECT count(*) FROM naeos_identity.audit_events) <> 2 THEN
@@ -277,8 +322,8 @@ END
 $assert_workspace_admin_audit_read$;
 
 -- Organization administrator context (no workspace) can read the organization's audit events.
-SELECT set_config('naeos.workspace_id', '', false);
-SELECT set_config('naeos.subject', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', false);
+SELECT set_config('naeos.workspace_id', '', true);
+SELECT set_config('naeos.subject', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', true);
 DO $assert_organization_admin_audit_read$
 BEGIN
   IF (SELECT count(*) FROM naeos_identity.audit_events) <> 2 THEN
@@ -288,8 +333,8 @@ END
 $assert_organization_admin_audit_read$;
 
 -- Restore workspace-admin context for remaining runtime mutation checks.
-SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', false);
-SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', false);
+SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', true);
+SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', true);
 
 DO $assert_forged_audit_actor_denial$
 BEGIN
@@ -378,3 +423,16 @@ $assert_login_memberships$;
 
 DROP ROLE naeos_identity_test_runtime_login;
 DROP ROLE naeos_identity_test_admin_login;
+
+COMMIT;
+
+DO $assert_transaction_local_context_reset$
+BEGIN
+  IF NULLIF(current_setting('naeos.organization_id', true), '') IS NOT NULL
+     OR NULLIF(current_setting('naeos.workspace_id', true), '') IS NOT NULL
+     OR NULLIF(current_setting('naeos.issuer', true), '') IS NOT NULL
+     OR NULLIF(current_setting('naeos.subject', true), '') IS NOT NULL THEN
+    RAISE EXCEPTION 'transaction-local tenant context leaked after COMMIT';
+  END IF;
+END
+$assert_transaction_local_context_reset$;
