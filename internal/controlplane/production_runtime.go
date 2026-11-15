@@ -160,7 +160,7 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 		runtime_role.rolreplication,
 		runtime_role.rolbypassrls,
 		runtime_role.rolinherit,
-		pg_catalog.pg_has_role(login_role.oid, runtime_role.oid, 'MEMBER'),
+		pg_catalog.pg_has_role(login_role.oid, runtime_role.oid, 'USAGE'),
 		current_user = session_user,
 		NOT EXISTS (
 			SELECT 1
