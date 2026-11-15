@@ -97,13 +97,12 @@ INSERT INTO naeos_identity.workspaces (id, organization_id, name, slug) VALUES
   ('33333333-3333-4333-8333-333333333333',
    '22222222-2222-4222-8222-222222222222', 'Test Workspace A', 'test-workspace-a');
 
-INSERT INTO naeos_identity.role_definitions (id, role_key, scope, description, is_system_role) VALUES
-  ('88888888-8888-4888-8888-888888888888', 'workspace_admin', 'workspace', 'Test workspace role', true),
-  ('99999999-9999-4999-8999-999999999999', 'organization_admin', 'organization', 'Test org role', true);
-
-INSERT INTO naeos_identity.role_capabilities (role_definition_id, capability_key) VALUES
-  ('88888888-8888-4888-8888-888888888888', 'crm.company.read'),
-  ('88888888-8888-4888-8888-888888888888', 'crm.company.write');
+INSERT INTO naeos_identity.role_capabilities (role_definition_id, capability_key)
+SELECT id, capability_key
+FROM naeos_identity.role_definitions
+CROSS JOIN (VALUES ('crm.company.read'), ('crm.company.write')) AS caps(capability_key)
+WHERE scope = 'workspace' AND role_key = 'workspace_admin'
+ON CONFLICT (role_definition_id, capability_key) DO NOTHING;
 
 INSERT INTO naeos_identity.memberships
   (id, organization_id, workspace_id, issuer, user_id, status)
@@ -113,11 +112,18 @@ VALUES
    '33333333-3333-4333-8333-333333333333',
    'https://issuer.example/auth/v1',
    '11111111-1111-4111-8111-111111111111',
+   'active'),
+  ('55555555-5555-4555-8555-555555555555',
+   '22222222-2222-4222-8222-222222222222',
+   '33333333-3333-4333-8333-333333333333',
+   'https://issuer.example/auth/v1',
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
    'active');
 
 INSERT INTO naeos_identity.role_assignments (membership_id, role_definition_id)
-VALUES ('44444444-4444-4444-8444-444444444444',
-        '88888888-8888-4888-8888-888888888888');
+SELECT '44444444-4444-4444-8444-444444444444'::uuid, id
+FROM naeos_identity.role_definitions
+WHERE scope = 'workspace' AND role_key = 'workspace_admin';
 
 DO $assert_scope_guards$
 DECLARE
@@ -162,9 +168,11 @@ BEGIN
 
   BEGIN
     INSERT INTO naeos_identity.role_assignments (membership_id, role_definition_id)
-    SELECT m.id, '88888888-8888-4888-8888-888888888888'
+    SELECT m.id, rd.id
     FROM naeos_identity.memberships AS m
-    WHERE m.user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    CROSS JOIN naeos_identity.role_definitions AS rd
+    WHERE m.user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+      AND rd.scope = 'workspace' AND rd.role_key = 'workspace_admin';
     RAISE EXCEPTION 'expected role scope guard rejection';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
@@ -177,6 +185,14 @@ BEGIN
   END;
 END
 $assert_scope_guards$;
+
+INSERT INTO naeos_identity.role_assignments (membership_id, role_definition_id)
+SELECT m.id, rd.id
+FROM naeos_identity.memberships AS m
+CROSS JOIN naeos_identity.role_definitions AS rd
+WHERE m.user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  AND m.workspace_id IS NULL
+  AND rd.scope = 'organization' AND rd.role_key = 'organization_admin';
 
 INSERT INTO naeos_identity.audit_events
   (issuer, actor_subject, organization_id, workspace_id, action,
@@ -203,7 +219,7 @@ BEGIN
      OR (SELECT count(*) FROM naeos_identity.memberships) <> 1
      OR (SELECT count(*) FROM naeos_identity.role_assignments) <> 1
      OR (SELECT count(*) FROM naeos_identity.role_definitions) <> 1
-     OR (SELECT count(*) FROM naeos_identity.role_capabilities) <> 2 THEN
+     OR (SELECT count(*) FROM naeos_identity.role_capabilities) <> 3 THEN
     RAISE EXCEPTION 'runtime tenant scope should expose only the actor assigned tenant/workspace and capabilities';
   END IF;
 END
@@ -239,6 +255,41 @@ VALUES
    '33333333-3333-4333-8333-333333333333',
    'runtime.audit.write', 'workspace', '33333333-3333-4333-8333-333333333333',
    'tenant-runtime-audit-valid', 'success');
+
+-- An active workspace member without the audit capability must see no audit rows.
+SELECT set_config('naeos.subject', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', false);
+DO $assert_audit_read_requires_capability$
+BEGIN
+  IF (SELECT count(*) FROM naeos_identity.audit_events) <> 0 THEN
+    RAISE EXCEPTION 'active membership without naeos.identity.audit.read must not read audit events';
+  END IF;
+END
+$assert_audit_read_requires_capability$;
+
+-- Workspace administrator can read only its workspace audit events.
+SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', false);
+DO $assert_workspace_admin_audit_read$
+BEGIN
+  IF (SELECT count(*) FROM naeos_identity.audit_events) <> 2 THEN
+    RAISE EXCEPTION 'workspace administrator with naeos.identity.audit.read must read workspace audit events';
+  END IF;
+END
+$assert_workspace_admin_audit_read$;
+
+-- Organization administrator context (no workspace) can read the organization's audit events.
+SELECT set_config('naeos.workspace_id', '', false);
+SELECT set_config('naeos.subject', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', false);
+DO $assert_organization_admin_audit_read$
+BEGIN
+  IF (SELECT count(*) FROM naeos_identity.audit_events) <> 2 THEN
+    RAISE EXCEPTION 'organization administrator with naeos.identity.audit.read must read organization audit events';
+  END IF;
+END
+$assert_organization_admin_audit_read$;
+
+-- Restore workspace-admin context for remaining runtime mutation checks.
+SELECT set_config('naeos.workspace_id', '33333333-3333-4333-8333-333333333333', false);
+SELECT set_config('naeos.subject', '11111111-1111-4111-8111-111111111111', false);
 
 DO $assert_forged_audit_actor_denial$
 BEGIN
