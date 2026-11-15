@@ -424,6 +424,18 @@ CREATE POLICY identity_audit_events_runtime_insert
     )
   );
 
+-- Trusted identity administration may append/read audit events independently
+-- of an end-user tenant context. UPDATE/DELETE remain unavailable by grants
+-- and are additionally rejected by the append-only trigger.
+DROP POLICY IF EXISTS identity_audit_events_admin_read ON naeos_identity.audit_events;
+CREATE POLICY identity_audit_events_admin_read
+  ON naeos_identity.audit_events FOR SELECT TO naeos_identity_admin
+  USING (TRUE);
+DROP POLICY IF EXISTS identity_audit_events_admin_insert ON naeos_identity.audit_events;
+CREATE POLICY identity_audit_events_admin_insert
+  ON naeos_identity.audit_events FOR INSERT TO naeos_identity_admin
+  WITH CHECK (TRUE);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA naeos_identity FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA naeos_identity FROM PUBLIC, anon, authenticated, service_role;
 
