@@ -198,6 +198,7 @@ func readSecretEnv(valueEnv, fileEnv string) (string, error) {
 	if file == "" {
 		return "", nil
 	}
+	// #nosec G703 -- this path is set by the deployment operator for a mounted secret.
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", fileEnv, err)
