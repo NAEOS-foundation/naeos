@@ -40,6 +40,13 @@ func supabaseEnvConfig() *Config {
 	}
 }
 
+func requireMutatingIntegrationApproval(t *testing.T) {
+	t.Helper()
+	if os.Getenv("SUPABASE_RUN_MUTATING_TESTS") != "true" {
+		t.Skip("mutating remote Supabase tests require an explicitly approved workflow_dispatch run")
+	}
+}
+
 func TestIntegrationListBuckets(t *testing.T) {
 	cfg := supabaseEnvConfig()
 	if cfg == nil {
@@ -79,6 +86,7 @@ func TestIntegrationExecuteSQL(t *testing.T) {
 }
 
 func TestIntegrationSignUpSignInFlow(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
@@ -123,6 +131,7 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 }
 
 func TestIntegrationStorageUploadDownload(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
@@ -190,6 +199,7 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 }
 
 func TestIntegrationAdminCreateUser(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil || cfg.ServiceRoleKey == "" {
 		t.Skip("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set")
