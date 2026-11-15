@@ -171,8 +171,8 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 	WHERE login_role.rolname = session_user`
 	var (
 		login, loginSuper, loginCreateDB, loginCreateRole, loginBypassRLS, loginInherit bool
-		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS bool
-		member, sameRole, noPrivilegedMembership bool
+		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS          bool
+		member, sameRole, noPrivilegedMembership                                        bool
 	)
 	if pool == nil {
 		return errors.New("control plane DATABASE_URL must use the dedicated least-privilege runtime role")
