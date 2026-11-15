@@ -42,6 +42,7 @@ No Production schema, auth configuration, or data has been changed.
 - [ ] Define service contract for trusted membership/permission lookup.
 - [ ] Test cross-tenant denial and member lifecycle.
 - [ ] Verify forged audit actor/outcome fields are denied and runtime audit rows match active membership.
+- [ ] Require `naeos.identity.audit.read` for runtime audit visibility; verify ordinary active members cannot read audit events and organization/workspace administrators can read only their authorized scope.
 
 ### Phase 3 — CRM tenant-aware persistence and API
 - [ ] Agree initial tenant ownership/backfill semantics.
