@@ -158,9 +158,10 @@ func WithRequiredRevalidation(enabled bool) Option {
 // Option configures an ExecutionGateway.
 type Option func(*ExecutionGateway)
 
-// FailClosed controls whether execution and observation errors are returned
-// to the caller. An ambiguous execution outcome remains "unknown"; fail-closed
-// mode does not imply that the external side effect definitely failed.
+// FailClosed controls whether execution, observation, and replay-state
+// errors are returned to the caller. An ambiguous execution outcome remains
+// "unknown"; fail-closed mode does not imply that the external side effect
+// definitely failed.
 func FailClosed(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.failClosed = enabled }
 }
