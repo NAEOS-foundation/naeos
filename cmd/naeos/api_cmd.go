@@ -162,7 +162,7 @@ func newAPICommand() *cobra.Command {
 
 	cmd.Flags().StringVarP(&apiPort, "port", "p", "8080", "API server port")
 	cmd.Flags().BoolVarP(&apiAuth, "auth", "a", false, "Enable JWT authentication")
-	cmd.Flags().StringVarP(&apiSecret, "secret", "s", "", "JWT secret key")
+	cmd.Flags().StringVarP(&apiSecret, "secret", "s", os.Getenv("NAEOS_API_JWT_SECRET"), "JWT secret key (defaults to NAEOS_API_JWT_SECRET)")
 
 	return cmd
 }

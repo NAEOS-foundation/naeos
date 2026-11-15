@@ -5,6 +5,8 @@ Start NAEOS REST API server
 ### Synopsis
 
 Start the NAEOS REST API server for external integrations and web dashboard.
+The JWT secret defaults to `NAEOS_API_JWT_SECRET` when set; `--secret`
+overrides that value.
 
 ```
 naeos api [flags]
