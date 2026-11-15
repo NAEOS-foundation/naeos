@@ -875,6 +875,22 @@ func TestReadyzEndpoint(t *testing.T) {
 	}
 }
 
+func TestReadyzEndpointChecksDatabase(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s.SetDatabase(&unhealthyDB{})
+
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/readyz", nil)
+	w := httptest.NewRecorder()
+	s.handleReadyz(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503, got %d", w.Code)
+	}
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"dependency":"database"`)) {
+		t.Fatalf("expected database readiness failure, got %s", w.Body.String())
+	}
+}
+
 func TestProfilesEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 

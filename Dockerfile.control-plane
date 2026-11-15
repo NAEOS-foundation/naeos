@@ -1,4 +1,4 @@
-FROM golang:1.26.10-alpine AS builder
+FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308 AS builder
 
 WORKDIR /app
 
@@ -17,10 +17,26 @@ WORKDIR /app
 
 COPY --from=builder /naeos /usr/local/bin/naeos
 COPY --from=builder /app/LICENSE /app/NOTICE /usr/local/share/naeos/
+RUN mkdir -p /usr/local/share/licenses/naeos
+COPY --from=builder /go/pkg/mod/github.com/!micah!parks/jwkset@v0.11.4/LICENSE /usr/local/share/licenses/naeos/jwkset-v0.11.4-LICENSE
+COPY --from=builder /go/pkg/mod/github.com/!micah!parks/keyfunc/v3@v3.9.2/LICENSE /usr/local/share/licenses/naeos/keyfunc-v3.9.2-LICENSE
+COPY --from=builder /go/pkg/mod/github.com/golang-jwt/jwt/v5@v5.3.1/LICENSE /usr/local/share/licenses/naeos/jwt-v5.3.1-LICENSE
+COPY --from=builder /go/pkg/mod/golang.org/x/time@v0.15.0/LICENSE /usr/local/share/licenses/naeos/x-time-v0.15.0-LICENSE
 
-RUN adduser -D -u 1000 naeos
+RUN adduser -D -u 1000 -h /home/naeos naeos \
+    && mkdir -p /home/naeos/.naeos/artifacts /home/naeos/.config/naeos \
+    && chown -R naeos:naeos /home/naeos
+
+ENV NAEOS_DB_DRIVER=sqlite \
+    NAEOS_DB_DATABASE=/home/naeos/.naeos/naeos.db
+
+WORKDIR /home/naeos
 USER naeos
 
-HEALTHCHECK --interval=30s --timeout=5s CMD /usr/local/bin/naeos health || exit 1
+EXPOSE 8080
 
-CMD ["/bin/sh", "-c", "exec /usr/local/bin/naeos demo --addr :8080"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
+
+ENTRYPOINT ["/usr/local/bin/naeos"]
+CMD ["api", "--port", "8080", "--auth", "--auth-mode", "supabase"]

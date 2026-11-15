@@ -53,6 +53,7 @@ type Server struct {
 	APIKeys          map[string]*RateLimiter
 	apiKeysMu        sync.RWMutex
 	jwt              *JWTValidator
+	supabaseAuth     *SupabaseAuthVerifier
 	authManager      *auth.Manager
 	routePerms       map[string]auth.RoutePermission
 	parser           parser.Parser
@@ -130,8 +131,10 @@ type cloudDeployment struct {
 
 // AuthConfig holds authentication settings for the API server.
 type AuthConfig struct {
-	JWTSecret string
-	Enabled   bool
+	JWTSecret     string
+	EncryptionKey string
+	Enabled       bool
+	SupabaseAuth  *SupabaseAuthVerifier
 }
 
 // CORSConfig holds Cross-Origin Resource Sharing settings.
@@ -214,6 +217,9 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 	if authCfg != nil && authCfg.JWTSecret != "" {
 		s.jwt = NewJWTValidator(authCfg.JWTSecret)
 	}
+	if authCfg != nil {
+		s.supabaseAuth = authCfg.SupabaseAuth
+	}
 	s.bundle = contextbundle.NewGenerator(s.compiler)
 	s.mcpServer = mcp.NewServer(s.compiler, s.bundle)
 	s.mcpServer.SetArtifactStore(store)
@@ -224,6 +230,9 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 	s.pipelineObserver = monitoring.NewMetricsObserver(metrics)
 
 	encKey := os.Getenv("NAEOS_ENCRYPTION_KEY")
+	if authCfg != nil && authCfg.EncryptionKey != "" {
+		encKey = authCfg.EncryptionKey
+	}
 	s.authManager = auth.NewManager(encKey)
 	auth.SetupDefaultRoles(s.authManager.RBAC())
 
@@ -542,39 +551,57 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 
 		// Auth
 		var userID string
+		var trustedTenantID string
 		if s.Auth.Enabled && r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/api/v1/health" {
-			token := r.Header.Get("Authorization")
-			if token == "" {
+			token, ok := bearerToken(r.Header.Get("Authorization"))
+			if !ok {
 				s.writeError(w, http.StatusUnauthorized, "authorization required")
 				return
 			}
-			token = strings.TrimPrefix(token, "Bearer ")
-			if s.jwt != nil {
+			var tokenUser *auth.User
+			switch {
+			case s.supabaseAuth != nil:
+				claims, err := s.supabaseAuth.Validate(token)
+				if err != nil {
+					s.writeError(w, http.StatusUnauthorized, "invalid token")
+					return
+				}
+				userID = claims.ID
+				trustedTenantID = claims.TenantID
+				tokenUser = &auth.User{ID: claims.ID, Roles: claims.Roles}
+			case s.jwt != nil:
 				claims, err := s.jwt.Validate(token)
 				if err != nil {
-					s.writeError(w, http.StatusUnauthorized, "invalid token: "+err.Error())
+					s.writeError(w, http.StatusUnauthorized, "invalid token")
 					return
 				}
 				userID = claims.Sub
+			default:
+				s.writeError(w, http.StatusUnauthorized, "authentication is not configured")
+				return
 			}
 
 			// RBAC check
-			if s.authManager != nil {
-				perm, ok := s.routePerms[r.URL.Path]
-				if ok {
-					var user *auth.User
-					if userID != "" {
-						var exists bool
-						user, exists = s.authManager.GetUser(userID)
-						if !exists {
-							s.writeError(w, http.StatusForbidden, "user not found")
-							return
-						}
-					}
-					if user != nil && !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
-						s.writeError(w, http.StatusForbidden, "insufficient permissions")
+			perm, hasPermission := s.routePerms[r.URL.Path]
+			if s.supabaseAuth != nil && (!hasPermission || s.authManager == nil) {
+				s.writeError(w, http.StatusForbidden, "route is not authorized")
+				return
+			}
+			if s.authManager != nil && hasPermission {
+				var user *auth.User
+				if tokenUser != nil {
+					user = tokenUser
+				} else if userID != "" {
+					var exists bool
+					user, exists = s.authManager.GetUser(userID)
+					if !exists {
+						s.writeError(w, http.StatusForbidden, "user not found")
 						return
 					}
+				}
+				if user == nil || !s.authManager.RBAC().HasPermission(user, perm.Resource, perm.Action) {
+					s.writeError(w, http.StatusForbidden, "insufficient permissions")
+					return
 				}
 			}
 		}
@@ -584,14 +611,29 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 
 			// Resolve tenant from user metadata (X-Tenant-ID header or user attribute)
 			if s.tenantWorkspace != nil {
-				tenantID := r.Header.Get("X-Tenant-ID")
-				if tenantID == "" {
+				tenantID := ""
+				if s.supabaseAuth != nil {
+					tenantID = trustedTenantID
+					requestedTenantID := r.Header.Get("X-Tenant-ID")
+					if requestedTenantID != "" && requestedTenantID != trustedTenantID {
+						s.writeError(w, http.StatusForbidden, "tenant is not authorized")
+						return
+					}
+				} else {
+					tenantID = r.Header.Get("X-Tenant-ID")
+				}
+				if tenantID == "" && s.supabaseAuth == nil && s.authManager != nil {
 					if user, exists := s.authManager.GetUser(userID); exists && len(user.Roles) > 0 {
 						tenantID = user.Roles[0]
 					}
 				}
 				if tenantID != "" {
-					if _, err := s.tenantWorkspace.GetTenant(tenantID); err == nil {
+					if _, err := s.tenantWorkspace.GetTenant(tenantID); err != nil {
+						if s.supabaseAuth != nil {
+							s.writeError(w, http.StatusForbidden, "tenant is not authorized")
+							return
+						}
+					} else {
 						r = r.WithContext(context.WithValue(r.Context(), TenantContextKey, tenantID))
 					}
 				}
@@ -640,6 +682,17 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 			})
 		}
 	}
+}
+
+func bearerToken(header string) (string, bool) {
+	if len(header) > 16<<10 {
+		return "", false
+	}
+	parts := strings.Fields(header)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
 }
 
 func mapMethodToAction(method string) string {
@@ -2231,6 +2284,13 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if s.db != nil {
+		if err := s.db.HealthCheck(); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = fmt.Fprint(w, `{"status":"not_ready","dependency":"database"}`)
+			return
+		}
+	}
 	fmt.Fprintf(w, `{"status":"ready"}`)
 }
 
@@ -2286,6 +2346,9 @@ func (s *Server) Handler() http.Handler {
 
 // Start begins listening for HTTP requests and handles graceful shutdown.
 func (s *Server) Start() error {
+	if s.supabaseAuth != nil {
+		defer s.supabaseAuth.Close()
+	}
 	s.server = &http.Server{
 		Addr:         s.Addr,
 		Handler:      s.Handler(),
@@ -2315,6 +2378,9 @@ func (s *Server) Start() error {
 
 // Stop gracefully shuts down the server and any attached WebSocket server.
 func (s *Server) Stop() error {
+	if s.supabaseAuth != nil {
+		defer s.supabaseAuth.Close()
+	}
 	if s.wsServer != nil {
 		s.wsServer.Stop()
 	}

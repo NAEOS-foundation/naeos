@@ -50,3 +50,63 @@ func TestAttachDatabaseUnknownDriver(t *testing.T) {
 		t.Fatal("attachDatabase should return an error for unknown driver")
 	}
 }
+
+func TestAPIPostgresDatabaseConfigFromEnv(t *testing.T) {
+	t.Setenv("NAEOS_DB_DRIVER", "postgres")
+	t.Setenv("NAEOS_DB_DATABASE", "naeos")
+	t.Setenv("NAEOS_DB_HOST", "db.internal")
+	t.Setenv("NAEOS_DB_PORT", "")
+	t.Setenv("NAEOS_DB_USER", "naeos")
+	t.Setenv("NAEOS_DB_PASSWORD", "test-password")
+	t.Setenv("NAEOS_DB_PASSWORD_FILE", "")
+	t.Setenv("NAEOS_DB_SSLMODE", "")
+
+	driver, config, err := apiDatabaseConfigFromEnv()
+	if err != nil {
+		t.Fatalf("apiDatabaseConfigFromEnv() error: %v", err)
+	}
+	if driver != "postgres" {
+		t.Fatalf("expected postgres driver, got %q", driver)
+	}
+	if config.Host != "db.internal" || config.Port != 5432 || config.User != "naeos" || config.Database != "naeos" || config.SSLMode != "verify-full" {
+		t.Fatalf("unexpected postgres config: %+v", config)
+	}
+}
+
+func TestAPIPostgresDatabaseConfigRejectsInvalidPort(t *testing.T) {
+	t.Setenv("NAEOS_DB_DRIVER", "postgres")
+	t.Setenv("NAEOS_DB_DATABASE", "naeos")
+	t.Setenv("NAEOS_DB_HOST", "db.internal")
+	t.Setenv("NAEOS_DB_PORT", "not-a-port")
+	t.Setenv("NAEOS_DB_USER", "naeos")
+	t.Setenv("NAEOS_DB_PASSWORD", "test-password")
+	t.Setenv("NAEOS_DB_PASSWORD_FILE", "")
+	t.Setenv("NAEOS_DB_SSLMODE", "verify-full")
+
+	if _, _, err := apiDatabaseConfigFromEnv(); err == nil {
+		t.Fatal("expected invalid database port to fail")
+	}
+}
+
+func TestAPIPostgresDatabasePasswordFromSecretFile(t *testing.T) {
+	passwordFile := filepath.Join(t.TempDir(), "password")
+	if err := os.WriteFile(passwordFile, []byte("file-password\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NAEOS_DB_DRIVER", "postgres")
+	t.Setenv("NAEOS_DB_DATABASE", "naeos")
+	t.Setenv("NAEOS_DB_HOST", "db.internal")
+	t.Setenv("NAEOS_DB_PORT", "")
+	t.Setenv("NAEOS_DB_USER", "naeos")
+	t.Setenv("NAEOS_DB_PASSWORD", "")
+	t.Setenv("NAEOS_DB_PASSWORD_FILE", passwordFile)
+	t.Setenv("NAEOS_DB_SSLMODE", "verify-full")
+
+	_, config, err := apiDatabaseConfigFromEnv()
+	if err != nil {
+		t.Fatalf("apiDatabaseConfigFromEnv() error: %v", err)
+	}
+	if config.Password != "file-password" {
+		t.Fatal("expected DB password to be read from the secret file")
+	}
+}
