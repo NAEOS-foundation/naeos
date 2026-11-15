@@ -11,6 +11,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      confirm_staging_mutations:
+        description: "Explicitly authorize staging tests that create/delete test users and Storage objects"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -338,6 +344,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_RUN_MUTATING_TESTS: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_staging_mutations == true && 'true' || 'false' }}
         run: go test -run TestIntegration -count=1 -timeout 180s ./internal/supabase/...
 
   dependency-risk-gate:
