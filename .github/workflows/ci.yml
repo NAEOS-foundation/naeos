@@ -311,7 +311,7 @@ jobs:
           if os.getenv("SUPABASE_INTEGRATION_ENV") != "staging":
               raise SystemExit("Blocked: SUPABASE_INTEGRATION_ENV must equal staging.")
           project_ref = os.getenv("SUPABASE_STAGING_PROJECT_REF", "").strip()
-          if not project_ref or not project_ref.isalnum() or len(project_ref) != 20:
+          if not project_ref or not project_ref.isascii() or not project_ref.isalnum() or len(project_ref) != 20:
               raise SystemExit("Blocked: SUPABASE_STAGING_PROJECT_REF must be the 20-character approved project ref.")
           parsed = urlparse(os.getenv("SUPABASE_URL", ""))
           expected_host = f"{project_ref}.supabase.co"
