@@ -274,6 +274,13 @@ jobs:
   supabase-integration:
     name: Supabase Integration
     runs-on: ubuntu-latest
+    # Keep staging credentials behind GitHub Environment protection rules.
+    # Configure required reviewers and store Supabase credentials as environment secrets.
+    environment:
+      name: staging
+    concurrency:
+      group: supabase-staging-integration
+      cancel-in-progress: false
     if: >-
       github.repository == 'NAEOS-foundation/naeos' &&
       (
@@ -304,13 +311,19 @@ jobs:
           if os.getenv("SUPABASE_INTEGRATION_ENV") != "staging":
               raise SystemExit("Blocked: SUPABASE_INTEGRATION_ENV must equal staging.")
           project_ref = os.getenv("SUPABASE_STAGING_PROJECT_REF", "").strip()
-          if not project_ref:
-              raise SystemExit("Blocked: set SUPABASE_STAGING_PROJECT_REF to the approved staging project ref.")
+          if not project_ref or not project_ref.isalnum() or len(project_ref) != 20:
+              raise SystemExit("Blocked: SUPABASE_STAGING_PROJECT_REF must be the 20-character approved project ref.")
           parsed = urlparse(os.getenv("SUPABASE_URL", ""))
           expected_host = f"{project_ref}.supabase.co"
-          if parsed.scheme != "https" or parsed.hostname != expected_host:
+          if (
+              parsed.scheme != "https"
+              or parsed.netloc != expected_host
+              or parsed.path not in ("", "/")
+              or parsed.query
+              or parsed.fragment
+          ):
               raise SystemExit(
-                  f"Blocked: SUPABASE_URL must use https://{expected_host}; refusing to run remote tests."
+                  f"Blocked: SUPABASE_URL must be exactly https://{expected_host}; refusing to run remote tests."
               )
           if not os.getenv("SUPABASE_PUBLISHABLE_KEY"):
               raise SystemExit("Blocked: SUPABASE_PUBLISHABLE_KEY secret is missing.")
