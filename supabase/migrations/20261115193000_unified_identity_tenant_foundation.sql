@@ -449,6 +449,7 @@ CREATE POLICY identity_role_capabilities_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     ));
@@ -499,15 +500,7 @@ CREATE POLICY identity_audit_events_runtime_insert
         AND m.issuer = audit_events.issuer
         AND m.user_id = audit_events.actor_subject
         AND m.status = 'active'
-        AND EXISTS (
-          SELECT 1 FROM naeos_identity.organizations AS o
-          WHERE o.id = m.organization_id AND o.status = 'active'
-        )
-        AND (m.workspace_id IS NULL OR EXISTS (
-          SELECT 1 FROM naeos_identity.workspaces AS w
-          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
-            AND w.status = 'active'
-        ))
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
     )
   );
 
