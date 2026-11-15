@@ -73,6 +73,8 @@ Execution and external observation remain separate boundaries.
 
 ## Production deployment
 
+The current Railway deployment entrypoint is still the investor-demo composition root. The production conversion plan and its release gates are defined in [ADR — Production Control Plane Runtime and Supabase Persistence](../architecture/ADR-PRODUCTION-CONTROL-PLANE-SUPABASE-PERSISTENCE.md). Do not interpret the public demo endpoint or a successful HTTP health check as proof of durable production persistence.
+
 A public demo deployment must also provide:
 - HTTPS/TLS at the edge
 - authentication when the endpoint is not intentionally public

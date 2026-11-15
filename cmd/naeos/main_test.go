@@ -138,9 +138,10 @@ func TestCanonicalDemoScriptRunsEndToEnd(t *testing.T) {
 		filepath.Join(outputDir, "context.json"),
 		filepath.Join(outputDir, "run.json"),
 		filepath.Join(outputDir, "summary.md"),
-		filepath.Join(outputDir, "generated", "README.md"),
-		filepath.Join(outputDir, "generated", "go.mod"),
-		filepath.Join(outputDir, "generated", "package.json"),
+		filepath.Join(outputDir, "generated", "go", "README.md"),
+		filepath.Join(outputDir, "generated", "go", "go.mod"),
+		filepath.Join(outputDir, "generated", "typescript", "README.md"),
+		filepath.Join(outputDir, "generated", "typescript", "package.json"),
 	} {
 		if _, err := os.Stat(path); err != nil {
 			t.Fatalf("expected demo artifact %q to exist: %v", path, err)

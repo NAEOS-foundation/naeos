@@ -33,10 +33,7 @@ type DeployFunctionParams struct {
 }
 
 func (c *Client) ListFunctions() ([]EdgeFunction, error) {
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	data, err := c.do("GET", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, nil)
+	data, err := c.doManagement("GET", "/v1/projects/"+c.config.ProjectRef+"/functions", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +53,7 @@ func (c *Client) DeployFunction(slug, name, entrypoint, body string, verifyJWT, 
 		VerifyJWT:  verifyJWT,
 		ImportMap:  importMap,
 	}
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	data, err := c.do("POST", "/api/v1/projects/"+c.config.ProjectRef+"/functions", headers, params)
+	data, err := c.doManagement("POST", "/v1/projects/"+c.config.ProjectRef+"/functions", params)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +61,7 @@ func (c *Client) DeployFunction(slug, name, entrypoint, body string, verifyJWT, 
 }
 
 func (c *Client) DeleteFunction(slug string) error {
-	headers := map[string]string{
-		"apikey": c.config.ServiceRoleKey,
-	}
-	_, err := c.do("DELETE", "/api/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, headers, nil)
+	_, err := c.doManagement("DELETE", "/v1/projects/"+c.config.ProjectRef+"/functions/"+slug, nil)
 	if err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrCloud, "delete function")
 	}
@@ -85,9 +76,7 @@ func (c *Client) InvokeFunction(slug string, body map[string]any) ([]byte, error
 	headers := map[string]string{
 		"apikey": c.config.AnonKey,
 	}
-	if token := c.AuthToken(); token != "" {
-		headers["Authorization"] = "Bearer " + token
-	}
+	headers["Authorization"] = "Bearer " + c.userAccessToken()
 	return c.do("POST", "/functions/v1/"+slug, headers, body)
 }
 

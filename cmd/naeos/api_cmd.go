@@ -119,6 +119,26 @@ func attachDatabase(server *api.Server) error {
 const apiAdminUserEnv = "NAEOS_API_ADMIN_USER"
 const apiAuthModeEnv = "NAEOS_API_AUTH_MODE"
 
+// supabaseAuthEnv derives the Supabase Auth issuer, audience, and JWKS URL
+// from the environment. SUPABASE_URL is the single required variable; the
+// other values have safe defaults matching the Supabase Auth defaults.
+func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
+	baseURL := strings.TrimSuffix(strings.TrimSpace(os.Getenv("SUPABASE_URL")), "/")
+	if baseURL == "" {
+		return "", "", "", false
+	}
+	issuer = baseURL + "/auth/v1"
+	jwksURL = issuer + "/.well-known/jwks.json"
+	if explicit := strings.TrimSpace(os.Getenv("SUPABASE_JWKS_URL")); explicit != "" {
+		jwksURL = explicit
+	}
+	audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	if audience == "" {
+		audience = "authenticated"
+	}
+	return issuer, audience, jwksURL, true
+}
+
 // registerAPIAuth attaches an auth manager seeded with an admin user so that a
 // legacy HS256 token whose "sub" matches the configured admin user can use protected routes.
 func registerAPIAuth(server *api.Server, encryptionKey string) error {
@@ -246,6 +266,37 @@ func newAPICommand() *cobra.Command {
 				JWTSecret:     jwtSecret,
 				EncryptionKey: encryptionKey,
 				SupabaseAuth:  supabaseAuth,
+			issuer := os.Getenv("NAEOS_API_JWKS_ISSUER")
+			audience := os.Getenv("NAEOS_API_JWKS_AUDIENCE")
+			jwksURL := os.Getenv("NAEOS_API_JWKS_URL")
+			serviceAuthConfigured := issuer != "" || audience != "" || jwksURL != ""
+			var serviceJWKS *api.JWKSValidator
+			if serviceAuthConfigured {
+				var err error
+				serviceJWKS, err = api.NewJWKSValidator(issuer, audience, jwksURL)
+				if err != nil {
+					return err
+				}
+			}
+
+			var supabaseAuth *api.SupabaseAuth
+			supabaseAuthConfigured := false
+			if apiAuth {
+				if sIssuer, sAudience, sJWKSURL, ok := supabaseAuthEnv(); ok {
+					var err error
+					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
+					if err != nil {
+						return err
+					}
+					supabaseAuthConfigured = true
+				}
+			}
+
+			auth := &api.AuthConfig{
+				Enabled:     apiAuth,
+				JWTSecret:   apiSecret,
+				ServiceJWKS: serviceJWKS,
+				Supabase:    supabaseAuth,
 			}
 
 			server := api.NewServer(":"+apiPort, auth)
@@ -254,6 +305,8 @@ func newAPICommand() *cobra.Command {
 			}
 			if apiAuth && authMode == "hs256" {
 				if err := registerAPIAuth(server, encryptionKey); err != nil {
+			if apiAuth && (apiSecret != "" || supabaseAuthConfigured) {
+				if err := registerAPIAuth(server); err != nil {
 					return err
 				}
 			}

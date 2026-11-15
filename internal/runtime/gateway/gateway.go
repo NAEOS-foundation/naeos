@@ -5,6 +5,7 @@ package gateway
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -75,7 +76,9 @@ type ExecutionResult struct {
 	Duration      time.Duration
 	Timestamp     time.Time
 	Reasons       []string
-	Observation   *Observation
+	// EvaluationFailure is internal diagnostic evidence, never an authorization decision.
+	EvaluationFailure *control.EvaluationFailure
+	Observation       *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -155,8 +158,10 @@ func WithRequiredRevalidation(enabled bool) Option {
 // Option configures an ExecutionGateway.
 type Option func(*ExecutionGateway)
 
-// FailClosed controls the behavior when the sandbox executor returns an
-// error. When true (default) the gateway treats execution errors as denied.
+// FailClosed controls whether execution, observation, and replay-state
+// errors are returned to the caller. An ambiguous execution outcome remains
+// "unknown"; fail-closed mode does not imply that the external side effect
+// definitely failed.
 func FailClosed(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.failClosed = enabled }
 }
@@ -299,6 +304,23 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		Context:     req.Context,
 	})
 	if err != nil {
+		var evaluationFailure *control.EvaluationFailure
+		if errors.As(err, &evaluationFailure) {
+			// Preserve the indeterminate evaluation as its own audit outcome.
+			// Decision remains empty and the sandbox is never reached.
+			result := ExecutionResult{
+				RequestID:         req.RequestID,
+				InvocationID:      req.InvocationID,
+				Request:           req,
+				Status:            "failed",
+				Timestamp:         time.Now().UTC(),
+				Reasons:           []string{"policy evaluation failed"},
+				EvaluationFailure: evaluationFailure,
+				Duration:          time.Since(start),
+			}
+			g.record(result)
+			return result, naeoserr.Wrapf(err, naeoserr.ErrInternal, "control plane evaluation failed")
+		}
 		return ExecutionResult{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "control plane evaluation failed")
 	}
 
@@ -370,6 +392,17 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			Context:     req.Context,
 		}, rec)
 		if err != nil {
+			var evaluationFailure *control.EvaluationFailure
+			if errors.As(err, &evaluationFailure) {
+				result.Decision = ""
+				result.Status = "failed"
+				result.Output = "policy evaluation failed during authorization revalidation"
+				result.Reasons = []string{"policy evaluation failed"}
+				result.EvaluationFailure = evaluationFailure
+				result.Duration = time.Since(start)
+				g.record(result)
+				return result, naeoserr.Wrapf(err, naeoserr.ErrInternal, "authorization revalidation evaluation failed")
+			}
 			result.Status = "denied"
 			result.Output = "authorization invalidated before execution"
 			result.Duration = time.Since(start)
