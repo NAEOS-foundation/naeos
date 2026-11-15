@@ -205,7 +205,11 @@ func TestIntegrationAdminCreateUser(t *testing.T) {
 		t.Fatalf("AdminCreateUser: %v", err)
 	}
 	t.Logf("Admin created: %s (%s)", user.Email, user.ID)
-	t.Cleanup(func() { client.AdminDeleteUser(user.ID) })
+	t.Cleanup(func() {
+		if err := client.AdminDeleteUser(user.ID); err != nil {
+			t.Errorf("cleanup admin integration user %q: %v", user.ID, err)
+		}
+	})
 
 	users, err := client.AdminListUsers()
 	if err != nil {
