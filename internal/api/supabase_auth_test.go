@@ -410,3 +410,27 @@ func TestServerSupabaseAuthDisabled(t *testing.T) {
 		t.Errorf("status = %d, want 403", resp.StatusCode)
 	}
 }
+
+func TestSupabaseAuthPreservesIssuerSubjectAndClientIDSeparately(t *testing.T) {
+	id := newSupabaseTestIdentity(t)
+	claims := supabaseAccessClaims(id, "11111111-1111-4111-8111-111111111111", []string{"viewer"})
+	claims["client_id"] = "crm-web-client"
+	token, err := id.sign(claims)
+	if err != nil {
+		t.Fatalf("sign token: %v", err)
+	}
+
+	baseClaims, supabaseClaims, err := id.auth().Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if baseClaims.Sub != "11111111-1111-4111-8111-111111111111" {
+		t.Fatalf("validated sub = %q; want Supabase user subject", baseClaims.Sub)
+	}
+	if baseClaims.ClientID != "crm-web-client" {
+		t.Fatalf("validated client_id = %q; want crm-web-client", baseClaims.ClientID)
+	}
+	if supabaseClaims.Issuer != id.issuer || supabaseClaims.Sub != baseClaims.Sub || supabaseClaims.ClientID != baseClaims.ClientID {
+		t.Fatalf("Supabase canonical identity claims = %+v; base claims = %+v", supabaseClaims, baseClaims)
+	}
+}
