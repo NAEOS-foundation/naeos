@@ -276,6 +276,41 @@ CREATE INDEX IF NOT EXISTS identity_audit_org_time_idx
 CREATE INDEX IF NOT EXISTS identity_audit_request_idx
   ON naeos_identity.audit_events (request_id);
 
+-- SECURITY DEFINER is intentionally limited to this boolean status lookup.
+-- It avoids recursive RLS when a policy needs to verify parent tenant state.
+CREATE OR REPLACE FUNCTION naeos_identity.is_active_tenant(
+  p_organization_id UUID,
+  p_workspace_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, naeos_identity
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM naeos_identity.organizations AS o
+    WHERE o.id = p_organization_id
+      AND o.status = 'active'
+  )
+  AND (
+    p_workspace_id IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM naeos_identity.workspaces AS w
+      WHERE w.id = p_workspace_id
+        AND w.organization_id = p_organization_id
+        AND w.status = 'active'
+    )
+  );
+$function$;
+
+REVOKE ALL ON FUNCTION naeos_identity.is_active_tenant(UUID, UUID)
+  FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION naeos_identity.is_active_tenant(UUID, UUID)
+  TO naeos_identity_runtime, naeos_identity_admin;
+
 CREATE OR REPLACE FUNCTION naeos_identity.reject_audit_event_mutation()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -313,6 +348,7 @@ CREATE POLICY identity_organizations_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (m.workspace_id IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     )
@@ -328,10 +364,7 @@ CREATE POLICY identity_workspaces_runtime_read
   ON naeos_identity.workspaces FOR SELECT TO naeos_identity_runtime
   USING (organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
     AND status = 'active'
-    AND EXISTS (
-      SELECT 1 FROM naeos_identity.organizations AS o
-      WHERE o.id = workspaces.organization_id AND o.status = 'active'
-    )
+    AND naeos_identity.is_active_tenant(workspaces.organization_id, NULL)
     AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
          OR id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     AND EXISTS (
@@ -340,6 +373,7 @@ CREATE POLICY identity_workspaces_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (m.workspace_id IS NULL OR m.workspace_id = workspaces.id)
     ));
 CREATE POLICY identity_workspaces_admin_all
@@ -352,16 +386,7 @@ DROP POLICY IF EXISTS identity_memberships_admin_all ON naeos_identity.membershi
 CREATE POLICY identity_memberships_runtime_read
   ON naeos_identity.memberships FOR SELECT TO naeos_identity_runtime
   USING (organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
-    AND EXISTS (
-      SELECT 1 FROM naeos_identity.organizations AS o
-      WHERE o.id = memberships.organization_id AND o.status = 'active'
-    )
-    AND (workspace_id IS NULL OR EXISTS (
-      SELECT 1 FROM naeos_identity.workspaces AS w
-      WHERE w.id = memberships.workspace_id
-        AND w.organization_id = memberships.organization_id
-        AND w.status = 'active'
-    ))
+    AND naeos_identity.is_active_tenant(memberships.organization_id, memberships.workspace_id)
     AND issuer = NULLIF(current_setting('naeos.issuer', true), '')
     AND user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
     AND status = 'active'
@@ -385,15 +410,7 @@ CREATE POLICY identity_role_definitions_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
-        AND EXISTS (
-          SELECT 1 FROM naeos_identity.organizations AS o
-          WHERE o.id = m.organization_id AND o.status = 'active'
-        )
-        AND (m.workspace_id IS NULL OR EXISTS (
-          SELECT 1 FROM naeos_identity.workspaces AS w
-          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
-            AND w.status = 'active'
-        ))
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     ));
@@ -413,15 +430,7 @@ CREATE POLICY identity_role_assignments_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
-        AND EXISTS (
-          SELECT 1 FROM naeos_identity.organizations AS o
-          WHERE o.id = m.organization_id AND o.status = 'active'
-        )
-        AND (m.workspace_id IS NULL OR EXISTS (
-          SELECT 1 FROM naeos_identity.workspaces AS w
-          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
-            AND w.status = 'active'
-        ))
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     ));
@@ -455,16 +464,7 @@ CREATE POLICY identity_audit_events_runtime_read
   ON naeos_identity.audit_events FOR SELECT TO naeos_identity_runtime
   USING (
     organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
-    AND EXISTS (
-      SELECT 1 FROM naeos_identity.organizations AS o
-      WHERE o.id = audit_events.organization_id AND o.status = 'active'
-    )
-    AND (workspace_id IS NULL OR EXISTS (
-      SELECT 1 FROM naeos_identity.workspaces AS w
-      WHERE w.id = audit_events.workspace_id
-        AND w.organization_id = audit_events.organization_id
-        AND w.status = 'active'
-    ))
+    AND naeos_identity.is_active_tenant(audit_events.organization_id, audit_events.workspace_id)
     AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
          OR workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     AND EXISTS (
@@ -476,6 +476,7 @@ CREATE POLICY identity_audit_events_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND naeos_identity.is_active_tenant(m.organization_id, m.workspace_id)
         AND (
           (m.workspace_id IS NULL AND NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL)
           OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid
