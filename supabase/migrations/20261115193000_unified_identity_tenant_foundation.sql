@@ -306,6 +306,7 @@ CREATE POLICY identity_organizations_runtime_read
   ON naeos_identity.organizations FOR SELECT TO naeos_identity_runtime
   USING (
     id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
+    AND status = 'active'
     AND EXISTS (
       SELECT 1 FROM naeos_identity.memberships AS m
       WHERE m.organization_id = organizations.id
@@ -326,6 +327,11 @@ DROP POLICY IF EXISTS identity_workspaces_admin_all ON naeos_identity.workspaces
 CREATE POLICY identity_workspaces_runtime_read
   ON naeos_identity.workspaces FOR SELECT TO naeos_identity_runtime
   USING (organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
+    AND status = 'active'
+    AND EXISTS (
+      SELECT 1 FROM naeos_identity.organizations AS o
+      WHERE o.id = workspaces.organization_id AND o.status = 'active'
+    )
     AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
          OR id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     AND EXISTS (
@@ -346,6 +352,16 @@ DROP POLICY IF EXISTS identity_memberships_admin_all ON naeos_identity.membershi
 CREATE POLICY identity_memberships_runtime_read
   ON naeos_identity.memberships FOR SELECT TO naeos_identity_runtime
   USING (organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
+    AND EXISTS (
+      SELECT 1 FROM naeos_identity.organizations AS o
+      WHERE o.id = memberships.organization_id AND o.status = 'active'
+    )
+    AND (workspace_id IS NULL OR EXISTS (
+      SELECT 1 FROM naeos_identity.workspaces AS w
+      WHERE w.id = memberships.workspace_id
+        AND w.organization_id = memberships.organization_id
+        AND w.status = 'active'
+    ))
     AND issuer = NULLIF(current_setting('naeos.issuer', true), '')
     AND user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
     AND status = 'active'
@@ -369,6 +385,15 @@ CREATE POLICY identity_role_definitions_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND EXISTS (
+          SELECT 1 FROM naeos_identity.organizations AS o
+          WHERE o.id = m.organization_id AND o.status = 'active'
+        )
+        AND (m.workspace_id IS NULL OR EXISTS (
+          SELECT 1 FROM naeos_identity.workspaces AS w
+          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
+            AND w.status = 'active'
+        ))
         AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     ));
@@ -388,6 +413,15 @@ CREATE POLICY identity_role_assignments_runtime_read
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
+        AND EXISTS (
+          SELECT 1 FROM naeos_identity.organizations AS o
+          WHERE o.id = m.organization_id AND o.status = 'active'
+        )
+        AND (m.workspace_id IS NULL OR EXISTS (
+          SELECT 1 FROM naeos_identity.workspaces AS w
+          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
+            AND w.status = 'active'
+        ))
         AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     ));
@@ -421,6 +455,16 @@ CREATE POLICY identity_audit_events_runtime_read
   ON naeos_identity.audit_events FOR SELECT TO naeos_identity_runtime
   USING (
     organization_id = NULLIF(current_setting('naeos.organization_id', true), '')::uuid
+    AND EXISTS (
+      SELECT 1 FROM naeos_identity.organizations AS o
+      WHERE o.id = audit_events.organization_id AND o.status = 'active'
+    )
+    AND (workspace_id IS NULL OR EXISTS (
+      SELECT 1 FROM naeos_identity.workspaces AS w
+      WHERE w.id = audit_events.workspace_id
+        AND w.organization_id = audit_events.organization_id
+        AND w.status = 'active'
+    ))
     AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
          OR workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     AND EXISTS (
@@ -454,6 +498,15 @@ CREATE POLICY identity_audit_events_runtime_insert
         AND m.issuer = audit_events.issuer
         AND m.user_id = audit_events.actor_subject
         AND m.status = 'active'
+        AND EXISTS (
+          SELECT 1 FROM naeos_identity.organizations AS o
+          WHERE o.id = m.organization_id AND o.status = 'active'
+        )
+        AND (m.workspace_id IS NULL OR EXISTS (
+          SELECT 1 FROM naeos_identity.workspaces AS w
+          WHERE w.id = m.workspace_id AND w.organization_id = m.organization_id
+            AND w.status = 'active'
+        ))
     )
   );
 
