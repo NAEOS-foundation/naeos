@@ -91,14 +91,14 @@ $assert_runtime_write_denial$;
 RESET ROLE;
 SET ROLE naeos_identity_test_admin_login;
 
-INSERT INTO naeos_identity.organizations (id, name, slug) VALUES
-  ('22222222-2222-4222-8222-222222222222', 'Test Organization A', 'test-organization-a'),
-  ('77777777-7777-4777-8777-777777777777', 'Test Organization B', 'test-organization-b'),
+INSERT INTO naeos_identity.organizations (id, name, slug, status) VALUES
+  ('22222222-2222-4222-8222-222222222222', 'Test Organization A', 'test-organization-a', 'active'),
+  ('77777777-7777-4777-8777-777777777777', 'Test Organization B', 'test-organization-b', 'active'),
   ('88888888-8888-4888-8888-888888888888', 'Suspended Organization', 'suspended-organization', 'suspended');
 
-INSERT INTO naeos_identity.workspaces (id, organization_id, name, slug) VALUES
+INSERT INTO naeos_identity.workspaces (id, organization_id, name, slug, status) VALUES
   ('33333333-3333-4333-8333-333333333333',
-   '22222222-2222-4222-8222-222222222222', 'Test Workspace A', 'test-workspace-a'),
+   '22222222-2222-4222-8222-222222222222', 'Test Workspace A', 'test-workspace-a', 'active'),
   ('99999999-9999-4999-8999-999999999999',
    '22222222-2222-4222-8222-222222222222',
    'Suspended Workspace', 'suspended-workspace', 'suspended');
