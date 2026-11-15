@@ -24,6 +24,8 @@ at least 2048 bits) and **ES256** (P-256) signing keys. HS256 is not supported.
 Repository routes retain their separate RS256 service-token and repository
 allowlist checks.
 
+The verified human principal is the exact `(iss, sub)` pair. JWT `client_id` is preserved separately and is used as a principal fallback only for legacy client-only tokens with no `sub`; it must not replace a human subject. The current `app_metadata.naeos_roles` mapping is NAEOS's legacy application RBAC layer, not proof of organization/workspace membership. Tenant access requires the separate trusted membership and capability resolver contract before multi-tenant routes are enabled.
+
 ## 2. Sign in and call the API
 
 For a browser or application client, use the Supabase client SDK with the
