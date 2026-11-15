@@ -46,7 +46,11 @@ func TestIntegrationListBuckets(t *testing.T) {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
 	}
 
+	if cfg.ServiceRoleKey == "" {
+		t.Skip("SUPABASE_SERVICE_ROLE_KEY is required for Storage bucket administration")
+	}
 	client := NewClient(cfg)
+	client.SetAuthToken(cfg.ServiceRoleKey)
 
 	buckets, err := client.ListBuckets()
 	if err != nil {
@@ -90,6 +94,13 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 		t.Fatalf("SignUp: %v", err)
 	}
 	t.Logf("Signed up: %s (%s)", result.Email, result.ID)
+	if cfg.ServiceRoleKey != "" {
+		t.Cleanup(func() {
+			if err := client.AdminDeleteUser(result.ID); err != nil {
+				t.Errorf("cleanup integration user %q: %v", result.ID, err)
+			}
+		})
+	}
 
 	session, err := client.SignInWithEmail(email, password)
 	if err != nil {
@@ -133,7 +144,13 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 		t.Fatalf("CreateBucket: %v", err)
 	}
 	t.Logf("Created bucket: %s", bucket.Name)
+	uploaded := false
 	t.Cleanup(func() {
+		if uploaded {
+			if err := client.DeleteFile(bucketName, "uploads/test.txt"); err != nil {
+				t.Errorf("cleanup Storage object: %v", err)
+			}
+		}
 		if err := client.DeleteBucket(bucket.ID); err != nil {
 			t.Errorf("cleanup bucket %q: %v", bucket.ID, err)
 		}
@@ -148,6 +165,7 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 	if err := client.UploadFile(bucketName, srcFile, "uploads/test.txt"); err != nil {
 		t.Fatalf("UploadFile: %v", err)
 	}
+	uploaded = true
 	t.Log("Uploaded test.txt")
 
 	destFile := filepath.Join(tmpDir, "downloaded.txt")
@@ -167,6 +185,7 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 	if err := client.DeleteFile(bucketName, "uploads/test.txt"); err != nil {
 		t.Fatalf("DeleteFile: %v", err)
 	}
+	uploaded = false
 	t.Log("Deleted test.txt")
 }
 
