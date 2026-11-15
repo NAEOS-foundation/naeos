@@ -288,22 +288,44 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Require staging target before remote integration
+      - name: Verify explicitly pinned Supabase staging target
         env:
           SUPABASE_INTEGRATION_ENV: ${{ vars.SUPABASE_INTEGRATION_ENV }}
+          SUPABASE_STAGING_PROJECT_REF: ${{ vars.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           set -euo pipefail
-          if [ "${SUPABASE_INTEGRATION_ENV:-}" != "staging" ]; then
-            echo "Supabase integration is blocked: set repository variable SUPABASE_INTEGRATION_ENV=staging before running remote tests."
-            exit 1
-          fi
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          if os.getenv("SUPABASE_INTEGRATION_ENV") != "staging":
+              raise SystemExit("Blocked: SUPABASE_INTEGRATION_ENV must equal staging.")
+          project_ref = os.getenv("SUPABASE_STAGING_PROJECT_REF", "").strip()
+          if not project_ref:
+              raise SystemExit("Blocked: set SUPABASE_STAGING_PROJECT_REF to the approved staging project ref.")
+          parsed = urlparse(os.getenv("SUPABASE_URL", ""))
+          expected_host = f"{project_ref}.supabase.co"
+          if parsed.scheme != "https" or parsed.hostname != expected_host:
+              raise SystemExit(
+                  f"Blocked: SUPABASE_URL must use https://{expected_host}; refusing to run remote tests."
+              )
+          if not os.getenv("SUPABASE_PUBLISHABLE_KEY"):
+              raise SystemExit("Blocked: SUPABASE_PUBLISHABLE_KEY secret is missing.")
+          if not os.getenv("SUPABASE_SECRET_KEY"):
+              raise SystemExit("Blocked: SUPABASE_SECRET_KEY secret is missing.")
+          print(f"Verified Supabase staging target: {expected_host}")
+          PY
       - name: Supabase integration tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
-        run: go test -run TestIntegration -count=1 -timeout 120s ./internal/supabase/...
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_STAGING_PROJECT_REF }}
+        run: go test -run TestIntegration -count=1 -timeout 180s ./internal/supabase/...
 
   dependency-risk-gate:
     name: Dependency Risk Governance
