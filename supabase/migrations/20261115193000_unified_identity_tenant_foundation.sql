@@ -120,6 +120,32 @@ CREATE TABLE IF NOT EXISTS naeos_identity.role_capabilities (
 CREATE INDEX IF NOT EXISTS role_capabilities_key_idx
   ON naeos_identity.role_capabilities (capability_key);
 
+-- Audit read is an explicit tenant capability, granted only to the built-in
+-- organization/workspace administrator roles. Other roles fail closed.
+INSERT INTO naeos_identity.role_definitions (role_key, scope, description, is_system_role)
+VALUES
+  ('organization_admin', 'organization', 'Organization administrator', TRUE),
+  ('workspace_admin', 'workspace', 'Workspace administrator', TRUE)
+ON CONFLICT (scope, role_key) DO NOTHING;
+
+DO $system_role_guard$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM naeos_identity.role_definitions
+    WHERE (scope, role_key) IN (('organization', 'organization_admin'), ('workspace', 'workspace_admin'))
+      AND NOT is_system_role
+  ) THEN
+    RAISE EXCEPTION 'reserved NAEOS administrator role keys must remain system roles';
+  END IF;
+END
+$system_role_guard$;
+
+INSERT INTO naeos_identity.role_capabilities (role_definition_id, capability_key)
+SELECT id, 'naeos.identity.audit.read'
+FROM naeos_identity.role_definitions
+WHERE (scope, role_key) IN (('organization', 'organization_admin'), ('workspace', 'workspace_admin'))
+ON CONFLICT (role_definition_id, capability_key) DO NOTHING;
+
 -- Tenant boundary identifiers are immutable after creation. Move/relink operations
 -- must use explicit reviewed workflows rather than in-place scope rewrites.
 CREATE OR REPLACE FUNCTION naeos_identity.reject_workspace_organization_change()
@@ -287,7 +313,6 @@ CREATE POLICY identity_organizations_runtime_read
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
         AND (m.workspace_id IS NULL
-             OR m.workspace_id IS NULL
              OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     )
   );
@@ -390,6 +415,8 @@ CREATE POLICY identity_role_capabilities_admin_all
   USING (TRUE) WITH CHECK (TRUE);
 
 DROP POLICY IF EXISTS identity_audit_events_runtime_read ON naeos_identity.audit_events;
+-- Audit visibility requires both active tenant membership and the explicit
+-- naeos.identity.audit.read capability on a role assigned to that membership.
 CREATE POLICY identity_audit_events_runtime_read
   ON naeos_identity.audit_events FOR SELECT TO naeos_identity_runtime
   USING (
@@ -397,13 +424,19 @@ CREATE POLICY identity_audit_events_runtime_read
     AND (NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL
          OR workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
     AND EXISTS (
-      SELECT 1 FROM naeos_identity.memberships AS m
+      SELECT 1
+      FROM naeos_identity.memberships AS m
+      JOIN naeos_identity.role_assignments AS ra ON ra.membership_id = m.id
+      JOIN naeos_identity.role_capabilities AS rc ON rc.role_definition_id = ra.role_definition_id
       WHERE m.organization_id = audit_events.organization_id
         AND m.issuer = NULLIF(current_setting('naeos.issuer', true), '')
         AND m.user_id = NULLIF(current_setting('naeos.subject', true), '')::uuid
         AND m.status = 'active'
-        AND (m.workspace_id IS NULL
-             OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid)
+        AND (
+          (m.workspace_id IS NULL AND NULLIF(current_setting('naeos.workspace_id', true), '') IS NULL)
+          OR m.workspace_id = NULLIF(current_setting('naeos.workspace_id', true), '')::uuid
+        )
+        AND rc.capability_key = 'naeos.identity.audit.read'
     )
   );
 DROP POLICY IF EXISTS identity_audit_events_runtime_insert ON naeos_identity.audit_events;
