@@ -81,3 +81,6 @@ No Production schema, auth configuration, or data has been changed.
 - Tenant backfill requires an explicit ownership decision.
 - Intelligence scope claims and canonical principal semantics need implementation and test evidence.
 - Production database modifications are explicitly gated.
+
+
+Remote integration safety: the GitHub Actions job targets the protected `staging` Environment. Repository/environment variables must include `SUPABASE_INTEGRATION_ENV=staging` and `SUPABASE_STAGING_PROJECT_REF` (the exact 20-character project ref); `SUPABASE_URL` must resolve to `https://<project-ref>.supabase.co`. Store `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and `SUPABASE_JWKS_URL` as Environment secrets, and configure required reviewers / deployment protection on the `staging` Environment. The workflow refuses to run remote tests when the staging label, project ref, URL host, or required credentials do not match. This repository workflow change cannot create GitHub Environment protection rules or read/verify secret values; those remain repository-administrator configuration tasks.
