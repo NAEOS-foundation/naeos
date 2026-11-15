@@ -32,6 +32,10 @@ Supabase role. NAEOS roles are read only from trusted `app_metadata.naeos_roles`
 only `admin`, `developer`, and `viewer` are recognized, with `viewer` as the
 least-privilege default. Routes without an explicit RBAC mapping are denied.
 The API does not seed a local admin account in Supabase mode.
+Tenant-scoped pipeline and schema routes use the trusted
+`app_metadata.naeos_tenant_id` claim; a conflicting `X-Tenant-ID` header is
+rejected. The artifact endpoint remains unavailable in Supabase mode because
+the current artifact store does not partition data by tenant.
 
 The CLI still supports the legacy HS256 mode for controlled deployments by
 setting `--auth-mode hs256` (or `NAEOS_API_AUTH_MODE=hs256`),

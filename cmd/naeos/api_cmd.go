@@ -34,6 +34,8 @@ const apiPipelineRunsSchema = `CREATE TABLE IF NOT EXISTS pipeline_runs (
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`
 
+// attachDatabase connects the API server to a database when the
+// NAEOS_DB_DRIVER and NAEOS_DB_DATABASE environment variables are set.
 func apiDatabaseConfigFromEnv() (string, *database.Config, error) {
 	driver := strings.TrimSpace(os.Getenv("NAEOS_DB_DRIVER"))
 	dsn := strings.TrimSpace(os.Getenv("NAEOS_DB_DATABASE"))
@@ -84,8 +86,6 @@ func apiDatabaseConfigFromEnv() (string, *database.Config, error) {
 	return driver, dbConfig, nil
 }
 
-// attachDatabase connects the API server to a database when the
-// NAEOS_DB_DRIVER and NAEOS_DB_DATABASE environment variables are set.
 func attachDatabase(server *api.Server) error {
 	driver, dbConfig, err := apiDatabaseConfigFromEnv()
 	if err != nil {
@@ -132,7 +132,10 @@ func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
 	if explicit := strings.TrimSpace(os.Getenv("SUPABASE_JWKS_URL")); explicit != "" {
 		jwksURL = explicit
 	}
-	audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	audience = strings.TrimSpace(os.Getenv("SUPABASE_JWT_AUDIENCE"))
+	if audience == "" {
+		audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	}
 	if audience == "" {
 		audience = "authenticated"
 	}
@@ -233,7 +236,7 @@ func newAPICommand() *cobra.Command {
 				return err
 			}
 			authMode := resolveAPIAuthMode(cmd)
-			var supabaseAuth *api.SupabaseAuthVerifier
+			var supabaseAuth *api.SupabaseAuth
 			if apiAuth {
 				switch authMode {
 				case "hs256":
@@ -244,12 +247,11 @@ func newAPICommand() *cobra.Command {
 					if jwtSecret != "" {
 						return fmt.Errorf("NAEOS_API_JWT_SECRET and --secret must not be set when %s=supabase", apiAuthModeEnv)
 					}
-					var err error
-					supabaseAuth, err = api.NewSupabaseAuthVerifier(api.SupabaseAuthConfig{
-						URL:      os.Getenv("SUPABASE_URL"),
-						Audience: os.Getenv("SUPABASE_JWT_AUDIENCE"),
-						JWKSURL:  os.Getenv("SUPABASE_JWKS_URL"),
-					})
+					sIssuer, sAudience, sJWKSURL, configured := supabaseAuthEnv()
+					if !configured {
+						return fmt.Errorf("SUPABASE_URL is required when %s=supabase", apiAuthModeEnv)
+					}
+					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
 					if err != nil {
 						return err
 					}
@@ -257,44 +259,22 @@ func newAPICommand() *cobra.Command {
 					return fmt.Errorf("unsupported %s %q: use hs256 or supabase", apiAuthModeEnv, authMode)
 				}
 			}
-			if supabaseAuth != nil {
-				defer supabaseAuth.Close()
-			}
 
-			auth := &api.AuthConfig{
-				Enabled:       apiAuth,
-				JWTSecret:     jwtSecret,
-				EncryptionKey: encryptionKey,
-				SupabaseAuth:  supabaseAuth,
 			issuer := os.Getenv("NAEOS_API_JWKS_ISSUER")
 			audience := os.Getenv("NAEOS_API_JWKS_AUDIENCE")
 			jwksURL := os.Getenv("NAEOS_API_JWKS_URL")
 			serviceAuthConfigured := issuer != "" || audience != "" || jwksURL != ""
 			var serviceJWKS *api.JWKSValidator
 			if serviceAuthConfigured {
-				var err error
 				serviceJWKS, err = api.NewJWKSValidator(issuer, audience, jwksURL)
 				if err != nil {
 					return err
 				}
 			}
 
-			var supabaseAuth *api.SupabaseAuth
-			supabaseAuthConfigured := false
-			if apiAuth {
-				if sIssuer, sAudience, sJWKSURL, ok := supabaseAuthEnv(); ok {
-					var err error
-					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
-					if err != nil {
-						return err
-					}
-					supabaseAuthConfigured = true
-				}
-			}
-
 			auth := &api.AuthConfig{
 				Enabled:     apiAuth,
-				JWTSecret:   apiSecret,
+				JWTSecret:   jwtSecret,
 				ServiceJWKS: serviceJWKS,
 				Supabase:    supabaseAuth,
 			}
@@ -305,8 +285,6 @@ func newAPICommand() *cobra.Command {
 			}
 			if apiAuth && authMode == "hs256" {
 				if err := registerAPIAuth(server, encryptionKey); err != nil {
-			if apiAuth && (apiSecret != "" || supabaseAuthConfigured) {
-				if err := registerAPIAuth(server); err != nil {
 					return err
 				}
 			}

@@ -36,13 +36,6 @@ The current `NOTICE` records the repository's known third-party licensing positi
 
 Any future dependency change must update the relevant attribution evidence.
 
-The Supabase API authentication implementation pins `keyfunc/v3` v3.9.2
-(Apache-2.0), `jwkset` v0.11.4 (Apache-2.0), `golang-jwt/jwt/v5` v5.3.1
-(MIT), and `golang.org/x/time` v0.15.0 (BSD-3-Clause). These dependencies
-are used unmodified; their upstream license texts are included in the
-production container under `/usr/local/share/licenses/naeos/`. Their
-SPDX identifiers are curated in `internal/sbom/gomod.go`.
-
 ## 5. Modifications
 
 If a third-party component is modified, record:

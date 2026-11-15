@@ -29,6 +29,10 @@ In Supabase mode, NAEOS roles are read from trusted
 `app_metadata.naeos_roles`; only `admin`, `developer`, and `viewer` are
 recognized, and the default is `viewer`. Routes without explicit RBAC mappings
 are denied. Do not put authorization claims in user-editable `user_metadata`.
+Tenant-scoped pipeline and schema routes use
+`app_metadata.naeos_tenant_id`; conflicting `X-Tenant-ID` headers are rejected.
+The artifact endpoint is disabled in Supabase mode until artifact data is
+partitioned by tenant.
 
 ```
 naeos api [flags]

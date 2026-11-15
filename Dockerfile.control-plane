@@ -1,4 +1,4 @@
-FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308 AS builder
+FROM golang:1.26.11-alpine@sha256:ae52b5bc6ed045a9ed26ab03dc19327a802a9cc9aa8b27ed57f5c6b60579b0bb AS builder
 
 WORKDIR /app
 
@@ -17,11 +17,6 @@ WORKDIR /app
 
 COPY --from=builder /naeos /usr/local/bin/naeos
 COPY --from=builder /app/LICENSE /app/NOTICE /usr/local/share/naeos/
-RUN mkdir -p /usr/local/share/licenses/naeos
-COPY --from=builder /go/pkg/mod/github.com/!micah!parks/jwkset@v0.11.4/LICENSE /usr/local/share/licenses/naeos/jwkset-v0.11.4-LICENSE
-COPY --from=builder /go/pkg/mod/github.com/!micah!parks/keyfunc/v3@v3.9.2/LICENSE /usr/local/share/licenses/naeos/keyfunc-v3.9.2-LICENSE
-COPY --from=builder /go/pkg/mod/github.com/golang-jwt/jwt/v5@v5.3.1/LICENSE /usr/local/share/licenses/naeos/jwt-v5.3.1-LICENSE
-COPY --from=builder /go/pkg/mod/golang.org/x/time@v0.15.0/LICENSE /usr/local/share/licenses/naeos/x-time-v0.15.0-LICENSE
 
 RUN adduser -D -u 1000 -h /home/naeos naeos \
     && mkdir -p /home/naeos/.naeos/artifacts /home/naeos/.config/naeos \
