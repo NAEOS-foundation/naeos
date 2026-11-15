@@ -157,6 +157,7 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 		runtime_role.rolcreatedb,
 		runtime_role.rolcreaterole,
 		runtime_role.rolbypassrls,
+		runtime_role.rolinherit,
 		pg_catalog.pg_has_role(login_role.oid, runtime_role.oid, 'MEMBER'),
 		current_user = session_user,
 		NOT EXISTS (
@@ -171,21 +172,21 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 	WHERE login_role.rolname = session_user`
 	var (
 		login, loginSuper, loginCreateDB, loginCreateRole, loginBypassRLS, loginInherit bool
-		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS          bool
-		member, sameRole, noPrivilegedMembership                                        bool
+		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupBypassRLS, groupInherit bool
+		member, sameRole, noPrivilegedMembership                                             bool
 	)
 	if pool == nil {
 		return errors.New("control plane DATABASE_URL must use the dedicated least-privilege runtime role")
 	}
 	if err := pool.QueryRow(ctx, query).Scan(
 		&login, &loginSuper, &loginCreateDB, &loginCreateRole, &loginBypassRLS, &loginInherit,
-		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupBypassRLS,
+		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupBypassRLS, &groupInherit,
 		&member, &sameRole, &noPrivilegedMembership,
 	); err != nil {
 		return errors.New("control plane DATABASE_URL runtime role verification failed")
 	}
 	if !login || loginSuper || loginCreateDB || loginCreateRole || loginBypassRLS || !loginInherit ||
-		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupBypassRLS ||
+		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupBypassRLS || !groupInherit ||
 		!member || !sameRole || !noPrivilegedMembership {
 		return errors.New("control plane DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without privileged role membership")
 	}
