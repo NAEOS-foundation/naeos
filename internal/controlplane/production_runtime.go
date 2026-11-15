@@ -242,6 +242,10 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
+		if err := verifyControlPlaneRuntimeRole(ctx, r.pool); err != nil {
+			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
+			return
+		}
 		if err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
