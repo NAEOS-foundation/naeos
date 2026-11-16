@@ -73,6 +73,10 @@ func (r *ProductionRuntime) readyHandler() http.Handler {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
 			return
 		}
+		if err := verifyControlPlaneRuntimeRole(ctx, r.pool); err != nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
+			return
+		}
 		if err := verifyControlPlaneSchema(ctx, r.pool); err != nil {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
 			return

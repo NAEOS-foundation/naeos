@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -33,6 +34,18 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatalf("ping PostgreSQL database: %v", err)
 	}
+
+	// Production startup must reject admin/BYPASSRLS credentials and require
+	// the dedicated least-privilege login principal.
+	runtimePool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create runtime role verification pool: %v", err)
+	}
+	if err := verifyControlPlaneRuntimeRole(ctx, runtimePool); err != nil {
+		runtimePool.Close()
+		t.Fatalf("dedicated runtime login was rejected: %v", err)
+	}
+	runtimePool.Close()
 
 	suffix := controlPlaneID("REPO-TEST")
 	policyID := "policy-" + suffix
@@ -130,5 +143,21 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	final, err := approvals.Get(ctx, approval.ID)
 	if err != nil || final.Status != "consumed" {
 		t.Fatalf("final approval = (%+v, %v)", final, err)
+	}
+
+	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
+	if adminURL == "" {
+		t.Skip("set NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL to verify admin-role rejection")
+	}
+	adminPool, err := pgxpool.New(ctx, adminURL)
+	if err != nil {
+		t.Fatalf("create isolated admin test pool: %v", err)
+	}
+	defer adminPool.Close()
+	if err := adminPool.Ping(ctx); err != nil {
+		t.Fatalf("ping isolated admin test database: %v", err)
+	}
+	if err := verifyControlPlaneRuntimeRole(ctx, adminPool); err == nil {
+		t.Fatal("production runtime role verification accepted the admin database principal")
 	}
 }
