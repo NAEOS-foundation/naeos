@@ -41,7 +41,7 @@ type dependencyReviewRecord struct {
 	SchemaVersion   string   `json:"schema_version"`
 }
 
-var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64})$`)
+var checksumPattern = regexp.MustCompile(`^(h1:[A-Za-z0-9+/]{43}=|sha256:[a-fA-F0-9]{64}|sha512-[A-Za-z0-9+/]{86}==)$`)
 var spdxTokens = regexp.MustCompile(`[()]|[^[:space:]()]+`)
 
 // parseDependencyReviewRegistry rejects malformed or incomplete records. The
@@ -73,7 +73,7 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 		if !strings.HasPrefix(record.UpstreamSource, "https://") || !strings.HasPrefix(record.Provenance, "https://") || !strings.HasPrefix(record.ReviewReference, "https://") {
 			return registry, fmt.Errorf("dependency review record %d has invalid upstream source", i)
 		}
-		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) {
+		if !validSPDXLicense(record.SPDXLicense) || !checksumPattern.MatchString(record.Checksum) || (strings.EqualFold(record.Ecosystem, "go") && !strings.HasPrefix(record.Checksum, "h1:")) || (strings.EqualFold(record.Ecosystem, "npm") && !strings.HasPrefix(record.Checksum, "sha512-")) {
 			return registry, fmt.Errorf("dependency review record %d has invalid SPDX license or checksum", i)
 		}
 		switch record.Criticality {
@@ -99,13 +99,27 @@ func parseDependencyReviewRegistry(data []byte) (dependencyReviewRegistry, error
 	return registry, nil
 }
 
+func normalizeDependencyVersion(ecosystem, version string) string {
+	version = strings.TrimSpace(version)
+	if strings.EqualFold(strings.TrimSpace(ecosystem), "go") {
+		// go.mod/go.sum use the leading "v" required by Go module versions,
+		// while trusted registry records may store the equivalent bare semver.
+		return strings.TrimPrefix(version, "v")
+	}
+	return version
+}
+
 func checksumPresentInGoSum(data []byte, record dependencyReviewRecord) bool {
 	if !strings.EqualFold(record.Ecosystem, "go") {
 		return false
 	}
+	expectedVersion := normalizeDependencyVersion(record.Ecosystem, record.Version)
 	for _, line := range strings.Split(string(data), "\n") {
 		fields := strings.Fields(line)
-		if len(fields) == 3 && fields[0] == record.Name && fields[1] == record.Version && fields[2] == record.Checksum {
+		if len(fields) == 3 &&
+			fields[0] == record.Name &&
+			normalizeDependencyVersion(record.Ecosystem, fields[1]) == expectedVersion &&
+			fields[2] == record.Checksum {
 			return true
 		}
 	}
@@ -195,7 +209,9 @@ func validDependencyDomain(value string) bool {
 
 func findReviewedDependency(registry dependencyReviewRegistry, ecosystem, name, version string) (dependencyReviewRecord, bool) {
 	for _, record := range registry.Records {
-		if strings.EqualFold(record.Ecosystem, ecosystem) && record.Name == name && record.Version == version {
+		if strings.EqualFold(record.Ecosystem, ecosystem) &&
+			record.Name == name &&
+			normalizeDependencyVersion(ecosystem, record.Version) == normalizeDependencyVersion(ecosystem, version) {
 			return record, true
 		}
 	}

@@ -5,6 +5,13 @@ package main
 
 import "testing"
 
+func TestRequireLinePreservesGoVersionPrefix(t *testing.T) {
+	match := requireLine.FindStringSubmatch("- github.com/klauspost/compress v1.18.5 // indirect")
+	if len(match) != 3 || match[2] != "v1.18.5" {
+		t.Fatalf("requireLine match = %#v, want version v1.18.5", match)
+	}
+}
+
 func TestSelectHighestRiskRequestRejectsNewDependency(t *testing.T) {
 	req := selectHighestRiskRequest(
 		map[string]string{"safe": "v1.2.3"},
@@ -86,5 +93,19 @@ func TestNPMVersionChange(t *testing.T) {
 				t.Fatalf("npmVersionChange(%q, %q) = %q, want %q", tt.oldv, tt.newv, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDeriveGoToolchainRequestPatchDirective(t *testing.T) {
+	request, changed := deriveGoToolchainRequest("module example.com/naeos\n\ngo 1.26.10\n", "module example.com/naeos\n\ngo 1.26.11\n")
+	if !changed || request.Ecosystem != "go-toolchain" || request.Name != "go" || request.VersionChange != "patch" || !request.KnownDependency {
+		t.Fatalf("expected a known Go toolchain patch classification: changed=%v request=%+v", changed, request)
+	}
+}
+
+func TestDeriveGoToolchainRequestNoChange(t *testing.T) {
+	_, changed := deriveGoToolchainRequest("module example.com/naeos\n\ngo 1.26.11\n", "module example.com/naeos\n\ngo 1.26.11\n")
+	if changed {
+		t.Fatal("same Go directive should not be classified as a toolchain change")
 	}
 }

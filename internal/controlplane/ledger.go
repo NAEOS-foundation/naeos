@@ -102,6 +102,7 @@ func saveLedgerEvents(path string, events []LedgerEvent) error {
 		return fmt.Errorf("marshal ledger: %w", err)
 	}
 	dir := filepath.Dir(path)
+	// #nosec G703 -- persistencePath is an operator-configured local snapshot path; callers choose the trusted destination.
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("create ledger directory: %w", err)
 	}
@@ -126,6 +127,7 @@ func saveLedgerEvents(path string, events []LedgerEvent) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("close ledger snapshot: %w", err)
 	}
+	// #nosec G703 -- tmpName is created in the same operator-configured directory and path is the configured snapshot destination.
 	if err := os.Rename(tmpName, path); err != nil {
 		return fmt.Errorf("commit ledger snapshot: %w", err)
 	}
@@ -182,6 +184,7 @@ func (l *Ledger) Append(event LedgerEvent) LedgerEvent {
 
 // appendLocked appends an event while the caller holds l.mu.
 func (l *Ledger) appendLocked(event LedgerEvent) LedgerEvent {
+	event = cloneLedgerEvent(event)
 	nextID := l.nextID + 1
 	if event.ID == "" {
 		event.ID = fmt.Sprintf("EVT-%05d", nextID)
@@ -205,7 +208,7 @@ func (l *Ledger) appendLocked(event LedgerEvent) LedgerEvent {
 	l.nextID = nextID
 	l.events = append(l.events, event)
 	l.lastPersistenceError = nil
-	return event
+	return cloneLedgerEvent(event)
 }
 
 func hashLedgerEvent(event LedgerEvent) string {
@@ -219,7 +222,9 @@ func (l *Ledger) Events() []LedgerEvent {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	out := make([]LedgerEvent, len(l.events))
-	copy(out, l.events)
+	for i, event := range l.events {
+		out[i] = cloneLedgerEvent(event)
+	}
 	return out
 }
 
@@ -230,7 +235,7 @@ func (l *Ledger) EventsForAgent(agentID string) []LedgerEvent {
 	out := make([]LedgerEvent, 0)
 	for _, event := range l.events {
 		if event.AgentID == agentID {
-			out = append(out, event)
+			out = append(out, cloneLedgerEvent(event))
 		}
 	}
 	return out
@@ -271,7 +276,7 @@ func (l *Ledger) Decision(decisionID string) (LedgerEvent, bool) {
 	for i := len(l.events) - 1; i >= 0; i-- {
 		event := l.events[i]
 		if event.EventType == "AUTHORIZATION_DECISION" && event.DecisionID == decisionID {
-			return event, true
+			return cloneLedgerEvent(event), true
 		}
 	}
 	return LedgerEvent{}, false
@@ -289,4 +294,16 @@ func (l *Ledger) HasExecution(decisionID string) bool {
 		}
 	}
 	return false
+}
+
+// cloneLedgerEvent returns a value copy with independently owned metadata.
+func cloneLedgerEvent(event LedgerEvent) LedgerEvent {
+	if event.Metadata != nil {
+		metadata := make(map[string]string, len(event.Metadata))
+		for key, value := range event.Metadata {
+			metadata[key] = value
+		}
+		event.Metadata = metadata
+	}
+	return event
 }

@@ -96,3 +96,11 @@ generated/
 # Policy bypass experiment artifacts
 experiments/policy-bypass/policy-bypass
 experiments/policy-bypass/reports/
+
+# Local service token issued by naeos api --auth (never commit)
+.naeos-api.token
+
+# Local tooling artifacts
+naeos.bak*
+dependency-risk-evidence.json
+examples/demo-cli/.run/

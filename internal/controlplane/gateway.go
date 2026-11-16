@@ -135,12 +135,33 @@ func (g *DecisionGateway) recordEvaluationFailure(req AuthorizeRequest, result D
 		result.Message = "policy evaluation failed; failure evidence ledger unavailable"
 		return result
 	}
+
+	// The evaluator may not populate attribution for operational failures
+	// (e.g. unavailable evaluator or unresolved policy version). Fall back to
+	// the policy supplied in the request so failure evidence remains correlated.
+	policyID := result.PolicyID
+	policyVersion := result.PolicyVersion
+	if req.Policy != nil {
+		if policyID == "" {
+			policyID = req.Policy.ID
+		}
+		if policyVersion == 0 {
+			policyVersion = req.Policy.Version
+		}
+	}
+
 	event := g.Ledger.Append(LedgerEvent{
 		Timestamp: req.Timestamp, RequestID: req.RequestID,
 		AgentID: req.AgentID, Capability: req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash, EventType: "POLICY_EVALUATION_FAILED",
-		Reason:   ReasonEvaluationFailed,
-		Metadata: map[string]string{"failure_message": result.Message},
+		Reason: ReasonEvaluationFailed,
+		Metadata: map[string]string{
+			"failure_code":    "policy_evaluation_failed",
+			"failure_stage":   "policy_evaluation",
+			"failure_message": result.Message,
+			"policy_id":       policyID,
+			"policy_version":  fmt.Sprintf("%d", policyVersion),
+		},
 	})
 	if event.ID == "" {
 		result.Message = "policy evaluation failed; failure evidence could not be persisted"
@@ -215,7 +236,8 @@ func (g *DecisionGateway) executeDecision(req AuthorizeRequest, result DecisionR
 		return result, LedgerEvent{}
 	}
 	canonical, ok := g.Ledger.Decision(result.DecisionID)
-	if !ok || canonical.Decision != DecisionAllow ||
+	if !ok || canonical.EventHash == "" || canonical.EventHash != hashLedgerEvent(canonical) ||
+		canonical.Decision != DecisionAllow ||
 		canonical.RequestID != result.RequestID ||
 		canonical.AgentID != req.AgentID ||
 		canonical.Capability != req.Action.Capability ||
@@ -338,23 +360,23 @@ func (g *DecisionGateway) ExecuteAtomic(req AuthorizeRequest, result DecisionRes
 		return result, LedgerEvent{}
 	}
 	if g == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
 		result.Message = "atomic execution boundary unavailable"
-		return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		return result, LedgerEvent{}
 	}
 	if g.Ledger == nil || g.Evaluator == nil || g.Evaluator.store == nil {
-		result.Status = DecisionDeny
-		result.Reason = ReasonDeniedStalePolicy
-		result.Message = "atomic execution boundary unavailable"
-		if g.Ledger == nil {
-			return result, LedgerEvent{RequestID: req.RequestID, DecisionID: result.DecisionID, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason}
+		result.Status = DecisionIndeterminate
+		result.DecisionID = ""
+		result.Reason = ReasonEvaluationFailed
+		result.Message = "atomic execution dependencies unavailable"
+		// Persist an operational failure when the ledger is available. Never
+		// manufacture an authorization DENY for missing execution infrastructure.
+		if g.Ledger != nil {
+			g.recordEvaluationFailure(req, result)
 		}
-		return result, g.Ledger.Append(LedgerEvent{
-			Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: result.DecisionID,
-			AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
-			EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny, Reason: result.Reason,
-		})
+		return result, LedgerEvent{}
 	}
 	if sideEffect == nil {
 		result.Status = DecisionDeny

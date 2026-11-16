@@ -106,3 +106,28 @@ func TestParseDependencyReviewRegistryAcceptsSPDXExpression(t *testing.T) {
 		t.Fatalf("expected valid SPDX expression to be accepted: %v", err)
 	}
 }
+
+func TestGoDependencyVersionNormalizationMatchesRegistryAndGoSum(t *testing.T) {
+	input := strings.Replace(validRegistryJSON(), `"version":"v1.2.3"`, `"version":"1.2.3"`, 1)
+	registry, err := parseDependencyReviewRegistry([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := registry.Records[0]
+	if _, ok := findReviewedDependency(registry, "go", record.Name, "v1.2.3"); !ok {
+		t.Fatal("Go module v-prefix must normalize when matching a trusted registry record")
+	}
+	line := record.Name + " v1.2.3 " + record.Checksum + "\n"
+	if !checksumPresentInGoSum([]byte(line), record) {
+		t.Fatal("Go sum v-prefix must normalize when matching the trusted checksum")
+	}
+}
+
+func TestNPMDependencyVersionMatchingRemainsExact(t *testing.T) {
+	registry := dependencyReviewRegistry{Records: []dependencyReviewRecord{{
+		Ecosystem: "npm", Name: "example-package", Version: "1.2.3",
+	}}}
+	if _, ok := findReviewedDependency(registry, "npm", "example-package", "v1.2.3"); ok {
+		t.Fatal("npm version matching must remain exact and must not apply Go normalization")
+	}
+}

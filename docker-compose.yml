@@ -1,0 +1,9 @@
+services:
+  naeos-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.control-plane
+    image: naeos-core:local
+    ports:
+      - "8081:8080"
+    restart: unless-stopped

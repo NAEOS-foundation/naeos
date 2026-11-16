@@ -40,8 +40,23 @@ func TestDurableRuntimeReceiptRoundTripAndRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	reloaded.Seal()
 	if err := VerifyDurableRuntimeReceipt(loadedReceipt, reloaded, "run-1"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDurableRuntimeReceiptRejectsUnsealedLedger(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-events.jsonl")
+	ledger, err := NewDurableRuntimeEventLedger(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.Publish("run-1", "pipeline.start", "payload-1", 1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := CreateDurableRuntimeReceipt(ledger, "run-1", time.Unix(1, 0)); err == nil {
+		t.Fatal("expected unsealed ledger to be rejected")
 	}
 }
 

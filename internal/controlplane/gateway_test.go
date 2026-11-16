@@ -808,3 +808,50 @@ func TestDecisionGateway_RejectsForgedSameVersionPolicyBeforeAtomicSideEffect(t 
 		t.Fatalf("expected canonical DENY and blocked-execution evidence, got %+v", events)
 	}
 }
+
+// TestDecisionGateway_ExecuteAtomicInfrastructureFailureIsIndeterminate verifies
+// missing execution dependencies remain operational failures and never invoke
+// the consequential side-effect callback.
+func TestDecisionGateway_ExecuteAtomicInfrastructureFailureIsIndeterminate(t *testing.T) {
+	now := time.Now().UTC()
+	policy := &Policy{ID: "POLICY-711-INFRA", Version: 1, Status: "active"}
+	req := AuthorizeRequest{
+		RequestID: "REQ-711-INFRA", AgentID: "agent-711",
+		Action: Action{AgentID: "agent-711", Capability: "repository.write"},
+		Policy: policy, Timestamp: now,
+	}
+	tests := []struct {
+		name    string
+		gateway *DecisionGateway
+	}{
+		{name: "gateway unavailable", gateway: nil},
+		{name: "ledger unavailable", gateway: &DecisionGateway{Evaluator: NewEvaluator(NewPolicyStore())}},
+		{name: "evaluator unavailable", gateway: &DecisionGateway{Ledger: NewLedger()}},
+		{name: "policy store unavailable", gateway: &DecisionGateway{Evaluator: NewEvaluator(), Ledger: NewLedger()}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			called := false
+			result := DecisionResult{Status: DecisionAllow, DecisionID: "DEC-UNSAFE"}
+			got, event := tt.gateway.ExecuteAtomic(req, result, func() error {
+				called = true
+				return nil
+			})
+			if called {
+				t.Fatal("missing execution infrastructure must block side effect")
+			}
+			if got.Status != DecisionIndeterminate || got.Reason != ReasonEvaluationFailed || got.DecisionID != "" {
+				t.Fatalf("expected INDETERMINATE without decision ID, got %+v", got)
+			}
+			if event.EventType != "" || event.Decision != "" {
+				t.Fatalf("infrastructure failure must not create an execution receipt, got %+v", event)
+			}
+			if tt.gateway != nil && tt.gateway.Ledger != nil {
+				events := tt.gateway.Ledger.Query(map[string]string{"request_id": req.RequestID})
+				if len(events) != 1 || events[0].EventType != "POLICY_EVALUATION_FAILED" || events[0].DecisionID != "" {
+					t.Fatalf("expected separate operational failure evidence, got %+v", events)
+				}
+			}
+		})
+	}
+}
