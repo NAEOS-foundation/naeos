@@ -16,6 +16,7 @@ import (
 	"errors"
 	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -113,15 +114,28 @@ type serviceJWTClaims struct {
 	Scopes    []string        `json:"scopes"`
 }
 
+// JWKSOptions tunes JWKS validator construction. The zero value matches the
+// production defaults (HTTPS only).
+type JWKSOptions struct {
+	// AllowInsecureLoopback permits an http issuer/JWKS URL when the host is a
+	// loopback address. This exists only for local development stacks; never
+	// enable it for a deployed service.
+	AllowInsecureLoopback bool
+}
+
 func NewJWKSValidator(issuer, audience, endpoint string) (*JWKSValidator, error) {
+	return NewJWKSValidatorWithOptions(issuer, audience, endpoint, JWKSOptions{})
+}
+
+// NewJWKSValidatorWithOptions is NewJWKSValidator with explicit trust options.
+func NewJWKSValidatorWithOptions(issuer, audience, endpoint string, opts JWKSOptions) (*JWKSValidator, error) {
 	issuer = strings.TrimSpace(issuer)
 	audience = strings.TrimSpace(audience)
 	endpoint = strings.TrimSpace(endpoint)
 	issuerURL, issuerErr := url.Parse(issuer)
 	endpointURL, endpointErr := url.Parse(endpoint)
 	if issuer == "" || audience == "" || endpoint == "" || issuerErr != nil || endpointErr != nil ||
-		issuerURL.Scheme != "https" || issuerURL.Host == "" || issuerURL.User != nil || issuerURL.Fragment != "" ||
-		endpointURL.Scheme != "https" || endpointURL.Host == "" || endpointURL.User != nil || endpointURL.Fragment != "" {
+		!validJWKSURL(issuerURL, opts) || !validJWKSURL(endpointURL, opts) {
 		return nil, errors.New("service JWT issuer, audience, and HTTPS JWKS URL are required")
 	}
 	return &JWKSValidator{
@@ -137,6 +151,59 @@ func NewJWKSValidator(issuer, audience, endpoint string) (*JWKSValidator, error)
 			},
 		},
 	}, nil
+}
+
+// validJWKSURL enforces HTTPS unless loopback HTTP was explicitly permitted.
+func validJWKSURL(u *url.URL, opts JWKSOptions) bool {
+	if u == nil || u.Host == "" || u.User != nil || u.Fragment != "" {
+		return false
+	}
+	switch u.Scheme {
+	case "https":
+		return true
+	case "http":
+		return opts.AllowInsecureLoopback && isLoopbackHost(u.Hostname())
+	default:
+		return false
+	}
+}
+
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+// tokenIssuer decodes the unverified iss claim so the middleware can route a
+// token to the correct validator. Callers must still verify the signature
+// before trusting any claim.
+func tokenIssuer(token string) string {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return ""
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return ""
+	}
+	var claims struct {
+		Issuer string `json:"iss"`
+	}
+	if json.Unmarshal(payload, &claims) != nil {
+		return ""
+	}
+	return strings.TrimSpace(claims.Issuer)
+}
+
+// Issuer returns the configured issuer, letting the server distinguish service
+// tokens from other RS256 tokens without verifying them first.
+func (v *JWKSValidator) Issuer() string {
+	if v == nil {
+		return ""
+	}
+	return v.issuer
 }
 
 func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims, error) {

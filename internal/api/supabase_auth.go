@@ -42,12 +42,33 @@ type SupabaseAuth struct {
 	validator *JWKSValidator
 }
 
+// SupabaseAuthOption customizes Supabase token validator construction.
+type SupabaseAuthOption func(*supabaseAuthConfig)
+
+type supabaseAuthConfig struct {
+	allowInsecureLoopback bool
+}
+
+// WithInsecureLoopback permits an http loopback issuer/JWKS URL so a local
+// Supabase stack can be validated. Never use this outside local development.
+func WithInsecureLoopback() SupabaseAuthOption {
+	return func(c *supabaseAuthConfig) {
+		c.allowInsecureLoopback = true
+	}
+}
+
 // NewSupabaseAuth builds a Supabase token validator. The issuer must be the
 // Supabase auth issuer (for example https://<ref>.supabase.co/auth/v1), the
 // audience the expected token aud value ("authenticated" by default), and the
 // JWKS endpoint the project's /.well-known/jwks.json URL.
-func NewSupabaseAuth(issuer, audience, jwksURL string) (*SupabaseAuth, error) {
-	validator, err := NewJWKSValidator(issuer, audience, jwksURL)
+func NewSupabaseAuth(issuer, audience, jwksURL string, opts ...SupabaseAuthOption) (*SupabaseAuth, error) {
+	cfg := &supabaseAuthConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	validator, err := NewJWKSValidatorWithOptions(issuer, audience, jwksURL, JWKSOptions{
+		AllowInsecureLoopback: cfg.allowInsecureLoopback,
+	})
 	if err != nil {
 		return nil, err
 	}

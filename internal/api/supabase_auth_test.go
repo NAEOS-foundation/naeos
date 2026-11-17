@@ -410,3 +410,16 @@ func TestServerSupabaseAuthDisabled(t *testing.T) {
 		t.Errorf("status = %d, want 403", resp.StatusCode)
 	}
 }
+
+func TestNewSupabaseAuthLoopbackHTTP(t *testing.T) {
+	id := newSupabaseTestIdentity(t)
+	if _, err := NewSupabaseAuth(id.issuer, id.audience, id.jwksURL); err == nil {
+		t.Fatal("expected http loopback JWKS to be rejected without opt-in")
+	}
+	if _, err := NewSupabaseAuth(id.issuer, id.audience, id.jwksURL, WithInsecureLoopback()); err != nil {
+		t.Fatalf("loopback opt-in should accept http loopback: %v", err)
+	}
+	if _, err := NewSupabaseAuth("http://example.com/auth/v1", id.audience, "http://example.com/jwks.json", WithInsecureLoopback()); err == nil {
+		t.Fatal("expected http non-loopback JWKS to be rejected even with opt-in")
+	}
+}

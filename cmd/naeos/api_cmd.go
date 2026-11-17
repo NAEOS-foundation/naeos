@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -87,6 +88,14 @@ func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
 	return issuer, audience, jwksURL, true
 }
 
+// allowLoopbackAuthEnabled reports whether the operator explicitly opted into
+// http loopback issuer/JWKS URLs for a local Supabase stack. This must never be
+// enabled for a deployed service.
+func allowLoopbackAuthEnabled() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(os.Getenv("NAEOS_SUPABASE_ALLOW_INSECURE_LOOPBACK")))
+	return err == nil && enabled
+}
+
 // registerAPIAuth attaches an auth manager seeded with an admin user so that a
 // JWT whose "sub" matches the configured admin user can use protected routes.
 func registerAPIAuth(server *api.Server) error {
@@ -127,12 +136,21 @@ func newAPICommand() *cobra.Command {
 				}
 			}
 
+			userSecret := apiSecret
+			if userSecret == "" {
+				userSecret = strings.TrimSpace(os.Getenv("NAEOS_API_JWT_SECRET"))
+			}
+
 			var supabaseAuth *api.SupabaseAuth
 			supabaseAuthConfigured := false
 			if apiAuth {
 				if sIssuer, sAudience, sJWKSURL, ok := supabaseAuthEnv(); ok {
+					var opts []api.SupabaseAuthOption
+					if allowLoopbackAuthEnabled() {
+						opts = append(opts, api.WithInsecureLoopback())
+					}
 					var err error
-					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
+					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL, opts...)
 					if err != nil {
 						return err
 					}
@@ -140,9 +158,13 @@ func newAPICommand() *cobra.Command {
 				}
 			}
 
+			if apiAuth && userSecret == "" && !supabaseAuthConfigured {
+				return fmt.Errorf("api auth requires NAEOS_API_JWT_SECRET or SUPABASE_URL")
+			}
+
 			auth := &api.AuthConfig{
 				Enabled:     apiAuth,
-				JWTSecret:   apiSecret,
+				JWTSecret:   userSecret,
 				ServiceJWKS: serviceJWKS,
 				Supabase:    supabaseAuth,
 			}
@@ -151,7 +173,7 @@ func newAPICommand() *cobra.Command {
 			if err := attachDatabase(server); err != nil {
 				return err
 			}
-			if apiAuth && (apiSecret != "" || supabaseAuthConfigured) {
+			if apiAuth && (userSecret != "" || supabaseAuthConfigured) {
 				if err := registerAPIAuth(server); err != nil {
 					return err
 				}
