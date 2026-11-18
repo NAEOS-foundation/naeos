@@ -46,7 +46,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, errors.New("parse Control Plane DATABASE_URL: invalid PostgreSQL URL")
+		return nil, errors.New("parse NAEOS_CONTROLPLANE_DATABASE_URL: invalid PostgreSQL URL")
 	}
 	// The runtime uses two drivers over one DATABASE_URL. Split the total
 	// connection budget evenly so the combined maximum remains eight.
