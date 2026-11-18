@@ -3,7 +3,7 @@
 <title>carousel-content-4x5.svg</title><desc>Editable NAEOS carousel content template.</desc>
 <defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#60A5FA" stroke-opacity=".075"/></pattern></defs>
 <rect width="1080" height="1350" fill="#0B0F19"/><rect width="1080" height="1350" fill="url(#grid)"/><circle cx="982" cy="175" r="205" fill="#2563FF" opacity=".10"/>
-<image href="../assets/naeos-primary-symbol-v2-2048.png" x="81" y="94" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
+<image href="../assets/naeos-primary-symbol-v2.svg" x="81" y="94" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
 <text x="81" y="405" class="eyebrow">NAEOS FIELD NOTES / 01</text><text x="81" y="553" class="headline">One principle.</text><text x="81" y="661" class="headline accent">Clear evidence.</text>
 <rect x="81" y="756" width="918" height="270" rx="18" fill="#FFF" fill-opacity=".06" stroke="#60A5FA" stroke-opacity=".65"/><text x="109" y="850" class="body">[Add one insight or explanation]</text><text x="109" y="931" class="small">[Support it with a workflow, example, or source]</text>
 <text x="81" y="1242" fill="#60A5FA" font-size="17">NAEOS / naeos.dev</text><text x="999" y="1242" fill="#E5E7EB" font-size="17" text-anchor="end">[SERIES / DATE]</text>
