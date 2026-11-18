@@ -36,11 +36,11 @@ type ProductionRuntime struct {
 	gateway   *RepositoryDecisionGateway
 }
 
-// OpenProductionRuntime validates the connection contract, opens bounded pools,
+// OpenProductionRuntime validates the environment-specific Supabase target and connection contract, opens bounded pools,
 // verifies the least-privilege runtime role and private schema, and validates
 // the persisted ledger before returning a production runtime.
-func OpenProductionRuntime(ctx context.Context, databaseURL string) (*ProductionRuntime, error) {
-	if err := validateProductionDatabaseURL(databaseURL); err != nil {
+func OpenProductionRuntime(ctx context.Context, databaseURL, environment string) (*ProductionRuntime, error) {
+	if err := validateControlPlaneDatabaseTarget(databaseURL, environment); err != nil {
 		return nil, err
 	}
 
