@@ -66,9 +66,10 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'principal-agent binding identity is immutable';
   END IF;
-  IF OLD.status = 'revoked' OR NEW.status <> 'revoked' OR NEW.revoked_at IS NULL THEN
+  IF OLD.status <> 'active' OR NEW.status <> 'revoked' THEN
     RAISE EXCEPTION 'principal-agent bindings may only transition once from active to revoked';
   END IF;
+  -- The database owns revocation time; callers must not supply it.
   NEW.revoked_at := now();
   NEW.updated_at := now();
   RETURN NEW;
