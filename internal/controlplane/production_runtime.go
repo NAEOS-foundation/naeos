@@ -46,9 +46,9 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, errors.New("parse NAEOS_CONTROLPLANE_DATABASE_URL: invalid PostgreSQL URL")
+		return nil, errors.New("parse NAEOS_CONTROLPLANE_NAEOS_CONTROLPLANE_DATABASE_URL: invalid PostgreSQL URL")
 	}
-	// The runtime uses two drivers over one DATABASE_URL. Split the total
+	// The runtime uses two drivers over one NAEOS_CONTROLPLANE_DATABASE_URL. Split the total
 	// connection budget evenly so the combined maximum remains eight.
 	cfg.MaxConns = 4
 	cfg.MinConns = 0
@@ -126,18 +126,18 @@ func (r *ProductionRuntime) Close() {
 
 func validateProductionDatabaseURL(raw string) error {
 	if strings.TrimSpace(raw) == "" {
-		return errors.New("control plane DATABASE_URL is required")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL is required")
 	}
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.Host == "" {
-		return errors.New("control plane DATABASE_URL must be a valid PostgreSQL URL")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must be a valid PostgreSQL URL")
 	}
 	sslmode := strings.ToLower(u.Query().Get("sslmode"))
 	switch sslmode {
 	case "require", "verify-ca", "verify-full":
 		return nil
 	default:
-		return errors.New("control plane DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
 	}
 }
 
@@ -179,19 +179,19 @@ func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) erro
 		member, sameRole, noAdditionalMembership                                                               bool
 	)
 	if pool == nil {
-		return errors.New("control plane DATABASE_URL must use the dedicated least-privilege runtime role")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must use the dedicated least-privilege runtime role")
 	}
 	if err := pool.QueryRow(ctx, query).Scan(
 		&login, &loginSuper, &loginCreateDB, &loginCreateRole, &loginReplication, &loginBypassRLS, &loginInherit,
 		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupReplication, &groupBypassRLS, &groupInherit,
 		&member, &sameRole, &noAdditionalMembership,
 	); err != nil {
-		return errors.New("control plane DATABASE_URL runtime role verification failed")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL runtime role verification failed")
 	}
 	if !login || loginSuper || loginCreateDB || loginCreateRole || loginReplication || loginBypassRLS || !loginInherit ||
 		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupReplication || groupBypassRLS || !groupInherit ||
 		!member || !sameRole || !noAdditionalMembership {
-		return errors.New("control plane DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without additional role memberships")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without additional role memberships")
 	}
 	return nil
 }
