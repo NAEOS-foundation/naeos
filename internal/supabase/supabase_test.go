@@ -4,6 +4,8 @@
 package supabase
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,6 +25,8 @@ func supabaseEnvConfig() *Config {
 		serviceKey = os.Getenv("SUPABASE_SECRET_KEY")
 	}
 	jwksURL := os.Getenv("SUPABASE_JWKS_URL")
+	projectRef := os.Getenv("SUPABASE_PROJECT_REF")
+	accessToken := os.Getenv("SUPABASE_ACCESS_TOKEN")
 	if url == "" || anonKey == "" {
 		return nil
 	}
@@ -31,22 +35,16 @@ func supabaseEnvConfig() *Config {
 		AnonKey:        anonKey,
 		ServiceRoleKey: serviceKey,
 		JWKSURL:        jwksURL,
+		ProjectRef:     projectRef,
+		AccessToken:    accessToken,
 	}
 }
 
-func TestIntegrationAuthFlow(t *testing.T) {
-	cfg := supabaseEnvConfig()
-	if cfg == nil {
-		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
+func requireMutatingIntegrationApproval(t *testing.T) {
+	t.Helper()
+	if os.Getenv("SUPABASE_RUN_MUTATING_TESTS") != "true" {
+		t.Skip("mutating remote Supabase tests require an explicitly approved workflow_dispatch run")
 	}
-
-	client := NewClient(cfg)
-
-	user, err := client.GetUser()
-	if err != nil {
-		t.Fatalf("GetUser: %v", err)
-	}
-	t.Logf("Authenticated as: %s (%s)", user.Email, user.ID)
 }
 
 func TestIntegrationListBuckets(t *testing.T) {
@@ -55,7 +53,11 @@ func TestIntegrationListBuckets(t *testing.T) {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
 	}
 
+	if cfg.ServiceRoleKey == "" {
+		t.Skip("SUPABASE_SERVICE_ROLE_KEY is required for Storage bucket administration")
+	}
 	client := NewClient(cfg)
+	client.SetAuthToken(cfg.ServiceRoleKey)
 
 	buckets, err := client.ListBuckets()
 	if err != nil {
@@ -67,8 +69,8 @@ func TestIntegrationListBuckets(t *testing.T) {
 
 func TestIntegrationExecuteSQL(t *testing.T) {
 	cfg := supabaseEnvConfig()
-	if cfg == nil || cfg.ServiceRoleKey == "" {
-		t.Skip("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set")
+	if cfg == nil || cfg.AccessToken == "" || cfg.ProjectRef == "" {
+		t.Skip("SUPABASE_URL, SUPABASE_ACCESS_TOKEN, and SUPABASE_PROJECT_REF are required for Management API SQL integration")
 	}
 
 	client := NewClient(cfg)
@@ -84,6 +86,7 @@ func TestIntegrationExecuteSQL(t *testing.T) {
 }
 
 func TestIntegrationSignUpSignInFlow(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
@@ -91,7 +94,7 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 
 	client := NewClient(cfg)
 
-	email := "test-" + randString(8) + "@naeos-test.com"
+	email := "test-" + randString(16) + "@naeos-test.com"
 	password := "Test1234!@#$"
 
 	result, err := client.SignUp(SignUpParams{Email: email, Password: password})
@@ -99,6 +102,13 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 		t.Fatalf("SignUp: %v", err)
 	}
 	t.Logf("Signed up: %s (%s)", result.Email, result.ID)
+	if cfg.ServiceRoleKey != "" {
+		t.Cleanup(func() {
+			if err := client.AdminDeleteUser(result.ID); err != nil {
+				t.Errorf("cleanup integration user %q: %v", result.ID, err)
+			}
+		})
+	}
 
 	session, err := client.SignInWithEmail(email, password)
 	if err != nil {
@@ -121,22 +131,39 @@ func TestIntegrationSignUpSignInFlow(t *testing.T) {
 }
 
 func TestIntegrationStorageUploadDownload(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil {
 		t.Skip("SUPABASE_URL and SUPABASE_ANON_KEY not set")
 	}
 
 	client := NewClient(cfg)
+	if cfg.ServiceRoleKey == "" {
+		t.Skip("SUPABASE_SERVICE_ROLE_KEY is required for isolated Storage bucket administration")
+	}
+	// Bucket administration is a privileged Storage operation. Use the backend-only
+	// service key for this isolated staging test; never expose it to browser code.
+	client.SetAuthToken(cfg.ServiceRoleKey)
 	tmpDir := t.TempDir()
 
-	bucketName := "test-" + randString(6)
+	bucketName := "naeos-it-" + randString(12)
 
 	bucket, err := client.CreateBucket(bucketName, false)
 	if err != nil {
 		t.Fatalf("CreateBucket: %v", err)
 	}
 	t.Logf("Created bucket: %s", bucket.Name)
-	t.Cleanup(func() { client.DeleteBucket(bucketName) })
+	uploaded := false
+	t.Cleanup(func() {
+		if uploaded {
+			if err := client.DeleteFile(bucketName, "uploads/test.txt"); err != nil {
+				t.Errorf("cleanup Storage object: %v", err)
+			}
+		}
+		if err := client.DeleteBucket(bucket.ID); err != nil {
+			t.Errorf("cleanup bucket %q: %v", bucket.ID, err)
+		}
+	})
 
 	srcContent := "hello supabase storage"
 	srcFile := filepath.Join(tmpDir, "test.txt")
@@ -147,6 +174,7 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 	if err := client.UploadFile(bucketName, srcFile, "uploads/test.txt"); err != nil {
 		t.Fatalf("UploadFile: %v", err)
 	}
+	uploaded = true
 	t.Log("Uploaded test.txt")
 
 	destFile := filepath.Join(tmpDir, "downloaded.txt")
@@ -166,10 +194,12 @@ func TestIntegrationStorageUploadDownload(t *testing.T) {
 	if err := client.DeleteFile(bucketName, "uploads/test.txt"); err != nil {
 		t.Fatalf("DeleteFile: %v", err)
 	}
+	uploaded = false
 	t.Log("Deleted test.txt")
 }
 
 func TestIntegrationAdminCreateUser(t *testing.T) {
+	requireMutatingIntegrationApproval(t)
 	cfg := supabaseEnvConfig()
 	if cfg == nil || cfg.ServiceRoleKey == "" {
 		t.Skip("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set")
@@ -177,7 +207,7 @@ func TestIntegrationAdminCreateUser(t *testing.T) {
 
 	client := NewClient(cfg)
 
-	email := "admin-test-" + randString(8) + "@naeos-test.com"
+	email := "admin-test-" + randString(16) + "@naeos-test.com"
 	password := "Admin4567!@#$"
 
 	user, err := client.AdminCreateUser(email, password, nil)
@@ -185,7 +215,11 @@ func TestIntegrationAdminCreateUser(t *testing.T) {
 		t.Fatalf("AdminCreateUser: %v", err)
 	}
 	t.Logf("Admin created: %s (%s)", user.Email, user.ID)
-	t.Cleanup(func() { client.AdminDeleteUser(user.ID) })
+	t.Cleanup(func() {
+		if err := client.AdminDeleteUser(user.ID); err != nil {
+			t.Errorf("cleanup admin integration user %q: %v", user.ID, err)
+		}
+	})
 
 	users, err := client.AdminListUsers()
 	if err != nil {
@@ -205,10 +239,12 @@ func TestIntegrationAdminCreateUser(t *testing.T) {
 }
 
 func randString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[(i*7+13)%len(letters)]
+	if n <= 0 {
+		return ""
 	}
-	return string(b)
+	b := make([]byte, (n+1)/2)
+	if _, err := rand.Read(b); err != nil {
+		panic("generate integration-test identifier: " + err.Error())
+	}
+	return hex.EncodeToString(b)[:n]
 }

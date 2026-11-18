@@ -101,8 +101,11 @@ func TestGenerateReportWithEvents(t *testing.T) {
 		t.Fatal("expected non-nil report")
 	}
 
-	if report.PassedControls == 0 {
-		t.Error("expected at least some controls to pass with events")
+	if report.PassedControls != 0 {
+		t.Errorf("audit events alone must not mark controls passed; got %d", report.PassedControls)
+	}
+	if report.IndeterminateControls != report.TotalControls {
+		t.Errorf("expected all controls indeterminate, got %d of %d", report.IndeterminateControls, report.TotalControls)
 	}
 }
 
@@ -126,16 +129,16 @@ func TestGenerateReportGDPR(t *testing.T) {
 		t.Errorf("expected GDPR, got %s", report.Framework)
 	}
 
-	// Art. 17 (right to erasure) should pass with delete:user events
-	var art17Passed bool
+	// A delete event is evidence of activity, not proof of an effective erasure process.
+	var art17Indeterminate bool
 	for _, cs := range report.ControlStatuses {
-		if cs.ControlID == "Art. 17" && cs.Passed {
-			art17Passed = true
+		if cs.ControlID == "Art. 17" && cs.Status == AssessmentIndeterminate && !cs.Passed {
+			art17Indeterminate = true
 			break
 		}
 	}
-	if !art17Passed {
-		t.Error("expected Art. 17 to pass with delete:user events")
+	if !art17Indeterminate {
+		t.Error("expected Art. 17 to remain indeterminate with delete:user events")
 	}
 }
 
@@ -150,16 +153,16 @@ func TestGenerateReportHIPAA(t *testing.T) {
 		t.Fatal("expected non-nil report")
 	}
 
-	// 164.308(a)(6) (incident response) should pass with error events
-	var irPassed bool
+	// An error event alone cannot prove incident response controls are effective.
+	var irIndeterminate bool
 	for _, cs := range report.ControlStatuses {
-		if cs.ControlID == "164.308(a)(6)" && cs.Passed {
-			irPassed = true
+		if cs.ControlID == "164.308(a)(6)" && cs.Status == AssessmentIndeterminate && !cs.Passed {
+			irIndeterminate = true
 			break
 		}
 	}
-	if !irPassed {
-		t.Error("expected 164.308(a)(6) to pass with error events")
+	if !irIndeterminate {
+		t.Error("expected 164.308(a)(6) to remain indeterminate with error events")
 	}
 }
 
@@ -173,19 +176,27 @@ func TestGenerateReportTimestamp(t *testing.T) {
 	}
 }
 
-func TestGenerateReportEvidence(t *testing.T) {
+func TestGenerateReportDoesNotInventEvidence(t *testing.T) {
 	report := GenerateReport(FrameworkSOC2, []audit.AuditEvent{
 		{UserID: "u1", Action: "create", Resource: "user", Status: "success"},
 	})
-	if len(report.Evidence) == 0 {
-		t.Error("expected evidence entries")
+	if len(report.Evidence) != 0 {
+		t.Errorf("expected no synthesized evidence, got %d entries", len(report.Evidence))
 	}
-	for _, ev := range report.Evidence {
-		if ev.Type == "" {
-			t.Error("expected evidence type")
-		}
-		if ev.Source == "" {
-			t.Error("expected evidence source")
+}
+
+func TestGenerateReportAuditEventsDoNotAssertCompliance(t *testing.T) {
+	events := []audit.AuditEvent{{UserID: "u1", Action: "create", Resource: "user", Status: "success"}}
+	report := GenerateReport(FrameworkSOC2, events)
+	if report == nil {
+		t.Fatal("expected non-nil report")
+	}
+	if report.PassedControls != 0 || report.FailedControls != 0 || report.IndeterminateControls != report.TotalControls {
+		t.Errorf("expected all controls indeterminate, got pass=%d fail=%d indeterminate=%d total=%d", report.PassedControls, report.FailedControls, report.IndeterminateControls, report.TotalControls)
+	}
+	for _, status := range report.ControlStatuses {
+		if status.Status != AssessmentIndeterminate || status.Passed {
+			t.Errorf("control %s should be indeterminate, got status=%s passed=%t", status.ControlID, status.Status, status.Passed)
 		}
 	}
 }

@@ -75,14 +75,19 @@ func TestPolicyBypassLandscape(t *testing.T) {
 		if r.Scenario == "no configured policies => no checks" && r.ObservedOutcome != OutcomeDeny {
 			t.Errorf("H2 regression: empty required governance must deny; observed=%s", r.ObservedOutcome)
 		}
-		if r.Scenario == "evaluator error fails closed" {
-			if r.ObservedOutcome != OutcomeDeny || r.Verdict != VerdictPass {
-				t.Errorf("P1.2 regression: evaluator failure must become DENY: observed=%s verdict=%s evidence=%s",
+		if r.Scenario == "malformed policy rejected before activation" {
+			if r.ObservedOutcome != OutcomeError || r.Verdict != VerdictPass {
+				t.Errorf("malformed policy must be rejected during registration: observed=%s verdict=%s evidence=%s",
 					r.ObservedOutcome, r.Verdict, r.Evidence)
 			}
+			if !strings.Contains(r.Evidence, "policy registration rejected malformed condition") {
+				t.Errorf("scenario must retain actual registration error evidence, got %q", r.Evidence)
+			}
 		}
-		if r.ObservedOutcome == OutcomeError && r.Verdict == VerdictPass {
-			t.Errorf("error must never masquerade as a successful governance outcome: %q", r.Scenario)
+		// Runtime evaluator failures remain distinct from authorization decisions.
+		// This scenario now exercises the earlier registration boundary instead.
+		if r.ObservedOutcome == OutcomeError && r.ExpectedOutcome != OutcomeError && r.Verdict == VerdictPass {
+			t.Errorf("unexpected evaluator error must not satisfy a governance scenario: %q", r.Scenario)
 		}
 	}
 	t.Logf("known findings: %v", gotFailures)

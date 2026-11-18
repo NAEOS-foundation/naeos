@@ -39,6 +39,10 @@ This flow demonstrates: specification → NEIR → validation → policy → AI 
 - [Reference Architecture/NAEOS-NRA-001.md](Reference%20Architecture/NAEOS-NRA-001.md) — reference architecture.
 - [ARCHITECTURE-OVERVIEW.md](ARCHITECTURE-OVERVIEW.md) — conceptual architecture overview.
 
+### Archived architecture drafts
+- [NAEOS-NRA-002 — conflicting non-canonical working draft](archive/reference-architecture/NAEOS-NRA-002-conflicting-draft.md) — retained for historical traceability; not implementation authority.
+- [docs/architecture/GO-PACKAGE-BOUNDARY-AUDIT.md](docs/architecture/GO-PACKAGE-BOUNDARY-AUDIT.md) — preliminary Go package-boundary findings and safe refactor sequence.
+
 ## 3. Governance and constitution
 - [constitution/NAEOS-CON-001.md](constitution/NAEOS-CON-001.md) — engineering constitution.
 - [constitution/NAEOS-CON-002.md](constitution/NAEOS-CON-002.md) — AI engineering constitution.
