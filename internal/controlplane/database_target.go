@@ -43,16 +43,37 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 		return nil
 	}
 
-	// Supabase shared session pooler URLs use a regional pooler hostname and
-	// encode the project ref in the database username (postgres.<project-ref>).
+	// Supavisor shared-pooler URLs encode the project ref after the database
+	// role name: postgres.<project-ref> or <custom-role>.<project-ref>.
 	username := ""
 	if u.User != nil {
 		username = u.User.Username()
 	}
-	if strings.HasSuffix(host, ".pooler.supabase.com") &&
-		username == "postgres."+expectedProjectRef {
-		return nil
+	projectSuffix := "." + expectedProjectRef
+	if strings.HasSuffix(host, ".pooler.supabase.com") && strings.HasSuffix(username, projectSuffix) {
+		roleName := strings.TrimSuffix(username, projectSuffix)
+		if validControlPlanePoolerRoleName(roleName) {
+			return nil
+		}
 	}
 
 	return errors.New("NAEOS_CONTROLPLANE_DATABASE_URL does not match the configured Supabase project for this environment")
+}
+
+func validControlPlanePoolerRoleName(name string) bool {
+	if len(name) == 0 || len(name) > 63 {
+		return false
+	}
+	for i, r := range name {
+		if i == 0 {
+			if !((r >= 'a' && r <= 'z') || r == '_') {
+				return false
+			}
+			continue
+		}
+		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_') {
+			return false
+		}
+	}
+	return true
 }
