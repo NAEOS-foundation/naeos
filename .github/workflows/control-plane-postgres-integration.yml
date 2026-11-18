@@ -7,6 +7,7 @@ on:
       - '.github/workflows/control-plane-postgres-integration.yml'
       - 'internal/controlplane/**'
       - 'supabase/migrations/**'
+      - 'supabase/tests/**'
       - 'go.mod'
       - 'go.sum'
   push:
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/control-plane-postgres-integration.yml'
       - 'internal/controlplane/**'
       - 'supabase/migrations/**'
+      - 'supabase/tests/**'
       - 'go.mod'
       - 'go.sum'
 
@@ -71,10 +73,18 @@ jobs:
           db="postgres://postgres@localhost:5432/naeos_control_plane_test?sslmode=disable"
           psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261111000100_production_control_plane.sql
           psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261111000200_control_plane_ledger_head_reader.sql
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261118000100_control_plane_principal_agent_bindings.sql
           psql "$db" -v ON_ERROR_STOP=1 <<'SQL'
           CREATE ROLE naeos_control_plane_login LOGIN INHERIT PASSWORD 'ephemeral-ci-only';
           GRANT naeos_control_plane_runtime TO naeos_control_plane_login;
           SQL
+      - name: Verify principal-agent binding migration invariants
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/naeos_control_plane_test?sslmode=disable"
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/tests/control_plane_principal_agent_bindings.sql
       - name: Run PostgreSQL ledger and repository integration tests
         env:
           NAEOS_CONTROLPLANE_TEST_DATABASE_URL: postgres://naeos_control_plane_login:ephemeral-ci-only@localhost:5432/naeos_control_plane_test?sslmode=disable
