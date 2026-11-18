@@ -133,6 +133,71 @@ func TestAPIControlPlaneSecurity(t *testing.T) {
 	}
 }
 
+func TestAPIRequiresAuthenticationForEveryNonHealthRoute(t *testing.T) {
+	setup := SetupDemoEnvironment()
+	as := NewAPIServer(setup)
+	as.security.token = ""
+
+	protectedRoutes := []struct {
+		method string
+		path   string
+	}{
+		{http.MethodPost, "/api/authorize"},
+		{http.MethodPost, "/api/execute"},
+		{http.MethodGet, "/api/audit"},
+		{http.MethodPost, "/api/scenarios"},
+		{http.MethodPost, "/api/scenario"},
+		{http.MethodGet, "/api/investor-demo"},
+		{http.MethodGet, "/api/policy"},
+		{http.MethodGet, "/api/grants"},
+		{http.MethodPost, "/api/verification"},
+		{http.MethodPost, "/api/control-plane/decision"},
+		{http.MethodPost, "/api/control-plane/session"},
+		{http.MethodGet, "/api/control-plane/evidence"},
+		{http.MethodGet, "/api/control-plane/runs"},
+		{http.MethodPost, "/api/control-plane/approval"},
+		{http.MethodGet, "/api/control-plane/approval/approval-1"},
+		{http.MethodPost, "/api/control-plane/approval/approve"},
+		{http.MethodPost, "/api/control-plane/approval/reject"},
+		{http.MethodPost, "/api/reset"},
+	}
+
+	for _, route := range protectedRoutes {
+		t.Run(route.method+" "+route.path, func(t *testing.T) {
+			req := httptest.NewRequest(route.method, route.path, nil)
+			rec := httptest.NewRecorder()
+			as.ServeHTTP(rec, req)
+			if rec.Code != http.StatusUnauthorized {
+				t.Fatalf("expected unauthenticated request to fail with 401, got %d: %s", rec.Code, rec.Body.String())
+			}
+			if rec.Header().Get("WWW-Authenticate") != "Bearer" {
+				t.Fatal("expected WWW-Authenticate: Bearer")
+			}
+		})
+	}
+
+	health := httptest.NewRecorder()
+	as.ServeHTTP(health, httptest.NewRequest(http.MethodGet, "/api/health", nil))
+	if health.Code != http.StatusOK {
+		t.Fatalf("expected public health endpoint to return 200, got %d", health.Code)
+	}
+}
+
+func TestAPIProtectedRouteAllowsApprovedOriginPreflightWithoutBearer(t *testing.T) {
+	as, _ := newTestAPI(t)
+	req := httptest.NewRequest(http.MethodOptions, "/api/control-plane/evidence", nil)
+	req.Header.Set("Origin", "https://naeos.dev")
+	rec := httptest.NewRecorder()
+	as.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected approved CORS preflight to return 200, got %d", rec.Code)
+	}
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://naeos.dev" {
+		t.Fatalf("expected approved CORS origin, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
 func TestAPIAuthorize(t *testing.T) {
 	as, _ := newTestAPI(t)
 
