@@ -15,7 +15,10 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
 
-const maxAuthorizationRequestBytes = 1 << 20
+const (
+	maxAuthorizationRequestBytes = 1 << 20
+	decisionWriteScope           = "naeos:control-plane:decision:write"
+)
 
 // ProductionIdentityConfig binds the production runtime to the configured identity
 // provider. Issuer, audience, and JWKS endpoint are explicit trust anchors.
@@ -107,6 +110,11 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid bearer token"})
 			return
 		}
+		// Only verified issuer-signed claims grant route scopes; match exact tokens.
+		if !claimsContainScope(claims, decisionWriteScope) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "required scope is missing"})
+			return
+		}
 		req.Body = http.MaxBytesReader(w, req.Body, maxAuthorizationRequestBytes)
 		decoder := json.NewDecoder(req.Body)
 		decoder.DisallowUnknownFields()
@@ -167,6 +175,23 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			writeJSON(w, http.StatusServiceUnavailable, result)
 		}
 	})
+}
+
+func claimsContainScope(claims *api.JWTClaims, required string) bool {
+	if claims == nil || strings.TrimSpace(required) == "" {
+		return false
+	}
+	for _, scope := range strings.Fields(claims.Scope) {
+		if scope == required {
+			return true
+		}
+	}
+	for _, scope := range claims.Scopes {
+		if scope == required {
+			return true
+		}
+	}
+	return false
 }
 
 func bearerToken(header string) (string, bool) {
