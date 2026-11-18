@@ -303,7 +303,14 @@ test("Policy Change Proof is localized in Indonesian and drives the same states"
   }
 });
 
-test("Control Plane proxy fails closed when the environment has no upstream", async () => {
+test(
+  "Control Plane proxy fails closed when the environment has no upstream",
+  {
+    skip: process.env.CONTROL_PLANE_EXPECT_UNCONFIGURED_UPSTREAM !== "true"
+      ? "Only valid in local and isolated preview environments; production has a configured upstream."
+      : false,
+  },
+  async () => {
   const { page, pageErrors } = await openPage("/en/control-plane");
   try {
     const response = await page.evaluate(async () => {
