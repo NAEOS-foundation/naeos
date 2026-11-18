@@ -1,0 +1,77 @@
+name: NAEOS Compliance Gate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: naeos-compliance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  naeos-verify:
+    name: Specification & Compliance CLI Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build NAEOS CLI from checked-out revision
+        run: |
+          set -euo pipefail
+          go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/naeos" ./cmd/naeos/
+          "$RUNNER_TEMP/naeos" version
+
+      - name: Validate & lint project specifications
+        run: |
+          set -euo pipefail
+
+          if [ ! -d ./specs ]; then
+            echo "::notice::No ./specs directory in this repository; specification validation is skipped."
+            exit 0
+          fi
+
+          mapfile -t SPEC_FILES < <(
+            find ./specs -type f \( -name '*.yaml' -o -name '*.yml' \) | sort
+          )
+
+          if [ "${#SPEC_FILES[@]}" -eq 0 ]; then
+            echo "::error::./specs exists but contains no YAML specifications."
+            exit 1
+          fi
+
+          for spec in "${SPEC_FILES[@]}"; do
+            echo "Validating $spec"
+            "$RUNNER_TEMP/naeos" validate --input-file "$spec"
+            "$RUNNER_TEMP/naeos" lint --input-file "$spec"
+          done
+
+      - name: Smoke-test supported compliance framework registry
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/naeos" compliance list-frameworks
+
+      - name: Verify audit-log integrity when audit evidence exists
+        run: |
+          set -euo pipefail
+          audit_file="$HOME/.naeos/audit.log"
+
+          if [ -s "$audit_file" ]; then
+            "$RUNNER_TEMP/naeos" compliance verify --audit-file "$audit_file"
+          else
+            echo "::notice::No NAEOS audit log was produced in this job; integrity verification is skipped."
+          fi

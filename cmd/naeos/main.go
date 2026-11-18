@@ -133,5 +133,6 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newAirgapCommand())
 	root.AddCommand(newServeCommand())
 	root.AddCommand(newDemoCommand())
+	root.AddCommand(newControlPlaneCommand())
 	return root
 }

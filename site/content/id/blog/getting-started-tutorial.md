@@ -12,7 +12,7 @@ Dalam tutorial ini Anda akan membangun proyek microservices sederhana dengan gat
 
 ## Prasyarat
 
-- [Go 1.26.6+](https://go.dev/dl/)
+- [Go 1.26.10+](https://go.dev/dl/)
 - Terminal
 
 Instal NAEOS:

@@ -1,27 +1,37 @@
 # NAEOS Logo System
 
-Status: **FROZEN / APPROVED**
+Status: **FROZEN / APPROVED — Logo Master v2.0.0**
 
-## Visual source of truth
+## Production master
 
-The immutable visual reference is documented at:
+The founder-approved **NAEOS Primary Symbol Candidate v1.0** (approved 2026-11-17) is registered in the repository as the new production Logo Master **v2.0.0**:
 
-`brand/source-of-truth/README.md`
+`brand/master/naeos-primary-symbol-master-v2.svg`
 
-The frozen reference fingerprint is:
+The repository version is v2.0.0 because Logo Master v1.0.0 already existed. This is a versioned supersession, not a silent overwrite.
 
-`d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974`
+## Derived assets
 
-The reference itself is preserved in the NAEOS Logo System FROZEN 1.0 artifact. The repository manifest records the fingerprint so the visual master can be verified without silently substituting another image.
+- `brand/logo-mark.svg` — primary gradient symbol consumer.
+- `brand/logo.svg` and `brand/logo-horizontal.svg` — horizontal wordmark lockup.
+- `brand/logo-mono.svg` — monochrome black mark.
+- `brand/variants/` — flat, white, black, and Signal Blue variants.
+- `site/public/images/logo-mark.svg` — website mark.
+- `site/public/favicon.svg` — website favicon.
 
-## Derived vector
+All production variants reuse the same approved two-path geometry. Only fill, color, or background treatment changes.
 
-`brand/master/naeos-mark-master.svg` remains the current production vector derivative (Logo Master v1.0). It is **not** the absolute visual source of truth and must not be treated as a pixel-identical reconstruction of the frozen reference.
+## Preserved history and source integrity
 
-## Rules
+- The original visual source under `brand/source-of-truth/` remains immutable.
+- The previous `brand/master/naeos-mark-master.svg` is retained unchanged as Logo Master v1.0.0 for history and rollback.
+- No source-of-truth reference image is replaced.
 
-1. The visual reference is immutable.
-2. Do not silently replace or redraw the frozen reference.
-3. Geometry changes require a new explicit version.
-4. Rendering/material changes may be made without changing the reference.
-5. Production consumers must use approved derived assets.
+## Brand rules
+
+1. Use Logo Master v2.0.0 for new NAEOS public-facing assets after this PR is merged.
+2. Do not alter the approved symbol geometry in downstream variants.
+3. Geometry changes require explicit approval and a new master version.
+4. Preserve the original frozen visual source and previous master.
+5. Use Sora for brand headings and Inter for body/UI typography.
+6. The official corporate tagline remains “Architecture Drives Engineering.” The approved visual lockup may use “The Intelligent Core” as its product-facing descriptor.

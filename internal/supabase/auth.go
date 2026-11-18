@@ -5,6 +5,7 @@ package supabase
 
 import (
 	"net/url"
+	"time"
 
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
@@ -24,11 +25,12 @@ type SignUpResponse struct {
 }
 
 type Session struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	User         User   `json:"user"`
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	ExpiresIn    int       `json:"expires_in"`
+	RefreshToken string    `json:"refresh_token"`
+	ExpiresAt    time.Time `json:"expires_at,omitempty"`
+	User         User      `json:"user"`
 }
 
 type User struct {
@@ -76,7 +78,8 @@ func (c *Client) SignInWithEmail(email, password string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.SetAuthToken(session.AccessToken)
+	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
+	c.SetSession(session)
 	return session, nil
 }
 
@@ -85,7 +88,7 @@ func (c *Client) SignOut() error {
 	if err != nil {
 		return naeoserr.Wrapf(err, naeoserr.ErrAuth, "sign out")
 	}
-	c.SetAuthToken("")
+	c.SetSession(nil)
 	return nil
 }
 
@@ -110,7 +113,8 @@ func (c *Client) RefreshToken(refreshToken string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.SetAuthToken(session.AccessToken)
+	session.ExpiresAt = time.Now().Add(time.Duration(session.ExpiresIn) * time.Second)
+	c.SetSession(session)
 	return session, nil
 }
 
@@ -149,6 +153,24 @@ func (c *Client) AdminCreateUser(email, password string, data map[string]any) (*
 		return nil, err
 	}
 	return jsonUnmarshal[User](body)
+}
+
+func (c *Client) AdminGetUserByID(userID string) (*User, error) {
+	data, err := c.doAdmin("GET", "/auth/v1/admin/users/"+url.PathEscape(userID), nil)
+	if err != nil {
+		return nil, err
+	}
+	return jsonUnmarshal[User](data)
+}
+
+func (c *Client) AdminUpdateUserAppMetadata(userID string, appMetadata map[string]any) (*User, error) {
+	data, err := c.doAdmin("PUT", "/auth/v1/admin/users/"+url.PathEscape(userID), map[string]any{
+		"app_metadata": appMetadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return jsonUnmarshal[User](data)
 }
 
 func (c *Client) AdminDeleteUser(userID string) error {

@@ -1,0 +1,48 @@
+name: Public Version Consistency
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+      - README.md
+      - ROADMAP.md
+      - WHITEPAPER.md
+      - WHITEPAPER-EN.md
+      - site/content/whitepaper.md
+      - site/content/id/whitepaper.md
+      - site/lib/site.ts
+      - site/data/status.json
+      - site/content/blog/ecommerce-end-to-end-tutorial.md
+      - site/content/id/blog/ecommerce-end-to-end-tutorial.md
+      - scripts/check-public-version-consistency.sh
+      - .github/workflows/public-version-consistency.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - VERSION
+      - README.md
+      - ROADMAP.md
+      - WHITEPAPER.md
+      - WHITEPAPER-EN.md
+      - site/content/whitepaper.md
+      - site/content/id/whitepaper.md
+      - site/lib/site.ts
+      - site/data/status.json
+      - site/content/blog/ecommerce-end-to-end-tutorial.md
+      - site/content/id/blog/ecommerce-end-to-end-tutorial.md
+      - scripts/check-public-version-consistency.sh
+      - .github/workflows/public-version-consistency.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-version-consistency:
+    name: Check public release references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify public version references
+        run: bash scripts/check-public-version-consistency.sh

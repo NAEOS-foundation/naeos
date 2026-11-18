@@ -5,6 +5,7 @@ package gateway
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -40,12 +41,18 @@ type ToolRequest struct {
 // observable result of an execution. It deliberately does not trust the sandbox
 // output as proof of a side effect.
 type Observation struct {
-	Status       string // "observed", "absent", "mismatch", "unavailable"
-	Observed     bool
-	ArtifactHash string
-	ArtifactSize int64
-	Metadata     map[string]string
-	Timestamp    time.Time
+	// RequestID and InvocationID bind runtime evidence to the governed execution.
+	// When the request supplies either identity, the gateway requires the
+	// observer to return the same value before treating the observation as proof.
+	RequestID        string
+	InvocationID     string
+	InvocationDigest string
+	Status           string // "observed", "absent", "mismatch", "unavailable"
+	Observed         bool
+	ArtifactHash     string
+	ArtifactSize     int64
+	Metadata         map[string]string
+	Timestamp        time.Time
 }
 
 // Observer verifies or records the externally observable effect of an execution.
@@ -56,19 +63,22 @@ type Observer interface {
 }
 
 type ExecutionResult struct {
-	RequestID    string
-	InvocationID string
-	Request      ToolRequest
-	Decision     control.Decision
-	PolicyID     string
-	RuleID       string
-	Status       string // "completed", "denied", "failed", "skipped"
-	Output       string
-	Hash         string // SHA-256 of output/payload
-	Duration     time.Duration
-	Timestamp    time.Time
-	Reasons      []string
-	Observation  *Observation
+	RequestID     string
+	InvocationID  string
+	Request       ToolRequest
+	Decision      control.Decision
+	PolicyID      string
+	PolicyVersion string
+	RuleID        string
+	Status        string // "completed", "denied", "failed", "unknown", "skipped"
+	Output        string
+	Hash          string // SHA-256 of output/payload
+	Duration      time.Duration
+	Timestamp     time.Time
+	Reasons       []string
+	// EvaluationFailure is internal diagnostic evidence, never an authorization decision.
+	EvaluationFailure *control.EvaluationFailure
+	Observation       *Observation
 }
 
 // AgentAdapter abstracts an external AI coding agent system. Each adapter
@@ -131,18 +141,27 @@ type ControlPlane interface {
 	Evaluate(req control.Request) (control.DecisionRecord, error)
 }
 
-// DecisionRevalidator is an optional second-phase authorization check.
-// Production control planes should implement it so policy changes between
-// authorization and execution invalidate the original decision.
+// DecisionRevalidator is a second-phase authorization check. Production
+// execution paths should require it so policy changes between authorization
+// and execution invalidate the original decision.
 type DecisionRevalidator interface {
 	ValidateDecision(req control.Request, issued control.DecisionRecord) (control.DecisionRecord, error)
+}
+
+// WithRequiredRevalidation requires the control plane to implement
+// DecisionRevalidator. If it does not, ALLOW requests fail closed before
+// reaching the sandbox. Keep this enabled on production/golden-path gateways.
+func WithRequiredRevalidation(enabled bool) Option {
+	return func(g *ExecutionGateway) { g.requireRevalidation = enabled }
 }
 
 // Option configures an ExecutionGateway.
 type Option func(*ExecutionGateway)
 
-// FailClosed controls the behavior when the sandbox executor returns an
-// error. When true (default) the gateway treats execution errors as denied.
+// FailClosed controls whether execution, observation, and replay-state
+// errors are returned to the caller. An ambiguous execution outcome remains
+// "unknown"; fail-closed mode does not imply that the external side effect
+// definitely failed.
 func FailClosed(enabled bool) Option {
 	return func(g *ExecutionGateway) { g.failClosed = enabled }
 }
@@ -189,11 +208,12 @@ type ExecutionGateway struct {
 	adapterPolicies map[string]AdapterPolicy
 	restrictions    []Restriction
 
-	mu               sync.RWMutex
-	history          []ExecutionResult
-	invocationStore  InvocationStore
-	replayProtection bool
-	failClosed       bool
+	mu                  sync.RWMutex
+	history             []ExecutionResult
+	invocationStore     InvocationStore
+	replayProtection    bool
+	requireRevalidation bool
+	failClosed          bool
 }
 
 // New creates an ExecutionGateway with the given control plane and sandbox.
@@ -284,18 +304,36 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		Context:     req.Context,
 	})
 	if err != nil {
+		var evaluationFailure *control.EvaluationFailure
+		if errors.As(err, &evaluationFailure) {
+			// Preserve the indeterminate evaluation as its own audit outcome.
+			// Decision remains empty and the sandbox is never reached.
+			result := ExecutionResult{
+				RequestID:         req.RequestID,
+				InvocationID:      req.InvocationID,
+				Request:           req,
+				Status:            "failed",
+				Timestamp:         time.Now().UTC(),
+				Reasons:           []string{"policy evaluation failed"},
+				EvaluationFailure: evaluationFailure,
+				Duration:          time.Since(start),
+			}
+			g.record(result)
+			return result, naeoserr.Wrapf(err, naeoserr.ErrInternal, "control plane evaluation failed")
+		}
 		return ExecutionResult{}, naeoserr.Wrapf(err, naeoserr.ErrInternal, "control plane evaluation failed")
 	}
 
 	result := ExecutionResult{
-		RequestID:    req.RequestID,
-		InvocationID: req.InvocationID,
-		Request:      req,
-		Decision:     rec.Decision,
-		PolicyID:     rec.PolicyID,
-		RuleID:       rec.RuleID,
-		Timestamp:    time.Now().UTC(),
-		Reasons:      rec.Reasons,
+		RequestID:     req.RequestID,
+		InvocationID:  req.InvocationID,
+		Request:       req,
+		Decision:      rec.Decision,
+		PolicyID:      rec.PolicyID,
+		PolicyVersion: rec.PolicyVersion,
+		RuleID:        rec.RuleID,
+		Timestamp:     time.Now().UTC(),
+		Reasons:       rec.Reasons,
 	}
 
 	// Check command restrictions before proceeding. A matching restriction
@@ -336,7 +374,15 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	// Revalidate immediately before execution when the control plane supports
 	// a second-phase check. This closes the policy-mutation window between the
 	// initial authorization decision and the externally observable side effect.
-	if revalidator, ok := g.controlPlane.(DecisionRevalidator); ok {
+	revalidator, supportsRevalidation := g.controlPlane.(DecisionRevalidator)
+	if g.requireRevalidation && !supportsRevalidation {
+		result.Status = "denied"
+		result.Output = "authorization revalidation unavailable"
+		result.Duration = time.Since(start)
+		g.record(result)
+		return result, naeoserr.New(naeoserr.ErrPipeline, result.Output)
+	}
+	if supportsRevalidation {
 		current, err := revalidator.ValidateDecision(control.Request{
 			Capability:  req.Capability,
 			Resource:    resource,
@@ -346,6 +392,17 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 			Context:     req.Context,
 		}, rec)
 		if err != nil {
+			var evaluationFailure *control.EvaluationFailure
+			if errors.As(err, &evaluationFailure) {
+				result.Decision = ""
+				result.Status = "failed"
+				result.Output = "policy evaluation failed during authorization revalidation"
+				result.Reasons = []string{"policy evaluation failed"}
+				result.EvaluationFailure = evaluationFailure
+				result.Duration = time.Since(start)
+				g.record(result)
+				return result, naeoserr.Wrapf(err, naeoserr.ErrInternal, "authorization revalidation evaluation failed")
+			}
 			result.Status = "denied"
 			result.Output = "authorization invalidated before execution"
 			result.Duration = time.Since(start)
@@ -355,8 +412,16 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		rec = current
 		result.Decision = current.Decision
 		result.PolicyID = current.PolicyID
+		result.PolicyVersion = current.PolicyVersion
 		result.RuleID = current.RuleID
 		result.Reasons = current.Reasons
+		if current.Decision != control.DecisionAllow {
+			result.Status = "denied"
+			result.Output = "authorization invalidated before execution"
+			result.Duration = time.Since(start)
+			g.record(result)
+			return result, nil
+		}
 	}
 
 	// Atomically consume the invocation identity immediately before the side
@@ -387,14 +452,16 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 	output, execErr := g.sandbox.Execute(req)
 	result.Duration = time.Since(start)
 	if execErr != nil {
-		result.Status = "failed"
-		result.Output = execErr.Error()
+		// An execution error does not prove that the side effect did not happen.
+		// The sandbox may have committed the effect and lost its response (for
+		// example, a timeout after dispatch). Preserve that ambiguity explicitly.
+		result.Status = "unknown"
+		result.Output = fmt.Sprintf("execution outcome unknown: %v", execErr)
 		result.Hash = hashBytes([]byte(result.Output))
 		g.record(result)
 		if g.failClosed {
-			return result, naeoserr.Wrapf(execErr, naeoserr.ErrPipeline, "sandbox execution failed")
+			return result, naeoserr.Wrapf(execErr, naeoserr.ErrPipeline, "sandbox execution outcome unknown")
 		}
-		g.record(result)
 		return result, nil
 	}
 
@@ -409,18 +476,32 @@ func (g *ExecutionGateway) Authorize(req ToolRequest) (ExecutionResult, error) {
 		observation, observeErr := g.observer.Observe(req, result)
 		result.Observation = &observation
 		if observeErr != nil {
-			result.Status = "failed"
-			result.Output = observeErr.Error()
+			result.Status = "unknown"
+			result.Output = fmt.Sprintf("execution outcome unknown: runtime observation failed: %v", observeErr)
 			result.Hash = hashBytes([]byte(result.Output))
 			g.record(result)
 			if g.failClosed {
-				return result, naeoserr.Wrapf(observeErr, naeoserr.ErrPipeline, "runtime observation failed")
+				return result, naeoserr.Wrapf(observeErr, naeoserr.ErrPipeline, "runtime observation failed; execution outcome unknown")
 			}
 			return result, nil
 		}
-		if !observation.Observed {
-			result.Status = "failed"
-			result.Output = "execution completed but required side effect was not observed"
+		if (req.RequestID != "" && observation.RequestID != req.RequestID) ||
+			(req.InvocationID != "" && observation.InvocationID != req.InvocationID) ||
+			((req.RequestID != "" || req.InvocationID != "") && observation.InvocationDigest != InvocationDigest(req)) {
+			result.Status = "unknown"
+			result.Output = "execution outcome unknown: runtime observation identity mismatch"
+			result.Hash = hashBytes([]byte(result.Output))
+			g.record(result)
+			if g.failClosed {
+				return result, naeoserr.New(naeoserr.ErrPipeline, result.Output)
+			}
+			return result, nil
+		}
+		if observation.Status != "observed" || !observation.Observed {
+			// Absence, mismatch, and unavailable observations are not proof that
+			// an external effect did not occur. Keep the outcome unresolved.
+			result.Status = "unknown"
+			result.Output = "execution outcome unknown: required side effect was not authoritatively observed"
 			result.Hash = hashBytes([]byte(result.Output))
 			g.record(result)
 			if g.failClosed {

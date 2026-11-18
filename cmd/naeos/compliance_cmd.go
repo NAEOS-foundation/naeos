@@ -170,14 +170,10 @@ Example:
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Compliance Report: %s\n", compliance.Frameworks[fw].Name)
 			fmt.Fprintf(out, "Generated: %s\n", report.GeneratedAt.Format(time.RFC3339))
-			fmt.Fprintf(out, "Controls: %d total, %d passed, %d failed\n",
-				report.TotalControls, report.PassedControls, report.FailedControls)
+			fmt.Fprintf(out, "Controls: %d total, %d passed, %d failed, %d indeterminate\n",
+				report.TotalControls, report.PassedControls, report.FailedControls, report.IndeterminateControls)
 			for _, cs := range report.ControlStatuses {
-				status := "PASS"
-				if !cs.Passed {
-					status = "FAIL"
-				}
-				fmt.Fprintf(out, "  [%s] %s: %s\n", status, cs.ControlID, cs.Finding)
+				fmt.Fprintf(out, "  [%s] %s: %s\n", cs.Status, cs.ControlID, cs.Finding)
 			}
 			if output != "" {
 				fmt.Fprintf(out, "\nReport saved to: %s\n", output)
@@ -246,7 +242,7 @@ Example:
 			for _, v := range violations {
 				fmt.Fprintf(out, "  - %s\n", v)
 			}
-			return nil
+			return fmt.Errorf("audit log hash chain verification failed: %d violation(s)", len(violations))
 		},
 	}
 
