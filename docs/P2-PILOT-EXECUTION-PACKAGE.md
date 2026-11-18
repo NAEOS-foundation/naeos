@@ -22,7 +22,7 @@ This pilot does not establish production readiness, customer adoption, enterpris
 | Workflow | Specification-to-service generation |
 | Control boundary | Deliberately invalid policy configuration must be rejected before the normal generation path |
 | Evidence boundary | spec.yaml, inspect.json, validate.json, invalid-policy.log, context artifacts, run.json, generated artifacts, summary.md |
-| Independent verification | naeos evidence verify-bundle --input-file evidence.json when a canonical serialized EvidenceBundle is available |
+| Independent verification | `naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub` when a canonical serialized EvidenceBundle is available |
 | External dependency | None for the baseline canonical run |
 | Optional AI stage | Only when NAEOS_LLM_API_KEY is explicitly configured |
 
@@ -146,16 +146,17 @@ The exact generated artifact set may evolve. The canonical script remains author
 
 ## 8. Independent verification boundary
 
-The external evaluator may independently verify a serialized canonical EvidenceBundle:
+For a canonical serialized EvidenceBundle, obtain the Ed25519 trust anchor independently from the operator's trust store or another trusted channel:
 
-    naeos evidence verify-bundle --input-file evidence.json
+    naeos evidence verify-bundle --input-file evidence.json --trusted-public-key /secure/trust/naeos-evidence.pub
 
-This verifier is read-only and independent of the live control plane.
+This verifier is read-only and independent of the live control plane. It reports digest integrity, signature validity, decision/execution binding, and signer trust as separate checks.
 
 Important distinction:
 - The canonical demo proves the runnable local workflow.
-- The EvidenceBundle verifier checks a serialized evidence record.
+- The EvidenceBundle verifier checks a serialized evidence record against an independently supplied trust anchor.
 - Verification does not re-run policy or execute an action.
+- A public key copied from the EvidenceBundle is not an independent trust anchor.
 
 If no canonical EvidenceBundle is produced by the scenario under evaluation, record:
 
@@ -220,6 +221,7 @@ Copy this record into the external evaluation issue:
 
     independent_verification=
     independent_verification_result=
+    trust_anchor_source=
 
     determination=
     deviations=
@@ -266,5 +268,3 @@ P2.1 is complete when:
 - the next run can be executed without creating a competing demo workflow.
 
 The next step is P2.2 — evaluator intake and first external run, using this package as the execution contract.
-
-**Evidence first. Claims second.**

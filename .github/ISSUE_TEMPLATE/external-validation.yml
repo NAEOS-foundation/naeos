@@ -37,7 +37,7 @@ body:
     attributes:
       label: Environment
       description: OS, architecture, Go version, and relevant tool versions.
-      placeholder: "Ubuntu 24.04 / amd64 / Go 1.26.6"
+      placeholder: "Ubuntu 24.04 / amd64 / Go 1.26.10"
     validations:
       required: true
 

@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,12 +35,23 @@ type verification struct {
 }
 
 func main() {
-	outputDir := filepath.Join(os.TempDir(), "naeos-p1-6-golden-path")
-	if err := os.RemoveAll(outputDir); err != nil {
-		fatal(err)
-	}
-	if err := os.MkdirAll(outputDir, 0o750); err != nil {
-		fatal(err)
+	outputDir := os.Getenv("NAEOS_CONTROL_PLANE_DEMO_OUTPUT_DIR")
+	if outputDir == "" {
+		var err error
+		outputDir, err = os.MkdirTemp("", "naeos-p1-6-golden-path-")
+		if err != nil {
+			fatal(err)
+		}
+	} else {
+		// Canonicalize the caller-supplied local path before using it in filesystem operations.
+		var err error
+		outputDir, err = filepath.Abs(filepath.Clean(outputDir))
+		if err != nil {
+			fatal(fmt.Errorf("resolve demo output directory: %w", err))
+		}
+		if err := os.Mkdir(outputDir, 0o750); err != nil {
+			fatal(fmt.Errorf("create demo output directory (it must not already exist): %w", err))
+		}
 	}
 
 	gateway, verifier := newControlPlane()
@@ -143,24 +155,32 @@ func runAllow(gateway *controlplane.DecisionGateway, verifier *controlplane.Sess
 	decision := gateway.Authorize(req)
 	fmt.Printf("decision: %s (%s)\n", decision.Status, decision.Reason)
 	if decision.Status != controlplane.DecisionAllow {
-		return failVerification(allowRunID, string(decision.Status), true, false, true, "ALLOW decision was not returned")
+		return failVerification(allowRunID, string(decision.Status), true, "ALLOW decision was not returned")
 	}
 
-	_, executionEvidence := gateway.ExecuteDecision(req, decision)
 	sideEffect := filepath.Join(outputDir, "allow-side-effect.json")
 	payload := []byte("{\n  \"side_effect\": \"created\",\n  \"run_id\": \"" + allowRunID + "\"\n}\n")
-	if err := os.WriteFile(sideEffect, payload, 0o600); err != nil {
-		return failVerification(allowRunID, "ALLOW", true, false, true, err.Error())
-	}
-	observed := fileExists(sideEffect)
-	gateway.Ledger.Append(controlplane.LedgerEvent{
-		RequestID: allowRunID, DecisionID: decision.DecisionID, ExecutionID: executionEvidence.ExecutionID,
-		AgentID: agentID, Capability: allowCapability, ArtifactHash: action.ArtifactHash,
-		EventType: "SIDE_EFFECT_OBSERVED", Decision: controlplane.DecisionAllow,
-		Reason: controlplane.ReasonAllowed, Metadata: map[string]string{"observed": fmt.Sprint(observed)},
+	_, executeErr := gateway.ExecuteAtomicWithEvidence(req, decision, func() error {
+		return os.WriteFile(sideEffect, payload, 0o600)
+	}, func(event controlplane.LedgerEvent) controlplane.LedgerEvent {
+		// Independently read back the created artifact while the gateway evidence callback runs.
+		observedInExecutor, observerErr := fileExists(sideEffect)
+		return controlplane.LedgerEvent{
+			RequestID: allowRunID, DecisionID: decision.DecisionID, ExecutionID: event.ExecutionID,
+			AgentID: agentID, Capability: allowCapability, ArtifactHash: action.ArtifactHash,
+			EventType: "SIDE_EFFECT_OBSERVED", Decision: controlplane.DecisionAllow,
+			Reason: controlplane.ReasonAllowed, Metadata: map[string]string{"observer": "independent-file-readback", "observed": fmt.Sprint(observerErr == nil && observedInExecutor)},
+		}
 	})
+	if executeErr != nil {
+		return failVerification(allowRunID, "ALLOW", true, executeErr.Error())
+	}
+	observed, err := fileExists(sideEffect)
+	if err != nil {
+		return failVerification(allowRunID, "ALLOW", true, fmt.Errorf("inspect ALLOW side effect: %w", err).Error())
+	}
 	events := gateway.Ledger.Query(map[string]string{"request_id": allowRunID})
-	evidenceRecorded := len(events) >= 3 && hasEvent(events, "AUTHORIZATION_DECISION") && hasEvent(events, "EXECUTION_ALLOWED") && hasEvent(events, "SIDE_EFFECT_OBSERVED")
+	evidenceRecorded := len(events) >= 3 && hasEvent(events, "AUTHORIZATION_DECISION") && hasEvent(events, "EXECUTION_ALLOWED") && hasObservedSideEffect(events)
 	summary := verifier.VerifySession(agentID)
 	pass := observed && evidenceRecorded && summary.Result == "PASS"
 	fmt.Printf("side effect: %v | evidence: %v | verify: %s\n", observed, evidenceRecorded, summary.Result)
@@ -188,12 +208,20 @@ func runDeny(gateway *controlplane.DecisionGateway, verifier *controlplane.Sessi
 	decision := gateway.Authorize(req)
 	fmt.Printf("decision: %s (%s)\n", decision.Status, decision.Reason)
 	if decision.Status != controlplane.DecisionDeny {
-		return failVerification(denyRunID, string(decision.Status), false, false, true, "DENY decision was not returned")
+		return failVerification(denyRunID, string(decision.Status), false, "DENY decision was not returned")
 	}
 
-	_, blockedEvidence := gateway.ExecuteDecision(req, decision)
 	sideEffect := filepath.Join(outputDir, "deny-side-effect.json")
-	observed := fileExists(sideEffect)
+	blockedResult, blockedEvidence := gateway.ExecuteAtomic(req, decision, func() error {
+		return os.WriteFile(sideEffect, []byte("forbidden\n"), 0o600)
+	})
+	if blockedResult.Status != controlplane.DecisionDeny || blockedEvidence.EventType != "EXECUTION_BLOCKED" {
+		return failVerification(denyRunID, string(blockedResult.Status), false, "DENY did not block executor")
+	}
+	observed, err := fileExists(sideEffect)
+	if err != nil {
+		return failVerification(denyRunID, "DENY", false, fmt.Errorf("inspect DENY side effect: %w", err).Error())
+	}
 	gateway.Ledger.Append(controlplane.LedgerEvent{
 		RequestID: denyRunID, DecisionID: decision.DecisionID, ExecutionID: blockedEvidence.ExecutionID,
 		AgentID: agentID, Capability: denyCapability, ArtifactHash: action.ArtifactHash,
@@ -201,11 +229,20 @@ func runDeny(gateway *controlplane.DecisionGateway, verifier *controlplane.Sessi
 		Reason: decision.Reason, Metadata: map[string]string{"observed": fmt.Sprint(observed)},
 	})
 	events := gateway.Ledger.Query(map[string]string{"request_id": denyRunID})
-	evidenceRecorded := len(events) >= 3 && hasEvent(events, "EXECUTION_BLOCKED") && hasEvent(events, "SIDE_EFFECT_OBSERVED")
+	evidenceRecorded := len(events) >= 3 && hasEvent(events, "AUTHORIZATION_DECISION") && hasEvent(events, "EXECUTION_BLOCKED") && hasEvent(events, "SIDE_EFFECT_OBSERVED")
 	summary := verifier.VerifySession(agentID)
 	pass := !observed && evidenceRecorded && summary.Result == "PASS"
 	fmt.Printf("side effect: %v | evidence: %v | verify: %s\n", observed, evidenceRecorded, summary.Result)
 	return verification{RunID: denyRunID, Decision: "DENY", SideEffectExpected: false, SideEffectObserved: observed, EvidenceRecorded: evidenceRecorded, Verification: boolStatus(pass)}
+}
+
+func hasObservedSideEffect(events []controlplane.LedgerEvent) bool {
+	for _, event := range events {
+		if event.EventType == "SIDE_EFFECT_OBSERVED" && event.Metadata["observed"] == "true" {
+			return true
+		}
+	}
+	return false
 }
 
 func hasEvent(events []controlplane.LedgerEvent, eventType string) bool {
@@ -217,9 +254,15 @@ func hasEvent(events []controlplane.LedgerEvent, eventType string) bool {
 	return false
 }
 
-func fileExists(path string) bool {
+func fileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
-	return err == nil
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
 }
 
 func boolStatus(ok bool) string {
@@ -229,10 +272,10 @@ func boolStatus(ok bool) string {
 	return "FAIL"
 }
 
-func failVerification(runID, decision string, expected, observed, evidence bool, issue string) verification {
+func failVerification(runID, decision string, expected bool, issue string) verification {
 	return verification{
 		RunID: runID, Decision: decision, SideEffectExpected: expected,
-		SideEffectObserved: observed, EvidenceRecorded: evidence,
+		SideEffectObserved: false, EvidenceRecorded: false,
 		Verification: "FAIL", Issues: []string{issue},
 	}
 }
