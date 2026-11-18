@@ -16,10 +16,13 @@ import (
 	naeoserr "github.com/NAEOS-foundation/naeos/internal/errors"
 )
 
-// JWTClaims represents the claims in a JSON Web Token.
+// JWTClaims represents the verified claims in a JSON Web Token.
+// Sub is always the issuer-provided subject; ClientID is a separate claim.
 type JWTClaims struct {
+	Issuer    string   `json:"iss,omitempty"`
 	Sub       string   `json:"sub"`
 	ClientID  string   `json:"client_id,omitempty"`
+	Audience  []string `json:"aud,omitempty"`
 	Name      string   `json:"name"`
 	ExpiresAt int64    `json:"exp"`
 	IssuedAt  int64    `json:"iat"`
@@ -35,9 +38,7 @@ type JWTValidator struct {
 
 // NewJWTValidator creates a validator that signs tokens with the given secret.
 func NewJWTValidator(secret string) *JWTValidator {
-	return &JWTValidator{
-		secret: []byte(secret),
-	}
+	return &JWTValidator{secret: []byte(secret)}
 }
 
 // Generate creates a signed JWT from the given claims.
@@ -48,28 +49,18 @@ func (j *JWTValidator) Generate(claims *JWTClaims) (string, error) {
 	if claims.IssuedAt == 0 {
 		claims.IssuedAt = time.Now().Unix()
 	}
-
-	header := map[string]string{
-		"alg": "HS256",
-		"typ": "JWT",
-	}
-
-	headerJSON, err := json.Marshal(header)
+	headerJSON, err := json.Marshal(map[string]string{"alg": "HS256", "typ": "JWT"})
 	if err != nil {
 		return "", err
 	}
 	headerB64 := base64.RawURLEncoding.EncodeToString(headerJSON)
-
 	claimsJSON, err := json.Marshal(claims)
 	if err != nil {
 		return "", err
 	}
 	claimsB64 := base64.RawURLEncoding.EncodeToString(claimsJSON)
-
 	signingInput := fmt.Sprintf("%s.%s", headerB64, claimsB64)
-	signature := j.sign(signingInput)
-
-	return fmt.Sprintf("%s.%s", signingInput, signature), nil
+	return fmt.Sprintf("%s.%s", signingInput, j.sign(signingInput)), nil
 }
 
 // Validate verifies the signature and expiry of a JWT and returns its claims.
@@ -79,27 +70,21 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 		slog.Error("jwt validation failed", "reason", "invalid token format")
 		return nil, naeoserr.New(naeoserr.ErrAuth, "invalid token format")
 	}
-
 	signingInput := fmt.Sprintf("%s.%s", parts[0], parts[1])
-	expectedSig := j.sign(signingInput)
-
-	if !hmac.Equal([]byte(parts[2]), []byte(expectedSig)) {
+	if !hmac.Equal([]byte(parts[2]), []byte(j.sign(signingInput))) {
 		slog.Error("jwt validation failed", "reason", "invalid signature")
 		return nil, naeoserr.New(naeoserr.ErrAuth, "invalid signature")
 	}
-
 	claimsJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims encoding", "error", err)
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "invalid claims encoding")
 	}
-
 	var claims JWTClaims
 	if err := json.Unmarshal(claimsJSON, &claims); err != nil {
 		slog.Error("jwt validation failed", "reason", "invalid claims format", "error", err)
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "invalid claims format")
 	}
-
 	now := time.Now().Unix()
 	if claims.ExpiresAt <= now {
 		slog.Error("jwt validation failed", "reason", "token expired")
@@ -109,7 +94,6 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 		slog.Error("jwt validation failed", "reason", "token not yet valid")
 		return nil, naeoserr.New(naeoserr.ErrAuth, "token not yet valid")
 	}
-
 	return &claims, nil
 }
 
@@ -132,11 +116,11 @@ type OIDCDiscovery struct {
 // OIDCDiscoveryDocument returns the OIDC discovery metadata for the given issuer.
 func (j *JWTValidator) OIDCDiscoveryDocument(issuer string) *OIDCDiscovery {
 	return &OIDCDiscovery{
-		Issuer:                           issuer,
-		AuthorizationEndpoint:            issuer + "/authorize",
-		TokenEndpoint:                    issuer + "/token",
-		ResponseTypesSupported:           []string{"code"},
-		SubjectTypesSupported:            []string{"public"},
+		Issuer: issuer,
+		AuthorizationEndpoint: issuer + "/authorize",
+		TokenEndpoint: issuer + "/token",
+		ResponseTypesSupported: []string{"code"},
+		SubjectTypesSupported: []string{"public"},
 		IDTokenSigningAlgValuesSupported: []string{"HS256"},
 	}
 }
