@@ -3,8 +3,8 @@
 <title id="title">NAEOS Quote and Engineering Insight Master</title>
 <desc id="desc">Reusable square quote card using NAEOS Logo Master v2.0.0 and canonical brand tokens.</desc>
 <defs>
-  <linearGradient id="markWhite" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".62" stop-color="#F7F9FF"/><stop offset="1" stop-color="#DCE8FA"/></linearGradient>
-  <linearGradient id="markBlue" x1=".12" y1="0" x2=".92" y2="1"><stop offset="0" stop-color="#168BFF"/><stop offset=".52" stop-color="#0563FF"/><stop offset="1" stop-color="#0737D9"/></linearGradient>
+  <linearGradient id="white" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".62" stop-color="#F7F9FF"/><stop offset="1" stop-color="#DCE8FA"/></linearGradient>
+  <linearGradient id="blue" x1=".12" y1="0" x2=".92" y2="1"><stop offset="0" stop-color="#168BFF"/><stop offset=".52" stop-color="#0563FF"/><stop offset="1" stop-color="#0737D9"/></linearGradient>
   <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2563FF"/><stop offset="1" stop-color="#60A5FA"/></linearGradient>
 </defs>
 <rect width="1080" height="1080" fill="#0B0F19"/>
