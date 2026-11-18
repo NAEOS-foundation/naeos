@@ -33,7 +33,7 @@ func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 		{name: "wrong pooler project username", raw: "postgres://postgres.kqmhpsftijskesjdovjm:secret@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
 		{name: "custom pooler role with wrong project suffix", raw: "postgres://naeos_control_plane_runtime_login.kqmhpsftijskesjdovjm:secret@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
 		{name: "invalid custom pooler role name", raw: "postgres://naeos-control-plane-runtime.oruykkehukoiipldzcvc:secret@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
-		{name: "pooler username suffix spoof", raw: "postgres://evil.oruykkehukoiipldzcvc:secret@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
+		{name: "pooler username suffix spoof", raw: "postgres://evil.oruykkehukoiipldzcvc.attacker:secret@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
 		{name: "untrusted host", raw: "postgres://naeos:secret@db.example.com:5432/postgres?sslmode=require", environment: "production", wantErr: true},
 		{name: "tls disabled", raw: "postgres://naeos:secret@db.oruykkehukoiipldzcvc.supabase.co:5432/postgres?sslmode=disable", environment: "production", wantErr: true},
 		{name: "empty url", raw: "", environment: "production", wantErr: true},
