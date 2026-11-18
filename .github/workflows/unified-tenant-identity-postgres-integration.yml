@@ -1,0 +1,77 @@
+name: Unified Tenant Identity PostgreSQL Integration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/unified-tenant-identity-postgres-integration.yml'
+      - 'supabase/migrations/20261115193000_unified_identity_tenant_foundation.sql'
+      - 'supabase/tests/unified_identity_tenant_foundation.sql'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/unified-tenant-identity-postgres-integration.yml'
+      - 'supabase/migrations/20261115193000_unified_identity_tenant_foundation.sql'
+      - 'supabase/tests/unified_identity_tenant_foundation.sql'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tenant-identity-postgres-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tenant-identity-integration:
+    name: Tenant Identity PostgreSQL Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Create Supabase-compatible roles and isolated test database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          psql "postgres://postgres@localhost:5432/postgres?sslmode=disable" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN BYPASSRLS;
+          CREATE DATABASE naeos_identity_test;
+          SQL
+      - name: Apply tenant identity foundation migration to ephemeral PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/naeos_identity_test?sslmode=disable"
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261115193000_unified_identity_tenant_foundation.sql
+      - name: Verify migration is safely rerunnable
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/naeos_identity_test?sslmode=disable"
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/migrations/20261115193000_unified_identity_tenant_foundation.sql
+      - name: Run tenant scope, RLS, and privilege regression tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/naeos_identity_test?sslmode=disable"
+          psql "$db" -v ON_ERROR_STOP=1 -f supabase/tests/unified_identity_tenant_foundation.sql

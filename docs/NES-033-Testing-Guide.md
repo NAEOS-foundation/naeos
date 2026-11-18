@@ -50,6 +50,12 @@ Build-tagged with `//go:build integration`:
 go test -tags=integration -race -count=1 -timeout 120s ./pkg/pipeline/ -run "TestEndToEnd"
 ```
 
+The real NATS adapter integration test requires a running NATS server:
+
+```bash
+NAEOS_NATS_TEST_URL=nats://127.0.0.1:4222 go test -tags=integration -race -count=1 -timeout 30s ./internal/broker/ -run TestRealNATSIntegration
+```
+
 ---
 
 ## Test Structure

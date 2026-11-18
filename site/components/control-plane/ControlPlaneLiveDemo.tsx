@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./ControlPlaneLiveDemo.module.css";
 
 type DecisionResponse = {
@@ -22,20 +22,21 @@ type DecisionResponse = {
 
 type Props = { lang: "en" | "id" };
 
-const PUBLIC_CONTROL_PLANE_ENDPOINT =
-  "https://naeos-control-plane-production.up.railway.app";
-
 const ALLOW_CAPABILITY = "repository.read";
 const DENY_CAPABILITY = "production.deploy";
 
 export default function ControlPlaneLiveDemo({ lang }: Props) {
   const id = lang === "id";
-  const configuredEndpoint =
-    process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL ||
-    (process.env.NODE_ENV === "production" ? PUBLIC_CONTROL_PLANE_ENDPOINT : "");
-  const configuredToken = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_TOKEN || "";
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+  const configuredEndpoint = process.env.NEXT_PUBLIC_CONTROL_PLANE_API_URL || "";
   const [endpoint, setEndpoint] = useState(configuredEndpoint);
-  const [token, setToken] = useState(configuredToken);
+  // Never prefill credentials from NEXT_PUBLIC_* build variables; they are browser-visible.
+  // User-entered tokens are transient and intended only for manually configured endpoints.
+  const [token, setToken] = useState("");
   const [agentId, setAgentId] = useState("agent-payment-01");
   const [capability, setCapability] = useState(ALLOW_CAPABILITY);
   const [artifactHash, setArtifactHash] = useState("sha256:demo-artifact");
@@ -67,11 +68,20 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
     }
 
     try {
+      const normalizedEndpoint = endpoint.replace(/\/$/, "");
+      // The build-time configured endpoint uses the same-origin server proxy.
+      // Custom endpoints are called directly and may use a transient user token.
+      const usesServerProxy = Boolean(configuredEndpoint) && normalizedEndpoint === configuredEndpoint;
+      const decisionUrl = usesServerProxy
+        ? "/api/control-plane/decision"
+        : normalizedEndpoint + "/api/control-plane/decision";
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token.trim()) {
-        headers["Authorization"] = `Bearer ${token.trim()}`;
+      // The production same-origin proxy supplies its server-held credential.
+      // Never forward a browser-entered token to the production proxy.
+      if (!usesServerProxy && token.trim()) {
+        headers.Authorization = `Bearer ${token.trim()}`;
       }
-      const response = await fetch(endpoint.replace(/\/$/, "") + "/api/control-plane/decision", {
+      const response = await fetch(decisionUrl, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -100,7 +110,7 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
   }
 
   return (
-    <div data-testid="control-plane-live-demo" className={styles.controlPlaneLive}>
+    <div data-testid="control-plane-live-demo" data-hydrated={hydrated ? "true" : "false"} className={styles.controlPlaneLive}>
       <div className={styles.liveHeader}>
         <div>
           <div className="eyebrow">LIVE POLICY EVALUATION</div>
@@ -122,13 +132,13 @@ export default function ControlPlaneLiveDemo({ lang }: Props) {
       </label>
 
       <label>
-        <span>API token (optional)</span>
+        <span>API token (optional; custom endpoints only)</span>
         <input
           data-testid="control-plane-live-demo-token"
           type="password"
           value={token}
           onChange={(event) => setToken(event.target.value)}
-          placeholder={id ? "Bearer token jika endpoint butuh autentikasi" : "Bearer token if the endpoint requires authentication"}
+          placeholder={id ? "Token hanya untuk endpoint kustom" : "Token for custom endpoints only"}
           autoComplete="off"
         />
       </label>

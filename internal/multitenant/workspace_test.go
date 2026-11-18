@@ -100,3 +100,31 @@ func TestCreateTenantValidations(t *testing.T) {
 		t.Error("expected error for empty name")
 	}
 }
+
+func TestTenantMembershipAndSingleTenantResolution(t *testing.T) {
+	w := New()
+	if _, err := w.CreateTenantForUser("tenant-a", "Tenant A", "free", "user-1"); err != nil {
+		t.Fatal(err)
+	}
+	if !w.IsMember("tenant-a", "user-1") {
+		t.Fatal("creator should be the initial member")
+	}
+	if id, ok := w.SingleTenantForUser("user-1"); !ok || id != "tenant-a" {
+		t.Fatalf("expected single membership tenant-a, got %q %v", id, ok)
+	}
+	if w.IsMember("tenant-a", "user-2") {
+		t.Fatal("unassigned user must not be a tenant member")
+	}
+	if err := w.AddMember("tenant-a", "user-2"); err != nil {
+		t.Fatal(err)
+	}
+	if !w.IsMember("tenant-a", "user-2") {
+		t.Fatal("added user should be a member")
+	}
+	if _, err := w.CreateTenantForUser("tenant-b", "Tenant B", "free", "user-1"); err != nil {
+		t.Fatal(err)
+	}
+	if id, ok := w.SingleTenantForUser("user-1"); ok || id != "" {
+		t.Fatalf("multiple memberships must require explicit tenant selection, got %q %v", id, ok)
+	}
+}

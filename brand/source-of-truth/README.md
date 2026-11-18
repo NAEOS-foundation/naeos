@@ -2,36 +2,31 @@
 
 Status: **FROZEN / IMMUTABLE**
 
-## Visual Source of Truth
+## Original visual source
 
-`brand/source-of-truth/naeos-logo-source-of-truth.png` is the canonical **original visual reference supplied for the NAEOS logo**.
+`brand/source-of-truth/naeos-logo-source-of-truth.png` remains the canonical original visual reference supplied for the earlier NAEOS logo system. It is preserved unchanged and remains available for historical traceability.
 
-This file is preserved as supplied. It is the visual reference against which derived logo geometry, rendering, and production assets are evaluated.
+## Approved production master
 
-> **Important:** the original reference PNG is not required to be byte-identical to any later frozen packaging artifact or derived vector. Its role is visual reference/source material, not a claim that every copy or derivative has identical file bytes.
+On 2026-11-17, the founder explicitly approved the NAEOS Primary Symbol Candidate v1.0 based on NAEOS Brand Identity v3.1. Under the existing version history, this new approved geometry is registered as **Logo Master v2.0.0**:
 
-## Reference Integrity
+`brand/master/naeos-primary-symbol-master-v2.svg`
 
-The repository copy must not be edited, redrawn, recompressed, recolored, or replaced in place.
+This is a deliberate, versioned production-master change. It does not modify or replace the original visual source above.
 
-The SHA-256 recorded in the repository documentation refers to the previously frozen reference-package artifact, not as an assertion that the currently uploaded original-reference PNG has identical bytes.
+## Derived assets
 
-For byte-level verification of a specific repository copy, download that exact PNG and compute its SHA-256 locally.
-
-## Derived Assets
-
-- `brand/master/naeos-mark-master.svg` — current production vector derivative (Logo Master v1.0).
-- `brand/logo-mark.svg` — public mark consumer.
+- `brand/master/naeos-mark-master.svg` — preserved previous Logo Master v1.0.0.
+- `brand/master/naeos-primary-symbol-master-v2.svg` — current approved production master v2.0.0.
+- `brand/logo-mark.svg` — current public mark consumer.
 - `brand/variants/` — derived presentation variants.
 - `brand/lockups/` — derived lockups.
-
-The derived vector is **not a pixel-identical copy of the visual reference**. Any future geometry replacement requires an explicit versioned review and must not silently overwrite the original visual reference.
+- `site/public/images/logo-mark.svg` — website mark.
 
 ## Governance
 
-1. The original visual reference is the absolute visual source of truth for visual intent.
-2. Geometry changes require a new version.
-3. Rendering/material changes may be made without changing the reference.
-4. Production consumers must point to approved derived assets.
-5. Do not delete or mutate the original visual reference.
-6. Do not treat a package checksum as the checksum of a separately uploaded repository copy unless it has been independently verified.
+1. The original visual reference is immutable.
+2. The founder-approved v2.0.0 production geometry is the current source for new brand derivatives.
+3. All downstream variants must reuse the approved geometry.
+4. Geometry changes require explicit approval and a new version.
+5. Do not delete, mutate, or silently substitute the original visual source.

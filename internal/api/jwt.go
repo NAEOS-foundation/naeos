@@ -18,10 +18,14 @@ import (
 
 // JWTClaims represents the claims in a JSON Web Token.
 type JWTClaims struct {
-	Sub       string `json:"sub"`
-	Name      string `json:"name"`
-	ExpiresAt int64  `json:"exp"`
-	IssuedAt  int64  `json:"iat"`
+	Sub       string   `json:"sub"`
+	ClientID  string   `json:"client_id,omitempty"`
+	Name      string   `json:"name"`
+	ExpiresAt int64    `json:"exp"`
+	IssuedAt  int64    `json:"iat"`
+	NotBefore int64    `json:"nbf,omitempty"`
+	Scope     string   `json:"scope,omitempty"`
+	Scopes    []string `json:"scopes,omitempty"`
 }
 
 // JWTValidator validates and generates HS256-signed JWTs.
@@ -96,9 +100,14 @@ func (j *JWTValidator) Validate(token string) (*JWTClaims, error) {
 		return nil, naeoserr.Wrapf(err, naeoserr.ErrAuth, "invalid claims format")
 	}
 
-	if claims.ExpiresAt < time.Now().Unix() {
+	now := time.Now().Unix()
+	if claims.ExpiresAt <= now {
 		slog.Error("jwt validation failed", "reason", "token expired")
 		return nil, naeoserr.New(naeoserr.ErrAuth, "token expired")
+	}
+	if claims.NotBefore != 0 && claims.NotBefore > now {
+		slog.Error("jwt validation failed", "reason", "token not yet valid")
+		return nil, naeoserr.New(naeoserr.ErrAuth, "token not yet valid")
 	}
 
 	return &claims, nil

@@ -19,6 +19,8 @@ func newTestServer(fn func(w http.ResponseWriter, r *http.Request)) (*Client, *h
 		AnonKey:        "test-anon-key",
 		ServiceRoleKey: "test-svc-role-key",
 		ProjectRef:     "test-proj",
+		ManagementURL:  srv.URL + "/api",
+		AccessToken:    "test-management-token",
 	})
 	return c, srv
 }

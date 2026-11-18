@@ -15,7 +15,35 @@ after(async () => {
 async function openPage(path, viewport = { width: 1440, height: 1000 }) {
   const page = await browser.newPage({ viewport });
   const pageErrors = [];
+  const consoleErrors = [];
+  const failedRequests = [];
+  const scriptResponses = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("requestfailed", (request) => {
+    failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" });
+  });
+  page.on("response", (response) => {
+    const responsePath = new URL(response.url()).pathname;
+    if (responsePath.startsWith("/_next/static/") && responsePath.endsWith(".js")) {
+      const requestHeaders = response.request().headers();
+      const responseHeaders = response.headers();
+      // Record only whether the secret header is present; never log its value.
+      // Cloudflare metadata distinguishes a missing exception from a CDN/origin
+      // failure without exposing the E2E token in Actions logs.
+      scriptResponses.push({
+        url: response.url(),
+        status: response.status(),
+        e2eTokenHeaderPresent: Boolean(requestHeaders["x-naeos-e2e-token"]),
+        server: responseHeaders.server,
+        cfRay: responseHeaders["cf-ray"],
+        cfMitigated: responseHeaders["cf-mitigated"],
+        contentType: responseHeaders["content-type"],
+      });
+    }
+  });
   const e2eToken = process.env.NAEOS_E2E_CHALLENGE_TOKEN;
   if (e2eToken) {
     const productionOrigin = new URL(baseURL).origin;
@@ -26,7 +54,14 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
         requestURL.origin === productionOrigin &&
         /^\/(?:en|id)\/control-plane\/?$/.test(requestURL.pathname) &&
         request.method() === "GET";
-      if (isControlPlaneDocument) {
+      // Cloudflare's narrowly scoped E2E exception must cover the document and
+      // the Next.js static assets required to hydrate it. Without the same
+      // header on /_next/static requests, production can return 403 HTML for JS.
+      const isNextStaticAsset =
+        requestURL.origin === productionOrigin &&
+        requestURL.pathname.startsWith("/_next/static/") &&
+        request.method() === "GET";
+      if (isControlPlaneDocument || isNextStaticAsset) {
         await route.continue({
           headers: {
             ...request.headers(),
@@ -43,7 +78,7 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
   const headers = await response.allHeaders();
   const challengeResponse = response.status() === 403 && headers["cf-mitigated"] === "challenge";
   if (response.status() >= 400 && !challengeResponse) {
-    const body = (await response.text()).slice(0, 1200).replace(/\\s+/g, " ");
+    const body = (await response.text()).slice(0, 1200).replace(/\s+/g, " ");
     assert.fail(`Unexpected HTTP ${response.status()} for ${path}; headers=${JSON.stringify({
       server: headers.server,
       "cf-ray": headers["cf-ray"],
@@ -57,7 +92,7 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
     // executes the challenge. Require the actual dashboard to render before passing.
     await page.locator(".control-plane-dashboard").waitFor({ timeout: challengeResponse ? 30_000 : 20_000 });
   } catch {
-    const body = (await page.locator("body").innerText().catch(() => "")).slice(0, 1200).replace(/\\s+/g, " ");
+    const body = (await page.locator("body").innerText().catch(() => "")).slice(0, 1200).replace(/\s+/g, " ");
     assert.fail(`Control Plane did not render for ${path}; initial HTTP ${response.status()}; headers=${JSON.stringify({
       server: headers.server,
       "cf-ray": headers["cf-ray"],
@@ -66,15 +101,32 @@ async function openPage(path, viewport = { width: 1440, height: 1000 }) {
       location: headers.location,
     })}; body=${body}`);
   }
-  // React exposes __reactProps on an element only after it has hydrated that
-  // node. Filling the controlled live-demo inputs before hydration can lose the
-  // value (React resets the field to its server-rendered state on hydration),
-  // which is timing-dependent and flaky on fast preview runners. Wait for the
-  // hydration of an input before handing the page to the test.
-  await page.waitForFunction((sel) => {
-    const node = document.querySelector(sel);
-    return !!node && Object.getOwnPropertyNames(node).some((name) => name.startsWith("__reactProps"));
-  }, '[data-testid="control-plane-live-demo-token"]', { timeout: 15_000 });
+  // Wait for the client component's explicit hydration marker instead of
+  // depending on React's private DOM properties, which are implementation details.
+  try {
+    await page.locator('[data-testid="control-plane-live-demo"][data-hydrated="true"]').waitFor({
+      state: "attached",
+      timeout: 15_000,
+    });
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => ({
+      url: location.href,
+      readyState: document.readyState,
+      markerCount: document.querySelectorAll('[data-testid="control-plane-live-demo"]').length,
+      markerState: document.querySelector('[data-testid="control-plane-live-demo"]')?.getAttribute("data-hydrated") ?? null,
+      scripts: Array.from(document.scripts, (script) => script.src).filter(Boolean),
+      nextBuildId: document.querySelector('meta[name="next-build-id"]')?.getAttribute("content") ?? null,
+    })).catch((diagnosticError) => ({ diagnosticError: String(diagnosticError) }));
+    assert.fail(
+      `Client hydration marker did not become true for ${path}; diagnostics=${JSON.stringify({
+        ...diagnostics,
+        pageErrors,
+        consoleErrors: consoleErrors.slice(-20),
+        failedRequests: failedRequests.slice(-30),
+        scriptResponses: scriptResponses.slice(-30),
+      })}; originalError=${String(error)}`,
+    );
+  }
   return { page, pageErrors };
 }
 
@@ -251,6 +303,41 @@ test("Policy Change Proof is localized in Indonesian and drives the same states"
   }
 });
 
+test(
+  "Control Plane proxy fails closed when the environment has no upstream",
+  {
+    skip: process.env.CONTROL_PLANE_EXPECT_UNCONFIGURED_UPSTREAM !== "true"
+      ? "Only valid in local and isolated preview environments; production has a configured upstream."
+      : false,
+  },
+  async () => {
+    const { page, pageErrors } = await openPage("/en/control-plane");
+    try {
+      const response = await page.evaluate(async () => {
+        const result = await fetch("/api/control-plane/decision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_id: "preview-isolation-test",
+            capability: "repository.read",
+            artifact_hash: "sha256:preview-isolation-test",
+          }),
+        });
+        return { status: result.status, body: await result.json() };
+      });
+
+      assert.equal(response.status, 503, "an unconfigured preview must not forward requests upstream");
+      assert.match(
+        response.body.message || "",
+        /upstream is not configured/i,
+        "the proxy must explain that this environment has no configured upstream",
+      );
+      assert.deepEqual(pageErrors, [], "the preview isolation check should not throw browser errors");
+    } finally {
+      await page.close();
+  }
+});
+
 test("Control Plane live demo gates evaluation until an endpoint is configured", async () => {
   const { page, pageErrors } = await openPage("/en/control-plane");
   try {
@@ -358,7 +445,8 @@ test("Control Plane live demo sends a Bearer token only when one is configured",
     await tokenInput.waitFor({ state: "visible" });
     assert.equal(await tokenInput.getAttribute("type"), "password", "token field must mask its value");
     assert.equal(await tokenInput.getAttribute("autoComplete"), "off", "token field must disable autofill");
-    assert.equal(await tokenInput.getAttribute("placeholder"), "Bearer token if the endpoint requires authentication");
+    // The public production endpoint uses the server-side proxy; this token is for custom endpoints.
+    assert.equal(await tokenInput.getAttribute("placeholder"), "Token for custom endpoints only");
 
     const allowedPayload = JSON.stringify({
       status: "ALLOW",

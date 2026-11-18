@@ -66,6 +66,12 @@ func (s *RealSupabase) Name() string {
 	return "supabase"
 }
 
+// IsRESTMode reports whether this adapter is connected through the Supabase
+// SQL REST endpoint, which does not support parameterized Exec arguments.
+func (s *RealSupabase) IsRESTMode() bool {
+	return s.restMode
+}
+
 func (s *RealSupabase) Connect(config *Config) error {
 	s.config = config
 
