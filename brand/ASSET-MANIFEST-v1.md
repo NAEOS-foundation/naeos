@@ -1,11 +1,11 @@
 # NAEOS Brand Asset Manifest
 
-**Manifest version:** 1.1  
+**Manifest version:** 1.2  
 **Logo master:** 2.0.0  
 **Last verified:** 2026-11-18  
 **Canonical repository:** `NAEOS-foundation/naeos`
 
-This manifest separates canonical source artwork, repository-verified production derivatives, locally generated delivery exports, and planned deliverables. A file is marked **repository verified** only when its presence was checked in GitHub.
+A file is marked **repository verified** only after its presence has been checked on this PR branch.
 
 ## 1. Canonical source
 
@@ -32,29 +32,28 @@ This manifest separates canonical source artwork, repository-verified production
 | NAEOS CRM | Favicon | `apps/web/public/favicon.svg` in `NAEOS-foundation/naeos-crm` | Repository verified |
 | NAEOS CRM | Brand mark | `apps/web/public/naeos-brand-mark.svg` in `NAEOS-foundation/naeos-crm` | Repository verified |
 
-## 4. Generated delivery exports
+## 4. Published export sources
 
-These assets have been generated as local delivery packages, but have **not yet been uploaded to this repository**. Their presence in GitHub must not be assumed until a follow-up PR adds and verifies them.
-
-| Asset | Local package | Status |
+| Asset | Repository path | Status |
 |---|---|---|
-| Transparent logo export set | `NAEOS-Logo-Exports-v1.0.zip` | Generated locally; repository upload pending |
-| Social avatar PNG set | `NAEOS-Social-Avatar-v1.0.zip` | Generated locally; repository upload pending |
+| Social avatar vector | `brand/exports/social/avatar/naeos-social-avatar.svg` | Repository verified on this PR branch |
+| Social avatar README | `brand/exports/social/avatar/README.md` | Repository verified on this PR branch |
+| Transparent logo PNG exports | Local package `NAEOS-Logo-Exports-v1.0.zip` | Generated locally; PNG upload pending |
+| Social avatar PNG sizes (64, 180, 320, 512, 1024 px) | Local package `NAEOS-Social-Avatar-v1.0.zip` | Generated locally; PNG upload pending |
 | LinkedIn company cover | — | Not generated |
 | Social post base template | — | Planned |
 | Presentation theme | — | Planned |
 | Business document set | — | Planned |
-| Compact favicon export set | — | Planned |
+
+The SVG avatar uses the canonical Primary Symbol Master v2.0.0 paths without changing symbol geometry. PNG delivery exports are not claimed as repository assets until their exact files are uploaded and verified.
 
 ## 5. Target repository layout
 
-When the generated packages are uploaded, use this layout:
-
 - `brand/exports/logo/` — transparent logo PNG exports and export README.
-- `brand/exports/social/avatar/` — square avatar PNGs and export README.
+- `brand/exports/social/avatar/` — vector avatar source, raster avatar exports, and README.
 - `brand/exports/manifest.json` — checksums and source/version provenance.
 
-Do not commit ZIP archives as the only source of truth. Extract their contents into the repository, preserve a concise README, and record SHA-256 checksums in the manifest. Keep original delivery ZIPs as convenience downloads only if repository policy permits.
+Do not commit ZIP archives as the only source of truth. Prefer extracted files, retain vector sources, and record SHA-256 checksums for raster outputs.
 
 ## 6. Production rules
 
