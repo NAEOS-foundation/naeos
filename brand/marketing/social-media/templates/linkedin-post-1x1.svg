@@ -3,7 +3,7 @@
 <title>linkedin-post-1x1.svg</title><desc>Editable NAEOS square social post template.</desc>
 <defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#60A5FA" stroke-opacity=".075"/></pattern></defs>
 <rect width="1080" height="1080" fill="#0B0F19"/><rect width="1080" height="1080" fill="url(#grid)"/><circle cx="982" cy="140" r="205" fill="#2563FF" opacity=".10"/>
-<image href="../assets/naeos-primary-symbol-v2-2048.png" x="81" y="75" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
+<image href="../assets/naeos-primary-symbol-v2.svg" x="81" y="75" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
 <rect x="81" y="334" width="12" height="302" fill="#2563FF"/><text x="129" y="432" class="eyebrow">AI ENGINEERING GOVERNANCE &amp; VERIFICATION</text><text x="129" y="561" class="headline">Make AI</text><text x="129" y="669" class="headline">engineering</text><text x="129" y="777" class="headline accent">verifiable.</text><text x="81" y="885" class="body">Evidence. Controls. Accountability.</text>
 <text x="81" y="993" fill="#60A5FA" font-size="17">NAEOS / naeos.dev</text><text x="999" y="993" fill="#E5E7EB" font-size="17" text-anchor="end">[SERIES / DATE]</text>
 <style>text{font-family:Inter,Arial,sans-serif}.eyebrow{fill:#60A5FA;font-size:19px;font-weight:700;letter-spacing:2.2px}.headline{fill:#FFF;font-size:84px;font-weight:700;letter-spacing:-1.8px}.accent{fill:#60A5FA}.body{fill:#E5E7EB;font-size:28px}</style></svg>
