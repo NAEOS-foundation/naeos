@@ -39,7 +39,7 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 	}
 	host := strings.ToLower(u.Hostname())
 	directHost := "db." + expectedProjectRef + ".supabase.co"
-	if host == directHost {
+	if host == directHost && (u.Port() == "" || u.Port() == "5432") {
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 		username = u.User.Username()
 	}
 	projectSuffix := "." + expectedProjectRef
-	if strings.HasSuffix(host, ".pooler.supabase.com") && strings.HasSuffix(username, projectSuffix) {
+	if strings.HasSuffix(host, ".pooler.supabase.com") && (u.Port() == "" || u.Port() == "5432") && strings.HasSuffix(username, projectSuffix) {
 		roleName := strings.TrimSuffix(username, projectSuffix)
 		if validControlPlanePoolerRoleName(roleName) {
 			return nil
