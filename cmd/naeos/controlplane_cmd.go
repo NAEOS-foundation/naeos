@@ -30,15 +30,16 @@ func newControlPlaneCommand() *cobra.Command {
 func newControlPlanePreflightCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "preflight",
-		Short: "Validate DATABASE_URL, TLS, PostgreSQL connectivity, and private schema",
-		Long:  "Open the dedicated Control Plane PostgreSQL repositories and verify that the expected private schema and ledger functions are installed. This command performs read-only connectivity and schema checks; it does not apply migrations or modify production data.",
+		Short: "Validate the environment-scoped database URL, TLS, PostgreSQL connectivity, and private schema",
+		Long:  "Open the dedicated Control Plane PostgreSQL repositories and verify that the environment-scoped Supabase project, expected private schema, and ledger functions are installed. This command performs read-only connectivity and schema checks; it does not apply migrations or modify data.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			databaseURL := os.Getenv("DATABASE_URL")
+			databaseURL := os.Getenv("NAEOS_CONTROLPLANE_DATABASE_URL")
+			environment := os.Getenv("NAEOS_CONTROLPLANE_ENVIRONMENT")
 			ctx, cancel := context.WithTimeout(cmd.Context(), 10*time.Second)
 			defer cancel()
 
-			runtime, err := controlplane.OpenProductionRuntime(ctx, databaseURL)
+			runtime, err := controlplane.OpenProductionRuntime(ctx, databaseURL, environment)
 			if err != nil {
 				// Avoid echoing a connection URL, which may contain credentials.
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
@@ -58,15 +59,16 @@ func newControlPlaneServeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Run the production Control Plane with JWKS authentication and repository authorization",
-		Long:  "Require DATABASE_URL and NAEOS_CONTROLPLANE_ISSUER, NAEOS_CONTROLPLANE_AUDIENCE, and NAEOS_CONTROLPLANE_JWKS_URL. Initialize PostgreSQL and fetch the JWKS keyset before binding the HTTP listener.",
+		Long:  "Require NAEOS_CONTROLPLANE_DATABASE_URL, NAEOS_CONTROLPLANE_ENVIRONMENT, and NAEOS_CONTROLPLANE_ISSUER, NAEOS_CONTROLPLANE_AUDIENCE, and NAEOS_CONTROLPLANE_JWKS_URL. Verify the database project target, initialize PostgreSQL, and fetch the JWKS keyset before binding the HTTP listener.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
-			databaseURL := os.Getenv("DATABASE_URL")
+			databaseURL := os.Getenv("NAEOS_CONTROLPLANE_DATABASE_URL")
+			environment := os.Getenv("NAEOS_CONTROLPLANE_ENVIRONMENT")
 			openCtx, cancelOpen := context.WithTimeout(ctx, 10*time.Second)
-			runtime, err := controlplane.OpenProductionRuntime(openCtx, databaseURL)
+			runtime, err := controlplane.OpenProductionRuntime(openCtx, databaseURL, environment)
 			cancelOpen()
 			if err != nil {
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
