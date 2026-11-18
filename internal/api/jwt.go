@@ -116,11 +116,11 @@ type OIDCDiscovery struct {
 // OIDCDiscoveryDocument returns the OIDC discovery metadata for the given issuer.
 func (j *JWTValidator) OIDCDiscoveryDocument(issuer string) *OIDCDiscovery {
 	return &OIDCDiscovery{
-		Issuer: issuer,
-		AuthorizationEndpoint: issuer + "/authorize",
-		TokenEndpoint: issuer + "/token",
-		ResponseTypesSupported: []string{"code"},
-		SubjectTypesSupported: []string{"public"},
+		Issuer:                           issuer,
+		AuthorizationEndpoint:            issuer + "/authorize",
+		TokenEndpoint:                    issuer + "/token",
+		ResponseTypesSupported:           []string{"code"},
+		SubjectTypesSupported:            []string{"public"},
 		IDTokenSigningAlgValuesSupported: []string{"HS256"},
 	}
 }
