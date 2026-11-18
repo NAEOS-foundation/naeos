@@ -196,6 +196,7 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		(claims.NotBefore != 0 && claims.NotBefore > now) || (claims.IssuedAt != 0 && claims.IssuedAt > now+60) {
 		return nil, errors.New("service JWT claims failed validation")
 	}
+	// Subject is an opaque issuer identifier; trim only to reject blank values.
 	subject := claims.Subject
 	if strings.TrimSpace(subject) == "" {
 		return nil, errors.New("service JWT has no subject")
