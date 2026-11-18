@@ -47,7 +47,7 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 	// encode the project ref in the database username (postgres.<project-ref>).
 	username := ""
 	if u.User != nil {
-		username, _ = u.User.Username()
+		username = u.User.Username()
 	}
 	if strings.HasSuffix(host, ".pooler.supabase.com") &&
 		username == "postgres."+expectedProjectRef {
