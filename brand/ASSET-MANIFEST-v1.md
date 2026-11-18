@@ -38,6 +38,7 @@ A file is marked **repository verified** only after its presence has been checke
 |---|---|---|
 | Social avatar vector | `brand/exports/social/avatar/naeos-social-avatar.svg` | Repository verified on this PR branch |
 | Social avatar README | `brand/exports/social/avatar/README.md` | Repository verified on this PR branch |
+| Extraction register | `brand/exports/UPLOAD-REGISTER-v1.md` | Repository verified on this PR branch |
 | Transparent logo PNG exports | Local package `NAEOS-Logo-Exports-v1.0.zip` | Generated locally; PNG upload pending |
 | Social avatar PNG sizes (64, 180, 320, 512, 1024 px) | Local package `NAEOS-Social-Avatar-v1.0.zip` | Generated locally; PNG upload pending |
 | LinkedIn company cover | — | Not generated |
@@ -47,7 +48,11 @@ A file is marked **repository verified** only after its presence has been checke
 
 The SVG avatar uses the canonical Primary Symbol Master v2.0.0 paths without changing symbol geometry. PNG delivery exports are not claimed as repository assets until their exact files are uploaded and verified.
 
-## 5. Target repository layout
+## 5. Extracted package inventory
+
+The three supplied ZIP packages were extracted and inspected locally: Logo System v1.0 (24 files), Logo Exports v1.0 (6 files), and Social Avatar v1.0 (7 files), 37 files total. The extraction register is published at `brand/exports/UPLOAD-REGISTER-v1.md`. Binary PNG/JPEG/ICO files remain pending individual repository upload and verification; no binary file is marked as published by this manifest.
+
+## 6. Target repository layout
 
 - `brand/exports/logo/` — transparent logo PNG exports and export README.
 - `brand/exports/social/avatar/` — vector avatar source, raster avatar exports, and README.
@@ -55,7 +60,7 @@ The SVG avatar uses the canonical Primary Symbol Master v2.0.0 paths without cha
 
 Do not commit ZIP archives as the only source of truth. Prefer extracted files, retain vector sources, and record SHA-256 checksums for raster outputs.
 
-## 6. Production rules
+## 7. Production rules
 
 1. Generate all derivatives from the canonical master or approved brand-system variants.
 2. Never edit the canonical master in place.
@@ -66,7 +71,7 @@ Do not commit ZIP archives as the only source of truth. Prefer extracted files, 
 7. Update this manifest whenever an asset is added, replaced, or retired.
 8. Do not mark locally generated assets as repository verified until the exact files are present on the target branch.
 
-## 7. Source references
+## 8. Source references
 
 - `brand/brand.json`
 - `brand/brand.css`
