@@ -311,30 +311,30 @@ test(
       : false,
   },
   async () => {
-  const { page, pageErrors } = await openPage("/en/control-plane");
-  try {
-    const response = await page.evaluate(async () => {
-      const result = await fetch("/api/control-plane/decision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agent_id: "preview-isolation-test",
-          capability: "repository.read",
-          artifact_hash: "sha256:preview-isolation-test",
-        }),
+    const { page, pageErrors } = await openPage("/en/control-plane");
+    try {
+      const response = await page.evaluate(async () => {
+        const result = await fetch("/api/control-plane/decision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_id: "preview-isolation-test",
+            capability: "repository.read",
+            artifact_hash: "sha256:preview-isolation-test",
+          }),
+        });
+        return { status: result.status, body: await result.json() };
       });
-      return { status: result.status, body: await result.json() };
-    });
 
-    assert.equal(response.status, 503, "an unconfigured preview must not forward requests upstream");
-    assert.match(
-      response.body.message || "",
-      /upstream is not configured/i,
-      "the proxy must explain that this environment has no configured upstream",
-    );
-    assert.deepEqual(pageErrors, [], "the preview isolation check should not throw browser errors");
-  } finally {
-    await page.close();
+      assert.equal(response.status, 503, "an unconfigured preview must not forward requests upstream");
+      assert.match(
+        response.body.message || "",
+        /upstream is not configured/i,
+        "the proxy must explain that this environment has no configured upstream",
+      );
+      assert.deepEqual(pageErrors, [], "the preview isolation check should not throw browser errors");
+    } finally {
+      await page.close();
   }
 });
 
