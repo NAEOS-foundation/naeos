@@ -3,7 +3,7 @@
 <title>announcement-4x5.svg</title><desc>Editable NAEOS announcement template.</desc>
 <defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#60A5FA" stroke-opacity=".075"/></pattern></defs>
 <rect width="1080" height="1350" fill="#0B0F19"/><rect width="1080" height="1350" fill="url(#grid)"/><circle cx="982" cy="175" r="205" fill="#2563FF" opacity=".10"/>
-<image href="../assets/naeos-primary-symbol-v2-2048.png" x="81" y="94" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
+<image href="../assets/naeos-primary-symbol-v2.svg" x="81" y="94" width="172" height="109" preserveAspectRatio="xMidYMid meet"/>
 <text x="81" y="459" class="eyebrow">NAEOS / ANNOUNCEMENT</text><text x="81" y="648" class="headline">[Announcement</text><text x="81" y="783" class="headline accent">headline]</text>
 <text x="81" y="944" class="body">[What changed, who it affects, and what happens next]</text><rect x="81" y="1053" width="302" height="87" rx="10" fill="#2563FF"/><text x="99" y="1113" class="button">[Learn more]</text>
 <text x="81" y="1242" fill="#60A5FA" font-size="17">NAEOS / naeos.dev</text><text x="999" y="1242" fill="#E5E7EB" font-size="17" text-anchor="end">[SERIES / DATE]</text>
