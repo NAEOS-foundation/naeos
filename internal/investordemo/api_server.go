@@ -94,25 +94,18 @@ func (as *APIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
-	// CORS preflight is not an application request. The origin has already
-	// been checked above; browsers send preflight without application credentials.
 	if r.Method == http.MethodOptions {
+		if r.URL.Path == "/api/control-plane/decision" && !as.security.authorize(r) {
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(w, "authentication required", http.StatusUnauthorized)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	// Keep the health endpoint public for platform probes. Every other API
-	// route is protected at the server boundary, including read-only evidence
-	// and approval status endpoints. Origin validation is defense in depth,
-	// not authentication.
-	if strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/api/health" {
-		if r.URL.Path == "/api/control-plane/decision" && r.Method == http.MethodPost {
-			if !as.security.protectDecision(w, r) {
-				return
-			}
-		} else if !as.security.authorize(r) {
-			w.Header().Set("WWW-Authenticate", "Bearer")
-			http.Error(w, "authentication required", http.StatusUnauthorized)
+	if r.URL.Path == "/api/control-plane/decision" && r.Method == http.MethodPost {
+		if !as.security.protectDecision(w, r) {
 			return
 		}
 	}
