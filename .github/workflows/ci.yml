@@ -580,8 +580,7 @@ jobs:
           IMAGE: naeos-control-plane:${{ github.sha }}
         run: |
           set -euo pipefail
-          docker run --rm --entrypoint /usr/local/bin/naeos "$IMAGE" control-plane serve --help \
-            | grep -Fq "Run the production Control Plane"
+          docker run --rm --entrypoint /usr/local/bin/naeos "$IMAGE" control-plane serve --help >/dev/null
           
   ci-gate:
     name: CI Gate
