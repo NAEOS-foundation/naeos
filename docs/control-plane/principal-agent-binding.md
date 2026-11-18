@@ -12,6 +12,16 @@ A verified JWT identifies an issuer-qualified principal. It does not, by itself,
 
 The runtime requires `NAEOS_CONTROLPLANE_PRINCIPAL_KIND` to be explicitly set to `human` or `service`. This is a trusted deployment profile, not a value inferred from JWT claim presence. A deployment must use the value appropriate to its configured issuer/token profile.
 
+## Decision route scope
+
+`POST /api/control-plane/decision` requires the exact issuer-signed JWT scope `naeos:control-plane:decision:write`.
+
+- The scope is read only from the verified JWT `scope` (space-delimited) or `scopes` (array) claim.
+- Matching is exact-token matching; substring matches are rejected.
+- A missing or insufficient scope returns 403 before the request body is processed.
+- Caller-supplied request fields cannot grant or override scopes.
+- Future read routes require their own independent scopes; the decision-write scope does not authorize them.
+
 ## Resolution rules
 
 - Issuer and subject must be present in the verified JWT.
@@ -45,4 +55,4 @@ The migration creates a private binding table with a composite identity key, RLS
 
 ## Current limitations
 
-This change implements decision-route principal-to-agent resolution only. Route-specific scope enforcement, tenant-aware binding administration/audit workflow, and agent-scoped runs/evidence queries remain separate gates. The migration file is an artifact only; no SQL has been applied to Supabase by this change.
+This change implements decision-route principal-to-agent resolution and decision-write scope enforcement only. Tenant-aware binding administration/audit workflow and agent-scoped runs/evidence queries remain separate gates. The migration file is an artifact only; no SQL has been applied to Supabase by this change.
