@@ -196,8 +196,8 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		(claims.NotBefore != 0 && claims.NotBefore > now) || (claims.IssuedAt != 0 && claims.IssuedAt > now+60) {
 		return nil, errors.New("service JWT claims failed validation")
 	}
-	subject := strings.TrimSpace(claims.Subject)
-	if subject == "" {
+	subject := claims.Subject
+	if strings.TrimSpace(subject) == "" {
 		return nil, errors.New("service JWT has no subject")
 	}
 	var audience []string
@@ -210,7 +210,7 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 	return &JWTClaims{
 		Issuer:    claims.Issuer,
 		Sub:       subject,
-		ClientID:  strings.TrimSpace(claims.ClientID),
+		ClientID:  claims.ClientID,
 		Audience:  audience,
 		ExpiresAt: claims.Expires,
 		IssuedAt:  claims.IssuedAt,
