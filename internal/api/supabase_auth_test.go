@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,7 +120,7 @@ func TestParseSupabaseClaims(t *testing.T) {
 		"email":"dev@example.com",
 		"role":"authenticated",
 		"user_metadata":{"name":"Dev User"},
-		"app_metadata":{"naeos_roles":["developer", "  ", 42]}
+		"app_metadata":{"naeos_roles":["developer", "  ", 42],"naeos_tenant_id":"tenant-a"}
 	}`))
 	token := "header." + payload + ".signature"
 	claims, err := ParseSupabaseClaims(token)
@@ -140,6 +141,9 @@ func TestParseSupabaseClaims(t *testing.T) {
 	}
 	if len(claims.AppRoles) != 1 || claims.AppRoles[0] != "developer" {
 		t.Errorf("app roles = %v", claims.AppRoles)
+	}
+	if claims.TenantID != "tenant-a" {
+		t.Errorf("tenant ID = %q, want tenant-a", claims.TenantID)
 	}
 }
 
@@ -362,6 +366,24 @@ func TestServerSupabaseAuthFlow(t *testing.T) {
 	if status := getStatus(viewerToken, "/api/v1/profiles"); status != http.StatusOK {
 		t.Errorf("viewer token status = %d, want 200", status)
 	}
+	if status := getStatus(viewerToken, "/api/v1/artifacts"); status != http.StatusForbidden {
+		t.Errorf("Supabase artifact read status = %d, want 403 until tenant scoping is supported", status)
+	}
+	artifactBody := strings.NewReader(`{"path":"viewer.txt","content":"not allowed"}`)
+	artifactReq, err := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/artifacts", artifactBody)
+	if err != nil {
+		t.Fatalf("new artifact request: %v", err)
+	}
+	artifactReq.Header.Set("Authorization", "Bearer "+viewerToken)
+	artifactReq.Header.Set("Content-Type", "application/json")
+	artifactResp, err := ts.Client().Do(artifactReq)
+	if err != nil {
+		t.Fatalf("post artifact: %v", err)
+	}
+	artifactResp.Body.Close()
+	if artifactResp.StatusCode != http.StatusForbidden {
+		t.Errorf("viewer artifact POST status = %d, want 403", artifactResp.StatusCode)
+	}
 
 	// Admin token → admin route accessible.
 	if status := getStatus(adminToken, "/api/v1/version"); status != http.StatusOK {
@@ -382,6 +404,70 @@ func TestServerSupabaseAuthFlow(t *testing.T) {
 	}
 	if len(viewerUser.Roles) != 1 || viewerUser.Roles[0] != "viewer" {
 		t.Errorf("viewer roles = %v, want [viewer]", viewerUser.Roles)
+	}
+}
+
+func TestServerSupabaseTenantClaimScopesPipelineStatus(t *testing.T) {
+	id := newSupabaseTestIdentity(t)
+	server := NewServer(":0", &AuthConfig{Enabled: true, Supabase: id.auth()})
+	server.pipelines = []pipelineRun{
+		{ID: "tenant-a-run", TenantID: "tenant-a", Status: "completed"},
+		{ID: "tenant-b-run", TenantID: "tenant-b", Status: "completed"},
+	}
+	ts := httptest.NewServer(server.Handler())
+	t.Cleanup(ts.Close)
+
+	claims := supabaseAccessClaims(id, "tenant-user", []string{"viewer"})
+	claims["app_metadata"] = map[string]any{
+		"naeos_roles":     []string{"viewer"},
+		"naeos_tenant_id": "tenant-a",
+	}
+	token, err := id.sign(claims)
+	if err != nil {
+		t.Fatalf("sign tenant token: %v", err)
+	}
+
+	request := func(tenantHeader string) *http.Response {
+		t.Helper()
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/pipeline/status", nil)
+		if err != nil {
+			t.Fatalf("new request: %v", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		if tenantHeader != "" {
+			req.Header.Set("X-Tenant-ID", tenantHeader)
+		}
+		resp, err := ts.Client().Do(req)
+		if err != nil {
+			t.Fatalf("do request: %v", err)
+		}
+		return resp
+	}
+
+	resp := request("")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("trusted tenant request status = %d, want 200", resp.StatusCode)
+	}
+	var result APIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("decode pipeline status: %v", err)
+	}
+	data, err := json.Marshal(result.Data)
+	if err != nil {
+		t.Fatalf("marshal pipeline status data: %v", err)
+	}
+	if strings.Contains(string(data), "tenant-b-run") {
+		t.Fatalf("pipeline status leaked another tenant's run: %s", data)
+	}
+	if !strings.Contains(string(data), "tenant-a-run") {
+		t.Fatalf("pipeline status omitted the caller's run: %s", data)
+	}
+
+	mismatch := request("tenant-b")
+	defer mismatch.Body.Close()
+	if mismatch.StatusCode != http.StatusForbidden {
+		t.Fatalf("mismatched tenant header status = %d, want 403", mismatch.StatusCode)
 	}
 }
 

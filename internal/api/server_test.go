@@ -875,6 +875,22 @@ func TestReadyzEndpoint(t *testing.T) {
 	}
 }
 
+func TestReadyzEndpointChecksDatabase(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	s.SetDatabase(&unhealthyDB{})
+
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/readyz", nil)
+	w := httptest.NewRecorder()
+	s.handleReadyz(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503, got %d", w.Code)
+	}
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"dependency":"database"`)) {
+		t.Fatalf("expected database readiness failure, got %s", w.Body.String())
+	}
+}
+
 func TestProfilesEndpoint(t *testing.T) {
 	s := NewServer(":8080", &AuthConfig{Enabled: false})
 
@@ -1409,6 +1425,18 @@ func TestRoutePermissionDynamicSchemaDeleteUsesConfigWrite(t *testing.T) {
 	perm, ok := s.routePermission("/api/v1/schemas/customer/v1.0.0", http.MethodDelete)
 	if !ok || perm.Resource != auth.ResourceConfig || perm.Action != auth.ActionWrite {
 		t.Fatalf("expected config-write permission for schema delete, got %+v, ok=%v", perm, ok)
+	}
+}
+
+func TestArtifactRoutePermissionDependsOnMethod(t *testing.T) {
+	s := NewServer(":8080", &AuthConfig{Enabled: false})
+	read, readOK := s.routePermission("/api/v1/artifacts", http.MethodGet)
+	write, writeOK := s.routePermission("/api/v1/artifacts", http.MethodPost)
+	if !readOK || read.Action != auth.ActionRead {
+		t.Fatalf("GET artifact permission = %+v, ok=%v; want read", read, readOK)
+	}
+	if !writeOK || write.Action != auth.ActionWrite {
+		t.Fatalf("POST artifact permission = %+v, ok=%v; want write", write, writeOK)
 	}
 }
 

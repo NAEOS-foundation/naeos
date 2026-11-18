@@ -26,10 +26,11 @@ const defaultSupabaseRBACRole = "viewer"
 // SupabaseClaims carries the identity information NAEOS reads from a
 // Supabase access token payload.
 type SupabaseClaims struct {
-	Sub   string
-	Email string
-	Name  string
-	Role  string
+	Sub      string
+	Email    string
+	Name     string
+	Role     string
+	TenantID string
 	// AppRoles holds the raw app_metadata.naeos_roles values before they are
 	// filtered against the NAEOS RBAC role registry.
 	AppRoles []string
@@ -93,17 +94,18 @@ func ParseSupabaseClaims(token string) (*SupabaseClaims, error) {
 		Role        string         `json:"role"`
 		UserMeta    map[string]any `json:"user_metadata"`
 		AppMetadata struct {
-			NAEOSRoles []any  `json:"naeos_roles"`
-			Raw        string `json:"-"`
+			NAEOSRoles    []any  `json:"naeos_roles"`
+			NAEOSTenantID string `json:"naeos_tenant_id"`
 		} `json:"app_metadata"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return nil, fmt.Errorf("malformed supabase token claims: %w", err)
 	}
 	claims := &SupabaseClaims{
-		Sub:   raw.Sub,
-		Email: raw.Email,
-		Role:  raw.Role,
+		Sub:      raw.Sub,
+		Email:    raw.Email,
+		Role:     raw.Role,
+		TenantID: strings.TrimSpace(raw.AppMetadata.NAEOSTenantID),
 	}
 	if name, ok := raw.UserMeta["name"].(string); ok {
 		claims.Name = name
