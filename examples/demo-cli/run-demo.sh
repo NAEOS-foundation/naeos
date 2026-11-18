@@ -113,9 +113,10 @@ REQUIRED_FILES=(
   "$OUTPUT_DIR/context.md"
   "$OUTPUT_DIR/context.json"
   "$OUTPUT_DIR/run.json"
-  "$GENERATED_DIR/README.md"
-  "$GENERATED_DIR/go.mod"
-  "$GENERATED_DIR/package.json"
+  "$GENERATED_DIR/go/README.md"
+  "$GENERATED_DIR/go/go.mod"
+  "$GENERATED_DIR/typescript/README.md"
+  "$GENERATED_DIR/typescript/package.json"
 )
 
 for required_file in "${REQUIRED_FILES[@]}"; do
@@ -136,6 +137,19 @@ import json, sys
 print(json.load(open(sys.argv[1], encoding="utf-8"))["artifact_summary"]["path_collisions"])
 PY
 )"
+if [[ "$PATH_COLLISIONS" -gt 0 ]]; then
+  printf 'Demo verification failed: %s generated artifact path collision(s). Duplicate paths:\n' "$PATH_COLLISIONS" >&2
+  python3 - "$OUTPUT_DIR/run.json" <<'PY' >&2
+import collections, json, sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = json.load(fh)
+counts = collections.Counter(item["path"] for item in data.get("artifact_details", []))
+for path, count in sorted(counts.items()):
+    if count > 1:
+        print(f"  {path} ({count} artifacts)")
+PY
+  exit 1
+fi
 cat > "$OUTPUT_DIR/summary.md" <<EOF
 # NAEOS CLI Demo Result
 
@@ -150,7 +164,7 @@ cat > "$OUTPUT_DIR/summary.md" <<EOF
 - Artifact path collisions: ${PATH_COLLISIONS}
 - Generated output: \`generated/\`
 
-The canonical demo verified the full control-plane flow: specification, NEIR, validation, policy, AI context, and generated artifacts, with traceability metadata and artifact accounting captured in run.json.
+The canonical demo verified the full control-plane flow: specification, NEIR, validation, policy, AI context, and generated artifacts, with traceability metadata and artifact accounting captured in run.json. A successful run requires zero artifact path collisions.
 EOF
 
 printf '\n== [8/8] Evidence ==\n'

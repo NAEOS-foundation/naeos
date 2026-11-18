@@ -152,6 +152,66 @@ func TestDatabaseInvocationStoreSharedAcrossGatewayInstances(t *testing.T) {
 	}
 }
 
+// effectThenErrorSandbox models the ambiguous failure window where an external
+// effect has occurred but the runtime loses the response before recording success.
+type effectThenErrorSandbox struct {
+	mu      sync.Mutex
+	effects int
+	err     error
+}
+
+func (s *effectThenErrorSandbox) Execute(ToolRequest) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.effects++
+	return "", s.err
+}
+
+func (s *effectThenErrorSandbox) Effects() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.effects
+}
+
+func TestAmbiguousExecutionIsUnknownAndCannotBeReplayedAfterRestart(t *testing.T) {
+	db := newSharedDurableInvocationDB()
+	sandbox := &effectThenErrorSandbox{err: fmt.Errorf("response lost after external effect committed")}
+	cp := &stubControlPlane{decision: control.DecisionAllow, policyID: "p1"}
+
+	firstGateway := New(cp, sandbox, WithReplayProtection(true), WithInvocationStore(NewDatabaseInvocationStore(db)))
+	request := ToolRequest{
+		RequestID:    "req-ambiguous-recovery",
+		InvocationID: "inv-ambiguous-recovery",
+		Tool:         "external-write",
+		Action:       "commit",
+	}
+	first, err := firstGateway.Authorize(request)
+	if err == nil {
+		t.Fatal("expected the transport/runtime error to be surfaced")
+	}
+	if first.Status != "unknown" {
+		t.Fatalf("expected UNKNOWN after response loss, got %q", first.Status)
+	}
+	if sandbox.Effects() != 1 {
+		t.Fatalf("expected the first attempt to reach the side effect once, got %d", sandbox.Effects())
+	}
+
+	// A new gateway and store instance represent a worker restart. The durable
+	// invocation claim must prevent an automatic retry while the outcome is
+	// ambiguous; reconciliation must happen outside this replay path.
+	restartedGateway := New(cp, sandbox, WithReplayProtection(true), WithInvocationStore(NewDatabaseInvocationStore(db)))
+	retry, err := restartedGateway.Authorize(request)
+	if err != nil {
+		t.Fatalf("replay should be denied without a new transport error: %v", err)
+	}
+	if retry.Status != "denied" {
+		t.Fatalf("expected duplicate invocation to be denied, got %q", retry.Status)
+	}
+	if sandbox.Effects() != 1 {
+		t.Fatalf("ambiguous invocation was executed more than once: %d effects", sandbox.Effects())
+	}
+}
+
 type countingSandbox struct {
 	mu    sync.Mutex
 	count int

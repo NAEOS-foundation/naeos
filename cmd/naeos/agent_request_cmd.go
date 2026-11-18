@@ -53,7 +53,7 @@ Example:
 				return err
 			}
 			defer closeReplayStore()
-			gw := gateway.New(cp, sb, gateway.WithReplayProtection(true), gateway.WithInvocationStore(replayStore))
+			gw := gateway.New(cp, sb, gateway.WithReplayProtection(true), gateway.WithInvocationStore(replayStore), gateway.WithRequiredRevalidation(true))
 
 			if adapterName == "" {
 				adapterName = "json"
