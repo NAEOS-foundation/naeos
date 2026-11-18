@@ -59,7 +59,7 @@ func newControlPlaneServeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Run the production Control Plane with JWKS authentication and repository authorization",
-		Long:  "Require NAEOS_CONTROLPLANE_DATABASE_URL, NAEOS_CONTROLPLANE_ENVIRONMENT, and NAEOS_CONTROLPLANE_ISSUER, NAEOS_CONTROLPLANE_AUDIENCE, and NAEOS_CONTROLPLANE_JWKS_URL. Verify the database project target, initialize PostgreSQL, and fetch the JWKS keyset before binding the HTTP listener.",
+		Long:  "Require NAEOS_CONTROLPLANE_DATABASE_URL, NAEOS_CONTROLPLANE_ENVIRONMENT, and NAEOS_CONTROLPLANE_ISSUER, NAEOS_CONTROLPLANE_AUDIENCE, NAEOS_CONTROLPLANE_JWKS_URL, and NAEOS_CONTROLPLANE_PRINCIPAL_KIND (human or service). Verify the database project target, initialize PostgreSQL, and fetch the JWKS keyset before binding the HTTP listener.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
@@ -79,9 +79,10 @@ func newControlPlaneServeCommand() *cobra.Command {
 			defer runtime.Close()
 
 			identity := controlplane.ProductionIdentityConfig{
-				Issuer:   os.Getenv("NAEOS_CONTROLPLANE_ISSUER"),
-				Audience: os.Getenv("NAEOS_CONTROLPLANE_AUDIENCE"),
-				JWKSURL:  os.Getenv("NAEOS_CONTROLPLANE_JWKS_URL"),
+				Issuer:        os.Getenv("NAEOS_CONTROLPLANE_ISSUER"),
+				Audience:      os.Getenv("NAEOS_CONTROLPLANE_AUDIENCE"),
+				JWKSURL:       os.Getenv("NAEOS_CONTROLPLANE_JWKS_URL"),
+				PrincipalKind: os.Getenv("NAEOS_CONTROLPLANE_PRINCIPAL_KIND"),
 			}
 			if err := runtime.ConfigureIdentity(identity); err != nil {
 				return fmt.Errorf("control plane identity initialization failed: %w", err)
