@@ -72,9 +72,9 @@ Example:
 				return fmt.Errorf("failed to construct pipeline: %w", err)
 			}
 
-			result, err := p.Run(inputValue)
-			if err != nil {
-				return fmt.Errorf("pipeline run failed: %w", err)
+			result, runErr := p.Run(inputValue)
+			if runErr != nil && result == nil {
+				return fmt.Errorf("pipeline run failed: %w", runErr)
 			}
 
 			if profileOut != "" && p.ProfileEnabled() {
@@ -97,20 +97,15 @@ Example:
 			}
 
 			artifactDetails := make([]map[string]any, 0, len(result.Artifacts))
-			artifactPaths := make(map[string]struct{}, len(result.Artifacts))
+			artifactPaths := make([]string, 0, len(result.Artifacts))
 			for _, artifact := range result.Artifacts {
 				artifactDetails = append(artifactDetails, map[string]any{
 					"path": artifact.Path,
 					"size": len(artifact.Content),
 				})
-				artifactPaths[artifact.Path] = struct{}{}
+				artifactPaths = append(artifactPaths, artifact.Path)
 			}
-			logicalArtifactCount := len(result.Artifacts)
-			materializedFileCount := 0
-			if !cfg.DryRun && cfg.OutputDir != "" {
-				materializedFileCount = len(artifactPaths)
-			}
-			artifactPathCollisions := logicalArtifactCount - len(artifactPaths)
+			logicalArtifactCount, materializedFileCount, artifactPathCollisions := summarizeArtifactWrites(artifactPaths, result.ArtifactsWritten)
 
 			pipelineStages := []string{
 				"[1/8] Specification",
@@ -123,22 +118,33 @@ Example:
 				"[8/8] Evidence",
 			}
 
+			commandStatus := "success"
+			if runErr != nil {
+				commandStatus = "failed"
+			}
 			payload := map[string]any{
-				"pipeline":           cfg.Name,
-				"mode":               cfg.Mode,
-				"verbose":            cfg.Verbose,
-				"output_dir":         cfg.OutputDir,
-				"status":             "success",
-				"run_id":             result.RunID,
-				"specification_hash": result.SpecificationHash,
-				"neir_hash":          result.NEIRHash,
-				"project":            projectName,
-				"artifacts":          logicalArtifactCount,
-				"artifact_details":   artifactDetails,
+				"pipeline":               cfg.Name,
+				"mode":                   cfg.Mode,
+				"verbose":                cfg.Verbose,
+				"output_dir":             cfg.OutputDir,
+				"status":                 commandStatus,
+				"completion_status":      result.CompletionStatus,
+				"artifact_write_status":  result.ArtifactWriteStatus,
+				"artifacts_written":      result.ArtifactsWritten,
+				"artifact_write_partial": result.ArtifactWritePartial,
+				"run_id":                 result.RunID,
+				"specification_hash":     result.SpecificationHash,
+				"neir_hash":              result.NEIRHash,
+				"project":                projectName,
+				"artifacts":              logicalArtifactCount,
+				"artifact_details":       artifactDetails,
 				"artifact_summary": map[string]any{
 					"logical_artifacts":  logicalArtifactCount,
+					"artifacts_written":  result.ArtifactsWritten,
 					"materialized_files": materializedFileCount,
 					"path_collisions":    artifactPathCollisions,
+					"write_status":       result.ArtifactWriteStatus,
+					"partial_write":      result.ArtifactWritePartial,
 				},
 				"tasks":          len(result.Tasks),
 				"execution_plan": result.Tasks,
@@ -164,8 +170,12 @@ Example:
 					"status":                  "available",
 					"stages":                  []string{"specification", "parse", "normalize", "resolve", "neir", "validate", "policy", "context", "execution", "artifacts", "evidence"},
 					"artifact_count":          logicalArtifactCount,
+					"artifacts_written":       result.ArtifactsWritten,
 					"materialized_file_count": materializedFileCount,
 					"path_collisions":         artifactPathCollisions,
+					"completion_status":       result.CompletionStatus,
+					"artifact_write_status":   result.ArtifactWriteStatus,
+					"artifact_write_partial":  result.ArtifactWritePartial,
 					"task_count":              len(result.Tasks),
 				},
 				"stages": []string{
@@ -202,14 +212,20 @@ Example:
 				fmt.Fprintf(&out, "run_id=%s\n", result.RunID)
 				fmt.Fprintf(&out, "specification_hash=%s\n", result.SpecificationHash)
 				fmt.Fprintf(&out, "neir_hash=%s\n", result.NEIRHash)
-				fmt.Fprintf(&out, "artifacts=%d materialized_files=%d path_collisions=%d tasks=%d\n", logicalArtifactCount, materializedFileCount, artifactPathCollisions, len(result.Tasks))
+				fmt.Fprintf(&out, "completion=%s artifact_write_status=%s artifacts=%d artifacts_written=%d materialized_files=%d partial_write=%t path_collisions=%d tasks=%d\n", result.CompletionStatus, result.ArtifactWriteStatus, logicalArtifactCount, result.ArtifactsWritten, materializedFileCount, result.ArtifactWritePartial, artifactPathCollisions, len(result.Tasks))
 				return []byte(out.String())
 			})
 			if err != nil {
 				return err
 			}
 
-			return writeOrPrint(cmd, rendered, outputFile)
+			if err := writeOrPrint(cmd, rendered, outputFile); err != nil {
+				return err
+			}
+			if runErr != nil {
+				return fmt.Errorf("pipeline run failed: %w", runErr)
+			}
+			return nil
 		},
 	}
 
@@ -225,4 +241,27 @@ Example:
 	cmd.Flags().StringVar(&pprofAddr, "pprof", "", "pprof HTTP server address (e.g. :6060)")
 	cmd.Flags().StringVar(&cacheDir, "cache-dir", "", "enable pipeline caching using the given directory")
 	return cmd
+}
+
+func summarizeArtifactWrites(paths []string, artifactsWritten int) (logicalArtifacts, materializedFiles, pathCollisions int) {
+	logicalArtifacts = len(paths)
+	if artifactsWritten < 0 {
+		artifactsWritten = 0
+	}
+	if artifactsWritten > len(paths) {
+		artifactsWritten = len(paths)
+	}
+
+	allPaths := make(map[string]struct{}, len(paths))
+	writtenPaths := make(map[string]struct{}, artifactsWritten)
+	for i, path := range paths {
+		allPaths[path] = struct{}{}
+		if i < artifactsWritten {
+			writtenPaths[path] = struct{}{}
+		}
+	}
+
+	materializedFiles = len(writtenPaths)
+	pathCollisions = logicalArtifacts - len(allPaths)
+	return logicalArtifacts, materializedFiles, pathCollisions
 }

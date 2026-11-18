@@ -60,6 +60,45 @@ func TestGenerateForNEIR_WithGeneration(t *testing.T) {
 	}
 }
 
+func TestGenerateForNEIR_MultipleLanguagesHaveIsolatedDeterministicPaths(t *testing.T) {
+	t.Parallel()
+	neir := &model.NEIR{
+		Project: &project.Project{Name: "test-proj"},
+		Modules: []module.Module{{Name: "core", Path: "./internal/core"}},
+		Generation: &generation.GenerationConfig{
+			Languages: []language.Language{language.LanguageGo, language.LanguageTypeScript},
+		},
+	}
+
+	first, err := GenerateForNEIR(neir)
+	if err != nil {
+		t.Fatalf("first generation: %v", err)
+	}
+	second, err := GenerateForNEIR(neir)
+	if err != nil {
+		t.Fatalf("second generation: %v", err)
+	}
+	if len(first) != len(second) {
+		t.Fatalf("generation count changed: first=%d second=%d", len(first), len(second))
+	}
+
+	seen := make(map[string]struct{}, len(first))
+	for i, artifact := range first {
+		if _, ok := seen[artifact.Path]; ok {
+			t.Errorf("duplicate generated path %q", artifact.Path)
+		}
+		seen[artifact.Path] = struct{}{}
+		if artifact.Path != second[i].Path {
+			t.Errorf("generation order is unstable at %d: first=%q second=%q", i, artifact.Path, second[i].Path)
+		}
+	}
+	for _, expected := range []string{"go/README.md", "typescript/README.md", "go/internal/core/handler.go", "typescript/src/index.ts"} {
+		if _, ok := seen[expected]; !ok {
+			t.Errorf("missing language-scoped artifact %q", expected)
+		}
+	}
+}
+
 func TestGenerateForNEIR_UnknownLanguageSkipped(t *testing.T) {
 	t.Parallel()
 	neir := &model.NEIR{
