@@ -122,7 +122,7 @@ func TestJWKSValidatorPreservesSubjectAndClientIDSeparately(t *testing.T) {
 func TestJWKSValidatorPreservesOpaqueSubjectAndClientID(t *testing.T) {
 	validator, key := newTestJWKSValidator(t)
 	input := defaultTestServiceClaims()
-	input.Subject = "  opaque-subject-123 \\t"
+	input.Subject = "  opaque-subject-123 \t"
 	input.ClientID = "  client-456  "
 	token := makeTestServiceToken(t, key, input)
 
@@ -139,7 +139,7 @@ func TestJWKSValidatorPreservesOpaqueSubjectAndClientID(t *testing.T) {
 }
 
 func TestJWKSValidatorRejectsMissingOrWhitespaceOnlySubject(t *testing.T) {
-	for _, subject := range []string{"", " ", "\\t\\n"} {
+	for _, subject := range []string{"", " ", "\t\n"} {
 		t.Run("subject_"+base64.RawURLEncoding.EncodeToString([]byte(subject)), func(t *testing.T) {
 			validator, key := newTestJWKSValidator(t)
 			input := defaultTestServiceClaims()
