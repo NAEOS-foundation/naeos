@@ -50,7 +50,7 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 		username, _ = u.User.Username()
 	}
 	if strings.HasSuffix(host, ".pooler.supabase.com") &&
-		strings.HasSuffix(username, "."+expectedProjectRef) {
+		username == "postgres."+expectedProjectRef {
 		return nil
 	}
 
