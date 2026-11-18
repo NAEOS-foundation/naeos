@@ -26,6 +26,8 @@ func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 		{name: "staging session pooler", raw: stagingPoolerURL, environment: "staging"},
 		{name: "production custom runtime role pooler", raw: productionRuntimePoolerURL, environment: "production"},
 		{name: "staging custom runtime role pooler", raw: stagingRuntimePoolerURL, environment: "staging"},
+		{name: "production transaction pooler rejected", raw: "postgres://postgres.oruykkehukoiipldzcvc:secret@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require", environment: "production", wantErr: true},
+		{name: "dedicated transaction pooler rejected", raw: "postgres://naeos:secret@db.oruykkehukoiipldzcvc.supabase.co:6543/postgres?sslmode=require", environment: "production", wantErr: true},
 		{name: "production cannot use staging", raw: stagingURL, environment: "production", wantErr: true},
 		{name: "staging cannot use production", raw: productionURL, environment: "staging", wantErr: true},
 		{name: "unknown environment", raw: productionURL, environment: "development", wantErr: true},
