@@ -36,6 +36,7 @@ func (r *PostgresPrincipalAgentBindingResolver) ResolveAgent(
 	if r == nil || r.db == nil {
 		return "", ErrRepositoryUnavailable
 	}
+	// Keep issuer and principal IDs byte-for-byte; trim only for blank-value checks.
 	if strings.TrimSpace(issuer) == "" || strings.TrimSpace(principalID) == "" ||
 		(principalKind != "human" && principalKind != "service") ||
 		(requestedAgentID != "" && strings.TrimSpace(requestedAgentID) == "") {
