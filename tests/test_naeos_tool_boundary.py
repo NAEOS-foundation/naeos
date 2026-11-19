@@ -58,6 +58,12 @@ class ToolBoundaryTests(unittest.TestCase):
         self.assertEqual(RecordingTool.entries, [])
         self.assertEqual([item.decision for item in self.decisions], ["DENY"])
 
+    def test_async_allow_executes_sync_delegate_after_observation(self) -> None:
+        tool = self.guarded(lambda _name, _args: True)
+        self.assertEqual(asyncio.run(tool.arun(value="async-allowed")), "executed")
+        self.assertEqual(RecordingTool.entries, [{"value": "async-allowed"}])
+        self.assertEqual([item.decision for item in self.decisions], ["ALLOW"])
+
     def test_policy_exception_fails_closed(self) -> None:
         def broken_policy(_name: str, _args: Any) -> bool:
             raise RuntimeError("policy unavailable")
