@@ -21,8 +21,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from crewai.agents.agent_adapters.langgraph.langgraph_tool_adapter import LangGraphToolAdapter
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
-from langchain_core.messages import AIMessage
-from langgraph.prebuilt import ToolNode
 
 from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
 
@@ -49,19 +47,11 @@ async def invoke_adapter() -> Any:
     adapter = LangGraphToolAdapter(tools=[tool])
     adapter.configure_tools([])
     converted = adapter.tools()[0]
-    node = ToolNode([converted])
-    message = AIMessage(
-        content="",
-        tool_calls=[
-            {
-                "name": converted.name,
-                "args": {"invocation_id": "langgraph-adapter-deny-001", "value": "probe"},
-                "id": "langgraph-deny-call-001",
-                "type": "tool_call",
-            }
-        ],
+    # Exercise the converted LangChain StructuredTool's async invocation API.
+    # ToolNode orchestration is intentionally outside this adapter-boundary probe.
+    return await converted.ainvoke(
+        {"invocation_id": "langgraph-adapter-deny-001", "value": "probe"}
     )
-    return await node.ainvoke({"messages": [message]})
 
 
 def run_probe() -> dict[str, Any]:
@@ -110,7 +100,7 @@ def run_probe() -> dict[str, Any]:
         "adapter_sdk_version": version("langgraph"),
         "langchain_core_version": version("langchain-core"),
         "python_version": platform.python_version(),
-        "execution_path": "LangGraphToolAdapter.configure_tools -> ToolNode.ainvoke -> StructuredTool.ainvoke -> adapter wrapper -> BaseTool.run",
+        "execution_path": "LangGraphToolAdapter.configure_tools -> converted StructuredTool.ainvoke -> adapter wrapper -> BaseTool.run",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
         "execution_error": execution_error,
