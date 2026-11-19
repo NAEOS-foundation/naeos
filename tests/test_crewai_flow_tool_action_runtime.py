@@ -36,6 +36,10 @@ LEDGER = SideEffectLedger()
 HOOK_OBSERVATIONS: list[dict[str, Any]] = []
 
 
+class ProbeFlow(Flow):
+    """Concrete Flow subclass required by CrewAI's Pydantic metaclass."""
+
+
 class SideEffectTool(BaseTool):
     name: str = "naeos_v2_flow_probe"
     description: str = "Records a local test side effect."
