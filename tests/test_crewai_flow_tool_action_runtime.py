@@ -64,7 +64,7 @@ def run_probe() -> dict[str, Any]:
     flow = Flow()
     definition = FlowToolActionDefinition(
         call="tool",
-        ref="tests.test_crewai_flow_tool_action_runtime:SideEffectTool",
+        ref=f"{SideEffectTool.__module__}:SideEffectTool",
         with_={"invocation_id": "flow-tool-action-deny-001", "value": "probe"},
     )
     action = build_action(flow, definition)
