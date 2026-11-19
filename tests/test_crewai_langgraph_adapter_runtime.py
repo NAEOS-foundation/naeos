@@ -134,7 +134,7 @@ def run_probe() -> dict[str, Any]:
         limitations.append("The converted StructuredTool returned an unawaited coroutine; tool execution and enforcement remain UNKNOWN.")
 
     report = {
-        "schema": "naeos.crewai-compatibility-v2.langgraph-adapter/0.1",
+        "schema": "naeos.crewai-compatibility-v2.langgraph-adapter/0.2",
         "framework": "crewai",
         "framework_version": crewai.__version__,
         "adapter": "LangGraphToolAdapter",
