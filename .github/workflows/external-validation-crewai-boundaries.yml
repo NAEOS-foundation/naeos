@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - "scripts/external_validation_crewai_boundaries.py"
-      - "scripts/crewai_compat_v2_harness.py"\n      - "scripts/naeos_tool_boundary.py"\n      - "tests/test_naeos_tool_boundary.py"
+      - "scripts/crewai_compat_v2_harness.py"
+      - "scripts/naeos_tool_boundary.py"
+      - "tests/test_naeos_tool_boundary.py"
       - "tests/test_crewai_flow_tool_action_runtime.py"
       - "tests/test_crewai_react_runtime.py"
       - "tests/test_crewai_native_tool_calling_runtime.py"
