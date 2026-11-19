@@ -25,6 +25,7 @@ from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest,
 
 
 LEDGER = SideEffectLedger()
+TOOL_BODY_ENTRIES = 0
 HOOK_OBSERVATIONS: list[dict[str, Any]] = []
 
 
@@ -33,6 +34,8 @@ class SideEffectTool(BaseTool):
     description: str = "Records a local test side effect."
 
     def _run(self, invocation_id: str, value: str) -> str:
+        global TOOL_BODY_ENTRIES
+        TOOL_BODY_ENTRIES += 1
         LEDGER.append(
             invocation_id=invocation_id,
             tool_name=self.name,
@@ -69,8 +72,9 @@ class DeterministicReActLLM(BaseLLM):
 
 
 def run_probe() -> dict[str, Any]:
-    global LEDGER
+    global LEDGER, TOOL_BODY_ENTRIES
     LEDGER = SideEffectLedger()
+    TOOL_BODY_ENTRIES = 0
     HOOK_OBSERVATIONS.clear()
     clear_all_tool_call_hooks()
 
@@ -114,13 +118,14 @@ def run_probe() -> dict[str, Any]:
         execution_error = f"{type(exc).__name__}: {exc}"
 
     entries = LEDGER.snapshot()
+    body_entries = TOOL_BODY_ENTRIES
     hook_called = bool(HOOK_OBSERVATIONS)
     # A second LLM turn means the ReAct executor advanced beyond the initial
     # tool-call response; hook or body observations are stronger evidence.
-    path_exercised = hook_called or bool(entries) or llm.call_count >= 2
+    path_exercised = hook_called or body_entries > 0 or llm.call_count >= 2
     result = classify_deny(
         enforcement_observed=hook_called,
-        tool_body_entries=len(entries),
+        tool_body_entries=body_entries,
         side_effect_count=len(entries),
         path_exercised=path_exercised,
     )
@@ -142,7 +147,7 @@ def run_probe() -> dict[str, Any]:
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
         "hook_observations": HOOK_OBSERVATIONS,
-        "tool_body_entries": len(entries),
+        "tool_body_entries": body_entries,
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
         "crew_result": crew_result,
@@ -150,7 +155,7 @@ def run_probe() -> dict[str, Any]:
         "limitations": limitations,
         "assertions": {
             "deny_hook_was_dispatched": hook_called,
-            "tool_body_not_entered": len(entries) == 0,
+            "tool_body_not_entered": body_entries == 0,
             "no_independent_side_effect": len(entries) == 0,
         },
         "candidate_digest_probe": candidate_digest(
