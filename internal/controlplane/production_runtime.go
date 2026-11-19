@@ -30,10 +30,10 @@ type productionLedgerReader interface {
 }
 
 type ProductionRuntime struct {
-	environment string
-	pool      *pgxpool.Pool
+	environment  string
+	pool         *pgxpool.Pool
 	ledgerReader productionLedgerReader
-	sqlDB     *sql.DB
+	sqlDB        *sql.DB
 	Policies  *PostgresPolicyRepository
 	Grants    *PostgresGrantRepository
 	Approvals *PostgresApprovalRepository
