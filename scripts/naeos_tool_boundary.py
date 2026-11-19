@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 
 from crewai.tools import BaseTool
+from pydantic import PrivateAttr
 
 from scripts.crewai_compat_v2_harness import candidate_digest
 
@@ -30,6 +31,11 @@ DecisionObserver = Callable[[BoundaryDecision], None]
 
 
 class PolicyEnforcedTool(BaseTool):
+    _delegate: BaseTool = PrivateAttr()
+    _authorize: Authorizer = PrivateAttr()
+    _observe: DecisionObserver = PrivateAttr()
+    _policy_id: str = PrivateAttr()
+
     """BaseTool proxy that authorizes and observes before delegate execution.
 
     Both synchronous and asynchronous entry points are guarded. The evaluator
