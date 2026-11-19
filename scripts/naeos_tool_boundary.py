@@ -110,6 +110,44 @@ class PolicyEnforcedTool(BaseTool):
         return await self._delegate.arun(**kwargs)
 
 
+class GuardedToolRegistry:
+    """Registry that only exposes policy-enforced CrewAI tools."""
+
+    def __init__(self) -> None:
+        self._tools: dict[str, PolicyEnforcedTool] = {}
+
+    def register(self, delegate: BaseTool, *, authorize: Authorizer, observe: DecisionObserver, policy_id: str = "naeos.default-deny-boundary/1") -> PolicyEnforcedTool:
+        if delegate.name in self._tools:
+            raise ValueError(f"tool already registered: {delegate.name}")
+        guarded = PolicyEnforcedTool(delegate=delegate, authorize=authorize, observe=observe, policy_id=policy_id)
+        self._tools[guarded.name] = guarded
+        return guarded
+
+    def register_guarded(self, tool: BaseTool) -> PolicyEnforcedTool:
+        if not isinstance(tool, PolicyEnforcedTool):
+            raise TypeError("raw CrewAI tools cannot enter the guarded registry")
+        if tool.name in self._tools:
+            raise ValueError(f"tool already registered: {tool.name}")
+        self._tools[tool.name] = tool
+        return tool
+
+    def tools(self) -> tuple[PolicyEnforcedTool, ...]:
+        return tuple(self._tools.values())
+
+
+def require_guarded_tools(tools: list[BaseTool] | tuple[BaseTool, ...]) -> list[PolicyEnforcedTool]:
+    """Reject adapter registration lists containing raw CrewAI tools."""
+    guarded: list[PolicyEnforcedTool] = []
+    names: set[str] = set()
+    for tool in tools:
+        if not isinstance(tool, PolicyEnforcedTool):
+            raise TypeError(f"tool {getattr(tool, 'name', '<unnamed>')} is not policy-enforced")
+        if tool.name in names:
+            raise ValueError(f"duplicate tool name: {tool.name}")
+        names.add(tool.name)
+        guarded.append(tool)
+    return guarded
+
 def normalize_langgraph_async_tool(tool: Any) -> Any:
     """Repair CrewAI's async StructuredTool conversion without changing its body.
 

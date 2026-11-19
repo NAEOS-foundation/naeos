@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** REACT AND NATIVE TOOL-CALLING PASS; FLOW TOOLACTION AND OPENAI AGENTS ADAPTER FAIL; LANGGRAPH ADAPTER UNKNOWN  
+**Status:** NAEOS WRAPPED EXECUTION PATHS PASS ON PINNED CREWAI VERSIONS; LANGGRAPH TOOLNODE GRAPH AND PRODUCTION GATEWAY INTEGRATION TRACKED SEPARATELY  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -234,14 +234,14 @@ Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github
 
 ## 13. Runtime evidence — LangGraph adapter invocation
 
-The v2 harness exercised the converted LangChain StructuredTool through LangGraph's actual `ToolNode.ainvoke()` runtime. A test runtime object was supplied using LangGraph's `__pregel_runtime` configuration contract so the tool node could reach the adapter boundary.
+The original probe exercised `StructuredTool.ainvoke()` directly and returned an unawaited coroutine. The follow-up probe now compiles a LangGraph `StateGraph` containing the adapter-produced `StructuredTool` inside a real `ToolNode`, supplies a deterministic `AIMessage` tool call, and invokes the compiled graph through `graph.ainvoke()`.
 
 | CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Adapter return | Policy result |
 |---|---:|---:|---:|---|---|
 | 1.15.16 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
 | 1.15.44 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
 
-Both converted tool invocations returned successfully at the outer `ainvoke()` call, but the result was a coroutine object from the adapter's async wrapper. The wrapper was not awaited, so the underlying `BaseTool.run()` and tool body were never entered. There was no side effect, but there was also no observed DENY enforcement; therefore this is UNKNOWN, not PASS.
+The direct `StructuredTool.ainvoke()` defect was addressed by `normalize_langgraph_async_tool`, which places the async wrapper in LangChain's `coroutine` field. The current graph-level probe must now establish that the compiled graph reaches `PolicyEnforcedTool._arun`, records DENY, and leaves both independent counters at zero. The earlier UNKNOWN evidence remains historical and is not silently rewritten.
 
 The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should use the appropriate asynchronous field or a synchronous wrapper. This is a confirmed adapter-construction defect in the tested version combination, not proof of policy enforcement.
 
@@ -274,3 +274,24 @@ The wrapper is deliberately outside CrewAI's global `before_tool_call` hook disp
 `tests/test_naeos_tool_boundary.py` verifies DENY, ALLOW, policy exceptions, non-boolean policy results, and observer failure. The three adapter runtime probes now assert the NAEOS boundary observation separately from the legacy CrewAI hook observation and independently assert zero tool-body entries and zero side effects under DENY.
 
 A successful adapter probe demonstrates the guarded wrapper's behavior for that tested execution path; it does not prove that arbitrary raw tools, unwrapped integrations, or downstream code paths are automatically protected. All tools must be registered through the NAEOS-controlled wrapper, and the policy/observation callbacks must be wired to the authoritative NAEOS policy and durable audit services before production use.
+
+
+## 15. Guarded tool registration and production integration boundary
+
+The harness now provides `GuardedToolRegistry` and `require_guarded_tools` in `scripts/naeos_tool_boundary.py`.
+
+- The registry wraps raw CrewAI `BaseTool` instances at registration and exposes only `PolicyEnforcedTool` instances.
+- Registering an unguarded tool through `register_guarded` is rejected.
+- Duplicate tool names are rejected to prevent ambiguous adapter registration.
+- Adapter composition roots can call `require_guarded_tools` immediately before constructing CrewAI adapters; raw tools are rejected.
+- Unit tests cover wrapping, raw-tool rejection, duplicate registration, and DENY before delegate execution.
+
+This is an enforceable registration contract for code paths that use the registry or validation helper. It cannot prevent unrelated application code from bypassing the registry and handing raw tools directly to third-party APIs. Every production adapter composition root must adopt the guarded registry; a repository-wide registration audit is still required before claiming universal coverage.
+
+### Production Policy Gateway / durable audit integration — BLOCKED
+
+The repository contains Go authorization and execution domains, including `internal/controlplane.RepositoryDecisionGateway` and `internal/runtime/gateway.ExecutionGateway`. The inspected code exposes Go interfaces and repository-backed decision/execution methods, but the Python CrewAI harness has no established, versioned transport contract for invoking those services. The inspected general API route table does not establish a supported agent-tool authorization endpoint.
+
+The current Python `authorize` and `observe` callbacks are therefore harness injection points, not a production Control Plane integration. Do not wire them to guessed routes, ad-hoc database access, or a second independent policy implementation.
+
+Before production integration, define and review a versioned service contract covering authenticated workload identity, tool/capability/resource mapping, request and invocation IDs, canonical argument digest, policy/decision IDs and versions, durable decision receipt, execution revalidation, idempotency/replay behavior, and durable execution/observation receipts. Then implement a client against that contract and verify fail-closed behavior against the actual service. Until then, production gateway integration and durable audit wiring remain **BLOCKED**, and this harness is not production-ready.

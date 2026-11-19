@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 
 from crewai.tools import BaseTool
 
-from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
+from scripts.naeos_tool_boundary import BoundaryDecision, GuardedToolRegistry, PolicyEnforcedTool, require_guarded_tools
 
 
 class RecordingTool(BaseTool):
@@ -80,6 +80,26 @@ class ToolBoundaryTests(unittest.TestCase):
             tool.run(value="must-not-run")
         self.assertEqual(RecordingTool.entries, [])
         self.assertEqual([item.decision for item in self.decisions], ["POLICY_ERROR"])
+
+    def test_guarded_registry_wraps_raw_tools_before_registration(self) -> None:
+        registry = GuardedToolRegistry()
+        guarded = registry.register(self.delegate, authorize=lambda _name, _args: False, observe=self.decisions.append, policy_id="naeos.registry-test/1")
+        self.assertIsInstance(guarded, PolicyEnforcedTool)
+        self.assertEqual(require_guarded_tools(registry.tools()), [guarded])
+        with self.assertRaises(PermissionError):
+            registry.tools()[0].run(value="registry-denied")
+        self.assertEqual(RecordingTool.entries, [])
+        self.assertEqual([item.decision for item in self.decisions], ["DENY"])
+
+    def test_guarded_registry_rejects_raw_tool_and_duplicate_name(self) -> None:
+        registry = GuardedToolRegistry()
+        with self.assertRaises(TypeError):
+            registry.register_guarded(self.delegate)
+        registry.register(self.delegate, authorize=lambda _name, _args: False, observe=self.decisions.append)
+        with self.assertRaises(ValueError):
+            registry.register(self.delegate, authorize=lambda _name, _args: False, observe=self.decisions.append)
+        with self.assertRaises(TypeError):
+            require_guarded_tools([self.delegate])
 
     def test_observer_failure_fails_closed(self) -> None:
         def broken_observer(_event: BoundaryDecision) -> None:

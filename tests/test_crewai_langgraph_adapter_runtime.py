@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Any
 
 import crewai
+from langchain_core.messages import AIMessage
+from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode
 from crewai.agents.agent_adapters.langgraph.langgraph_tool_adapter import LangGraphToolAdapter
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
@@ -51,10 +54,21 @@ async def invoke_adapter() -> tuple[Any, bool]:
     adapter.configure_tools([])
     raw_converted = adapter.tools()[0]
     converted = normalize_langgraph_async_tool(raw_converted)
-    result = await converted.ainvoke({
-        "invocation_id": "langgraph-adapter-deny-001",
-        "value": "probe",
-    })
+    workflow = StateGraph(MessagesState)
+    workflow.add_node("tools", ToolNode([converted]))
+    workflow.add_edge(START, "tools")
+    workflow.add_edge("tools", END)
+    graph = workflow.compile()
+    tool_call = AIMessage(
+        content="",
+        tool_calls=[{
+            "name": converted.name,
+            "args": {"invocation_id": "langgraph-adapter-deny-001", "value": "probe"},
+            "id": "langgraph-adapter-deny-001",
+            "type": "tool_call",
+        }],
+    )
+    result = await graph.ainvoke({"messages": [tool_call]})
     normalized = getattr(converted, "coroutine", None) is not None
     return result, normalized
 
@@ -95,7 +109,7 @@ def run_probe() -> dict[str, Any]:
     )
     limitations = []
     if not path_exercised:
-        limitations.append("LangGraph StructuredTool.ainvoke did not reach the NAEOS boundary.")
+        limitations.append("LangGraph ToolNode graph invocation did not reach the NAEOS boundary.")
     if execution_error and not enforcement_observed:
         limitations.append(f"LangGraph adapter invocation raised before enforcement: {execution_error}")
 
@@ -108,7 +122,8 @@ def run_probe() -> dict[str, Any]:
         "adapter_sdk_version": version("langgraph"),
         "langchain_core_version": version("langchain-core"),
         "python_version": platform.python_version(),
-        "execution_path": "LangGraphToolAdapter.configure_tools -> NAEOS async normalization -> StructuredTool.ainvoke -> adapter coroutine -> PolicyEnforcedTool.run",
+        "execution_path": "LangGraph StateGraph.ainvoke -> ToolNode -> LangGraphToolAdapter StructuredTool coroutine -> PolicyEnforcedTool._arun",
+        "graph_orchestration": "compiled StateGraph with ToolNode and deterministic AIMessage tool call; no model/network dependency",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
         "async_callable_normalized": async_callable_normalized,
