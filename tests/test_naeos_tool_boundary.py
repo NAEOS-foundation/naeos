@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import Any
+from typing import Any, ClassVar
 
 from crewai.tools import BaseTool
 
@@ -15,7 +15,7 @@ from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
 class RecordingTool(BaseTool):
     name: str = "naeos_boundary_unit_probe"
     description: str = "Records whether the underlying tool body was entered."
-    entries: list[dict[str, Any]] = []
+    entries: ClassVar[list[dict[str, Any]]] = []
 
     def _run(self, value: str) -> str:
         type(self).entries.append({"value": value})
