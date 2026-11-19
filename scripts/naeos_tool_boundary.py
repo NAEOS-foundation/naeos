@@ -9,6 +9,7 @@ defense-in-depth, not the authorization boundary.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping
@@ -104,6 +105,8 @@ class PolicyEnforcedTool(BaseTool):
 
     async def _arun(self, **kwargs: Any) -> Any:
         self._decide(kwargs)
+        if type(self._delegate)._arun is BaseTool._arun:
+            return await asyncio.to_thread(self._delegate.run, **kwargs)
         return await self._delegate.arun(**kwargs)
 
 
