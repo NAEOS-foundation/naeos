@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** REACT AND NATIVE TOOL-CALLING RUNTIME PASS CONFIRMED; FLOW TOOLACTION RUNTIME FAIL CONFIRMED; EXTERNAL ADAPTER PATHS NOT YET EXECUTED  
+**Status:** REACT AND NATIVE TOOL-CALLING PASS; FLOW TOOLACTION AND OPENAI AGENTS ADAPTER FAIL; LANGGRAPH ADAPTER RUNTIME PENDING  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -77,7 +77,7 @@ Sources:
 - [1.15.16 openai_agent_tool_adapter.py](https://github.com/crewAIInc/crewAI/blob/1.15.16/lib/crewai/src/crewai/agents/agent_adapters/openai_agents/openai_agent_tool_adapter.py)
 - [1.15.44 openai_agent_tool_adapter.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/agents/agent_adapters/openai_agents/openai_agent_tool_adapter.py)
 
-**Interpretation:** classify as **HOOK BYPASS RISK / NOT COVERED BY THE OBSERVED TOOL-HOOK SEAM**. Validate through the adapter's real conversion and invocation API, with a denying hook and independent tool-body counter. Confirm supported optional dependencies and public construction API before writing the test.
+**Interpretation:** the converted SDK FunctionTool.on_invoke_tool callback was invoked in both pinned versions. It called BaseTool._run directly, did not dispatch the CrewAI before-tool hook, and produced one independent side effect; see Section 12.
 
 ### 2.5 LangGraph tool adapter
 
@@ -98,7 +98,7 @@ Sources:
 | ReAct / text tool call | Before/after hooks in `tool_utils.py` | Before/after hooks in `tool_utils.py` | **PASS — runtime confirmed in both versions** |
 | Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | **PASS — runtime confirmed in both versions** |
 | Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
-| OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | NOT EXECUTED |
+| OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | **FAIL — runtime confirmed in both versions** |
 | LangGraph adapter | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
 
 ## 4. Runtime harness entry points (1.15.44 source)
@@ -214,3 +214,19 @@ Both versions recorded exactly one DENY observation for `naeos_v2_native_probe`,
 Evidence and raw JSON artifacts: [GitHub Actions run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622). Both native tool-calling matrix jobs completed successfully.
 
 **Scope boundary:** this PASS covers CrewAI's native tool-calling path only. It does not establish compatibility for the OpenAI Agents adapter or LangGraph adapter, which remain separate execution paths and require their own runtime probes.
+
+
+## 12. Runtime evidence — OpenAI Agents adapter DENY probe
+
+The v2 harness installed the optional OpenAI Agents SDK, converted the CrewAI test tool through `OpenAIAgentToolAdapter.configure_tools()`, and invoked the resulting SDK `FunctionTool.on_invoke_tool` callback with a deterministic JSON argument payload. This tests the actual adapter callback and SDK tool object; it does not claim to exercise the full OpenAI Agents `Runner` model loop.
+
+| CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Result |
+|---|---:|---:|---:|---|
+| 1.15.16 | No | 1 | 1 | **FAIL** |
+| 1.15.44 | No | 1 | 1 | **FAIL** |
+
+Both adapter callbacks completed and returned `tool-body-executed`. The CrewAI global before-tool hook was not dispatched, and the independent ledger recorded one side effect under DENY.
+
+Evidence and raw JSON artifacts: [GitHub Actions run 44594186676](https://github.com/NAEOS-foundation/naeos/actions/runs/44594186676). Both OpenAI Agents adapter matrix jobs failed intentionally on the observed side effect.
+
+**Scope boundary:** this result applies to the CrewAI OpenAI Agents tool adapter callback. It does not claim a full OpenAI Agents Runner end-to-end conformance test.
