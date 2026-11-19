@@ -25,7 +25,7 @@ from crewai.hooks.tool_hooks import (
 )
 from crewai.tools import BaseTool
 
-from scripts.crewai_compat_v2_harness import (
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool\n\nfrom scripts.crewai_compat_v2_harness import (
     Result,
     SideEffectLedger,
     candidate_digest,
@@ -33,7 +33,7 @@ from scripts.crewai_compat_v2_harness import (
 )
 
 LEDGER = SideEffectLedger()
-HOOK_OBSERVATIONS: list[dict[str, Any]] = []
+HOOK_OBSERVATIONS: list[dict[str, Any]] = []\nBOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
 
 
 class ProbeFlow(Flow):
@@ -53,12 +53,12 @@ class SideEffectTool(BaseTool):
         return "tool-body-executed"
 
 
-class ToolActionProbeFlow(Flow):
+class GuardedFlowTool(PolicyEnforcedTool):\n    def __init__(self, **data: Any) -> None:\n        super().__init__(\n            delegate=SideEffectTool(),\n            authorize=lambda _name, _args: False,\n            observe=BOUNDARY_OBSERVATIONS.append,\n            policy_id="naeos.test.deny-flow/1",\n        )\n\n\nclass ToolActionProbeFlow(Flow):
     @start()
     def invoke_tool_action(self) -> str:
         definition = FlowToolActionDefinition(
             call="tool",
-            ref=f"{SideEffectTool.__module__}:SideEffectTool",
+            ref=f"{GuardedFlowTool.__module__}:GuardedFlowTool",
             with_={
                 "invocation_id": "flow-tool-action-deny-001",
                 "value": "probe",
@@ -96,7 +96,7 @@ def run_probe() -> dict[str, Any]:
     hook_called = bool(HOOK_OBSERVATIONS)
     path_exercised = execution_completed or hook_called or bool(entries)
     result = classify_deny(
-        enforcement_observed=hook_called,
+        enforcement_observed=enforcement_observed,
         tool_body_entries=len(entries),
         side_effect_count=len(entries),
         path_exercised=path_exercised,
@@ -145,7 +145,7 @@ class FlowToolActionRuntimeTests(unittest.TestCase):
     def test_deny_classification_matches_independent_observations(self) -> None:
         report = run_probe()
         expected = classify_deny(
-            enforcement_observed=report["hook_dispatch_observed"],
+            enforcement_observed=report["enforcement_observed"],
             tool_body_entries=report["tool_body_entries"],
             side_effect_count=report["side_effect_count"],
             path_exercised=report["path_exercised"],
