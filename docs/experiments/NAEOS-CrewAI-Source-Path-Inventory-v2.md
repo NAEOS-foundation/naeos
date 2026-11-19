@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** SOURCE INSPECTION COMPLETE — RUNTIME VALIDATION NOT EXECUTED  
+**Status:** SOURCE INSPECTION COMPLETE — FLOW TOOLACTION RUNTIME FAIL CONFIRMED; OTHER PATHS NOT YET EXECUTED  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -65,7 +65,7 @@ Sources:
 - [1.15.16 flow/runtime/_actions.py](https://github.com/crewAIInc/crewAI/blob/1.15.16/lib/crewai/src/crewai/flow/runtime/_actions.py)
 - [1.15.44 flow/runtime/_actions.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/flow/runtime/_actions.py)
 
-**Interpretation:** classify as **HOOK BYPASS RISK / NOT COVERED BY THE OBSERVED TOOL-HOOK SEAM**. Confirm with a runtime test that registers a denying before-tool hook, executes a Flow `ToolAction`, and checks an independent side-effect counter. Do not claim a bypass test has passed until executed.
+**Interpretation:** runtime confirmation is recorded in Section 9. Both pinned versions execute the Flow ToolAction body and produce an independent side effect while the global before-tool hook is not dispatched.
 
 ### 2.4 OpenAI Agents tool adapter
 
@@ -97,7 +97,7 @@ Sources:
 |---|---|---|---|
 | ReAct / text tool call | Before/after hooks in `tool_utils.py` | Before/after hooks in `tool_utils.py` | NOT EXECUTED |
 | Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | NOT EXECUTED |
-| Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
+| Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | NOT EXECUTED |
 | LangGraph adapter | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
 
@@ -166,3 +166,19 @@ The current `scripts/external_validation_crewai_boundaries.py` registers hooks a
 ## 8. Next implementation step
 
 Implement the smallest pinned harness that first proves the **ReAct path** and **Flow ToolAction path** against both versions. Then add the OpenAI Agents and LangGraph adapter paths using their real public adapter APIs. Native tool calling in both versions remains its own path, separate from ReAct. Execute the v2 scenario matrix only after the path inventory and harness entry points are verified.
+
+
+## 9. Runtime evidence — Flow ToolAction DENY probe
+
+The v2 harness executed the public Flow runtime path on GitHub Actions with Python 3.12.16 and the pinned CrewAI versions below. The test registered a global `before_tool_call` hook that returned DENY, invoked the Flow through `Flow.kickoff()`, and recorded tool-body execution independently in the side-effect ledger.
+
+| CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Result |
+|---|---:|---:|---:|---|
+| 1.15.16 | No | 1 | 1 | **FAIL** |
+| 1.15.44 | No | 1 | 1 | **FAIL** |
+
+Both probes completed the execution path without a fixture or import error. The tool returned `tool-body-executed`; the ledger recorded exactly one side effect. This is a confirmed enforcement bypass for the tested global tool-hook contract on Flow `ToolAction`, not merely a static-source suspicion.
+
+Evidence and raw JSON artifacts: [GitHub Actions run 44591869537](https://github.com/NAEOS-foundation/naeos/actions/runs/44591869537). The two matrix jobs intentionally exit non-zero on this result. The legacy policy-boundary job in the same workflow passes, but it does not cover the Flow execution path.
+
+**Scope boundary:** this result does not establish behavior for ReAct, native tool calling, OpenAI Agents, or LangGraph. Those paths remain independently testable and must not inherit the Flow result.
