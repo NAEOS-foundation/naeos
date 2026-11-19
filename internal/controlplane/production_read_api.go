@@ -31,7 +31,7 @@ type controlPlaneDecision struct {
 	RequestID  string         `json:"request_id,omitempty"`
 	DecisionID string         `json:"decision_id,omitempty"`
 	AgentID    string         `json:"agent_id"`
-	Capability Capability    `json:"capability,omitempty"`
+	Capability Capability     `json:"capability,omitempty"`
 	EventType  string         `json:"event_type"`
 	Decision   DecisionStatus `json:"decision,omitempty"`
 	Reason     DecisionReason `json:"reason,omitempty"`
