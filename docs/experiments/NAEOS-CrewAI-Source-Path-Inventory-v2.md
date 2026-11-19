@@ -2,7 +2,7 @@
 
 **Version:** 0.1  
 **Status:** SOURCE INSPECTION COMPLETE — RUNTIME VALIDATION NOT EXECUTED  
-**Branch:** `feat/crewai-compatibility-validation-v2`  
+**Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
 > This inventory records static source observations for two pinned upstream tags. It is not a runtime conformance result, security certification, or proof that all downstream integrations use these paths exactly as inspected.
@@ -46,7 +46,7 @@ In `lib/crewai/src/crewai/agents/agent_executor.py`, native tool-call handling:
 5. invokes the resolved native function only when not blocked;
 6. invokes after-tool hooks and emits lifecycle events.
 
-The inspected method contains a direct call through `self._available_functions[func_name](**args_dict)` after the before-hook decision.
+The inspected method invokes the resolved function with the parsed `args_dict` after the before-hook decision.
 
 Sources:
 - [1.15.16 crew_agent_executor.py](https://github.com/crewAIInc/crewAI/blob/1.15.16/lib/crewai/src/crewai/agents/crew_agent_executor.py)
