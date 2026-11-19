@@ -19,6 +19,8 @@ from pydantic import PrivateAttr
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from crewai.agents.agent_adapters.openai_agents.openai_agent_tool_adapter import OpenAIAgentToolAdapter
+from agents import Agent, Runner
+from agents.testing import ScriptedModel, assistant_message, function_call
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
 
@@ -42,17 +44,31 @@ class SideEffectTool(BaseTool):
         return "tool-body-executed"
 
 
-async def invoke_adapter() -> Any:
+async def invoke_adapter() -> tuple[Any, int]:
     tool = SideEffectTool()
     adapter = OpenAIAgentToolAdapter(tools=[tool])
     adapter.configure_tools([])
-    converted = adapter.converted_tools[0]
-    # Exercise the SDK FunctionTool's actual invocation callback. The adapter
-    # wrapper ignores context_wrapper and parses the JSON argument payload.
-    return await converted.on_invoke_tool(
-        None,
-        json.dumps({"invocation_id": "openai-adapter-deny-001", "value": "probe"}),
+    model = ScriptedModel(
+        [
+            [
+                function_call(
+                    "naeos_v2_openai_adapter_probe",
+                    {"invocation_id": "openai-adapter-deny-001", "value": "probe"},
+                    call_id="openai-adapter-call-001",
+                )
+            ],
+            [assistant_message("OpenAI Agents adapter policy probe completed.")],
+        ]
     )
+    agent = Agent(
+        name="NAEOS adapter boundary probe",
+        instructions="Call the provided test tool once, then finish.",
+        model=model,
+        tools=adapter.converted_tools,
+    )
+    result = await Runner.run(agent, "Exercise the controlled tool once.")
+    model.assert_complete()
+    return result.final_output, len(model.calls)
 
 
 def run_probe() -> dict[str, Any]:
@@ -71,8 +87,9 @@ def run_probe() -> dict[str, Any]:
     execution_error = None
     adapter_result = None
     invocation_completed = False
+    model_calls = 0
     try:
-        adapter_result = asyncio.run(invoke_adapter())
+        adapter_result, model_calls = asyncio.run(invoke_adapter())
         invocation_completed = True
     except Exception as exc:
         execution_error = f"{type(exc).__name__}: {exc}"
@@ -100,9 +117,10 @@ def run_probe() -> dict[str, Any]:
         "adapter_sdk": "openai-agents",
         "adapter_sdk_version": version("openai-agents"),
         "python_version": platform.python_version(),
-        "execution_path": "OpenAIAgentToolAdapter.configure_tools -> FunctionTool.on_invoke_tool -> adapter wrapper -> BaseTool._run",
+        "execution_path": "OpenAIAgentToolAdapter.configure_tools -> OpenAI Agents Runner.run -> FunctionTool.on_invoke_tool -> adapter wrapper -> BaseTool._run",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
+        "model_calls": model_calls,
         "execution_error": execution_error,
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
