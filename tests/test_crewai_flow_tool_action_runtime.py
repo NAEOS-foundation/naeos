@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import json
 import platform
+import sys
 import unittest
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 import crewai
 from crewai.flow.flow_definition import FlowToolActionDefinition
@@ -25,6 +26,8 @@ from crewai.hooks.tool_hooks import (
     register_before_tool_call_hook,
 )
 from crewai.tools import BaseTool
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest
 
