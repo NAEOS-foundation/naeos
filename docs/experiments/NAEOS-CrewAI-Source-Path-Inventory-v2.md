@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** REACT RUNTIME PASS CONFIRMED; FLOW TOOLACTION RUNTIME FAIL CONFIRMED; OTHER PATHS NOT YET EXECUTED  
+**Status:** REACT AND NATIVE TOOL-CALLING RUNTIME PASS CONFIRMED; FLOW TOOLACTION RUNTIME FAIL CONFIRMED; EXTERNAL ADAPTER PATHS NOT YET EXECUTED  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -52,7 +52,7 @@ Sources:
 - [1.15.16 crew_agent_executor.py](https://github.com/crewAIInc/crewAI/blob/1.15.16/lib/crewai/src/crewai/agents/crew_agent_executor.py)
 - [1.15.44 agent_executor.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/agents/agent_executor.py)
 
-**Interpretation:** test native tool calling separately from the ReAct utility path in each version. Static source inspection indicates both versions have a before-hook seam; runtime enforcement remains unverified.
+**Interpretation:** native tool calling was exercised separately from the ReAct utility path through public `Crew.kickoff()`. The denying hook was observed and the independent ledger remained empty in both pinned versions; see Section 11.
 
 ### 2.3 Flow `ToolAction`
 
@@ -96,7 +96,7 @@ Sources:
 | Path | 1.15.16 source observation | 1.15.44 source observation | Runtime status |
 |---|---|---|---|
 | ReAct / text tool call | Before/after hooks in `tool_utils.py` | Before/after hooks in `tool_utils.py` | **PASS — runtime confirmed in both versions** |
-| Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | NOT EXECUTED |
+| Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | **PASS — runtime confirmed in both versions** |
 | Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | NOT EXECUTED |
 | LangGraph adapter | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
@@ -198,3 +198,19 @@ Both versions recorded exactly one DENY hook observation for `naeos_v2_react_pro
 Evidence and raw JSON artifacts: [GitHub Actions run 44592362102](https://github.com/NAEOS-foundation/naeos/actions/runs/44592362102). Both ReAct matrix jobs completed successfully.
 
 **Scope boundary:** ReAct PASS does not imply Flow ToolAction, native tool calling, OpenAI Agents, or LangGraph are covered. Flow ToolAction is independently confirmed FAIL in Section 9; the remaining paths stay untested until their own runtime evidence exists.
+
+
+## 11. Runtime evidence — native tool-calling DENY probe
+
+The v2 harness exercised native tool calling independently from the ReAct text path. A deterministic `BaseLLM` explicitly advertised native function-calling support and returned a structured native function-call response through the public `Crew.kickoff()` API. The global before-tool hook returned DENY; the tool body wrote to the independent side-effect ledger only if the resolved function actually ran.
+
+| CrewAI version | Native path selected | Hook dispatched | Tool-body entries | Independent side effects | Result |
+|---|---:|---:|---:|---:|---|
+| 1.15.16 | Yes | Yes | 0 | 0 | **PASS** |
+| 1.15.44 | Yes | Yes | 0 | 0 | **PASS** |
+
+Both versions recorded exactly one DENY observation for `naeos_v2_native_probe`, completed the native tool-call loop with two LLM calls, returned `native tool policy test completed`, and left the independent ledger empty.
+
+Evidence and raw JSON artifacts: [GitHub Actions run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622). Both native tool-calling matrix jobs completed successfully.
+
+**Scope boundary:** this PASS covers CrewAI's native tool-calling path only. It does not establish compatibility for the OpenAI Agents adapter or LangGraph adapter, which remain separate execution paths and require their own runtime probes.
