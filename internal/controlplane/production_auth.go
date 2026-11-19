@@ -53,6 +53,8 @@ func (r *ProductionRuntime) ProductionHandler() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "live"})
 	})
 	mux.Handle("GET /health/ready", r.readyHandler())
+	mux.Handle("GET /api/control-plane/overview", r.readAuthorizationHandler(http.HandlerFunc(r.overviewHandler)))
+	mux.Handle("GET /api/control-plane/decisions", r.readAuthorizationHandler(http.HandlerFunc(r.decisionsHandler)))
 	mux.Handle("POST /api/control-plane/decision", r.authorizationHandler())
 	return mux
 }
