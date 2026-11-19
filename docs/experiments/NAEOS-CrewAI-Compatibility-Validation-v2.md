@@ -62,11 +62,11 @@ The current implementation has executed a limited DENY boundary probe for the fo
 
 | Execution path | CrewAI 1.15.16 | CrewAI 1.15.44 | Runtime evidence |
 |---|---|---|---|
-| ReAct via public `Crew.kickoff()` | PASS — hook observed; zero body entries and side effects | PASS — hook observed; zero body entries and side effects | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
-| Native tool calling via public `Crew.kickoff()` | PASS — native path selected; hook observed; zero body entries and side effects | PASS — native path selected; hook observed; zero body entries and side effects | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
-| Flow ToolAction via public `Flow.kickoff()` | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
-| OpenAI Agents adapter callback | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44594186676](https://github.com/NAEOS-foundation/naeos/actions/runs/44594186676) |
-| LangGraph converted StructuredTool invocation | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | [Run 44594554943](https://github.com/NAEOS-foundation/naeos/actions/runs/44594554943) |
+| ReAct via public `Crew.kickoff()` | PASS — hook observed; zero body entries and side effects | PASS — hook observed; zero body entries and side effects | [Run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725) |
+| Native tool calling via public `Crew.kickoff()` | PASS — native path selected; hook observed; zero body entries and side effects | PASS — native path selected; hook observed; zero body entries and side effects | [Run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725) |
+| Flow ToolAction via public `Flow.kickoff()` | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725) |
+| OpenAI Agents adapter callback | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725) |
+| LangGraph converted StructuredTool invocation | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | [Run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725) |
 
 The Flow and OpenAI Agents adapter FAIL results are enforcement bypasses for the tested paths: the tool body and independent side-effect ledger were entered under DENY. LangGraph remains UNKNOWN because the converted async wrapper was returned as an unawaited coroutine; no policy enforcement conclusion can be drawn. The initial full ToolNode attempt was separately BLOCKED by a LangGraph config error.
 
