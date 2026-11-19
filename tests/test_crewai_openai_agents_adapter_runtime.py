@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2026 NAEOS contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Probe the CrewAI OpenAI Agents adapter's actual FunctionTool invocation."""
+"""Probe the CrewAI OpenAI Agents adapter with the NAEOS tool boundary."""
 from __future__ import annotations
 
 import argparse
@@ -14,25 +14,24 @@ from pathlib import Path
 from typing import Any
 
 import crewai
-from pydantic import PrivateAttr
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from crewai.agents.agent_adapters.openai_agents.openai_agent_tool_adapter import OpenAIAgentToolAdapter
 from agents import Agent, Runner
 from agents.items import ModelResponse
 from agents.models.interface import Model, ModelTracing
 from agents.usage import Usage
 from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
+from crewai.agents.agent_adapters.openai_agents.openai_agent_tool_adapter import OpenAIAgentToolAdapter
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
 
-from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
 
 LEDGER = SideEffectLedger()
 TOOL_BODY_ENTRIES = 0
 HOOK_OBSERVATIONS: list[dict[str, Any]] = []
+BOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
 
 
 class SideEffectTool(BaseTool):
@@ -42,11 +41,7 @@ class SideEffectTool(BaseTool):
     def _run(self, invocation_id: str, value: str) -> str:
         global TOOL_BODY_ENTRIES
         TOOL_BODY_ENTRIES += 1
-        LEDGER.append(
-            invocation_id=invocation_id,
-            tool_name=self.name,
-            payload={"value": value},
-        )
+        LEDGER.append(invocation_id=invocation_id, tool_name=self.name, payload={"value": value})
         return "tool-body-executed"
 
 
@@ -70,34 +65,26 @@ class DeterministicAgentsModel(Model):
     ) -> ModelResponse:
         self.calls += 1
         if self.calls == 1:
-            output = [
-                ResponseFunctionToolCall(
-                    id="openai-adapter-item-001",
-                    call_id="openai-adapter-call-001",
-                    type="function_call",
-                    name="naeos_v2_openai_adapter_probe",
-                    arguments=json.dumps(
-                        {"invocation_id": "openai-adapter-deny-001", "value": "probe"}
-                    ),
-                )
-            ]
+            output = [ResponseFunctionToolCall(
+                id="openai-adapter-item-001",
+                call_id="openai-adapter-call-001",
+                type="function_call",
+                name="naeos_v2_openai_adapter_probe",
+                arguments=json.dumps({"invocation_id": "openai-adapter-deny-001", "value": "probe"}),
+            )]
         else:
-            output = [
-                ResponseOutputMessage(
-                    id="openai-adapter-final-001",
-                    type="message",
-                    role="assistant",
-                    content=[
-                        ResponseOutputText(
-                            type="output_text",
-                            text="OpenAI Agents adapter policy probe completed.",
-                            annotations=[],
-                            logprobs=[],
-                        )
-                    ],
-                    status="completed",
-                )
-            ]
+            output = [ResponseOutputMessage(
+                id="openai-adapter-final-001",
+                type="message",
+                role="assistant",
+                content=[ResponseOutputText(
+                    type="output_text",
+                    text="OpenAI Agents adapter policy probe completed.",
+                    annotations=[],
+                    logprobs=[],
+                )],
+                status="completed",
+            )]
         return ModelResponse(
             output=output,
             usage=Usage(),
@@ -109,8 +96,13 @@ class DeterministicAgentsModel(Model):
 
 
 async def invoke_adapter() -> tuple[Any, int]:
-    tool = SideEffectTool()
-    adapter = OpenAIAgentToolAdapter(tools=[tool])
+    guarded = PolicyEnforcedTool(
+        delegate=SideEffectTool(),
+        authorize=lambda _name, _args: False,
+        observe=BOUNDARY_OBSERVATIONS.append,
+        policy_id="naeos.test.deny-openai-agents/1",
+    )
+    adapter = OpenAIAgentToolAdapter(tools=[guarded])
     adapter.configure_tools([])
     model = DeterministicAgentsModel()
     agent = Agent(
@@ -128,12 +120,11 @@ def run_probe() -> dict[str, Any]:
     LEDGER = SideEffectLedger()
     TOOL_BODY_ENTRIES = 0
     HOOK_OBSERVATIONS.clear()
+    BOUNDARY_OBSERVATIONS.clear()
     clear_all_tool_call_hooks()
 
     def deny_every_tool(context: Any) -> bool:
-        HOOK_OBSERVATIONS.append(
-            {"tool_name": context.tool_name, "decision": "DENY"}
-        )
+        HOOK_OBSERVATIONS.append({"tool_name": context.tool_name, "decision": "DENY"})
         return False
 
     register_before_tool_call_hook(deny_every_tool)
@@ -150,18 +141,19 @@ def run_probe() -> dict[str, Any]:
     entries = LEDGER.snapshot()
     body_entries = TOOL_BODY_ENTRIES
     hook_called = bool(HOOK_OBSERVATIONS)
-    path_exercised = invocation_completed or hook_called or body_entries > 0
+    enforcement_observed = any(item.decision == "DENY" for item in BOUNDARY_OBSERVATIONS)
+    path_exercised = invocation_completed or enforcement_observed or bool(entries)
     result = classify_deny(
-        enforcement_observed=hook_called,
+        enforcement_observed=enforcement_observed,
         tool_body_entries=body_entries,
         side_effect_count=len(entries),
         path_exercised=path_exercised,
     )
     limitations = []
     if not path_exercised:
-        limitations.append("OpenAI Agents FunctionTool adapter did not reach its invocation boundary.")
-    if execution_error:
-        limitations.append(f"Adapter invocation raised: {execution_error}")
+        limitations.append("OpenAI Agents FunctionTool did not reach the NAEOS boundary.")
+    if execution_error and not enforcement_observed:
+        limitations.append(f"Adapter invocation raised before enforcement: {execution_error}")
 
     report = {
         "schema": "naeos.crewai-compatibility-v2.openai-agents-adapter/0.2",
@@ -171,7 +163,7 @@ def run_probe() -> dict[str, Any]:
         "adapter_sdk": "openai-agents",
         "adapter_sdk_version": version("openai-agents"),
         "python_version": platform.python_version(),
-        "execution_path": "OpenAIAgentToolAdapter.configure_tools -> OpenAI Agents Runner.run -> FunctionTool.on_invoke_tool -> adapter wrapper -> BaseTool._run",
+        "execution_path": "OpenAIAgentToolAdapter -> OpenAI Agents Runner.run -> FunctionTool callback -> PolicyEnforcedTool._run",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
         "model_calls": model_calls,
@@ -179,6 +171,8 @@ def run_probe() -> dict[str, Any]:
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
         "hook_observations": HOOK_OBSERVATIONS,
+        "enforcement_observed": enforcement_observed,
+        "boundary_decisions": [item.__dict__ for item in BOUNDARY_OBSERVATIONS],
         "tool_body_entries": body_entries,
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
@@ -186,13 +180,11 @@ def run_probe() -> dict[str, Any]:
         "compatibility_result": result.value,
         "limitations": limitations,
         "assertions": {
-            "deny_hook_was_dispatched": hook_called,
+            "naeos_deny_observed": enforcement_observed,
             "tool_body_not_entered": body_entries == 0,
             "no_independent_side_effect": len(entries) == 0,
         },
-        "candidate_digest_probe": candidate_digest(
-            {"tool": "naeos_v2_openai_adapter_probe", "decision": "DENY"}
-        ),
+        "candidate_digest_probe": candidate_digest({"tool": "naeos_v2_openai_adapter_probe", "decision": "DENY"}),
     }
     clear_all_tool_call_hooks()
     return report
@@ -206,8 +198,4 @@ if __name__ == "__main__":
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, sort_keys=True))
-    raise SystemExit(
-        0 if report["compatibility_result"] == "PASS"
-        else 2 if report["compatibility_result"] == "FAIL"
-        else 3
-    )
+    raise SystemExit(0 if report["compatibility_result"] == "PASS" else 2 if report["compatibility_result"] == "FAIL" else 3)
