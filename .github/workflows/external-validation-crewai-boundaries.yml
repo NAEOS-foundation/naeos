@@ -74,24 +74,11 @@ jobs:
           python --version
           python -c "import crewai; print('crewai', crewai.__version__)"
 
-      - name: Execute Flow ToolAction probe and record compatibility result
+      - name: Execute Flow ToolAction probe (DENY violations fail the job)
         run: |
           mkdir -p external-validation-evidence
-          set +e
           python tests/test_crewai_flow_tool_action_runtime.py \
             --output "external-validation-evidence/flow-tool-action-${{ matrix.crewai-version }}.json"
-          rc=$?
-          set -e
-          if [ "$rc" -eq 2 ]; then
-            echo "::warning::Compatibility FAIL observed for CrewAI ${{ matrix.crewai-version }}; inspect evidence artifact."
-            exit 0
-          elif [ "$rc" -ne 0 ]; then
-            echo "::error::Probe crashed or produced invalid evidence (exit $rc)."
-            exit "$rc"
-          fi
-
-      - name: Validate evidence consistency
-        run: python -m unittest tests.test_crewai_flow_tool_action_runtime -v
 
       - name: Upload Flow ToolAction evidence
         if: always()
