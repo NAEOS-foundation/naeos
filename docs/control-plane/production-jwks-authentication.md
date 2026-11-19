@@ -8,7 +8,7 @@ demo reset, scenario, or execution routes.
 
 The `naeos control-plane serve` command requires these environment variables:
 
-- `DATABASE_URL`: dedicated Control Plane PostgreSQL login/connection URL (TLS required).
+- `NAEOS_CONTROLPLANE_DATABASE_URL`: dedicated Control Plane PostgreSQL login/connection URL (TLS required).
 - `NAEOS_CONTROLPLANE_ISSUER`: exact JWT `iss` claim value.
 - `NAEOS_CONTROLPLANE_AUDIENCE`: exact expected JWT `aud` value.
 - `NAEOS_CONTROLPLANE_JWKS_URL`: HTTPS URL that publishes the signing key set.
