@@ -101,7 +101,47 @@ Sources:
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | NOT EXECUTED |
 | LangGraph adapter | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
 
-## 4. Consequences for the v2 harness
+## 4. Runtime harness entry points (1.15.44 source)
+
+The static findings above identify concrete entry points for a future integration harness. These are source-derived entry points, not evidence that a runtime test has been run.
+
+### 4.1 Flow ToolAction through the public Flow runtime
+
+- Public runtime class: `crewai.flow.flow.Flow` (re-exporting the runtime implementation).
+- Declarative constructor: `Flow.from_declaration(contents=...)`.
+- Definition schema: `FlowDefinition` with `FlowMethodDefinition.do` set to `FlowToolActionDefinition`.
+- Runtime method binding: `Flow._flow_post_init` -> `_action_bound_methods` -> `build_action`.
+- Consequential entry point: `Flow.kickoff()`.
+- Tool execution: `ToolAction.run` -> `self.tool.run(**rendered)`.
+
+For the test, create an importable test-only `BaseTool` class with an append-only in-memory side-effect ledger. Build a declarative Flow referencing that class via `module:qualname`, register a denying before-tool hook, and invoke `kickoff()`. Assert whether the hook was called and whether the tool body changed the ledger. Keep the fixture importable by the declarative resolver; avoid a monkey-patched internal method.
+
+### 4.2 OpenAI Agents adapter
+
+- Adapter: `OpenAIAgentToolAdapter`.
+- Conversion entry point: `_convert_tools_to_openai_format(tools)`.
+- Tool wrapper is supplied to the OpenAI Agents `FunctionTool(on_invoke_tool=...)`.
+- The wrapper calls `tool._run(**args_dict)` directly.
+
+Test the converted FunctionTool through its supported invocation interface from the pinned `openai-agents` dependency. Do not merely call a copied wrapper or invoke `tool._run` directly. If the installed package's supported interface cannot be exercised deterministically, mark the path BLOCKED and record the exact dependency version.
+
+### 4.3 LangGraph adapter
+
+- Adapter: `LangGraphToolAdapter`.
+- Conversion entry point: `configure_tools(tools)`, followed by `tools()`.
+- For CrewAI BaseTool inputs, conversion creates a LangChain `StructuredTool` whose async wrapper calls `tool.run(...)` directly.
+
+Test the returned StructuredTool through its supported async invocation API (for example, `ainvoke`) with the actual pinned `langchain-core` package. Assert the before-hook observation and independent side-effect ledger. If optional dependencies are absent, classify BLOCKED rather than PASS.
+
+### 4.4 ReAct and native tool calling
+
+Use the public Agent/Crew execution route that causes the pinned executor to parse and dispatch a tool call. Do not call `run_before_tool_call_hooks` directly in the v2 test. Use deterministic/mock LLM output if the public runtime supports it, and assert the real tool body counter. Test ReAct and native tool-calling independently for each version.
+
+### 4.5 Version and dependency caveats
+
+The 1.15.44 package metadata inspected declares core dependencies and does not expose dedicated extras named for these OpenAI Agents or LangGraph adapters in the shown optional-dependency list. Adapter dependencies are resolved dynamically through import helpers or inside the adapter. The harness must therefore record installed package versions explicitly and should not assume that installing `crewai` alone makes every adapter test runnable.
+
+## 5. Consequences for the v2 harness
 
 1. Keep ReAct and native tool calling as separate test entry points.
 2. Treat Flow `ToolAction`, OpenAI Agents adapter, and LangGraph adapter as independent suspected bypass paths.
@@ -111,11 +151,11 @@ Sources:
 6. Do not patch or monkey-patch the framework's internal hook dispatcher in a way that makes a bypass path appear covered.
 7. Pin adapter dependencies and record their exact versions in the run manifest. If an optional adapter dependency is unavailable, mark that path `BLOCKED`, not `PASS`.
 
-## 5. Relationship to existing NAEOS v1 harness
+## 6. Relationship to existing NAEOS v1 harness
 
 The current `scripts/external_validation_crewai_boundaries.py` registers hooks and calls `run_before_tool_call_hooks` directly in its own `invoke` helper, then invokes `tool.run`. It therefore validates the hook dispatcher and tool body in that controlled harness, but it does not enter through CrewAI's public Agent/Crew executor, Flow runtime, OpenAI Agents adapter, or LangGraph adapter. Its v1 report remains valid within its stated scope; it must not be described as full execution-path coverage.
 
-## 6. Scope and limitations
+## 7. Scope and limitations
 
 - This is static source inspection of the two commits listed above.
 - It does not establish that every Flow action, third-party adapter, user-defined wrapper, or downstream integration follows the inspected path.
@@ -123,6 +163,6 @@ The current `scripts/external_validation_crewai_boundaries.py` registers hooks a
 - It does not prove zero side effects, exactly-once execution, durable review/resume, or policy freshness.
 - No runtime tests, integration tests, or side-effect assertions were executed as part of producing this inventory.
 
-## 7. Next implementation step
+## 8. Next implementation step
 
 Implement the smallest pinned harness that first proves the **ReAct path** and **Flow ToolAction path** against both versions. Then add the OpenAI Agents and LangGraph adapter paths using their real public adapter APIs. Native tool calling in both versions remains its own path, separate from ReAct. Execute the v2 scenario matrix only after the path inventory and harness entry points are verified.
