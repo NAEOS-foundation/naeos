@@ -6,7 +6,7 @@ on:
     paths:
       - "scripts/external_validation_crewai_boundaries.py"
       - "scripts/crewai_compat_v2_harness.py"
-      - "tests/test_crewai_flow_tool_action_runtime.py"
+      - "tests/test_crewai_flow_tool_action_runtime.py"\n      - "tests/test_crewai_react_runtime.py"
       - "tests/test_crewai_react_runtime.py"
       - ".github/workflows/external-validation-crewai-boundaries.yml"
   workflow_dispatch:
