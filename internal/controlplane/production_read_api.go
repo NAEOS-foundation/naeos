@@ -95,7 +95,7 @@ func (r *ProductionRuntime) overviewHandler(w http.ResponseWriter, req *http.Req
 	}
 	result := controlPlaneOverviewResponse{
 		Environment: r.environment,
-		Status: "healthy",
+		Status: "verified",
 		ObservedAt: time.Now().UTC(),
 		LastSequence: int64(len(events)),
 	}
@@ -138,7 +138,7 @@ func (r *ProductionRuntime) decisionsHandler(w http.ResponseWriter, req *http.Re
 
 	ctx, cancel := context.WithTimeout(req.Context(), 5*time.Second)
 	defer cancel()
-	events, err := r.Ledger.Load(ctx)
+	events, err := r.ledgerReader.Load(ctx)
 	if err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verified control plane ledger is unavailable"})
 		return
