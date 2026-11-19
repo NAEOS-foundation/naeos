@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# Copyright 2026 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Unit tests for the NAEOS final tool-execution authorization boundary."""
+from __future__ import annotations
+
+import unittest
+from typing import Any, ClassVar
+
+from crewai.tools import BaseTool
+
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
+
+
+class RecordingTool(BaseTool):
+    name: str = "naeos_boundary_unit_probe"
+    description: str = "Records whether the underlying tool body was entered."
+    entries: ClassVar[list[dict[str, Any]]] = []
+
+    def _run(self, value: str) -> str:
+        type(self).entries.append({"value": value})
+        return "executed"
+
+
+class ToolBoundaryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        RecordingTool.entries = []
+        self.decisions: list[BoundaryDecision] = []
+        self.delegate = RecordingTool()
+
+    def guarded(self, authorize: Any, observe: Any = None) -> PolicyEnforcedTool:
+        return PolicyEnforcedTool(
+            delegate=self.delegate,
+            authorize=authorize,
+            observe=observe or self.decisions.append,
+            policy_id="naeos.unit-test/1",
+        )
+
+    def test_deny_is_observed_before_delegate_and_has_no_side_effect(self) -> None:
+        tool = self.guarded(lambda _name, _args: False)
+        with self.assertRaises(PermissionError):
+            tool.run(value="denied")
+        self.assertEqual(RecordingTool.entries, [])
+        self.assertEqual(len(self.decisions), 1)
+        self.assertEqual(self.decisions[0].decision, "DENY")
+
+    def test_allow_is_observed_then_delegate_executes(self) -> None:
+        tool = self.guarded(lambda _name, _args: True)
+        self.assertEqual(tool.run(value="allowed"), "executed")
+        self.assertEqual(RecordingTool.entries, [{"value": "allowed"}])
+        self.assertEqual([item.decision for item in self.decisions], ["ALLOW"])
+
+    def test_policy_exception_fails_closed(self) -> None:
+        def broken_policy(_name: str, _args: Any) -> bool:
+            raise RuntimeError("policy unavailable")
+
+        tool = self.guarded(broken_policy)
+        with self.assertRaises(PermissionError):
+            tool.run(value="must-not-run")
+        self.assertEqual(RecordingTool.entries, [])
+        self.assertEqual([item.decision for item in self.decisions], ["POLICY_ERROR"])
+
+    def test_non_boolean_policy_result_fails_closed(self) -> None:
+        tool = self.guarded(lambda _name, _args: "ALLOW")
+        with self.assertRaises(PermissionError):
+            tool.run(value="must-not-run")
+        self.assertEqual(RecordingTool.entries, [])
+        self.assertEqual([item.decision for item in self.decisions], ["POLICY_ERROR"])
+
+    def test_observer_failure_fails_closed(self) -> None:
+        def broken_observer(_event: BoundaryDecision) -> None:
+            raise OSError("audit sink unavailable")
+
+        tool = self.guarded(lambda _name, _args: True, observe=broken_observer)
+        with self.assertRaises(OSError):
+            tool.run(value="must-not-run")
+        self.assertEqual(RecordingTool.entries, [])
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
