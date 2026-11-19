@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import json
 import platform
 import sys
@@ -70,9 +71,13 @@ def run_probe() -> dict[str, Any]:
     execution_error = None
     adapter_result = None
     invocation_completed = False
+    unawaited_coroutine_returned = False
     try:
         adapter_result = asyncio.run(invoke_adapter())
         invocation_completed = True
+        unawaited_coroutine_returned = inspect.isawaitable(adapter_result)
+        if inspect.iscoroutine(adapter_result):
+            adapter_result.close()
     except Exception as exc:
         execution_error = f"{type(exc).__name__}: {exc}"
 
@@ -90,6 +95,8 @@ def run_probe() -> dict[str, Any]:
         limitations.append("LangGraph ToolNode did not reach the adapter invocation boundary.")
     if execution_error:
         limitations.append(f"Adapter invocation raised: {execution_error}")
+    if unawaited_coroutine_returned:
+        limitations.append("The converted StructuredTool returned an unawaited coroutine; tool execution and enforcement remain UNKNOWN.")
 
     report = {
         "schema": "naeos.crewai-compatibility-v2.langgraph-adapter/0.1",
@@ -103,6 +110,8 @@ def run_probe() -> dict[str, Any]:
         "execution_path": "LangGraphToolAdapter.configure_tools -> converted StructuredTool.ainvoke -> adapter wrapper -> BaseTool.run",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
+        "adapter_result_type": None if adapter_result is None else type(adapter_result).__name__,
+        "adapter_returned_unawaited_coroutine": unawaited_coroutine_returned,
         "execution_error": execution_error,
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
