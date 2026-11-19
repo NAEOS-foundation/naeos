@@ -218,7 +218,7 @@ Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github
 
 ## 12. Runtime evidence — OpenAI Agents adapter DENY probe
 
-The v2 harness installed the optional OpenAI Agents SDK, converted the CrewAI test tool through `OpenAIAgentToolAdapter.configure_tools()`, and invoked the resulting SDK `FunctionTool.on_invoke_tool` callback with a deterministic JSON argument payload. This tests the actual adapter callback and SDK tool object; it does not claim to exercise the full OpenAI Agents `Runner` model loop.
+The v2 harness installed the optional OpenAI Agents SDK, converted the CrewAI test tool through `OpenAIAgentToolAdapter.configure_tools()`, and executed the converted FunctionTool through the full OpenAI Agents `Runner.run()` loop. A deterministic custom Model returned one structured function call and then a final answer; no external model API was used.
 
 | CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Result |
 |---|---:|---:|---:|---|
@@ -234,7 +234,7 @@ Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github
 
 ## 13. Runtime evidence — LangGraph adapter invocation
 
-The first attempt to exercise the converted tool through `ToolNode.ainvoke()` was BLOCKED before reaching the adapter invocation boundary by a LangGraph configuration error (`Missing required config key 'N/A' for 'tools'`). The probe was then narrowed to the converted LangChain `StructuredTool.ainvoke()` API so the adapter's own asynchronous wrapper could be observed directly.
+The v2 harness exercised the converted LangChain StructuredTool through LangGraph's actual `ToolNode.ainvoke()` runtime. A test runtime object was supplied using LangGraph's `__pregel_runtime` configuration contract so the tool node could reach the adapter boundary.
 
 | CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Adapter return | Policy result |
 |---|---:|---:|---:|---|---|
@@ -243,6 +243,6 @@ The first attempt to exercise the converted tool through `ToolNode.ainvoke()` wa
 
 Both converted tool invocations returned successfully at the outer `ainvoke()` call, but the result was a coroutine object from the adapter's async wrapper. The wrapper was not awaited, so the underlying `BaseTool.run()` and tool body were never entered. There was no side effect, but there was also no observed DENY enforcement; therefore this is UNKNOWN, not PASS.
 
-The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should be checked for using the appropriate asynchronous field or a synchronous wrapper. This is a likely adapter-construction defect, not proof of policy enforcement.
+The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should use the appropriate asynchronous field or a synchronous wrapper. This is a confirmed adapter-construction defect in the tested version combination, not proof of policy enforcement.
 
 Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725). This test exercises the converted StructuredTool API, not a full LangGraph graph/ToolNode orchestration.
