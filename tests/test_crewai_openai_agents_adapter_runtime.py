@@ -27,11 +27,13 @@ from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessa
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
 
-from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool\nfrom scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
+from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
 
 
 LEDGER = SideEffectLedger()
-HOOK_OBSERVATIONS: list[dict[str, Any]] = []\nBOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
+HOOK_OBSERVATIONS: list[dict[str, Any]] = []
+BOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
 
 
 class SideEffectTool(BaseTool):
@@ -173,7 +175,9 @@ def run_probe() -> dict[str, Any]:
         "execution_error": execution_error,
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
-        "hook_observations": HOOK_OBSERVATIONS,\n        "enforcement_observed": enforcement_observed,\n        "boundary_decisions": [event.__dict__ for event in BOUNDARY_OBSERVATIONS],
+        "hook_observations": HOOK_OBSERVATIONS,
+        "enforcement_observed": enforcement_observed,
+        "boundary_decisions": [event.__dict__ for event in BOUNDARY_OBSERVATIONS],
         "tool_body_entries": len(entries),
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
@@ -199,7 +203,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     report = run_probe()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "
+", encoding="utf-8")
     print(json.dumps(report, indent=2, sort_keys=True))
     raise SystemExit(
         0 if report["compatibility_result"] == "PASS"
