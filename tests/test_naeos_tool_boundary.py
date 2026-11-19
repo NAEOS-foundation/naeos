@@ -4,6 +4,7 @@
 """Unit tests for the NAEOS final tool-execution authorization boundary."""
 from __future__ import annotations
 
+import asyncio
 import unittest
 from typing import Any, ClassVar
 
@@ -49,6 +50,13 @@ class ToolBoundaryTests(unittest.TestCase):
         self.assertEqual(tool.run(value="allowed"), "executed")
         self.assertEqual(RecordingTool.entries, [{"value": "allowed"}])
         self.assertEqual([item.decision for item in self.decisions], ["ALLOW"])
+
+    def test_async_deny_is_observed_before_delegate(self) -> None:
+        tool = self.guarded(lambda _name, _args: False)
+        with self.assertRaises(PermissionError):
+            asyncio.run(tool.arun(value="async-denied"))
+        self.assertEqual(RecordingTool.entries, [])
+        self.assertEqual([item.decision for item in self.decisions], ["DENY"])
 
     def test_policy_exception_fails_closed(self) -> None:
         def broken_policy(_name: str, _args: Any) -> bool:
