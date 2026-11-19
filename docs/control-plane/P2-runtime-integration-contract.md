@@ -59,3 +59,5 @@ This document records repository implementation progress only. It does not autho
 - live production health or durable-state proof.
 
 Maintain the ADR release gates and never bypass security or governance checks to obtain a green status.
+
+Operational evidence must be recorded with environment identity, timestamp, command, outcome, and sanitized output.
