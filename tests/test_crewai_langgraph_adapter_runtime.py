@@ -11,6 +11,7 @@ import json
 import platform
 import sys
 from importlib.metadata import version
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from crewai.agents.agent_adapters.langgraph.langgraph_tool_adapter import LangGraphToolAdapter
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
+from langchain_core.messages import AIMessage
+from langgraph.prebuilt import ToolNode
+from langgraph.runtime import ExecutionInfo
 
 from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
 
@@ -48,10 +52,32 @@ async def invoke_adapter() -> Any:
     adapter = LangGraphToolAdapter(tools=[tool])
     adapter.configure_tools([])
     converted = adapter.tools()[0]
-    # Exercise the converted LangChain StructuredTool's async invocation API.
-    # ToolNode orchestration is intentionally outside this adapter-boundary probe.
-    return await converted.ainvoke(
-        {"invocation_id": "langgraph-adapter-deny-001", "value": "probe"}
+    node = ToolNode([converted])
+    runtime = SimpleNamespace(
+        store=None,
+        context=None,
+        stream_writer=lambda *args, **kwargs: None,
+        execution_info=ExecutionInfo(
+            checkpoint_id="naeos-test-checkpoint",
+            checkpoint_ns="",
+            task_id="naeos-test-task",
+        ),
+        server_info=None,
+    )
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": converted.name,
+                "args": {"invocation_id": "langgraph-adapter-deny-001", "value": "probe"},
+                "id": "langgraph-deny-call-001",
+                "type": "tool_call",
+            }
+        ],
+    )
+    return await node.ainvoke(
+        {"messages": [message]},
+        config={"configurable": {"__pregel_runtime": runtime}},
     )
 
 
@@ -75,9 +101,13 @@ def run_probe() -> dict[str, Any]:
     try:
         adapter_result = asyncio.run(invoke_adapter())
         invocation_completed = True
-        unawaited_coroutine_returned = inspect.isawaitable(adapter_result)
-        if inspect.iscoroutine(adapter_result):
-            adapter_result.close()
+        tool_messages = adapter_result.get("messages", []) if isinstance(adapter_result, dict) else []
+        tool_content = tool_messages[-1].content if tool_messages else None
+        unawaited_coroutine_returned = inspect.isawaitable(tool_content) or (
+            isinstance(tool_content, str) and "coroutine object" in tool_content
+        )
+        if inspect.iscoroutine(tool_content):
+            tool_content.close()
     except Exception as exc:
         execution_error = f"{type(exc).__name__}: {exc}"
 
@@ -107,10 +137,11 @@ def run_probe() -> dict[str, Any]:
         "adapter_sdk_version": version("langgraph"),
         "langchain_core_version": version("langchain-core"),
         "python_version": platform.python_version(),
-        "execution_path": "LangGraphToolAdapter.configure_tools -> converted StructuredTool.ainvoke -> adapter wrapper -> BaseTool.run",
+        "execution_path": "LangGraphToolAdapter.configure_tools -> LangGraph ToolNode.ainvoke -> StructuredTool.ainvoke -> adapter wrapper -> BaseTool.run",
         "decision": "DENY",
         "invocation_completed": invocation_completed,
         "adapter_result_type": None if adapter_result is None else type(adapter_result).__name__,
+        "tool_node_result_content_type": None if "tool_content" not in locals() or tool_content is None else type(tool_content).__name__,
         "adapter_returned_unawaited_coroutine": unawaited_coroutine_returned,
         "execution_error": execution_error,
         "path_exercised": path_exercised,
