@@ -39,6 +39,7 @@ HOOK_OBSERVATIONS: list[dict[str, Any]] = []
 class SideEffectTool(BaseTool):
     name: str = "naeos_v2_flow_probe"
     description: str = "Records a local test side effect."
+
     def _run(self, invocation_id: str, value: str) -> str:
         LEDGER.append(
             invocation_id=invocation_id,
