@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** REACT AND NATIVE TOOL-CALLING PASS; FLOW TOOLACTION AND OPENAI AGENTS ADAPTER FAIL; LANGGRAPH ADAPTER RUNTIME PENDING  
+**Status:** REACT AND NATIVE TOOL-CALLING PASS; FLOW TOOLACTION AND OPENAI AGENTS ADAPTER FAIL; LANGGRAPH ADAPTER UNKNOWN  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -89,7 +89,7 @@ Sources:
 - [1.15.16 langgraph_tool_adapter.py](https://github.com/crewAIInc/crewAI/blob/1.15.16/lib/crewai/src/crewai/agents/agent_adapters/langgraph/langgraph_tool_adapter.py)
 - [1.15.44 langgraph_tool_adapter.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/agents/agent_adapters/langgraph/langgraph_tool_adapter.py)
 
-**Interpretation:** classify as **HOOK BYPASS RISK / NOT COVERED BY THE OBSERVED TOOL-HOOK SEAM**. Validate through the actual LangGraph adapter output and invocation path; a unit test of the wrapper alone is not an end-to-end integration result.
+**Interpretation:** the converted StructuredTool invocation returned an unawaited coroutine in both pinned versions. The CrewAI hook was not dispatched, but the tool body also did not run; classify the policy result as UNKNOWN, not PASS or FAIL. See Section 13. The full LangGraph ToolNode orchestration remains unverified.
 
 ## 3. Consolidated static inventory
 
@@ -99,7 +99,7 @@ Sources:
 | Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | **PASS — runtime confirmed in both versions** |
 | Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | **FAIL — runtime confirmed in both versions** |
-| LangGraph adapter | Direct `tool.run` | Direct `tool.run` | NOT EXECUTED |
+| LangGraph adapter | Direct `tool.run` | Direct `tool.run` | **UNKNOWN — unawaited coroutine; tool body not reached** |
 
 ## 4. Runtime harness entry points (1.15.44 source)
 
@@ -230,3 +230,19 @@ Both adapter callbacks completed and returned `tool-body-executed`. The CrewAI g
 Evidence and raw JSON artifacts: [GitHub Actions run 44594186676](https://github.com/NAEOS-foundation/naeos/actions/runs/44594186676). Both OpenAI Agents adapter matrix jobs failed intentionally on the observed side effect.
 
 **Scope boundary:** this result applies to the CrewAI OpenAI Agents tool adapter callback. It does not claim a full OpenAI Agents Runner end-to-end conformance test.
+
+
+## 13. Runtime evidence — LangGraph adapter invocation
+
+The first attempt to exercise the converted tool through `ToolNode.ainvoke()` was BLOCKED before reaching the adapter invocation boundary by a LangGraph configuration error (`Missing required config key 'N/A' for 'tools'`). The probe was then narrowed to the converted LangChain `StructuredTool.ainvoke()` API so the adapter's own asynchronous wrapper could be observed directly.
+
+| CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Adapter return | Policy result |
+|---|---:|---:|---:|---|---|
+| 1.15.16 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
+| 1.15.44 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
+
+Both converted tool invocations returned successfully at the outer `ainvoke()` call, but the result was a coroutine object from the adapter's async wrapper. The wrapper was not awaited, so the underlying `BaseTool.run()` and tool body were never entered. There was no side effect, but there was also no observed DENY enforcement; therefore this is UNKNOWN, not PASS.
+
+The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should be checked for using the appropriate asynchronous field or a synchronous wrapper. This is a likely adapter-construction defect, not proof of policy enforcement.
+
+Evidence and raw JSON artifacts: [GitHub Actions run 44594554943](https://github.com/NAEOS-foundation/naeos/actions/runs/44594554943). This test exercises the converted StructuredTool API, not a full LangGraph graph/ToolNode orchestration.
