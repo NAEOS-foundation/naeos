@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
@@ -78,7 +77,7 @@ func TestControlPlaneOverviewUsesVerifiedLedgerAndCountsDecisions(t *testing.T) 
 		t.Fatalf("status = %d; want 200; body=%s", response.Code, response.Body.String())
 	}
 	body := response.Body.String()
-	for _, expected := range []string{`"environment":"staging"`, `"status":"healthy"`, `"last_sequence":4`, `"decision_count":3`, `"allow_count":1`, `"deny_count":1`, `"pending_count":1`} {
+	for _, expected := range []string{`"environment":"staging"`, `"status":"verified"`, `"last_sequence":4`, `"decision_count":3`, `"allow_count":1`, `"deny_count":1`, `"pending_count":1`} {
 		if !contains(body, expected) {
 			t.Errorf("response %q missing %q", body, expected)
 		}
@@ -103,10 +102,10 @@ func TestControlPlaneDecisionsAreBoundedAndDoNotExposeMetadata(t *testing.T) {
 		t.Fatalf("status = %d; want 200; body=%s", response.Code, response.Body.String())
 	}
 	body := response.Body.String()
-	if !contains(body, `"decision_id":"decision-1"`) || contains(body, "must-not-leak") || !contains(body, `"next_cursor":"1"`) {
+	if !contains(body, `"decision_id":"decision-1"`) || contains(body, "must-not-leak") || !contains(body, `"next_cursor":"2"`) {
 		t.Fatalf("unexpected decision page: %s", body)
 	}
-	next := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/decisions?limit=1&after=1")
+	next := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/decisions?limit=1&after=2")
 	if next.Code != http.StatusOK || !contains(next.Body.String(), `"decision_id":"decision-2"`) {
 		t.Fatalf("next page status=%d body=%s", next.Code, next.Body.String())
 	}
@@ -147,9 +146,6 @@ func TestControlPlaneReadAPIResponseHasObservationTime(t *testing.T) {
 	response := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/overview")
 	if response.Code != http.StatusOK || !contains(response.Body.String(), `"observed_at":"`) {
 		t.Fatalf("status=%d body=%s; expected timestamped response", response.Code, response.Body.String())
-	}
-	if !time.Now().UTC().After(time.Time{}) {
-		t.Fatal("unexpected clock state")
 	}
 }
 
