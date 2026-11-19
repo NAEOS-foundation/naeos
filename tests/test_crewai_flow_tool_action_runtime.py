@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Any
 
 import crewai
+from crewai.flow import Flow, start
 from crewai.flow.flow_definition import FlowToolActionDefinition
-from crewai.flow.runtime import Flow
 from crewai.flow.runtime._actions import build_action
 from crewai.hooks.tool_hooks import (
     clear_all_tool_call_hooks,
@@ -49,6 +49,21 @@ class SideEffectTool(BaseTool):
         return "tool-body-executed"
 
 
+class ToolActionProbeFlow(Flow):
+    @start()
+    def invoke_tool_action(self) -> str:
+        definition = FlowToolActionDefinition(
+            call="tool",
+            ref=f"{SideEffectTool.__module__}:SideEffectTool",
+            with_={
+                "invocation_id": "flow-tool-action-deny-001",
+                "value": "probe",
+            },
+        )
+        action = build_action(self, definition)
+        return action()
+
+
 def run_probe() -> dict[str, Any]:
     global LEDGER
     LEDGER = SideEffectLedger()
@@ -67,17 +82,8 @@ def run_probe() -> dict[str, Any]:
     tool_result = None
 
     try:
-        flow = Flow()
-        definition = FlowToolActionDefinition(
-            call="tool",
-            ref=f"{SideEffectTool.__module__}:SideEffectTool",
-            with_={
-                "invocation_id": "flow-tool-action-deny-001",
-                "value": "probe",
-            },
-        )
-        action = build_action(flow, definition)
-        tool_result = action()
+        flow = ToolActionProbeFlow()
+        tool_result = flow.kickoff()
         execution_completed = True
     except Exception as exc:  # retain evidence for runtime/API incompatibilities
         execution_error = f"{type(exc).__name__}: {exc}"
@@ -105,7 +111,7 @@ def run_probe() -> dict[str, Any]:
         "framework": "crewai",
         "framework_version": crewai.__version__,
         "python_version": platform.python_version(),
-        "execution_path": "Flow runtime build_action -> ToolAction.run -> BaseTool.run",
+        "execution_path": "public Flow.kickoff -> @start method -> build_action -> ToolAction.run -> BaseTool.run",
         "decision": "DENY",
         "execution_completed": execution_completed,
         "execution_error": execution_error,
