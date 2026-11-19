@@ -34,12 +34,12 @@ type ProductionRuntime struct {
 	pool         *pgxpool.Pool
 	ledgerReader productionLedgerReader
 	sqlDB        *sql.DB
-	Policies  *PostgresPolicyRepository
-	Grants    *PostgresGrantRepository
-	Approvals *PostgresApprovalRepository
-	Ledger    *PostgresLedger
-	identity  productionTokenValidator
-	gateway   *RepositoryDecisionGateway
+	Policies     *PostgresPolicyRepository
+	Grants       *PostgresGrantRepository
+	Approvals    *PostgresApprovalRepository
+	Ledger       *PostgresLedger
+	identity     productionTokenValidator
+	gateway      *RepositoryDecisionGateway
 }
 
 // OpenProductionRuntime validates the environment-specific Supabase target and connection contract, opens bounded pools,
