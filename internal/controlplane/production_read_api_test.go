@@ -41,7 +41,7 @@ func readRequest(handler http.Handler, token, path string) *httptest.ResponseRec
 
 func TestControlPlaneReadAPIRequiresExplicitScope(t *testing.T) {
 	runtime := &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: "crm:read"}},
+		identity:     productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: "crm:read"}},
 		ledgerReader: productionReadLedgerStub{},
 	}
 	response := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/overview")
@@ -52,7 +52,7 @@ func TestControlPlaneReadAPIRequiresExplicitScope(t *testing.T) {
 
 func TestControlPlaneReadAPIRequiresAuthentication(t *testing.T) {
 	runtime := &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scopes: []string{controlPlaneReadScope}}},
+		identity:     productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scopes: []string{controlPlaneReadScope}}},
 		ledgerReader: productionReadLedgerStub{},
 	}
 	response := readRequest(runtime.ProductionHandler(), "", "/api/control-plane/overview")
@@ -64,7 +64,7 @@ func TestControlPlaneReadAPIRequiresAuthentication(t *testing.T) {
 func TestControlPlaneOverviewUsesVerifiedLedgerAndCountsDecisions(t *testing.T) {
 	runtime := &ProductionRuntime{
 		environment: "staging",
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scopes: []string{controlPlaneReadScope}}},
+		identity:    productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scopes: []string{controlPlaneReadScope}}},
 		ledgerReader: productionReadLedgerStub{events: []LedgerEvent{
 			{ID: "event-1", EventType: "AUTHORIZATION_DECISION", Decision: DecisionAllow},
 			{ID: "event-2", EventType: "POLICY_EVALUATION_FAILED"},
@@ -90,7 +90,7 @@ func TestControlPlaneOverviewUsesVerifiedLedgerAndCountsDecisions(t *testing.T) 
 func TestControlPlaneDecisionsAreBoundedAndDoNotExposeMetadata(t *testing.T) {
 	runtime := &ProductionRuntime{
 		environment: "staging",
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
+		identity:    productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
 		ledgerReader: productionReadLedgerStub{events: []LedgerEvent{
 			{ID: "event-1", EventType: "AUTHORIZATION_DECISION", DecisionID: "decision-1", AgentID: "agent-1", Metadata: map[string]string{"secret": "must-not-leak"}},
 			{ID: "event-2", EventType: "POLICY_EVALUATION_FAILED"},
@@ -113,7 +113,7 @@ func TestControlPlaneDecisionsAreBoundedAndDoNotExposeMetadata(t *testing.T) {
 
 func TestControlPlaneDecisionsRejectInvalidLimit(t *testing.T) {
 	runtime := &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
+		identity:     productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
 		ledgerReader: productionReadLedgerStub{},
 	}
 	for _, query := range []string{"limit=0", "limit=101", "limit=abc", "after=-1", "after=bad"} {
@@ -126,7 +126,7 @@ func TestControlPlaneDecisionsRejectInvalidLimit(t *testing.T) {
 
 func TestControlPlaneReadAPIFailsClosedWhenLedgerUnavailable(t *testing.T) {
 	runtime := &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
+		identity:     productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
 		ledgerReader: productionReadLedgerStub{err: errors.New("database unavailable")},
 	}
 	response := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/overview")
@@ -140,7 +140,7 @@ func TestControlPlaneReadAPIFailsClosedWhenLedgerUnavailable(t *testing.T) {
 
 func TestControlPlaneReadAPIResponseHasObservationTime(t *testing.T) {
 	runtime := &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
+		identity:     productionTokenValidatorStub{claims: &api.JWTClaims{Sub: "operator", Scope: controlPlaneReadScope}},
 		ledgerReader: productionReadLedgerStub{},
 	}
 	response := readRequest(runtime.ProductionHandler(), "valid", "/api/control-plane/overview")
