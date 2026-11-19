@@ -18,7 +18,7 @@ from crewai.flow.runtime._actions import build_action
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
 
-from scripts.crewai_compat_v2_harness import Result, SideEffectLedger, candidate_digest, classify_deny
+from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
 from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
 
 LEDGER = SideEffectLedger()
