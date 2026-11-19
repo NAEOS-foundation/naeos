@@ -25,9 +25,14 @@ type productionTokenValidator interface {
 
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
+type productionLedgerReader interface {
+	Load(context.Context) ([]LedgerEvent, error)
+}
+
 type ProductionRuntime struct {
 	environment string
 	pool      *pgxpool.Pool
+	ledgerReader productionLedgerReader
 	sqlDB     *sql.DB
 	Policies  *PostgresPolicyRepository
 	Grants    *PostgresGrantRepository
@@ -105,7 +110,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 	cleanup = false
 	return &ProductionRuntime{
 		environment: environment,
-		pool: pool, sqlDB: sqlDB,
+		pool: pool, sqlDB: sqlDB, ledgerReader: ledger,
 		Policies:  NewPostgresPolicyRepository(sqlDB),
 		Grants:    NewPostgresGrantRepository(sqlDB),
 		Approvals: NewPostgresApprovalRepository(sqlDB),
