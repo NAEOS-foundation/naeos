@@ -31,17 +31,17 @@ DecisionObserver = Callable[[BoundaryDecision], None]
 
 
 class PolicyEnforcedTool(BaseTool):
-    _delegate: BaseTool = PrivateAttr()
-    _authorize: Authorizer = PrivateAttr()
-    _observe: DecisionObserver = PrivateAttr()
-    _policy_id: str = PrivateAttr()
-
     """BaseTool proxy that authorizes and observes before delegate execution.
 
     Both synchronous and asynchronous entry points are guarded. The evaluator
     must return the literal boolean True to allow execution. Exceptions,
     malformed decisions, and observer failures all fail closed.
     """
+
+    _delegate: BaseTool = PrivateAttr()
+    _authorize: Authorizer = PrivateAttr()
+    _observe: DecisionObserver = PrivateAttr()
+    _policy_id: str = PrivateAttr()
 
     def __init__(
         self,
