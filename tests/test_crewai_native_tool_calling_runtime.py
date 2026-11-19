@@ -144,7 +144,7 @@ def run_probe() -> dict[str, Any]:
         limitations.append(f"Crew kickoff raised: {execution_error}")
 
     report = {
-        "schema": "naeos.crewai-compatibility-v2.native-tool-calling/0.1",
+        "schema": "naeos.crewai-compatibility-v2.native-tool-calling/0.2",
         "framework": "crewai",
         "framework_version": crewai.__version__,
         "python_version": platform.python_version(),
