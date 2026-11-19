@@ -29,7 +29,7 @@ from crewai.tools import BaseTool
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest
+from scripts.crewai_compat_v2_harness import (\n    Result,\n    SideEffectLedger,\n    candidate_digest,\n    classify_deny,\n)
 
 
 LEDGER = SideEffectLedger()
@@ -73,7 +73,7 @@ def run_probe() -> dict[str, Any]:
     hook_called = bool(HOOK_OBSERVATIONS)
     body_executed = len(entries) > 0
     # Hook-based DENY should prevent the tool body and independent side effect.
-    compatibility = "PASS" if hook_called and not body_executed else "FAIL"
+    compatibility = classify_deny(\n        enforcement_observed=hook_called,\n        tool_body_entries=len(entries),\n        side_effect_count=len(entries),\n        path_exercised=True,\n    ).value
     report = {
         "schema": "naeos.crewai-compatibility-v2.flow-tool-action/0.1",
         "framework": "crewai",
@@ -87,7 +87,7 @@ def run_probe() -> dict[str, Any]:
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
         "tool_result": str(result),
-        "compatibility_result": compatibility,
+        "compatibility_result": compatibility,\n        "path_exercised": True,
         "assertions": {
             "deny_hook_was_dispatched": hook_called,
             "tool_body_not_entered": not body_executed,
