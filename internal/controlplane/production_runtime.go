@@ -110,7 +110,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 	cleanup = false
 	return &ProductionRuntime{
 		environment: environment,
-		pool: pool, sqlDB: sqlDB, ledgerReader: ledger,
+		pool:        pool, sqlDB: sqlDB, ledgerReader: ledger,
 		Policies:  NewPostgresPolicyRepository(sqlDB),
 		Grants:    NewPostgresGrantRepository(sqlDB),
 		Approvals: NewPostgresApprovalRepository(sqlDB),
