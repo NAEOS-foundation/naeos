@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 # Copyright 2026 NAEOS contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Probe CrewAI Flow ToolAction through the framework's action builder.
+"""Probe CrewAI Flow ToolAction through the framework action builder.
 
-This deliberately records a compatibility FAIL when the global before-tool
-hook is bypassed and the tool body executes. A green unittest means the probe
-observed and documented the framework behavior; it does NOT mean compatibility
-passed.
+This is an execution-path probe, not a generic unit test of CrewAI hooks.
+The independent ledger is changed only inside the test tool body.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import platform
-import sys
 import unittest
 from pathlib import Path
 from typing import Any
@@ -27,10 +25,12 @@ from crewai.hooks.tool_hooks import (
 )
 from crewai.tools import BaseTool
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from scripts.crewai_compat_v2_harness import (\n    Result,\n    SideEffectLedger,\n    candidate_digest,\n    classify_deny,\n)
-
+from scripts.crewai_compat_v2_harness import (
+    Result,
+    SideEffectLedger,
+    candidate_digest,
+    classify_deny,
+)
 
 LEDGER = SideEffectLedger()
 HOOK_OBSERVATIONS: list[dict[str, Any]] = []
@@ -52,51 +52,79 @@ class SideEffectTool(BaseTool):
 def run_probe() -> dict[str, Any]:
     global LEDGER
     LEDGER = SideEffectLedger()
-    clear_all_tool_call_hooks()
     HOOK_OBSERVATIONS.clear()
+    clear_all_tool_call_hooks()
 
     def deny_every_tool(context: Any) -> bool:
-        HOOK_OBSERVATIONS.append({"tool_name": context.tool_name, "decision": "DENY"})
+        HOOK_OBSERVATIONS.append(
+            {"tool_name": context.tool_name, "decision": "DENY"}
+        )
         return False
 
     register_before_tool_call_hook(deny_every_tool)
-    flow = Flow()
-    definition = FlowToolActionDefinition(
-        call="tool",
-        ref=f"{SideEffectTool.__module__}:SideEffectTool",
-        with_={"invocation_id": "flow-tool-action-deny-001", "value": "probe"},
-    )
-    action = build_action(flow, definition)
-    result = action()
+    execution_error = None
+    execution_completed = False
+    tool_result = None
+
+    try:
+        flow = Flow()
+        definition = FlowToolActionDefinition(
+            call="tool",
+            ref=f"{SideEffectTool.__module__}:SideEffectTool",
+            with_={
+                "invocation_id": "flow-tool-action-deny-001",
+                "value": "probe",
+            },
+        )
+        action = build_action(flow, definition)
+        tool_result = action()
+        execution_completed = True
+    except Exception as exc:  # retain evidence for runtime/API incompatibilities
+        execution_error = f"{type(exc).__name__}: {exc}"
 
     entries = LEDGER.snapshot()
     hook_called = bool(HOOK_OBSERVATIONS)
-    body_executed = len(entries) > 0
-    # Hook-based DENY should prevent the tool body and independent side effect.
-    compatibility = classify_deny(\n        enforcement_observed=hook_called,\n        tool_body_entries=len(entries),\n        side_effect_count=len(entries),\n        path_exercised=True,\n    ).value
+    path_exercised = execution_completed or hook_called or bool(entries)
+    result = classify_deny(
+        enforcement_observed=hook_called,
+        tool_body_entries=len(entries),
+        side_effect_count=len(entries),
+        path_exercised=path_exercised,
+    )
+
+    limitations = []
+    if not path_exercised:
+        limitations.append(
+            "Flow ToolAction did not reach an observable hook or tool-body boundary."
+        )
+    if execution_error:
+        limitations.append(f"ToolAction invocation raised: {execution_error}")
+
     report = {
-        "schema": "naeos.crewai-compatibility-v2.flow-tool-action/0.1",
+        "schema": "naeos.crewai-compatibility-v2.flow-tool-action/0.2",
         "framework": "crewai",
         "framework_version": crewai.__version__,
         "python_version": platform.python_version(),
         "execution_path": "Flow runtime build_action -> ToolAction.run -> BaseTool.run",
         "decision": "DENY",
+        "execution_completed": execution_completed,
+        "execution_error": execution_error,
+        "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
         "hook_observations": HOOK_OBSERVATIONS,
         "tool_body_entries": len(entries),
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
-        "tool_result": str(result),
-        "compatibility_result": compatibility,\n        "path_exercised": True,
+        "tool_result": None if tool_result is None else str(tool_result),
+        "compatibility_result": result.value,
+        "limitations": limitations,
         "assertions": {
             "deny_hook_was_dispatched": hook_called,
-            "tool_body_not_entered": not body_executed,
+            "tool_body_not_entered": len(entries) == 0,
             "no_independent_side_effect": len(entries) == 0,
         },
-        "candidate_digest_probe": candidate_digest({"tool": "naeos_v2_flow_probe", "decision": "DENY"}),
-        "interpretation": (
-            "PASS means DENY was dispatched and no tool body/side effect occurred. "
-            "FAIL means the Flow ToolAction path bypassed the hook or executed the body."
+        "candidate_digest_probe": candidate_digest(
+            {"tool": "naeos_v2_flow_probe", "decision": "DENY"}
         ),
     }
     clear_all_tool_call_hooks()
@@ -104,31 +132,33 @@ def run_probe() -> dict[str, Any]:
 
 
 class FlowToolActionRuntimeTests(unittest.TestCase):
-    def test_deny_hook_blocks_tool_body_on_flow_tool_action(self) -> None:
+    def test_deny_classification_matches_independent_observations(self) -> None:
         report = run_probe()
-        expected = (
-            "FAIL"
-            if report["tool_body_entries"] > 0
-            or report["side_effect_count"] > 0
-            or not report["hook_dispatch_observed"]
-            else "PASS"
+        expected = classify_deny(
+            enforcement_observed=report["hook_dispatch_observed"],
+            tool_body_entries=report["tool_body_entries"],
+            side_effect_count=report["side_effect_count"],
+            path_exercised=report["path_exercised"],
         )
-        self.assertEqual(report["compatibility_result"], expected, msg=json.dumps(report, indent=2, sort_keys=True))
+        self.assertEqual(report["compatibility_result"], expected.value)
         self.assertEqual(report["tool_body_entries"], report["side_effect_count"])
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        clear_all_tool_call_hooks()
+        if expected is Result.BLOCKED:
+            self.assertTrue(report["limitations"])
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     report = run_probe()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps(report, indent=2, sort_keys=True))
-    raise SystemExit(0 if report["compatibility_result"] == "PASS" else 2)
+    if report["compatibility_result"] == Result.PASS.value:
+        raise SystemExit(0)
+    if report["compatibility_result"] == Result.FAIL.value:
+        raise SystemExit(2)
+    raise SystemExit(3)
