@@ -25,7 +25,9 @@ from crewai.hooks.tool_hooks import (
 )
 from crewai.tools import BaseTool
 
-from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool\n\nfrom scripts.crewai_compat_v2_harness import (
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool
+
+from scripts.crewai_compat_v2_harness import (
     Result,
     SideEffectLedger,
     candidate_digest,
@@ -33,7 +35,8 @@ from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool\n\n
 )
 
 LEDGER = SideEffectLedger()
-HOOK_OBSERVATIONS: list[dict[str, Any]] = []\nBOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
+HOOK_OBSERVATIONS: list[dict[str, Any]] = []
+BOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
 
 
 class ProbeFlow(Flow):
@@ -53,7 +56,17 @@ class SideEffectTool(BaseTool):
         return "tool-body-executed"
 
 
-class GuardedFlowTool(PolicyEnforcedTool):\n    def __init__(self, **data: Any) -> None:\n        super().__init__(\n            delegate=SideEffectTool(),\n            authorize=lambda _name, _args: False,\n            observe=BOUNDARY_OBSERVATIONS.append,\n            policy_id="naeos.test.deny-flow/1",\n        )\n\n\nclass ToolActionProbeFlow(Flow):
+class GuardedFlowTool(PolicyEnforcedTool):
+    def __init__(self, **data: Any) -> None:
+        super().__init__(
+            delegate=SideEffectTool(),
+            authorize=lambda _name, _args: False,
+            observe=BOUNDARY_OBSERVATIONS.append,
+            policy_id="naeos.test.deny-flow/1",
+        )
+
+
+class ToolActionProbeFlow(Flow):
     @start()
     def invoke_tool_action(self) -> str:
         definition = FlowToolActionDefinition(
@@ -163,7 +176,8 @@ if __name__ == "__main__":
     report = run_probe()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        json.dumps(report, indent=2, sort_keys=True) + "
+",
         encoding="utf-8",
     )
     print(json.dumps(report, indent=2, sort_keys=True))
