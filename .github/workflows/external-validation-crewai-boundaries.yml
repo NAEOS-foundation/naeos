@@ -77,7 +77,7 @@ jobs:
       - name: Execute Flow ToolAction probe (DENY violations fail the job)
         run: |
           mkdir -p external-validation-evidence
-          python tests/test_crewai_flow_tool_action_runtime.py \
+          python -m tests.test_crewai_flow_tool_action_runtime \
             --output "external-validation-evidence/flow-tool-action-${{ matrix.crewai-version }}.json"
 
       - name: Upload Flow ToolAction evidence
