@@ -1,7 +1,7 @@
 # NAEOS CrewAI Source Execution-Path Inventory v2
 
 **Version:** 0.1  
-**Status:** SOURCE INSPECTION COMPLETE — FLOW TOOLACTION RUNTIME FAIL CONFIRMED; OTHER PATHS NOT YET EXECUTED  
+**Status:** REACT RUNTIME PASS CONFIRMED; FLOW TOOLACTION RUNTIME FAIL CONFIRMED; OTHER PATHS NOT YET EXECUTED  
 **Branch:** `feat/crewai-v2-harness-foundation`  
 **Related plan:** [NAEOS CrewAI Compatibility Validation v2](./NAEOS-CrewAI-Compatibility-Validation-v2.md)
 
@@ -20,7 +20,7 @@ Tags are named `1.15.16` and `1.15.44` (without a `v` prefix). The commit SHAs a
 
 ### 2.1 Standard ReAct / text tool-call path
 
-**Observation: hook-mediated in both inspected versions.**
+**Observation: hook-mediated in both inspected versions; public runtime DENY enforcement confirmed in Section 10.**
 
 - In 1.15.16, `CrewAgentExecutor` in `lib/crewai/src/crewai/agents/crew_agent_executor.py` delegates parsed `AgentAction` execution to `execute_tool_and_check_finality`.
 - In 1.15.16 and 1.15.44, `lib/crewai/src/crewai/utilities/tool_utils.py` constructs `ToolCallHookContext`, calls `run_before_tool_call_hooks`, and only proceeds to `ToolUsage.use/ause` if the hook did not block. It then invokes after-tool hooks.
@@ -32,7 +32,7 @@ Source:
 - [1.15.44 agent_executor.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/agents/agent_executor.py)
 - [1.15.44 tool_utils.py](https://github.com/crewAIInc/crewAI/blob/1.15.44/lib/crewai/src/crewai/utilities/tool_utils.py)
 
-**Interpretation:** this is a candidate path for an actual-runtime hook test. A direct call to the dispatcher alone is insufficient; the harness must enter through the public agent/crew execution path and independently count tool-body side effects.
+**Interpretation:** the public `Crew.kickoff()` ReAct path was exercised with a deterministic LLM. The denying hook was observed and the independent ledger remained empty in both pinned versions; see Section 10.
 
 ### 2.2 Native tool-calling path
 
@@ -95,7 +95,7 @@ Sources:
 
 | Path | 1.15.16 source observation | 1.15.44 source observation | Runtime status |
 |---|---|---|---|
-| ReAct / text tool call | Before/after hooks in `tool_utils.py` | Before/after hooks in `tool_utils.py` | NOT EXECUTED |
+| ReAct / text tool call | Before/after hooks in `tool_utils.py` | Before/after hooks in `tool_utils.py` | **PASS — runtime confirmed in both versions** |
 | Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | NOT EXECUTED |
 | Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | NOT EXECUTED |
@@ -182,3 +182,19 @@ Both probes completed the execution path without a fixture or import error. The 
 Evidence and raw JSON artifacts: [GitHub Actions run 44591869537](https://github.com/NAEOS-foundation/naeos/actions/runs/44591869537). The two matrix jobs intentionally exit non-zero on this result. The legacy policy-boundary job in the same workflow passes, but it does not cover the Flow execution path.
 
 **Scope boundary:** this result does not establish behavior for ReAct, native tool calling, OpenAI Agents, or LangGraph. Those paths remain independently testable and must not inherit the Flow result.
+
+
+## 10. Runtime evidence — ReAct DENY probe
+
+The v2 harness exercised the public `Crew.kickoff()` path with a deterministic `BaseLLM` that emitted one ReAct tool action followed by a final answer. A global `before_tool_call` hook returned DENY, and the test tool body wrote to the independent side-effect ledger only if it actually ran.
+
+| CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Result |
+|---|---:|---:|---:|---|
+| 1.15.16 | Yes | 0 | 0 | **PASS** |
+| 1.15.44 | Yes | 0 | 0 | **PASS** |
+
+Both versions recorded exactly one DENY hook observation for `naeos_v2_react_probe`, completed the ReAct loop with two LLM calls, and returned `policy test completed`. The tool body was not entered and the independent ledger remained empty.
+
+Evidence and raw JSON artifacts: [GitHub Actions run 44592362102](https://github.com/NAEOS-foundation/naeos/actions/runs/44592362102). Both ReAct matrix jobs completed successfully.
+
+**Scope boundary:** ReAct PASS does not imply Flow ToolAction, native tool calling, OpenAI Agents, or LangGraph are covered. Flow ToolAction is independently confirmed FAIL in Section 9; the remaining paths stay untested until their own runtime evidence exists.
