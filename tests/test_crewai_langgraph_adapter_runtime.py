@@ -27,11 +27,11 @@ from langchain_core.messages import AIMessage
 from langgraph.prebuilt import ToolNode
 from langgraph.runtime import ExecutionInfo
 
-from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
+from scripts.naeos_tool_boundary import BoundaryDecision, PolicyEnforcedTool\nfrom scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest, classify_deny
 
 
 LEDGER = SideEffectLedger()
-HOOK_OBSERVATIONS: list[dict[str, Any]] = []
+HOOK_OBSERVATIONS: list[dict[str, Any]] = []\nBOUNDARY_OBSERVATIONS: list[BoundaryDecision] = []
 
 
 class SideEffectTool(BaseTool):
@@ -115,7 +115,7 @@ def run_probe() -> dict[str, Any]:
     hook_called = bool(HOOK_OBSERVATIONS)
     path_exercised = invocation_completed or hook_called or bool(entries)
     result = classify_deny(
-        enforcement_observed=hook_called,
+        enforcement_observed=enforcement_observed,
         tool_body_entries=len(entries),
         side_effect_count=len(entries),
         path_exercised=path_exercised,
@@ -146,7 +146,7 @@ def run_probe() -> dict[str, Any]:
         "execution_error": execution_error,
         "path_exercised": path_exercised,
         "hook_dispatch_observed": hook_called,
-        "hook_observations": HOOK_OBSERVATIONS,
+        "hook_observations": HOOK_OBSERVATIONS,\n        "enforcement_observed": enforcement_observed,\n        "boundary_decisions": [event.__dict__ for event in BOUNDARY_OBSERVATIONS],
         "tool_body_entries": len(entries),
         "side_effect_count": len(entries),
         "side_effect_ledger_checksum": LEDGER.checksum(),
