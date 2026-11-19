@@ -99,7 +99,7 @@ Sources:
 | Native tool calling | Before-hook seam in `crew_agent_executor.py` | Before-hook seam in `agent_executor.py` | **PASS — runtime confirmed in both versions** |
 | Flow `ToolAction` | Direct `tool.run` | Direct `tool.run` | **FAIL — runtime confirmed in both versions** |
 | OpenAI Agents adapter | Direct `tool._run` | Direct `tool._run` | **FAIL — runtime confirmed in both versions** |
-| LangGraph adapter | Direct `tool.run` | Direct `tool.run` | **UNKNOWN — unawaited coroutine; tool body not reached** |
+| LangGraph adapter | Direct `tool.run` | Direct `tool.run` | **PASS — guarded ToolNode graph runtime confirmed in both versions** |
 
 ## 4. Runtime harness entry points (1.15.44 source)
 
@@ -236,14 +236,14 @@ Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github
 
 The original probe exercised `StructuredTool.ainvoke()` directly and returned an unawaited coroutine. The follow-up probe now compiles a LangGraph `StateGraph` containing the adapter-produced `StructuredTool` inside a real `ToolNode`, supplies a deterministic `AIMessage` tool call, and invokes the compiled graph through `graph.ainvoke()`.
 
-| CrewAI version | Hook dispatched | Tool-body entries | Independent side effects | Adapter return | Policy result |
-|---|---:|---:|---:|---|---|
-| 1.15.16 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
-| 1.15.44 | No | 0 | 0 | Unawaited coroutine object | **UNKNOWN** |
+| CrewAI version | Hook dispatched | NAEOS DENY observed | Tool-body entries | Independent side effects | Policy result |
+|---|---:|---:|---:|---:|---|
+| 1.15.16 | No | Yes | 0 | 0 | **PASS** |
+| 1.15.44 | No | Yes | 0 | 0 | **PASS** |
 
-The direct `StructuredTool.ainvoke()` defect was addressed by `normalize_langgraph_async_tool`, which places the async wrapper in LangChain's `coroutine` field. The current graph-level probe must now establish that the compiled graph reaches `PolicyEnforcedTool._arun`, records DENY, and leaves both independent counters at zero. The earlier UNKNOWN evidence remains historical and is not silently rewritten.
+The follow-up graph probe confirms that `normalize_langgraph_async_tool` places the async wrapper in LangChain's `coroutine` field. The compiled `StateGraph.ainvoke()` dispatched the deterministic tool call through the real `ToolNode`, reached `PolicyEnforcedTool._arun`, and observed the expected DENY. Both independent counters remained zero in both CrewAI versions. The prior direct-invocation UNKNOWN result remains historical evidence and is superseded for this graph-level path only.
 
-The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should use the appropriate asynchronous field or a synchronous wrapper. This is a confirmed adapter-construction defect in the tested version combination, not proof of policy enforcement.
+The upstream adapter still constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. NAEOS normalizes the returned object at its adapter integration boundary rather than modifying CrewAI or LangChain internals. The graph-level DENY test verifies this normalization for the two pinned CrewAI versions and the installed LangGraph/LangChain runtime.
 
 Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405). This test exercises the LangGraph ToolNode adapter boundary; a full compiled LangGraph agent graph with model-driven tool selection remains outside this probe.
 ructuredTool API, not a full LangGraph graph/ToolNode orchestration.
