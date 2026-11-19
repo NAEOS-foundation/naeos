@@ -1,8 +1,8 @@
 # NAEOS CrewAI Compatibility Validation v2
 
 **Version:** 0.1  
-**Status:** IMPLEMENTATION PLAN — NOT EXECUTED  
-**Branch:** `feat/crewai-compatibility-validation-v2`  
+**Status:** PARTIAL RUNTIME EVIDENCE RECORDED — NOT A COMPLETE V2 CONFORMANCE RESULT  
+**Branch:** `feat/crewai-v2-harness-foundation`  
 **Scope:** NAEOS external validation against CrewAI runtime and adapter execution paths.
 
 > This document defines the v2 validation plan. It is not a conformance result, security certification, or claim that any listed adapter is currently covered.
@@ -55,6 +55,22 @@ For each path record:
 - source file / symbol or upstream commit used to identify the path.
 
 A path that is unavailable in a pinned version is BLOCKED/NOT_APPLICABLE with evidence and rationale; it must not be counted as PASS. A path that reaches the tool body without enforcement is FAIL.
+
+## 3A. Current runtime evidence — DENY boundary probes
+
+The current implementation has executed a limited DENY boundary probe for the following CrewAI paths. These results are not the V2-01 through V2-12 scenario suite and do not establish exact candidate binding, policy freshness, replay control, UNKNOWN reconciliation, or production readiness.
+
+| Execution path | CrewAI 1.15.16 | CrewAI 1.15.44 | Runtime evidence |
+|---|---|---|---|
+| ReAct via public `Crew.kickoff()` | PASS — hook observed; zero body entries and side effects | PASS — hook observed; zero body entries and side effects | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
+| Native tool calling via public `Crew.kickoff()` | PASS — native path selected; hook observed; zero body entries and side effects | PASS — native path selected; hook observed; zero body entries and side effects | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
+| Flow ToolAction via public `Flow.kickoff()` | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44593153622](https://github.com/NAEOS-foundation/naeos/actions/runs/44593153622) |
+| OpenAI Agents adapter callback | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44594186676](https://github.com/NAEOS-foundation/naeos/actions/runs/44594186676) |
+| LangGraph converted StructuredTool invocation | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | [Run 44594554943](https://github.com/NAEOS-foundation/naeos/actions/runs/44594554943) |
+
+The Flow and OpenAI Agents adapter FAIL results are enforcement bypasses for the tested paths: the tool body and independent side-effect ledger were entered under DENY. LangGraph remains UNKNOWN because the converted async wrapper was returned as an unawaited coroutine; no policy enforcement conclusion can be drawn. The initial full ToolNode attempt was separately BLOCKED by a LangGraph config error.
+
+The v2 harness and raw JSON artifacts are maintained in PR [#847](https://github.com/NAEOS-foundation/naeos/pull/847). The PR remains draft. Do not aggregate these path-level results into an overall PASS.
 
 ## 4. Normative invariants
 
@@ -146,11 +162,11 @@ Do not aggregate BLOCKED or UNKNOWN into PASS. The version-level result is PASS 
 
 ## 9. Implementation sequence
 
-1. Inspect CrewAI 1.15.16 and 1.15.44 source/API surfaces and map ReAct, native, Flow, and adapter dispatch paths.
-2. Build a minimal pinned-version test environment for each version.
-3. Implement the side-effect ledger, deterministic policy/decision provider, and controllable fault injection.
-4. Add ReAct and native runtime path tests separately; add Flow and adapter tests only through their actual runtime/conversion APIs.
-5. Execute V2-01 through V2-12; preserve raw artifacts.
+1. **Completed:** inspect CrewAI 1.15.16 and 1.15.44 source/API surfaces and map ReAct, native, Flow, and adapter dispatch paths.
+2. **Partially completed:** pinned-version GitHub Actions jobs exist for the tested CrewAI paths and optional adapter dependencies.
+3. **Partially completed:** an independent append-only side-effect ledger and deterministic DENY probes exist; policy freshness, decision lifecycle, controllable clock, and response-loss injection remain outstanding.
+4. **Partially completed:** ReAct, native, Flow, and adapter boundary probes have been added; full adapter orchestration and remaining scenario coverage are outstanding.
+5. **Not completed:** V2-01 through V2-12 have not been executed as a complete scenario suite; current results are limited to DENY boundary probes.
 6. Independently inspect the ledger and recompute candidate digests.
 7. Publish a version-by-version report with PASS/FAIL/BLOCKED/UNKNOWN and exact limitations.
 
