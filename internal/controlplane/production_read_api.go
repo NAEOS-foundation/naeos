@@ -14,34 +14,34 @@ import (
 const controlPlaneReadScope = "control-plane:read"
 
 type controlPlaneOverviewResponse struct {
-	Environment string    `json:"environment"`
-	Status      string    `json:"status"`
-	ObservedAt  time.Time `json:"observed_at"`
-	LastSequence int64    `json:"last_sequence"`
-	DecisionCount int     `json:"decision_count"`
-	AllowCount int        `json:"allow_count"`
-	DenyCount int         `json:"deny_count"`
-	PendingCount int      `json:"pending_count"`
+	Environment   string    `json:"environment"`
+	Status        string    `json:"status"`
+	ObservedAt    time.Time `json:"observed_at"`
+	LastSequence  int64     `json:"last_sequence"`
+	DecisionCount int       `json:"decision_count"`
+	AllowCount    int       `json:"allow_count"`
+	DenyCount     int       `json:"deny_count"`
+	PendingCount  int       `json:"pending_count"`
 }
 
 type controlPlaneDecision struct {
-	Sequence   int64           `json:"sequence"`
-	ID         string          `json:"id"`
-	Timestamp  time.Time       `json:"timestamp"`
-	RequestID  string          `json:"request_id,omitempty"`
-	DecisionID string          `json:"decision_id,omitempty"`
-	AgentID    string          `json:"agent_id"`
-	Capability Capability      `json:"capability,omitempty"`
-	EventType  string          `json:"event_type"`
-	Decision   DecisionStatus  `json:"decision,omitempty"`
-	Reason     DecisionReason  `json:"reason,omitempty"`
+	Sequence   int64          `json:"sequence"`
+	ID         string         `json:"id"`
+	Timestamp  time.Time      `json:"timestamp"`
+	RequestID  string         `json:"request_id,omitempty"`
+	DecisionID string         `json:"decision_id,omitempty"`
+	AgentID    string         `json:"agent_id"`
+	Capability Capability    `json:"capability,omitempty"`
+	EventType  string         `json:"event_type"`
+	Decision   DecisionStatus `json:"decision,omitempty"`
+	Reason     DecisionReason `json:"reason,omitempty"`
 }
 
 type controlPlaneDecisionPage struct {
-	Environment string                   `json:"environment"`
-	ObservedAt  time.Time                `json:"observed_at"`
-	Items       []controlPlaneDecision   `json:"items"`
-	NextCursor  string                   `json:"next_cursor,omitempty"`
+	Environment string                 `json:"environment"`
+	ObservedAt  time.Time              `json:"observed_at"`
+	Items       []controlPlaneDecision `json:"items"`
+	NextCursor  string                 `json:"next_cursor,omitempty"`
 }
 
 // readAuthorizationHandler authenticates the caller and requires an explicit
@@ -94,9 +94,9 @@ func (r *ProductionRuntime) overviewHandler(w http.ResponseWriter, req *http.Req
 		return
 	}
 	result := controlPlaneOverviewResponse{
-		Environment: r.environment,
-		Status: "verified",
-		ObservedAt: time.Now().UTC(),
+		Environment:  r.environment,
+		Status:       "verified",
+		ObservedAt:   time.Now().UTC(),
 		LastSequence: int64(len(events)),
 	}
 	for _, event := range events {
@@ -167,4 +167,3 @@ func (r *ProductionRuntime) decisionsHandler(w http.ResponseWriter, req *http.Re
 		Items: items, NextCursor: nextCursor,
 	})
 }
-
