@@ -20,7 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from crewai.agents.agent_adapters.openai_agents.openai_agent_tool_adapter import OpenAIAgentToolAdapter
 from agents import Agent, Runner
-from agents.testing import ScriptedModel, assistant_message, function_call
+from agents.items import ModelResponse
+from agents.models.interface import Model, ModelTracing
+from agents.usage import Usage
+from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
 from crewai.hooks.tool_hooks import clear_all_tool_call_hooks, register_before_tool_call_hook
 from crewai.tools import BaseTool
 
@@ -44,22 +47,69 @@ class SideEffectTool(BaseTool):
         return "tool-body-executed"
 
 
+class DeterministicAgentsModel(Model):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def get_response(
+        self,
+        system_instructions: str | None,
+        input: Any,
+        model_settings: Any,
+        tools: list[Any],
+        output_schema: Any,
+        handoffs: list[Any],
+        tracing: ModelTracing,
+        *,
+        previous_response_id: str | None,
+        conversation_id: str | None,
+        prompt: Any,
+    ) -> ModelResponse:
+        self.calls += 1
+        if self.calls == 1:
+            output = [
+                ResponseFunctionToolCall(
+                    id="openai-adapter-item-001",
+                    call_id="openai-adapter-call-001",
+                    type="function_call",
+                    name="naeos_v2_openai_adapter_probe",
+                    arguments=json.dumps(
+                        {"invocation_id": "openai-adapter-deny-001", "value": "probe"}
+                    ),
+                )
+            ]
+        else:
+            output = [
+                ResponseOutputMessage(
+                    id="openai-adapter-final-001",
+                    type="message",
+                    role="assistant",
+                    content=[
+                        ResponseOutputText(
+                            type="output_text",
+                            text="OpenAI Agents adapter policy probe completed.",
+                            annotations=[],
+                            logprobs=[],
+                        )
+                    ],
+                    status="completed",
+                )
+            ]
+        return ModelResponse(
+            output=output,
+            usage=Usage(),
+            response_id=f"naeos-openai-adapter-response-{self.calls}",
+        )
+
+    async def stream_response(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError("Streaming is not used by this deterministic probe.")
+
+
 async def invoke_adapter() -> tuple[Any, int]:
     tool = SideEffectTool()
     adapter = OpenAIAgentToolAdapter(tools=[tool])
     adapter.configure_tools([])
-    model = ScriptedModel(
-        [
-            [
-                function_call(
-                    "naeos_v2_openai_adapter_probe",
-                    {"invocation_id": "openai-adapter-deny-001", "value": "probe"},
-                    call_id="openai-adapter-call-001",
-                )
-            ],
-            [assistant_message("OpenAI Agents adapter policy probe completed.")],
-        ]
-    )
+    model = DeterministicAgentsModel()
     agent = Agent(
         name="NAEOS adapter boundary probe",
         instructions="Call the provided test tool once, then finish.",
@@ -67,8 +117,7 @@ async def invoke_adapter() -> tuple[Any, int]:
         tools=adapter.converted_tools,
     )
     result = await Runner.run(agent, "Exercise the controlled tool once.")
-    model.assert_complete()
-    return result.final_output, len(model.calls)
+    return result.final_output, model.calls
 
 
 def run_probe() -> dict[str, Any]:
