@@ -25,7 +25,6 @@ from crewai.hooks.tool_hooks import (
     register_before_tool_call_hook,
 )
 from crewai.tools import BaseTool
-from pydantic import PrivateAttr
 
 from scripts.crewai_compat_v2_harness import SideEffectLedger, candidate_digest
 
@@ -37,14 +36,8 @@ HOOK_OBSERVATIONS: list[dict[str, Any]] = []
 class SideEffectTool(BaseTool):
     name: str = "naeos_v2_flow_probe"
     description: str = "Records a local test side effect."
-    _ledger: SideEffectLedger = PrivateAttr()
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._ledger = LEDGER
-
     def _run(self, invocation_id: str, value: str) -> str:
-        self._ledger.append(
+        LEDGER.append(
             invocation_id=invocation_id,
             tool_name=self.name,
             payload={"value": value},
@@ -53,6 +46,8 @@ class SideEffectTool(BaseTool):
 
 
 def run_probe() -> dict[str, Any]:
+    global LEDGER
+    LEDGER = SideEffectLedger()
     clear_all_tool_call_hooks()
     HOOK_OBSERVATIONS.clear()
 
@@ -107,7 +102,15 @@ def run_probe() -> dict[str, Any]:
 class FlowToolActionRuntimeTests(unittest.TestCase):
     def test_deny_hook_blocks_tool_body_on_flow_tool_action(self) -> None:
         report = run_probe()
-        expected = (\n            "PASS"\n            if report["hook_dispatch_observed"] and report["tool_body_entries"] == 0 and report["side_effect_count"] == 0\n            else "FAIL"\n        )\n        self.assertEqual(report["compatibility_result"], expected, msg=json.dumps(report, indent=2, sort_keys=True))
+        expected = (
+            "FAIL"
+            if report["tool_body_entries"] > 0
+            or report["side_effect_count"] > 0
+            or not report["hook_dispatch_observed"]
+            else "PASS"
+        )
+        self.assertEqual(report["compatibility_result"], expected, msg=json.dumps(report, indent=2, sort_keys=True))
+        self.assertEqual(report["tool_body_entries"], report["side_effect_count"])
 
     @classmethod
     def tearDownClass(cls) -> None:
