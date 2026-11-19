@@ -39,6 +39,10 @@ These are source-level implementation findings. They do **not** prove that produ
 | Staging validation | Not evidenced as complete | Confirm target, review/apply migration, persistence/restart/concurrency/privilege tests |
 | Production cutover | Not authorized / not evidenced | Backup and restore proof, schema/role review, explicit approval, deployment and rollback receipts |
 
+## Staging migration scope warning
+
+The repository migration directory includes Control Plane, CRM, and unified identity/tenant migrations. A normal Supabase migration push may apply all pending migrations, not only the Control Plane schema. Before any staging migration, inventory the full pending migration set against the target project, verify the project is isolated and its data is disposable or backed up, review ordering and effects, and use an explicit approved migration plan. Do not use a generic migration push as a shortcut for installing only the Control Plane schema.
+
 ## Required tests and evidence
 
 - Environment mismatch, invalid database URL, and TLS requirement fail closed.
