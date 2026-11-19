@@ -7,6 +7,7 @@ on:
       - "scripts/external_validation_crewai_boundaries.py"
       - "scripts/crewai_compat_v2_harness.py"
       - "tests/test_crewai_flow_tool_action_runtime.py"
+      - "tests/test_crewai_react_runtime.py"
       - ".github/workflows/external-validation-crewai-boundaries.yml"
   workflow_dispatch:
 
@@ -85,6 +86,47 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: crewai-v2-flow-tool-action-${{ matrix.crewai-version }}-${{ github.sha }}
+          path: external-validation-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
+  crewai-v2-react:
+    name: CrewAI v2 ReAct runtime — ${{ matrix.crewai-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crewai-version: ["1.15.16", "1.15.44"]
+    steps:
+      - name: Checkout NAEOS
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned CrewAI runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "crewai==${{ matrix.crewai-version }}"
+
+      - name: Record exact runtime
+        run: |
+          python --version
+          python -c "import crewai; print('crewai', crewai.__version__)"
+
+      - name: Execute public ReAct DENY probe
+        run: |
+          mkdir -p external-validation-evidence
+          python -m tests.test_crewai_react_runtime \
+            --output "external-validation-evidence/react-${{ matrix.crewai-version }}.json"
+
+      - name: Upload ReAct evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: crewai-v2-react-${{ matrix.crewai-version }}-${{ github.sha }}
           path: external-validation-evidence/
           if-no-files-found: warn
           retention-days: 30
