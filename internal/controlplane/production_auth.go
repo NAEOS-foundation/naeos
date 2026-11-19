@@ -15,21 +15,28 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
 
-const maxAuthorizationRequestBytes = 1 << 20
+const (
+	maxAuthorizationRequestBytes = 1 << 20
+	decisionWriteScope           = "naeos:control-plane:decision:write"
+)
 
 // ProductionIdentityConfig binds the production runtime to the configured identity
 // provider. Issuer, audience, and JWKS endpoint are explicit trust anchors.
 type ProductionIdentityConfig struct {
-	Issuer   string
-	Audience string
-	JWKSURL  string
+	Issuer        string
+	Audience      string
+	JWKSURL       string
+	PrincipalKind string
 }
 
 // ConfigureIdentity installs JWKS authentication and repository-backed
 // authorization. Readiness remains false until this succeeds.
 func (r *ProductionRuntime) ConfigureIdentity(cfg ProductionIdentityConfig) error {
-	if r == nil || r.Policies == nil || r.Grants == nil || r.Approvals == nil || r.Ledger == nil {
+	if r == nil || r.Policies == nil || r.Grants == nil || r.Approvals == nil || r.Ledger == nil || r.bindings == nil {
 		return errors.New("control plane persistence dependencies are unavailable")
+	}
+	if cfg.PrincipalKind != "human" && cfg.PrincipalKind != "service" {
+		return errors.New("control plane principal kind must be explicitly configured as human or service")
 	}
 	validator, err := api.NewJWKSValidator(cfg.Issuer, cfg.Audience, cfg.JWKSURL)
 	if err != nil {
@@ -41,6 +48,8 @@ func (r *ProductionRuntime) ConfigureIdentity(cfg ProductionIdentityConfig) erro
 		return errors.New("control plane JWKS endpoint could not be initialized")
 	}
 	r.identity = validator
+	// Principal kind is a trusted deployment profile, never inferred from JWT claims.
+	r.principalKind = cfg.PrincipalKind
 	r.gateway = NewRepositoryDecisionGateway(r.Policies, r.Grants, r.Approvals, r.Ledger)
 	return nil
 }
@@ -59,7 +68,7 @@ func (r *ProductionRuntime) ProductionHandler() http.Handler {
 
 func (r *ProductionRuntime) readyHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil {
+		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil || r.bindings == nil || r.principalKind == "" {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
 			return
 		}
@@ -87,7 +96,7 @@ func (r *ProductionRuntime) readyHandler() http.Handler {
 
 func (r *ProductionRuntime) authorizationHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.identity == nil || r.gateway == nil {
+		if r == nil || r.identity == nil || r.gateway == nil || r.bindings == nil || r.principalKind == "" {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "authorization runtime unavailable"})
 			return
 		}
@@ -97,8 +106,13 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			return
 		}
 		claims, err := r.identity.Validate(req.Context(), token)
-		if err != nil || claims == nil || strings.TrimSpace(claims.Sub) == "" {
+		if err != nil || claims == nil || strings.TrimSpace(claims.Issuer) == "" || strings.TrimSpace(claims.Sub) == "" {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid bearer token"})
+			return
+		}
+		// Only verified issuer-signed claims grant route scopes; match exact tokens.
+		if !claimsContainScope(claims, decisionWriteScope) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "required scope is missing"})
 			return
 		}
 		req.Body = http.MaxBytesReader(w, req.Body, maxAuthorizationRequestBytes)
@@ -114,19 +128,30 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			return
 		}
 
-		principal := strings.TrimSpace(claims.Sub)
-		if authorization.AgentID != "" && authorization.AgentID != principal {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "token identity does not match requested agent"})
+		requestedAgentID := authorization.AgentID
+		actionAgentID := authorization.Action.AgentID
+		if requestedAgentID != "" && actionAgentID != "" && requestedAgentID != actionAgentID {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "requested agent identifiers do not match"})
 			return
 		}
-		if authorization.Action.AgentID != "" && authorization.Action.AgentID != principal {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "token identity does not match action agent"})
+		if requestedAgentID == "" {
+			requestedAgentID = actionAgentID
+		}
+		agentID, bindingErr := r.bindings.ResolveAgent(
+			req.Context(), claims.Issuer, r.principalKind, claims.Sub, requestedAgentID,
+		)
+		if errors.Is(bindingErr, ErrRepositoryNotFound) || errors.Is(bindingErr, ErrRepositoryConflict) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "verified principal has no unambiguous active agent binding"})
+			return
+		}
+		if bindingErr != nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "principal binding lookup unavailable"})
 			return
 		}
 		// Identity comes only from the verified token. Client-supplied policy,
 		// grant, and authorization-context objects are not sources of authority.
-		authorization.AgentID = principal
-		authorization.Action.AgentID = principal
+		authorization.AgentID = agentID
+		authorization.Action.AgentID = agentID
 		authorization.Grant = nil
 		authorization.Policy = nil
 		authorization.Context = AuthorizationContext{}
@@ -150,6 +175,23 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			writeJSON(w, http.StatusServiceUnavailable, result)
 		}
 	})
+}
+
+func claimsContainScope(claims *api.JWTClaims, required string) bool {
+	if claims == nil || strings.TrimSpace(required) == "" {
+		return false
+	}
+	for _, scope := range strings.Fields(claims.Scope) {
+		if scope == required {
+			return true
+		}
+	}
+	for _, scope := range claims.Scopes {
+		if scope == required {
+			return true
+		}
+	}
+	return false
 }
 
 func bearerToken(header string) (string, bool) {

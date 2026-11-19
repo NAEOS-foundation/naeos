@@ -16,6 +16,28 @@ import (
 	"github.com/NAEOS-foundation/naeos/internal/api"
 )
 
+type productionBindingResolverStub struct{}
+
+func (productionBindingResolverStub) ResolveAgent(_ context.Context, issuer, kind, principalID, requestedAgentID string) (string, error) {
+	if issuer != "https://issuer.example" || (kind != "human" && kind != "service") {
+		return "", ErrRepositoryNotFound
+	}
+	if principalID == "user:multi" && requestedAgentID == "" {
+		return "", ErrRepositoryConflict
+	}
+	allowed := map[string]string{
+		"agent-gateway": "agent-gateway",
+		"user:123":      "agent-gateway",
+		" user:123 ":    " agent-gateway ",
+		"user:multi":    "agent-a",
+	}
+	agentID, ok := allowed[principalID]
+	if !ok || (requestedAgentID != "" && requestedAgentID != agentID) {
+		return "", ErrRepositoryNotFound
+	}
+	return agentID, nil
+}
+
 type productionTokenValidatorStub struct {
 	claims *api.JWTClaims
 	err    error
@@ -28,9 +50,14 @@ func (v productionTokenValidatorStub) Validate(context.Context, string) (*api.JW
 func productionAuthorizationHandlerFixture(t *testing.T, claims *api.JWTClaims, validateErr error) (*ProductionRuntime, AuthorizeRequest) {
 	t.Helper()
 	gateway, req := repositoryGatewayFixture(t)
+	if claims != nil && claims.Scope == "" && len(claims.Scopes) == 0 {
+		claims.Scope = decisionWriteScope
+	}
 	return &ProductionRuntime{
-		identity: productionTokenValidatorStub{claims: claims, err: validateErr},
-		gateway:  gateway,
+		identity:      productionTokenValidatorStub{claims: claims, err: validateErr},
+		gateway:       gateway,
+		bindings:      productionBindingResolverStub{},
+		principalKind: "service",
 	}, req
 }
 
@@ -46,7 +73,7 @@ func sendProductionAuthorizationRequest(handler http.Handler, token string, requ
 }
 
 func TestProductionAuthorizationRequiresBearerAndValidIdentity(t *testing.T) {
-	claims := &api.JWTClaims{Sub: "agent-gateway"}
+	claims := &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway"}
 	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
 	handler := runtime.ProductionHandler()
 
@@ -59,16 +86,113 @@ func TestProductionAuthorizationRequiresBearerAndValidIdentity(t *testing.T) {
 	}
 }
 
+func TestProductionAuthorizationRequiresDecisionWriteScope(t *testing.T) {
+	request := AuthorizeRequest{AgentID: "agent-gateway", Action: Action{AgentID: "agent-gateway", Capability: "artifact.read"}}
+	tests := []struct {
+		name   string
+		claims *api.JWTClaims
+		want   int
+	}{
+		{name: "missing scope", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scope: " "}, want: http.StatusForbidden},
+		{name: "wrong scope", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scope: "naeos:control-plane:runs:read"}, want: http.StatusForbidden},
+		{name: "substring is not a scope", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scope: "naeos:control-plane:decision:write-extra"}, want: http.StatusForbidden},
+		{name: "padded scopes array value is not exact", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scopes: []string{" naeos:control-plane:decision:write "}}, want: http.StatusForbidden},
+		{name: "exact scope token", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scope: "openid profile naeos:control-plane:decision:write"}, want: http.StatusOK},
+		{name: "scopes array", claims: &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway", Scopes: []string{"profile", "naeos:control-plane:decision:write"}}, want: http.StatusOK},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			runtime, _ := productionAuthorizationHandlerFixture(t, test.claims, nil)
+			response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", request)
+			if response.Code != test.want {
+				t.Fatalf("status = %d; want %d; body=%s", response.Code, test.want, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestProductionAuthorizationRejectsMissingScopeBeforeReadingBody(t *testing.T) {
+	runtime, _ := productionAuthorizationHandlerFixture(t, &api.JWTClaims{
+		Issuer: "https://issuer.example", Sub: "agent-gateway", Scope: "naeos:control-plane:runs:read",
+	}, nil)
+	request := httptest.NewRequest(http.MethodPost, "/api/control-plane/decision", strings.NewReader("{not-json"))
+	request.Header.Set("Authorization", "Bearer valid")
+	response := httptest.NewRecorder()
+	runtime.ProductionHandler().ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("status = %d; want 403 before JSON parsing; body=%s", response.Code, response.Body.String())
+	}
+}
+
 func TestProductionAuthorizationRequiresPrincipalBinding(t *testing.T) {
 	reqBody := AuthorizeRequest{AgentID: "agent-gateway", Action: Action{AgentID: "agent-gateway", Capability: "artifact.read"}}
-	runtime, _ := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "other-agent"}, nil)
+	runtime, _ := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Issuer: "https://issuer.example", Sub: "other-agent"}, nil)
 	if got := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", reqBody).Code; got != http.StatusForbidden {
 		t.Fatalf("agent mismatch status = %d; want 403", got)
 	}
 }
 
+func TestProductionAuthorizationResolvesSubjectWithoutUsingClientIDAsAgent(t *testing.T) {
+	claims := &api.JWTClaims{
+		Issuer:   "https://issuer.example",
+		Sub:      "user:123",
+		ClientID: "untrusted-agent-override",
+	}
+	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
+	runtime.principalKind = "human"
+	req.AgentID = ""
+	req.Action.AgentID = ""
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("authorization status = %d; want 200; body=%s", response.Code, response.Body.String())
+	}
+	var result DecisionResult
+	if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if result.AgentID != "agent-gateway" {
+		t.Fatalf("result agent = %q; want persisted binding agent-gateway, not client_id %q", result.AgentID, claims.ClientID)
+	}
+}
+
+func TestProductionAuthorizationPreservesOpaqueSubjectAndRequestedAgentID(t *testing.T) {
+	claims := &api.JWTClaims{
+		Issuer:   "https://issuer.example",
+		Sub:      " user:123 ",
+		ClientID: "different-client",
+	}
+	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
+	runtime.principalKind = "human"
+	req.AgentID = " agent-gateway "
+	req.Action.AgentID = " agent-gateway "
+
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("authorization status = %d; want 200; body=%s", response.Code, response.Body.String())
+	}
+	var result DecisionResult
+	if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if result.AgentID != " agent-gateway " {
+		t.Fatalf("agent ID = %q; want exact bound identifier", result.AgentID)
+	}
+}
+
+func TestProductionAuthorizationRejectsAmbiguousPrincipalBinding(t *testing.T) {
+	claims := &api.JWTClaims{Issuer: "https://issuer.example", Sub: "user:multi"}
+	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
+	runtime.principalKind = "human"
+	req.AgentID = ""
+	req.Action.AgentID = ""
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("ambiguous binding status = %d; want 403; body=%s", response.Code, response.Body.String())
+	}
+}
+
 func TestProductionAuthorizationUsesVerifiedPrincipalAndRepositoryGateway(t *testing.T) {
-	claims := &api.JWTClaims{Sub: "agent-gateway"}
+	claims := &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway"}
 	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
 	// Caller-supplied grant/policy values are explicitly not authoritative.
 	req.Grant = &Grant{GrantID: "forged", AgentID: "attacker", Status: "active", Capabilities: []Capability{"admin"}}
@@ -114,7 +238,7 @@ func TestProductionHandlerDoesNotExposeDemoRoutes(t *testing.T) {
 }
 
 func TestProductionAuthorizationUsesServerControlledTimestamp(t *testing.T) {
-	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "agent-gateway"}, nil)
+	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway"}, nil)
 	req.Timestamp = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
@@ -135,7 +259,7 @@ func TestProductionAuthorizationUsesServerControlledTimestamp(t *testing.T) {
 }
 
 func TestProductionAuthorizationCapabilityDeniedByCanonicalGrant(t *testing.T) {
-	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Sub: "agent-gateway"}, nil)
+	runtime, req := productionAuthorizationHandlerFixture(t, &api.JWTClaims{Issuer: "https://issuer.example", Sub: "agent-gateway"}, nil)
 	req.Action.Capability = "admin"
 	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
 	if response.Code != http.StatusForbidden {

@@ -26,14 +26,16 @@ type productionTokenValidator interface {
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
 type ProductionRuntime struct {
-	pool      *pgxpool.Pool
-	sqlDB     *sql.DB
-	Policies  *PostgresPolicyRepository
-	Grants    *PostgresGrantRepository
-	Approvals *PostgresApprovalRepository
-	Ledger    *PostgresLedger
-	identity  productionTokenValidator
-	gateway   *RepositoryDecisionGateway
+	pool          *pgxpool.Pool
+	sqlDB         *sql.DB
+	Policies      *PostgresPolicyRepository
+	Grants        *PostgresGrantRepository
+	Approvals     *PostgresApprovalRepository
+	Ledger        *PostgresLedger
+	identity      productionTokenValidator
+	gateway       *RepositoryDecisionGateway
+	bindings      PrincipalAgentBindingResolver
+	principalKind string
 }
 
 // OpenProductionRuntime validates the environment-specific Supabase target and connection contract, opens bounded pools,
@@ -108,6 +110,7 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 		Grants:    NewPostgresGrantRepository(sqlDB),
 		Approvals: NewPostgresApprovalRepository(sqlDB),
 		Ledger:    ledger,
+		bindings:  NewPostgresPrincipalAgentBindingResolver(sqlDB),
 	}, nil
 }
 
@@ -204,18 +207,19 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		to_regclass('naeos_control_plane.approvals') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_head') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_events') IS NOT NULL,
+		to_regclass('naeos_control_plane.principal_agent_bindings') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL`
-	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, appendFn, headFn bool
+	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, principalBindings, appendFn, headFn bool
 	if pool == nil {
 		return errors.New("control plane schema compatibility check failed")
 	}
 	if err := pool.QueryRow(ctx, required).Scan(
-		&policyVersions, &activePolicies, &grants, &approvals, &ledgerHead, &ledgerEvents, &appendFn, &headFn,
+		&policyVersions, &activePolicies, &grants, &approvals, &ledgerHead, &ledgerEvents, &principalBindings, &appendFn, &headFn,
 	); err != nil {
 		return errors.New("control plane schema compatibility check failed")
 	}
-	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerHead || !ledgerEvents || !appendFn || !headFn {
+	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerHead || !ledgerEvents || !principalBindings || !appendFn || !headFn {
 		return errors.New("control plane schema is missing required tables or functions")
 	}
 	return nil
@@ -231,7 +235,7 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 		_, _ = w.Write([]byte(`{"status":"live"}`))
 	})
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil {
+		if r == nil || r.pool == nil || r.sqlDB == nil || r.identity == nil || r.gateway == nil || r.bindings == nil || r.principalKind == "" {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}
