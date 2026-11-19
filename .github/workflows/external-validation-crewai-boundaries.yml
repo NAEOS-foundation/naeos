@@ -38,7 +38,7 @@ jobs:
           python -m pip install "crewai==1.15.44"
 
       - name: Compile boundary and tests
-        run: python -m compileall -q scripts/naeos_tool_boundary.py tests/test_naeos_tool_boundary.py
+        run: python -m compileall -q scripts/naeos_tool_boundary.py tests/test_naeos_tool_boundary.py tests/test_crewai_flow_tool_action_runtime.py tests/test_crewai_openai_agents_adapter_runtime.py tests/test_crewai_langgraph_adapter_runtime.py
 
       - name: Run fail-closed boundary tests
         run: python -m unittest tests.test_naeos_tool_boundary -v
