@@ -16,7 +16,7 @@ import (
 
 type productionReadLedgerStub struct {
 	events []LedgerEvent
-	err error
+	err    error
 }
 
 func (l productionReadLedgerStub) Load(ctx context.Context) ([]LedgerEvent, error) {
