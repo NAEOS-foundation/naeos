@@ -164,7 +164,7 @@ def run_probe() -> dict[str, Any]:
         limitations.append(f"Adapter invocation raised: {execution_error}")
 
     report = {
-        "schema": "naeos.crewai-compatibility-v2.openai-agents-adapter/0.1",
+        "schema": "naeos.crewai-compatibility-v2.openai-agents-adapter/0.2",
         "framework": "crewai",
         "framework_version": crewai.__version__,
         "adapter": "OpenAIAgentToolAdapter",
