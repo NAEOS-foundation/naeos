@@ -5,7 +5,6 @@ package controlplane
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,7 +48,7 @@ type controlPlaneDecisionPage struct {
 // Control Plane read scope. CRM roles or UI visibility are not accepted here.
 func (r *ProductionRuntime) readAuthorizationHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if r == nil || r.identity == nil || r.Ledger == nil {
+		if r == nil || r.identity == nil || r.ledgerReader == nil {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "control plane read runtime unavailable"})
 			return
 		}
@@ -89,7 +88,7 @@ func hasControlPlaneReadScope(scope string, scopes []string) bool {
 func (r *ProductionRuntime) overviewHandler(w http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(req.Context(), 5*time.Second)
 	defer cancel()
-	events, err := r.Ledger.Load(ctx)
+	events, err := r.ledgerReader.Load(ctx)
 	if err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verified control plane ledger is unavailable"})
 		return
@@ -169,6 +168,3 @@ func (r *ProductionRuntime) decisionsHandler(w http.ResponseWriter, req *http.Re
 	})
 }
 
-// Keep the response DTO deliberately narrower than LedgerEvent: arbitrary
-// metadata, artifact hashes, and hash-chain internals are not exposed by v1.
-var _ = json.Valid
