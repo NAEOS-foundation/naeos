@@ -1,0 +1,49 @@
+name: Control Plane Local Compose Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compose.control-plane.local.yml'
+      - '.env.control-plane.local.example'
+      - '.github/workflows/control-plane-local-compose-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compose.control-plane.local.yml'
+      - '.env.control-plane.local.example'
+      - '.github/workflows/control-plane-local-compose-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: control-plane-compose-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-config:
+    name: Validate Local Staging Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b
+      - name: Validate Compose configuration with non-secret placeholders
+        env:
+          NAEOS_CONTROLPLANE_ENVIRONMENT: staging
+          NAEOS_CONTROLPLANE_DATABASE_URL: postgres://staging-placeholder:placeholder@db.invalid:5432/staging?sslmode=require
+          NAEOS_CONTROLPLANE_ISSUER: https://staging-auth.invalid
+          NAEOS_CONTROLPLANE_AUDIENCE: authenticated
+          NAEOS_CONTROLPLANE_JWKS_URL: https://staging-auth.invalid/.well-known/jwks.json
+        run: |
+          set -euo pipefail
+          docker compose -f compose.control-plane.local.yml config --quiet
+          docker compose -f compose.control-plane.local.yml config > /tmp/compose-rendered.yml
+          grep -F '127.0.0.1' /tmp/compose-rendered.yml
+          grep -F '8080' /tmp/compose-rendered.yml
+          grep -F 'read_only: true' /tmp/compose-rendered.yml
+          grep -F 'no-new-privileges:true' /tmp/compose-rendered.yml
+          grep -F 'cap_drop:' /tmp/compose-rendered.yml
+          grep -F 'staging' /tmp/compose-rendered.yml
+          echo 'Compose config validation passed; no services were started.'
