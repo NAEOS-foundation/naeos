@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2026 NAEOS contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Probe CrewAI Flow ToolAction through the framework action builder.
+"""Probe CrewAI Flow ToolAction through the public Flow runtime kickoff.
 
 This is an execution-path probe, not a generic unit test of CrewAI hooks.
 The independent ledger is changed only inside the test tool body.
