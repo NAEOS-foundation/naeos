@@ -104,3 +104,26 @@ class PolicyEnforcedTool(BaseTool):
     async def _arun(self, **kwargs: Any) -> Any:
         self._decide(kwargs)
         return await self._delegate.arun(**kwargs)
+
+
+def normalize_langgraph_async_tool(tool: Any) -> Any:
+    """Repair CrewAI's async StructuredTool conversion without changing its body.
+
+    CrewAI 1.15.16 and 1.15.44 pass an async wrapper as StructuredTool.func.
+    LangChain expects async callables in StructuredTool.coroutine; keeping the
+    callable in func can return an unawaited coroutine and skip the tool body.
+    """
+    from langchain_core.tools import StructuredTool
+
+    if (
+        isinstance(tool, StructuredTool)
+        and tool.coroutine is None
+        and inspect.iscoroutinefunction(tool.func)
+    ):
+        return StructuredTool(
+            name=tool.name,
+            description=tool.description,
+            coroutine=tool.func,
+            args_schema=tool.args_schema,
+        )
+    return tool
