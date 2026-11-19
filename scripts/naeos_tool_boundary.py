@@ -10,6 +10,7 @@ defense-in-depth, not the authorization boundary.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 from typing import Any, Callable, Mapping
 
 from crewai.tools import BaseTool
