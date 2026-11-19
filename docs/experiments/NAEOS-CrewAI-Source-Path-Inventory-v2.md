@@ -246,3 +246,30 @@ Both converted tool invocations returned successfully at the outer `ainvoke()` c
 The source constructs `StructuredTool(func=tool_wrapper, ...)` while `tool_wrapper` is asynchronous. LangChain's `StructuredTool` separates synchronous `func` from asynchronous `coroutine`; the adapter should be checked for using the appropriate asynchronous field or a synchronous wrapper. This is a likely adapter-construction defect, not proof of policy enforcement.
 
 Evidence and raw JSON artifacts: [GitHub Actions run 44594967725](https://github.com/NAEOS-foundation/naeos/actions/runs/44594967725). This test exercises the converted StructuredTool API, not a full LangGraph graph/ToolNode orchestration.
+
+
+## 14. NAEOS-controlled tool execution boundary
+
+The compatibility harness now includes `scripts/naeos_tool_boundary.py`. Its `PolicyEnforcedTool` proxy is the NAEOS authorization boundary and must be supplied to the framework/adapter in place of the raw CrewAI tool.
+
+The wrapper performs the following sequence for both synchronous and asynchronous tool calls:
+
+1. Canonicalize the argument mapping and compute an argument digest.
+2. Call the NAEOS policy evaluator with the tool name and arguments.
+3. Require the evaluator to return the literal boolean `True` to allow execution. A denial, exception, malformed result, or missing evaluator fails closed.
+4. Emit a `BoundaryDecision` through the required observer before any delegate execution. If observation fails, execution is stopped.
+5. Invoke the wrapped tool only after an observed ALLOW decision.
+
+The wrapper is deliberately outside CrewAI's global `before_tool_call` hook dispatcher. That hook remains defense-in-depth and is not treated as a universal execution boundary.
+
+### 14.1 Adapter integration
+
+- **Flow ToolAction:** the declarative Flow resolves a `PolicyEnforcedTool` implementation; `ToolAction.run` enters the wrapper before the delegate.
+- **OpenAI Agents:** `OpenAIAgentToolAdapter` receives the guarded BaseTool, so its direct `_run` call reaches the NAEOS decision boundary before the underlying tool body.
+- **LangGraph:** `LangGraphToolAdapter` receives the guarded BaseTool. CrewAI 1.15.16 and 1.15.44 construct a `StructuredTool` with an async callable assigned to `func`; NAEOS normalizes that callable into LangChain's `coroutine` slot before `StructuredTool.ainvoke`, preventing an unawaited coroutine from masquerading as successful execution.
+
+### 14.2 Verification contract
+
+`tests/test_naeos_tool_boundary.py` verifies DENY, ALLOW, policy exceptions, non-boolean policy results, and observer failure. The three adapter runtime probes now assert the NAEOS boundary observation separately from the legacy CrewAI hook observation and independently assert zero tool-body entries and zero side effects under DENY.
+
+A successful adapter probe demonstrates the guarded wrapper's behavior for that tested execution path; it does not prove that arbitrary raw tools, unwrapped integrations, or downstream code paths are automatically protected. All tools must be registered through the NAEOS-controlled wrapper, and the policy/observation callbacks must be wired to the authoritative NAEOS policy and durable audit services before production use.
