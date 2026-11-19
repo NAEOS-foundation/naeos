@@ -9,6 +9,8 @@ on:
       - "tests/test_crewai_flow_tool_action_runtime.py"
       - "tests/test_crewai_react_runtime.py"
       - "tests/test_crewai_native_tool_calling_runtime.py"
+      - "tests/test_crewai_openai_agents_adapter_runtime.py"
+      - "tests/test_crewai_langgraph_adapter_runtime.py"
       - ".github/workflows/external-validation-crewai-boundaries.yml"
   workflow_dispatch:
 
@@ -169,6 +171,88 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: crewai-v2-native-tool-calling-${{ matrix.crewai-version }}-${{ github.sha }}
+          path: external-validation-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
+  crewai-v2-openai-agents-adapter:
+    name: CrewAI OpenAI Agents adapter — ${{ matrix.crewai-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crewai-version: ["1.15.16", "1.15.44"]
+    steps:
+      - name: Checkout NAEOS
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install CrewAI and OpenAI Agents SDK
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "crewai==${{ matrix.crewai-version }}" openai-agents
+
+      - name: Record exact runtime versions
+        run: |
+          python --version
+          python -c "import crewai, importlib.metadata as m; print('crewai', crewai.__version__); print('openai-agents', m.version('openai-agents'))"
+
+      - name: Execute OpenAI Agents adapter DENY probe
+        run: |
+          mkdir -p external-validation-evidence
+          python -m tests.test_crewai_openai_agents_adapter_runtime \
+            --output "external-validation-evidence/openai-agents-adapter-${{ matrix.crewai-version }}.json"
+
+      - name: Upload OpenAI Agents adapter evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: crewai-v2-openai-agents-adapter-${{ matrix.crewai-version }}-${{ github.sha }}
+          path: external-validation-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
+  crewai-v2-langgraph-adapter:
+    name: CrewAI LangGraph adapter — ${{ matrix.crewai-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crewai-version: ["1.15.16", "1.15.44"]
+    steps:
+      - name: Checkout NAEOS
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install CrewAI and LangGraph
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "crewai==${{ matrix.crewai-version }}" langgraph
+
+      - name: Record exact runtime versions
+        run: |
+          python --version
+          python -c "import crewai, importlib.metadata as m; print('crewai', crewai.__version__); print('langgraph', m.version('langgraph')); print('langchain-core', m.version('langchain-core'))"
+
+      - name: Execute LangGraph adapter DENY probe
+        run: |
+          mkdir -p external-validation-evidence
+          python -m tests.test_crewai_langgraph_adapter_runtime \
+            --output "external-validation-evidence/langgraph-adapter-${{ matrix.crewai-version }}.json"
+
+      - name: Upload LangGraph adapter evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: crewai-v2-langgraph-adapter-${{ matrix.crewai-version }}-${{ github.sha }}
           path: external-validation-evidence/
           if-no-files-found: warn
           retention-days: 30
