@@ -18,6 +18,23 @@ The production Control Plane runtime implementation is present on `main`:
 
 These are source-level implementation findings. They do **not** prove that production or staging credentials have been configured, that the preflight has run against either live database, that migrations have been applied, or that a deployment/cutover has occurred.
 
+## Live staging database audit (read-only, 2026-11-19)
+
+A read-only catalog audit was performed against the approved `naeos.db` staging project (project ref `kqmhpsftijskesjdovjm`). No schema, data, role, credential, or migration changes were made during the audit.
+
+Verified findings:
+
+- The private `naeos_control_plane` schema exists and contains all six required tables: `policy_versions`, `active_policies`, `grants`, `approvals`, `ledger_head`, and `ledger_events`.
+- Both Control Plane migration versions (`20261111000100` and `20261111000200`) are recorded in the staging migration history.
+- The runtime group role exists as `NOLOGIN`, `NOSUPERUSER`, `NOBYPASSRLS`, `NOCREATEDB`, and `NOCREATEROLE`. No dedicated runtime login role currently exists.
+- Schema usage is denied to `PUBLIC`, `anon`, `authenticated`, and `service_role`; those roles also have no table SELECT access in the private Control Plane schema.
+- All six tables have RLS enabled. The runtime group has narrowly scoped table privileges; direct ledger-event writes are not granted.
+- Ledger append and read-head functions are `SECURITY DEFINER`, owned by `postgres`, use a fixed `pg_catalog` search path, and are executable by the runtime group only (not `PUBLIC`).
+- The staging ledger head is at sequence 0 and the event table is empty at audit time.
+- The CRM staging `public` schema contains 22 base tables; the audit did not alter them.
+
+This verifies the live schema and static role/grant configuration only. The runtime LOGIN identity and secret are not provisioned, so live runtime preflight remains blocked. A live runtime login/preflight test and recovery/concurrency evidence remain outstanding.
+
 ## Compatibility and safety requirements
 
 - Keep the investor-demo composition root and its route surface separate from the production runtime.
