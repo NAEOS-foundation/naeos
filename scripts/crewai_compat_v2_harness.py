@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Mapping
 
 
 SCHEMA = "naeos.crewai-compatibility-v2.evidence/0.1"
