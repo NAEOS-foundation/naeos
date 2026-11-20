@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Unit tests for v2 evidence primitives; not framework integration tests."""
 import unittest
+import threading
 
 from scripts.crewai_compat_v2_harness import (
     ActionState, DecisionGate, DecisionGateError, ExecutionLedger, Result, SideEffectLedger, candidate_digest,
@@ -140,6 +141,31 @@ class DecisionLifecycleTests(unittest.TestCase):
             self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
                 subject="agent-1", scope="tenant-b/resource-r-1")
 
+    def test_concurrent_authorize_consumes_decision_exactly_once(self):
+        record = self.issue()
+        barrier = threading.Barrier(8)
+        accepted = []
+        rejected = []
+
+        def attempt():
+            barrier.wait(timeout=5)
+            try:
+                self.gate.authorize(decision_id=record.decision_id,
+                    candidate=self.candidate, subject="agent-1",
+                    scope="tenant-a/resource-r-1")
+                accepted.append(True)
+            except DecisionGateError:
+                rejected.append(True)
+
+        threads = [threading.Thread(target=attempt) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+        self.assertTrue(all(not thread.is_alive() for thread in threads))
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(len(rejected), 7)
+
     def test_v2_08_single_use_decision_replay_rejected(self):
         record = self.issue()
         args = dict(decision_id=record.decision_id, candidate=self.candidate,
@@ -234,6 +260,32 @@ class ResponseLossAndReconciliationTests(unittest.TestCase):
         self.assertEqual(reconciled.state, ActionState.UNKNOWN)
         self.assertEqual(reconciled.authoritative_effect_count, 0)
         self.assertIn("absence is not proof", reconciled.reconciliation_note)
+
+    def test_concurrent_dispatch_transition_is_single_winner(self):
+        fresh = ExecutionLedger()
+        fresh.prepare(action_id="race", invocation_id="race-inv",
+            tool_name="write", candidate=self.candidate)
+        barrier = threading.Barrier(8)
+        successes = []
+        failures = []
+
+        def dispatch():
+            barrier.wait(timeout=5)
+            try:
+                fresh.mark_dispatched(action_id="race")
+                successes.append(True)
+            except ValueError:
+                failures.append(True)
+
+        threads = [threading.Thread(target=dispatch) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+        self.assertTrue(all(not thread.is_alive() for thread in threads))
+        self.assertEqual(len(successes), 1)
+        self.assertEqual(len(failures), 7)
+        self.assertEqual(fresh.get("race").state, ActionState.DISPATCHED)
 
     def test_dispatch_state_transition_guards(self):
         fresh = ExecutionLedger()
