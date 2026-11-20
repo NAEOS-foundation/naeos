@@ -205,6 +205,108 @@ class SideEffectLedger:
         return "sha256:" + hashlib.sha256(_json_bytes([asdict(x) for x in self.snapshot()])).hexdigest()
 
 
+class ActionState(str, Enum):
+    PREPARED = "PREPARED"
+    DISPATCHED = "DISPATCHED"
+    UNKNOWN = "UNKNOWN"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+
+
+@dataclass(frozen=True)
+class ActionRecord:
+    action_id: str
+    invocation_id: str
+    tool_name: str
+    candidate_digest: str
+    state: ActionState
+    authoritative_effect_count: int = 0
+    reconciliation_note: str = ""
+
+
+class ExecutionLedger:
+    """Harness model for response-loss and authoritative effect reconciliation.
+
+    Absence of an effect record is deliberately not treated as proof that an
+    action did not execute. Reconciliation only upgrades UNKNOWN to SUCCEEDED
+    when exactly one authoritative effect is found for the stable action ID.
+    """
+
+    def __init__(self) -> None:
+        self._records: dict[str, ActionRecord] = {}
+        self._lock = threading.Lock()
+
+    def prepare(self, *, action_id: str, invocation_id: str, tool_name: str,
+                candidate: Mapping[str, Any]) -> ActionRecord:
+        if not all(isinstance(x, str) and x.strip() for x in
+                   (action_id, invocation_id, tool_name)):
+            raise ValueError("action_id, invocation_id, and tool_name are required")
+        record = ActionRecord(action_id, invocation_id, tool_name,
+                             candidate_digest(candidate), ActionState.PREPARED)
+        with self._lock:
+            if action_id in self._records:
+                raise ValueError("duplicate action ID; do not create a new dispatch record")
+            self._records[action_id] = record
+        return record
+
+    def mark_dispatched(self, *, action_id: str) -> ActionRecord:
+        with self._lock:
+            record = self._records.get(action_id)
+            if record is None or record.state is not ActionState.PREPARED:
+                raise ValueError("action must exist in PREPARED state to dispatch")
+            record = dataclass_replace(record, state=ActionState.DISPATCHED)
+            self._records[action_id] = record
+            return record
+
+    def mark_unknown(self, *, action_id: str, reason: str) -> ActionRecord:
+        if not reason.strip():
+            raise ValueError("UNKNOWN requires an explicit reason")
+        with self._lock:
+            record = self._records.get(action_id)
+            if record is None or record.state is not ActionState.DISPATCHED:
+                raise ValueError("only dispatched actions can become UNKNOWN")
+            record = dataclass_replace(record, state=ActionState.UNKNOWN,
+                                      reconciliation_note=reason)
+            self._records[action_id] = record
+            return record
+
+    def reconcile(self, *, action_id: str, authoritative_effects: tuple[SideEffect, ...]) -> ActionRecord:
+        with self._lock:
+            record = self._records.get(action_id)
+            if record is None or record.state is not ActionState.UNKNOWN:
+                raise ValueError("only UNKNOWN actions can be reconciled")
+            matches = tuple(effect for effect in authoritative_effects
+                            if effect.action_id == action_id)
+            if len(matches) == 1:
+                record = dataclass_replace(record, state=ActionState.SUCCEEDED,
+                    authoritative_effect_count=1,
+                    reconciliation_note="one authoritative effect matched stable action ID")
+            elif len(matches) == 0:
+                record = dataclass_replace(record, state=ActionState.UNKNOWN,
+                    authoritative_effect_count=0,
+                    reconciliation_note="no authoritative match; absence is not proof of non-execution")
+            else:
+                record = dataclass_replace(record, state=ActionState.UNKNOWN,
+                    authoritative_effect_count=len(matches),
+                    reconciliation_note="multiple authoritative matches; outcome ambiguous")
+            self._records[action_id] = record
+            return record
+
+    def get(self, action_id: str) -> ActionRecord | None:
+        with self._lock:
+            return self._records.get(action_id)
+
+    def retry_allowed(self, *, action_id: str) -> bool:
+        """Only a prepared action may be dispatched; UNKNOWN is never retryable here."""
+        with self._lock:
+            record = self._records.get(action_id)
+            return bool(record and record.state is ActionState.PREPARED)
+
+
+# dataclasses.replace alias avoids mutation of frozen records and keeps transitions explicit.
+from dataclasses import replace as dataclass_replace
+
+
 @dataclass
 class ScenarioEvidence:
     test_id: str
