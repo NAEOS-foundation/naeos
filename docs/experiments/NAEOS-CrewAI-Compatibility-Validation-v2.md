@@ -58,7 +58,7 @@ A path that is unavailable in a pinned version is BLOCKED/NOT_APPLICABLE with ev
 
 ## 3A. Current runtime evidence — guarded DENY boundary probes
 
-**Latest verified head:** `eac4847892385b635e6684119916d0c73e627455` (PR #847). Runtime probe artifacts from [workflow run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) were downloaded and inspected. The CI jobs and tool-boundary unit tests completed successfully.
+**Latest runtime evidence:** head `eac4847892385b635e6684119916d0c73e627455` (PR #847). Runtime probe artifacts from [workflow run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) were downloaded and inspected; the runtime matrix and tool-boundary unit tests passed. New primitive-only lifecycle tests are added on later commits and are pending CI; see the PR for current head/checks.
 
 These results establish enforcement at the **NAEOS `PolicyEnforcedTool` guarded-proxy boundary** for the tested paths. They do not show CrewAI global hook dispatch on every adapter path and do not establish overall V2 conformance.
 
@@ -168,9 +168,9 @@ Do not aggregate BLOCKED or UNKNOWN into PASS. The version-level result is PASS 
 
 1. **Completed:** inspect CrewAI 1.15.16 and 1.15.44 source/API surfaces and map ReAct, native, Flow, and adapter dispatch paths.
 2. **Partially completed:** pinned-version GitHub Actions jobs exist for the tested CrewAI paths and optional adapter dependencies.
-3. **Partially completed:** an independent append-only side-effect ledger and deterministic guarded-boundary DENY probes exist; policy freshness, decision lifecycle, controllable clock, and response-loss injection remain outstanding.
+3. **Partially completed:** an independent append-only side-effect ledger and guarded-boundary DENY probes exist. Framework-neutral harness primitives now model decision binding/freshness, expiry, replay, review approvals, response loss, UNKNOWN, and authoritative reconciliation; these primitives are not yet exercised across framework paths.
 4. **Partially completed:** ReAct, native, Flow, OpenAI Agents, and compiled LangGraph ToolNode guarded-boundary probes execute successfully on the pinned matrix; remaining scenario coverage and adapter/hook instrumentation are outstanding.
-5. **Not completed:** V2-01 through V2-12 have not been executed as a complete scenario suite; current results are limited to DENY guarded-boundary probes.
+5. **Not completed:** V2-01 through V2-12 are implemented as isolated primitive tests in the harness, but have not been executed as a complete framework/path/version scenario suite. Latest new primitive test workflow is pending.
 6. Independently inspect the ledger and recompute candidate digests.
 7. Publish a version-by-version report with PASS/FAIL/BLOCKED/UNKNOWN and exact limitations.
 
