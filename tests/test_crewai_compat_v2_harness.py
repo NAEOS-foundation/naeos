@@ -117,7 +117,11 @@ class DecisionLifecycleTests(unittest.TestCase):
                 subject="agent-1", scope="tenant-a/resource-r-1")
 
     def test_v2_06_policy_provider_unavailable_fails_closed(self):
+        record = self.issue()
         self.policy_available = False
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-1", scope="tenant-a/resource-r-1")
         with self.assertRaises(DecisionGateError):
             self.issue()
 
