@@ -210,9 +210,8 @@ class ResponseLossAndReconciliationTests(unittest.TestCase):
     def test_v2_12_duplicate_effect_matches_remain_ambiguous_unknown(self):
         self.simulate_commit_then_response_loss()
         original = self.effects.snapshot()[0]
-        duplicate = self.effects.append(action_id=self.action_id,
-            invocation_id=self.invocation_id, tool_name="mock_write",
-            payload=self.candidate["input"], action_id=self.action_id)
+        duplicate = self.effects.append(invocation_id=self.invocation_id,
+            tool_name="mock_write", payload=self.candidate["input"], action_id=self.action_id)
         reconciled = self.exec_ledger.reconcile(action_id=self.action_id,
             authoritative_effects=(original, duplicate))
         self.assertEqual(reconciled.state, ActionState.UNKNOWN)
