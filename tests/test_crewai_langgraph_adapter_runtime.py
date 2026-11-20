@@ -95,6 +95,8 @@ def run_probe() -> dict[str, Any]:
         invocation_completed = True
     except Exception as exc:
         execution_error = f"{type(exc).__name__}: {exc}"
+    finally:
+        clear_all_tool_call_hooks()
 
     entries = LEDGER.snapshot()
     body_entries = TOOL_BODY_ENTRIES
@@ -146,7 +148,6 @@ def run_probe() -> dict[str, Any]:
         },
         "candidate_digest_probe": candidate_digest({"tool": "naeos_v2_langgraph_probe", "decision": "DENY"}),
     }
-    clear_all_tool_call_hooks()
     return report
 
 

@@ -68,7 +68,11 @@ class PolicyEnforcedTool(BaseTool):
         self._policy_id = policy_id
 
     def _decide(self, arguments: Mapping[str, Any]) -> None:
-        digest = candidate_digest(dict(arguments))
+        digest = candidate_digest({
+            "tool_name": self.name,
+            "policy_id": self._policy_id,
+            "arguments": dict(arguments),
+        })
         allowed = False
         try:
             decision = self._authorize(self.name, dict(arguments))
