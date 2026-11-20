@@ -218,6 +218,17 @@ class ResponseLossAndReconciliationTests(unittest.TestCase):
         self.assertEqual(reconciled.authoritative_effect_count, 2)
         self.assertIn("ambiguous", reconciled.reconciliation_note)
 
+    def test_v2_12_mismatched_effect_identity_cannot_confirm_success(self):
+        self.simulate_commit_then_response_loss()
+        wrong = self.effects.append(invocation_id="other-invocation",
+            tool_name="different_tool", payload={"different": "payload"},
+            action_id=self.action_id)
+        reconciled = self.exec_ledger.reconcile(action_id=self.action_id,
+            authoritative_effects=(wrong,))
+        self.assertEqual(reconciled.state, ActionState.UNKNOWN)
+        self.assertEqual(reconciled.authoritative_effect_count, 0)
+        self.assertIn("absence is not proof", reconciled.reconciliation_note)
+
     def test_dispatch_state_transition_guards(self):
         fresh = ExecutionLedger()
         fresh.prepare(action_id="fresh", invocation_id="inv", tool_name="write",
