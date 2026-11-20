@@ -171,10 +171,10 @@ Do not aggregate BLOCKED or UNKNOWN into PASS. The version-level result is PASS 
 ## 9. Implementation sequence
 
 1. **Completed:** inspect CrewAI 1.15.16 and 1.15.44 source/API surfaces and map ReAct, native, Flow, and adapter dispatch paths.
-2. **Partially completed:** pinned-version GitHub Actions jobs exist for the tested CrewAI paths and optional adapter dependencies.
-3. **Partially completed:** an independent append-only side-effect ledger and guarded-boundary DENY probes exist. Framework-neutral harness primitives now model decision binding/freshness, expiry, replay, review approvals, response loss, UNKNOWN, and authoritative reconciliation; these primitives are not yet exercised across framework paths.
-4. **Partially completed:** ReAct, native, Flow, OpenAI Agents, and compiled LangGraph ToolNode guarded-boundary probes execute successfully on the pinned matrix; remaining scenario coverage and adapter/hook instrumentation are outstanding.
-5. **Not completed:** V2-01 through V2-12 are implemented as isolated primitive tests in the harness, but have not been executed as a complete framework/path/version scenario suite. Latest new primitive test workflow is pending.
+2. **Completed for the current probes:** pinned-version GitHub Actions jobs exercise ReAct, native tool calling, Flow ToolAction, OpenAI Agents, and compiled LangGraph ToolNode paths on the two CrewAI versions.
+3. **Completed as harness primitives:** an independent append-only side-effect ledger and guarded-boundary DENY probes exist. Framework-neutral primitives model candidate binding/freshness, expiry, replay, review approvals, response loss, UNKNOWN, reconciliation, and concurrent single-use transitions. These primitives are not a production authorization or persistence service.
+4. **Runtime evidence recorded:** ReAct/native hook paths and guarded proxy paths have PASS evidence for DENY behavior; response-loss/reconciliation controlled probes pass on both versions. Adapter probes that require the guarded proxy do not certify global hook coverage.
+5. **Not completed:** V2-01 through V2-12 have not been executed as a complete framework/path/version scenario suite. ALLOW, review/approval, mutation, expiry, replay, policy freshness, and provider-failure scenarios are not fully covered at the framework execution boundaries.
 6. Independently inspect the ledger and recompute candidate digests.
 7. Publish a version-by-version report with PASS/FAIL/BLOCKED/UNKNOWN and exact limitations.
 
