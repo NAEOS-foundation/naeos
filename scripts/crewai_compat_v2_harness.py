@@ -219,6 +219,7 @@ class ActionRecord:
     invocation_id: str
     tool_name: str
     candidate_digest: str
+    payload_digest: str
     state: ActionState
     authoritative_effect_count: int = 0
     reconciliation_note: str = ""
@@ -241,8 +242,10 @@ class ExecutionLedger:
         if not all(isinstance(x, str) and x.strip() for x in
                    (action_id, invocation_id, tool_name)):
             raise ValueError("action_id, invocation_id, and tool_name are required")
+        payload = candidate.get("input", candidate)
         record = ActionRecord(action_id, invocation_id, tool_name,
-                             candidate_digest(candidate), ActionState.PREPARED)
+                             candidate_digest(candidate), candidate_digest(payload),
+                             ActionState.PREPARED)
         with self._lock:
             if action_id in self._records:
                 raise ValueError("duplicate action ID; do not create a new dispatch record")
@@ -276,11 +279,14 @@ class ExecutionLedger:
             if record is None or record.state is not ActionState.UNKNOWN:
                 raise ValueError("only UNKNOWN actions can be reconciled")
             matches = tuple(effect for effect in authoritative_effects
-                            if effect.action_id == action_id)
+                            if effect.action_id == action_id
+                            and effect.invocation_id == record.invocation_id
+                            and effect.tool_name == record.tool_name
+                            and effect.payload_digest == record.payload_digest)
             if len(matches) == 1:
                 record = dataclass_replace(record, state=ActionState.SUCCEEDED,
                     authoritative_effect_count=1,
-                    reconciliation_note="one authoritative effect matched stable action ID")
+                    reconciliation_note="one authoritative effect matched action ID, invocation, tool, and payload")
             elif len(matches) == 0:
                 record = dataclass_replace(record, state=ActionState.UNKNOWN,
                     authoritative_effect_count=0,
