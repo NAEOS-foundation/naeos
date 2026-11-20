@@ -23,6 +23,10 @@ class RecordingTool(BaseTool):
         return "executed"
 
 
+class AlternateRecordingTool(RecordingTool):
+    name: str = "naeos_boundary_alternate_probe"
+
+
 class ToolBoundaryTests(unittest.TestCase):
     def setUp(self) -> None:
         RecordingTool.entries = []
@@ -44,6 +48,28 @@ class ToolBoundaryTests(unittest.TestCase):
         self.assertEqual(RecordingTool.entries, [])
         self.assertEqual(len(self.decisions), 1)
         self.assertEqual(self.decisions[0].decision, "DENY")
+
+    def test_candidate_digest_binds_tool_policy_and_arguments(self) -> None:
+        first = PolicyEnforcedTool(
+            delegate=RecordingTool(), authorize=lambda _name, _args: False,
+            observe=self.decisions.append, policy_id="naeos.digest-policy-a/1",
+        )
+        other_policy = PolicyEnforcedTool(
+            delegate=RecordingTool(), authorize=lambda _name, _args: False,
+            observe=self.decisions.append, policy_id="naeos.digest-policy-b/1",
+        )
+        other_tool = PolicyEnforcedTool(
+            delegate=AlternateRecordingTool(), authorize=lambda _name, _args: False,
+            observe=self.decisions.append, policy_id="naeos.digest-policy-a/1",
+        )
+        changed_args = {"value": "different"}
+        for guarded, args in ((first, {"value": "same"}), (other_policy, {"value": "same"}), (other_tool, {"value": "same"}), (first, changed_args)):
+            with self.assertRaises(PermissionError):
+                guarded.run(**args)
+        digests = [decision.arguments_digest for decision in self.decisions]
+        self.assertEqual(len(digests), 4)
+        self.assertEqual(len(set(digests)), 4)
+        self.assertEqual(RecordingTool.entries, [])
 
     def test_allow_is_observed_then_delegate_executes(self) -> None:
         tool = self.guarded(lambda _name, _args: True)
