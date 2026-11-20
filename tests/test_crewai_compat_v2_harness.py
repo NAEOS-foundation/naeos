@@ -4,8 +4,8 @@
 import unittest
 
 from scripts.crewai_compat_v2_harness import (
-    Result, SideEffectLedger, candidate_digest, classify_deny,
-    run_primitive_self_test,
+    DecisionGate, DecisionGateError, Result, SideEffectLedger, candidate_digest,
+    classify_deny, run_primitive_self_test,
 )
 
 
@@ -57,6 +57,106 @@ class HarnessPrimitiveTests(unittest.TestCase):
 
     def test_primitive_self_test(self):
         self.assertEqual(run_primitive_self_test()["status"], "PASS")
+
+
+class DecisionLifecycleTests(unittest.TestCase):
+    def setUp(self):
+        self.now = 1000.0
+        self.policy_version = "policy-v1"
+        self.policy_available = True
+        def policy_provider():
+            if not self.policy_available:
+                raise RuntimeError("simulated policy service outage")
+            return self.policy_version
+        self.gate = DecisionGate(policy_version_provider=policy_provider, clock=lambda: self.now)
+        self.candidate = {
+            "framework": "crewai", "path": "Flow.ToolAction",
+            "tool_name": "mock_write", "action": "write",
+            "input": {"record_id": "r-1", "value": "test"},
+            "subject": "agent-1", "scope": "tenant-a/resource-r-1",
+        }
+
+    def issue(self, decision="PROCEED", expiry=1100.0):
+        return self.gate.issue(candidate=self.candidate, policy_id="policy.main",
+            subject="agent-1", scope="tenant-a/resource-r-1", expires_at=expiry,
+            decision=decision, decision_id=f"decision-{decision.lower()}")
+
+    def test_v2_01_fresh_proceed_authorizes_exact_candidate(self):
+        record = self.issue()
+        authorized = self.gate.authorize(decision_id=record.decision_id,
+            candidate=self.candidate, subject="agent-1", scope="tenant-a/resource-r-1")
+        self.assertEqual(authorized.decision, "PROCEED")
+        self.assertEqual(authorized.candidate_digest, candidate_digest(self.candidate))
+
+    def test_v2_02_candidate_mutation_is_rejected(self):
+        record = self.issue()
+        mutated = {**self.candidate, "input": {"record_id": "r-1", "value": "mutated"}}
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=mutated,
+                subject="agent-1", scope="tenant-a/resource-r-1")
+
+    def test_v2_03_tool_identity_mutation_is_rejected(self):
+        record = self.issue()
+        changed_tool = {**self.candidate, "tool_name": "other_tool"}
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=changed_tool,
+                subject="agent-1", scope="tenant-a/resource-r-1")
+
+    def test_v2_04_policy_version_change_invalidates_decision(self):
+        record = self.issue()
+        self.policy_version = "policy-v2"
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-1", scope="tenant-a/resource-r-1")
+
+    def test_v2_05_expired_decision_is_rejected(self):
+        record = self.issue(expiry=1001.0)
+        self.now = 1001.0
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-1", scope="tenant-a/resource-r-1")
+
+    def test_v2_06_policy_provider_unavailable_fails_closed(self):
+        self.policy_available = False
+        with self.assertRaises(DecisionGateError):
+            self.issue()
+
+    def test_v2_07_subject_and_scope_mismatch_rejected(self):
+        record = self.issue()
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-2", scope="tenant-a/resource-r-1")
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-1", scope="tenant-b/resource-r-1")
+
+    def test_v2_08_single_use_decision_replay_rejected(self):
+        record = self.issue()
+        args = dict(decision_id=record.decision_id, candidate=self.candidate,
+            subject="agent-1", scope="tenant-a/resource-r-1")
+        self.gate.authorize(**args)
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(**args)
+
+    def test_v2_09_needs_review_requires_exact_explicit_approval(self):
+        record = self.issue(decision="NEEDS_REVIEW")
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+                subject="agent-1", scope="tenant-a/resource-r-1")
+        self.gate.approve(decision_id=record.decision_id, candidate=self.candidate)
+        authorized = self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
+            subject="agent-1", scope="tenant-a/resource-r-1")
+        self.assertEqual(authorized.decision, "NEEDS_REVIEW")
+
+    def test_v2_10_approval_candidate_substitution_rejected(self):
+        record = self.issue(decision="NEEDS_REVIEW")
+        substituted = {**self.candidate, "input": {"record_id": "r-1", "value": "different"}}
+        with self.assertRaises(DecisionGateError):
+            self.gate.approve(decision_id=record.decision_id, candidate=substituted)
+        self.gate.approve(decision_id=record.decision_id, candidate=self.candidate)
+        with self.assertRaises(DecisionGateError):
+            self.gate.authorize(decision_id=record.decision_id, candidate=substituted,
+                subject="agent-1", scope="tenant-a/resource-r-1")
 
 
 if __name__ == "__main__":
