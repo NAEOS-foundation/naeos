@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import platform
 import threading
 import uuid
@@ -105,8 +106,9 @@ class DecisionGate:
             raise DecisionGateError("invalid decision literal")
         if not all(isinstance(x, str) and x.strip() for x in (policy_id, subject, scope)):
             raise DecisionGateError("policy, subject, and scope are required")
-        if not isinstance(expires_at, (int, float)) or expires_at <= self._clock():
-            raise DecisionGateError("decision expiry must be in the future")
+        if (isinstance(expires_at, bool) or not isinstance(expires_at, (int, float))
+                or not math.isfinite(expires_at) or expires_at <= self._clock()):
+            raise DecisionGateError("decision expiry must be finite and in the future")
         policy_version = self._current_policy_version()
         record = AuthorizationDecision(
             decision_id=decision_id or str(uuid.uuid4()),
