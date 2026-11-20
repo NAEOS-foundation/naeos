@@ -45,14 +45,17 @@ func (r *ProductionRuntime) ConfigureIdentity(cfg ProductionIdentityConfig) erro
 	return nil
 }
 
-// ProductionHandler exposes the health probes and one authenticated
-// authorization route. No demo, reset, scenario, or execution routes are mounted.
+// ProductionHandler exposes health probes, scoped read-only operations views,
+// and the authenticated authorization route. No demo, reset, scenario, or
+// execution routes are mounted.
 func (r *ProductionRuntime) ProductionHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "live"})
 	})
 	mux.Handle("GET /health/ready", r.readyHandler())
+	mux.Handle("GET /api/control-plane/overview", r.readAuthorizationHandler(http.HandlerFunc(r.overviewHandler)))
+	mux.Handle("GET /api/control-plane/decisions", r.readAuthorizationHandler(http.HandlerFunc(r.decisionsHandler)))
 	mux.Handle("POST /api/control-plane/decision", r.authorizationHandler())
 	return mux
 }
