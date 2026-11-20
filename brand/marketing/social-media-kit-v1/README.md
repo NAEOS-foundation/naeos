@@ -177,3 +177,36 @@ Use the same layout and replace only the quote and supporting copy:
 - Export PNG at 1080 × 1080 for LinkedIn after confirming Sora, Inter, and JetBrains Mono availability.
 - Inspect contrast, line wrapping, logo fidelity, and mobile legibility before publishing.
 - SVG is the editable source. Raster export and rendered visual QA remain separate production steps.
+
+## Asset 005 — Announcement Master
+
+- Source: `005-announcement-master.svg`
+- Canvas: 1080 × 1350 (4:5 portrait)
+- Format: editable SVG
+- Purpose: reusable announcement layout for verified product milestones, releases, and company updates.
+- Demonstration headline: “A new milestone for NAEOS.”
+- Replaceable fields: date, milestone/release name, and one concise verifiable detail.
+- Logo: canonical Logo Master v2.0.0 path geometry; do not redraw or modify.
+- Palette: canonical NAEOS colors only; typography roles use Sora, Inter, and JetBrains Mono.
+
+### Reuse and production rules
+
+1. Duplicate the SVG before adapting it for a specific announcement.
+2. Replace all bracketed placeholders with approved, factual information; remove any field that is not applicable.
+3. Keep claims measurable and verifiable. Do not imply a release, customer deployment, certification, or milestone that has not occurred.
+4. Preserve the logo geometry, 4:5 canvas, safe margins, and footer hierarchy.
+5. Inspect font rendering, line wrapping, contrast, and mobile legibility before exporting.
+6. Export PNG at 1080 × 1350 only after visual review. The checked-in SVG is an editable source master; raster export and rendered visual QA remain separate production steps.
+
+### Suggested LinkedIn caption
+
+A new milestone for NAEOS.
+
+We are continuing to build governance into the AI engineering lifecycle—connecting authorization, execution, verification, and evidence as engineering concerns.
+
+[Insert the specific milestone and one verifiable detail.]
+
+Architecture Drives Engineering.
+
+#NAEOS #AIGovernance #AIEngineering #EngineeringGovernance #AgenticAI
+
