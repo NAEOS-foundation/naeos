@@ -56,21 +56,25 @@ For each path record:
 
 A path that is unavailable in a pinned version is BLOCKED/NOT_APPLICABLE with evidence and rationale; it must not be counted as PASS. A path that reaches the tool body without enforcement is FAIL.
 
-## 3A. Current runtime evidence — DENY boundary probes
+## 3A. Current runtime evidence — guarded DENY boundary probes
 
-The current implementation has executed a limited DENY boundary probe for the following CrewAI paths and adapter invocation boundaries. These results are not the V2-01 through V2-12 scenario suite and do not establish exact candidate binding, policy freshness, replay control, UNKNOWN reconciliation, or production readiness.
+**Latest verified head:** `eac4847892385b635e6684119916d0c73e627455` (PR #847). Runtime probe artifacts from [workflow run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) were downloaded and inspected. The CI jobs and tool-boundary unit tests completed successfully.
 
-| Execution path | CrewAI 1.15.16 | CrewAI 1.15.44 | Runtime evidence |
+These results establish enforcement at the **NAEOS `PolicyEnforcedTool` guarded-proxy boundary** for the tested paths. They do not show CrewAI global hook dispatch on every adapter path and do not establish overall V2 conformance.
+
+| Execution path | CrewAI 1.15.16 | CrewAI 1.15.44 | Evidence |
 |---|---|---|---|
-| ReAct via public `Crew.kickoff()` | PASS — hook observed; zero body entries and side effects | PASS — hook observed; zero body entries and side effects | [Run 44596426405](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405) |
-| Native tool calling via public `Crew.kickoff()` | PASS — native path selected; hook observed; zero body entries and side effects | PASS — native path selected; hook observed; zero body entries and side effects | [Run 44596426405](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405) |
-| Flow ToolAction via public `Flow.kickoff()` | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44596426405](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405) |
-| OpenAI Agents Runner via the CrewAI adapter | FAIL — hook not dispatched; one body entry and side effect | FAIL — hook not dispatched; one body entry and side effect | [Run 44596426405](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405) |
-| LangGraph ToolNode via the CrewAI adapter | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | UNKNOWN — returned unawaited coroutine; no hook/body/side effect observed | [Run 44596426405](https://github.com/NAEOS-foundation/naeos/actions/runs/44596426405) |
+| ReAct via public `Crew.kickoff()` | PASS — hook observed; 0 body entries / 0 side effects | PASS — hook observed; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
+| Native tool calling via public `Crew.kickoff()` | PASS — hook observed; 0 body entries / 0 side effects | PASS — hook observed; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
+| Flow ToolAction via public `Flow.kickoff()` + guarded proxy | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
+| OpenAI Agents Runner via CrewAI adapter + guarded proxy | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
+| Compiled LangGraph StateGraph / ToolNode via adapter + guarded proxy | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
 
-The Flow and OpenAI Agents adapter FAIL results are enforcement bypasses for the tested paths: the tool body and independent side-effect ledger were entered under DENY. LangGraph remains UNKNOWN because the converted async wrapper was returned as an unawaited coroutine; no policy enforcement conclusion can be drawn. The initial full ToolNode attempt was separately BLOCKED by a LangGraph config error.
+For Flow ToolAction and OpenAI Agents, the runtime probes deliberately supply a `PolicyEnforcedTool`; the upstream CrewAI hook is not dispatched, but the NAEOS proxy blocks before delegate execution. The compiled LangGraph ToolNode likewise reaches the guarded async boundary and records DENY with no body or independent side effect. Its evidence field `async_callable_normalized` is false; this field's instrumentation meaning needs a follow-up assertion comparing the adapter's raw conversion with the normalized callable. It does not negate the observed guarded DENY boundary, but async normalization should not be marked fully verified until clarified.
 
-The v2 harness and raw JSON artifacts are maintained in PR [#847](https://github.com/NAEOS-foundation/naeos/pull/847). The PR remains draft. Do not aggregate these path-level results into an overall PASS.
+The latest evidence supersedes the earlier unguarded bypass and unawaited-coroutine probe results recorded in prior run 44596426405. **It does not certify hook coverage without the proxy, overall V2 conformance, or production integration.**
+
+The v2 harness and evidence artifacts are maintained in PR [#847](https://github.com/NAEOS-foundation/naeos/pull/847).
 
 ## 4. Normative invariants
 
@@ -164,9 +168,9 @@ Do not aggregate BLOCKED or UNKNOWN into PASS. The version-level result is PASS 
 
 1. **Completed:** inspect CrewAI 1.15.16 and 1.15.44 source/API surfaces and map ReAct, native, Flow, and adapter dispatch paths.
 2. **Partially completed:** pinned-version GitHub Actions jobs exist for the tested CrewAI paths and optional adapter dependencies.
-3. **Partially completed:** an independent append-only side-effect ledger and deterministic DENY probes exist; policy freshness, decision lifecycle, controllable clock, and response-loss injection remain outstanding.
-4. **Partially completed:** ReAct, native, Flow, and adapter boundary probes have been added; full adapter orchestration and remaining scenario coverage are outstanding.
-5. **Not completed:** V2-01 through V2-12 have not been executed as a complete scenario suite; current results are limited to DENY boundary probes.
+3. **Partially completed:** an independent append-only side-effect ledger and deterministic guarded-boundary DENY probes exist; policy freshness, decision lifecycle, controllable clock, and response-loss injection remain outstanding.
+4. **Partially completed:** ReAct, native, Flow, OpenAI Agents, and compiled LangGraph ToolNode guarded-boundary probes execute successfully on the pinned matrix; remaining scenario coverage and adapter/hook instrumentation are outstanding.
+5. **Not completed:** V2-01 through V2-12 have not been executed as a complete scenario suite; current results are limited to DENY guarded-boundary probes.
 6. Independently inspect the ledger and recompute candidate digests.
 7. Publish a version-by-version report with PASS/FAIL/BLOCKED/UNKNOWN and exact limitations.
 
