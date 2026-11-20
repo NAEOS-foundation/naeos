@@ -4,7 +4,7 @@
 import unittest
 
 from scripts.crewai_compat_v2_harness import (
-    DecisionGate, DecisionGateError, Result, SideEffectLedger, candidate_digest,
+    ActionState, DecisionGate, DecisionGateError, ExecutionLedger, Result, SideEffectLedger, candidate_digest,
     classify_deny, run_primitive_self_test,
 )
 
@@ -161,6 +161,73 @@ class DecisionLifecycleTests(unittest.TestCase):
         with self.assertRaises(DecisionGateError):
             self.gate.authorize(decision_id=record.decision_id, candidate=substituted,
                 subject="agent-1", scope="tenant-a/resource-r-1")
+
+
+class ResponseLossAndReconciliationTests(unittest.TestCase):
+    def setUp(self):
+        self.candidate = {
+            "tool_name": "mock_write", "input": {"record": "r-9", "value": "committed"},
+        }
+        self.action_id = "action-v2-11-stable"
+        self.invocation_id = "invocation-v2-11"
+        self.exec_ledger = ExecutionLedger()
+        self.effects = SideEffectLedger()
+        self.exec_ledger.prepare(action_id=self.action_id, invocation_id=self.invocation_id,
+            tool_name="mock_write", candidate=self.candidate)
+        self.exec_ledger.mark_dispatched(action_id=self.action_id)
+
+    def simulate_commit_then_response_loss(self):
+        # Independent effect ledger records that the tool body committed.
+        self.effects.append(action_id=self.action_id, invocation_id=self.invocation_id,
+            tool_name="mock_write", payload=self.candidate["input"])
+        # Simulate transport timeout after commit: caller cannot observe response.
+        return self.exec_ledger.mark_unknown(action_id=self.action_id,
+            reason="response lost after tool commit; client timeout")
+
+    def test_v2_11_response_loss_is_unknown_and_retry_is_forbidden(self):
+        unknown = self.simulate_commit_then_response_loss()
+        self.assertEqual(unknown.state, ActionState.UNKNOWN)
+        self.assertEqual(self.effects.count(self.invocation_id), 1)
+        self.assertFalse(self.exec_ledger.retry_allowed(action_id=self.action_id))
+        self.assertEqual(self.exec_ledger.get(self.action_id).state, ActionState.UNKNOWN)
+
+    def test_v2_12_authoritative_reconciliation_finds_single_commit(self):
+        self.simulate_commit_then_response_loss()
+        reconciled = self.exec_ledger.reconcile(action_id=self.action_id,
+            authoritative_effects=self.effects.snapshot())
+        self.assertEqual(reconciled.state, ActionState.SUCCEEDED)
+        self.assertEqual(reconciled.authoritative_effect_count, 1)
+        self.assertFalse(self.exec_ledger.retry_allowed(action_id=self.action_id))
+
+    def test_v2_12_absence_is_not_misreported_as_failure(self):
+        self.simulate_commit_then_response_loss()
+        reconciled = self.exec_ledger.reconcile(action_id=self.action_id,
+            authoritative_effects=())
+        self.assertEqual(reconciled.state, ActionState.UNKNOWN)
+        self.assertIn("absence is not proof", reconciled.reconciliation_note)
+        self.assertFalse(self.exec_ledger.retry_allowed(action_id=self.action_id))
+
+    def test_v2_12_duplicate_effect_matches_remain_ambiguous_unknown(self):
+        self.simulate_commit_then_response_loss()
+        original = self.effects.snapshot()[0]
+        duplicate = self.effects.append(action_id=self.action_id,
+            invocation_id=self.invocation_id, tool_name="mock_write",
+            payload=self.candidate["input"], action_id=self.action_id)
+        reconciled = self.exec_ledger.reconcile(action_id=self.action_id,
+            authoritative_effects=(original, duplicate))
+        self.assertEqual(reconciled.state, ActionState.UNKNOWN)
+        self.assertEqual(reconciled.authoritative_effect_count, 2)
+        self.assertIn("ambiguous", reconciled.reconciliation_note)
+
+    def test_dispatch_state_transition_guards(self):
+        fresh = ExecutionLedger()
+        fresh.prepare(action_id="fresh", invocation_id="inv", tool_name="write",
+            candidate=self.candidate)
+        self.assertTrue(fresh.retry_allowed(action_id="fresh"))
+        fresh.mark_dispatched(action_id="fresh")
+        self.assertFalse(fresh.retry_allowed(action_id="fresh"))
+        with self.assertRaises(ValueError):
+            fresh.mark_dispatched(action_id="fresh")
 
 
 if __name__ == "__main__":
