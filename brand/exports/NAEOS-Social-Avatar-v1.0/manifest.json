@@ -1,0 +1,12 @@
+{
+  "package": "NAEOS Social Avatar",
+  "version": "1.0",
+  "source": "NAEOS Primary Symbol Master v2.0 exported PNG",
+  "files": {
+    "naeos-social-avatar-1024.png": "98d865857bed41ec31313d0753bbdd70db56eab26abe75097aede57ae8893f90",
+    "naeos-social-avatar-512.png": "58f81e1946f7183535c16ebd6750fbe3d5605beb29ccbf27adf1814cbb43b713",
+    "naeos-social-avatar-320.png": "ebcf332dbdb45ada15b4e59a7b51a0f93115eff8724d5193246ab8201f8b98f4",
+    "naeos-social-avatar-180.png": "7f9015dc681387f92f029723f8a391b9e9cb8d86cf46a5fa627f78bb0c27462e",
+    "naeos-social-avatar-64.png": "202017a7ebc037138c9048be0006cd3d945fb326162b09d8e6316ceb813cb616"
+  }
+}
