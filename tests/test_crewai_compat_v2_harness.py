@@ -109,6 +109,12 @@ class DecisionLifecycleTests(unittest.TestCase):
             self.gate.authorize(decision_id=record.decision_id, candidate=self.candidate,
                 subject="agent-1", scope="tenant-a/resource-r-1")
 
+    def test_decision_expiry_rejects_nan_infinity_and_bool(self):
+        for expiry in (float("nan"), float("inf"), float("-inf"), True):
+            with self.subTest(expiry=expiry):
+                with self.assertRaises(DecisionGateError):
+                    self.issue(expiry=expiry)
+
     def test_v2_05_expired_decision_is_rejected(self):
         record = self.issue(expiry=1001.0)
         self.now = 1001.0
