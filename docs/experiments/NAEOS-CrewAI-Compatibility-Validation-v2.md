@@ -58,13 +58,13 @@ A path that is unavailable in a pinned version is BLOCKED/NOT_APPLICABLE with ev
 
 ## 3A. Current runtime evidence — guarded DENY boundary probes
 
-**Latest runtime evidence:** head `eac4847892385b635e6684119916d0c73e627455` (PR #847). Runtime probe artifacts from [workflow run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) were downloaded and inspected; the runtime matrix and tool-boundary unit tests passed. New primitive-only lifecycle tests are added on later commits and are pending CI; see the PR for current head/checks.
+**Latest verified evidence:** PR #847 head `610d3b6d5e3aa97ca208123355392309d7366a83`. The 12-job external runtime matrix completed successfully in [workflow run 44769326632](https://github.com/NAEOS-foundation/naeos/actions/runs/44769326632). The isolated harness primitive workflow passed 23 unit tests plus the explicit primitive self-test in [workflow run 44769326527](https://github.com/NAEOS-foundation/naeos/actions/runs/44769326527). The primitive artifact reports `framework_compatibility: NOT_EVALUATED` and explicitly scopes itself to primitive self-test only. All CI, DCO, CodeQL, secrets, compliance, docs, policy-bypass, Cloudflare, and gofmt checks for this head completed successfully.
 
 These results establish enforcement at the **NAEOS `PolicyEnforcedTool` guarded-proxy boundary** for the tested paths. They do not show CrewAI global hook dispatch on every adapter path and do not establish overall V2 conformance.
 
 | Execution path | CrewAI 1.15.16 | CrewAI 1.15.44 | Evidence |
 |---|---|---|---|
-| ReAct via public `Crew.kickoff()` | PASS — hook observed; 0 body entries / 0 side effects | PASS — hook observed; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
+| ReAct via public `Crew.kickoff()` | PASS — hook observed; 0 body entries / 0 side effects | PASS — hook observed; 0 body entries / 0 side effects | [Run 44769326632](https://github.com/NAEOS-foundation/naeos/actions/runs/44769326632) |
 | Native tool calling via public `Crew.kickoff()` | PASS — hook observed; 0 body entries / 0 side effects | PASS — hook observed; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
 | Flow ToolAction via public `Flow.kickoff()` + guarded proxy | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
 | OpenAI Agents Runner via CrewAI adapter + guarded proxy | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | PASS — NAEOS DENY observed; hook not dispatched; 0 body entries / 0 side effects | [Run 44764910370](https://github.com/NAEOS-foundation/naeos/actions/runs/44764910370) |
