@@ -52,6 +52,116 @@ def candidate_digest(candidate: Mapping[str, Any]) -> str:
     return "sha256:" + hashlib.sha256(_json_bytes(envelope)).hexdigest()
 
 
+class DecisionGateError(PermissionError):
+    """Authorization evidence cannot be safely verified or consumed."""
+
+
+@dataclass(frozen=True)
+class AuthorizationDecision:
+    decision_id: str
+    candidate_digest: str
+    policy_id: str
+    policy_version: str
+    subject: str
+    scope: str
+    expires_at: float
+    decision: str
+
+
+class DecisionGate:
+    """Deterministic decision lifecycle primitive for isolated v2 scenarios.
+
+    This is a test harness model, not a production authorization service.
+    Decisions are bound to candidate digest, policy version, subject, scope,
+    and expiry; PROCEED decisions are single-use. NEEDS_REVIEW requires an
+    explicit approval bound to the exact same candidate digest.
+    """
+
+    VALID_DECISIONS = {"PROCEED", "NEEDS_REVIEW", "SILENCE"}
+
+    def __init__(self, *, policy_version_provider: Any, clock: Any) -> None:
+        if not callable(policy_version_provider) or not callable(clock):
+            raise TypeError("policy_version_provider and clock must be callable")
+        self._policy_version_provider = policy_version_provider
+        self._clock = clock
+        self._decisions: dict[str, AuthorizationDecision] = {}
+        self._consumed: set[str] = set()
+        self._approvals: dict[str, str] = {}
+        self._lock = threading.Lock()
+
+    def _current_policy_version(self) -> str:
+        try:
+            version = self._policy_version_provider()
+        except Exception as exc:
+            raise DecisionGateError("policy provider unavailable; fail closed") from exc
+        if not isinstance(version, str) or not version.strip():
+            raise DecisionGateError("policy version missing or malformed; fail closed")
+        return version
+
+    def issue(self, *, candidate: Mapping[str, Any], policy_id: str, subject: str,
+               scope: str, expires_at: float, decision: str = "PROCEED",
+               decision_id: str | None = None) -> AuthorizationDecision:
+        if decision not in self.VALID_DECISIONS:
+            raise DecisionGateError("invalid decision literal")
+        if not all(isinstance(x, str) and x.strip() for x in (policy_id, subject, scope)):
+            raise DecisionGateError("policy, subject, and scope are required")
+        if not isinstance(expires_at, (int, float)) or expires_at <= self._clock():
+            raise DecisionGateError("decision expiry must be in the future")
+        policy_version = self._current_policy_version()
+        record = AuthorizationDecision(
+            decision_id=decision_id or str(uuid.uuid4()),
+            candidate_digest=candidate_digest(candidate),
+            policy_id=policy_id,
+            policy_version=policy_version,
+            subject=subject,
+            scope=scope,
+            expires_at=float(expires_at),
+            decision=decision,
+        )
+        with self._lock:
+            if record.decision_id in self._decisions:
+                raise DecisionGateError("decision id already exists")
+            self._decisions[record.decision_id] = record
+        return record
+
+    def approve(self, *, decision_id: str, candidate: Mapping[str, Any]) -> None:
+        with self._lock:
+            record = self._decisions.get(decision_id)
+            if record is None or record.decision != "NEEDS_REVIEW":
+                raise DecisionGateError("no review decision to approve")
+            digest = candidate_digest(candidate)
+            if digest != record.candidate_digest:
+                raise DecisionGateError("approval candidate mismatch")
+            if decision_id in self._consumed:
+                raise DecisionGateError("decision already consumed")
+            self._approvals[decision_id] = digest
+
+    def authorize(self, *, decision_id: str, candidate: Mapping[str, Any],
+                  subject: str, scope: str) -> AuthorizationDecision:
+        with self._lock:
+            record = self._decisions.get(decision_id)
+            if record is None:
+                raise DecisionGateError("decision not found")
+            if decision_id in self._consumed:
+                raise DecisionGateError("decision replay rejected")
+            if candidate_digest(candidate) != record.candidate_digest:
+                raise DecisionGateError("candidate mutation detected")
+            if subject != record.subject or scope != record.scope:
+                raise DecisionGateError("subject or scope mismatch")
+            if self._clock() >= record.expires_at:
+                raise DecisionGateError("decision expired")
+            if self._current_policy_version() != record.policy_version:
+                raise DecisionGateError("policy version changed; stale decision")
+            if record.decision == "SILENCE":
+                raise DecisionGateError("SILENCE is not executable")
+            if record.decision == "NEEDS_REVIEW" and self._approvals.get(decision_id) != record.candidate_digest:
+                raise DecisionGateError("explicit approval required for exact candidate")
+            if record.decision != "PROCEED" and record.decision != "NEEDS_REVIEW":
+                raise DecisionGateError("decision is not executable")
+            self._consumed.add(decision_id)
+            return record
+
+
 @dataclass(frozen=True)
 class SideEffect:
     sequence: int
