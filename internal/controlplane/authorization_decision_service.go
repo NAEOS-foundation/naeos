@@ -38,7 +38,7 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 	if ctx == nil || ctx.Err() != nil {
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "authorization context unavailable"}, contextError(ctx)
 	}
-	if g == nil || s.Policies == nil || s.Grants == nil || s.Ledger == nil || s.Evaluator == nil {
+	if s == nil || s.Policies == nil || s.Grants == nil || s.Ledger == nil || s.Evaluator == nil {
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "repository gateway dependencies unavailable"}, ErrRepositoryUnavailable
 	}
 	now := req.Timestamp.UTC()
