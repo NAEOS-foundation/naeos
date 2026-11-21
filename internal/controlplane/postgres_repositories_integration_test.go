@@ -357,3 +357,109 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		t.Fatal("production runtime role verification accepted the admin database principal")
 	}
 }
+
+
+func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
+	databaseURL := os.Getenv("NAEOS_CONTROLPLANE_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set NAEOS_CONTROLPLANE_TEST_DATABASE_URL to an isolated migrated PostgreSQL test database")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create reconciliation pool: %v", err)
+	}
+	defer pool.Close()
+	ledger, err := NewPostgresLedger(pool)
+	if err != nil {
+		t.Fatalf("create PostgreSQL ledger: %v", err)
+	}
+	repository, err := NewPostgresLedgerRepository(ledger)
+	if err != nil {
+		t.Fatalf("create PostgreSQL ledger repository: %v", err)
+	}
+
+	suffix := controlPlaneID("RECONCILE-TEST")
+	start := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: "request-" + suffix,
+		DecisionID: "decision-" + suffix, ExecutionID: "execution-" + suffix,
+		AgentID: "agent-" + suffix, Capability: "repository.write",
+		ArtifactHash: "sha256:" + suffix, EventType: "EXECUTION_STARTED",
+		Decision: DecisionAllow,
+	}
+	if event, _, err := repository.Append(ctx, start); err != nil || event.ID == "" {
+		t.Fatalf("append execution start = (%+v, %v)", event, err)
+	}
+	unknown := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
+		ExecutionID: start.ExecutionID, AgentID: start.AgentID, Capability: start.Capability,
+		ArtifactHash: start.ArtifactHash, EventType: "EXECUTION_UNKNOWN",
+		Decision: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown,
+	}
+	if event, _, err := repository.Append(ctx, unknown); err != nil || event.ID == "" {
+		t.Fatalf("append unknown outcome = (%+v, %v)", event, err)
+	}
+
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeCommitted, "", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("missing evidence reference error = %v; want conflict", err)
+	}
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcome("MAYBE"), "evidence://invalid", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("invalid outcome error = %v; want conflict", err)
+	}
+
+	startReconcile := make(chan struct{})
+	results := make(chan error, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-startReconcile
+			_, _, reconcileErr := repository.ReconcileExecution(
+				ctx, start.ExecutionID, ExecutionOutcomeCommitted,
+				"evidence://verified/"+suffix, "operator-test", time.Now().UTC(),
+			)
+			results <- reconcileErr
+		}()
+	}
+	close(startReconcile)
+	wg.Wait()
+	close(results)
+
+	successes, conflicts := 0, 0
+	for reconcileErr := range results {
+		if reconcileErr == nil {
+			successes++
+		} else if errors.Is(reconcileErr, ErrRepositoryConflict) {
+			conflicts++
+		} else {
+			t.Fatalf("unexpected reconciliation error: %v", reconcileErr)
+		}
+	}
+	if successes != 1 || conflicts != 1 {
+		t.Fatalf("reconciliation winners=%d conflicts=%d; want exactly one of each", successes, conflicts)
+	}
+
+	events, err := repository.LoadVerified(ctx)
+	if err != nil {
+		t.Fatalf("verify reconciled ledger: %v", err)
+	}
+	reconciliations := 0
+	for _, event := range events {
+		if event.ExecutionID == start.ExecutionID && event.EventType == "EXECUTION_RECONCILED" {
+			reconciliations++
+			if event.Metadata["reconciler_id"] != "operator-test" ||
+				event.Metadata["evidence_ref"] != "evidence://verified/"+suffix ||
+				event.Metadata["reconciliation_outcome"] != string(ExecutionOutcomeCommitted) {
+				t.Fatalf("unexpected durable reconciliation event: %+v", event)
+			}
+		}
+	}
+	if reconciliations != 1 {
+		t.Fatalf("durable reconciliation count=%d; want exactly one", reconciliations)
+	}
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeNotCommitted, "evidence://other", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("duplicate reconciliation error = %v; want conflict", err)
+	}
+}
