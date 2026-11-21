@@ -20,6 +20,6 @@ CRM's `POST /api/v1/intelligence/engineering-analysis` accepts an allowlisted re
 
 Do not grant repository writes, Core admin scopes, Intelligence cancellation, CRM contact access, or GO-Gate execution to either service identity. The audience must be distinct per API, and each service must validate the same issuer and JWKS published by the selected identity provider.
 
-For local development, run Core on port 8081 with `naeos api --port 8081`; run Intelligence on port 8080. Set `NAEOS_INTELLIGENCE_CORE_API_BASE_URL=http://127.0.0.1:8081/api`. Configure the issuer, audience, and JWKS URL for both services with the appropriate audience-specific service tokens. Remote deployments must use HTTPS and a private service network.
+For local development on the host, run Core on port 8081 with `naeos api --port 8081`; run Intelligence on port 8080 and set `NAEOS_INTELLIGENCE_CORE_API_BASE_URL=http://127.0.0.1:8081/api`. Under Docker Compose, Core publishes host port 8081 and Intelligence uses `NAEOS_INTELLIGENCE_DOCKER_CORE_API_BASE_URL=http://host.docker.internal:8081/api`; Compose maps the host gateway for Linux. Configure the issuer, audience, and JWKS URL for both services with the appropriate audience-specific service tokens. Remote deployments must use HTTPS and a private service network.
 
 The services remain fail-closed when JWKS configuration, service scopes, or either repository allowlist is absent or invalid.
