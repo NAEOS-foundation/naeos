@@ -42,6 +42,11 @@ func (r *ProductionRuntime) ConfigureIdentity(cfg ProductionIdentityConfig) erro
 	}
 	r.identity = validator
 	r.gateway = NewRepositoryDecisionGateway(r.Policies, r.Grants, r.Approvals, r.Ledger)
+	ledgerRepository, err := NewPostgresLedgerRepository(r.Ledger)
+	if err != nil {
+		return errors.New("control plane reconciliation repository is unavailable")
+	}
+	r.reconciler = ledgerRepository
 	return nil
 }
 
@@ -57,6 +62,7 @@ func (r *ProductionRuntime) ProductionHandler() http.Handler {
 	mux.Handle("GET /api/control-plane/overview", r.readAuthorizationHandler(http.HandlerFunc(r.overviewHandler)))
 	mux.Handle("GET /api/control-plane/decisions", r.readAuthorizationHandler(http.HandlerFunc(r.decisionsHandler)))
 	mux.Handle("POST /api/control-plane/decision", r.authorizationHandler())
+	mux.Handle("POST /api/control-plane/executions/{executionID}/reconcile", r.reconciliationHandler())
 	return mux
 }
 
@@ -153,6 +159,90 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			writeJSON(w, http.StatusServiceUnavailable, result)
 		}
 	})
+}
+
+type executionReconciliationRequest struct {
+	Outcome    ExecutionOutcome `json:"outcome"`
+	EvidenceRef string           `json:"evidence_ref"`
+}
+
+func (r *ProductionRuntime) reconciliationHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if r == nil || r.identity == nil || r.reconciler == nil || r.evidenceVerifier == nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "execution reconciliation is not configured"})
+			return
+		}
+		token, ok := bearerToken(req.Header.Get("Authorization"))
+		if !ok {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "bearer token required"})
+			return
+		}
+		claims, err := r.identity.Validate(req.Context(), token)
+		if err != nil || claims == nil || strings.TrimSpace(claims.Sub) == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid bearer token"})
+			return
+		}
+		if !hasReconciliationScope(claims) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "execution reconciliation scope required"})
+			return
+		}
+		executionID := strings.TrimSpace(req.PathValue("executionID"))
+		if executionID == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "execution ID is required"})
+			return
+		}
+		req.Body = http.MaxBytesReader(w, req.Body, 16<<10)
+		decoder := json.NewDecoder(req.Body)
+		decoder.DisallowUnknownFields()
+		var body executionReconciliationRequest
+		if err := decoder.Decode(&body); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid reconciliation request"})
+			return
+		}
+		if err := decoder.Decode(new(any)); !errors.Is(err, io.EOF) {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "request body must contain exactly one JSON object"})
+			return
+		}
+		if body.Outcome != ExecutionOutcomeCommitted && body.Outcome != ExecutionOutcomeNotCommitted {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported reconciliation outcome"})
+			return
+		}
+		verifiedRef, err := r.evidenceVerifier.VerifyExecutionEvidence(req.Context(), executionID, body.Outcome, strings.TrimSpace(body.EvidenceRef))
+		if err != nil || strings.TrimSpace(verifiedRef) == "" {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "authoritative execution evidence could not be verified"})
+			return
+		}
+		event, sequence, err := r.reconciler.ReconcileExecution(req.Context(), executionID, body.Outcome, verifiedRef, strings.TrimSpace(claims.Sub), time.Now().UTC())
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrRepositoryConflict):
+				writeJSON(w, http.StatusConflict, map[string]string{"error": "execution is already resolved or not eligible for reconciliation"})
+			case errors.Is(err, ErrRepositoryNotFound):
+				writeJSON(w, http.StatusNotFound, map[string]string{"error": "execution not found"})
+			default:
+				writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "durable reconciliation could not be committed"})
+			}
+			return
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{"event": event, "sequence": sequence})
+	})
+}
+
+func hasReconciliationScope(claims *api.JWTClaims) bool {
+	if claims == nil {
+		return false
+	}
+	for _, scope := range strings.Fields(claims.Scope) {
+		if scope == "naeos:execution:reconcile" {
+			return true
+		}
+	}
+	for _, scope := range claims.Scopes {
+		if strings.TrimSpace(scope) == "naeos:execution:reconcile" {
+			return true
+		}
+	}
+	return false
 }
 
 func bearerToken(header string) (string, bool) {
