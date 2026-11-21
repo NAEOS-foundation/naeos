@@ -294,3 +294,43 @@ func TestRepositoryDecisionGatewayConcurrentExecuteHasSingleWinner(t *testing.T)
 		t.Fatalf("concurrent Execute: side_effects=%d conflicts=%d unexpected=%v; want one winner and one conflict", sideEffects, conflicts, unexpected)
 	}
 }
+
+
+func TestRepositoryDecisionGatewayRejectsMismatchedApprovalBeforeExecutionIntent(t *testing.T) {
+	gateway, req := repositoryGatewayFixture(t)
+	result, err := gateway.Authorize(context.Background(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewApprovalStore()
+	approvals := NewMemoryApprovalRepository(store)
+	approval := Approval{
+		ID: "approval-for-other-decision", DecisionID: "different-decision",
+		AgentID: req.AgentID, Capability: req.Action.Capability,
+		PolicyID: "repo-gateway-policy", PolicyVersion: 1,
+		Approver: "reviewer@example.test", Status: "pending",
+		CreatedAt: req.Timestamp.Add(-time.Minute), ExpiresAt: req.Timestamp.Add(time.Hour),
+		ArtifactHash: req.Action.ArtifactHash,
+	}
+	if err := approvals.Create(context.Background(), approval); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := approvals.Transition(context.Background(), approval.ID, "pending", "approved", req.Timestamp); err != nil {
+		t.Fatal(err)
+	}
+	gateway.Approvals = approvals
+	req.ApprovalID = approval.ID
+
+	called := false
+	executed, _, executeErr := gateway.Execute(context.Background(), req, result, func(context.Context) error {
+		called = true
+		return nil
+	})
+	if !errors.Is(executeErr, ErrRepositoryConflict) || executed.Status != DecisionDeny || called {
+		t.Fatalf("Execute = %+v, err=%v, side_effect_called=%t; want DENY before side effect", executed, executeErr, called)
+	}
+	if got := gateway.Ledger.(*repositoryGatewayTestLedger).countType("EXECUTION_STARTED"); got != 0 {
+		t.Fatalf("execution intents = %d; want 0 for mismatched approval", got)
+	}
+}

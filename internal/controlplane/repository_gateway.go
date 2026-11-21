@@ -125,6 +125,35 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 		return result, LedgerEvent{}, ErrRepositoryConflict
 	}
 
+	// Revalidate the exact approval at the execution boundary. ApprovalID is
+	// caller-controlled input and may differ from the one checked at Authorize.
+	// Do this before claiming execution so a mismatch cannot leave a started intent.
+	if req.ApprovalID != "" {
+		if g.Approvals == nil {
+			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+			result.Message = "approval repository unavailable; side effect was not invoked"
+			return result, LedgerEvent{}, ErrRepositoryUnavailable
+		}
+		approval, approvalErr := g.Approvals.Get(ctx, req.ApprovalID)
+		if approvalErr != nil {
+			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+			result.Message = "approval could not be revalidated at execution boundary"
+			if errors.Is(approvalErr, ErrRepositoryNotFound) || errors.Is(approvalErr, ErrRepositoryConflict) {
+				result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+				result.Message = "approval is missing or no longer consumable"
+			}
+			return result, LedgerEvent{}, approvalErr
+		}
+		if approval.ID != req.ApprovalID || approval.DecisionID != canonical.DecisionID ||
+			approval.AgentID != req.AgentID || approval.Capability != req.Action.Capability ||
+			approval.PolicyID != policyID || approval.PolicyVersion != policyVersion ||
+			approval.ArtifactHash != req.Action.ArtifactHash || !approval.IsValid(time.Now().UTC()) {
+			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+			result.Message = "approval is not valid for this canonical execution request"
+			return result, LedgerEvent{}, ErrRepositoryConflict
+		}
+	}
+
 	executionID := controlPlaneID("EXEC")
 	intent := LedgerEvent{
 		Timestamp: time.Now().UTC(), RequestID: result.RequestID, DecisionID: result.DecisionID,
