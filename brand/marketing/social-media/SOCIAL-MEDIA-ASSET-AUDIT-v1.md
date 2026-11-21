@@ -30,19 +30,22 @@ The seven template files are present:
 
 All seven templates reference `../assets/naeos-primary-symbol-v2.svg`, which is present. Relative path is correct from the template directory.
 
-### Documentation discrepancy remediated
+### Repository-level export reconciliation
 
-The README described `assets/naeos-primary-symbol-v2-2048.png` as the logo reference, but the repository currently has only the SVG logo reference copy in the kit. README and Asset Register now clarify that the PNG export is missing and that templates currently use the SVG. This is a documentation correction; no asset geometry or production brand tokens were changed.
+The user-uploaded export packages are confirmed present under `brand/exports/` on `main`, separate from this Social Media Kit folder:
+- `NAEOS-Logo-Exports-v1.0/`: canonical Master v2 SVG and transparent PNG exports (512, 1024, 2048); manifest includes file SHA-256 and byte sizes.
+- `NAEOS-Social-Avatar-v1.0/`: avatar PNG exports (64, 180, 320, 512, 1024); manifest includes SHA-256 values.
+- `NAEOS-Logo-System-v1.0/`: historical derivatives, app icons, favicons, monochrome variants, and contact sheet. Package README labels it historical; its v1 master must not be treated as current canonical master.
 
-### Raster exports and previews
+The Social Media Kit README now points to these repository-level packages and clarifies that templates use a kit-local SVG copy. This resolves the previous false claim that symbol PNG and avatar exports were globally absent from the repository.
 
-Not committed:
-- PNG symbol export `naeos-primary-symbol-v2-2048.png`
-- Social avatar PNG
-- Seven template previews
-- Contact sheet
+### Still missing from this kit / pending validation
 
-These are release-candidate gaps, not path failures in the editable SVG templates.
+- Seven template-render PNG previews and a Social Media Kit-specific contact sheet are not confirmed in the kit folder.
+- Hash/provenance comparison between kit-local SVG and canonical Master v2.0.0 still needs direct file bytes.
+- Raster decode, dimensions, transparency, visual rendering, crop/safe-area validation remain pending direct inspection.
+
+These are release-candidate validation gaps, not missing repository-level logo/avatar exports.
 
 ## 4. Placeholder classification
 
