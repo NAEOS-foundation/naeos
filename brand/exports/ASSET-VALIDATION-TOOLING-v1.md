@@ -16,6 +16,7 @@ This validator is read-only with respect to brand source files. It does not modi
 python3 scripts/validate-brand-assets.py
 python3 scripts/validate-brand-assets.py --write
 python3 scripts/validate-brand-assets.py --check-generated
+python3 -m unittest discover -s tests/brand_assets -v
 ```
 
 Generated outputs: `brand/exports/asset-inventory.json` and `brand/exports/asset-checksums.sha256`. The CI job publishes these as a build artifact; inventory includes only assets actually present in the repository, while planned or local-only assets are excluded.
