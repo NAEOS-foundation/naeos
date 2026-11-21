@@ -1,0 +1,39 @@
+name: NAEOS Brand Visual QA
+
+on:
+  pull_request:
+    paths:
+      - 'brand/**/*.svg'
+      - 'scripts/brand-visual-qa.mjs'
+      - '.github/workflows/brand-visual-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-and-report:
+    name: Render SVG assets and publish QA previews
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install render dependencies
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Render brand SVGs and report
+        run: node scripts/brand-visual-qa.mjs
+      - name: Upload rendered PNGs and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: naeos-brand-visual-qa
+          path: brand-visual-qa-output/
+          if-no-files-found: warn
+          retention-days: 14
