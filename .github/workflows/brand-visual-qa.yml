@@ -1,6 +1,14 @@
 name: NAEOS Brand Visual QA
 
 on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+    paths:
+      - 'brand/**/*.svg'
+      - 'scripts/brand-visual-qa.mjs'
+      - '.github/workflows/brand-visual-qa.yml'
   pull_request:
     paths:
       - 'brand/**/*.svg'
