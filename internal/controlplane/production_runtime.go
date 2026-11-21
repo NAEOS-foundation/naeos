@@ -230,7 +230,8 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		to_regclass('naeos_control_plane.ledger_head') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_events') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
-		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL,\n\t\tto_regprocedure('naeos_control_plane.reconcile_execution(text,jsonb)') IS NOT NULL`
+		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL,
+		to_regprocedure('naeos_control_plane.reconcile_execution(text,jsonb)') IS NOT NULL`
 	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, appendFn, headFn, reconcileFn bool
 	if pool == nil {
 		return errors.New("control plane schema compatibility check failed")
