@@ -38,7 +38,7 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 	if ctx == nil || ctx.Err() != nil {
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "authorization context unavailable"}, contextError(ctx)
 	}
-	if s == nil || s.Policies == nil || s.Grants == nil || s.Ledger == nil || s.Evaluator == nil {
+	if g == nil || s.Policies == nil || s.Grants == nil || s.Ledger == nil || s.Evaluator == nil {
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "repository gateway dependencies unavailable"}, ErrRepositoryUnavailable
 	}
 	now := req.Timestamp.UTC()
@@ -77,9 +77,6 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 	auth := AuthorizationContext{PolicyID: grant.PolicyID, PolicyVersion: grant.PolicyVersion, Grant: &grant, Now: now}
 	result := s.Evaluator.Evaluate(ctx, auth, action)
 	result.RequestID, result.AgentID, result.ArtifactHash = requestID, req.AgentID, action.ArtifactHash
-	if result.Status == DecisionIndeterminate {
-		return result, fmt.Errorf("policy evaluation indeterminate: %s", result.Message)
-	}
 	if req.DecisionID != "" {
 		result.DecisionID = req.DecisionID
 	} else {
@@ -133,3 +130,4 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 	}
 	return result, nil
 }
+

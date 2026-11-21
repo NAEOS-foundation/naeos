@@ -30,7 +30,7 @@ func decisionServiceFixture(t *testing.T, approvalRequired bool) (*Authorization
 		GrantID: "decision-service-grant", AgentID: "decision-service-agent",
 		PolicyID: policy.ID, PolicyVersion: policy.Version,
 		Capabilities: []Capability{"artifact.read"},
-		CreatedAt: now.Add(-time.Minute), ExpiresAt: now.Add(time.Hour), Status: "active",
+		CreatedAt:    now.Add(-time.Minute), ExpiresAt: now.Add(time.Hour), Status: "active",
 	}
 	if err := grants.Create(ctx, grant); err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func decisionServiceFixture(t *testing.T, approvalRequired bool) (*Authorization
 	service := NewAuthorizationDecisionService(policies, grants, nil, ledger)
 	req := AuthorizeRequest{
 		RequestID: "decision-service-request", AgentID: grant.AgentID,
-		Action: Action{AgentID: grant.AgentID, Capability: "artifact.read", ArtifactHash: "sha256:decision-service"},
+		Action:    Action{AgentID: grant.AgentID, Capability: "artifact.read", ArtifactHash: "sha256:decision-service"},
 		Timestamp: now,
 	}
 	return service, req, ledger
