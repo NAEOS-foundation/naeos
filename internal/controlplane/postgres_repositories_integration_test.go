@@ -221,6 +221,25 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		t.Fatalf("atomic approval state = (%+v, %v); want consumed", consumedApproval, err)
 	}
 
+	// Non-approval executions must still use the same atomic policy/grant fence.
+	noApprovalAgentID := "agent-no-approval-" + suffix
+	noApprovalGrant := Grant{
+		GrantID: "grant-no-approval-" + suffix, AgentID: noApprovalAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, noApprovalGrant); err != nil {
+		t.Fatalf("create no-approval grant: %v", err)
+	}
+	noApprovalIntent := LedgerEvent{
+		Timestamp: now.Add(5 * time.Second), RequestID: "request-no-approval-" + suffix,
+		DecisionID: "decision-no-approval-" + suffix, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: noApprovalAgentID, Capability: "repo.read", EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"policy_id": policyID, "policy_version": "1", "grant_id": noApprovalGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, noApprovalIntent, Approval{}, now.Add(5*time.Second)); err != nil {
+		t.Fatalf("atomic no-approval execution claim: %v", err)
+	}
+
 	rollbackApproval := Approval{
 		ID: "approval-rollback-" + suffix, DecisionID: atomicApproval.DecisionID,
 		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
