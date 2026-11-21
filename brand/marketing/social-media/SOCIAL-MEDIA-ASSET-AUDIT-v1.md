@@ -37,13 +37,21 @@ The user-uploaded export packages are confirmed present under `brand/exports/` o
 - `NAEOS-Social-Avatar-v1.0/`: avatar PNG exports (64, 180, 320, 512, 1024); manifest includes SHA-256 values.
 - `NAEOS-Logo-System-v1.0/`: historical derivatives, app icons, favicons, monochrome variants, and contact sheet. Package README labels it historical; its v1 master must not be treated as current canonical master.
 
-The Social Media Kit README now points to these repository-level packages and clarifies that templates use a kit-local SVG copy. This resolves the previous false claim that symbol PNG and avatar exports were globally absent from the repository.
+The Social Media Kit README points to these repository-level packages and clarifies that templates use a kit-local SVG copy. This resolves the previous false claim that symbol PNG and avatar exports were globally absent from the repository.
 
-### Still missing from this kit / pending validation
+### Render automation added
 
-- Seven template-render PNG previews and a Social Media Kit-specific contact sheet are not confirmed in the kit folder.
-- **SVG source equivalence verified:** fetched kit-local `assets/naeos-primary-symbol-v2.svg` and canonical `brand/master/naeos-primary-symbol-master-v2.svg` contain identical SVG text (including viewBox, gradients, paths, title/desc). This establishes content equivalence for the fetched text files.
-- Raster decode, dimensions, transparency, visual rendering, crop/safe-area validation remain pending direct inspection.
+- Added `scripts/render-social-media-kit.py` to render the seven SVG templates, validate PNG decodability, create a contact sheet, and write a dimensions/SHA-256 manifest.
+- Added `.github/workflows/social-media-render.yml` to run on manual dispatch or relevant PR path changes and upload a 14-day QA artifact.
+- Documented the reproducible local command in the kit README.
+
+**Important:** automation source is committed, but its CI execution and resulting render artifact have not yet been verified. Do not claim rendered previews or visual QA are complete until workflow succeeds and artifact is inspected.
+
+### Remaining validation
+
+- [ ] Run render workflow and inspect generated previews/contact sheet.
+- [ ] **SVG source equivalence verified:** fetched kit-local `assets/naeos-primary-symbol-v2.svg` and canonical `brand/master/naeos-primary-symbol-master-v2.svg` contain identical SVG text (including viewBox, gradients, paths, title/desc). This establishes content equivalence for the fetched text files.
+- [ ] Raster decode, dimensions, transparency, visual rendering, crop/safe-area validation pending render artifact inspection.
 
 These are release-candidate validation gaps, not missing repository-level logo/avatar exports.
 
@@ -63,12 +71,11 @@ Bracketed content is intentionally retained in reusable template files:
 - [x] Confirm all seven social template files exist.
 - [x] Confirm template logo SVG reference path exists.
 - [x] Correct README mismatch about missing PNG export.
-- [x] Document missing raster previews/contact sheet.
+- [x] Document repository-level logo/avatar export packages.
 - [x] Classify generic template placeholders as intentional.
+- [x] Add reproducible render script and CI workflow source.
+- [ ] Execute render workflow and inspect the QA artifact.
 - [ ] Download and inspect generated inventory/checksum artifact line-by-line.
-- [ ] Decode and validate raster dimensions/format and transparency.
-- [ ] Render all seven SVG templates to PNG for visual QA.
-- [ ] Produce contact sheet and compare to approved master v2.0 geometry/appearance.
 - [ ] Verify LinkedIn safe areas and crops on platform-specific previews.
 - [ ] Fill campaign placeholders in RC copies and re-run placeholder check on release assets.
 - [ ] Review all SHA-256 values, provenance and release manifest.
@@ -76,4 +83,4 @@ Bracketed content is intentionally retained in reusable template files:
 
 ## 6. Governance
 
-This audit and the corrective documentation are draft evidence only. No Logo Master v2.0.0, production CSS, semantic brand tokens, or brand decisions were changed. No release was published and no PR was merged.
+This audit and corrective tooling are draft evidence only. No Logo Master v2.0.0, production CSS, semantic brand tokens, or brand decisions were changed. No release was published and no PR was merged.
