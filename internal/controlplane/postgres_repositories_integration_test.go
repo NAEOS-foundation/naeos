@@ -161,9 +161,17 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		t.Fatalf("create atomic execution ledger repository: %v", err)
 	}
 
+	atomicAgentID := "agent-atomic-" + suffix
+	atomicGrant := Grant{
+		GrantID: "grant-atomic-" + suffix, AgentID: atomicAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, atomicGrant); err != nil {
+		t.Fatalf("create active atomic grant: %v", err)
+	}
 	atomicApproval := Approval{
 		ID: "approval-atomic-" + suffix, DecisionID: "decision-atomic-" + suffix,
-		AgentID: agentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
 		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
 		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:atomic-" + suffix,
 	}
@@ -184,9 +192,9 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 			intent := LedgerEvent{
 				Timestamp: now.Add(4 * time.Second), RequestID: "request-" + suffix,
 				DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
-				AgentID: agentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+				AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
 				EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
-				Metadata: map[string]string{"approval_id": atomicApproval.ID},
+				Metadata: map[string]string{"approval_id": atomicApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
 			}
 			_, _, claimErr := ledgerRepository.ClaimExecution(ctx, intent, atomicApproval, now.Add(4*time.Second))
 			claimResults <- claimErr
@@ -230,7 +238,7 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
 		AgentID: agentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
 		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
-		Metadata: map[string]string{"approval_id": rollbackApproval.ID},
+		Metadata: map[string]string{"approval_id": rollbackApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
 	}
 	if _, _, err := ledgerRepository.ClaimExecution(ctx, rollbackIntent, rollbackApproval, now.Add(6*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
 		t.Fatalf("duplicate execution claim error = %v; want conflict", err)
