@@ -145,6 +145,101 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		t.Fatalf("final approval = (%+v, %v)", final, err)
 	}
 
+	// Verify the production execution claim consumes approval and appends the
+	// durable intent in one transaction, including rollback when the ledger rejects it.
+	claimPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create atomic execution claim pool: %v", err)
+	}
+	defer claimPool.Close()
+	postgresLedger, err := NewPostgresLedger(claimPool)
+	if err != nil {
+		t.Fatalf("create atomic execution ledger: %v", err)
+	}
+	ledgerRepository, err := NewPostgresLedgerRepository(postgresLedger)
+	if err != nil {
+		t.Fatalf("create atomic execution ledger repository: %v", err)
+	}
+
+	atomicApproval := Approval{
+		ID: "approval-atomic-" + suffix, DecisionID: "decision-atomic-" + suffix,
+		AgentID: agentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:atomic-" + suffix,
+	}
+	if err := approvals.Create(ctx, atomicApproval); err != nil {
+		t.Fatalf("create atomic approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, atomicApproval.ID, "pending", "approved", now.Add(3*time.Second)); err != nil {
+		t.Fatalf("approve atomic approval: %v", err)
+	}
+	startClaims := make(chan struct{})
+	claimResults := make(chan error, 2)
+	var claimWG sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		claimWG.Add(1)
+		go func(index int) {
+			defer claimWG.Done()
+			<-startClaims
+			intent := LedgerEvent{
+				Timestamp: now.Add(4 * time.Second), RequestID: "request-" + suffix,
+				DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+				AgentID: agentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+				EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+				Metadata: map[string]string{"approval_id": atomicApproval.ID},
+			}
+			_, _, claimErr := ledgerRepository.ClaimExecution(ctx, intent, atomicApproval, now.Add(4*time.Second))
+			claimResults <- claimErr
+		}(i)
+	}
+	close(startClaims)
+	claimWG.Wait()
+	close(claimResults)
+	claimSuccesses, claimConflicts := 0, 0
+	for claimErr := range claimResults {
+		if claimErr == nil {
+			claimSuccesses++
+		} else if errors.Is(claimErr, ErrRepositoryConflict) {
+			claimConflicts++
+		} else {
+			t.Fatalf("unexpected atomic claim error: %v", claimErr)
+		}
+	}
+	if claimSuccesses != 1 || claimConflicts != 1 {
+		t.Fatalf("atomic claim winners=%d conflicts=%d; want exactly one of each", claimSuccesses, claimConflicts)
+	}
+	consumedApproval, err := approvals.Get(ctx, atomicApproval.ID)
+	if err != nil || consumedApproval.Status != "consumed" {
+		t.Fatalf("atomic approval state = (%+v, %v); want consumed", consumedApproval, err)
+	}
+
+	rollbackApproval := Approval{
+		ID: "approval-rollback-" + suffix, DecisionID: atomicApproval.DecisionID,
+		AgentID: agentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: atomicApproval.ArtifactHash,
+	}
+	if err := approvals.Create(ctx, rollbackApproval); err != nil {
+		t.Fatalf("create rollback approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, rollbackApproval.ID, "pending", "approved", now.Add(5*time.Second)); err != nil {
+		t.Fatalf("approve rollback approval: %v", err)
+	}
+	rollbackIntent := LedgerEvent{
+		Timestamp: now.Add(6 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: agentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": rollbackApproval.ID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, rollbackIntent, rollbackApproval, now.Add(6*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("duplicate execution claim error = %v; want conflict", err)
+	}
+	unchangedApproval, err := approvals.Get(ctx, rollbackApproval.ID)
+	if err != nil || unchangedApproval.Status != "approved" {
+		t.Fatalf("approval after rolled-back claim = (%+v, %v); want still approved", unchangedApproval, err)
+	}
+
 	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
 	if adminURL == "" {
 		t.Skip("set NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL to verify admin-role rejection")
