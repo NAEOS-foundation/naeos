@@ -9,13 +9,13 @@
 
 | Asset | Source SVG | Candidate status |
 |---|---|---|
-| LinkedIn 1:1 | `templates/linkedin-post-1x1.svg` | Needs campaign content, render QA |
-| LinkedIn 4:5 | `templates/linkedin-post-4x5.svg` | Needs campaign content, render QA |
-| Carousel cover 4:5 | `templates/carousel-cover-4x5.svg` | Needs campaign content, render QA |
-| Carousel content 4:5 | `templates/carousel-content-4x5.svg` | Generic placeholder intentionally retained; RC copy must be filled |
-| Quote/insight 1:1 | `templates/quote-insight-1x1.svg` | Needs verified quote/source and campaign copy |
-| Announcement 4:5 | `templates/announcement-4x5.svg` | Needs approved announcement copy and CTA |
-| LinkedIn company banner | `templates/linkedin-company-banner.svg` | Needs crop/safe-area visual validation |
+| LinkedIn 1:1 | `templates/linkedin-post-1x1.svg` | Render QA passed; campaign content pending |
+| LinkedIn 4:5 | `templates/linkedin-post-4x5.svg` | Render QA passed; campaign content pending |
+| Carousel cover 4:5 | `templates/carousel-cover-4x5.svg` | Render QA passed; campaign content pending |
+| Carousel content 4:5 | `templates/carousel-content-4x5.svg` | Render QA passed; generic placeholder retained, RC copy must be filled |
+| Quote/insight 1:1 | `templates/quote-insight-1x1.svg` | Render QA passed; verified quote/source and campaign copy pending |
+| Announcement 4:5 | `templates/announcement-4x5.svg` | Render QA passed; approved announcement copy and CTA pending |
+| LinkedIn company banner | `templates/linkedin-company-banner.svg` | Render QA passed and text clipping fixed; platform crop/safe-area validation pending |
 
 ## Repository-level export evidence
 
@@ -26,10 +26,10 @@
 ## Required gates before RC can be complete
 
 - [ ] Generated inventory and per-file checksums inspected.
-- [ ] SVG and PNG outputs rendered and visually inspected.
-- [ ] Logo geometry and appearance compared with approved Master v2.0.
-- [ ] Raster formats, dimensions, transparency, and color profile checked.
-- [ ] LinkedIn crop/safe-area checks completed.
+- [x] SVG templates rendered to PNG and visually inspected (workflow #4; artifact inspected).
+- [x] Rendered symbol visually matches approved Master v2.0 direction; kit-local SVG source text equivalence verified against canonical source.
+- [x] PNG decoding and dimensions checked for seven outputs; RGB/opaque output verified. Color profile/platform export check remains pending.
+- [ ] LinkedIn crop/safe-area checks on actual platform preview remain pending.
 - [ ] All campaign-specific placeholder text filled in candidate exports.
 - [ ] Campaign factual claims and source/attribution verified.
 - [ ] Final asset set and SHA-256 manifest recorded.
