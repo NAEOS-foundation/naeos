@@ -312,7 +312,9 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 					if attempt+1 < maxPredecessorRetries {
 						continue
 					}
-				case "execution already has a terminal outcome", "execution start not found", "reconciliation binding mismatch", "execution has no unresolved outcome":
+				case "execution start not found":
+					return LedgerEvent{}, 0, ErrRepositoryNotFound
+				case "execution already has a terminal outcome", "reconciliation binding mismatch", "execution has no unresolved outcome":
 					return LedgerEvent{}, 0, ErrRepositoryConflict
 				}
 			}
