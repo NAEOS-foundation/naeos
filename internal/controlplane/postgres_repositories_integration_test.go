@@ -359,7 +359,6 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	}
 }
 
-
 func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 	databaseURL := os.Getenv("NAEOS_CONTROLPLANE_TEST_DATABASE_URL")
 	if databaseURL == "" {
