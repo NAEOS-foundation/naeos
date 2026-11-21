@@ -194,6 +194,6 @@ func (r *PostgresLedgerRepository) HasExecution(ctx context.Context, decisionID 
 }
 
 var (
-	_ LedgerRepository                 = (*PostgresLedgerRepository)(nil)
-	_ AtomicExecutionClaimRepository   = (*PostgresLedgerRepository)(nil)
+	_ LedgerRepository               = (*PostgresLedgerRepository)(nil)
+	_ AtomicExecutionClaimRepository = (*PostgresLedgerRepository)(nil)
 )
