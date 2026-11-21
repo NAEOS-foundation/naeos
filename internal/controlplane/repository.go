@@ -34,6 +34,14 @@ type AtomicExecutionClaimRepository interface {
 	ClaimExecution(context.Context, LedgerEvent, Approval, time.Time) (LedgerEvent, int64, error)
 }
 
+// ExecutionReconciliationRepository atomically records an operator-reviewed outcome
+// for an unresolved execution. reconcilerID MUST come from an authenticated and
+// authorized principal established by the calling service boundary; it is not
+// authentication evidence by itself.
+type ExecutionReconciliationRepository interface {
+	ReconcileExecution(context.Context, string, ExecutionOutcome, string, string, time.Time) (LedgerEvent, int64, error)
+}
+
 // PolicyRepository stores immutable policy versions and authoritative active
 // version state. Implementations must enforce monotonic versions atomically.
 type PolicyRepository interface {
