@@ -34,7 +34,7 @@ python -m pip install cairosvg pillow
 python scripts/render-social-media-kit.py
 ```
 
-Outputs are generated locally under `previews/` plus `SOCIAL-MEDIA-KIT-PREVIEW.png`. The GitHub Actions workflow `.github/workflows/social-media-render.yml` also runs on relevant pull requests and uploads a 14-day QA artifact. This is render automation, not visual approval; inspect the generated artifact before claiming visual QA complete.
+Outputs are generated locally under `previews/` plus `SOCIAL-MEDIA-KIT-PREVIEW.png`. The GitHub Actions workflow `.github/workflows/social-media-render.yml` runs on relevant pull requests and uploads a 14-day QA artifact. Render QA run #4 succeeded and the artifact was inspected. The renderer embeds the kit-local SVG logo as a data URI at render time so CairoSVG displays it; this does not change the master logo or template reference. The first run exposed a clipped company-banner supporting line; its font size was corrected from 41px to 31px and the updated render inspected. Platform crop/safe-area QA is still pending.
 
 ## Important limitations
 
