@@ -250,7 +250,7 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 	}
 	var start LedgerEvent
 	found := false
-	for _, event := range events {
+	for index, event := range events {
 		if event.ExecutionID != executionID {
 			continue
 		}
@@ -259,7 +259,16 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 			if !found {
 				start, found = event, true
 			}
-		case "EXECUTION_ALLOWED", "EXECUTION_RECONCILED":
+		case "EXECUTION_ALLOWED":
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		case "EXECUTION_RECONCILED":
+			// A retry after an ambiguous commit is idempotent only when every
+			// assertion field matches the already committed reconciliation.
+			if event.Metadata["reconciliation_outcome"] == string(outcome) &&
+				event.Metadata["evidence_ref"] == evidenceRef &&
+				event.Metadata["reconciler_id"] == reconcilerID {
+				return cloneLedgerEvent(event), int64(index + 1), nil
+			}
 			return LedgerEvent{}, 0, ErrRepositoryConflict
 		}
 	}
