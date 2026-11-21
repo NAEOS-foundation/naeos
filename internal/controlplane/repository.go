@@ -27,6 +27,13 @@ type LedgerRepository interface {
 	HasExecution(context.Context, string) (bool, error)
 }
 
+// AtomicExecutionClaimRepository commits approval consumption and the durable
+// EXECUTION_STARTED ledger event in one database transaction. Implementations
+// must bind the approval row to the supplied canonical intent and fail closed.
+type AtomicExecutionClaimRepository interface {
+	ClaimExecution(context.Context, LedgerEvent, Approval, time.Time) (LedgerEvent, int64, error)
+}
+
 // PolicyRepository stores immutable policy versions and authoritative active
 // version state. Implementations must enforce monotonic versions atomically.
 type PolicyRepository interface {
