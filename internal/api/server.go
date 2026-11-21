@@ -633,7 +633,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					s.writeError(w, http.StatusUnauthorized, "invalid bearer token")
 					return
 				}
-				userID = claims.Sub
+				userID = claims.PrincipalID()
 				if r.Method != http.MethodGet || !hasJWTClaimScope(claims, "naeos:repository:read") {
 					s.writeError(w, http.StatusForbidden, "service token lacks permission for this route")
 					return

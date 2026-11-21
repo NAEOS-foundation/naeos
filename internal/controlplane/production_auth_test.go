@@ -142,3 +142,20 @@ func TestProductionAuthorizationCapabilityDeniedByCanonicalGrant(t *testing.T) {
 		t.Fatalf("ungranted capability status = %d; want 403; body=%s", response.Code, response.Body.String())
 	}
 }
+
+func TestProductionAuthorizationUsesJWTSubjectOverClientID(t *testing.T) {
+	claims := &api.JWTClaims{Sub: "agent-gateway", ClientID: "crm-web-client"}
+	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
+
+	response := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("authorization status = %d; want 200 using JWT sub rather than client_id; body=%s", response.Code, response.Body.String())
+	}
+	var result DecisionResult
+	if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if result.Status != DecisionAllow || result.AgentID != claims.Sub {
+		t.Fatalf("result = %+v; want principal bound to JWT sub %q", result, claims.Sub)
+	}
+}

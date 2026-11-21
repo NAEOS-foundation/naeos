@@ -286,3 +286,44 @@ func TestJWKSValidatorWarmupLoadsES256JWKFromEndpoint(t *testing.T) {
 		t.Fatalf("loaded JWKS key type = %T; want *ecdsa.PublicKey", validator.keys["ec-key"])
 	}
 }
+
+func TestJWKSValidatorKeepsSubjectAndClientIDDistinct(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	claims := defaultTestServiceClaims()
+	claims.Subject = "user-123"
+	claims.ClientID = "crm-web-client"
+	token := makeTestServiceToken(t, key, claims)
+
+	verified, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if verified.Sub != claims.Subject {
+		t.Fatalf("verified sub = %q; want JWT sub %q", verified.Sub, claims.Subject)
+	}
+	if verified.ClientID != claims.ClientID {
+		t.Fatalf("verified client_id = %q; want %q", verified.ClientID, claims.ClientID)
+	}
+	if verified.PrincipalID() != claims.Subject {
+		t.Fatalf("PrincipalID() = %q; want subject %q", verified.PrincipalID(), claims.Subject)
+	}
+}
+
+func TestJWKSValidatorClientOnlyTokenUsesClientIDPrincipalFallback(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	claims := defaultTestServiceClaims()
+	claims.Subject = ""
+	claims.ClientID = "service-client"
+	token := makeTestServiceToken(t, key, claims)
+
+	verified, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if verified.Sub != "" || verified.ClientID != claims.ClientID {
+		t.Fatalf("verified claims = %+v; expected empty sub and client_id %q", verified, claims.ClientID)
+	}
+	if verified.PrincipalID() != claims.ClientID {
+		t.Fatalf("PrincipalID() = %q; want client_id fallback %q", verified.PrincipalID(), claims.ClientID)
+	}
+}
