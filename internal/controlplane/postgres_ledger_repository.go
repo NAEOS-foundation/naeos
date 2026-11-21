@@ -327,7 +327,24 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 					}
 				case "execution start not found":
 					return LedgerEvent{}, 0, ErrRepositoryNotFound
-				case "execution already has a terminal outcome", "reconciliation binding mismatch", "execution has no unresolved outcome":
+				case "execution already has a terminal outcome":
+					// A concurrent identical request may have committed while this
+					// transaction waited for the ledger-head lock. Resolve that race
+					// as an idempotent success only when all assertion fields match.
+					committedEvents, loadErr := r.LoadVerified(ctx)
+					if loadErr != nil {
+						return LedgerEvent{}, 0, loadErr
+					}
+					for index, committed := range committedEvents {
+						if committed.ExecutionID == executionID && committed.EventType == "EXECUTION_RECONCILED" &&
+							committed.Metadata["reconciliation_outcome"] == string(outcome) &&
+							committed.Metadata["evidence_ref"] == evidenceRef &&
+							committed.Metadata["reconciler_id"] == reconcilerID {
+							return cloneLedgerEvent(committed), int64(index + 1), nil
+						}
+					}
+					return LedgerEvent{}, 0, ErrRepositoryConflict
+				case "reconciliation binding mismatch", "execution has no unresolved outcome":
 					return LedgerEvent{}, 0, ErrRepositoryConflict
 				}
 			}
