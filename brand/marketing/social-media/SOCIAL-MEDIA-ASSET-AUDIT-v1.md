@@ -50,7 +50,7 @@ The Social Media Kit README points to these repository-level packages and clarif
 ### Remaining validation
 
 - [ ] Run render workflow and inspect generated previews/contact sheet.
-- [ ] **SVG source equivalence verified:** fetched kit-local `assets/naeos-primary-symbol-v2.svg` and canonical `brand/master/naeos-primary-symbol-master-v2.svg` contain identical SVG text (including viewBox, gradients, paths, title/desc). This establishes content equivalence for the fetched text files.
+- [x] **SVG source equivalence verified:** fetched kit-local `assets/naeos-primary-symbol-v2.svg` and canonical `brand/master/naeos-primary-symbol-master-v2.svg` contain identical SVG text (including viewBox, gradients, paths, title/desc). This establishes content equivalence for the fetched text files.
 - [ ] Raster decode, dimensions, transparency, visual rendering, crop/safe-area validation pending render artifact inspection.
 
 These are release-candidate validation gaps, not missing repository-level logo/avatar exports.
