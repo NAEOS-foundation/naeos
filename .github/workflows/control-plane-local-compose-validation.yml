@@ -45,8 +45,10 @@ jobs:
           NAEOS_CONTROLPLANE_ISSUER: https://staging-auth.invalid
           NAEOS_CONTROLPLANE_AUDIENCE: authenticated
           NAEOS_CONTROLPLANE_JWKS_URL: https://staging-auth.invalid/.well-known/jwks.json
+          NAEOS_CONTROLPLANE_PRINCIPAL_KIND: human
         run: |
           set -euo pipefail
+          case "$NAEOS_CONTROLPLANE_PRINCIPAL_KIND" in human|service) ;; *) echo "Invalid principal kind" >&2; exit 1 ;; esac
           docker compose -f compose.control-plane.local.yml config --quiet
           docker compose -f compose.control-plane.local.yml config > /tmp/compose-rendered.yml
           grep -F '127.0.0.1' /tmp/compose-rendered.yml
@@ -55,6 +57,7 @@ jobs:
           grep -F 'no-new-privileges:true' /tmp/compose-rendered.yml
           grep -F 'cap_drop:' /tmp/compose-rendered.yml
           grep -F 'staging' /tmp/compose-rendered.yml
+          grep -F 'NAEOS_CONTROLPLANE_PRINCIPAL_KIND: human' /tmp/compose-rendered.yml
           echo 'Compose config validation passed; no services were started.'
 
   docker-image-build:
