@@ -127,7 +127,8 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 
 	// Revalidate the exact approval at the execution boundary. ApprovalID is
 	// caller-controlled input and may differ from the one checked at Authorize.
-	// Do this before claiming execution so a mismatch cannot leave a started intent.
+	// The approved row is then consumed atomically with the execution intent.
+	var approvedApproval *Approval
 	if req.ApprovalID != "" {
 		if g.Approvals == nil {
 			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
@@ -152,17 +153,32 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 			result.Message = "approval is not valid for this canonical execution request"
 			return result, LedgerEvent{}, ErrRepositoryConflict
 		}
+		approvedApproval = &approval
 	}
 
 	executionID := controlPlaneID("EXEC")
+	intentMetadata := map[string]string{"policy_id": policyID, "policy_version": fmt.Sprintf("%d", policyVersion), "grant_id": grant.GrantID}
+	if req.ApprovalID != "" {
+		intentMetadata["approval_id"] = req.ApprovalID
+	}
 	intent := LedgerEvent{
 		Timestamp: time.Now().UTC(), RequestID: result.RequestID, DecisionID: result.DecisionID,
 		ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_STARTED",
-		Decision: DecisionAllow, Reason: result.Reason,
-		Metadata: map[string]string{"policy_id": policyID, "policy_version": fmt.Sprintf("%d", policyVersion), "grant_id": grant.GrantID},
+		Decision: DecisionAllow, Reason: result.Reason, Metadata: intentMetadata,
 	}
-	started, _, err := g.Ledger.Append(ctx, intent)
+	var started LedgerEvent
+	if approvedApproval != nil {
+		atomicClaims, ok := g.Ledger.(AtomicExecutionClaimRepository)
+		if !ok {
+			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+			result.Message = "atomic approval consumption is unsupported; side effect was not invoked"
+			return result, LedgerEvent{}, ErrRepositoryUnavailable
+		}
+		started, _, err = atomicClaims.ClaimExecution(ctx, intent, *approvedApproval, time.Now().UTC())
+	} else {
+		started, _, err = g.Ledger.Append(ctx, intent)
+	}
 	if err != nil {
 		if errors.Is(err, ErrRepositoryConflict) {
 			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
@@ -177,38 +193,6 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 		result.Status, result.DecisionID, result.Reason = DecisionIndeterminate, "", ReasonEvaluationFailed
 		result.Message = "durable execution intent returned no committed event; side effect was not invoked"
 		return result, LedgerEvent{}, ErrRepositoryUnavailable
-	}
-
-	if req.ApprovalID != "" {
-		if g.Approvals == nil {
-			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-			result.Message = "approval repository unavailable after intent commit; execution requires reconciliation"
-			return result, started, ErrRepositoryUnavailable
-		}
-		if _, err := g.Approvals.Transition(ctx, req.ApprovalID, "approved", "consumed", time.Now().UTC()); err != nil {
-			if !errors.Is(err, ErrRepositoryNotFound) && !errors.Is(err, ErrRepositoryConflict) {
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval consumption could not be verified; execution intent requires reconciliation"
-				return result, started, err
-			}
-			blocked, _, appendErr := g.Ledger.Append(ctx, LedgerEvent{
-				Timestamp: time.Now().UTC(), RequestID: result.RequestID, DecisionID: result.DecisionID,
-				ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
-				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
-				Reason: ReasonDeniedByPolicy, Metadata: map[string]string{"approval_error": err.Error()},
-			})
-			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
-			result.Message = "approval was missing or already consumed; side effect was not invoked"
-			if appendErr != nil || blocked.ID == "" {
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval rejection evidence append failed; reconcile execution intent"
-				if appendErr != nil {
-					return result, started, appendErr
-				}
-				return result, started, ErrRepositoryUnavailable
-			}
-			return result, blocked, err
-		}
 	}
 
 	if err := sideEffect(ctx); err != nil {
