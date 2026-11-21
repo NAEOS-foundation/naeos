@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -78,6 +79,74 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 		tx, err := r.ledger.pool.BeginTx(ctx, pgx.TxOptions{})
 		if err != nil {
 			return LedgerEvent{}, 0, fmt.Errorf("%w: begin atomic execution claim: %w", ErrRepositoryUnavailable, err)
+		}
+
+		// Fence policy activation and grant revocation inside this transaction.
+		// FOR SHARE conflicts with policy-pointer updates and grant revocation, so
+		// either this claim linearizes first or it observes the newer revoked/stale state.
+		policyID := event.Metadata["policy_id"]
+		grantID := event.Metadata["grant_id"]
+		policyVersion, parseErr := strconv.Atoi(event.Metadata["policy_version"])
+		if policyID == "" || grantID == "" || parseErr != nil || policyVersion < 1 ||
+			approval.PolicyID != policyID || approval.PolicyVersion != policyVersion {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		}
+
+		var policyPayload []byte
+		err = tx.QueryRow(ctx, `SELECT pv.policy
+			FROM naeos_control_plane.active_policies ap
+			JOIN naeos_control_plane.policy_versions pv
+			  ON pv.policy_id = ap.policy_id AND pv.version = ap.version
+			WHERE ap.policy_id = $1 AND ap.version = $2
+			FOR SHARE OF ap`, policyID, policyVersion).Scan(&policyPayload)
+		if errors.Is(err, pgx.ErrNoRows) {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		}
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, postgresRepositoryError(err)
+		}
+		var policy Policy
+		if err := json.Unmarshal(policyPayload, &policy); err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, fmt.Errorf("%w: decode policy during execution claim: %w", ErrRepositoryIntegrity, err)
+		}
+		if policy.ID != policyID || policy.Version != policyVersion || policy.Status != "active" ||
+			!containsCapability(policy.AllowedCapabilities, event.Capability) ||
+			containsCapability(policy.DeniedCapabilities, event.Capability) ||
+			containsCapability(policy.ProtectedCapabilities, event.Capability) {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		}
+
+		var grantPayload []byte
+		var grantStatus string
+		var grantExpires time.Time
+		err = tx.QueryRow(ctx, `SELECT grant_payload, status, expires_at
+			FROM naeos_control_plane.grants
+			WHERE grant_id = $1 AND agent_id = $2 AND policy_id = $3 AND policy_version = $4
+			FOR SHARE`, grantID, event.AgentID, policyID, policyVersion).Scan(&grantPayload, &grantStatus, &grantExpires)
+		if errors.Is(err, pgx.ErrNoRows) {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		}
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, postgresRepositoryError(err)
+		}
+		var grant Grant
+		if err := json.Unmarshal(grantPayload, &grant); err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, fmt.Errorf("%w: decode grant during execution claim: %w", ErrRepositoryIntegrity, err)
+		}
+		if grant.GrantID != grantID || grant.AgentID != event.AgentID ||
+			grant.PolicyID != policyID || grant.PolicyVersion != policyVersion ||
+			grantStatus != "active" || !grant.IsValid(at) || !at.Before(grantExpires) ||
+			!containsCapability(grant.Capabilities, event.Capability) {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, ErrRepositoryConflict
 		}
 
 		var consumedID string
