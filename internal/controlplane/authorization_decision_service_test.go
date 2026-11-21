@@ -77,9 +77,38 @@ func TestAuthorizationDecisionServiceApprovalRequiredHasNoExecutionClaim(t *test
 	}
 }
 
-func TestAuthorizationDecisionServiceEvaluationFailureHasNoDecisionOrExecutionClaim(t *testing.T) {
+func TestAuthorizationDecisionServiceGrantResolutionFailureHasNoDecisionOrExecutionClaim(t *testing.T) {
 	service, req, ledger := decisionServiceFixture(t, false)
 	service.Grants = unavailableGrantRepository{GrantRepository: service.Grants}
+	result, err := service.Authorize(context.Background(), req)
+	if err == nil || result.Status != DecisionIndeterminate {
+		t.Fatalf("result = %+v, err=%v; want INDETERMINATE with error", result, err)
+	}
+	if result.DecisionID != "" {
+		t.Fatalf("indeterminate result minted decision ID %q", result.DecisionID)
+	}
+	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 0 {
+		t.Fatalf("authorization evidence = %d; want 0", got)
+	}
+	if got := ledger.countType("EXECUTION_STARTED"); got != 0 {
+		t.Fatalf("execution claims = %d; want 0", got)
+	}
+}
+
+type unavailablePolicyVersionRepository struct {
+	PolicyRepository
+}
+
+func (r unavailablePolicyVersionRepository) Version(context.Context, string, int) (*Policy, error) {
+	return nil, ErrRepositoryUnavailable
+}
+
+func TestAuthorizationDecisionServiceEvaluatorFailureHasNoDecisionOrExecutionClaim(t *testing.T) {
+	service, req, ledger := decisionServiceFixture(t, false)
+	policies := unavailablePolicyVersionRepository{PolicyRepository: service.Policies}
+	service.Policies = policies
+	service.Evaluator = NewRepositoryEvaluator(policies)
+
 	result, err := service.Authorize(context.Background(), req)
 	if err == nil || result.Status != DecisionIndeterminate {
 		t.Fatalf("result = %+v, err=%v; want INDETERMINATE with error", result, err)
