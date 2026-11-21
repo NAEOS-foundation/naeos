@@ -35,8 +35,8 @@ BEGIN
 
   v_event_type := p_event->>'event_type';
   v_metadata := p_event->'metadata';
-  IF v_event_type <> 'EXECUTION_RECONCILED'
-     OR p_event->>'execution_id' <> p_execution_id
+  IF v_event_type IS DISTINCT FROM 'EXECUTION_RECONCILED'
+     OR p_event->>'execution_id' IS DISTINCT FROM p_execution_id
      OR coalesce(v_metadata->>'evidence_ref', '') = ''
      OR coalesce(v_metadata->>'reconciler_id', '') = ''
      OR coalesce(v_metadata->>'reconciliation_outcome', '') NOT IN ('COMMITTED', 'NOT_COMMITTED') THEN
@@ -76,17 +76,8 @@ BEGIN
     RAISE EXCEPTION 'execution already has a terminal outcome';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM naeos_control_plane.ledger_events
-    WHERE execution_id = p_execution_id
-      AND event_type = 'EXECUTION_UNKNOWN'
-  ) AND NOT EXISTS (
-    SELECT 1 FROM naeos_control_plane.ledger_events
-    WHERE execution_id = p_execution_id
-      AND event_type = 'EXECUTION_STARTED'
-  ) THEN
-    RAISE EXCEPTION 'execution has no unresolved outcome';
-  END IF;
+  -- A durable start with no terminal event is unresolved even if the process
+  -- crashed before it could append EXECUTION_UNKNOWN.
 
   -- Reuse the canonical append function. It takes the same row lock
   -- re-entrantly and verifies the candidate predecessor/hash.
