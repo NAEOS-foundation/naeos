@@ -90,7 +90,30 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 		if s.Approvals == nil {
 			result.Status, result.Reason, result.Message = DecisionIndeterminate, ReasonEvaluationFailed, "approval repository unavailable"
 		} else {
-			approval, approvalErr := s.Approvals.Get(ctx, req.ApprovalID)
+			canonical, canonicalErr := s.Ledger.Decision(ctx, result.DecisionID)
+			switch {
+			case canonicalErr != nil:
+				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+				result.Message = "canonical pending decision lookup failed"
+				if errors.Is(canonicalErr, ErrRepositoryNotFound) || errors.Is(canonicalErr, ErrRepositoryConflict) {
+					result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+					result.Message = "approval has no canonical pending decision"
+				}
+			case canonical.RequestID != requestID || canonical.AgentID != req.AgentID ||
+				canonical.Capability != action.Capability || canonical.ArtifactHash != action.ArtifactHash ||
+				canonical.Metadata["policy_id"] != grant.PolicyID ||
+				canonical.Metadata["policy_version"] != fmt.Sprintf("%d", grant.PolicyVersion) ||
+				(canonical.Decision != DecisionPending && canonical.Decision != DecisionAllow):
+				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval does not match the canonical request decision"
+			}
+			if result.Status == DecisionIndeterminate {
+				result.DecisionID = ""
+				return result, fmt.Errorf("canonical decision validation indeterminate: %s", result.Message)
+			}
+			if result.Status == DecisionDeny {
+				// Preserve the denial as decision evidence below; do not inspect or accept the approval.
+			} else {
+				approval, approvalErr := s.Approvals.Get(ctx, req.ApprovalID)
 			switch {
 			case approvalErr != nil:
 				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
@@ -109,6 +132,7 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 			default:
 				result.Status, result.Reason, result.NeedsApproval = DecisionAllow, ReasonAllowed, false
 				result.Message = "approval validated against durable repository"
+				}
 			}
 		}
 		if result.Status == DecisionIndeterminate {

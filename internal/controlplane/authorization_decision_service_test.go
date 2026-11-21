@@ -150,6 +150,14 @@ func decisionServiceApprovedFixture(t *testing.T, decisionID, approvalID string,
 	if _, err := repository.Transition(context.Background(), approvalID, "pending", "approved", req.Timestamp); err != nil {
 		t.Fatal(err)
 	}
+	if _, _, err := ledger.Append(context.Background(), LedgerEvent{
+		Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: decisionID,
+		AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+		EventType: "AUTHORIZATION_DECISION", Decision: DecisionPending,
+		Metadata: map[string]string{"policy_id": "decision-service-policy", "policy_version": "1"},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if !expiresAt.IsZero() {
 		store.mu.Lock()
 		approval = store.approvals[approvalID]
@@ -231,6 +239,22 @@ func TestAuthorizationDecisionServiceApprovalRepositoryOutageIsIndeterminateWith
 	}
 	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 0 {
 		t.Fatalf("authorization decision evidence = %d; want 0", got)
+	}
+	if got := ledger.countType("EXECUTION_STARTED"); got != 0 {
+		t.Fatalf("execution claims = %d; want 0", got)
+	}
+}
+
+func TestAuthorizationDecisionServiceApprovalCannotReplayAcrossRequestIDs(t *testing.T) {
+	now := time.Now().UTC()
+	service, req, ledger := decisionServiceApprovedFixture(t, "stable-decision-id", "approval-cross-request", now.Add(time.Hour))
+	req.RequestID = "different-request-id"
+	result, err := service.Authorize(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Authorize: %v", err)
+	}
+	if result.Status != DecisionDeny {
+		t.Fatalf("status = %s; want DENY for cross-request approval replay", result.Status)
 	}
 	if got := ledger.countType("EXECUTION_STARTED"); got != 0 {
 		t.Fatalf("execution claims = %d; want 0", got)
