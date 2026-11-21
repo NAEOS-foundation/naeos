@@ -36,17 +36,17 @@ type productionLedgerReader interface {
 }
 
 type ProductionRuntime struct {
-	environment  string
-	pool         *pgxpool.Pool
-	ledgerReader productionLedgerReader
-	sqlDB        *sql.DB
-	Policies     *PostgresPolicyRepository
-	Grants       *PostgresGrantRepository
-	Approvals    *PostgresApprovalRepository
-	Ledger       *PostgresLedger
-	identity     productionTokenValidator
-	gateway      *RepositoryDecisionGateway
-	reconciler   ExecutionReconciliationRepository
+	environment      string
+	pool             *pgxpool.Pool
+	ledgerReader     productionLedgerReader
+	sqlDB            *sql.DB
+	Policies         *PostgresPolicyRepository
+	Grants           *PostgresGrantRepository
+	Approvals        *PostgresApprovalRepository
+	Ledger           *PostgresLedger
+	identity         productionTokenValidator
+	gateway          *RepositoryDecisionGateway
+	reconciler       ExecutionReconciliationRepository
 	evidenceVerifier ExecutionEvidenceVerifier
 }
 
