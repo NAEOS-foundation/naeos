@@ -25,6 +25,17 @@
 - SVG files are editable. Replace all bracketed placeholder text before exporting a campaign-specific final asset.
 - Templates intentionally avoid claims of customer adoption, certification, compliance, or measured outcomes.
 
+## Reproducible rendering
+
+Render seven templates, generate PNG previews/contact sheet, and produce a per-preview dimensions/SHA-256 manifest:
+
+```bash
+python -m pip install cairosvg pillow
+python scripts/render-social-media-kit.py
+```
+
+Outputs are generated locally under `previews/` plus `SOCIAL-MEDIA-KIT-PREVIEW.png`. The GitHub Actions workflow `.github/workflows/social-media-render.yml` also runs on relevant pull requests and uploads a 14-day QA artifact. This is render automation, not visual approval; inspect the generated artifact before claiming visual QA complete.
+
 ## Important limitations
 
 This is a first layout system, not a final approved campaign kit. Palette, typography, logo clear-space/minimum-size, and LinkedIn crop/safe-area validation remain open for review.
@@ -33,8 +44,8 @@ This is a first layout system, not a final approved campaign kit. Palette, typog
 
 - `templates/` — seven editable SVG layouts.
 - `assets/naeos-primary-symbol-v2.svg` — canonical symbol SVG copy used by template references.
-- `previews/` — planned; template PNG render previews are not committed yet.
-- `SOCIAL-MEDIA-KIT-PREVIEW.png` — planned template contact sheet; not committed yet.
+- `previews/` — generated PNG template renders and `render-manifest.json`.
+- `SOCIAL-MEDIA-KIT-PREVIEW.png` — generated contact sheet (created by the renderer).
 - Repository-level exports are available under `brand/exports/NAEOS-Logo-Exports-v1.0/`, `brand/exports/NAEOS-Social-Avatar-v1.0/`, and `brand/exports/NAEOS-Logo-System-v1.0/`. These packages are separate from the kit folder and require provenance/hash reconciliation before RC packaging.
 
 Do not mark this package production-approved until open items are reviewed. Record SHA-256 for released binary files.
