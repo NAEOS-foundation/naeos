@@ -461,8 +461,8 @@ func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 			t.Fatalf("unexpected reconciliation error: %v", reconcileErr)
 		}
 	}
-	if successes != 1 || conflicts != 1 {
-		t.Fatalf("reconciliation winners=%d conflicts=%d; want exactly one of each", successes, conflicts)
+	if successes != 2 || conflicts != 0 {
+		t.Fatalf("identical concurrent reconciliation requests successes=%d conflicts=%d; want idempotent success for both", successes, conflicts)
 	}
 
 	events, err := repository.LoadVerified(ctx)
