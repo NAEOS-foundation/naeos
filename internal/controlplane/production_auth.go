@@ -162,7 +162,7 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 }
 
 type executionReconciliationRequest struct {
-	Outcome    ExecutionOutcome `json:"outcome"`
+	Outcome     ExecutionOutcome `json:"outcome"`
 	EvidenceRef string           `json:"evidence_ref"`
 }
 
