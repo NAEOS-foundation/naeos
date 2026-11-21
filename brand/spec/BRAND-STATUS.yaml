@@ -1,36 +1,59 @@
-# Brand System Status Registry
-
-**Registry version:** 1.0  
-**Status:** Proposed registry — review required  
-**Canonical logo master:** v2.0.0
-
-This registry intentionally uses per-subsystem states. A frozen logo master does not imply that every brand deliverable is frozen or approved.
-
-| Subsystem | Status | Authority / evidence | Next action |
-|---|---|---|---|
-| Original visual source | Frozen / immutable | source-of-truth README | Preserve |
-| Logo Master v2.0.0 | Approved / frozen | brand/docs README | Preserve; derivatives only |
-| Logo derivatives | Mixed verified | Asset Manifest | Audit current production consumers |
-| Positioning | Baseline documented | docs/SOCIAL-IDENTITY.md | Synchronize profiles and review wording |
-| Color tokens | Draft / reconcile | brand.json, brand.css, guideline | Verify master gradient + actual UI; ratify semantic tokens |
-| Typography | Draft / reconcile | brand.json vs guideline/social kit | Confirm fonts, licenses, availability, fallbacks |
-| Guidelines v1.1 | Draft | BRAND-GUIDELINES-v1.1.md | Ratification review |
-| Social Media Kit v1.0 | Draft | social README/register | Validate visual, safe areas, exports |
-| Binary asset publication | Partial / pending | Asset manifest + extraction register | Publish individual files, verify dimensions/checksums |
-| Product design system | Not verified as unified | Product implementation required | Inventory website, CRM, dashboard |
-| Brand CI | Not established/verified | Repository evidence not yet audited exhaustively | Add validation workflow and tests |
-
-## State definitions
-
-- **Draft:** authoring, not production approved.
-- **Review:** evidence and visual review underway.
-- **Approved:** explicitly approved for the intended scope.
-- **Frozen:** immutable artifact/source; changes require new version and approval.
-- **Implemented:** present in target code/product.
-- **Verified:** checked against explicit validation criteria.
-- **Published:** release artifacts are present and available at the intended destination.
-- **Deprecated:** superseded; retained for traceability.
-
-## Status transition rule
-
-No status may be promoted without evidence or approval appropriate to that status. Asset presence alone is not proof of visual quality; documentation alone is not proof of implementation.
+version: 1
+registry_status: proposed_review_required
+canonical_logo_master: "2.0.0"
+subsystems:
+  original_visual_source:
+    status: frozen_immutable
+    evidence: "brand/source-of-truth/README.md"
+    next_action: preserve
+  logo_master:
+    status: approved_frozen
+    version: "2.0.0"
+    evidence: "brand/docs/README.md"
+    next_action: preserve_geometry_derive_only
+  logo_derivatives:
+    status: mixed_verified
+    evidence: "brand/ASSET-MANIFEST-v1.md"
+    next_action: audit_production_consumers
+  positioning:
+    status: baseline_documented
+    evidence: "docs/SOCIAL-IDENTITY.md"
+    next_action: synchronize_public_profiles
+  color_tokens:
+    status: draft_reconcile
+    evidence: "brand.json and brand.css and guideline"
+    next_action: verify_source_values_and_ratify_semantic_tokens
+  typography:
+    status: draft_reconcile
+    evidence: "brand.json versus guidelines and social kit"
+    next_action: validate_fonts_licensing_availability_and_fallbacks
+  guidelines_v1_1:
+    status: draft
+    evidence: "brand/guidelines/BRAND-GUIDELINES-v1.1.md"
+    next_action: ratification_review
+  social_media_kit_v1:
+    status: draft
+    evidence: "social-media README and ASSET-REGISTER.md"
+    next_action: visual_safe_area_export_validation
+  binary_asset_publication:
+    status: partial_pending
+    evidence: "asset manifest and extraction register"
+    next_action: publish_files_then_verify_dimensions_and_checksums
+  product_design_system:
+    status: not_verified_unified
+    evidence: implementation_inventory_required
+    next_action: inventory_website_crm_dashboard_control_plane
+  brand_ci:
+    status: not_established_verified
+    evidence: automation_audit_required
+    next_action: add_asset_and_token_validation
+state_definitions:
+  draft: authoring_not_approved
+  review: evidence_visual_review_underway
+  approved: explicit_scope_approval
+  frozen: immutable_source_requires_new_version_for_change
+  implemented: present_in_target_implementation
+  verified: checked_against_explicit_criteria
+  published: artifacts_present_at_intended_destination
+  deprecated: superseded_retained_for_traceability
+promotion_rule: "Do not promote state without required evidence or explicit approval."
