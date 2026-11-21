@@ -59,9 +59,16 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 	if r == nil || r.ledger == nil || r.ledger.pool == nil {
 		return LedgerEvent{}, 0, ErrRepositoryUnavailable
 	}
-	if approval.ID == "" || approval.DecisionID == "" || event.EventType != "EXECUTION_STARTED" ||
-		event.DecisionID != approval.DecisionID || event.AgentID != approval.AgentID ||
-		event.Capability != approval.Capability || event.ArtifactHash != approval.ArtifactHash {
+	if event.EventType != "EXECUTION_STARTED" || event.DecisionID == "" || event.AgentID == "" ||
+		event.Capability == "" {
+		return LedgerEvent{}, 0, ErrRepositoryConflict
+	}
+	if approval.ID != "" && (approval.DecisionID == "" || event.DecisionID != approval.DecisionID ||
+		event.AgentID != approval.AgentID || event.Capability != approval.Capability ||
+		event.ArtifactHash != approval.ArtifactHash || event.Metadata["approval_id"] != approval.ID) {
+		return LedgerEvent{}, 0, ErrRepositoryConflict
+	}
+	if approval.ID == "" && event.Metadata["approval_id"] != "" {
 		return LedgerEvent{}, 0, ErrRepositoryConflict
 	}
 	at = at.UTC()
@@ -88,7 +95,7 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 		grantID := event.Metadata["grant_id"]
 		policyVersion, parseErr := strconv.Atoi(event.Metadata["policy_version"])
 		if policyID == "" || grantID == "" || parseErr != nil || policyVersion < 1 ||
-			approval.PolicyID != policyID || approval.PolicyVersion != policyVersion {
+			(approval.ID != "" && (approval.PolicyID != policyID || approval.PolicyVersion != policyVersion)) {
 			_ = tx.Rollback(ctx)
 			return LedgerEvent{}, 0, ErrRepositoryConflict
 		}
@@ -116,7 +123,8 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 		if policy.ID != policyID || policy.Version != policyVersion || policy.Status != "active" ||
 			!containsCapability(policy.AllowedCapabilities, event.Capability) ||
 			containsCapability(policy.DeniedCapabilities, event.Capability) ||
-			containsCapability(policy.ProtectedCapabilities, event.Capability) {
+			containsCapability(policy.ProtectedCapabilities, event.Capability) ||
+			(approval.ID == "" && containsCapability(policy.ApprovalRequired, event.Capability)) {
 			_ = tx.Rollback(ctx)
 			return LedgerEvent{}, 0, ErrRepositoryConflict
 		}
@@ -149,23 +157,25 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 			return LedgerEvent{}, 0, ErrRepositoryConflict
 		}
 
-		var consumedID string
-		err = tx.QueryRow(ctx, `UPDATE naeos_control_plane.approvals
-			SET status = 'consumed', consumed_at = $8
-			WHERE approval_id = $1 AND decision_id = $2 AND agent_id = $3
-			  AND capability = $4 AND policy_id = $5 AND policy_version = $6
-			  AND artifact_hash = $7 AND status = 'approved'
-			  AND (expires_at IS NULL OR expires_at > $8)
-			RETURNING approval_id`,
-			approval.ID, approval.DecisionID, approval.AgentID, string(approval.Capability),
-			approval.PolicyID, approval.PolicyVersion, approval.ArtifactHash, at).Scan(&consumedID)
-		if errors.Is(err, pgx.ErrNoRows) {
-			_ = tx.Rollback(ctx)
-			return LedgerEvent{}, 0, ErrRepositoryConflict
-		}
-		if err != nil {
-			_ = tx.Rollback(ctx)
-			return LedgerEvent{}, 0, postgresRepositoryError(err)
+		if approval.ID != "" {
+			var consumedID string
+			err = tx.QueryRow(ctx, `UPDATE naeos_control_plane.approvals
+				SET status = 'consumed', consumed_at = $8
+				WHERE approval_id = $1 AND decision_id = $2 AND agent_id = $3
+				  AND capability = $4 AND policy_id = $5 AND policy_version = $6
+				  AND artifact_hash = $7 AND status = 'approved'
+				  AND (expires_at IS NULL OR expires_at > $8)
+				RETURNING approval_id`,
+				approval.ID, approval.DecisionID, approval.AgentID, string(approval.Capability),
+				approval.PolicyID, approval.PolicyVersion, approval.ArtifactHash, at).Scan(&consumedID)
+			if errors.Is(err, pgx.ErrNoRows) {
+				_ = tx.Rollback(ctx)
+				return LedgerEvent{}, 0, ErrRepositoryConflict
+			}
+			if err != nil {
+				_ = tx.Rollback(ctx)
+				return LedgerEvent{}, 0, postgresRepositoryError(err)
+			}
 		}
 
 		var previousHash string
