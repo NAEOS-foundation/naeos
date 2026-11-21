@@ -42,7 +42,7 @@ The Social Media Kit README now points to these repository-level packages and cl
 ### Still missing from this kit / pending validation
 
 - Seven template-render PNG previews and a Social Media Kit-specific contact sheet are not confirmed in the kit folder.
-- Hash/provenance comparison between kit-local SVG and canonical Master v2.0.0 still needs direct file bytes.
+- **SVG source equivalence verified:** fetched kit-local `assets/naeos-primary-symbol-v2.svg` and canonical `brand/master/naeos-primary-symbol-master-v2.svg` contain identical SVG text (including viewBox, gradients, paths, title/desc). This establishes content equivalence for the fetched text files.
 - Raster decode, dimensions, transparency, visual rendering, crop/safe-area validation remain pending direct inspection.
 
 These are release-candidate validation gaps, not missing repository-level logo/avatar exports.
