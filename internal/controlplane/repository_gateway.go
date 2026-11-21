@@ -38,6 +38,9 @@ func (g *RepositoryDecisionGateway) Authorize(ctx context.Context, req Authorize
 		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "repository gateway unavailable"}, ErrRepositoryUnavailable
 	}
 	service := NewAuthorizationDecisionService(g.Policies, g.Grants, g.Approvals, g.Ledger)
+	if g.Evaluator != nil {
+		service.Evaluator = g.Evaluator
+	}
 	return service.Authorize(ctx, req)
 }
 
