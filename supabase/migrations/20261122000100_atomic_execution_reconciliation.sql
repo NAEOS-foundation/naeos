@@ -1,3 +1,12 @@
+-- Index the event stream lookup performed by the reconciliation guard and
+-- enforce at most one durable reconciliation event per execution ID.
+CREATE INDEX IF NOT EXISTS ledger_events_execution_id_type_idx
+  ON naeos_control_plane.ledger_events (execution_id, event_type)
+  WHERE execution_id <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS ledger_events_single_reconciliation_idx
+  ON naeos_control_plane.ledger_events (execution_id)
+  WHERE execution_id <> '' AND event_type = 'EXECUTION_RECONCILED';
+
 -- Atomic, append-only reconciliation for ambiguous execution outcomes.
 -- Apply only to isolated staging until the explicit production cutover gate.
 -- The function serializes on ledger_head and revalidates the execution binding
