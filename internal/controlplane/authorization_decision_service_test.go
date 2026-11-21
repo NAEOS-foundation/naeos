@@ -142,7 +142,7 @@ func decisionServiceApprovedFixture(t *testing.T, decisionID, approvalID string,
 		ID: approvalID, DecisionID: decisionID, AgentID: req.AgentID,
 		Capability: req.Action.Capability, PolicyID: "decision-service-policy",
 		PolicyVersion: 1, Approver: "reviewer@example.test", Status: "pending",
-		CreatedAt: req.Timestamp.Add(-time.Minute), ExpiresAt: expiresAt,
+		CreatedAt: req.Timestamp.Add(-time.Minute), ExpiresAt: req.Timestamp.Add(time.Hour),
 		ArtifactHash: req.Action.ArtifactHash,
 	}
 	if err := repository.Create(context.Background(), approval); err != nil {
@@ -150,6 +150,13 @@ func decisionServiceApprovedFixture(t *testing.T, decisionID, approvalID string,
 	}
 	if _, err := repository.Transition(context.Background(), approvalID, "pending", "approved", req.Timestamp); err != nil {
 		t.Fatal(err)
+	}
+	if !expiresAt.IsZero() {
+		store.mu.Lock()
+		approval = store.approvals[approvalID]
+		approval.ExpiresAt = expiresAt
+		store.approvals[approvalID] = approval
+		store.mu.Unlock()
 	}
 	service.Approvals = repository
 	req.DecisionID, req.ApprovalID = decisionID, approvalID
