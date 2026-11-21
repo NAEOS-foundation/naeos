@@ -111,6 +111,11 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 				result.Message = "approval validated against durable repository"
 			}
 		}
+		}
+		if result.Status == DecisionIndeterminate {
+			result.DecisionID = ""
+			return result, fmt.Errorf("approval validation indeterminate: %s", result.Message)
+		}
 	}
 
 	event := LedgerEvent{
