@@ -295,7 +295,6 @@ func TestRepositoryDecisionGatewayConcurrentExecuteHasSingleWinner(t *testing.T)
 	}
 }
 
-
 func TestRepositoryDecisionGatewayRejectsMismatchedApprovalBeforeExecutionIntent(t *testing.T) {
 	gateway, req := repositoryGatewayFixture(t)
 	result, err := gateway.Authorize(context.Background(), req)
