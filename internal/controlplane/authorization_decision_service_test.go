@@ -230,6 +230,14 @@ func TestAuthorizationDecisionServiceApprovalRepositoryOutageIsIndeterminateWith
 	service, req, ledger := decisionServiceFixture(t, true)
 	service.Approvals = unavailableApprovalRepository{}
 	req.DecisionID, req.ApprovalID = "stable-decision-id", "approval-unavailable"
+	if _, _, err := ledger.Append(context.Background(), LedgerEvent{
+		Timestamp: req.Timestamp, RequestID: req.RequestID, DecisionID: req.DecisionID,
+		AgentID: req.AgentID, Capability: req.Action.Capability, ArtifactHash: req.Action.ArtifactHash,
+		EventType: "AUTHORIZATION_DECISION", Decision: DecisionPending,
+		Metadata: map[string]string{"policy_id": "decision-service-policy", "policy_version": "1"},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	result, err := service.Authorize(context.Background(), req)
 	if err == nil || result.Status != DecisionIndeterminate {
 		t.Fatalf("result = %+v, err=%v; want INDETERMINATE with error", result, err)

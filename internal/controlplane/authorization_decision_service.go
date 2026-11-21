@@ -104,7 +104,8 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 				canonical.Metadata["policy_id"] != grant.PolicyID ||
 				canonical.Metadata["policy_version"] != fmt.Sprintf("%d", grant.PolicyVersion) ||
 				(canonical.Decision != DecisionPending && canonical.Decision != DecisionAllow):
-				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval does not match the canonical request decision"
+				result.Status, result.DecisionID, result.Reason = DecisionDeny, "", ReasonDeniedByPolicy
+				result.Message = "approval does not match the canonical request decision"
 			}
 			if result.Status == DecisionIndeterminate {
 				result.DecisionID = ""
