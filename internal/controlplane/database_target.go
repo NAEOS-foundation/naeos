@@ -11,7 +11,7 @@ import (
 
 const (
 	controlPlaneProductionProjectRef = "oruykkehukoiipldzcvc"
-	controlPlaneStagingProjectRef   = "kqmhpsftijskesjdovjm"
+	controlPlaneStagingProjectRef    = "kqmhpsftijskesjdovjm"
 )
 
 // validateControlPlaneDatabaseTarget binds each runtime environment to its
