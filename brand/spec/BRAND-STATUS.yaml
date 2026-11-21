@@ -1,0 +1,36 @@
+# Brand System Status Registry
+
+**Registry version:** 1.0  
+**Status:** Proposed registry — review required  
+**Canonical logo master:** v2.0.0
+
+This registry intentionally uses per-subsystem states. A frozen logo master does not imply that every brand deliverable is frozen or approved.
+
+| Subsystem | Status | Authority / evidence | Next action |
+|---|---|---|---|
+| Original visual source | Frozen / immutable | source-of-truth README | Preserve |
+| Logo Master v2.0.0 | Approved / frozen | brand/docs README | Preserve; derivatives only |
+| Logo derivatives | Mixed verified | Asset Manifest | Audit current production consumers |
+| Positioning | Baseline documented | docs/SOCIAL-IDENTITY.md | Synchronize profiles and review wording |
+| Color tokens | Draft / reconcile | brand.json, brand.css, guideline | Verify master gradient + actual UI; ratify semantic tokens |
+| Typography | Draft / reconcile | brand.json vs guideline/social kit | Confirm fonts, licenses, availability, fallbacks |
+| Guidelines v1.1 | Draft | BRAND-GUIDELINES-v1.1.md | Ratification review |
+| Social Media Kit v1.0 | Draft | social README/register | Validate visual, safe areas, exports |
+| Binary asset publication | Partial / pending | Asset manifest + extraction register | Publish individual files, verify dimensions/checksums |
+| Product design system | Not verified as unified | Product implementation required | Inventory website, CRM, dashboard |
+| Brand CI | Not established/verified | Repository evidence not yet audited exhaustively | Add validation workflow and tests |
+
+## State definitions
+
+- **Draft:** authoring, not production approved.
+- **Review:** evidence and visual review underway.
+- **Approved:** explicitly approved for the intended scope.
+- **Frozen:** immutable artifact/source; changes require new version and approval.
+- **Implemented:** present in target code/product.
+- **Verified:** checked against explicit validation criteria.
+- **Published:** release artifacts are present and available at the intended destination.
+- **Deprecated:** superseded; retained for traceability.
+
+## Status transition rule
+
+No status may be promoted without evidence or approval appropriate to that status. Asset presence alone is not proof of visual quality; documentation alone is not proof of implementation.
