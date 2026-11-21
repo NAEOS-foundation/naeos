@@ -3,6 +3,9 @@
 CREATE INDEX IF NOT EXISTS ledger_events_execution_id_type_idx
   ON naeos_control_plane.ledger_events (execution_id, event_type)
   WHERE execution_id <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS ledger_events_single_execution_start_idx
+  ON naeos_control_plane.ledger_events (execution_id)
+  WHERE execution_id <> '' AND event_type = 'EXECUTION_STARTED';
 CREATE UNIQUE INDEX IF NOT EXISTS ledger_events_single_reconciliation_idx
   ON naeos_control_plane.ledger_events (execution_id)
   WHERE execution_id <> '' AND event_type = 'EXECUTION_RECONCILED';
@@ -20,7 +23,7 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog
 AS $function$
 BEGIN
-  IF NEW.event_type IN ('EXECUTION_ALLOWED', 'EXECUTION_UNKNOWN', 'EXECUTION_RECONCILED')
+  IF NEW.event_type IN ('EXECUTION_STARTED', 'EXECUTION_ALLOWED', 'EXECUTION_UNKNOWN', 'EXECUTION_RECONCILED')
      AND NEW.execution_id <> ''
      AND EXISTS (
        SELECT 1
@@ -37,6 +40,9 @@ $function$;
 CREATE TRIGGER execution_outcome_after_reconciliation_guard
 BEFORE INSERT ON naeos_control_plane.ledger_events
 FOR EACH ROW EXECUTE FUNCTION naeos_control_plane.reject_execution_outcome_after_reconciliation();
+
+REVOKE ALL ON FUNCTION naeos_control_plane.reject_execution_outcome_after_reconciliation()
+  FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION naeos_control_plane.reconcile_execution(
   p_execution_id TEXT,
