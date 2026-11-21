@@ -470,9 +470,11 @@ func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 		t.Fatalf("verify reconciled ledger: %v", err)
 	}
 	reconciliations := 0
+	var committedReconciliation LedgerEvent
 	for _, event := range events {
 		if event.ExecutionID == start.ExecutionID && event.EventType == "EXECUTION_RECONCILED" {
 			reconciliations++
+			committedReconciliation = event
 			if event.Metadata["reconciler_id"] != "operator-test" ||
 				event.Metadata["evidence_ref"] != "evidence://verified/"+suffix ||
 				event.Metadata["reconciliation_outcome"] != string(ExecutionOutcomeCommitted) {
@@ -482,6 +484,13 @@ func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 	}
 	if reconciliations != 1 {
 		t.Fatalf("durable reconciliation count=%d; want exactly one", reconciliations)
+	}
+	replayed, replaySequence, err := repository.ReconcileExecution(
+		ctx, start.ExecutionID, ExecutionOutcomeCommitted,
+		"evidence://verified/"+suffix, "operator-test", time.Now().UTC(),
+	)
+	if err != nil || replayed.ID != committedReconciliation.ID || replaySequence < 1 {
+		t.Fatalf("idempotent reconciliation replay = (%+v, %d, %v)", replayed, replaySequence, err)
 	}
 	lateReceipt := LedgerEvent{
 		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
