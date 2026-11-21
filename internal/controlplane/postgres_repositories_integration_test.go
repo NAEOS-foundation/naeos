@@ -6,6 +6,7 @@ package controlplane
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
 	"sync"
@@ -399,6 +400,30 @@ func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 	}
 	if event, _, err := repository.Append(ctx, unknown); err != nil || event.ID == "" {
 		t.Fatalf("append unknown outcome = (%+v, %v)", event, err)
+	}
+
+	// The SQL append function itself must reject reconciliation events; callers
+	// cannot bypass the dedicated atomic reconciliation workflow.
+	var previousHash string
+	if err := pool.QueryRow(ctx, `SELECT event_hash FROM naeos_control_plane.read_ledger_head()`).Scan(&previousHash); err != nil {
+		t.Fatalf("read ledger head for bypass test: %v", err)
+	}
+	bypass := LedgerEvent{
+		ID: controlPlaneID("EVT"), Timestamp: time.Now().UTC(), RequestID: start.RequestID,
+		DecisionID: start.DecisionID, ExecutionID: start.ExecutionID, AgentID: start.AgentID,
+		Capability: start.Capability, ArtifactHash: start.ArtifactHash,
+		EventType: "EXECUTION_RECONCILED", Decision: DecisionUnknown,
+		Metadata: map[string]string{"reconciliation_outcome": string(ExecutionOutcomeCommitted), "evidence_ref": "evidence://bypass", "reconciler_id": "operator-bypass"},
+	}
+	bypass.PreviousHash = previousHash
+	bypass.EventHash = hashLedgerEvent(bypass)
+	bypassPayload, err := json.Marshal(bypass)
+	if err != nil {
+		t.Fatalf("marshal bypass reconciliation: %v", err)
+	}
+	var bypassSequence int64
+	if err := pool.QueryRow(ctx, `SELECT naeos_control_plane.append_ledger_event($1::jsonb, $2, $3)`, bypassPayload, previousHash, bypass.EventHash).Scan(&bypassSequence); err == nil {
+		t.Fatal("generic SQL append function must reject reconciliation events")
 	}
 
 	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeCommitted, "", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
