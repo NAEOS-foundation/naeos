@@ -124,7 +124,6 @@ func TestAuthorizationDecisionServiceEvaluatorFailureHasNoDecisionOrExecutionCla
 	}
 }
 
-
 type unavailableApprovalRepository struct {
 	ApprovalRepository
 }
