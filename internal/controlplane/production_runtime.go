@@ -25,21 +25,29 @@ type productionTokenValidator interface {
 
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
+// ExecutionEvidenceVerifier resolves and verifies immutable authoritative evidence
+// for an execution outcome. Returning an empty reference or an error is fail-closed.
+type ExecutionEvidenceVerifier interface {
+	VerifyExecutionEvidence(context.Context, string, ExecutionOutcome, string) (string, error)
+}
+
 type productionLedgerReader interface {
 	Load(context.Context) ([]LedgerEvent, error)
 }
 
 type ProductionRuntime struct {
-	environment  string
-	pool         *pgxpool.Pool
-	ledgerReader productionLedgerReader
-	sqlDB        *sql.DB
-	Policies     *PostgresPolicyRepository
-	Grants       *PostgresGrantRepository
-	Approvals    *PostgresApprovalRepository
-	Ledger       *PostgresLedger
-	identity     productionTokenValidator
-	gateway      *RepositoryDecisionGateway
+	environment      string
+	pool             *pgxpool.Pool
+	ledgerReader     productionLedgerReader
+	sqlDB            *sql.DB
+	Policies         *PostgresPolicyRepository
+	Grants           *PostgresGrantRepository
+	Approvals        *PostgresApprovalRepository
+	Ledger           *PostgresLedger
+	identity         productionTokenValidator
+	gateway          *RepositoryDecisionGateway
+	reconciler       ExecutionReconciliationRepository
+	evidenceVerifier ExecutionEvidenceVerifier
 }
 
 // OpenProductionRuntime validates the environment-specific Supabase target and connection contract, opens bounded pools,
@@ -116,6 +124,16 @@ func OpenProductionRuntime(ctx context.Context, databaseURL, environment string)
 		Approvals: NewPostgresApprovalRepository(sqlDB),
 		Ledger:    ledger,
 	}, nil
+}
+
+// ConfigureExecutionEvidenceVerifier installs the authoritative evidence verifier.
+// Reconciliation remains unavailable until this dependency is configured.
+func (r *ProductionRuntime) ConfigureExecutionEvidenceVerifier(verifier ExecutionEvidenceVerifier) error {
+	if r == nil || verifier == nil {
+		return errors.New("execution evidence verifier is required")
+	}
+	r.evidenceVerifier = verifier
+	return nil
 }
 
 // Close releases both PostgreSQL pools. Call it during graceful shutdown.
@@ -212,17 +230,18 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		to_regclass('naeos_control_plane.ledger_head') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_events') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
-		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL`
-	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, appendFn, headFn bool
+		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL,
+		to_regprocedure('naeos_control_plane.reconcile_execution(text,jsonb)') IS NOT NULL`
+	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, appendFn, headFn, reconcileFn bool
 	if pool == nil {
 		return errors.New("control plane schema compatibility check failed")
 	}
 	if err := pool.QueryRow(ctx, required).Scan(
-		&policyVersions, &activePolicies, &grants, &approvals, &ledgerHead, &ledgerEvents, &appendFn, &headFn,
+		&policyVersions, &activePolicies, &grants, &approvals, &ledgerHead, &ledgerEvents, &appendFn, &headFn, &reconcileFn,
 	); err != nil {
 		return errors.New("control plane schema compatibility check failed")
 	}
-	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerHead || !ledgerEvents || !appendFn || !headFn {
+	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerHead || !ledgerEvents || !appendFn || !headFn || !reconcileFn {
 		return errors.New("control plane schema is missing required tables or functions")
 	}
 	return nil

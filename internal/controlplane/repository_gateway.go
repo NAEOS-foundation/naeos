@@ -34,100 +34,14 @@ func NewRepositoryDecisionGateway(policies PolicyRepository, grants GrantReposit
 // Authorize resolves the canonical grant and policy, evaluates the request, and
 // returns a usable decision only after its evidence append has committed.
 func (g *RepositoryDecisionGateway) Authorize(ctx context.Context, req AuthorizeRequest) (DecisionResult, error) {
-	if ctx == nil || ctx.Err() != nil {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "authorization context unavailable"}, contextError(ctx)
+	if g == nil {
+		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "repository gateway unavailable"}, ErrRepositoryUnavailable
 	}
-	if g == nil || g.Policies == nil || g.Grants == nil || g.Ledger == nil || g.Evaluator == nil {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, Message: "repository gateway dependencies unavailable"}, ErrRepositoryUnavailable
+	service := NewAuthorizationDecisionService(g.Policies, g.Grants, g.Approvals, g.Ledger)
+	if g.Evaluator != nil {
+		service.Evaluator = g.Evaluator
 	}
-	now := req.Timestamp.UTC()
-	if req.Timestamp.IsZero() {
-		now = time.Now().UTC()
-	}
-	requestID := req.RequestID
-	if requestID == "" {
-		requestID = controlPlaneID("REQ")
-	}
-	action := normalizeRequest(req.Action)
-	if req.AgentID == "" || action.AgentID != req.AgentID || action.Capability == "" {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, RequestID: requestID, AgentID: req.AgentID, Requested: action.Capability, Message: "request and action agent/capability bindings are required"}, ErrRepositoryIntegrity
-	}
-
-	grant, err := g.Grants.GetByAgent(ctx, req.AgentID)
-	if err != nil {
-		status, reason := DecisionIndeterminate, ReasonEvaluationFailed
-		if errors.Is(err, ErrRepositoryNotFound) || errors.Is(err, ErrRepositoryConflict) {
-			status, reason = DecisionDeny, ReasonDeniedByGrant
-		}
-		return DecisionResult{Status: status, Reason: reason, RequestID: requestID, AgentID: req.AgentID, Requested: action.Capability, Message: fmt.Sprintf("resolve canonical grant: %v", err)}, err
-	}
-	if grant.AgentID != req.AgentID || grant.GrantID == "" || grant.PolicyID == "" || grant.PolicyVersion < 1 {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, RequestID: requestID, AgentID: req.AgentID, Requested: action.Capability, Message: "canonical grant bindings failed integrity validation"}, ErrRepositoryIntegrity
-	}
-
-	active, err := g.Policies.Active(ctx, grant.PolicyID)
-	if err != nil {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, RequestID: requestID, AgentID: req.AgentID, Requested: action.Capability, Message: fmt.Sprintf("resolve active policy: %v", err)}, err
-	}
-	if active == nil || active.ID != grant.PolicyID || active.Status != "active" {
-		return DecisionResult{Status: DecisionIndeterminate, Reason: ReasonEvaluationFailed, RequestID: requestID, AgentID: req.AgentID, Requested: action.Capability, Message: "active policy repository response failed integrity validation"}, ErrRepositoryIntegrity
-	}
-
-	auth := AuthorizationContext{PolicyID: grant.PolicyID, PolicyVersion: grant.PolicyVersion, Grant: &grant, Now: now}
-	result := g.Evaluator.Evaluate(ctx, auth, action)
-	result.RequestID, result.AgentID, result.ArtifactHash = requestID, req.AgentID, action.ArtifactHash
-	if req.DecisionID != "" {
-		result.DecisionID = req.DecisionID
-	} else {
-		result.DecisionID = controlPlaneID("DEC")
-	}
-
-	if result.Status == DecisionPending && req.ApprovalID != "" {
-		if g.Approvals == nil {
-			result.Status, result.Reason, result.Message = DecisionIndeterminate, ReasonEvaluationFailed, "approval repository unavailable"
-		} else {
-			approval, approvalErr := g.Approvals.Get(ctx, req.ApprovalID)
-			switch {
-			case approvalErr != nil:
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval repository lookup failed"
-				if errors.Is(approvalErr, ErrRepositoryNotFound) || errors.Is(approvalErr, ErrRepositoryConflict) {
-					result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
-					result.Message = "approval is missing or no longer consumable"
-				}
-			case approval.ID != req.ApprovalID || approval.DecisionID != result.DecisionID ||
-				approval.AgentID != req.AgentID || approval.Capability != action.Capability ||
-				approval.PolicyID != grant.PolicyID || approval.PolicyVersion != grant.PolicyVersion ||
-				approval.ArtifactHash != action.ArtifactHash:
-				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval binding does not match the requested decision and artifact"
-			case !approval.IsValid(now):
-				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval is not approved or has expired"
-			default:
-				result.Status, result.Reason, result.NeedsApproval = DecisionAllow, ReasonAllowed, false
-				result.Message = "approval validated against durable repository"
-			}
-		}
-	}
-
-	event := LedgerEvent{
-		Timestamp: now, RequestID: requestID, DecisionID: result.DecisionID,
-		AgentID: req.AgentID, Capability: action.Capability, ArtifactHash: action.ArtifactHash,
-		EventType: "AUTHORIZATION_DECISION", Decision: result.Status, Reason: result.Reason,
-		Metadata: map[string]string{
-			"policy_id": grant.PolicyID, "policy_version": fmt.Sprintf("%d", grant.PolicyVersion),
-			"grant_id": grant.GrantID,
-		},
-	}
-	committed, _, err := g.Ledger.Append(ctx, event)
-	if err != nil || committed.ID == "" {
-		result.Status, result.DecisionID, result.Reason = DecisionIndeterminate, "", ReasonEvaluationFailed
-		result.Message = "authorization evidence append failed; decision is not usable"
-		if err != nil {
-			return result, err
-		}
-		return result, ErrRepositoryUnavailable
-	}
-	return result, nil
+	return service.Authorize(ctx, req)
 }
 
 // Execute persists an execution intent before calling the external side effect.
@@ -211,15 +125,60 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 		return result, LedgerEvent{}, ErrRepositoryConflict
 	}
 
+	// Revalidate the exact approval at the execution boundary. ApprovalID is
+	// caller-controlled input and may differ from the one checked at Authorize.
+	// The approved row is then consumed atomically with the execution intent.
+	var approvedApproval *Approval
+	if req.ApprovalID != "" {
+		if g.Approvals == nil {
+			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+			result.Message = "approval repository unavailable; side effect was not invoked"
+			return result, LedgerEvent{}, ErrRepositoryUnavailable
+		}
+		approval, approvalErr := g.Approvals.Get(ctx, req.ApprovalID)
+		if approvalErr != nil {
+			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+			result.Message = "approval could not be revalidated at execution boundary"
+			if errors.Is(approvalErr, ErrRepositoryNotFound) || errors.Is(approvalErr, ErrRepositoryConflict) {
+				result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+				result.Message = "approval is missing or no longer consumable"
+			}
+			return result, LedgerEvent{}, approvalErr
+		}
+		if approval.ID != req.ApprovalID || approval.DecisionID != canonical.DecisionID ||
+			approval.AgentID != req.AgentID || approval.Capability != req.Action.Capability ||
+			approval.PolicyID != policyID || approval.PolicyVersion != policyVersion ||
+			approval.ArtifactHash != req.Action.ArtifactHash || !approval.IsValid(time.Now().UTC()) {
+			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+			result.Message = "approval is not valid for this canonical execution request"
+			return result, LedgerEvent{}, ErrRepositoryConflict
+		}
+		approvedApproval = &approval
+	}
+
 	executionID := controlPlaneID("EXEC")
+	intentMetadata := map[string]string{"policy_id": policyID, "policy_version": fmt.Sprintf("%d", policyVersion), "grant_id": grant.GrantID}
+	if req.ApprovalID != "" {
+		intentMetadata["approval_id"] = req.ApprovalID
+	}
 	intent := LedgerEvent{
 		Timestamp: time.Now().UTC(), RequestID: result.RequestID, DecisionID: result.DecisionID,
 		ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
 		ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_STARTED",
-		Decision: DecisionAllow, Reason: result.Reason,
-		Metadata: map[string]string{"policy_id": policyID, "policy_version": fmt.Sprintf("%d", policyVersion), "grant_id": grant.GrantID},
+		Decision: DecisionAllow, Reason: result.Reason, Metadata: intentMetadata,
 	}
-	started, _, err := g.Ledger.Append(ctx, intent)
+	var started LedgerEvent
+	atomicClaims, ok := g.Ledger.(AtomicExecutionClaimRepository)
+	if !ok {
+		result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+		result.Message = "atomic policy/grant execution claim is unsupported; side effect was not invoked"
+		return result, LedgerEvent{}, ErrRepositoryUnavailable
+	}
+	approvalToConsume := Approval{}
+	if approvedApproval != nil {
+		approvalToConsume = *approvedApproval
+	}
+	started, _, err = atomicClaims.ClaimExecution(ctx, intent, approvalToConsume, time.Now().UTC())
 	if err != nil {
 		if errors.Is(err, ErrRepositoryConflict) {
 			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
@@ -234,38 +193,6 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 		result.Status, result.DecisionID, result.Reason = DecisionIndeterminate, "", ReasonEvaluationFailed
 		result.Message = "durable execution intent returned no committed event; side effect was not invoked"
 		return result, LedgerEvent{}, ErrRepositoryUnavailable
-	}
-
-	if req.ApprovalID != "" {
-		if g.Approvals == nil {
-			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-			result.Message = "approval repository unavailable after intent commit; execution requires reconciliation"
-			return result, started, ErrRepositoryUnavailable
-		}
-		if _, err := g.Approvals.Transition(ctx, req.ApprovalID, "approved", "consumed", time.Now().UTC()); err != nil {
-			if !errors.Is(err, ErrRepositoryNotFound) && !errors.Is(err, ErrRepositoryConflict) {
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval consumption could not be verified; execution intent requires reconciliation"
-				return result, started, err
-			}
-			blocked, _, appendErr := g.Ledger.Append(ctx, LedgerEvent{
-				Timestamp: time.Now().UTC(), RequestID: result.RequestID, DecisionID: result.DecisionID,
-				ExecutionID: executionID, AgentID: req.AgentID, Capability: req.Action.Capability,
-				ArtifactHash: req.Action.ArtifactHash, EventType: "EXECUTION_BLOCKED", Decision: DecisionDeny,
-				Reason: ReasonDeniedByPolicy, Metadata: map[string]string{"approval_error": err.Error()},
-			})
-			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
-			result.Message = "approval was missing or already consumed; side effect was not invoked"
-			if appendErr != nil || blocked.ID == "" {
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval rejection evidence append failed; reconcile execution intent"
-				if appendErr != nil {
-					return result, started, appendErr
-				}
-				return result, started, ErrRepositoryUnavailable
-			}
-			return result, blocked, err
-		}
 	}
 
 	if err := sideEffect(ctx); err != nil {
