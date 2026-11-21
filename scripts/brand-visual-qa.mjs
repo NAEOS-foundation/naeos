@@ -45,7 +45,9 @@ try {
     await fs.mkdir(path.dirname(output),{recursive:true});
     if(!issues.includes('missing/invalid canvas dimensions')) {
       const page=await browser.newPage({viewport:{width:Math.ceil(dim.width),height:Math.ceil(dim.height)},deviceScaleFactor:1});
-      await page.setContent('<!doctype html><html><head><style>html,body{margin:0;padding:0;width:'+dim.width+'px;height:'+dim.height+'px;overflow:hidden;background:transparent}</style></head><body>'+svg+'</body></html>',{waitUntil:'load'});
+      const svgData = Buffer.from(svg, 'utf8').toString('base64');
+      await page.setContent('<!doctype html><html><head><style>html,body{margin:0;padding:0;width:'+dim.width+'px;height:'+dim.height+'px;overflow:hidden;background:transparent}img{display:block;width:'+dim.width+'px;height:'+dim.height+'px}</style></head><body><img alt="SVG preview" src="data:image/svg+xml;base64,'+svgData+'"></body></html>',{waitUntil:'load'});
+      await page.locator('img').evaluate(img => img.decode());
       await page.screenshot({path:output,omitBackground:true});
       await page.close();
     }
