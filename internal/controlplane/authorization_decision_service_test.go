@@ -180,8 +180,15 @@ func TestAuthorizationDecisionServiceValidApprovalAllowsDecisionOnly(t *testing.
 	if result.Status != DecisionAllow || result.DecisionID != req.DecisionID {
 		t.Fatalf("result = %+v; want ALLOW bound to stable decision ID", result)
 	}
-	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 1 {
-		t.Fatalf("authorization evidence = %d; want 1", got)
+	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 2 {
+		t.Fatalf("authorization evidence = %d; want pending and approved decision events", got)
+	}
+	canonical, lookupErr := ledger.Decision(context.Background(), req.DecisionID)
+	if lookupErr != nil {
+		t.Fatalf("resolve latest canonical decision: %v", lookupErr)
+	}
+	if canonical.Decision != DecisionAllow {
+		t.Fatalf("latest canonical decision = %s; want ALLOW", canonical.Decision)
 	}
 	if got := ledger.countType("EXECUTION_STARTED"); got != 0 {
 		t.Fatalf("execution claims = %d; want 0; ALLOW is decision evidence only", got)
