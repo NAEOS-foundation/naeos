@@ -223,7 +223,7 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 
 	rollbackApproval := Approval{
 		ID: "approval-rollback-" + suffix, DecisionID: atomicApproval.DecisionID,
-		AgentID: agentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
 		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
 		ExpiresAt: now.Add(time.Hour), ArtifactHash: atomicApproval.ArtifactHash,
 	}
@@ -236,7 +236,7 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	rollbackIntent := LedgerEvent{
 		Timestamp: now.Add(6 * time.Second), RequestID: "request-" + suffix,
 		DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
-		AgentID: agentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+		AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
 		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
 		Metadata: map[string]string{"approval_id": rollbackApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
 	}
@@ -246,6 +246,80 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	unchangedApproval, err := approvals.Get(ctx, rollbackApproval.ID)
 	if err != nil || unchangedApproval.Status != "approved" {
 		t.Fatalf("approval after rolled-back claim = (%+v, %v); want still approved", unchangedApproval, err)
+	}
+
+	// A revocation that commits before the claim must fence execution.
+	if err := grants.Revoke(ctx, atomicGrant.GrantID, "integration test revocation before claim", now.Add(7*time.Second)); err != nil {
+		t.Fatalf("revoke atomic grant before claim: %v", err)
+	}
+	revokedApproval := Approval{
+		ID: "approval-revoked-" + suffix, DecisionID: "decision-revoked-" + suffix,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:revoked-" + suffix,
+	}
+	if err := approvals.Create(ctx, revokedApproval); err != nil {
+		t.Fatalf("create revoked-grant approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, revokedApproval.ID, "pending", "approved", now.Add(8*time.Second)); err != nil {
+		t.Fatalf("approve revoked-grant approval: %v", err)
+	}
+	revokedIntent := LedgerEvent{
+		Timestamp: now.Add(9 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: revokedApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: revokedApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": revokedApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, revokedIntent, revokedApproval, now.Add(9*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("claim with revoked grant error = %v; want conflict", err)
+	}
+	stillApproved, err := approvals.Get(ctx, revokedApproval.ID)
+	if err != nil || stillApproved.Status != "approved" {
+		t.Fatalf("approval after revoked-grant claim = (%+v, %v); want approved", stillApproved, err)
+	}
+
+	// Advancing the active policy version before claim must reject the stale decision.
+	staleAgentID := "agent-stale-policy-" + suffix
+	staleGrant := Grant{
+		GrantID: "grant-stale-policy-" + suffix, AgentID: staleAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, staleGrant); err != nil {
+		t.Fatalf("create stale-policy grant: %v", err)
+	}
+	staleApproval := Approval{
+		ID: "approval-stale-policy-" + suffix, DecisionID: "decision-stale-policy-" + suffix,
+		AgentID: staleAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:stale-policy-" + suffix,
+	}
+	if err := approvals.Create(ctx, staleApproval); err != nil {
+		t.Fatalf("create stale-policy approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, staleApproval.ID, "pending", "approved", now.Add(10*time.Second)); err != nil {
+		t.Fatalf("approve stale-policy approval: %v", err)
+	}
+	policyV2 := clonePolicy(policy)
+	policyV2.Version = 2
+	policyV2.CreatedAt = now.Add(11 * time.Second)
+	policyV2.UpdatedAt = now.Add(11 * time.Second)
+	if err := policies.PutVersion(ctx, policyV2); err != nil {
+		t.Fatalf("activate policy version 2: %v", err)
+	}
+	staleIntent := LedgerEvent{
+		Timestamp: now.Add(12 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: staleApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: staleAgentID, Capability: "repo.read", ArtifactHash: staleApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": staleApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": staleGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, staleIntent, staleApproval, now.Add(12*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("claim with stale policy error = %v; want conflict", err)
+	}
+	staleStillApproved, err := approvals.Get(ctx, staleApproval.ID)
+	if err != nil || staleStillApproved.Status != "approved" {
+		t.Fatalf("approval after stale-policy claim = (%+v, %v); want approved", staleStillApproved, err)
 	}
 
 	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
