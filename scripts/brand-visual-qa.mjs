@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
