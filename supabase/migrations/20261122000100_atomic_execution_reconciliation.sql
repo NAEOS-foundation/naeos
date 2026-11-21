@@ -12,6 +12,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS ledger_events_single_reconciliation_idx
 -- The function serializes on ledger_head and revalidates the execution binding
 -- while holding that lock, so concurrent reconcilers cannot both succeed.
 
+-- Once reconciliation is committed, no later provider receipt or UNKNOWN
+-- observation may contradict that terminal operator decision.
+CREATE OR REPLACE FUNCTION naeos_control_plane.reject_execution_outcome_after_reconciliation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = pg_catalog
+AS $function$
+BEGIN
+  IF NEW.event_type IN ('EXECUTION_ALLOWED', 'EXECUTION_UNKNOWN', 'EXECUTION_RECONCILED')
+     AND NEW.execution_id <> ''
+     AND EXISTS (
+       SELECT 1
+       FROM naeos_control_plane.ledger_events existing
+       WHERE existing.execution_id = NEW.execution_id
+         AND existing.event_type = 'EXECUTION_RECONCILED'
+     ) THEN
+    RAISE EXCEPTION 'execution already reconciled; later outcome events are forbidden';
+  END IF;
+  RETURN NEW;
+END
+$function$;
+
+CREATE TRIGGER execution_outcome_after_reconciliation_guard
+BEFORE INSERT ON naeos_control_plane.ledger_events
+FOR EACH ROW EXECUTE FUNCTION naeos_control_plane.reject_execution_outcome_after_reconciliation();
+
 CREATE OR REPLACE FUNCTION naeos_control_plane.reconcile_execution(
   p_execution_id TEXT,
   p_event JSONB
