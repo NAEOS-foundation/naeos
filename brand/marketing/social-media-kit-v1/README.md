@@ -210,3 +210,23 @@ Architecture Drives Engineering.
 
 #NAEOS #AIGovernance #AIEngineering #EngineeringGovernance #AgenticAI
 
+## Asset 006 — LinkedIn Company Banner Master
+
+- Source: `006-linkedin-company-banner-master.svg`
+- Canvas: 1584 × 396 (LinkedIn company banner proportions)
+- Format: editable SVG
+- Purpose: company-page header expressing NAEOS brand, positioning, and engineering tagline.
+- Primary copy: **NAEOS — The Intelligent Core**
+- Tagline: **Architecture Drives Engineering.**
+- Supporting descriptors: Governance / Engineering / Connected Systems
+- Logo: canonical Logo Master v2.0.0 geometry; exact master paths embedded.
+- Palette: canonical NAEOS tokens; typography uses Sora, Inter, and JetBrains Mono.
+
+### Reuse and production rules
+
+1. Duplicate the SVG before making campaign-specific edits.
+2. Keep the core company identity and tagline unless a deliberate approved brand update is intended.
+3. Check the banner crop against LinkedIn company-page display on desktop and mobile; ensure the logo and copy remain inside the central safe area.
+4. Inspect fonts, contrast, and logo fidelity. Export a raster version at the platform-required dimensions only after visual review.
+5. The SVG is an editable source master. Rendering and PNG export are not claimed as completed.
+
