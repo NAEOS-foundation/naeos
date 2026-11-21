@@ -3,7 +3,7 @@
 Requires cairosvg, Pillow. Outputs are generated artifacts, not release assets.
 """
 from __future__ import annotations
-import hashlib, json
+import base64, hashlib, json
 from pathlib import Path
 import cairosvg
 from PIL import Image, ImageDraw, ImageFont
@@ -32,11 +32,16 @@ def create_sheet(items):
     sheet.save(SHEET,format="PNG",optimize=True)
 def main():
     PREVIEWS.mkdir(parents=True,exist_ok=True); items=[]
+    logo_path=KIT/"assets"/"naeos-primary-symbol-v2.svg"
+    logo_data=base64.b64encode(logo_path.read_bytes()).decode("ascii")
+    logo_uri=f"data:image/svg+xml;base64,{logo_data}"
+    image_ref='href="../assets/naeos-primary-symbol-v2.svg"'
     for name in NAMES:
         source=TEMPLATES/name
         if not source.is_file(): raise FileNotFoundError(f"Missing template: {source}")
         output=PREVIEWS/(source.stem+".png")
-        cairosvg.svg2png(url=str(source),write_to=str(output))
+        svg_text=source.read_text(encoding="utf-8").replace(image_ref,f'href="{logo_uri}"')
+        cairosvg.svg2png(bytestring=svg_text.encode("utf-8"),write_to=str(output))
         with Image.open(output) as im: im.verify()
         with Image.open(output) as im:
             items.append({"source":source.relative_to(ROOT).as_posix(),"preview":output.relative_to(ROOT).as_posix(),"width":im.width,"height":im.height,"sha256":sha256(output)})
