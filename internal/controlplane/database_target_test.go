@@ -3,7 +3,7 @@
 
 package controlplane
 
-import "testing"
+import (\n\t"strings"\n\t"testing"\n)
 
 func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 	const productionURL = "postgres://naeos:secret@db.oruykkehukoiipldzcvc.supabase.co:5432/postgres?sslmode=require"
@@ -46,6 +46,41 @@ func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 			err := validateControlPlaneDatabaseTarget(tt.raw, tt.environment)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("validateControlPlaneDatabaseTarget() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidControlPlanePoolerRoleName(t *testing.T) {
+	valid := []string{
+		"a",
+		"postgres",
+		"_role",
+		"role_123",
+		strings.Repeat("a", 63),
+	}
+	for _, name := range valid {
+		t.Run("valid_"+name, func(t *testing.T) {
+			if !validControlPlanePoolerRoleName(name) {
+				t.Errorf("expected role name %q to be valid", name)
+			}
+		})
+	}
+
+	invalid := []string{
+		"",
+		"1role",
+		"-role",
+		"role-name",
+		"role.name",
+		"Role",
+		"strings.Repeat("a", 64)",
+		"érole",
+	}
+	for _, name := range invalid {
+		t.Run("invalid_"+name, func(t *testing.T) {
+			if validControlPlanePoolerRoleName(name) {
+				t.Errorf("expected role name %q to be invalid", name)
 			}
 		})
 	}
