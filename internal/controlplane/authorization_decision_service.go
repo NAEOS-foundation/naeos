@@ -130,4 +130,3 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 	}
 	return result, nil
 }
-
