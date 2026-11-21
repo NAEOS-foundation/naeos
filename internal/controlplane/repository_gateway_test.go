@@ -47,6 +47,12 @@ func (l *repositoryGatewayTestLedger) Append(ctx context.Context, event LedgerEv
 	return event, int64(len(l.events)), nil
 }
 
+// ClaimExecution provides the atomic-claim contract for this serialized test ledger.
+// Production policy/grant locking is covered by PostgreSQL integration tests.
+func (l *repositoryGatewayTestLedger) ClaimExecution(ctx context.Context, event LedgerEvent, approval Approval, now time.Time) (LedgerEvent, int64, error) {
+	return l.Append(ctx, event)
+}
+
 func (l *repositoryGatewayTestLedger) LoadVerified(ctx context.Context) ([]LedgerEvent, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
