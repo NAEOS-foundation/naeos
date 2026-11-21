@@ -3,7 +3,10 @@
 
 package controlplane
 
-import (\n\t"strings"\n\t"testing"\n)
+import (
+	"strings"
+	"testing"
+)
 
 func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 	const productionURL = "postgres://naeos:secret@db.oruykkehukoiipldzcvc.supabase.co:5432/postgres?sslmode=require"
