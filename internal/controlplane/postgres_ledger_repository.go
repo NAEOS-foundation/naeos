@@ -220,6 +220,115 @@ func (r *PostgresLedgerRepository) ClaimExecution(ctx context.Context, event Led
 	return LedgerEvent{}, 0, fmt.Errorf("%w: ledger head changed too frequently during execution claim", ErrRepositoryUnavailable)
 }
 
+// ReconcileExecution atomically appends an explicit outcome for an unresolved
+// execution. The SQL function rechecks all bindings and terminal state while
+// holding the global ledger-head lock; this Go-side read supplies the canonical
+// start-event fields but is never trusted as the final concurrency check.
+// reconcilerID must be supplied by an authenticated/authorized service boundary.
+func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, executionID string, outcome ExecutionOutcome, evidenceRef, reconcilerID string, at time.Time) (LedgerEvent, int64, error) {
+	if ctx == nil {
+		return LedgerEvent{}, 0, ErrRepositoryUnavailable
+	}
+	if err := ctx.Err(); err != nil {
+		return LedgerEvent{}, 0, err
+	}
+	if r == nil || r.ledger == nil || r.ledger.pool == nil {
+		return LedgerEvent{}, 0, ErrRepositoryUnavailable
+	}
+	if executionID == "" || evidenceRef == "" || reconcilerID == "" ||
+		(outcome != ExecutionOutcomeCommitted && outcome != ExecutionOutcomeNotCommitted) {
+		return LedgerEvent{}, 0, ErrRepositoryConflict
+	}
+
+	events, err := r.LoadVerified(ctx)
+	if err != nil {
+		return LedgerEvent{}, 0, err
+	}
+	var start LedgerEvent
+	found := false
+	for _, event := range events {
+		if event.ExecutionID != executionID {
+			continue
+		}
+		switch event.EventType {
+		case "EXECUTION_STARTED":
+			if !found {
+				start, found = event, true
+			}
+		case "EXECUTION_ALLOWED", "EXECUTION_RECONCILED":
+			return LedgerEvent{}, 0, ErrRepositoryConflict
+		}
+	}
+	if !found {
+		return LedgerEvent{}, 0, ErrRepositoryNotFound
+	}
+	if at.IsZero() {
+		at = time.Now().UTC()
+	} else {
+		at = at.UTC()
+	}
+
+	candidate := LedgerEvent{
+		ID: controlPlaneID("EVT"), Timestamp: at, RequestID: start.RequestID,
+		DecisionID: start.DecisionID, ExecutionID: executionID, AgentID: start.AgentID,
+		Capability: start.Capability, ArtifactHash: start.ArtifactHash,
+		EventType: "EXECUTION_RECONCILED", Decision: DecisionUnknown,
+		Reason: ReasonExecutionOutcomeUnknown,
+		Metadata: map[string]string{
+			"reconciliation_outcome": string(outcome),
+			"evidence_ref": evidenceRef,
+			"reconciler_id": reconcilerID,
+		},
+	}
+
+	const maxPredecessorRetries = 64
+	for attempt := 0; attempt < maxPredecessorRetries; attempt++ {
+		tx, err := r.ledger.pool.BeginTx(ctx, pgx.TxOptions{})
+		if err != nil {
+			return LedgerEvent{}, 0, fmt.Errorf("%w: begin execution reconciliation: %w", ErrRepositoryUnavailable, err)
+		}
+		var previousHash string
+		if err := tx.QueryRow(ctx, `SELECT event_hash
+			FROM naeos_control_plane.read_ledger_head()`).Scan(&previousHash); err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, postgresRepositoryError(err)
+		}
+		candidate.PreviousHash = previousHash
+		candidate.EventHash = hashLedgerEvent(candidate)
+		payload, err := json.Marshal(candidate)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			return LedgerEvent{}, 0, fmt.Errorf("%w: encode execution reconciliation: %w", ErrRepositoryIntegrity, err)
+		}
+		var sequence int64
+		err = tx.QueryRow(ctx, `SELECT naeos_control_plane.reconcile_execution($1, $2::jsonb)`,
+			executionID, payload).Scan(&sequence)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "P0001" {
+				switch pgErr.Message {
+				case "ledger predecessor mismatch":
+					if attempt+1 < maxPredecessorRetries {
+						continue
+					}
+				case "execution already has a terminal outcome", "execution start not found", "reconciliation binding mismatch", "execution has no unresolved outcome":
+					return LedgerEvent{}, 0, ErrRepositoryConflict
+				}
+			}
+			return LedgerEvent{}, 0, postgresRepositoryError(err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return LedgerEvent{}, 0, fmt.Errorf("%w: commit execution reconciliation: %w", ErrRepositoryUnavailable, err)
+		}
+		if sequence < 1 {
+			return LedgerEvent{}, 0, fmt.Errorf("%w: invalid reconciliation sequence %d", ErrRepositoryIntegrity, sequence)
+		}
+		return cloneLedgerEvent(candidate), sequence, nil
+	}
+	return LedgerEvent{}, 0, fmt.Errorf("%w: ledger head changed too frequently during reconciliation", ErrRepositoryUnavailable)
+}
+
 // LoadVerified returns the full chain only after PostgresLedger validates its
 // sequence continuity, predecessor links, and event hashes.
 func (r *PostgresLedgerRepository) LoadVerified(ctx context.Context) ([]LedgerEvent, error) {
