@@ -17,6 +17,12 @@
 | Announcement 4:5 | `templates/announcement-4x5.svg` | Needs approved announcement copy and CTA |
 | LinkedIn company banner | `templates/linkedin-company-banner.svg` | Needs crop/safe-area visual validation |
 
+## Repository-level export evidence
+
+- Logo Master v2.0.0-derived SVG and PNG exports are available in `brand/exports/NAEOS-Logo-Exports-v1.0/` (512, 1024, 2048 px; manifest present).
+- Social Avatar v1.0 PNG exports are available in `brand/exports/NAEOS-Social-Avatar-v1.0/` (64, 180, 320, 512, 1024 px; manifest present).
+- Historical Logo System package and contact sheet are available in `brand/exports/NAEOS-Logo-System-v1.0/`; do not promote its legacy v1 master as canonical.
+
 ## Required gates before RC can be complete
 
 - [ ] Generated inventory and per-file checksums inspected.
