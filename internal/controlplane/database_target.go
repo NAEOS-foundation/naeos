@@ -11,7 +11,7 @@ import (
 
 const (
 	controlPlaneProductionProjectRef = "oruykkehukoiipldzcvc"
-	controlPlaneStagingProjectRef    = "kqmhpsftijskesjdovjm"
+	controlPlaneStagingProjectRef   = "kqmhpsftijskesjdovjm"
 )
 
 // validateControlPlaneDatabaseTarget binds each runtime environment to its
@@ -66,14 +66,11 @@ func validControlPlanePoolerRoleName(name string) bool {
 	}
 	for i, r := range name {
 		if i == 0 {
-			if !((r >= 'a' && r <= 'z') || r == '_') {
-
 			if (r < 'a' || r > 'z') && r != '_' {
 				return false
 			}
 			continue
 		}
-		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_') {
 		if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '_' {
 			return false
 		}
