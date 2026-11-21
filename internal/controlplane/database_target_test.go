@@ -52,35 +52,41 @@ func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 }
 
 func TestValidControlPlanePoolerRoleName(t *testing.T) {
-	valid := []string{
-		"a",
-		"postgres",
-		"_role",
-		"role_123",
-		strings.Repeat("a", 63),
+	valid := []struct {
+		name string
+		role string
+	}{
+		{name: "single letter", role: "a"},
+		{name: "postgres role", role: "postgres"},
+		{name: "underscore prefix", role: "_role"},
+		{name: "digits and underscore", role: "role_123"},
+		{name: "maximum length", role: strings.Repeat("a", 63)},
 	}
-	for _, name := range valid {
-		t.Run("valid_"+name, func(t *testing.T) {
-			if !validControlPlanePoolerRoleName(name) {
-				t.Errorf("expected role name %q to be valid", name)
+	for _, tt := range valid {
+		t.Run(tt.name, func(t *testing.T) {
+			if !validControlPlanePoolerRoleName(tt.role) {
+				t.Errorf("expected role name %q to be valid", tt.role)
 			}
 		})
 	}
 
-	invalid := []string{
-		"",
-		"1role",
-		"-role",
-		"role-name",
-		"role.name",
-		"Role",
-		"strings.Repeat("a", 64)",
-		"érole",
+	invalid := []struct {
+		name string
+		role string
+	}{
+		{name: "empty", role: ""},
+		{name: "leading digit", role: "1role"},
+		{name: "leading hyphen", role: "-role"},
+		{name: "hyphen", role: "role-name"},
+		{name: "dot", role: "role.name"},
+		{name: "uppercase", role: "Role"},
+		{name: "too long", role: strings.Repeat("a", 64)},
+		{name: "non ASCII", role: "érole"},
 	}
-	for _, name := range invalid {
-		t.Run("invalid_"+name, func(t *testing.T) {
-			if validControlPlanePoolerRoleName(name) {
-				t.Errorf("expected role name %q to be invalid", name)
+	for _, tt := range invalid {
+		t.Run(tt.name, func(t *testing.T) {
+			if validControlPlanePoolerRoleName(tt.role) {
+				t.Errorf("expected role name %q to be invalid", tt.role)
 			}
 		})
 	}
