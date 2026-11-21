@@ -1,0 +1,32 @@
+{
+  "package": "NAEOS Logo Exports",
+  "version": "1.0",
+  "logo_master": "2.0.0",
+  "files": [
+    {
+      "name": "README.md",
+      "bytes": 425,
+      "sha256": "bc002e2dd193aa8e34258133767824802ea63d55e67c5995383ebb1256e99f5c"
+    },
+    {
+      "name": "naeos-primary-symbol-master-v2.svg",
+      "bytes": 3085,
+      "sha256": "faf195f34b1f6ea1b47a8f454cbfaef14f4bf039efa03c6c6fb7c6f923fafca0"
+    },
+    {
+      "name": "naeos-primary-symbol-v2-1024.png",
+      "bytes": 54478,
+      "sha256": "eb60c6017878358a75d0ddb98d86204ec07108e91a06ebe16c5e4c0ade9794cd"
+    },
+    {
+      "name": "naeos-primary-symbol-v2-2048.png",
+      "bytes": 133010,
+      "sha256": "e096316df241bba029e035d45a6e44730ab1635844b9ecab1af00fa4777dc169"
+    },
+    {
+      "name": "naeos-primary-symbol-v2-512.png",
+      "bytes": 22834,
+      "sha256": "ea3c9f754e2b37ffcc12ad7cdd43818cf47018a6aca9fdeb6e4ada73bc90f87c"
+    }
+  ]
+}

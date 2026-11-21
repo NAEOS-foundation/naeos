@@ -1,0 +1,37 @@
+name: CrewAI Compatibility v2 Harness Primitives
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/crewai_compat_v2_harness.py"
+      - "tests/test_crewai_compat_v2_harness.py"
+      - ".github/workflows/crewai-compat-v2-primitives.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  harness-primitives:
+    name: V2 harness primitive tests (not framework compatibility)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Compile harness and tests
+        run: python -m compileall -q scripts/crewai_compat_v2_harness.py tests/test_crewai_compat_v2_harness.py
+      - name: Run primitive unit tests
+        run: python -m unittest tests.test_crewai_compat_v2_harness -v
+      - name: Run explicit primitive self-test
+        run: python scripts/crewai_compat_v2_harness.py --self-test --output harness-primitives.json
+      - name: Upload primitive evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: crewai-v2-harness-primitives-${{ github.sha }}
+          path: harness-primitives.json
+          if-no-files-found: error

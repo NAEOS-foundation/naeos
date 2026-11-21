@@ -555,6 +555,33 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: bash scripts/check-merge-base-freshness.sh
 
+  control-plane-container:
+    name: Control Plane Production Container
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Build production Control Plane image
+        env:
+          IMAGE: naeos-control-plane:${{ github.sha }}
+        run: docker build --pull -f Dockerfile.control-plane -t "$IMAGE" .
+      - name: Verify runtime user and minimal runtime dependencies
+        env:
+          IMAGE: naeos-control-plane:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint /bin/sh "$IMAGE" -ec '
+            test "$(id -u)" = "1000"
+            command -v wget >/dev/null
+            ! command -v git >/dev/null 2>&1
+          '
+      - name: Verify production Control Plane CLI entrypoint
+        env:
+          IMAGE: naeos-control-plane:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint /usr/local/bin/naeos "$IMAGE" control-plane serve --help >/dev/null
+          
   ci-gate:
     name: CI Gate
     if: always()
@@ -562,6 +589,7 @@ jobs:
       - lint
       - test
       - control-plane-golden-path
+      - control-plane-container
       - canonical-demo
       - governance-lifecycle
       - day2-atomic-execution
@@ -586,6 +614,7 @@ jobs:
           TEST: ${{ needs.test.result }}
           CANONICAL_DEMO: ${{ needs['canonical-demo'].result }}
           CONTROL_PLANE_GOLDEN_PATH: ${{ needs['control-plane-golden-path'].result }}
+          CONTROL_PLANE_CONTAINER: ${{ needs['control-plane-container'].result }}
           GOVERNANCE: ${{ needs['governance-lifecycle'].result }}
           DAY2_ATOMIC: ${{ needs['day2-atomic-execution'].result }}
           LEVEL3: ${{ needs['level3-evidence'].result }}
@@ -605,7 +634,7 @@ jobs:
           SUPABASE_REQUIRED: ${{ github.repository == 'NAEOS-foundation/naeos' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) }}
         run: |
           set -euo pipefail
-          for result in "$LINT" "$TEST" "$CONTROL_PLANE_GOLDEN_PATH" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
+          for result in "$LINT" "$TEST" "$CONTROL_PLANE_GOLDEN_PATH" "$CONTROL_PLANE_CONTAINER" "$CANONICAL_DEMO" "$GOVERNANCE" "$DAY2_ATOMIC" "$LEVEL3" "$POLICY" "$BENCH" "$EVIDENCE_TAMPERING" "$VULNCHECK" "$COVERAGE" "$FUZZ" "$DEPENDENCY_RISK" "$CHANGE_RISK" "$PDR"; do
             test "$result" = "success"
           done
           if [ "$SUPABASE_REQUIRED" = "true" ]; then
