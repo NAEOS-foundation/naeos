@@ -168,17 +168,17 @@ func (g *RepositoryDecisionGateway) Execute(ctx context.Context, req AuthorizeRe
 		Decision: DecisionAllow, Reason: result.Reason, Metadata: intentMetadata,
 	}
 	var started LedgerEvent
-	if approvedApproval != nil {
-		atomicClaims, ok := g.Ledger.(AtomicExecutionClaimRepository)
-		if !ok {
-			result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-			result.Message = "atomic approval consumption is unsupported; side effect was not invoked"
-			return result, LedgerEvent{}, ErrRepositoryUnavailable
-		}
-		started, _, err = atomicClaims.ClaimExecution(ctx, intent, *approvedApproval, time.Now().UTC())
-	} else {
-		started, _, err = g.Ledger.Append(ctx, intent)
+	atomicClaims, ok := g.Ledger.(AtomicExecutionClaimRepository)
+	if !ok {
+		result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+		result.Message = "atomic policy/grant execution claim is unsupported; side effect was not invoked"
+		return result, LedgerEvent{}, ErrRepositoryUnavailable
 	}
+	approvalToConsume := Approval{}
+	if approvedApproval != nil {
+		approvalToConsume = *approvedApproval
+	}
+	started, _, err = atomicClaims.ClaimExecution(ctx, intent, approvalToConsume, time.Now().UTC())
 	if err != nil {
 		if errors.Is(err, ErrRepositoryConflict) {
 			result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
