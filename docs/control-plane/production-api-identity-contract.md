@@ -2,7 +2,7 @@
 
 **Status:** Proposed — implementation gate  
 **Scope:** Production Control Plane API compatibility for `/decision`, `/runs`, and `/evidence`  
-**Baseline:** `feat/control-plane-db-target-guard-20261118` at `35c2ddab6c3893cfcc562b3f63b422fb84c86cbc`  
+**Baseline:** PR #829 merged into `main` at `aa5f3b51a806904ae1c1a4d404f713a06712d1b42`  
 **Environment:** Internal NAEOS use; no pilot-client or multi-tenant authorization is implied.
 
 ## 1. Context and observed implementation
@@ -124,7 +124,7 @@ This proposal does not:
 - change the Docker entrypoint or deploy any service;
 - claim tenant isolation or pilot-client readiness.
 
-The existing environment database target guard remains a separate concern in PR #829. This contract is a prerequisite for a later implementation PR, not authorization to perform a production cutover.
+The environment database target guard from PR #829 is already merged. This contract is a prerequisite for a later implementation PR, not authorization to perform a production cutover.
 
 ## 8. Review decision requested
 
