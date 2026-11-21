@@ -280,8 +280,8 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 		Reason: ReasonExecutionOutcomeUnknown,
 		Metadata: map[string]string{
 			"reconciliation_outcome": string(outcome),
-			"evidence_ref": evidenceRef,
-			"reconciler_id": reconcilerID,
+			"evidence_ref":           evidenceRef,
+			"reconciler_id":          reconcilerID,
 		},
 	}
 
@@ -388,7 +388,7 @@ func (r *PostgresLedgerRepository) HasExecution(ctx context.Context, decisionID 
 }
 
 var (
-	_ LedgerRepository                     = (*PostgresLedgerRepository)(nil)
-	_ AtomicExecutionClaimRepository       = (*PostgresLedgerRepository)(nil)
-	_ ExecutionReconciliationRepository    = (*PostgresLedgerRepository)(nil)
+	_ LedgerRepository                  = (*PostgresLedgerRepository)(nil)
+	_ AtomicExecutionClaimRepository    = (*PostgresLedgerRepository)(nil)
+	_ ExecutionReconciliationRepository = (*PostgresLedgerRepository)(nil)
 )
