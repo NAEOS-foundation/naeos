@@ -8,6 +8,7 @@ not the investor demo.
 
 - Host bind is localhost only: `127.0.0.1:8080`.
 - Environment must be `staging`; runtime target validation is fail-closed.
+- Principal kind is explicitly required as `human` or `service`; never inferred from `client_id`.
 - Use only a dedicated staging PostgreSQL login scoped to the private
   `naeos_control_plane` schema in `naeos.db`.
 - Never use the CRM production database, CRM credentials, Supabase
@@ -21,8 +22,9 @@ not the investor demo.
 ## Configuration
 
 1. Copy `.env.control-plane.local.example` to `.env` (the root `.env` is gitignored).
-2. Populate the five values from verified staging settings and the dedicated staging
-   runtime role. Do not paste secrets into chat or commit them.
+2. Populate all six configuration values from verified staging settings and the dedicated staging
+   runtime role. Set `NAEOS_CONTROLPLANE_PRINCIPAL_KIND` to exactly `human` or `service`, based on
+   the actual token profile. Do not infer it from `client_id`; do not paste secrets into chat or commit them.
 3. Confirm issuer, audience, and JWKS URL from actual staging Auth configuration
    and token claims; do not guess.
 4. Confirm the database URL is staging-only and TLS is required (sslmode=require,
