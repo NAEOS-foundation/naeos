@@ -66,6 +66,40 @@ Other open PRs include #823, #820, #818, #817, #815, #794, #696, #692, #676, #67
 
 **Limitations:** only PR-triggered workflow runs returned by the connector are shown; this may not include every required check or review state. Refresh exact head/checks/reviews immediately before merge. Merge candidates are not authorization to merge.
 
+## Phase 0 live CI evidence (refreshed 2026-11-21)
+| Repo / PR | Head (short) | Current observed checks | Phase 0 disposition |
+|---|---|---|---|
+| Core #830 | `355db86f7` | DCO, docs, deployment gate, gofmt, sign-off, policy bypass, secrets scan, browser E2E and CodeQL pass; Compliance, PostgreSQL integration and CI fail | Revise; resolve gates |
+| Core #831 | `2c3678901` | Supporting checks pass; Compliance, PostgreSQL integration and CI fail | Revise; preserve identity semantics and resolve failures |
+| Core #832 | `f6c662358` | Browser E2E/docs/migration replay/CodeQL/DCO/sign-off pass; External Validation, PostgreSQL integration, Compliance and CI fail; not mergeable | Hold/revise; binding depends on identity contract |
+| Core #842 | `425f63253` | Compose Validation, CI, Compliance, CodeQL, Secrets scan and deployment gate pass; DCO and Sign-off fail | Revise sign-off; current Compose check now passes despite older PR description |
+| Core #841 | `880a65f42` | Compliance, CodeQL, docs and other checks pass; DCO and Sign-off fail | Revise sign-off; align contract after runtime proof |
+| Core #851 | `beefc54c9` | CI, Compliance, CodeQL and security checks pass; Sign-off fails | Revise sign-off |
+| Core #852 | `7dd19a71b` | Asset Validation/security/docs gates pass; CI cancelled | Rerun CI |
+| Core #853 | `6ec28d4bb` | Render QA and asset validation pass; DCO and Sign-off fail | Revise sign-off |
+| Core #817 | `59462aa43` | CI, PostgreSQL integration, CodeQL, Browser E2E and Compliance pass; DCO/Sign-off fail; not mergeable | Hold/revise sign-off and branch alignment |
+| Core #815 | `038ce0555` | Major checks pass; not mergeable | Hold; resolve base/mergeability and dependency review |
+| Core #794 | `8bb7ea89a` | Major checks pass; not mergeable | Hold; check supersession/base conflict |
+| Core #676 | `c5425b8dc` | CI/docs/DCO/CodeQL pass; Secrets scan and Browser E2E fail; not mergeable | Revise; security-related preview isolation |
+| CRM #69 | `4eb9af8d6` | CI pass | Review candidate; verify base/dependencies/review |
+| CRM #68 | `9faa47f9a` | CI pass | Draft prototype; review transaction/audit semantics |
+| CRM #67 | `cbbc7a9f9` | CI pass | Review/merge remediation plan after review |
+| CRM #63 | `591ea0b7f` | CI pass | Hold for scoped Core API dependency and review |
+| CRM #64 | `513a44ca2` | CI pass | Review candidate after dependency/base checks |
+| CRM #65 | `2e84d0e9c` | CI pass | Review candidate after dependency/base checks |
+| CRM #66 | `7df8f81c5` | CI pass | Review candidate after dependency/base checks |
+| CRM #62 | `51096b748` | CI pass | Hold/review audit hash version dependency |
+| Intelligence #78 | `d74932b1d` | CI pass | Review candidate after IAM review |
+| Intelligence #77 | `498a5ae41` | CI pass | Review candidate; baseline only, not IAM closure |
+| Intelligence #72 | `93d38d17e` | CI pass | Review candidate after ownership/IAM review |
+| Intelligence #74 | `16fbe947d` | CI pass | Draft; review DB role matrix |
+| Intelligence #73 | `9c71f908b` | CI fail; not mergeable | Hold; migration remains unapproved, resolve CI |
+| Intelligence #71 | `05cb9bd6e` | CI fail; mergeable metadata refreshed | Revise; keep integration read-only |
+| Intelligence #69 | `e3627f2a9` | CI fail; not mergeable | Revise/hold; reconcile build/dependencies |
+| Intelligence #67 | `3ab461430` | CI fail; not mergeable | Revise; maintain read-only API contract |
+
+**Evidence limitations:** connector returns PR-triggered runs only and may omit other required checks/reviews. Refresh head SHA, checks and review state immediately before merge. Merge candidates are not authorization to merge.
+
 ## Dependency-aware critical path
 ### P0 — security and operational safety
 1. **CORE-IDENTITY:** #831 preserve `iss/sub/client_id` distinctions; then align/ratify #830 contract.
