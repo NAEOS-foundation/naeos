@@ -51,8 +51,8 @@ func (r *reconciliationTestRepository) ReconcileExecution(_ context.Context, exe
 func TestProductionReconciliationRequiresDedicatedScope(t *testing.T) {
 	repository := &reconciliationTestRepository{}
 	runtime := &ProductionRuntime{
-		identity: reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:read"}},
-		reconciler: repository,
+		identity:          reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:read"}},
+		reconciler:        repository,
 		evidenceVerifier: reconciliationTestEvidenceVerifier{ref: "evidence://verified/1"},
 	}
 	handler := runtime.reconciliationHandler()
@@ -72,8 +72,8 @@ func TestProductionReconciliationRequiresDedicatedScope(t *testing.T) {
 func TestProductionReconciliationUsesVerifiedPrincipalAndEvidence(t *testing.T) {
 	repository := &reconciliationTestRepository{}
 	runtime := &ProductionRuntime{
-		identity: reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-from-jwt", Scopes: []string{"naeos:execution:reconcile"}}},
-		reconciler: repository,
+		identity:          reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-from-jwt", Scopes: []string{"naeos:execution:reconcile"}}},
+		reconciler:        repository,
 		evidenceVerifier: reconciliationTestEvidenceVerifier{ref: "evidence://immutable/sha256:abc"},
 	}
 	handler := runtime.reconciliationHandler()
@@ -97,8 +97,8 @@ func TestProductionReconciliationUsesVerifiedPrincipalAndEvidence(t *testing.T) 
 func TestProductionReconciliationFailsClosedWhenEvidenceCannotBeVerified(t *testing.T) {
 	repository := &reconciliationTestRepository{}
 	runtime := &ProductionRuntime{
-		identity: reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:execution:reconcile"}},
-		reconciler: repository,
+		identity:          reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:execution:reconcile"}},
+		reconciler:        repository,
 		evidenceVerifier: reconciliationTestEvidenceVerifier{err: errors.New("evidence unavailable")},
 	}
 	handler := runtime.reconciliationHandler()
@@ -118,8 +118,8 @@ func TestProductionReconciliationFailsClosedWhenEvidenceCannotBeVerified(t *test
 func TestProductionReconciliationRejectsUnknownRequestFields(t *testing.T) {
 	repository := &reconciliationTestRepository{}
 	runtime := &ProductionRuntime{
-		identity: reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:execution:reconcile"}},
-		reconciler: repository,
+		identity:          reconciliationTestIdentity{claims: &api.JWTClaims{Sub: "operator-1", Scope: "naeos:execution:reconcile"}},
+		reconciler:        repository,
 		evidenceVerifier: reconciliationTestEvidenceVerifier{ref: "evidence://verified/1"},
 	}
 	request := httptest.NewRequest(http.MethodPost, "/api/control-plane/executions/exec-1/reconcile", strings.NewReader(`{"outcome":"COMMITTED","evidence_ref":"evidence://submitted/1","reconciler_id":"spoofed"}`))
