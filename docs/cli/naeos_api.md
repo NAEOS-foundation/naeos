@@ -2,6 +2,9 @@
 
 Start NAEOS REST API server
 
+This generic REST API is distinct from the dedicated production Control Plane
+container, which runs `naeos control-plane serve`.
+
 ### Synopsis
 
 Start the NAEOS REST API server for external integrations and web dashboard.

@@ -1,0 +1,101 @@
+name: CRM Migration Replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/crm-migration-replay.yml'
+      - 'supabase/migrations/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/crm-migration-replay.yml'
+      - 'supabase/migrations/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crm-migration-replay-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Replay Supabase migration history
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Create Supabase-compatible roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          psql "postgres://postgres@localhost:5432/postgres?sslmode=disable" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN BYPASSRLS;
+          SQL
+
+      - name: Replay every migration in version order
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          db="postgres://postgres@localhost:5432/postgres?sslmode=disable"
+          count=0
+          for migration in supabase/migrations/*.sql; do
+            [ -f "$migration" ] || continue
+            echo "::group::Applying $migration"
+            psql "$db" -v ON_ERROR_STOP=1 -f "$migration"
+            echo "::endgroup::"
+            count=$((count + 1))
+          done
+          test "$count" -ge 19
+          echo "Successfully replayed $count migration files."
+
+      - name: Assert CRM schema and hardening state
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          psql "postgres://postgres@localhost:5432/postgres?sslmode=disable" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF to_regclass('public."User"') IS NULL
+              OR to_regclass('public."Company"') IS NULL
+              OR to_regclass('public."EvidenceReceipt"') IS NULL
+              OR to_regclass('public."OutboxEvent"') IS NULL THEN
+              RAISE EXCEPTION 'expected CRM tables are missing after migration replay';
+            END IF;
+
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_class
+              WHERE oid = 'public."User"'::regclass AND relrowsecurity
+            ) THEN
+              RAISE EXCEPTION 'CRM User table does not have RLS enabled';
+            END IF;
+
+            IF has_table_privilege('anon', 'public."User"', 'SELECT')
+              OR has_table_privilege('authenticated', 'public."User"', 'SELECT') THEN
+              RAISE EXCEPTION 'public API roles retain SELECT on CRM User table';
+            END IF;
+          END
+          $$;
+          SQL

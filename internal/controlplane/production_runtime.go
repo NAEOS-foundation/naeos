@@ -25,29 +25,36 @@ type productionTokenValidator interface {
 
 // ProductionRuntime owns the dedicated PostgreSQL connections and repository
 // instances for the production Control Plane. It does not seed demo state.
-type ProductionRuntime struct {
-	pool      *pgxpool.Pool
-	sqlDB     *sql.DB
-	Policies  *PostgresPolicyRepository
-	Grants    *PostgresGrantRepository
-	Approvals *PostgresApprovalRepository
-	Ledger    *PostgresLedger
-	identity  productionTokenValidator
-	gateway   *RepositoryDecisionGateway
+type productionLedgerReader interface {
+	Load(context.Context) ([]LedgerEvent, error)
 }
 
-// OpenProductionRuntime validates the connection contract, opens bounded pools,
-// and verifies the required private schema before returning a runtime.
-func OpenProductionRuntime(ctx context.Context, databaseURL string) (*ProductionRuntime, error) {
-	if err := validateProductionDatabaseURL(databaseURL); err != nil {
+type ProductionRuntime struct {
+	environment  string
+	pool         *pgxpool.Pool
+	ledgerReader productionLedgerReader
+	sqlDB        *sql.DB
+	Policies     *PostgresPolicyRepository
+	Grants       *PostgresGrantRepository
+	Approvals    *PostgresApprovalRepository
+	Ledger       *PostgresLedger
+	identity     productionTokenValidator
+	gateway      *RepositoryDecisionGateway
+}
+
+// OpenProductionRuntime validates the environment-specific Supabase target and connection contract, opens bounded pools,
+// verifies the least-privilege runtime role and private schema, and validates
+// the persisted ledger before returning a production runtime.
+func OpenProductionRuntime(ctx context.Context, databaseURL, environment string) (*ProductionRuntime, error) {
+	if err := validateControlPlaneDatabaseTarget(databaseURL, environment); err != nil {
 		return nil, err
 	}
 
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, errors.New("parse Control Plane DATABASE_URL: invalid PostgreSQL URL")
+		return nil, errors.New("parse NAEOS_CONTROLPLANE_DATABASE_URL: invalid PostgreSQL URL")
 	}
-	// The runtime uses two drivers over one DATABASE_URL. Split the total
+	// The runtime uses two drivers over one NAEOS_CONTROLPLANE_DATABASE_URL. Split the total
 	// connection budget evenly so the combined maximum remains eight.
 	cfg.MaxConns = 4
 	cfg.MinConns = 0
@@ -67,6 +74,9 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 	}()
 	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("control plane PostgreSQL ping failed: %w", err)
+	}
+	if err := verifyControlPlaneRuntimeRole(ctx, pool); err != nil {
+		return nil, err
 	}
 	if err := verifyControlPlaneSchema(ctx, pool); err != nil {
 		return nil, err
@@ -90,9 +100,17 @@ func OpenProductionRuntime(ctx context.Context, databaseURL string) (*Production
 		_ = sqlDB.Close()
 		return nil, fmt.Errorf("initialize Control Plane ledger: %w", err)
 	}
+	// Do not bind the listener over an unverified or tampered ledger. The
+	// complete chain and authoritative head are checked from one DB snapshot.
+	if _, err := ledger.Load(ctx); err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("control plane ledger startup verification failed: %w", err)
+	}
+
 	cleanup = false
 	return &ProductionRuntime{
-		pool: pool, sqlDB: sqlDB,
+		environment: environment,
+		pool:        pool, sqlDB: sqlDB, ledgerReader: ledger,
 		Policies:  NewPostgresPolicyRepository(sqlDB),
 		Grants:    NewPostgresGrantRepository(sqlDB),
 		Approvals: NewPostgresApprovalRepository(sqlDB),
@@ -115,19 +133,74 @@ func (r *ProductionRuntime) Close() {
 
 func validateProductionDatabaseURL(raw string) error {
 	if strings.TrimSpace(raw) == "" {
-		return errors.New("control plane DATABASE_URL is required")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL is required")
 	}
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.Host == "" {
-		return errors.New("control plane DATABASE_URL must be a valid PostgreSQL URL")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must be a valid PostgreSQL URL")
 	}
 	sslmode := strings.ToLower(u.Query().Get("sslmode"))
 	switch sslmode {
 	case "require", "verify-ca", "verify-full":
 		return nil
 	default:
-		return errors.New("control plane DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must require TLS (sslmode=require, verify-ca, or verify-full)")
 	}
+}
+
+// verifyControlPlaneRuntimeRole rejects admin, BYPASSRLS, and non-login
+// connections. The application must authenticate as a dedicated LOGIN role
+// that inherits the NOLOGIN/NOBYPASSRLS Control Plane runtime group only.
+func verifyControlPlaneRuntimeRole(ctx context.Context, pool *pgxpool.Pool) error {
+	const query = `SELECT
+		login_role.rolcanlogin,
+		login_role.rolsuper,
+		login_role.rolcreatedb,
+		login_role.rolcreaterole,
+		login_role.rolreplication,
+		login_role.rolbypassrls,
+		login_role.rolinherit,
+		runtime_role.rolcanlogin,
+		runtime_role.rolsuper,
+		runtime_role.rolcreatedb,
+		runtime_role.rolcreaterole,
+		runtime_role.rolreplication,
+		runtime_role.rolbypassrls,
+		runtime_role.rolinherit,
+		pg_catalog.pg_has_role(login_role.oid, runtime_role.oid, 'USAGE'),
+		current_user = session_user,
+		NOT EXISTS (
+			SELECT 1
+			FROM pg_catalog.pg_roles inherited_role
+			WHERE inherited_role.oid <> login_role.oid
+			  AND inherited_role.oid <> runtime_role.oid
+			  AND pg_catalog.pg_has_role(login_role.oid, inherited_role.oid, 'MEMBER')
+		)
+	FROM pg_catalog.pg_roles login_role
+	JOIN pg_catalog.pg_roles runtime_role
+	  ON runtime_role.rolname = 'naeos_control_plane_runtime'
+	WHERE login_role.rolname = session_user`
+	var (
+		login, loginSuper, loginCreateDB, loginCreateRole, loginReplication, loginBypassRLS, loginInherit      bool
+		groupLogin, groupSuper, groupCreateDB, groupCreateRole, groupReplication, groupBypassRLS, groupInherit bool
+		member, sameRole, noAdditionalMembership                                                               bool
+	)
+	if pool == nil {
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must use the dedicated least-privilege runtime role")
+	}
+	if err := pool.QueryRow(ctx, query).Scan(
+		&login, &loginSuper, &loginCreateDB, &loginCreateRole, &loginReplication, &loginBypassRLS, &loginInherit,
+		&groupLogin, &groupSuper, &groupCreateDB, &groupCreateRole, &groupReplication, &groupBypassRLS, &groupInherit,
+		&member, &sameRole, &noAdditionalMembership,
+	); err != nil {
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL runtime role verification failed")
+	}
+	if !login || loginSuper || loginCreateDB || loginCreateRole || loginReplication || loginBypassRLS || !loginInherit ||
+		groupLogin || groupSuper || groupCreateDB || groupCreateRole || groupReplication || groupBypassRLS || !groupInherit ||
+		!member || !sameRole || !noAdditionalMembership {
+		return errors.New("control plane NAEOS_CONTROLPLANE_DATABASE_URL must authenticate as a dedicated LOGIN member of naeos_control_plane_runtime without additional role memberships")
+	}
+	return nil
 }
 
 func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
@@ -136,16 +209,20 @@ func verifyControlPlaneSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		to_regclass('naeos_control_plane.active_policies') IS NOT NULL,
 		to_regclass('naeos_control_plane.grants') IS NOT NULL,
 		to_regclass('naeos_control_plane.approvals') IS NOT NULL,
+		to_regclass('naeos_control_plane.ledger_head') IS NOT NULL,
 		to_regclass('naeos_control_plane.ledger_events') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.append_ledger_event(jsonb,text,text)') IS NOT NULL,
 		to_regprocedure('naeos_control_plane.read_ledger_head()') IS NOT NULL`
-	var policyVersions, activePolicies, grants, approvals, ledgerEvents, appendFn, headFn bool
+	var policyVersions, activePolicies, grants, approvals, ledgerHead, ledgerEvents, appendFn, headFn bool
+	if pool == nil {
+		return errors.New("control plane schema compatibility check failed")
+	}
 	if err := pool.QueryRow(ctx, required).Scan(
-		&policyVersions, &activePolicies, &grants, &approvals, &ledgerEvents, &appendFn, &headFn,
+		&policyVersions, &activePolicies, &grants, &approvals, &ledgerHead, &ledgerEvents, &appendFn, &headFn,
 	); err != nil {
 		return errors.New("control plane schema compatibility check failed")
 	}
-	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerEvents || !appendFn || !headFn {
+	if !policyVersions || !activePolicies || !grants || !approvals || !ledgerHead || !ledgerEvents || !appendFn || !headFn {
 		return errors.New("control plane schema is missing required tables or functions")
 	}
 	return nil
@@ -172,6 +249,10 @@ func (r *ProductionRuntime) ProductionHealthHandler() http.Handler {
 			return
 		}
 		if err := r.sqlDB.PingContext(ctx); err != nil {
+			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
+			return
+		}
+		if err := verifyControlPlaneRuntimeRole(ctx, r.pool); err != nil {
 			http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 			return
 		}

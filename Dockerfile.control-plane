@@ -7,31 +7,23 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /naeos ./cmd/naeos/
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /naeos ./cmd/naeos/
 
-FROM alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1
+FROM alpine:3.23
 
-RUN apk --no-cache add ca-certificates git
+RUN apk --no-cache add ca-certificates \
+    && adduser -D -u 1000 naeos
 
 WORKDIR /app
 
 COPY --from=builder /naeos /usr/local/bin/naeos
 COPY --from=builder /app/LICENSE /app/NOTICE /usr/local/share/naeos/
 
-RUN adduser -D -u 1000 -h /home/naeos naeos \
-    && mkdir -p /home/naeos/.naeos/artifacts /home/naeos/.config/naeos \
-    && chown -R naeos:naeos /home/naeos
-
-ENV NAEOS_DB_DRIVER=sqlite \
-    NAEOS_DB_DATABASE=/home/naeos/.naeos/naeos.db
-
-WORKDIR /home/naeos
 USER naeos
 
-EXPOSE 8080
+# The production handler exposes a liveness endpoint that does not depend on
+# database readiness. Readiness is checked separately by the orchestrator.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/health/live || exit 1
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
-
-ENTRYPOINT ["/usr/local/bin/naeos"]
-CMD ["api", "--port", "8080", "--auth", "--auth-mode", "supabase"]
+CMD ["/usr/local/bin/naeos", "control-plane", "serve", "--addr", ":8080"]
