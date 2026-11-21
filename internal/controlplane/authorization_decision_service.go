@@ -115,24 +115,24 @@ func (s *AuthorizationDecisionService) Authorize(ctx context.Context, req Author
 				// Preserve the denial as decision evidence below; do not inspect or accept the approval.
 			} else {
 				approval, approvalErr := s.Approvals.Get(ctx, req.ApprovalID)
-			switch {
-			case approvalErr != nil:
-				result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
-				result.Message = "approval repository lookup failed"
-				if errors.Is(approvalErr, ErrRepositoryNotFound) || errors.Is(approvalErr, ErrRepositoryConflict) {
-					result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
-					result.Message = "approval is missing or no longer consumable"
-				}
-			case approval.ID != req.ApprovalID || approval.DecisionID != result.DecisionID ||
-				approval.AgentID != req.AgentID || approval.Capability != action.Capability ||
-				approval.PolicyID != grant.PolicyID || approval.PolicyVersion != grant.PolicyVersion ||
-				approval.ArtifactHash != action.ArtifactHash:
-				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval binding does not match the requested decision and artifact"
-			case !approval.IsValid(now):
-				result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval is not approved or has expired"
-			default:
-				result.Status, result.Reason, result.NeedsApproval = DecisionAllow, ReasonAllowed, false
-				result.Message = "approval validated against durable repository"
+				switch {
+				case approvalErr != nil:
+					result.Status, result.Reason = DecisionIndeterminate, ReasonEvaluationFailed
+					result.Message = "approval repository lookup failed"
+					if errors.Is(approvalErr, ErrRepositoryNotFound) || errors.Is(approvalErr, ErrRepositoryConflict) {
+						result.Status, result.Reason = DecisionDeny, ReasonDeniedByPolicy
+						result.Message = "approval is missing or no longer consumable"
+					}
+				case approval.ID != req.ApprovalID || approval.DecisionID != result.DecisionID ||
+					approval.AgentID != req.AgentID || approval.Capability != action.Capability ||
+					approval.PolicyID != grant.PolicyID || approval.PolicyVersion != grant.PolicyVersion ||
+					approval.ArtifactHash != action.ArtifactHash:
+					result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval binding does not match the requested decision and artifact"
+				case !approval.IsValid(now):
+					result.Status, result.Reason, result.Message = DecisionDeny, ReasonDeniedByPolicy, "approval is not approved or has expired"
+				default:
+					result.Status, result.Reason, result.NeedsApproval = DecisionAllow, ReasonAllowed, false
+					result.Message = "approval validated against durable repository"
 				}
 			}
 		}

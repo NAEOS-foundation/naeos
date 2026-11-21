@@ -191,11 +191,12 @@ func TestAuthorizationDecisionServiceValidApprovalAllowsDecisionOnly(t *testing.
 func TestAuthorizationDecisionServiceApprovalBindingAndExpiryFailClosed(t *testing.T) {
 	tests := []struct {
 		name       string
-		decisionID string
-		artifact   string
+		decisionID    string
+		requestDecisionID string
+		artifact      string
 		expiresAt  time.Time
 	}{
-		{name: "decision ID mismatch", decisionID: "different-decision", expiresAt: time.Now().Add(time.Hour)},
+		{name: "decision ID mismatch", decisionID: "different-decision", requestDecisionID: "stable-decision-id", expiresAt: time.Now().Add(time.Hour)},
 		{name: "artifact hash mismatch", decisionID: "stable-decision-id", artifact: "sha256:other", expiresAt: time.Now().Add(time.Hour)},
 		{name: "expired approval", decisionID: "stable-decision-id", expiresAt: time.Now().Add(-time.Minute)},
 	}
@@ -203,6 +204,9 @@ func TestAuthorizationDecisionServiceApprovalBindingAndExpiryFailClosed(t *testi
 		t.Run(tt.name, func(t *testing.T) {
 			now := time.Now().UTC()
 			service, req, ledger := decisionServiceApprovedFixture(t, tt.decisionID, "approval-"+tt.name, tt.expiresAt)
+			if tt.requestDecisionID != "" {
+				req.DecisionID = tt.requestDecisionID
+			}
 			if tt.artifact != "" {
 				store := service.Approvals.(*MemoryApprovalRepository).store
 				store.mu.Lock()
@@ -245,8 +249,8 @@ func TestAuthorizationDecisionServiceApprovalRepositoryOutageIsIndeterminateWith
 	if result.DecisionID != "" {
 		t.Fatalf("indeterminate result retained decision ID %q", result.DecisionID)
 	}
-	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 0 {
-		t.Fatalf("authorization decision evidence = %d; want 0", got)
+	if got := ledger.countType("AUTHORIZATION_DECISION"); got != 1 {
+		t.Fatalf("authorization decision evidence = %d; want seeded canonical event only", got)
 	}
 	if got := ledger.countType("EXECUTION_STARTED"); got != 0 {
 		t.Fatalf("execution claims = %d; want 0", got)
