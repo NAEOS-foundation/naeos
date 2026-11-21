@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+<title id="title">NAEOS LinkedIn Portrait Master 1080 by 1350</title>
+<desc id="desc">Portrait social media master demonstrating the NAEOS brand system: AI engineering governance, control, verification, and accountability.</desc>
+<defs>
+ <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B0F19"/><stop offset="1" stop-color="#0B0F19"/></linearGradient>
+ <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#64748B" stroke-width="1" opacity=".38"/></pattern>
+ <radialGradient id="ambient"><stop offset="0" stop-color="#2563FF" stop-opacity=".22"/><stop offset="1" stop-color="#2563FF" stop-opacity="0"/></radialGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2563FF"/><stop offset="1" stop-color="#60A5FA"/></linearGradient>
+</defs>
+<rect width="1080" height="1350" fill="url(#background)"/><rect width="1080" height="1350" fill="url(#grid)"/><circle cx="840" cy="470" r="450" fill="url(#ambient)"/>
+<g transform="translate(870 70) scale(.42)">
+ <defs><linearGradient id="logoWhite" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".62" stop-color="#F7F9FF"/><stop offset="1" stop-color="#DCE8FA"/></linearGradient><linearGradient id="logoBlue" x1=".12" y1="0" x2=".92" y2="1"><stop offset="0" stop-color="#168BFF"/><stop offset=".52" stop-color="#0563FF"/><stop offset="1" stop-color="#0737D9"/></linearGradient></defs>
+ <path fill="url(#logoWhite)" d="M 180.50,71.12 Q 180.50,70.50 163.38,56.25 Q 146.25,42.00 133.62,31.88 Q 121.00,21.75 118.50,20.00 Q 116.00,18.25 112.38,17.25 Q 108.75,16.25 106.62,16.25 Q 104.50,16.25 102.00,16.75 Q 99.50,17.25 97.25,18.25 Q 95.00,19.25 85.62,25.12 Q 76.25,31.00 73.38,33.88 Q 70.50,36.75 68.88,39.25 Q 67.25,41.75 58.62,63.62 Q 50.00,85.50 47.62,91.00 Q 45.25,96.50 44.62,98.50 Q 44.00,100.50 43.62,101.00 Q 43.25,101.50 42.12,104.75 Q 41.00,108.00 40.25,109.38 Q 39.50,110.75 37.75,115.50 Q 36.00,120.25 31.62,130.50 Q 27.25,140.75 26.62,142.88 Q 26.00,145.00 26.12,146.12 Q 26.25,147.25 27.38,148.50 Q 28.50,149.75 30.38,149.88 Q 32.25,150.00 33.25,149.75 Q 34.25,149.50 38.12,147.12 Q 42.00,144.75 57.88,136.50 Q 73.75,128.25 75.38,127.25 Q 77.00,126.25 78.25,125.12 Q 79.50,124.00 81.00,122.00 Q 82.50,120.00 83.88,117.12 Q 85.25,114.25 94.50,90.75 Q 103.75,67.25 104.25,66.38 Q 104.75,65.50 106.50,64.12 Q 108.25,62.75 109.88,62.75 Q 111.50,62.75 112.38,63.25 Q 113.25,63.75 140.25,84.00 Q 167.25,104.25 169.38,99.25 Q 171.50,94.25 174.12,86.88 Q 176.75,79.50 178.12,76.75 Q 179.50,74.00 179.62,73.25 Q 179.75,72.50 180.12,72.12 Q 180.50,71.75 180.50,71.12 Z"/><path fill="url(#logoBlue)" d="M 249.00,13.62 Q 248.50,12.50 247.88,11.88 Q 247.25,11.25 245.88,10.75 Q 244.50,10.25 243.50,10.25 Q 242.50,10.25 240.25,11.12 Q 238.00,12.00 221.62,20.12 Q 205.25,28.25 202.00,30.25 Q 198.75,32.25 197.25,33.88 Q 195.75,35.50 194.38,37.88 Q 193.00,40.25 189.88,48.75 Q 186.75,57.25 184.50,62.38 Q 182.25,67.50 182.12,68.25 Q 182.00,69.00 181.62,69.50 Q 181.25,70.00 181.00,70.00 Q 180.75,70.00 180.88,71.00 Q 181.00,72.00 180.62,72.38 Q 180.25,72.75 178.62,76.62 Q 177.00,80.50 172.50,92.38 Q 168.00,104.25 167.62,104.50 Q 167.25,104.75 167.25,105.50 Q 167.25,106.25 166.50,108.25 Q 165.75,110.25 164.62,111.50 Q 163.50,112.75 163.00,113.00 Q 162.50,113.25 161.00,113.12 Q 159.50,113.00 146.38,103.12 Q 133.25,93.25 132.12,92.62 Q 131.00,92.00 128.75,91.88 Q 126.50,91.75 124.62,92.50 Q 122.75,93.25 118.25,95.62 Q 113.75,98.00 111.62,99.88 Q 109.50,101.75 108.38,104.25 Q 107.25,106.75 107.38,108.75 Q 107.50,110.75 107.88,112.12 Q 108.25,113.50 109.50,114.75 Q 110.75,116.00 116.50,120.25 Q 122.25,124.50 137.00,136.25 Q 151.75,148.00 153.75,149.38 Q 155.75,150.75 157.12,151.38 Q 158.50,152.00 160.75,152.50 Q 163.00,153.00 165.00,153.00 Q 167.00,153.00 169.50,152.38 Q 172.00,151.75 178.38,148.25 Q 184.75,144.75 189.62,141.75 Q 194.50,138.75 198.25,135.38 Q 202.00,132.00 204.38,128.38 Q 206.75,124.75 209.25,118.12 Q 211.75,111.50 213.75,107.00 Q 215.75,102.50 216.75,99.50 Q 217.75,96.50 220.25,90.75 Q 222.75,85.00 222.88,84.25 Q 223.00,83.50 227.50,72.50 Q 232.00,61.50 232.88,59.88 Q 233.75,58.25 234.88,54.88 Q 236.00,51.50 241.88,37.38 Q 247.75,23.25 248.62,20.75 Q 249.50,18.25 249.50,16.50 Q 249.50,14.75 249.00,13.62 Z"/>
+</g>
+<text x="92" y="112" fill="#60A5FA" font-family="JetBrains Mono,monospace" font-size="18" letter-spacing="3">NAEOS / ENGINEERING INSIGHT</text>
+<text x="92" y="228" fill="#64748B" font-family="JetBrains Mono,monospace" font-size="20" letter-spacing="2">AI GOVERNANCE / 001</text>
+<text x="92" y="360" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="74" font-weight="700" letter-spacing="-2">GOVERNANCE</text>
+<text x="92" y="452" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="74" font-weight="700" letter-spacing="-2">IS AN</text>
+<text x="92" y="544" fill="#60A5FA" font-family="Sora,Inter,sans-serif" font-size="74" font-weight="700" letter-spacing="-2">ENGINEERING</text>
+<text x="92" y="636" fill="#60A5FA" font-family="Sora,Inter,sans-serif" font-size="74" font-weight="700" letter-spacing="-2">REQUIREMENT.</text>
+<rect x="92" y="694" width="118" height="5" rx="2.5" fill="url(#cyan)"/>
+<text x="92" y="770" fill="#E5E7EB" font-family="Inter,sans-serif" font-size="29" font-weight="500">AI systems need boundaries, verification,</text>
+<text x="92" y="812" fill="#E5E7EB" font-family="Inter,sans-serif" font-size="29" font-weight="500">and evidence—not just capability.</text>
+<g>
+ <rect x="92" y="886" width="896" height="190" rx="20" fill="#0B0F19" stroke="#64748B"/>
+ <path d="M390 914V1048M688 914V1048" stroke="#64748B"/>
+ <text x="126" y="944" fill="#60A5FA" font-family="JetBrains Mono,monospace" font-size="16">01 / POLICY</text>
+ <text x="126" y="990" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="25" font-weight="600">CONTROL</text>
+ <text x="126" y="1028" fill="#64748B" font-family="Inter,sans-serif" font-size="17">Define boundaries</text>
+ <text x="424" y="944" fill="#60A5FA" font-family="JetBrains Mono,monospace" font-size="16">02 / TEST</text>
+ <text x="424" y="990" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="25" font-weight="600">VERIFY</text>
+ <text x="424" y="1028" fill="#64748B" font-family="Inter,sans-serif" font-size="17">Validate behavior</text>
+ <text x="722" y="944" fill="#60A5FA" font-family="JetBrains Mono,monospace" font-size="16">03 / EVIDENCE</text>
+ <text x="722" y="990" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="25" font-weight="600">ACCOUNT</text>
+ <text x="722" y="1028" fill="#64748B" font-family="Inter,sans-serif" font-size="17">Preserve trace</text>
+</g>
+<text x="92" y="1160" fill="#60A5FA" font-family="JetBrains Mono,monospace" font-size="16" letter-spacing="2">THE INTELLIGENT CORE</text>
+<path d="M92 1192H988" stroke="#64748B"/>
+<text x="92" y="1250" fill="#FFFFFF" font-family="Sora,Inter,sans-serif" font-size="19" font-weight="600">ARCHITECTURE DRIVES ENGINEERING.</text>
+<text x="988" y="1250" text-anchor="end" fill="#64748B" font-family="JetBrains Mono,monospace" font-size="16">NAEOS / 003</text>
+</svg>
