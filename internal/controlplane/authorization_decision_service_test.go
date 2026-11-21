@@ -190,11 +190,11 @@ func TestAuthorizationDecisionServiceValidApprovalAllowsDecisionOnly(t *testing.
 
 func TestAuthorizationDecisionServiceApprovalBindingAndExpiryFailClosed(t *testing.T) {
 	tests := []struct {
-		name       string
-		decisionID    string
+		name              string
+		decisionID        string
 		requestDecisionID string
-		artifact      string
-		expiresAt  time.Time
+		artifact          string
+		expiresAt         time.Time
 	}{
 		{name: "decision ID mismatch", decisionID: "different-decision", requestDecisionID: "stable-decision-id", expiresAt: time.Now().Add(time.Hour)},
 		{name: "artifact hash mismatch", decisionID: "stable-decision-id", artifact: "sha256:other", expiresAt: time.Now().Add(time.Hour)},
