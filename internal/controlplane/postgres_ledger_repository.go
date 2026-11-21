@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -235,6 +236,9 @@ func (r *PostgresLedgerRepository) ReconcileExecution(ctx context.Context, execu
 	if r == nil || r.ledger == nil || r.ledger.pool == nil {
 		return LedgerEvent{}, 0, ErrRepositoryUnavailable
 	}
+	executionID = strings.TrimSpace(executionID)
+	evidenceRef = strings.TrimSpace(evidenceRef)
+	reconcilerID = strings.TrimSpace(reconcilerID)
 	if executionID == "" || evidenceRef == "" || reconcilerID == "" ||
 		(outcome != ExecutionOutcomeCommitted && outcome != ExecutionOutcomeNotCommitted) {
 		return LedgerEvent{}, 0, ErrRepositoryConflict
