@@ -100,6 +100,15 @@ Other open PRs include #823, #820, #818, #817, #815, #794, #696, #692, #676, #67
 
 **Evidence limitations:** connector returns PR-triggered runs only and may omit other required checks/reviews. Refresh head SHA, checks and review state immediately before merge. Merge candidates are not authorization to merge.
 
+## Phase 0 review-state audit
+- Core #830/#831/#832 have maintainer technical self-review comments only; these are **not independent approvals**.
+- Core #842 has no review submissions recorded.
+- CRM #69/#68/#67/#63 have no review submissions recorded in the connector snapshot.
+- Intelligence #78 has a maintainer assessment comment; #72/#71/#77 have no review submissions recorded in the connector snapshot.
+- Roadmap PR #856 is DCO-signed; its CI, DCO and required checks were pending/queued at last refresh. PR #855 was closed as duplicate/superseded due to missing DCO sign-off.
+- All review/check data is a snapshot. Refresh immediately before merge.
+
+
 ## Dependency-aware critical path
 ### P0 — security and operational safety
 1. **CORE-IDENTITY:** #831 preserve `iss/sub/client_id` distinctions; then align/ratify #830 contract.
@@ -142,9 +151,9 @@ Other open PRs include #823, #820, #818, #817, #815, #794, #696, #692, #676, #67
 - [x] Record initial mergeability/draft metadata for critical PR subset.
 - [x] Establish dependency-aware critical path and safety rules.
 - [x] Refresh current checks/head SHA for critical PRs in batches (sampled; see CI evidence below).
-- [ ] Review PR comments/reviews and identify stale or conflicting PRs.
-- [ ] Confirm base branches and stacked dependencies.
-- [ ] Create/maintain issue or task tracker for all P0 items.
+- [x] Review submitted review-state snapshot for the critical PR subset (independent approvals absent in sampled PRs; see notes).\n- [ ] Review all PR comments/reviews and identify stale or conflicting PRs (full repository sweep remains).
+- [ ] Confirm base branches and stacked dependencies (full sweep remains).
+- [x] Create master roadmap/backlog PR as tracker for P0/P1/P2 items.
 - [x] Publish initial Phase 0 disposition recommendations (merge/revise/hold) with check evidence; stale/close dispositions remain pending history review.
 - [ ] Reconcile plan after PR merges and update status.
 
