@@ -459,6 +459,14 @@ func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
 	if reconciliations != 1 {
 		t.Fatalf("durable reconciliation count=%d; want exactly one", reconciliations)
 	}
+	lateReceipt := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
+		ExecutionID: start.ExecutionID, AgentID: start.AgentID, Capability: start.Capability,
+		ArtifactHash: start.ArtifactHash, EventType: "EXECUTION_ALLOWED", Decision: DecisionAllow,
+	}
+	if _, _, err := repository.Append(ctx, lateReceipt); err == nil {
+		t.Fatal("late execution receipt must be rejected after reconciliation")
+	}
 	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeNotCommitted, "evidence://other", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
 		t.Fatalf("duplicate reconciliation error = %v; want conflict", err)
 	}
