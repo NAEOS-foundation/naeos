@@ -1,44 +1,84 @@
 # P2 Runtime Integration Contract — Supabase Control Plane
 
-- Status: implementation sequencing note
-- Scope: Issue #786, production runtime integration only
+- Status: implementation contract; source baseline updated 2026-11-19
+- Scope: production Control Plane runtime integration, originally tracked under Issue #786
 - Related ADR: [Production Control Plane Runtime and Supabase Persistence](../architecture/ADR-PRODUCTION-CONTROL-PLANE-SUPABASE-PERSISTENCE.md)
 
-## Verified repository baseline
+## Verified repository baseline (main)
 
-The PostgreSQL persistence components are present on `main`:
+The production Control Plane runtime implementation is present on `main`:
 
-- `PostgresPolicyRepository`, `PostgresGrantRepository`, and `PostgresApprovalRepository` use `database/sql`.
-- `PostgresLedger` uses `pgxpool` and exposes transactional `Append(ctx, event) (event, sequence, error)` plus integrity-checking `Load(ctx)`.
-- The reusable `DecisionGateway` currently has concrete fields `*Evaluator`, `*Ledger`, and `*ApprovalStore`; its decision/execution flows call synchronous in-memory ledger APIs (`Append(event)`, `Decision(id)`, `HasExecution(id)`, and event query helpers).
-- The demo composition root `newControlPlaneGateway` seeds in-memory policy state and constructs `NewLedger()`. The demo API router also contains demo reset/scenario routes.
-- `internal/api.JWKSValidator` exists for the generic API path; it has not yet been wired to a dedicated production Control Plane router.
+- `naeos control-plane preflight` performs read-only database target, TLS, connectivity, runtime-role, private-schema, and required-function checks.
+- `naeos control-plane serve` opens the environment-scoped PostgreSQL runtime, verifies the ledger, configures JWT/JWKS identity, and then starts the dedicated HTTP server.
+- The runtime uses `NAEOS_CONTROLPLANE_DATABASE_URL` and `NAEOS_CONTROLPLANE_ENVIRONMENT`; it does not silently fall back to generic `DATABASE_URL`, in-memory state, or file snapshots.
+- Database target validation binds production to the approved CRM PostgreSQL Supabase project and staging/preview to the approved `naeos.db` Supabase project.
+- Runtime startup requires TLS, a dedicated login role with constrained membership, the private `naeos_control_plane` schema and required tables/functions, and a valid ledger integrity check.
+- Production health routes separate liveness and readiness. The dedicated production handler does not mount investor-demo reset, scenario, or execution routes.
+- Identity configuration requires issuer, audience, and JWKS URL; the identity validator is initialized before the listener is bound.
 
-## Compatibility gap (do not paper over)
+These are source-level implementation findings. They do **not** prove that production or staging credentials have been configured, that the preflight has run against either live database, that migrations have been applied, or that a deployment/cutover has occurred.
 
-`PostgresLedger` is not a drop-in replacement for `*Ledger`: method signatures differ, it is context-aware, and its current API does not provide the gateway's canonical decision/execution query methods. The gateway also relies on evaluator access to an in-process policy store and execution locking. Directly substituting the PostgreSQL ledger or sharing the demo router would therefore be unsafe and incomplete.
+## Live staging database audit (read-only, 2026-11-19)
 
-## P2 implementation sequence
+A read-only catalog audit was performed against the approved `naeos.db` staging project (project ref `kqmhpsftijskesjdovjm`). No schema, data, role, credential, or migration changes were made during the audit.
 
-1. Define narrow, context-aware interfaces for production policy/grant/approval reads and ledger operations; keep existing demo-facing concrete APIs unchanged during migration.
-2. Add production adapters for the interface boundary, including ledger lookups for canonical authorization decisions and prior execution state. A repository append error must produce an indeterminate result, not an ALLOW.
-3. Build a dedicated production composition root that opens the single `DATABASE_URL` contract, applies TLS and bounded pool settings, pings the database, and validates required schema compatibility before binding the listener.
-4. Load the active immutable policy and grant records from PostgreSQL for every authorization request; reject stale policy-version grants and missing/revoked/expired or scope-mismatched grants.
-5. Register only explicitly allowlisted production routes. Do not mount investor demo reset, scripted scenario, demo execution, or seed routes.
-6. Add liveness and readiness handlers. Readiness must be false if DB connectivity, schema compatibility, or required identity trust configuration is unavailable. Shut down the server and pools cleanly on cancellation.
+Verified findings:
 
-## Required tests for this integration slice
+- The private `naeos_control_plane` schema exists and contains all six required tables: `policy_versions`, `active_policies`, `grants`, `approvals`, `ledger_head`, and `ledger_events`.
+- Both Control Plane migration versions (`20261111000100` and `20261111000200`) are recorded in the staging migration history.
+- The runtime group role exists as `NOLOGIN`, `NOSUPERUSER`, `NOBYPASSRLS`, `NOCREATEDB`, and `NOCREATEROLE`. No dedicated runtime login role currently exists.
+- Schema usage is denied to `PUBLIC`, `anon`, `authenticated`, and `service_role`; those roles also have no table SELECT access in the private Control Plane schema.
+- All six tables have RLS enabled. The runtime group has narrowly scoped table privileges; direct ledger-event writes are not granted.
+- Ledger append and read-head functions are `SECURITY DEFINER`, owned by `postgres`, use a fixed `pg_catalog` search path, and are executable by the runtime group only (not `PUBLIC`).
+- The staging ledger head is at sequence 0 and the event table is empty at audit time.
+- The CRM staging `public` schema contains 22 base tables; the audit did not alter them.
 
-- Interface conformance tests for the in-memory test doubles and PostgreSQL implementations.
-- Authorization negative cases: absent grant, revoked/expired grant, agent mismatch, capability scope mismatch, and stale policy version.
-- Persistence fail-closed: append/query failure never returns a usable ALLOW decision.
-- Router allowlist: demo-only routes are not registered in the production mux.
-- Startup failure: missing/invalid DATABASE_URL, DB ping failure, or missing/incompatible schema prevents listener startup.
-- Readiness transition: database dependency failure flips readiness unhealthy; liveness remains independent.
-- Shutdown: cancellation closes listener and database pools without leaking goroutines.
+This verifies the live schema and static role/grant configuration only. The runtime LOGIN identity and secret are not provisioned, so live runtime preflight remains blocked. A live runtime login/preflight test and recovery/concurrency evidence remain outstanding.
 
-## Verification and rollout boundaries
+## Compatibility and safety requirements
 
-- This note does not assert that runtime composition has been implemented.
-- No production Supabase migration, role/credential change, Railway variable edit, or deployment is authorized by this change.
-- Keep the PR draft until the integration code and CI evidence satisfy the acceptance criteria in Issue #786.
+- Keep the investor-demo composition root and its route surface separate from the production runtime.
+- Runtime startup and authorization must fail closed on target mismatch, missing schema/trust configuration, database failures, invalid identity, or ledger integrity failure.
+- Do not use a generic database variable, in-memory store, or JSON file as a production fallback.
+- Keep production CRM database access behind the dedicated least-privilege Control Plane role and private schema; staging/preview uses separate credentials and the `naeos.db` target.
+- Do not apply migrations, edit environment secrets, deploy, or perform production cutover without a separately reviewed and authorized operational step.
+
+## Implementation and verification status
+
+| Workstream | Source status | Remaining evidence / gate |
+|---|---|---|
+| Environment-scoped DB contract and target validation | Implemented | Live preflight per environment |
+| PostgreSQL repositories and ledger adapter | Present | Staging migration, integration and recovery evidence |
+| Dedicated production composition root and route allowlist | Implemented | Live deployment verification |
+| Startup DB/schema/role/ledger checks | Implemented | Live preflight evidence |
+| JWT/JWKS identity configuration | Implemented | Confirm actual issuer/audience/key configuration and live token tests |
+| Liveness/readiness | Implemented | Runtime monitoring and dependency failure observation |
+| Staging validation | Not evidenced as complete | Confirm target, review/apply migration, persistence/restart/concurrency/privilege tests |
+| Production cutover | Not authorized / not evidenced | Backup and restore proof, schema/role review, explicit approval, deployment and rollback receipts |
+
+## Staging migration scope warning
+
+The repository migration directory includes Control Plane, CRM, and unified identity/tenant migrations. A normal Supabase migration push may apply all pending migrations, not only the Control Plane schema. Before any staging migration, inventory the full pending migration set against the target project, verify the project is isolated and its data is disposable or backed up, review ordering and effects, and use an explicit approved migration plan. Do not use a generic migration push as a shortcut for installing only the Control Plane schema.
+
+## Required tests and evidence
+
+- Environment mismatch, invalid database URL, and TLS requirement fail closed.
+- Runtime role is dedicated, non-superuser, non-BYPASSRLS, and has no additional role memberships.
+- Required private schema tables/functions are present before startup.
+- Ledger integrity is verified before binding the listener; persistence failure cannot become an ALLOW.
+- JWT negative cases reject wrong issuer/audience, expired/not-before tokens, invalid signatures, unsupported algorithms, and unknown keys.
+- Production router allowlist excludes demo reset, scenario, execution, and other demo-only routes.
+- Readiness fails when database, schema, role, or identity dependencies are unavailable; liveness remains independent.
+- Staging integration tests cover migration, restart recovery, concurrent ledger append, least-privilege grants, and fail-closed behavior.
+
+## Rollout boundaries
+
+This document records repository implementation progress only. It does not authorize or claim:
+- a staging migration or live staging preflight;
+- a production database migration, role/credential change, or cutover;
+- a Railway environment-variable change or deployment;
+- live production health or durable-state proof.
+
+Maintain the ADR release gates and never bypass security or governance checks to obtain a green status.
+
+Operational evidence must be recorded with environment identity, timestamp, command, outcome, and sanitized output.
