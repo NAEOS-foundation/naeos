@@ -13,16 +13,22 @@ import (
 )
 
 type readinessSource struct{}
+
 func (readinessSource) ObserveExecution(context.Context, string, controlplane.ExecutionOutcome, string) (controlplane.AuthoritativeExecutionObservation, error) {
 	return controlplane.AuthoritativeExecutionObservation{}, controlplane.ErrAuthoritativeEvidenceNotVerified
 }
 
 func TestHealthRoutesDoNotClaimDependencyReadiness(t *testing.T) {
 	svc, err := controlplane.NewProviderNeutralEvidenceVerificationService(readinessSource{}, policy{version: "test-v1"}, "service-token")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	handler := newHandler(svc)
 
-	for _, tc := range []struct{name, path string; want int}{
+	for _, tc := range []struct {
+		name, path string
+		want       int
+	}{
 		{name: "liveness", path: "/healthz", want: http.StatusOK},
 		{name: "configuration", path: "/configz", want: http.StatusOK},
 		{name: "dependency readiness remains unverified", path: "/readyz", want: http.StatusServiceUnavailable},
