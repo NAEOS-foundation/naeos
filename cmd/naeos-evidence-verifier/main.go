@@ -57,23 +57,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	mux := http.NewServeMux()
-	mux.Handle("/v1/verify", svc.Handler())
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("ok"))
-	})
-	mux.HandleFunc("/configz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("configured"))
-	})
-	// The source interface has no dependency health contract. Do not claim
-	// dependency readiness until a bounded, read-only probe is implemented.
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "authoritative source readiness is not verified", http.StatusServiceUnavailable)
-	})
+	handler := newHandler(svc)
 	server := &http.Server{
-		Addr: addr, Handler: mux, ReadHeaderTimeout: 3 * time.Second,
+		Addr: addr, Handler: handler, ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second,
 		IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024,
 	}
@@ -92,4 +78,23 @@ func run() error {
 		}
 		return err
 	}
+}
+
+func newHandler(svc *controlplane.ProviderNeutralEvidenceVerificationService) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/v1/verify", svc.Handler())
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("/configz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("configured"))
+	})
+	// The source interface has no dependency health contract. Do not claim
+	// dependency readiness until a bounded, read-only probe is implemented.
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "authoritative source readiness is not verified", http.StatusServiceUnavailable)
+	})
+	return mux
 }
