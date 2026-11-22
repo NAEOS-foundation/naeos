@@ -11,7 +11,7 @@ aliases: ["/whitepaper/"]
 | | |
 |---|---|
 | **Document Version** | 1.0.0 |
-| **Status** | Stable |
+| **Status** | Public Draft |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
 | **Software Release Baseline** | v3.7.1 |
