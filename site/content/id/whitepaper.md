@@ -1,6 +1,6 @@
 ---
 title: "Whitepaper NAEOS"
-description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang mengubah spesifikasi menjadi sistem perangkat lunak multi-bahasa yang tervalidasi. Tentukan Sekali. Bangun di Mana Saja."
+description: "Whitepaper resmi NAEOS — engineering control plane open-source untuk AI coding agents, dengan policy, authorization, execution, evidence, dan independent verification yang eksplisit."
 ---
 
 **Nusantara AI Engineering Operating System**
@@ -10,7 +10,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 | | |
 |---|---|
 | **Versi Dokumen** | 1.0.0 |
-| **Status** | Public Draft |
+| **Status** | Stable |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
 | **Versi Platform** | v3.7.1 (versi rilis saat ini) |
@@ -21,7 +21,7 @@ description: "Whitepaper resmi NAEOS — platform engineering deklaratif yang me
 
 NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas. NAEOS bukan sekadar *project generator* — ia adalah *engineering runtime* yang memahami spesifikasi, membangun model internal (NEIR), mengorkestrasi rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasinya sepanjang siklus hidup.
 
-Dengan semboyan **"Architecture Drives Engineering."**, NAEOS memungkinkan organisasi mendeskripsikan sistem mereka **sekali**, lalu membangun, memvalidasi, dan mengevolusi perangkat lunak di berbagai bahasa, framework, dan platform — dengan model engineering yang dapat dibagi untuk kode, dokumentasi, konfigurasi, dan konteks AI.
+Dengan semboyan **"Architecture Drives Engineering."**, NAEOS menghubungkan specification-first engineering dengan control plane AI engineering: intent yang eksplisit, policy, authorized execution, observation, evidence, dan verification.
 
 Status repositori saat ini mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart scaffolding, dan template kebijakan yang berorientasi pada kepatuhan SOC 2, HIPAA, dan GDPR.
 
