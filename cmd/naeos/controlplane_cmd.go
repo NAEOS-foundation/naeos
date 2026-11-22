@@ -87,6 +87,18 @@ func newControlPlaneServeCommand() *cobra.Command {
 				return fmt.Errorf("control plane identity initialization failed: %w", err)
 			}
 
+			verifierURL := os.Getenv("NAEOS_CONTROLPLANE_EVIDENCE_VERIFIER_URL")
+			verifierToken := os.Getenv("NAEOS_CONTROLPLANE_EVIDENCE_VERIFIER_TOKEN")
+			if verifierURL != "" || verifierToken != "" {
+				verifier, err := controlplane.NewHTTPExecutionEvidenceVerifier(verifierURL, verifierToken)
+				if err != nil {
+					return fmt.Errorf("control plane evidence verifier configuration failed: %w", err)
+				}
+				if err := runtime.ConfigureExecutionEvidenceVerifier(verifier); err != nil {
+					return fmt.Errorf("control plane evidence verifier initialization failed: %w", err)
+				}
+			}
+
 			if addr == "" {
 				addr = os.Getenv("NAEOS_CONTROLPLANE_ADDR")
 			}
