@@ -22,7 +22,7 @@ export const MAIN_ENTITY = {
       logo: `${SITE.baseUrl}/images/logo-mark.svg`,
       publisher: {
         "@type": "Organization",
-        name: "NAEOS OSS",
+        name: "NAEOS Foundation",
         url: SITE.baseUrl,
         logo: `${SITE.baseUrl}/images/logo-mark.svg`,
         sameAs: [
