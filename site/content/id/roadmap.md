@@ -1,46 +1,111 @@
 ---
 title: Peta Jalan
-description: Peta jalan pengembangan NAEOS.
+description: Strategi eksekusi NAEOS dari konsistensi publik, Golden Path yang dapat direproduksi, adopsi eksternal, hingga ekosistem dan komersialisasi.
 ---
 
-## Visi
+## Strategi Saat Ini
 
-NAEOS bertujuan menjadi sistem operasi deklaratif standar untuk proyek engineering — sumber kebenaran tunggal yang menghubungkan kode, dokumentasi, spesifikasi, dan kode yang dihasilkan AI dalam kerangka kerja yang koheren dan terverifikasi.
+NAEOS mengurutkan eksekusi dengan prinsip **proof first, adoption second, ecosystem third, commercialization last**.
 
-## Fokus Saat Ini
+Arah produk canonical saat ini:
 
-### Q3–Q4 2026
+> **The Engineering Control Plane for AI Coding Agents**
 
-| Area | Status |
-|------|--------|
-| **Spesifikasi NEIR v1.0** | 🚧 Dalam Pengerjaan |
-| **Sistem Plugin** | 🚧 Dalam Pengerjaan |
-| **Workspace Multi-Proyek** | 📋 Direncanakan |
-| **Ekstensi VS Code** | 📋 Direncanakan |
-| **Integrasi CI/CD** | 🚧 Dalam Pengerjaan |
-| **API Penyedia Konteks AI** | 📋 Direncanakan |
+Model control canonical:
 
-## Pencapaian
+```
+Specification
+→ NEIR
+→ Validation + Policy
+→ Agent Intent
+→ Authorized Execution
+→ Observation
+→ Evidence
+→ Independent Verification
+```
 
-### Q1–Q2 2026
+## P0 — Konsistensi Publik
 
-- ✅ **NAEOS CLI v0.x** — CLI inti dengan perintah `init`, `run`, `generate`, `validate`
-- ✅ **Format NEIR** — Format spesifikasi engineering deklaratif berbasis YAML
-- ✅ **Pemodelan Modul & Ketergantungan** — Definisikan modul proyek, layanan, dan ketergantungannya
-- ✅ **Generasi Kode** — Hasilkan scaffolding proyek dari model NEIR
-- ✅ **Integrasi OpenCode** — Alur kerja pengembangan berbasis AI
-- ✅ **Situs Web Resmi** — Pusat dokumentasi dan komunitas NAEOS.dev
-- ✅ **Stack Observability (v3.5.0)** — Ekspor trace OTLP, korelasi request, alerting burn-rate SLO, ekspor SIEM
-- ✅ **Control Plane Demo Investor (v3.5.0)** — Server referensi `naeos demo` untuk authorization, policy, verification, dan audit
-- ✅ **Pemindaian Keamanan di CI** — govulncheck pada push dan pull request
+**Status: ACTIVE**
 
-## Rencana Masa Depan
+Sinkronkan seluruh permukaan publik dengan kondisi engineering repository yang sebenarnya.
 
-### 2027 dan Seterusnya
+- Positioning dan navigasi website
+- SEO titles, descriptions, canonical messaging, dan structured copy
+- Whitepaper
+- FAQ
+- About
+- Roadmap dan referensi dokumentasi publik
+- Pemisahan versi software release dengan milestone engineering/experiment
 
-- **NEIR v2.0** — Sintaks yang diperluas dengan modul bersyarat, profil lingkungan, dan pewarisan
-- **Dashboard GUI** — Antarmuka manajemen proyek visual
-- **Fitur Enterprise** — RBAC, audit logging, integrasi SSO
-- **Kolaborasi Tim** — Pengeditan model NEIR multi-pengguna waktu nyata
-- **Marketplace** — Plugin komunitas, template, dan generator
-- **Cloud Sync** — Sinkronisasi proyek berbasis cloud opsional
+## P1 — Golden Path
+
+**Status: NEXT**
+
+Jadikan control-plane proof yang sudah ada sebagai demonstrasi developer utama.
+
+```
+Control Plane
+→ Golden Path
+→ P1.6–P1.10 Reference Demo
+→ Evidence
+→ Independent Verification (P1.11)
+```
+
+Targetnya adalah alur fresh-checkout yang dapat dijalankan, diperiksa, dan dipahami technical evaluator dalam beberapa menit.
+
+## P2 — Adopsi Eksternal
+
+**Status: GATED BY P1**
+
+Bekerja dengan 5–10 developer atau repository pertama.
+
+Capture:
+- jalur evaluasi yang berhasil;
+- friction integrasi;
+- deviasi dari Golden Path terdokumentasi;
+- failure modes;
+- dokumentasi yang kurang;
+- kualitas evidence;
+- kebutuhan berulang dari evaluator independen.
+
+Observasi ini menjadi input prioritas engineering berikutnya.
+
+## P3 — Ekosistem
+
+**Status: GATED BY P2**
+
+Prioritaskan SDK, integrasi, dan marketplace hanya jika evidence adopsi eksternal menunjukkan kebutuhan yang berulang.
+
+Tujuannya memperluas control boundary tanpa memecah governance atau model evidence.
+
+## P4 — Komersialisasi
+
+**Status: GATED BY P2**
+
+Packaging Cloud dan Enterprise mengikuti evidence adopsi teknis, bukan mendahuluinya.
+
+Arah komersial ditentukan oleh deployment boundary, operational requirements, governance needs, dan evidence dari penggunaan eksternal.
+
+## Engineering Proof yang Selesai
+
+- **P1.6** — Public Control-Plane Golden Path — DONE
+- **P1.7** — Policy Change Mid-Run / Stale Authorization — DONE
+- **P1.8** — Atomic Execution Commit Boundary — DONE
+- **P1.9** — Evidence & Verification Plane — DONE
+- **P1.10** — Evidence Query & Audit API — DONE
+- **P1.11** — Independent Verifier CLI — DONE
+
+P1.11 adalah capability verifikasi yang mendukung proof path, bukan alasan membuka siklus feature expansion baru.
+
+## Urutan Strategis
+
+```
+Public consistency
+→ Reproducible Golden Path
+→ 5–10 external evaluators
+→ Evidence-backed ecosystem priorities
+→ Cloud / Enterprise
+```
+
+NAEOS sengaja belum memprioritaskan ekspansi dashboard, fitur AI provider-specific, pertumbuhan marketplace, atau packaging komersial sebelum tersedia evidence adopsi teknis.
