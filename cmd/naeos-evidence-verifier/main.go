@@ -63,9 +63,14 @@ func run() error {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte("ok"))
 	})
+	mux.HandleFunc("/configz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("configured"))
+	})
+	// The source interface has no dependency health contract. Do not claim
+	// dependency readiness until a bounded, read-only probe is implemented.
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte("ready"))
+		http.Error(w, "authoritative source readiness is not verified", http.StatusServiceUnavailable)
 	})
 	server := &http.Server{
 		Addr: addr, Handler: mux, ReadHeaderTimeout: 3 * time.Second,
