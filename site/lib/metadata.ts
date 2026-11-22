@@ -40,7 +40,7 @@ export const MAIN_ENTITY = {
       inLanguage: ["en", "id"],
       publisher: {
         "@type": "Organization",
-        name: "NAEOS OSS",
+        name: "NAEOS Foundation",
         url: SITE.baseUrl,
         logo: `${SITE.baseUrl}/images/logo-mark.svg`,
       },
@@ -69,7 +69,7 @@ export function breadcrumbJsonLd(crumbs: Crumb[]) {
 export function blogPostingJsonLd(
   page: Page,
   author: string,
-  publisherName = "NAEOS OSS",
+  publisherName = "NAEOS Foundation",
 ) {
   return {
     "@context": "https://schema.org",
