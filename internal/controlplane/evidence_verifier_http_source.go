@@ -103,9 +103,5 @@ func (s *HTTPAuthoritativeEvidenceSource) ObserveExecution(ctx context.Context, 
 	if dec.Decode(new(any)) != io.EOF {
 		return AuthoritativeExecutionObservation{}, errors.New("source response must be one JSON object")
 	}
-	return AuthoritativeExecutionObservation{
-		ExecutionID: o.ExecutionID, Outcome: o.Outcome, EvidenceRef: o.EvidenceRef,
-		Authority: o.Authority, EvidenceSHA256: o.EvidenceSHA256,
-		ObservedAt: o.ObservedAt, ValidUntil: o.ValidUntil,
-	}, nil
+	return AuthoritativeExecutionObservation(o), nil
 }
