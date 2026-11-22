@@ -19,11 +19,11 @@ description: "Whitepaper resmi NAEOS — engineering control plane open-source u
 
 ## Ringkasan Eksekutif
 
-NAEOS adalah platform engineering deklaratif open-source yang mengubah spesifikasi menjadi sistem perangkat lunak berkualitas tinggi melalui pipeline yang konsisten, tervalidasi, dan dapat diperluas. NAEOS bukan sekadar *project generator* — ia adalah *engineering runtime* yang memahami spesifikasi, membangun model internal (NEIR), mengorkestrasi rencana eksekusi, menghasilkan artefak, memvalidasi hasil, dan menjaga proyek tetap selaras dengan spesifikasinya sepanjang siklus hidup.
+NAEOS adalah engineering control plane open-source dan vendor-neutral untuk AI coding agents. NAEOS menetapkan boundary eksplisit antara apa yang diusulkan agent, apa yang diotorisasi policy, apa yang dijalankan runtime, apa yang dikonfirmasi observation, dan evidence durable yang dapat diverifikasi secara independen. Model control canonical adalah Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification. NAEOS juga mempertahankan capability specification-first engineering: NEIR menghubungkan intent sistem dengan validation, generated artifacts, dan AI context.
 
 Dengan semboyan **"Architecture Drives Engineering."**, NAEOS menghubungkan specification-first engineering dengan control plane AI engineering: intent yang eksplisit, policy, authorized execution, observation, evidence, dan verification.
 
-Status repositori saat ini mencakup spesifikasi bahasa v2, kompiler AI multi-adapter, LSP NEIR-aware, tata kelola berbasis konstitusi, marketplace, daemon produksi (`naeos serve`), SBOM & artifact signing, Helm chart scaffolding, dan template kebijakan yang berorientasi pada kepatuhan SOC 2, HIPAA, dan GDPR.
+Repository memiliki capability platform yang lebih luas. Namun, public proof scope saat ini berfokus pada control-plane authorization, execution, evidence, dan independent verification melalui milestone P1.6–P1.11. Capability lain perlu dievaluasi berdasarkan dokumentasi, implementation state, dan evidence masing-masing; keberadaannya tidak berarti blanket compliance atau production assurance.
 
 ---
 
