@@ -1,6 +1,6 @@
 ---
 title: "NAEOS Whitepaper"
-description: "The official NAEOS whitepaper — a declarative engineering platform that transforms specifications into validated, multi-language software systems. Architecture Drives Engineering."
+description: "The official NAEOS whitepaper — the open-source engineering control plane for AI coding agents, with explicit policy, authorization, execution, evidence, and independent verification."
 aliases: ["/whitepaper/"]
 ---
 
@@ -11,7 +11,7 @@ aliases: ["/whitepaper/"]
 | | |
 |---|---|
 | **Document Version** | 1.0.0 |
-| **Status** | Public Draft |
+| **Status** | Stable |
 | **Project License** | Apache License 2.0 |
 | **Repository** | github.com/NAEOS-foundation/naeos |
 | **Software Release Baseline** | v3.7.1 |
@@ -21,7 +21,7 @@ aliases: ["/whitepaper/"]
 
 ## Executive Summary
 
-NAEOS is an open-source declarative engineering platform that transforms specifications into high-quality software systems through a consistent, validated, and extensible pipeline. NAEOS is not just a project generator — it is an *engineering runtime* that understands specifications, builds an internal model (NEIR), orchestrates execution plans, generates artifacts, validates results, and keeps projects aligned with their specifications throughout the entire lifecycle.
+NAEOS is an open-source, vendor-neutral engineering control plane for AI coding agents. It establishes an explicit boundary between what an agent proposes, what policy authorizes, what runtime executes, what observation confirms, and what durable evidence can independently verify. Its canonical control model is Specification → NEIR → Validation + Policy → Agent Intent → Authorized Execution → Observation → Evidence → Independent Verification. NAEOS also retains specification-first engineering capabilities: NEIR connects system intent to validation, generated artifacts, and AI context.
 
 Under the motto **"Architecture Drives Engineering."**, NAEOS enables organizations to describe their system **once**, then derive code, documentation, configuration, and AI context from a shared engineering model across multiple languages and frameworks.
 
