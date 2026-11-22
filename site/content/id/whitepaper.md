@@ -10,7 +10,7 @@ description: "Whitepaper resmi NAEOS — engineering control plane open-source u
 | | |
 |---|---|
 | **Versi Dokumen** | 1.0.0 |
-| **Status** | Stable |
+| **Status** | Public Draft |
 | **Lisensi Proyek** | Apache License 2.0 |
 | **Repositori** | github.com/NAEOS-foundation/naeos |
 | **Versi Platform** | v3.7.1 (versi rilis saat ini) |
