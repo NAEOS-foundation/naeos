@@ -9,7 +9,7 @@ on:
       - '**.md'
       - '.github/workflows/website.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feat/provider-neutral-evidence-verifier-20261122]
   workflow_dispatch:
     inputs:
       confirm_staging_mutations:
