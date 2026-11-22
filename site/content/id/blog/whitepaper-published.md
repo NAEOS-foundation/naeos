@@ -1,30 +1,33 @@
 ---
 title: "Whitepaper Resmi NAEOS Diterbitkan"
-description: "Whitepaper resmi NAEOS kini tersedia — dokumen teknis komprehensif yang mencakup visi, arsitektur, Engineering Constitution, NEIR, integrasi AI, tata kelola, dan kepatuhan."
+description: "Whitepaper NAEOS mendokumentasikan engineering control plane open-source untuk AI coding agents, control model, proof path saat ini, dan batas evidence."
 date: 2026-08-01
 author: "NAEOS Foundation"
 categories: ["announcement"]
 ---
 
-Kami dengan bangga mengumumkan penerbitan **whitepaper resmi NAEOS** — tersedia dalam Bahasa Indonesia dan Inggris, baik di repositori maupun di situs web ini.
+**Whitepaper resmi NAEOS** tersedia dalam Bahasa Indonesia dan Inggris. Dokumen ini dipelihara bersama repository dan website agar mencerminkan arah engineering serta kondisi yang didukung evidence.
 
-## Isi Whitepaper
+## Fokus Saat Ini
 
-Whitepaper ini adalah dokumen teknis komprehensif yang mencakup:
+NAEOS adalah engineering control plane open-source dan vendor-neutral untuk AI coding agents. Control model canonical:
 
-- **Ringkasan eksekutif & pernyataan masalah** — mengapa engineering deklaratif menjawab krisis fragmentasi pengembangan perangkat lunak modern
-- **Visi & misi** — "Tentukan Sekali. Bangun di Mana Saja."
-- **Engineering Constitution** — 12 pasal konstitusi yang dikompilasi NAEOS menjadi aturan yang dapat dieksekusi
-- **Arsitektur platform** — model lima lapisan dan pipeline kompilasi sembilan tahap yang deterministik
-- **Komponen inti** — Specification Language v2, NEIR, generator multi-bahasa, kernel, AI compiler dengan 6 output adapter, tata kelola & kepatuhan, dan marketplace ekosistem
-- **Diferensiasi** — NAEOS vs pendekatan konvensional, riwayat rilis, roadmap, kasus penggunaan, dan pertimbangan adopsi
+```
+Specification
+→ NEIR
+→ Validation + Policy
+→ Agent Intent
+→ Authorized Execution
+→ Observation
+→ Evidence
+→ Independent Verification
+```
 
-Seluruh diagram dirender dengan Mermaid dan divalidasi otomatis di CI.
+Public proof scope berfokus pada authorization, execution, evidence, dan independent verification dalam control plane. Versi release software dan identifier engineering milestone didokumentasikan secara terpisah.
 
 ## Tempat Membaca
 
-- **Situs web**: [Bahasa Indonesia](/id/whitepaper/) · [English](/whitepaper/)
-- **PDF**: [Bahasa Indonesia](/downloads/naeos-whitepaper-id.pdf) · [English](/downloads/naeos-whitepaper.pdf)
-- **Repositori**: [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md) · [WHITEPAPER-EN.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER-EN.md)
+- **Website**: [Bahasa Indonesia](/id/whitepaper/) · [English](/whitepaper/)
+- **Repository**: [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md) · [WHITEPAPER-EN.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER-EN.md)
 
-Kami berharap dokumen ini membantu para engineer, arsitek, dan organisasi mengevaluasi NAEOS sebagai fondasi platform engineering mereka. Masukan dan saran selalu kami terima — buka issue atau bergabunglah dalam diskusi di GitHub.
+Whitepaper merupakan dokumen teknis yang terus diperbarui. Evaluasi documented scope dan proof yang dapat direproduksi untuk kebutuhan Anda; keberadaan capability platform yang lebih luas tidak otomatis berarti production assurance atau compliance certification.
