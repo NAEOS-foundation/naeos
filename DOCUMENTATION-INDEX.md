@@ -96,6 +96,8 @@ This flow demonstrates: specification → NEIR → validation → policy → AI 
 - [NAEOS-RDP-001.md](NAEOS-RDP-001.md) — roadmap & development plan (architecture to executable AI engineering foundation).
 
 ## 5.2 Website and academic documents
+- [docs/commercial-services/](docs/commercial-services/) — commercial services offer, delivery playbook, and acceptance gates (draft/internal review).
+
 - [site/](site/) — Next.js website (Cloudflare Pages) with English and Indonesian (`site/content/id`) content.
 
 
