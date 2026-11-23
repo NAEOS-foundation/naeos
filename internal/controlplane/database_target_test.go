@@ -3,7 +3,10 @@
 
 package controlplane
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 	const productionURL = "postgres://naeos:secret@db.oruykkehukoiipldzcvc.supabase.co:5432/postgres?sslmode=require"
@@ -46,6 +49,47 @@ func TestValidateControlPlaneDatabaseTarget(t *testing.T) {
 			err := validateControlPlaneDatabaseTarget(tt.raw, tt.environment)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("validateControlPlaneDatabaseTarget() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidControlPlanePoolerRoleName(t *testing.T) {
+	valid := []struct {
+		name string
+		role string
+	}{
+		{name: "single letter", role: "a"},
+		{name: "postgres role", role: "postgres"},
+		{name: "underscore prefix", role: "_role"},
+		{name: "digits and underscore", role: "role_123"},
+		{name: "maximum length", role: strings.Repeat("a", 63)},
+	}
+	for _, tt := range valid {
+		t.Run(tt.name, func(t *testing.T) {
+			if !validControlPlanePoolerRoleName(tt.role) {
+				t.Errorf("expected role name %q to be valid", tt.role)
+			}
+		})
+	}
+
+	invalid := []struct {
+		name string
+		role string
+	}{
+		{name: "empty", role: ""},
+		{name: "leading digit", role: "1role"},
+		{name: "leading hyphen", role: "-role"},
+		{name: "hyphen", role: "role-name"},
+		{name: "dot", role: "role.name"},
+		{name: "uppercase", role: "Role"},
+		{name: "too long", role: strings.Repeat("a", 64)},
+		{name: "non ASCII", role: "érole"},
+	}
+	for _, tt := range invalid {
+		t.Run(tt.name, func(t *testing.T) {
+			if validControlPlanePoolerRoleName(tt.role) {
+				t.Errorf("expected role name %q to be invalid", tt.role)
 			}
 		})
 	}

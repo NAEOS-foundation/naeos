@@ -60,18 +60,22 @@ func validateControlPlaneDatabaseTarget(raw, environment string) error {
 	return errors.New("NAEOS_CONTROLPLANE_DATABASE_URL does not match the configured Supabase project for this environment")
 }
 
+// validControlPlanePoolerRoleName accepts PostgreSQL-style lowercase ASCII
+// role identifiers with a maximum of 63 bytes. The first byte must be a
+// lowercase ASCII letter or underscore; subsequent bytes may also be digits.
 func validControlPlanePoolerRoleName(name string) bool {
 	if len(name) == 0 || len(name) > 63 {
 		return false
 	}
-	for i, r := range name {
+	for i := 0; i < len(name); i++ {
+		c := name[i]
 		if i == 0 {
-			if (r < 'a' || r > 'z') && r != '_' {
+			if (c < 'a' || c > 'z') && c != '_' {
 				return false
 			}
 			continue
 		}
-		if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '_' {
+		if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_' {
 			return false
 		}
 	}
