@@ -78,7 +78,7 @@ A generated **NAEOS Client Delivery Kit v1.0** was prepared outside this reposit
 - Service-led discovery and assessment offer: **DRAFT / READY FOR INTERNAL VALIDATION**
 - Template package structure: **QA-checked at file/package level; assessor usability and layout review pending**
 - Fictional sample assessment: **illustrative only**
-- Delivery repeatability: **pending independent assessor walkthrough**
+- Delivery repeatability: **desk-based simulated repeatability test PARTIAL PASS; independent human assessor walkthrough pending** ([repeatability report](REPEATABILITY-TEST.md))
 - Client simulation: **pending**
 - Legal/SOW/privacy review: **required before client engagement**
 - SaaS / multi-tenant product offer: **HOLD**
