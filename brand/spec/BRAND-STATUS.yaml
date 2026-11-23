@@ -1,0 +1,59 @@
+version: 1
+registry_status: proposed_review_required
+canonical_logo_master: "2.0.0"
+subsystems:
+  original_visual_source:
+    status: frozen_immutable
+    evidence: "brand/source-of-truth/README.md"
+    next_action: preserve
+  logo_master:
+    status: approved_frozen
+    version: "2.0.0"
+    evidence: "brand/docs/README.md"
+    next_action: preserve_geometry_derive_only
+  logo_derivatives:
+    status: mixed_verified
+    evidence: "brand/ASSET-MANIFEST-v1.md"
+    next_action: audit_production_consumers
+  positioning:
+    status: baseline_documented
+    evidence: "docs/SOCIAL-IDENTITY.md"
+    next_action: synchronize_public_profiles
+  color_tokens:
+    status: draft_reconcile
+    evidence: "brand.json and brand.css and guideline"
+    next_action: verify_source_values_and_ratify_semantic_tokens
+  typography:
+    status: draft_reconcile
+    evidence: "brand.json versus guidelines and social kit"
+    next_action: validate_fonts_licensing_availability_and_fallbacks
+  guidelines_v1_1:
+    status: draft
+    evidence: "brand/guidelines/BRAND-GUIDELINES-v1.1.md"
+    next_action: ratification_review
+  social_media_kit_v1:
+    status: draft
+    evidence: "social-media README and ASSET-REGISTER.md"
+    next_action: visual_safe_area_export_validation
+  binary_asset_publication:
+    status: partial_pending
+    evidence: "asset manifest and extraction register"
+    next_action: publish_files_then_verify_dimensions_and_checksums
+  product_design_system:
+    status: not_verified_unified
+    evidence: implementation_inventory_required
+    next_action: inventory_website_crm_dashboard_control_plane
+  brand_ci:
+    status: not_established_verified
+    evidence: automation_audit_required
+    next_action: add_asset_and_token_validation
+state_definitions:
+  draft: authoring_not_approved
+  review: evidence_visual_review_underway
+  approved: explicit_scope_approval
+  frozen: immutable_source_requires_new_version_for_change
+  implemented: present_in_target_implementation
+  verified: checked_against_explicit_criteria
+  published: artifacts_present_at_intended_destination
+  deprecated: superseded_retained_for_traceability
+promotion_rule: "Do not promote state without required evidence or explicit approval."
