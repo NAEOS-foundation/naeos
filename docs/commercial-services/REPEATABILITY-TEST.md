@@ -16,6 +16,7 @@ Check whether assessment classifications and conclusions are reproducible when t
 - No new evidence was collected; no external facts were introduced.
 - This is **not** a two-human inter-rater study and is not statistically representative.
 - The assessed controls are CTL-001 through CTL-007. CTL-008 and CTL-009 remain Not Assessed and are excluded from maturity agreement.
+- Calibration reference: [Assessment Maturity Rubric](MATURITY-RUBRIC.md).
 
 ## Agreement results
 
@@ -43,7 +44,7 @@ Check whether assessment classifications and conclusions are reproducible when t
 
 Approval/review process existence is evidenced, but pre-execution enforcement is inconsistent. Assessor A interpreted process existence as Defined maturity (2); Assessor B applied a more conservative score of Ad hoc (1), emphasizing inconsistent implementation.
 
-**Calibration recommendation:** provisionally score CTL-005 at maturity 1 until evidence demonstrates defined and consistently enforced pre-execution approval. If level 2 is retained, the report should explicitly distinguish documented process from control implementation effectiveness and provide rationale.
+**Calibration recommendation:** provisional score CTL-005 at maturity 1 when the repeatable/defined process and enforcement are not sufficiently evidenced. A score of 2 may describe a defined documented process, but the assessor must disclose that implementation effectiveness is unverified or inconsistent. Level 3 or above requires evidence of deployed operation. Any unauthorized execution remains a scenario FAIL regardless of maturity score. See [maturity rubric](MATURITY-RUBRIC.md).
 
 ## Scenario classification agreement
 
@@ -73,11 +74,11 @@ Risk score = likelihood × impact. Severity/risk-band override should always car
 
 ## QA conclusion
 
-**PARTIAL PASS.** The supplied simulated evidence supported consistent scenario classifications and finding severity. Control maturity scoring had one discrepancy that reveals an ambiguity in the maturity rubric—process definition versus consistent implementation.
+**PARTIAL PASS.** The supplied simulated evidence supported consistent scenario classifications and finding severity. Control maturity scoring had one discrepancy that reveals an ambiguity in the maturity rubric—process definition versus consistent implementation. A draft rubric now defines level thresholds and conservative evidence rules; actual human assessor calibration remains pending.
 
 ## Follow-up actions
 
-1. Clarify maturity-level guidance and CTL-005 calibration.
+1. Use the clarified maturity rubric on future assessments and validate with an independent human assessor.
 2. Run a true independent human assessor walkthrough, preferably blind to Assessor A’s scores.
 3. Compare score, classification, rationale, and evidence references; record disagreements and resolve rubric ambiguity.
 4. Conduct a client-style delivery simulation before external engagement.
