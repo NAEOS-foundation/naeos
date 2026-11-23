@@ -71,7 +71,7 @@ For a typical assessment/pilot, provide only applicable artifacts:
 
 ## Internal starter kit
 
-A generated **NAEOS Client Delivery Kit v1.1 QA-fix** was prepared outside this repository as a ZIP containing spreadsheet registers and editable report/questionnaire/test/readout templates. File/package QA passed; usability and layout review remain pending. It is a working starter, not ratified or repository-canonical. Review before importing or publishing. The simulated assessment package is fictional and must never be represented as client evidence.
+The working **NAEOS Client Delivery Kit v1.2** and fictional assessment validation package are available as external QA artifacts. ZIP integrity, workbook sheet structure, and maturity rubric inclusion were verified. Assessor usability/layout review is still pending. They are not repository-canonical or ratified. The fictional sample must never be represented as client evidence.
 
 ## Readiness status
 
