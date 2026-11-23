@@ -69,6 +69,10 @@ Dokumen ini memetakan struktur dokumentasi NAEOS berdasarkan skema modular yang 
 - [GTM 90-Day](GTM-90-DAY.md) — go-to-market execution framework.
 
 ## Dokumentasi pendukung
+- [Commercial Services & Client Delivery System](commercial-services/README.md) — service offering, delivery lifecycle, draft pricing hypotheses, readiness boundaries.
+- [Client Delivery Playbook](commercial-services/DELIVERY-PLAYBOOK.md) — engagement workflow and evidence practices.
+- [Client Delivery Acceptance Gates](commercial-services/ACCEPTANCE-GATES.md) — per-engagement preflight and closure gates.
+
 - Kernel Architecture (NAEOS-KER-001) — arsitektur kernel.
 - Kernel Implementation (NAEOS-KER-002) — panduan implementasi kernel.
 - Kernel Examples (NAEOS-KER-003) — contoh penggunaan kernel.
