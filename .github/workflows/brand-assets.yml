@@ -1,0 +1,40 @@
+name: Brand Asset Validation
+
+on:
+  pull_request:
+    paths:
+      - 'brand/**'
+      - 'site/public/**'
+      - 'scripts/validate-brand-assets.py'
+      - '.github/workflows/brand-assets.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'brand/**'
+      - 'site/public/**'
+      - 'scripts/validate-brand-assets.py'
+      - '.github/workflows/brand-assets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate brand assets and generate inventory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Run validator unit tests
+        run: python3 -m unittest discover -s tests/brand_assets -v
+      - name: Validate SVG and generate inventory/checksums
+        run: python3 scripts/validate-brand-assets.py --write
+      - name: Upload generated asset inventory
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: brand-asset-inventory
+          path: |
+            brand/exports/asset-inventory.json
+            brand/exports/asset-checksums.sha256
