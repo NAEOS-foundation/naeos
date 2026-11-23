@@ -165,6 +165,112 @@ func TestServiceJWTIsRestrictedToAllowlistedReadOnlyRepositoryRoute(t *testing.T
 	}
 }
 
+func TestRepositoryAllowlistAllowedPathMakesExactlyOneFixedHostRead(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	server := NewServer(":0", &AuthConfig{Enabled: false, ServiceJWKS: validator})
+	t.Setenv("NAEOS_GITHUB_ALLOWED_REPOSITORIES", " OWNER/REPO ")
+	outboundCalls := 0
+	server.githubClient = &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		outboundCalls++
+		if request.Method != http.MethodGet {
+			t.Errorf("outbound method = %s, want GET", request.Method)
+		}
+		if request.URL.Scheme != "https" || request.URL.Host != "api.github.com" || request.URL.Path != "/repos/owner/repo" {
+			t.Errorf("outbound destination = %s, want https://api.github.com/repos/owner/repo", request.URL)
+		}
+		body := `{"id":123,"name":"repo","full_name":"owner/repo","default_branch":"main","html_url":"https://github.com/owner/repo"}`
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(body)),
+			Request:    request,
+		}, nil
+	})}
+
+	claims := defaultTestServiceClaims()
+	claims.Scope = "naeos:repository:read"
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/repositories/owner/repo", nil)
+	request.Header.Set("Authorization", "Bearer "+makeTestServiceToken(t, key, claims))
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("allowed repository status = %d, want 200: %s", response.Code, response.Body.String())
+	}
+	if outboundCalls != 1 {
+		t.Fatalf("GitHub outbound calls = %d, want exactly 1", outboundCalls)
+	}
+}
+
+func TestRepositoryAllowlistDeniedRequestsHaveNoGitHubOutboundSideEffect(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	server := NewServer(":0", &AuthConfig{Enabled: false, ServiceJWKS: validator})
+	t.Setenv("NAEOS_GITHUB_ALLOWED_REPOSITORIES", "owner/allowed")
+	outboundCalls := 0
+	server.githubClient = &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		outboundCalls++
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"id":123,"name":"repo","full_name":"owner/repo"}`)),
+			Request:    request,
+		}, nil
+	})}
+
+	tests := []struct {
+		name      string
+		method    string
+		path      string
+		scope     string
+		allowlist string
+	}{
+		{name: "wrong scope", method: http.MethodGet, path: "/api/v1/repositories/owner/allowed", scope: "naeos:repository:write", allowlist: "owner/allowed"},
+		{name: "wrong method", method: http.MethodPost, path: "/api/v1/repositories/owner/allowed", scope: "naeos:repository:read", allowlist: "owner/allowed"},
+		{name: "not allowlisted", method: http.MethodGet, path: "/api/v1/repositories/owner/denied", scope: "naeos:repository:read", allowlist: "owner/allowed"},
+		{name: "empty allowlist", method: http.MethodGet, path: "/api/v1/repositories/owner/allowed", scope: "naeos:repository:read", allowlist: ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("NAEOS_GITHUB_ALLOWED_REPOSITORIES", test.allowlist)
+			claims := defaultTestServiceClaims()
+			claims.Scope = test.scope
+			request := httptest.NewRequest(test.method, test.path, nil)
+			request.Header.Set("Authorization", "Bearer "+makeTestServiceToken(t, key, claims))
+			response := httptest.NewRecorder()
+			server.Handler().ServeHTTP(response, request)
+			if response.Code < 400 {
+				t.Fatalf("denied request status = %d, want an error response", response.Code)
+			}
+			if outboundCalls != 0 {
+				t.Fatalf("denied request caused %d GitHub outbound calls; want 0", outboundCalls)
+			}
+		})
+	}
+}
+
+func TestRepositoryAllowedNormalizesEntriesAndUsesExactMatch(t *testing.T) {
+	tests := []struct {
+		name       string
+		repository string
+		allowlist  string
+		want       bool
+	}{
+		{name: "trimmed case-insensitive entry", repository: "owner/repo", allowlist: " OWNER/REPO ,other/project ", want: true},
+		{name: "exact second entry", repository: "other/project", allowlist: " OWNER/REPO , OTHER/PROJECT ", want: true},
+		{name: "no wildcard expansion", repository: "owner/repo", allowlist: "owner/*", want: false},
+		{name: "no partial match", repository: "owner/repo", allowlist: "owner/repository", want: false},
+		{name: "empty repository denied", repository: "", allowlist: "owner/repo", want: false},
+		{name: "empty allowlist denied", repository: "owner/repo", allowlist: "", want: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := repositoryAllowed(test.repository, test.allowlist); got != test.want {
+				t.Fatalf("repositoryAllowed(%q, %q) = %v, want %v", test.repository, test.allowlist, got, test.want)
+			}
+		})
+	}
+}
+
 func TestJWKSValidatorDoesNotFollowRedirects(t *testing.T) {
 	validator, err := NewJWKSValidator("https://issuer.example", "naeos-core", "https://issuer.example/jwks")
 	if err != nil {
