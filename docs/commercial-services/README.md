@@ -71,12 +71,13 @@ For a typical assessment/pilot, provide only applicable artifacts:
 
 ## Internal starter kit
 
-A generated **NAEOS Client Delivery Kit v1.0** was prepared outside this repository as a ZIP containing spreadsheet registers and editable report/questionnaire/test/readout templates. It is a working starter, not ratified or repository-canonical. Review its layout and content before importing or publishing it. The simulated assessment package is fictional and must never be represented as client evidence.
+A generated **NAEOS Client Delivery Kit v1.1 QA-fix** was prepared outside this repository as a ZIP containing spreadsheet registers and editable report/questionnaire/test/readout templates. File/package QA passed; usability and layout review remain pending. It is a working starter, not ratified or repository-canonical. Review before importing or publishing. The simulated assessment package is fictional and must never be represented as client evidence.
 
 ## Readiness status
 
 - Service-led discovery and assessment offer: **DRAFT / READY FOR INTERNAL VALIDATION**
 - Template package structure: **QA-checked at file/package level; assessor usability and layout review pending**
+- Maturity rubric: **draft calibration guidance added** ([maturity rubric](MATURITY-RUBRIC.md))
 - Fictional sample assessment: **illustrative only**
 - Delivery repeatability: **desk-based simulated repeatability test PARTIAL PASS; independent human assessor walkthrough pending** ([repeatability report](REPEATABILITY-TEST.md))
 - Client simulation: **pending**
