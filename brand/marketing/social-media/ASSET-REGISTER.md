@@ -20,14 +20,14 @@
 | LinkedIn company banner | `brand/marketing/social-media/templates/linkedin-company-banner.svg` | SVG |
 | Brand Guidelines v1.1 | `brand/guidelines/BRAND-GUIDELINES-v1.1.md` | Markdown |
 
-## Not uploaded in this change
+## Not uploaded / missing from repository
 
-The following locally generated raster artifacts remain outside the repository because the current file-writing path used for this change only committed UTF-8 text files:
+These raster artifacts are not currently committed to this repository:
 
-- `SOCIAL-MEDIA-KIT-PREVIEW.png`
+- `SOCIAL-MEDIA-KIT-PREVIEW.png` (contact sheet)
 - Seven PNG template previews under `previews/`
-- `assets/naeos-primary-symbol-v2-2048.png`
-- `assets/naeos-social-avatar-1024.png`
+- `assets/naeos-primary-symbol-v2-2048.png` (earlier README reference corrected; templates currently use SVG)
+- `assets/naeos-social-avatar-1024.png` (social avatar export)
 
 These are not marked as repository assets. The SVG templates reference the canonical logo SVG copy in this repository, so they do not depend on the pending PNG export.
 
