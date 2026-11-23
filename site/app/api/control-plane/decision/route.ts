@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { resolveControlPlaneUpstream } from "./upstream.ts";
 
 const MAX_REQUEST_BYTES = 8 * 1024;
 
@@ -75,27 +76,6 @@ async function readBoundedBody(
   return { ok: true, body: new TextDecoder().decode(bodyBytes) };
 }
 
-function getUpstreamUrl(value: string | undefined): URL | undefined {
-  if (!value?.trim()) return undefined;
-
-  try {
-    const url = new URL(value.trim());
-    if (
-      url.protocol !== "https:" ||
-      !url.hostname.endsWith(".up.railway.app") ||
-      url.username ||
-      url.password ||
-      url.pathname !== "/" ||
-      url.search ||
-      url.hash
-    ) {
-      return undefined;
-    }
-    return url;
-  } catch {
-    return undefined;
-  }
-}
 
 export async function POST(request: Request) {
   const boundedBody = await readBoundedBody(request);
@@ -127,8 +107,8 @@ export async function POST(request: Request) {
 
   // Resolve the environment boundary before checking credentials. An unconfigured
   // preview must report unavailable and must never be mistaken for a production proxy.
-  const upstreamUrl = getUpstreamUrl(configuredUrl);
-  if (!upstreamUrl) {
+  const upstreamOrigin = resolveControlPlaneUpstream(configuredUrl);
+  if (!upstreamOrigin) {
     return errorResponse("Control Plane upstream is not configured correctly.", 503);
   }
 
@@ -139,7 +119,7 @@ export async function POST(request: Request) {
   let upstream: Response;
   try {
     upstream = await fetch(
-      new URL("/api/control-plane/decision", upstreamUrl).toString(),
+      new URL("/api/control-plane/decision", upstreamOrigin).toString(),
       {
         method: "POST",
         headers: {
