@@ -1,0 +1,32 @@
+name: Social Media Kit Render QA
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "brand/marketing/social-media/**"
+      - "scripts/render-social-media-kit.py"
+      - ".github/workflows/social-media-render.yml"
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12.16"
+      - name: Install rendering dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements/brand-render.txt
+      - name: Render SVG templates and contact sheet
+        run: python scripts/render-social-media-kit.py
+      - name: Upload render QA artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: naeos-social-media-kit-render-qa
+          path: |
+            brand/marketing/social-media/previews/*.png
+            brand/marketing/social-media/previews/render-manifest.json
+            brand/marketing/social-media/SOCIAL-MEDIA-KIT-PREVIEW.png
+          if-no-files-found: error
+          retention-days: 14
