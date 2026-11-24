@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+<title id="title">NAEOS FOUNDER JOURNEY cover template</title>
+<desc id="desc">Editable NAEOS publication cover using the shared family system. Draft template, 1080 by 1350 pixels.</desc>
+<defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#60A5FA" stroke-opacity=".045"/></pattern></defs>
+<rect width="1080" height="1350" fill="#0B0F19"/><rect width="1080" height="1350" fill="url(#grid)"/>
+<circle cx="930" cy="220" r="220" fill="#2563FF" opacity=".055"/><circle cx="930" cy="220" r="155" fill="none" stroke="#60A5FA" stroke-opacity=".14" stroke-width="1"/>
+<image href="../../social-media/assets/naeos-primary-symbol-v2.svg" x="80" y="72" width="160" height="102" preserveAspectRatio="xMidYMid meet"/>
+<text x="80" y="228" class="pub">NAEOS FOUNDER JOURNEY</text>
+<rect x="80" y="260" width="10" height="140" rx="5" fill="#2563FF"/>
+<text x="126" y="338" class="eyebrow">BUILD IN PUBLIC / FOUNDER STORY</text>
+<text x="80" y="622" class="headline">Founder</text>
+<text x="80" y="748" class="headline accent">Journey</text>
+<text x="80" y="850" class="sub">Decisions · experiments · lessons · progress</text>
+<rect x="80" y="984" width="920" height="1" fill="#60A5FA" opacity=".35"/>
+<text x="80" y="1036" class="metadata">[DOCUMENT TITLE / ISSUE]</text>
+<text x="80" y="1080" class="metadata">[DATE] · [AUTHOR] · [STATUS]</text>
+<text x="80" y="1244" class="footer">NAEOS · THE INTELLIGENT CORE</text>
+<text x="1000" y="1244" class="footer right">02 / BUILD JOURNEY</text>
+<style>
+text{font-family:Inter,Arial,sans-serif}
+.pub{font-size:22px;font-weight:700;letter-spacing:2.6px;fill:#60A5FA}
+.eyebrow{font-size:16px;font-weight:600;letter-spacing:2px;fill:#E5E7EB}
+.headline{font-size:118px;font-weight:700;letter-spacing:-3px;fill:#FFFFFF}
+.accent{fill:#60A5FA}
+.sub{font-size:26px;font-weight:400;fill:#E5E7EB}
+.metadata{font-size:18px;letter-spacing:.5px;fill:#E5E7EB;opacity:.8}
+.footer{font-size:16px;letter-spacing:1.4px;fill:#60A5FA}
+.right{text-anchor:end}
+</style></svg>

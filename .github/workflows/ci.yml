@@ -295,6 +295,10 @@ jobs:
       name: ${{ github.event_name == 'workflow_dispatch' && 'staging' || 'ci' }}
     concurrency:
       group: supabase-staging-integration
+    # Keep manual staging mutation runs serialized, but isolate read-only PR package
+    # tests so concurrent PRs cannot cancel one another while queued.
+    concurrency:
+      group: supabase-integration-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
       cancel-in-progress: false
     if: >-
       github.repository == 'NAEOS-foundation/naeos' &&
