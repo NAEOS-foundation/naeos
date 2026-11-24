@@ -111,6 +111,10 @@ func TestDeriveGoToolchainRequestNoChange(t *testing.T) {
 }
 func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T) {
 	workspace := t.TempDir()
+	originalDir, err := os.Getwd()
+	if err != nil { t.Fatal(err) }
+	if err := os.Chdir(workspace); err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = os.Chdir(originalDir) })
 	runGitTestCommand(t, workspace, "init")
 	runGitTestCommand(t, workspace, "config", "user.email", "test@example.invalid")
 	runGitTestCommand(t, workspace, "config", "user.name", "Test")
