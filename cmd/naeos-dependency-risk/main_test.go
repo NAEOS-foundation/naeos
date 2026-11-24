@@ -118,7 +118,7 @@ func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T
 	runGitTestCommand(t, workspace, "init")
 	runGitTestCommand(t, workspace, "config", "user.email", "test@example.invalid")
 	runGitTestCommand(t, workspace, "config", "user.name", "Test")
-	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\\n\\ngo 1.26.0\\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\n\ngo 1.26.0\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	runGitTestCommand(t, workspace, "add", "go.mod")
@@ -129,7 +129,7 @@ func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T
 		t.Fatal(err)
 	}
 	manifest := filepath.Join(nested, "go.mod")
-	if err := os.WriteFile(manifest, []byte("module example.com/new-service\\n\\ngo 1.26.0\\n"), 0o600); err != nil {
+	if err := os.WriteFile(manifest, []byte("module example.com/new-service\n\ngo 1.26.0\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	relative := "services/new-service/go.mod"
@@ -144,10 +144,14 @@ func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T
 
 func TestDeriveEmptyNewGoModuleRejectsDependenciesAndGoSum(t *testing.T) {
 	workspace := t.TempDir()
+	originalDir, err := os.Getwd()
+	if err != nil { t.Fatal(err) }
+	if err := os.Chdir(workspace); err != nil { t.Fatal(err) }
+	t.Cleanup(func() { _ = os.Chdir(originalDir) })
 	runGitTestCommand(t, workspace, "init")
 	runGitTestCommand(t, workspace, "config", "user.email", "test@example.invalid")
 	runGitTestCommand(t, workspace, "config", "user.name", "Test")
-	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\\n\\ngo 1.26.0\\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\n\ngo 1.26.0\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	runGitTestCommand(t, workspace, "add", "go.mod")
@@ -158,14 +162,14 @@ func TestDeriveEmptyNewGoModuleRejectsDependenciesAndGoSum(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := filepath.Join(nested, "go.mod")
-	if err := os.WriteFile(manifest, []byte("module example.com/new-service\\n\\ngo 1.26.0\\n\\nrequire example.com/dependency v1.2.3\\n"), 0o600); err != nil {
+	if err := os.WriteFile(manifest, []byte("module example.com/new-service\n\ngo 1.26.0\n\nrequire example.com/dependency v1.2.3\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	relative := "services/new-service/go.mod"
 	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative}); err != nil || ok {
 		t.Fatalf("module with dependencies must not be classified empty: ok=%v err=%v", ok, err)
 	}
-	if err := os.WriteFile(filepath.Join(nested, "go.sum"), []byte("evidence checksum\\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(nested, "go.sum"), []byte("evidence checksum\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative, "services/new-service/go.sum"}); err != nil || ok {
@@ -176,7 +180,7 @@ func TestDeriveEmptyNewGoModuleRejectsDependenciesAndGoSum(t *testing.T) {
 func runGitTestCommand(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	if output, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
-		t.Fatalf("git %v failed: %v\\n%s", args, err, output)
+		t.Fatalf("git %v failed: %v\n%s", args, err, output)
 	}
 }
 
