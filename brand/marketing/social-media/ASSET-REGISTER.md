@@ -32,7 +32,7 @@
 
 ## Not uploaded in this change
 
-The following locally generated raster artifacts remain outside the repository:
+The following locally generated raster artifacts remain outside the repository because the current file-writing path used for this change only committed UTF-8 text files:
 
 - `SOCIAL-MEDIA-KIT-PREVIEW.png`
 - Seven PNG template previews under `previews/`
