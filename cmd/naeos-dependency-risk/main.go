@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
@@ -72,8 +73,8 @@ func run() error {
 	registry, registryErr := loadTrustedDependencyReviewRegistry(baseSHA)
 	var reviewReference string
 	registryStatus := "unavailable_or_invalid"
-	if req.Ecosystem == "go-toolchain" {
-		registryStatus = "not_applicable_toolchain_directive"
+	if req.Ecosystem == "go-toolchain" || req.Ecosystem == "go-module-empty" {
+		registryStatus = "not_applicable_no_dependency_change"
 	} else if registryErr == nil {
 		registryStatus = "loaded"
 		if record, ok := findReviewedDependency(registry, req.Ecosystem, req.Name, req.Version); ok && verifiedDependencyLockEvidence(record) {
@@ -182,6 +183,15 @@ func deriveRequest() (requestFile, error) {
 		return requestFile{PolicyVersion: "1.0.0", SchemaVersion: "1.0.0", Ecosystem: "unknown", Name: "dependency-change", VersionChange: "unknown", Evidence: automaticEvidenceAvailable(), KnownDependency: false}, nil
 	}
 	for _, manifest := range changed {
+		if filepath.Base(manifest) == "go.mod" {
+			if req, ok, err := deriveEmptyNewGoModule(base, manifest, changed); err != nil {
+				return requestFile{}, err
+			} else if ok {
+				return req, nil
+			}
+		}
+	}
+	for _, manifest := range changed {
 		if filepath.Base(manifest) == "package.json" {
 			if req, ok, err := deriveNPMRequest(base, manifest); err != nil {
 				return requestFile{}, err
@@ -250,6 +260,38 @@ func deriveRequest() (requestFile, error) {
 	}
 
 	return selectHighestRiskRequest(oldv, newv), nil
+}
+
+// deriveEmptyNewGoModule recognizes a newly added nested Go module with no
+// declared dependencies. This is a narrowly-scoped, evidence-backed no-dependency
+// change; modules with requirements or accompanying go.sum changes remain on the
+// normal fail-closed dependency path.
+func deriveEmptyNewGoModule(base, manifest string, changed []string) (requestFile, bool, error) {
+	for _, path := range changed {
+		if filepath.Dir(path) == filepath.Dir(manifest) && filepath.Base(path) == "go.sum" {
+			return requestFile{}, false, nil
+		}
+	}
+	if _, err := gitShowFile(base, manifest); err == nil {
+		return requestFile{}, false, nil
+	}
+	current, err := os.ReadFile(manifest)
+	if err != nil {
+		return requestFile{}, false, fmt.Errorf("read new Go module %s: %w", manifest, err)
+	}
+	parsed, err := modfile.Parse(manifest, current, nil)
+	if err != nil {
+		return requestFile{}, false, fmt.Errorf("parse new Go module %s: %w", manifest, err)
+	}
+	if parsed.Module == nil || len(parsed.Requires) != 0 {
+		return requestFile{}, false, nil
+	}
+	return requestFile{
+		PolicyVersion: "1.0.0", SchemaVersion: "1.0.0",
+		Ecosystem: "go-module-empty", Name: "new-empty-module",
+		VersionChange: "patch", Paths: []string{manifest},
+		Evidence: automaticEvidenceAvailable(), KnownDependency: true,
+	}, true, nil
 }
 
 func changedDependencyManifests(base string) ([]string, error) {
