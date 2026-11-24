@@ -18,7 +18,7 @@ func main() {
 	handler := noshttp.NewHandler()
 	server := &http.Server{
 		Addr:              addr,
-		Handler:            handler,
+		Handler:           handler,
 		ReadHeaderTimeout:  5 * time.Second,
 		ReadTimeout:        10 * time.Second,
 		WriteTimeout:       10 * time.Second,
