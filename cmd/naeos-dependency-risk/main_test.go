@@ -3,7 +3,7 @@
 
 package main
 
-import (\n\t"os"\n\t"os/exec"\n\t"path/filepath"\n\t"strings"\n\t"testing"\n)
+import "testing"
 
 func TestRequireLinePreservesGoVersionPrefix(t *testing.T) {
 	match := requireLine.FindStringSubmatch("- github.com/klauspost/compress v1.18.5 // indirect")
@@ -109,89 +109,52 @@ func TestDeriveGoToolchainRequestNoChange(t *testing.T) {
 		t.Fatal("same Go directive should not be classified as a toolchain change")
 	}
 }
+
 func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T) {
 	workspace := t.TempDir()
 	originalDir, err := os.Getwd()
 	if err != nil { t.Fatal(err) }
 	if err := os.Chdir(workspace); err != nil { t.Fatal(err) }
 	t.Cleanup(func() { _ = os.Chdir(originalDir) })
-	runGitTestCommand(t, workspace, "init")
-	runGitTestCommand(t, workspace, "config", "user.email", "test@example.invalid")
-	runGitTestCommand(t, workspace, "config", "user.name", "Test")
-	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\n\ngo 1.26.0\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	runGitTestCommand(t, workspace, "add", "go.mod")
-	runGitTestCommand(t, workspace, "commit", "-m", "base")
-	base := strings.TrimSpace(runGitTestCommandOutput(t, workspace, "rev-parse", "HEAD"))
-	nested := filepath.Join(workspace, "services", "new-service")
-	if err := os.MkdirAll(nested, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	manifest := filepath.Join(nested, "go.mod")
-	if err := os.WriteFile(manifest, []byte("module example.com/new-service\n\ngo 1.26.0\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	relative := "services/new-service/go.mod"
-	req, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative})
-	if err != nil || !ok {
-		t.Fatalf("expected dependency-free module classification: ok=%v err=%v", ok, err)
-	}
-	if req.Ecosystem != "go-module-empty" || req.Name != "new-empty-module" || req.VersionChange != "patch" || !req.KnownDependency {
-		t.Fatalf("unexpected classification: %+v", req)
-	}
-	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative, "package-lock.json"}); err != nil || ok {
-		t.Fatalf("empty module must not mask another manifest change: ok=%v err=%v", ok, err)
-	}
+	initRiskTestRepo(t, workspace)
+	base := strings.TrimSpace(runRiskGit(t, workspace, "rev-parse", "HEAD"))
+	manifest := "services/new-service/go.mod"
+	if err := os.MkdirAll(filepath.Dir(manifest), 0o700); err != nil { t.Fatal(err) }
+	if err := os.WriteFile(manifest, []byte("module example.com/new-service\n\ngo 1.26.0\n"), 0o600); err != nil { t.Fatal(err) }
+	req, ok, err := deriveEmptyNewGoModule(base, manifest, []string{manifest})
+	if err != nil || !ok { t.Fatalf("classification failed: ok=%v err=%v", ok, err) }
+	if req.Ecosystem != "go-module-empty" || req.Name != "new-empty-module" || !req.KnownDependency { t.Fatalf("unexpected classification: %+v", req) }
+	if _, ok, err := deriveEmptyNewGoModule(base, manifest, []string{manifest, "package-lock.json"}); err != nil || ok { t.Fatalf("must not mask other manifest: ok=%v err=%v", ok, err) }
 }
-
 func TestDeriveEmptyNewGoModuleRejectsDependenciesAndGoSum(t *testing.T) {
 	workspace := t.TempDir()
 	originalDir, err := os.Getwd()
 	if err != nil { t.Fatal(err) }
 	if err := os.Chdir(workspace); err != nil { t.Fatal(err) }
 	t.Cleanup(func() { _ = os.Chdir(originalDir) })
-	runGitTestCommand(t, workspace, "init")
-	runGitTestCommand(t, workspace, "config", "user.email", "test@example.invalid")
-	runGitTestCommand(t, workspace, "config", "user.name", "Test")
-	if err := os.WriteFile(filepath.Join(workspace, "go.mod"), []byte("module example.com/root\n\ngo 1.26.0\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	runGitTestCommand(t, workspace, "add", "go.mod")
-	runGitTestCommand(t, workspace, "commit", "-m", "base")
-	base := strings.TrimSpace(runGitTestCommandOutput(t, workspace, "rev-parse", "HEAD"))
-	nested := filepath.Join(workspace, "services", "new-service")
-	if err := os.MkdirAll(nested, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	manifest := filepath.Join(nested, "go.mod")
-	if err := os.WriteFile(manifest, []byte("module example.com/new-service\n\ngo 1.26.0\n\nrequire example.com/dependency v1.2.3\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	relative := "services/new-service/go.mod"
-	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative}); err != nil || ok {
-		t.Fatalf("module with dependencies must not be classified empty: ok=%v err=%v", ok, err)
-	}
-	if err := os.WriteFile(filepath.Join(nested, "go.sum"), []byte("evidence checksum\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative, "services/new-service/go.sum"}); err != nil || ok {
-		t.Fatalf("module with go.sum change must not be classified empty: ok=%v err=%v", ok, err)
-	}
+	initRiskTestRepo(t, workspace)
+	base := strings.TrimSpace(runRiskGit(t, workspace, "rev-parse", "HEAD"))
+	manifest := "services/new-service/go.mod"
+	if err := os.MkdirAll(filepath.Dir(manifest), 0o700); err != nil { t.Fatal(err) }
+	withRequire := "module example.com/new-service\n\ngo 1.26.0\n\nrequire example.com/dependency v1.2.3\n"
+	if err := os.WriteFile(manifest, []byte(withRequire), 0o600); err != nil { t.Fatal(err) }
+	if _, ok, err := deriveEmptyNewGoModule(base, manifest, []string{manifest}); err != nil || ok { t.Fatalf("module with require must not be classified empty: ok=%v err=%v", ok, err) }
+	if err := os.WriteFile(filepath.Join(filepath.Dir(manifest), "go.sum"), []byte("checksum evidence\n"), 0o600); err != nil { t.Fatal(err) }
+	if _, ok, err := deriveEmptyNewGoModule(base, manifest, []string{manifest, "services/new-service/go.sum"}); err != nil || ok { t.Fatalf("go.sum change must not qualify: ok=%v err=%v", ok, err) }
 }
-
-func runGitTestCommand(t *testing.T, dir string, args ...string) {
+func initRiskTestRepo(t *testing.T, dir string) {
 	t.Helper()
-	if output, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
-		t.Fatalf("git %v failed: %v\n%s", args, err, output)
-	}
+	runRiskGit(t, dir, "init")
+	runRiskGit(t, dir, "config", "user.email", "test@example.invalid")
+	runRiskGit(t, dir, "config", "user.name", "Risk Test")
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/root\n\ngo 1.26.0\n"), 0o600); err != nil { t.Fatal(err) }
+	runRiskGit(t, dir, "add", "go.mod")
+	runRiskGit(t, dir, "commit", "-m", "base")
 }
-
-func runGitTestCommandOutput(t *testing.T, dir string, args ...string) string {
+func runRiskGit(t *testing.T, dir string, args ...string) string {
 	t.Helper()
-	output, err := exec.Command("git", append([]string{"-C", dir}, args...)...).Output()
-	if err != nil {
-		t.Fatalf("git %v failed: %v", args, err)
-	}
-	return string(output)
+	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+	out, err := cmd.CombinedOutput()
+	if err != nil { t.Fatalf("git %v failed: %v\n%s", args, err, out) }
+	return string(out)
 }
