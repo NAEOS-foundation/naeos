@@ -4,12 +4,12 @@ on:
   pull_request:
     paths:
       - 'services/naeos-outreach/**'
-      - '.github/workflows/nos-phase1a-ci.yml'
+      - '.github/workflows/naeos-outreach-phase1a-ci.yml'
   push:
     branches: [main]
     paths:
       - 'services/naeos-outreach/**'
-      - '.github/workflows/nos-phase1a-ci.yml'
+      - '.github/workflows/naeos-outreach-phase1a-ci.yml'
 
 permissions:
   contents: read
