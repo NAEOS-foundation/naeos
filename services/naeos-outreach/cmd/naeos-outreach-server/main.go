@@ -4,36 +4,56 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	outreachconfig "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/config"
 	outreachhttp "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/httpserver"
 )
 
 func main() {
-	addr := os.Getenv("NAEOS_OUTREACH_ADDR")
-	if addr == "" {
-		addr = "127.0.0.1:8088"
+	cfg, err := outreachconfig.Load(os.Getenv("NAEOS_OUTREACH_ADDR"))
+	if err != nil {
+		log.Fatalf("configuration error: %v", err)
 	}
-	handler := outreachhttp.NewHandler()
+
 	server := &http.Server{
-		Addr:              addr,
-		Handler:           handler,
+		Addr:              cfg.Addr,
+		Handler:           outreachhttp.NewHandler(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
-	// Validate bind address before starting. Loopback is the default; callers
-	// explicitly opt into a non-loopback listener by setting NAEOS_OUTREACH_ADDR.
-	if _, _, err := net.SplitHostPort(addr); err != nil {
-		log.Fatalf("invalid NAEOS_OUTREACH_ADDR %q: %v", addr, err)
-	}
-	log.Printf("NAEOS Outreach server listening at %s", addr)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("server failed: %v", err)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		log.Printf("NAEOS Outreach server listening at %s", cfg.Addr)
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server failed: %v", err)
+		}
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("graceful shutdown failed: %v", err)
+			_ = server.Close()
+		}
+		if err := <-serverErrors; err != nil && err != http.ErrServerClosed {
+			log.Printf("server shutdown: %v", err)
+		}
 	}
 }
