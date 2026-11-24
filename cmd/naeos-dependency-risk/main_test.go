@@ -3,7 +3,13 @@
 
 package main
 
-import "testing"
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestRequireLinePreservesGoVersionPrefix(t *testing.T) {
 	match := requireLine.FindStringSubmatch("- github.com/klauspost/compress v1.18.5 // indirect")
