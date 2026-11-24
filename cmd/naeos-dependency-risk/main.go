@@ -16,8 +16,8 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/mod/semver"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/semver"
 
 	"github.com/NAEOS-foundation/naeos/internal/governance/dependencyrisk"
 )
@@ -278,7 +278,7 @@ func deriveEmptyNewGoModule(base, manifest string, changed []string) (requestFil
 	if err != nil {
 		return requestFile{}, false, fmt.Errorf("parse new Go module %s: %w", manifest, err)
 	}
-	if parsed.Module == nil || len(parsed.Requires) != 0 {
+	if parsed.Module == nil || len(parsed.Require) != 0 {
 		return requestFile{}, false, nil
 	}
 	return requestFile{
