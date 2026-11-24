@@ -140,6 +140,9 @@ func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T
 	if req.Ecosystem != "go-module-empty" || req.Name != "new-empty-module" || req.VersionChange != "patch" || !req.KnownDependency {
 		t.Fatalf("unexpected classification: %+v", req)
 	}
+	if _, ok, err := deriveEmptyNewGoModule(base, relative, []string{relative, "package-lock.json"}); err != nil || ok {
+		t.Fatalf("empty module must not mask another manifest change: ok=%v err=%v", ok, err)
+	}
 }
 
 func TestDeriveEmptyNewGoModuleRejectsDependenciesAndGoSum(t *testing.T) {
