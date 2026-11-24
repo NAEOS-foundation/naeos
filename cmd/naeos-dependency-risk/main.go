@@ -260,19 +260,33 @@ func deriveRequest() (requestFile, error) {
 	return selectHighestRiskRequest(oldv, newv), nil
 }
 
-
 // deriveEmptyNewGoModule recognizes a newly added nested Go module with no
 // declared dependencies. It only applies when this is the sole changed dependency
 // manifest and cannot mask a changed go.sum or another ecosystem manifest.
 func deriveEmptyNewGoModule(base, manifest string, changed []string) (requestFile, bool, error) {
-	if len(changed) != 1 || changed[0] != manifest { return requestFile{}, false, nil }
-	if _, err := gitShowFile(base, manifest); err == nil { return requestFile{}, false, nil }
+	if len(changed) != 1 || changed[0] != manifest {
+		return requestFile{}, false, nil
+	}
+	if _, err := gitShowFile(base, manifest); err == nil {
+		return requestFile{}, false, nil
+	}
 	current, err := os.ReadFile(manifest)
-	if err != nil { return requestFile{}, false, fmt.Errorf("read new Go module %s: %w", manifest, err) }
+	if err != nil {
+		return requestFile{}, false, fmt.Errorf("read new Go module %s: %w", manifest, err)
+	}
 	parsed, err := modfile.Parse(manifest, current, nil)
-	if err != nil { return requestFile{}, false, fmt.Errorf("parse new Go module %s: %w", manifest, err) }
-	if parsed.Module == nil || len(parsed.Requires) != 0 { return requestFile{}, false, nil }
-	return requestFile{PolicyVersion:"1.0.0", SchemaVersion:"1.0.0", Ecosystem:"go-module-empty", Name:"new-empty-module", VersionChange:"patch", Paths:[]string{manifest}, Evidence:automaticEvidenceAvailable(), KnownDependency:true}, true, nil
+	if err != nil {
+		return requestFile{}, false, fmt.Errorf("parse new Go module %s: %w", manifest, err)
+	}
+	if parsed.Module == nil || len(parsed.Requires) != 0 {
+		return requestFile{}, false, nil
+	}
+	return requestFile{
+		PolicyVersion: "1.0.0", SchemaVersion: "1.0.0",
+		Ecosystem: "go-module-empty", Name: "new-empty-module",
+		VersionChange: "patch", Paths: []string{manifest},
+		Evidence: automaticEvidenceAvailable(), KnownDependency: true,
+	}, true, nil
 }
 
 func changedDependencyManifests(base string) ([]string, error) {
