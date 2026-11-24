@@ -20,9 +20,9 @@ func main() {
 		Addr:              addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	// Validate bind address before starting. Loopback is the default; callers
 	// explicitly opt into a non-loopback listener by setting NOS_ADDR.
