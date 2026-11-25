@@ -74,7 +74,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = pg_catalog, recruitment, auth
-as $$
+as $body$
 declare
   v_reviewer uuid := auth.uid();
   v_old_status text;
@@ -123,7 +123,7 @@ begin
   );
   return true;
 end;
-$;
+$body$;
 
 create or replace function public.founding_partner_review_transition(
   p_application_id uuid,
@@ -145,7 +145,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, recruitment, auth
-as $$
+as $body$
 declare
   v_reviewer uuid := auth.uid();
   v_display_name text;
@@ -164,7 +164,7 @@ begin
 
   return jsonb_build_object('user_id', v_reviewer, 'display_name', v_display_name);
 end;
-$;
+$body$;
 
 create or replace function public.founding_partner_review_context()
 returns jsonb
@@ -184,7 +184,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, recruitment, auth
-as $$
+as $body$
 declare
   v_reviewer uuid := auth.uid();
   v_items jsonb;
@@ -233,7 +233,7 @@ begin
 
   return jsonb_build_object('items', v_items, 'total', v_total, 'limit', p_limit, 'offset', p_offset);
 end;
-$;
+$body$;
 
 create or replace function public.founding_partner_review_list(
   p_limit integer default 50,
@@ -253,7 +253,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, recruitment, auth
-as $$
+as $body$
 declare
   v_reviewer uuid := auth.uid();
   v_application jsonb;
@@ -281,7 +281,7 @@ begin
 
   return jsonb_build_object('application', v_application, 'events', v_events);
 end;
-$;
+$body$;
 
 create or replace function public.founding_partner_review_detail(p_application_id uuid)
 returns jsonb
