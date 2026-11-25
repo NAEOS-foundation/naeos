@@ -63,6 +63,28 @@ BEGIN
              WHERE oid = 'recruitment.founding_partner_review_events'::regclass) THEN
     RAISE EXCEPTION 'RLS must be enabled on all review workflow tables';
   END IF;
+  IF (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'public.founding_partner_review_transition(uuid,text,text)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'public.founding_partner_review_context()'::regprocedure)
+     OR (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'public.founding_partner_review_list(integer,integer,text)'::regprocedure)
+     OR (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'public.founding_partner_review_detail(uuid)'::regprocedure) THEN
+    RAISE EXCEPTION 'public PostgREST wrappers must remain SECURITY INVOKER';
+  END IF;
+  IF NOT (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'recruitment.founding_partner_review_transition_internal(uuid,text,text)'::regprocedure)
+     OR NOT (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'recruitment.founding_partner_review_context_internal()'::regprocedure)
+     OR NOT (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'recruitment.founding_partner_review_list_internal(integer,integer,text)'::regprocedure)
+     OR NOT (SELECT prosecdef FROM pg_catalog.pg_proc WHERE oid = 'recruitment.founding_partner_review_detail_internal(uuid)'::regprocedure) THEN
+    RAISE EXCEPTION 'privileged implementations must remain in the private recruitment schema';
+  END IF;
+  IF has_function_privilege('anon', 'recruitment.founding_partner_review_transition_internal(uuid,text,text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'recruitment.founding_partner_review_context_internal()', 'EXECUTE')
+     OR has_function_privilege('anon', 'recruitment.founding_partner_review_list_internal(integer,integer,text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'recruitment.founding_partner_review_detail_internal(uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'recruitment.founding_partner_review_transition_internal(uuid,text,text)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'recruitment.founding_partner_review_context_internal()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'recruitment.founding_partner_review_list_internal(integer,integer,text)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'recruitment.founding_partner_review_detail_internal(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'private review implementations must be executable only by authenticated sessions';
+  END IF;
   IF NOT has_function_privilege('authenticated',
        'public.founding_partner_review_transition(uuid,text,text)', 'EXECUTE')
      OR has_function_privilege('anon',
