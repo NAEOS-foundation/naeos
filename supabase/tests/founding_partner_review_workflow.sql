@@ -75,11 +75,11 @@ $assert_privileges_and_rls$;
 -- Inject an audit-sink failure to prove status mutation and audit append roll back together.
 CREATE FUNCTION public.reject_review_event_insert() RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $trigger$
 BEGIN
   RAISE EXCEPTION 'synthetic audit sink failure';
 END
-$;
+$trigger$;
 CREATE TRIGGER reject_review_event_insert
 BEFORE INSERT ON recruitment.founding_partner_review_events
 FOR EACH ROW EXECUTE FUNCTION public.reject_review_event_insert();
