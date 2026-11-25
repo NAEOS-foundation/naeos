@@ -37,9 +37,7 @@ revoke all on recruitment.founding_partner_applications from public, anon, authe
 -- Authenticated must resolve objects in this private schema; table privileges and RLS still limit access.
 grant usage on schema recruitment to authenticated;
 
-grant select on recruitment.founding_partner_reviewers to authenticated;
-grant select on recruitment.founding_partner_review_events to authenticated;
-grant select on recruitment.founding_partner_applications to authenticated;
+-- No direct table SELECT is granted to authenticated; reads are returned only by allowlisted private RPCs.
 
 create policy "reviewer can read own allowlist record"
   on recruitment.founding_partner_reviewers
