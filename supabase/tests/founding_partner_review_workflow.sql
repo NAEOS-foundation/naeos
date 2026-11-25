@@ -141,14 +141,21 @@ BEGIN
          WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 1 THEN
     RAISE EXCEPTION 'invalid transition changed application or audit history';
   END IF;
+  DECLARE
+    v_failure_state text;
+    v_failure_message text;
   BEGIN
     PERFORM public.founding_partner_review_transition(
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Shortlisted', 'audit failure rollback'
     );
     RAISE EXCEPTION 'transition unexpectedly succeeded when audit insert failed';
-  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-    IF SQLERRM <> 'synthetic audit sink failure' THEN
-      RAISE;
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS
+      v_failure_state = RETURNED_SQLSTATE,
+      v_failure_message = MESSAGE_TEXT;
+    IF v_failure_state <> 'P0001' OR v_failure_message <> 'synthetic audit sink failure' THEN
+      RAISE EXCEPTION 'expected audit sink failure P0001, got %: %',
+        v_failure_state, v_failure_message;
     END IF;
   END;
   IF (SELECT application_status FROM recruitment.founding_partner_applications
