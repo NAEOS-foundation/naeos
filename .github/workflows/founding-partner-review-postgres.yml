@@ -9,6 +9,10 @@ on:
       - 'supabase/migrations/20261125073000_founding_partner_private_submit_rpc.sql'
       - 'supabase/migrations/20261125100000_founding_partner_review_workflow.sql'
       - 'supabase/tests/founding_partner_review_workflow.sql'
+      - 'site/app/[lang]/founding-partners/review/page.tsx'
+      - 'site/components/partners/FoundingPartnerReviewDashboard.tsx'
+      - 'site/.env.example'
+      - 'site/FOUNDING_PARTNER_REVIEW.md'
   push:
     branches: [feat/founding-partner-review-workflow]
     paths:
