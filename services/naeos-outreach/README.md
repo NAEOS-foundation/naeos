@@ -5,7 +5,7 @@
 
 NAEOS Outreach is a separate service boundary from NAEOS core and CRM business logic. This initial skeleton is placed in the canonical NAEOS repository only because automated repository creation is not available through the connected GitHub tooling. Move it to a standalone NAEOS Outreach repository once repository creation/administration is available and the boundary is ratified.
 
-## Run
+## Run locally
 
 ```bash
 cd services/naeos-outreach
@@ -13,7 +13,7 @@ go test ./...
 go run ./cmd/naeos-outreach-server
 ```
 
-Server listens on `127.0.0.1:8088` by default. Override with `NAEOS_OUTREACH_ADDR`. Binding to loopback is enforced by configuration to reduce accidental exposure.
+Server listens on `127.0.0.1:8088` by default. Override with `NAEOS_OUTREACH_ADDR`. Non-loopback binding is rejected unless `NAEOS_OUTREACH_ALLOW_NON_LOOPBACK=true` is explicitly set.
 
 ## Build (Docker)
 
@@ -22,6 +22,8 @@ cd services/naeos-outreach
 docker build -t naeos-outreach:local .
 docker run --rm -p 8088:8088 naeos-outreach:local
 ```
+
+The container image explicitly enables non-loopback binding so Docker port publishing can reach the service. Do not reuse this opt-in for an untrusted direct host deployment; restrict network exposure at the container runtime or orchestration layer.
 
 ## Endpoints
 
@@ -33,7 +35,7 @@ All other routes require a trusted principal supplied by a NAEOS identity adapte
 ## Phase 1B changes
 
 - Fail-closed principal boundary (`internal/authboundary`): identity must be supplied by a trusted upstream NAEOS identity adapter; this package intentionally does not parse credentials.
-- Strict configuration (`internal/config`): validates `NAEOS_OUTREACH_ADDR`, enforces loopback-only host binding, rejects malformed addresses.
+- Strict configuration (`internal/config`): validates `NAEOS_OUTREACH_ADDR`, enforces loopback-only host binding by default, and rejects malformed addresses.
 - Graceful shutdown on `SIGINT`/`SIGTERM` with 10-second shutdown timeout.
 - Security headers (`X-Content-Type-Options: nosniff`, `Cache-Control: no-store`).
 

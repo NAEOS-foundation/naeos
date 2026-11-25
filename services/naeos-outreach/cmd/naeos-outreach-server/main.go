@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -18,7 +19,16 @@ import (
 )
 
 func main() {
-	cfg, err := outreachconfig.Load(os.Getenv("NAEOS_OUTREACH_ADDR"))
+	allowNonLoopback := false
+	if value := os.Getenv("NAEOS_OUTREACH_ALLOW_NON_LOOPBACK"); value != "" {
+		parsed, err := strconv.ParseBool(value)
+		if err != nil {
+			log.Fatalf("configuration error: NAEOS_OUTREACH_ALLOW_NON_LOOPBACK must be a boolean: %v", err)
+		}
+		allowNonLoopback = parsed
+	}
+
+	cfg, err := outreachconfig.LoadWithOptions(os.Getenv("NAEOS_OUTREACH_ADDR"), allowNonLoopback)
 	if err != nil {
 		log.Fatalf("configuration error: %v", err)
 	}

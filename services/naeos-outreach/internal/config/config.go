@@ -16,7 +16,15 @@ type Config struct {
 	Addr string
 }
 
+// Load validates an address with the secure loopback-only default.
 func Load(addr string) (Config, error) {
+	return LoadWithOptions(addr, false)
+}
+
+// LoadWithOptions permits non-loopback binding only when the caller explicitly
+// opts in. Applications should keep this disabled unless container/network
+// exposure is intentional and protected by an appropriate deployment boundary.
+func LoadWithOptions(addr string, allowNonLoopback bool) (Config, error) {
 	if addr == "" {
 		addr = DefaultAddr
 	}
@@ -30,8 +38,8 @@ func Load(addr string) (Config, error) {
 	if host == "" {
 		return Config{}, fmt.Errorf("NAEOS_OUTREACH_ADDR host must not be empty")
 	}
-	if !isLoopback(host) {
-		return Config{}, fmt.Errorf("NAEOS_OUTREACH_ADDR host %q must be a loopback address", host)
+	if !isLoopback(host) && !allowNonLoopback {
+		return Config{}, fmt.Errorf("NAEOS_OUTREACH_ADDR host %q must be a loopback address unless NAEOS_OUTREACH_ALLOW_NON_LOOPBACK is explicitly enabled", host)
 	}
 	port, err := strconv.Atoi(portText)
 	if err != nil || port < 1 || port > 65535 {
@@ -41,8 +49,7 @@ func Load(addr string) (Config, error) {
 }
 
 // isLoopback reports whether host is a loopback address (IPv4 127/8, IPv6 ::1,
-// or the hostname "localhost"). Outreach binds to loopback only by default to
-// reduce accidental exposure.
+// or the hostname "localhost").
 func isLoopback(host string) bool {
 	if host == "localhost" || host == "localhost.localdomain" {
 		return true

@@ -48,3 +48,19 @@ func TestLoadValidHostnameAndIPv6(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadWithOptionsAllowsNonLoopbackOnlyOnExplicitOptIn(t *testing.T) {
+	const addr = "0.0.0.0:8088"
+
+	if _, err := LoadWithOptions(addr, false); err == nil {
+		t.Fatal("non-loopback address must be rejected without explicit opt-in")
+	}
+
+	cfg, err := LoadWithOptions(addr, true)
+	if err != nil {
+		t.Fatalf("explicit non-loopback opt-in: %v", err)
+	}
+	if cfg.Addr != addr {
+		t.Fatalf("Addr = %q, want %q", cfg.Addr, addr)
+	}
+}

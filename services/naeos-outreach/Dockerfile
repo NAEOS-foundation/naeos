@@ -2,7 +2,9 @@ FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# This module currently has no external dependencies, so do not require a
+# go.sum file to exist. go mod download remains ready for future dependencies.
+COPY go.mod ./
 RUN go mod download
 
 COPY . .
@@ -17,7 +19,10 @@ WORKDIR /app
 
 COPY --from=builder /naeos-outreach-server /usr/local/bin/naeos-outreach-server
 
+# Container networking requires a non-loopback listener. This explicit opt-in
+# is scoped to the image; local execution remains loopback-only by default.
 ENV NAEOS_OUTREACH_ADDR=0.0.0.0:8088
+ENV NAEOS_OUTREACH_ALLOW_NON_LOOPBACK=true
 
 RUN adduser -D -u 1000 naeos
 USER naeos
