@@ -62,7 +62,10 @@ create policy "enabled reviewers can read review audit"
     where r.user_id = (select auth.uid()) and r.enabled = true
   ));
 
-create or replace function public.founding_partner_review_transition(
+
+-- Privileged implementations live in the private, non-exposed recruitment schema.
+-- Public PostgREST entrypoints below are SECURITY INVOKER wrappers only.
+create or replace function recruitment.founding_partner_review_transition_internal(
   p_application_id uuid,
   p_new_status text,
   p_note text default null
@@ -70,7 +73,7 @@ create or replace function public.founding_partner_review_transition(
 returns boolean
 language plpgsql
 security definer
-set search_path = pg_catalog, recruitment
+set search_path = pg_catalog, recruitment, auth
 as $$
 declare
   v_reviewer uuid := auth.uid();
@@ -122,23 +125,26 @@ begin
 end;
 $$;
 
-revoke all on function public.founding_partner_review_transition(uuid,text,text) from public, anon;
-grant execute on function public.founding_partner_review_transition(uuid,text,text) to authenticated;
+create or replace function public.founding_partner_review_transition(
+  p_application_id uuid,
+  p_new_status text,
+  p_note text default null
+)
+returns boolean
+language sql
+security invoker
+set search_path = pg_catalog, recruitment
+as $$
+  select recruitment.founding_partner_review_transition_internal(
+    p_application_id, p_new_status, p_note
+  );
+$$;
 
--- Reviewer bootstrap must be performed by a trusted project owner through SQL editor:
--- insert into recruitment.founding_partner_reviewers(user_id, display_name)
--- values ('<AUTH_USER_UUID>', 'Founder Reviewer');
--- Never expose reviewer bootstrap via a public endpoint.
-
-
--- Narrow public-schema RPC surface for the founder review dashboard.
--- The recruitment schema remains unexposed; all reads are performed by
--- SECURITY DEFINER functions after checking the caller's reviewer allowlist.
-create or replace function public.founding_partner_review_context()
+create or replace function recruitment.founding_partner_review_context_internal()
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, recruitment
+set search_path = pg_catalog, recruitment, auth
 as $$
 declare
   v_reviewer uuid := auth.uid();
@@ -160,7 +166,16 @@ begin
 end;
 $$;
 
-create or replace function public.founding_partner_review_list(
+create or replace function public.founding_partner_review_context()
+returns jsonb
+language sql
+security invoker
+set search_path = pg_catalog, recruitment
+as $$
+  select recruitment.founding_partner_review_context_internal();
+$$;
+
+create or replace function recruitment.founding_partner_review_list_internal(
   p_limit integer default 50,
   p_offset integer default 0,
   p_status text default null
@@ -168,7 +183,7 @@ create or replace function public.founding_partner_review_list(
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, recruitment
+set search_path = pg_catalog, recruitment, auth
 as $$
 declare
   v_reviewer uuid := auth.uid();
@@ -220,11 +235,24 @@ begin
 end;
 $$;
 
-create or replace function public.founding_partner_review_detail(p_application_id uuid)
+create or replace function public.founding_partner_review_list(
+  p_limit integer default 50,
+  p_offset integer default 0,
+  p_status text default null
+)
+returns jsonb
+language sql
+security invoker
+set search_path = pg_catalog, recruitment
+as $$
+  select recruitment.founding_partner_review_list_internal(p_limit, p_offset, p_status);
+$$;
+
+create or replace function recruitment.founding_partner_review_detail_internal(p_application_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = pg_catalog, recruitment
+set search_path = pg_catalog, recruitment, auth
 as $$
 declare
   v_reviewer uuid := auth.uid();
@@ -255,9 +283,31 @@ begin
 end;
 $$;
 
+create or replace function public.founding_partner_review_detail(p_application_id uuid)
+returns jsonb
+language sql
+security invoker
+set search_path = pg_catalog, recruitment
+as $$
+  select recruitment.founding_partner_review_detail_internal(p_application_id);
+$$;
+
+-- Private implementations are callable only by authenticated sessions through
+-- the public SECURITY INVOKER wrappers; the recruitment schema is not exposed.
+revoke all on function recruitment.founding_partner_review_transition_internal(uuid,text,text) from public, anon;
+revoke all on function recruitment.founding_partner_review_context_internal() from public, anon;
+revoke all on function recruitment.founding_partner_review_list_internal(integer,integer,text) from public, anon;
+revoke all on function recruitment.founding_partner_review_detail_internal(uuid) from public, anon;
+grant execute on function recruitment.founding_partner_review_transition_internal(uuid,text,text) to authenticated;
+grant execute on function recruitment.founding_partner_review_context_internal() to authenticated;
+grant execute on function recruitment.founding_partner_review_list_internal(integer,integer,text) to authenticated;
+grant execute on function recruitment.founding_partner_review_detail_internal(uuid) to authenticated;
+
+revoke all on function public.founding_partner_review_transition(uuid,text,text) from public, anon;
 revoke all on function public.founding_partner_review_context() from public, anon;
 revoke all on function public.founding_partner_review_list(integer,integer,text) from public, anon;
 revoke all on function public.founding_partner_review_detail(uuid) from public, anon;
+grant execute on function public.founding_partner_review_transition(uuid,text,text) to authenticated;
 grant execute on function public.founding_partner_review_context() to authenticated;
 grant execute on function public.founding_partner_review_list(integer,integer,text) to authenticated;
 grant execute on function public.founding_partner_review_detail(uuid) to authenticated;
