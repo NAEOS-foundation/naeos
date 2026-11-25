@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/authboundary"
 	outreachconfig "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/config"
 	outreachhttp "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/httpserver"
 )
@@ -22,9 +23,18 @@ func main() {
 		log.Fatalf("configuration error: %v", err)
 	}
 
+	publicHandler := outreachhttp.NewHandler()
+
+	mux := http.NewServeMux()
+	mux.Handle("/health", publicHandler)
+	mux.Handle("/ready", publicHandler)
+	mux.Handle("/", authboundary.RequirePrincipal(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	})))
+
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           outreachhttp.NewHandler(),
+		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
