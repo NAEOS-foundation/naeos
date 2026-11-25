@@ -58,6 +58,8 @@ jobs:
           NEXT_PUBLIC_CONTROL_PLANE_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://naeos-control-plane-production.up.railway.app' || '' }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'feat/founding-partner-intake-20261125' && 'https://kqmhpsftijskesjdovjm.supabase.co' || '' }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'feat/founding-partner-intake-20261125' && 'sb_publishable_PkjsKuqVuy5BdjikdbNpNg_tsYL66Pq' || '' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'feat/founding-partner-intake-20261125' && 'https://kqmhpsftijskesjdovjm.supabase.co' || '' }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'feat/founding-partner-intake-20261125' && 'sb_publishable_PkjsKuqVuy5BdjikdbNpNg_tsYL66Pq' || '' }}
         run: npx opennextjs-cloudflare build
       - name: Populate static assets cache
         run: npx opennextjs-cloudflare populateCache local
