@@ -3,6 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const allowedOrigins = new Set(["https://naeos.dev", "https://www.naeos.dev"]);
 const roles = ["Technical Founding Partner / CTO", "AI Systems & Engineering Partner", "Product & Engineering Strategy Partner", "Commercial & GTM Partner", "Governance & Security Specialist"];
+const expertiseAreas = ["AI agents & orchestration", "Backend / distributed systems", "Frontend & UX", "DevOps / platform", "Security & governance", "Product strategy", "Sales / GTM", "Partnerships", "Research / evaluation"];
+const weeklyHoursChoices = ["2–5", "5–10", "10–15", "15–20", "20+"];
+const collaborationChoices = ["Part-time", "Flexible", "Other"];
 const cors = (origin: string) => ({
   "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://naeos.dev",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -40,7 +43,7 @@ Deno.serve(async (req) => {
   const expectations = clean(body.partnership_expectations, 4000);
   if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !roles.includes(role) ||
       experience.length < 20 || contribution.length < 20 || motivation.length < 20 || expectations.length < 10 ||
-      !weeklyHours || !collaboration || body.trial_available !== true || body.consent !== true) {
+      !weeklyHoursChoices.includes(weeklyHours) || !collaborationChoices.includes(collaboration) || body.trial_available !== true || body.consent !== true) {
     return response({ error: "Please complete all required fields and consent." }, 400, origin);
   }
 
@@ -52,22 +55,20 @@ Deno.serve(async (req) => {
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) return response({ error: "Application service unavailable." }, 503, origin);
   const db = createClient(url, key, { auth: { persistSession: false } });
-  const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // Trust only platform-provided Cloudflare client IP; forwarded headers can be spoofed.
+  const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
   const ipHash = await hash(key + ":" + ip);
-  const cutoff = new Date(Date.now() - 3600000).toISOString();
-  const { count, error: countError } = await db.schema("recruitment").from("intake_rate_limits")
-    .select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).gte("created_at", cutoff);
-  if (countError) return response({ error: "Submission service temporarily unavailable." }, 503, origin);
-  if ((count ?? 0) >= 5) return response({ error: "Too many submissions. Please try again later." }, 429, origin);
-  const { error: limitError } = await db.schema("recruitment").from("intake_rate_limits").insert({ ip_hash: ipHash });
-  if (limitError) return response({ error: "Submission service temporarily unavailable." }, 503, origin);
+  const { data: rateAllowed, error: rateError } = await db.schema("recruitment")
+    .rpc("enforce_intake_rate_limit", { p_ip_hash: ipHash, p_max_submissions: 5, p_window_seconds: 3600 });
+  if (rateError) return response({ error: "Submission service temporarily unavailable." }, 503, origin);
+  if (rateAllowed !== true) return response({ error: "Too many submissions. Please try again later." }, 429, origin);
 
   const { error } = await db.schema("recruitment").from("founding_partner_applications").insert({
     applicant_name: name, email, location: clean(body.location, 150) || null,
     linkedin_url: linkedin || null, portfolio_url: portfolio || null,
     professional_role: clean(body.professional_role, 200) || null, primary_role: role,
     alternate_role: clean(body.alternate_role, 120) || null,
-    expertise_areas: Array.isArray(body.expertise_areas) ? body.expertise_areas.filter((v) => typeof v === "string").map((v) => clean(v, 80)).slice(0, 20) : [],
+    expertise_areas: Array.isArray(body.expertise_areas) ? body.expertise_areas.filter((v) => typeof v === "string" && expertiseAreas.includes(v)).slice(0, 20) : [],
     relevant_experience: experience, portfolio_summary: clean(body.portfolio_summary, 3000) || null,
     contribution_proposal: contribution, motivation, weekly_hours: weeklyHours, collaboration_model: collaboration,
     earliest_availability: clean(body.earliest_availability, 10) || null, trial_available: true,
