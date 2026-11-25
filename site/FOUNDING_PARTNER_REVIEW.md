@@ -5,7 +5,7 @@ The reviewer dashboard is available at `/{lang}/founding-partners/review` (for e
 
 ## Staging-only setup
 
-1. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` with the
+1. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with the
    **NAEOS staging Supabase project** values before building the site.
 2. Do not use a service-role key or any secret in a `NEXT_PUBLIC_*` variable.
 3. Create the founder reviewer account through the trusted Supabase staging Auth
@@ -24,10 +24,8 @@ The reviewer dashboard is available at `/{lang}/founding-partners/review` (for e
 
 - The `recruitment` schema remains unexposed to PostgREST/browser clients.
 - Browser requests use the public anon/publishable key plus the signed-in user's access
-  token. All reviewer data reads and status transitions pass through narrowly scoped
-  `public.founding_partner_review_*` RPCs.
-- Each RPC checks `auth.uid()` against the enabled reviewer allowlist. An authenticated
-  account alone is insufficient.
+  token. Browser requests use narrowly scoped `public.founding_partner_review_*` SECURITY INVOKER RPC wrappers. Those wrappers delegate to SECURITY DEFINER implementations in the non-exposed `recruitment` schema.
+- Each private implementation checks `auth.uid()` against the enabled reviewer allowlist. The public wrappers do not execute with elevated privileges; an authenticated account alone is insufficient.
 - The dashboard does not persist access tokens; refresh requires signing in again.
 - The status transition RPC remains the only write path and appends the audit event
   atomically. Invalid transitions and audit-write failures roll back.
