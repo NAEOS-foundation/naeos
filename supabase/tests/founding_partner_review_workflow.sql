@@ -77,7 +77,10 @@ CREATE FUNCTION public.reject_review_event_insert() RETURNS trigger
 LANGUAGE plpgsql
 AS $trigger$
 BEGIN
-  RAISE EXCEPTION 'synthetic audit sink failure';
+  IF NEW.new_status = 'Shortlisted' THEN
+    RAISE EXCEPTION 'synthetic audit sink failure';
+  END IF;
+  RETURN NEW;
 END
 $trigger$;
 CREATE TRIGGER reject_review_event_insert
