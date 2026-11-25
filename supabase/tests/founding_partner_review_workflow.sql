@@ -190,6 +190,26 @@ END
 $assert_disabled_reviewer_denied$;
 
 RESET ROLE;
+
+DO $assert_audit_retention$
+BEGIN
+  BEGIN
+    DELETE FROM recruitment.founding_partner_applications
+    WHERE id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    RAISE EXCEPTION 'application deletion unexpectedly removed referenced review history';
+  EXCEPTION WHEN foreign_key_violation THEN
+    NULL;
+  END;
+  IF NOT EXISTS (
+    SELECT 1 FROM recruitment.founding_partner_review_events
+    WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+      AND new_status = 'Screening'
+  ) THEN
+    RAISE EXCEPTION 'review audit history was not retained';
+  END IF;
+END
+$assert_audit_retention$;
+
 DROP TRIGGER reject_review_event_insert ON recruitment.founding_partner_review_events;
 DROP FUNCTION public.reject_review_event_insert();
 ROLLBACK;
