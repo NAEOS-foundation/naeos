@@ -47,7 +47,8 @@ export default function FoundingPartnerIntake({ lang }: Props) {
     event.preventDefault();
     if (state === "sending") return;
     setState("sending"); setError("");
-    const formElement = event.currentTarget;\n    const fd = new FormData(formElement);
+    const formElement = event.currentTarget;
+    const fd = new FormData(formElement);
     const payload: Record<string, unknown> = Object.fromEntries(fd.entries());
     payload.expertise_areas = fd.getAll("expertise_areas");
     payload.trial_available = fd.get("trial_available") === "on";
