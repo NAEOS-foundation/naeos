@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: founding-partner-review-site-\u0024{{ github.workflow }}-\u0024{{ github.ref }}
+  group: founding-partner-review-site-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
