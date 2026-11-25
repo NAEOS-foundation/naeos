@@ -240,7 +240,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
           </div>
           {error && <p role="alert" style={{ color: "var(--color-danger)" }}>{error}</p>}
           {notice && <p role="status" style={{ color: "var(--color-success)" }}>{notice}</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, .9fr) minmax(0, 1.4fr)", gap: "1rem", alignItems: "start" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: "1rem", alignItems: "start" }}>
             <section style={panel}>
               <h2>{t.applications} ({total})</h2>
               <label htmlFor="status-filter" style={{ display: "block", fontWeight: 600, margin: "1rem 0 .4rem" }}>{t.status}</label>
