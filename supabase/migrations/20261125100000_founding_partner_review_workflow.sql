@@ -12,7 +12,7 @@ create table if not exists recruitment.founding_partner_reviewers (
 
 create table if not exists recruitment.founding_partner_review_events (
   id uuid primary key default gen_random_uuid(),
-  application_id uuid not null references recruitment.founding_partner_applications(id) on delete cascade,
+  application_id uuid not null references recruitment.founding_partner_applications(id) on delete restrict,
   reviewer_id uuid not null references auth.users(id),
   previous_status text not null,
   new_status text not null,
