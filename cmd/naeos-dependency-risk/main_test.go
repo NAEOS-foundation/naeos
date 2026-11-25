@@ -198,4 +198,3 @@ func runRiskGit(t *testing.T, dir string, args ...string) string {
 	}
 	return string(out)
 }
-
