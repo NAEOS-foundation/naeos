@@ -34,8 +34,10 @@ revoke all on recruitment.founding_partner_reviewers from public, anon, authenti
 revoke all on recruitment.founding_partner_review_events from public, anon, authenticated;
 revoke all on recruitment.founding_partner_applications from public, anon, authenticated;
 
--- Authenticated must resolve objects in this private schema; table privileges and RLS still limit access.
-grant usage on schema recruitment to authenticated;
+-- Keep the intake schema ACL restricted. A separate non-exposed schema hosts reviewer RPC implementations.
+create schema if not exists recruitment_private;
+revoke all on schema recruitment_private from public, anon;
+grant usage on schema recruitment_private to authenticated;
 
 -- No direct table SELECT is granted to authenticated; reads are returned only by allowlisted private RPCs.
 
@@ -61,9 +63,9 @@ create policy "enabled reviewers can read review audit"
   ));
 
 
--- Privileged implementations live in the private, non-exposed recruitment schema.
+-- Privileged implementations live in the private, non-exposed recruitment_private schema.
 -- Public PostgREST entrypoints below are SECURITY INVOKER wrappers only.
-create or replace function recruitment.founding_partner_review_transition_internal(
+create or replace function recruitment_private.founding_partner_review_transition_internal(
   p_application_id uuid,
   p_new_status text,
   p_note text default null
@@ -131,14 +133,14 @@ create or replace function public.founding_partner_review_transition(
 returns boolean
 language sql
 security invoker
-set search_path = pg_catalog, recruitment
-as $$
-  select recruitment.founding_partner_review_transition_internal(
+set search_path = pg_catalog, recruitment_private
+as $
+  select recruitment_private.founding_partner_review_transition_internal(
     p_application_id, p_new_status, p_note
   );
 $$;
 
-create or replace function recruitment.founding_partner_review_context_internal()
+create or replace function recruitment_private.founding_partner_review_context_internal()
 returns jsonb
 language plpgsql
 security definer
@@ -168,12 +170,12 @@ create or replace function public.founding_partner_review_context()
 returns jsonb
 language sql
 security invoker
-set search_path = pg_catalog, recruitment
-as $$
-  select recruitment.founding_partner_review_context_internal();
+set search_path = pg_catalog, recruitment_private
+as $
+  select recruitment_private.founding_partner_review_context_internal();
 $$;
 
-create or replace function recruitment.founding_partner_review_list_internal(
+create or replace function recruitment_private.founding_partner_review_list_internal(
   p_limit integer default 50,
   p_offset integer default 0,
   p_status text default null
@@ -241,12 +243,12 @@ create or replace function public.founding_partner_review_list(
 returns jsonb
 language sql
 security invoker
-set search_path = pg_catalog, recruitment
-as $$
-  select recruitment.founding_partner_review_list_internal(p_limit, p_offset, p_status);
+set search_path = pg_catalog, recruitment_private
+as $
+  select recruitment_private.founding_partner_review_list_internal(p_limit, p_offset, p_status);
 $$;
 
-create or replace function recruitment.founding_partner_review_detail_internal(p_application_id uuid)
+create or replace function recruitment_private.founding_partner_review_detail_internal(p_application_id uuid)
 returns jsonb
 language plpgsql
 security definer
@@ -285,21 +287,21 @@ create or replace function public.founding_partner_review_detail(p_application_i
 returns jsonb
 language sql
 security invoker
-set search_path = pg_catalog, recruitment
-as $$
-  select recruitment.founding_partner_review_detail_internal(p_application_id);
+set search_path = pg_catalog, recruitment_private
+as $
+  select recruitment_private.founding_partner_review_detail_internal(p_application_id);
 $$;
 
 -- Private implementations are callable only by authenticated sessions through
 -- the public SECURITY INVOKER wrappers; the recruitment schema is not exposed.
-revoke all on function recruitment.founding_partner_review_transition_internal(uuid,text,text) from public, anon;
-revoke all on function recruitment.founding_partner_review_context_internal() from public, anon;
-revoke all on function recruitment.founding_partner_review_list_internal(integer,integer,text) from public, anon;
-revoke all on function recruitment.founding_partner_review_detail_internal(uuid) from public, anon;
-grant execute on function recruitment.founding_partner_review_transition_internal(uuid,text,text) to authenticated;
-grant execute on function recruitment.founding_partner_review_context_internal() to authenticated;
-grant execute on function recruitment.founding_partner_review_list_internal(integer,integer,text) to authenticated;
-grant execute on function recruitment.founding_partner_review_detail_internal(uuid) to authenticated;
+revoke all on function recruitment_private.founding_partner_review_transition_internal(uuid,text,text) from public, anon;
+revoke all on function recruitment_private.founding_partner_review_context_internal() from public, anon;
+revoke all on function recruitment_private.founding_partner_review_list_internal(integer,integer,text) from public, anon;
+revoke all on function recruitment_private.founding_partner_review_detail_internal(uuid) from public, anon;
+grant execute on function recruitment_private.founding_partner_review_transition_internal(uuid,text,text) to authenticated;
+grant execute on function recruitment_private.founding_partner_review_context_internal() to authenticated;
+grant execute on function recruitment_private.founding_partner_review_list_internal(integer,integer,text) to authenticated;
+grant execute on function recruitment_private.founding_partner_review_detail_internal(uuid) to authenticated;
 
 revoke all on function public.founding_partner_review_transition(uuid,text,text) from public, anon;
 revoke all on function public.founding_partner_review_context() from public, anon;
