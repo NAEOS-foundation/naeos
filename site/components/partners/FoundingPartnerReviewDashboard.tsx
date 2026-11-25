@@ -53,7 +53,7 @@ const copy = {
   en: {
     title: "Founding Partner Review", subtitle: "Restricted founder workspace. Sign in with an existing reviewer account.",
     email: "Reviewer email", password: "Password", signIn: "Sign in", signingIn: "Verifying…", signOut: "Sign out",
-    config: "Dashboard is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to the NAEOS staging project.",
+    config: "Dashboard is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to the NAEOS staging project.",
     unauthorized: "This account is not enabled as a founding partner reviewer.", loginError: "Sign-in failed. Check your credentials and try again.",
     loading: "Loading applications…", applications: "Applications", all: "All statuses", empty: "No applications found.",
     open: "Open review", applicant: "Applicant", role: "Primary role", status: "Status", submitted: "Submitted",
@@ -68,7 +68,7 @@ const copy = {
   id: {
     title: "Review Founding Partner", subtitle: "Workspace founder terbatas. Masuk dengan akun reviewer yang sudah dibuat.",
     email: "Email reviewer", password: "Password", signIn: "Masuk", signingIn: "Memverifikasi…", signOut: "Keluar",
-    config: "Dashboard belum dikonfigurasi. Isi NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY dengan nilai project staging NAEOS.",
+    config: "Dashboard belum dikonfigurasi. Isi NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY dengan nilai project staging NAEOS.",
     unauthorized: "Akun ini belum diaktifkan sebagai reviewer founding partner.", loginError: "Login gagal. Periksa kredensial lalu coba lagi.",
     loading: "Memuat aplikasi…", applications: "Daftar aplikasi", all: "Semua status", empty: "Tidak ada aplikasi.",
     open: "Buka review", applicant: "Pelamar", role: "Peran utama", status: "Status", submitted: "Dikirim",
@@ -85,8 +85,8 @@ const copy = {
 export default function FoundingPartnerReviewDashboard({ lang }: Props) {
   const t = copy[lang];
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const configured = Boolean(supabaseUrl && anonKey);
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
+  const configured = Boolean(supabaseUrl && publishableKey);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [session, setSession] = useState<RpcSession | null>(null);
@@ -108,7 +108,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
     if (!session) throw new Error("Reviewer session missing");
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
       method: "POST",
-      headers: { apikey: anonKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+      headers: { apikey: publishableKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
       body: JSON.stringify(args),
       cache: "no-store",
     });
@@ -120,7 +120,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
   async function loadApplications(activeSession: RpcSession, nextOffset = offset, nextFilter = filter) {
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/founding_partner_review_list`, {
       method: "POST",
-      headers: { apikey: anonKey, Authorization: `Bearer ${activeSession.access_token}`, "Content-Type": "application/json" },
+      headers: { apikey: publishableKey, Authorization: `Bearer ${activeSession.access_token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ p_limit: pageSize, p_offset: nextOffset, p_status: nextFilter || null }),
       cache: "no-store",
     });
@@ -138,7 +138,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
     try {
       const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
         method: "POST",
-        headers: { apikey: anonKey, "Content-Type": "application/json" },
+        headers: { apikey: publishableKey, "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
         cache: "no-store",
       });
@@ -147,7 +147,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
       const candidate: RpcSession = { access_token: result.access_token, user: result.user };
       const contextResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/founding_partner_review_context`, {
         method: "POST",
-        headers: { apikey: anonKey, Authorization: `Bearer ${candidate.access_token}`, "Content-Type": "application/json" },
+        headers: { apikey: publishableKey, Authorization: `Bearer ${candidate.access_token}`, "Content-Type": "application/json" },
         body: "{}",
         cache: "no-store",
       });
@@ -157,7 +157,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
       setReviewerName(typeof context?.display_name === "string" && context.display_name ? context.display_name : candidate.user.email ?? "");
       const listResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/founding_partner_review_list`, {
         method: "POST",
-        headers: { apikey: anonKey, Authorization: `Bearer ${candidate.access_token}`, "Content-Type": "application/json" },
+        headers: { apikey: publishableKey, Authorization: `Bearer ${candidate.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ p_limit: pageSize, p_offset: 0, p_status: null }),
         cache: "no-store",
       });
