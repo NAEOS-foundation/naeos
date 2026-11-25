@@ -129,3 +129,127 @@ grant execute on function public.founding_partner_review_transition(uuid,text,te
 -- insert into recruitment.founding_partner_reviewers(user_id, display_name)
 -- values ('<AUTH_USER_UUID>', 'Founder Reviewer');
 -- Never expose reviewer bootstrap via a public endpoint.
+
+
+-- Narrow public-schema RPC surface for the founder review dashboard.
+-- The recruitment schema remains unexposed; all reads are performed by
+-- SECURITY DEFINER functions after checking the caller's reviewer allowlist.
+create or replace function public.founding_partner_review_context()
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, recruitment
+as $$
+declare
+  v_reviewer uuid := auth.uid();
+  v_display_name text;
+begin
+  if v_reviewer is null then
+    raise exception 'reviewer authorization required' using errcode = '42501';
+  end if;
+
+  select display_name into v_display_name
+    from recruitment.founding_partner_reviewers
+   where user_id = v_reviewer and enabled = true;
+
+  if not found then
+    raise exception 'reviewer authorization required' using errcode = '42501';
+  end if;
+
+  return jsonb_build_object('user_id', v_reviewer, 'display_name', v_display_name);
+end;
+$$;
+
+create or replace function public.founding_partner_review_list(
+  p_limit integer default 50,
+  p_offset integer default 0,
+  p_status text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, recruitment
+as $$
+declare
+  v_reviewer uuid := auth.uid();
+  v_items jsonb;
+  v_total bigint;
+begin
+  if v_reviewer is null or not exists (
+    select 1 from recruitment.founding_partner_reviewers
+    where user_id = v_reviewer and enabled = true
+  ) then
+    raise exception 'reviewer authorization required' using errcode = '42501';
+  end if;
+
+  if p_limit is null or p_limit < 1 or p_limit > 100
+     or p_offset is null or p_offset < 0 then
+    raise exception 'invalid pagination parameters' using errcode = '22023';
+  end if;
+
+  if p_status is not null and p_status not in (
+    'New Application','Screening','Shortlisted','Interview','Mutual Fit','Trial',
+    'Partnership Negotiation','Accepted','Rejected','Withdrawn','On Hold'
+  ) then
+    raise exception 'invalid application status filter' using errcode = '22023';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(page_row) order by page_row.created_at desc), '[]'::jsonb)
+    into v_items
+    from (
+      select a.*
+        from recruitment.founding_partner_applications a
+       where p_status is null or a.application_status = p_status
+       order by a.created_at desc, a.id
+       limit p_limit offset p_offset
+    ) as page_row;
+
+  select count(*) into v_total
+    from recruitment.founding_partner_applications a
+   where p_status is null or a.application_status = p_status;
+
+  return jsonb_build_object('items', v_items, 'total', v_total, 'limit', p_limit, 'offset', p_offset);
+end;
+$$;
+
+create or replace function public.founding_partner_review_detail(p_application_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, recruitment
+as $$
+declare
+  v_reviewer uuid := auth.uid();
+  v_application jsonb;
+  v_events jsonb;
+begin
+  if v_reviewer is null or not exists (
+    select 1 from recruitment.founding_partner_reviewers
+    where user_id = v_reviewer and enabled = true
+  ) then
+    raise exception 'reviewer authorization required' using errcode = '42501';
+  end if;
+
+  select to_jsonb(a) into v_application
+    from recruitment.founding_partner_applications a
+   where a.id = p_application_id;
+
+  if v_application is null then
+    raise exception 'application not found' using errcode = 'P0002';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at asc), '[]'::jsonb)
+    into v_events
+    from recruitment.founding_partner_review_events e
+   where e.application_id = p_application_id;
+
+  return jsonb_build_object('application', v_application, 'events', v_events);
+end;
+$$;
+
+revoke all on function public.founding_partner_review_context() from public, anon;
+revoke all on function public.founding_partner_review_list(integer,integer,text) from public, anon;
+revoke all on function public.founding_partner_review_detail(uuid) from public, anon;
+grant execute on function public.founding_partner_review_context() to authenticated;
+grant execute on function public.founding_partner_review_list(integer,integer,text) to authenticated;
+grant execute on function public.founding_partner_review_detail(uuid) to authenticated;
