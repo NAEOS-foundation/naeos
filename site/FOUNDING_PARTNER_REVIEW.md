@@ -22,10 +22,10 @@ The reviewer dashboard is available at `/{lang}/founding-partners/review` (for e
 
 ## Security boundary
 
-- The `recruitment` schema remains unexposed to PostgREST/browser clients.
+- The `recruitment` intake schema remains unexposed and retains its restricted ACL. The separate `recruitment_private` schema is also not exposed to PostgREST; authenticated sessions receive schema USAGE only to invoke its narrowly scoped reviewer functions.
 - Browser requests use the public anon/publishable key plus the signed-in user's access
-  token. Browser requests use narrowly scoped `public.founding_partner_review_*` SECURITY INVOKER RPC wrappers. Those wrappers delegate to SECURITY DEFINER implementations in the non-exposed `recruitment` schema.
-- Each private implementation checks `auth.uid()` against the enabled reviewer allowlist. The public wrappers do not execute with elevated privileges; an authenticated account alone is insufficient.
+  token. Browser requests use narrowly scoped `public.founding_partner_review_*` SECURITY INVOKER RPC wrappers. Those wrappers delegate to SECURITY DEFINER implementations in the non-exposed `recruitment_private` schema.
+- Authenticated clients receive no direct SELECT/INSERT/UPDATE/DELETE grants on recruitment tables. Each private implementation checks `auth.uid()` against the enabled reviewer allowlist. The public wrappers do not execute with elevated privileges; an authenticated account alone is insufficient.
 - The dashboard does not persist access tokens; refresh requires signing in again.
 - The status transition RPC remains the only write path and appends the audit event
   atomically. Invalid transitions and audit-write failures roll back.
