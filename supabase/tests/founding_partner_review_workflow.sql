@@ -43,10 +43,10 @@ BEGIN
      OR has_table_privilege('anon', 'recruitment.founding_partner_review_events', 'SELECT') THEN
     RAISE EXCEPTION 'anon must not have SELECT on founding partner review tables';
   END IF;
-  IF NOT has_table_privilege('authenticated', 'recruitment.founding_partner_applications', 'SELECT')
-     OR NOT has_table_privilege('authenticated', 'recruitment.founding_partner_reviewers', 'SELECT')
-     OR NOT has_table_privilege('authenticated', 'recruitment.founding_partner_review_events', 'SELECT') THEN
-    RAISE EXCEPTION 'authenticated SELECT grants required for RLS-gated reads';
+  IF has_table_privilege('authenticated', 'recruitment.founding_partner_applications', 'SELECT')
+     OR has_table_privilege('authenticated', 'recruitment.founding_partner_reviewers', 'SELECT')
+     OR has_table_privilege('authenticated', 'recruitment.founding_partner_review_events', 'SELECT') THEN
+    RAISE EXCEPTION 'authenticated must not receive direct SELECT on private recruitment tables';
   END IF;
   IF has_table_privilege('authenticated', 'recruitment.founding_partner_applications', 'INSERT')
      OR has_table_privilege('authenticated', 'recruitment.founding_partner_applications', 'UPDATE')
@@ -143,9 +143,12 @@ $assert_dashboard_rpcs_deny_non_reviewers$;
 
 DO $assert_non_reviewer_denied$
 BEGIN
-  IF (SELECT count(*) FROM recruitment.founding_partner_applications) <> 0 THEN
-    RAISE EXCEPTION 'non-reviewer unexpectedly read applications';
-  END IF;
+  BEGIN
+    PERFORM 1 FROM recruitment.founding_partner_applications;
+    RAISE EXCEPTION 'authenticated non-reviewer unexpectedly received direct table access';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
   BEGIN
     PERFORM public.founding_partner_review_transition(
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Screening', 'must be denied'
@@ -160,10 +163,9 @@ $assert_non_reviewer_denied$;
 -- An enabled allowlisted reviewer can read and transition; audit is atomic.
 SELECT set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
 DO $assert_active_reviewer_flow$
+DECLARE
+  v_detail jsonb;
 BEGIN
-  IF (SELECT count(*) FROM recruitment.founding_partner_applications) <> 1 THEN
-    RAISE EXCEPTION 'enabled reviewer could not read the application';
-  END IF;
   IF public.founding_partner_review_context()->>'user_id' <> '11111111-1111-4111-8111-111111111111' THEN
     RAISE EXCEPTION 'enabled reviewer could not obtain reviewer context';
   END IF;
@@ -178,16 +180,15 @@ BEGIN
      ) IS DISTINCT FROM true THEN
     RAISE EXCEPTION 'valid reviewer transition did not return true';
   END IF;
-  IF (SELECT application_status FROM recruitment.founding_partner_applications
-      WHERE id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 'Screening' THEN
+  v_detail := public.founding_partner_review_detail('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  IF v_detail->'application'->>'application_status' <> 'Screening' THEN
     RAISE EXCEPTION 'valid transition did not update application status';
   END IF;
-  IF (SELECT count(*) FROM recruitment.founding_partner_review_events
-      WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-        AND reviewer_id = '11111111-1111-4111-8111-111111111111'
-        AND previous_status = 'New Application'
-        AND new_status = 'Screening'
-        AND note = 'synthetic review') <> 1 THEN
+  IF jsonb_array_length(v_detail->'events') <> 1
+     OR v_detail->'events'->0->>'reviewer_id' <> '11111111-1111-4111-8111-111111111111'
+     OR v_detail->'events'->0->>'previous_status' <> 'New Application'
+     OR v_detail->'events'->0->>'new_status' <> 'Screening'
+     OR v_detail->'events'->0->>'note' <> 'synthetic review' THEN
     RAISE EXCEPTION 'valid transition must append exactly one matching audit event';
   END IF;
   BEGIN
@@ -198,10 +199,9 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN
     NULL;
   END;
-  IF (SELECT application_status FROM recruitment.founding_partner_applications
-      WHERE id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 'Screening'
-     OR (SELECT count(*) FROM recruitment.founding_partner_review_events
-         WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 1 THEN
+  v_detail := public.founding_partner_review_detail('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  IF v_detail->'application'->>'application_status' <> 'Screening'
+     OR jsonb_array_length(v_detail->'events') <> 1 THEN
     RAISE EXCEPTION 'invalid transition changed application or audit history';
   END IF;
   DECLARE
@@ -221,10 +221,9 @@ BEGIN
         v_failure_state, v_failure_message;
     END IF;
   END;
-  IF (SELECT application_status FROM recruitment.founding_partner_applications
-      WHERE id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 'Screening'
-     OR (SELECT count(*) FROM recruitment.founding_partner_review_events
-         WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 1 THEN
+  v_detail := public.founding_partner_review_detail('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  IF v_detail->'application'->>'application_status' <> 'Screening'
+     OR jsonb_array_length(v_detail->'events') <> 1 THEN
     RAISE EXCEPTION 'audit failure did not roll back the application status mutation';
   END IF;
 END
@@ -234,10 +233,12 @@ $assert_active_reviewer_flow$;
 SELECT set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
 DO $assert_disabled_reviewer_denied$
 BEGIN
-  IF (SELECT count(*) FROM recruitment.founding_partner_applications) <> 0
-     OR (SELECT count(*) FROM recruitment.founding_partner_review_events) <> 0 THEN
-    RAISE EXCEPTION 'disabled reviewer unexpectedly read application or audit data';
-  END IF;
+  BEGIN
+    PERFORM 1 FROM recruitment.founding_partner_applications;
+    RAISE EXCEPTION 'disabled reviewer unexpectedly received direct table access';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
   BEGIN
     PERFORM public.founding_partner_review_list(10, 0, NULL);
     RAISE EXCEPTION 'disabled reviewer unexpectedly listed applications through dashboard RPC';
