@@ -123,7 +123,7 @@ begin
   );
   return true;
 end;
-$wrapper$;
+$;
 
 create or replace function public.founding_partner_review_transition(
   p_application_id uuid,
@@ -164,7 +164,7 @@ begin
 
   return jsonb_build_object('user_id', v_reviewer, 'display_name', v_display_name);
 end;
-$wrapper$;
+$;
 
 create or replace function public.founding_partner_review_context()
 returns jsonb
@@ -233,7 +233,7 @@ begin
 
   return jsonb_build_object('items', v_items, 'total', v_total, 'limit', p_limit, 'offset', p_offset);
 end;
-$wrapper$;
+$;
 
 create or replace function public.founding_partner_review_list(
   p_limit integer default 50,
@@ -281,7 +281,7 @@ begin
 
   return jsonb_build_object('application', v_application, 'events', v_events);
 end;
-$wrapper$;
+$;
 
 create or replace function public.founding_partner_review_detail(p_application_id uuid)
 returns jsonb
