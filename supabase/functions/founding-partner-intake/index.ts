@@ -1,3 +1,6 @@
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -45,7 +48,7 @@ Deno.serve(async (req) => {
   const availabilityDate = clean(body.earliest_availability, 10);
   const submittedAreas = Array.isArray(body.expertise_areas) ? body.expertise_areas : [];
   const parsedDate = availabilityDate ? Date.parse(availabilityDate + "T00:00:00.000Z") : 0;
-  const validDate = !availabilityDate || (/^\\d{4}-\\d{2}-\\d{2}$/.test(availabilityDate) &&
+  const validDate = !availabilityDate || (/^\d{4}-\d{2}-\d{2}$/.test(availabilityDate) &&
     Number.isFinite(parsedDate) && new Date(parsedDate).toISOString().slice(0, 10) === availabilityDate);
   if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !roles.includes(role) ||
       (alternateRole && !roles.includes(alternateRole)) ||
