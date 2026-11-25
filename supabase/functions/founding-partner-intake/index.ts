@@ -41,9 +41,16 @@ Deno.serve(async (req) => {
   const weeklyHours = clean(body.weekly_hours, 40);
   const collaboration = clean(body.collaboration_model, 100);
   const expectations = clean(body.partnership_expectations, 4000);
+  const alternateRole = clean(body.alternate_role, 120);
+  const availabilityDate = clean(body.earliest_availability, 10);
+  const submittedAreas = Array.isArray(body.expertise_areas) ? body.expertise_areas : [];
+  const validDate = !availabilityDate || (/^\\d{4}-\\d{2}-\\d{2}$/.test(availabilityDate) &&
+    new Date(availabilityDate + "T00:00:00.000Z").toISOString().slice(0, 10) === availabilityDate);
   if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !roles.includes(role) ||
+      (alternateRole && !roles.includes(alternateRole)) ||
       experience.length < 20 || contribution.length < 20 || motivation.length < 20 || expectations.length < 10 ||
-      !weeklyHoursChoices.includes(weeklyHours) || !collaborationChoices.includes(collaboration) || body.trial_available !== true || body.consent !== true) {
+      !weeklyHoursChoices.includes(weeklyHours) || !collaborationChoices.includes(collaboration) || body.trial_available !== true || body.consent !== true ||
+      !validDate || submittedAreas.length > 20 || submittedAreas.some((v) => typeof v !== "string" || !expertiseAreas.includes(v))) {
     return response({ error: "Please complete all required fields and consent." }, 400, origin);
   }
 
@@ -62,11 +69,11 @@ Deno.serve(async (req) => {
     applicant_name: name, email, location: clean(body.location, 150) || null,
     linkedin_url: linkedin || null, portfolio_url: portfolio || null,
     professional_role: clean(body.professional_role, 200) || null, primary_role: role,
-    alternate_role: clean(body.alternate_role, 120) || null,
-    expertise_areas: Array.isArray(body.expertise_areas) ? body.expertise_areas.filter((v) => typeof v === "string" && expertiseAreas.includes(v)).slice(0, 20) : [],
+    alternate_role: alternateRole || null,
+    expertise_areas: submittedAreas,
     relevant_experience: experience, portfolio_summary: clean(body.portfolio_summary, 3000) || null,
     contribution_proposal: contribution, motivation, weekly_hours: weeklyHours, collaboration_model: collaboration,
-    earliest_availability: clean(body.earliest_availability, 10) || null, trial_available: true,
+    earliest_availability: availabilityDate || null, trial_available: true,
     partnership_expectations: expectations, equity_expectations: clean(body.equity_expectations, 1000) || null,
     consent: true,
   };
