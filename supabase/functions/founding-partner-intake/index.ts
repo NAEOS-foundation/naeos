@@ -58,12 +58,7 @@ Deno.serve(async (req) => {
   // Trust only platform-provided Cloudflare client IP; forwarded headers can be spoofed.
   const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
   const ipHash = await hash(key + ":" + ip);
-  const { data: rateAllowed, error: rateError } = await db.schema("recruitment")
-    .rpc("enforce_intake_rate_limit", { p_ip_hash: ipHash, p_max_submissions: 5, p_window_seconds: 3600 });
-  if (rateError) return response({ error: "Submission service temporarily unavailable." }, 503, origin);
-  if (rateAllowed !== true) return response({ error: "Too many submissions. Please try again later." }, 429, origin);
-
-  const { error } = await db.schema("recruitment").from("founding_partner_applications").insert({
+  const application = {
     applicant_name: name, email, location: clean(body.location, 150) || null,
     linkedin_url: linkedin || null, portfolio_url: portfolio || null,
     professional_role: clean(body.professional_role, 200) || null, primary_role: role,
@@ -73,9 +68,11 @@ Deno.serve(async (req) => {
     contribution_proposal: contribution, motivation, weekly_hours: weeklyHours, collaboration_model: collaboration,
     earliest_availability: clean(body.earliest_availability, 10) || null, trial_available: true,
     partnership_expectations: expectations, equity_expectations: clean(body.equity_expectations, 1000) || null,
-    consent: true, consent_at: new Date().toISOString(),
-  });
-  if (error) return response({ error: "We could not save your application. Please try again." }, 503, origin);
+    consent: true,
+  };
+  const { data: submitted, error: submitError } = await db.rpc("founding_partner_intake_submit", { p_ip_hash: ipHash, p_application: application });
+  if (submitError) return response({ error: "Submission service temporarily unavailable." }, 503, origin);
+  if (submitted !== true) return response({ error: "Too many submissions. Please try again later." }, 429, origin);
   await db.schema("recruitment").from("intake_rate_limits").delete().lt("created_at", new Date(Date.now() - 7 * 86400000).toISOString());
   return response({ ok: true }, 201, origin);
 });
