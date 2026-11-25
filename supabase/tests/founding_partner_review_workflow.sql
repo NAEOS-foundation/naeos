@@ -66,8 +66,14 @@ BEGIN
   IF NOT has_function_privilege('authenticated',
        'public.founding_partner_review_transition(uuid,text,text)', 'EXECUTE')
      OR has_function_privilege('anon',
-       'public.founding_partner_review_transition(uuid,text,text)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'review transition RPC must be executable only by authenticated';
+       'public.founding_partner_review_transition(uuid,text,text)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.founding_partner_review_context()', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.founding_partner_review_context()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.founding_partner_review_list(integer,integer,text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.founding_partner_review_list(integer,integer,text)', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.founding_partner_review_detail(uuid)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.founding_partner_review_detail(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'review RPCs must be executable only by authenticated';
   END IF;
 END
 $assert_privileges_and_rls$;
@@ -90,6 +96,29 @@ FOR EACH ROW EXECUTE FUNCTION public.reject_review_event_insert();
 -- A signed-in user who is not allowlisted sees no applications and cannot transition.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+DO $assert_dashboard_rpcs_deny_non_reviewers$
+BEGIN
+  BEGIN
+    PERFORM public.founding_partner_review_context();
+    RAISE EXCEPTION 'non-reviewer unexpectedly obtained reviewer context';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM public.founding_partner_review_list(50, 0, NULL);
+    RAISE EXCEPTION 'non-reviewer unexpectedly listed applications';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+  BEGIN
+    PERFORM public.founding_partner_review_detail('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    RAISE EXCEPTION 'non-reviewer unexpectedly opened application detail';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+END
+$assert_dashboard_rpcs_deny_non_reviewers$;
+
 DO $assert_non_reviewer_denied$
 BEGIN
   IF (SELECT count(*) FROM recruitment.founding_partner_applications) <> 0 THEN
@@ -112,6 +141,15 @@ DO $assert_active_reviewer_flow$
 BEGIN
   IF (SELECT count(*) FROM recruitment.founding_partner_applications) <> 1 THEN
     RAISE EXCEPTION 'enabled reviewer could not read the application';
+  END IF;
+  IF public.founding_partner_review_context()->>'user_id' <> '11111111-1111-4111-8111-111111111111' THEN
+    RAISE EXCEPTION 'enabled reviewer could not obtain reviewer context';
+  END IF;
+  IF (public.founding_partner_review_list(10, 0, NULL)->>'total')::integer <> 1 THEN
+    RAISE EXCEPTION 'enabled reviewer could not list applications through dashboard RPC';
+  END IF;
+  IF public.founding_partner_review_detail('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')->'application'->>'applicant_name' <> 'Synthetic Applicant' THEN
+    RAISE EXCEPTION 'enabled reviewer could not retrieve application detail through dashboard RPC';
   END IF;
   IF public.founding_partner_review_transition(
        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Screening', 'synthetic review'
@@ -178,6 +216,12 @@ BEGIN
      OR (SELECT count(*) FROM recruitment.founding_partner_review_events) <> 0 THEN
     RAISE EXCEPTION 'disabled reviewer unexpectedly read application or audit data';
   END IF;
+  BEGIN
+    PERFORM public.founding_partner_review_list(10, 0, NULL);
+    RAISE EXCEPTION 'disabled reviewer unexpectedly listed applications through dashboard RPC';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
   BEGIN
     PERFORM public.founding_partner_review_transition(
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Interview', 'must be denied'
