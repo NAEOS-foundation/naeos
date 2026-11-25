@@ -72,6 +72,18 @@ BEGIN
 END
 $assert_privileges_and_rls$;
 
+-- Inject an audit-sink failure to prove status mutation and audit append roll back together.
+CREATE FUNCTION public.reject_review_event_insert() RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  RAISE EXCEPTION 'synthetic audit sink failure';
+END
+$;
+CREATE TRIGGER reject_review_event_insert
+BEFORE INSERT ON recruitment.founding_partner_review_events
+FOR EACH ROW EXECUTE FUNCTION public.reject_review_event_insert();
+
 -- A signed-in user who is not allowlisted sees no applications and cannot transition.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
@@ -129,6 +141,22 @@ BEGIN
          WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 1 THEN
     RAISE EXCEPTION 'invalid transition changed application or audit history';
   END IF;
+  BEGIN
+    PERFORM public.founding_partner_review_transition(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Shortlisted', 'audit failure rollback'
+    );
+    RAISE EXCEPTION 'transition unexpectedly succeeded when audit insert failed';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'synthetic audit sink failure' THEN
+      RAISE;
+    END IF;
+  END;
+  IF (SELECT application_status FROM recruitment.founding_partner_applications
+      WHERE id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 'Screening'
+     OR (SELECT count(*) FROM recruitment.founding_partner_review_events
+         WHERE application_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') <> 1 THEN
+    RAISE EXCEPTION 'audit failure did not roll back the application status mutation';
+  END IF;
 END
 $assert_active_reviewer_flow$;
 
@@ -152,4 +180,6 @@ END
 $assert_disabled_reviewer_denied$;
 
 RESET ROLE;
+DROP TRIGGER reject_review_event_insert ON recruitment.founding_partner_review_events;
+DROP FUNCTION public.reject_review_event_insert();
 ROLLBACK;
