@@ -194,10 +194,18 @@ begin
     raise exception 'invalid application status filter' using errcode = '22023';
   end if;
 
-  select coalesce(jsonb_agg(to_jsonb(page_row) order by page_row.created_at desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(
+      jsonb_build_object(
+        'id', page_row.id,
+        'applicant_name', page_row.applicant_name,
+        'primary_role', page_row.primary_role,
+        'application_status', page_row.application_status,
+        'created_at', page_row.created_at
+      ) order by page_row.created_at desc
+    ), '[]'::jsonb)
     into v_items
     from (
-      select a.*
+      select a.id, a.applicant_name, a.primary_role, a.application_status, a.created_at
         from recruitment.founding_partner_applications a
        where p_status is null or a.application_status = p_status
        order by a.created_at desc, a.id
