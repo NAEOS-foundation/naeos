@@ -5,6 +5,7 @@ on:
     branches: [feat/founding-partner-intake-20261125]
     paths:
       - '.github/workflows/founding-partner-review-postgres.yml'
+      - '.github/workflows/founding-partner-review-site-check.yml'
       - 'supabase/migrations/20261125064126_founding_partner_intake_private_schema.sql'
       - 'supabase/migrations/20261125073000_founding_partner_private_submit_rpc.sql'
       - 'supabase/migrations/20261125100000_founding_partner_review_workflow.sql'
@@ -17,6 +18,7 @@ on:
     branches: [feat/founding-partner-review-workflow]
     paths:
       - '.github/workflows/founding-partner-review-postgres.yml'
+      - '.github/workflows/founding-partner-review-site-check.yml'
       - 'supabase/migrations/20261125064126_founding_partner_intake_private_schema.sql'
       - 'supabase/migrations/20261125073000_founding_partner_private_submit_rpc.sql'
       - 'supabase/migrations/20261125100000_founding_partner_review_workflow.sql'
