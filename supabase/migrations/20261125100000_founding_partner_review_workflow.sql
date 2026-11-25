@@ -123,7 +123,7 @@ begin
   );
   return true;
 end;
-$$;
+$wrapper$;
 
 create or replace function public.founding_partner_review_transition(
   p_application_id uuid,
@@ -134,11 +134,11 @@ returns boolean
 language sql
 security invoker
 set search_path = pg_catalog, recruitment_private
-as $
+as $wrapper$
   select recruitment_private.founding_partner_review_transition_internal(
     p_application_id, p_new_status, p_note
   );
-$$;
+$wrapper$;
 
 create or replace function recruitment_private.founding_partner_review_context_internal()
 returns jsonb
@@ -164,16 +164,16 @@ begin
 
   return jsonb_build_object('user_id', v_reviewer, 'display_name', v_display_name);
 end;
-$$;
+$wrapper$;
 
 create or replace function public.founding_partner_review_context()
 returns jsonb
 language sql
 security invoker
 set search_path = pg_catalog, recruitment_private
-as $
+as $wrapper$
   select recruitment_private.founding_partner_review_context_internal();
-$$;
+$wrapper$;
 
 create or replace function recruitment_private.founding_partner_review_list_internal(
   p_limit integer default 50,
@@ -233,7 +233,7 @@ begin
 
   return jsonb_build_object('items', v_items, 'total', v_total, 'limit', p_limit, 'offset', p_offset);
 end;
-$$;
+$wrapper$;
 
 create or replace function public.founding_partner_review_list(
   p_limit integer default 50,
@@ -244,9 +244,9 @@ returns jsonb
 language sql
 security invoker
 set search_path = pg_catalog, recruitment_private
-as $
+as $wrapper$
   select recruitment_private.founding_partner_review_list_internal(p_limit, p_offset, p_status);
-$$;
+$wrapper$;
 
 create or replace function recruitment_private.founding_partner_review_detail_internal(p_application_id uuid)
 returns jsonb
@@ -281,16 +281,16 @@ begin
 
   return jsonb_build_object('application', v_application, 'events', v_events);
 end;
-$$;
+$wrapper$;
 
 create or replace function public.founding_partner_review_detail(p_application_id uuid)
 returns jsonb
 language sql
 security invoker
 set search_path = pg_catalog, recruitment_private
-as $
+as $wrapper$
   select recruitment_private.founding_partner_review_detail_internal(p_application_id);
-$$;
+$wrapper$;
 
 -- Private implementations are callable only by authenticated sessions through
 -- the public SECURITY INVOKER wrappers; the recruitment schema is not exposed.
