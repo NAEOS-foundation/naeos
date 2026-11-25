@@ -289,7 +289,6 @@ func deriveEmptyNewGoModule(base, manifest string, changed []string) (requestFil
 	}, true, nil
 }
 
-
 func changedDependencyManifests(base string) ([]string, error) {
 	raw, err := exec.CommandContext(context.Background(), "git", "diff", "--name-only", base+"...HEAD").Output() //nolint:gosec // BASE_SHA is supplied by trusted CI
 	if err != nil {
