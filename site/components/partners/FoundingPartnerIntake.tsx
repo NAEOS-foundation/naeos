@@ -47,19 +47,19 @@ export default function FoundingPartnerIntake({ lang }: Props) {
     event.preventDefault();
     if (state === "sending") return;
     setState("sending"); setError("");
-    const fd = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;\n    const fd = new FormData(formElement);
     const payload: Record<string, unknown> = Object.fromEntries(fd.entries());
     payload.expertise_areas = fd.getAll("expertise_areas");
     payload.trial_available = fd.get("trial_available") === "on";
     payload.consent = fd.get("consent") === "on";
     try {
       const res = await fetch("https://kqmhpsftijskesjdovjm.supabase.co/functions/v1/founding-partner-intake", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+        method: "POST", headers: { "Content-Type": "application/json", "apikey": "sb_publishable_PkjsKuqVuy5BdjikdbNpNg_tsYL66Pq" }, body: JSON.stringify(payload),
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof result.error === "string" ? result.error : t.failure);
       setState("success");
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (err) { setState("error"); setError(err instanceof Error ? err.message : t.failure); }
   };
   const field = (name: string, label: string, opts: { required?: boolean; type?: string; placeholder?: string; maxLength?: number } = {}) => (
