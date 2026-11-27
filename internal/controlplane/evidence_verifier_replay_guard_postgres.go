@@ -25,7 +25,6 @@ func NewPostgresEvidenceVerifierReplayGuard(ctx context.Context, databaseURL str
  pool, err := pgxpool.NewWithConfig(ctx,cfg); if err != nil { return nil, errors.New("unable to configure verifier PostgreSQL pool") }
  pingCtx,cancel:=context.WithTimeout(ctx,5*time.Second); defer cancel()
  if err:=pool.Ping(pingCtx); err!=nil { pool.Close(); return nil,errors.New("verifier PostgreSQL connectivity failed") }
- var ready bool
  const check = `SELECT to_regclass('naeos_evidence_verifier.replay_claims') IS NOT NULL,
  has_schema_privilege(current_user,'naeos_evidence_verifier','USAGE'),
  has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','INSERT'),
@@ -40,11 +39,11 @@ func NewPostgresEvidenceVerifierReplayGuard(ctx context.Context, databaseURL str
  return &PostgresEvidenceVerifierReplayGuard{pool:pool},nil
 }
 func (g *PostgresEvidenceVerifierReplayGuard) Claim(ctx context.Context, scope, requestID string) (bool,error) {
- if g==nil || g.pool==nil || strings.TrimSpace(scope)=="" || len(requestID)!=32 { return false,errors.New("durable replay guard is not configured or claim is invalid") }
+ if g==nil || g.pool==nil || strings.TrimSpace(scope)=="" || len(strings.TrimSpace(scope))>128 || len(requestID)!=32 { return false,errors.New("durable replay guard is not configured or claim is invalid") }
  ctx,cancel:=context.WithTimeout(ctx,3*time.Second); defer cancel()
  const query = `INSERT INTO naeos_evidence_verifier.replay_claims (verifier_scope, request_id)
  VALUES ($1,$2) ON CONFLICT (verifier_scope,request_id) DO NOTHING`
- tag,err:=g.pool.Exec(ctx,query,scope,strings.ToLower(requestID)); if err!=nil { return false,errors.New("durable replay claim failed") }
+ tag,err:=g.pool.Exec(ctx,query,strings.TrimSpace(scope),strings.ToLower(requestID)); if err!=nil { return false,errors.New("durable replay claim failed") }
  return tag.RowsAffected()==1,nil
 }
 func (g *PostgresEvidenceVerifierReplayGuard) ClaimReadiness(ctx context.Context) (bool,error) {
