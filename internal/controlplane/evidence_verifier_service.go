@@ -19,8 +19,8 @@ type ExecutionEvidencePolicy interface { Version() string; EvaluateExecutionEvid
 type EvidenceVerifierReplayGuard interface { Claim(context.Context,string,string)(bool,error) }
 type ProviderNeutralEvidenceVerificationService struct { source AuthoritativeExecutionEvidenceSource; policy ExecutionEvidencePolicy; guard EvidenceVerifierReplayGuard; scope string; token string; now func()time.Time }
 func NewProviderNeutralEvidenceVerificationService(source AuthoritativeExecutionEvidenceSource, policy ExecutionEvidencePolicy, guard EvidenceVerifierReplayGuard, scope, token string)(*ProviderNeutralEvidenceVerificationService,error) {
- if source==nil || policy==nil || guard==nil || strings.TrimSpace(policy.Version())=="" || strings.TrimSpace(scope)=="" || strings.TrimSpace(token)=="" { return nil,errors.New("source, policy, durable replay guard, verifier scope, and credential are required") }
- return &ProviderNeutralEvidenceVerificationService{source:source,policy:policy,guard:guard,scope:scope,token:token,now:time.Now},nil
+ if source==nil || policy==nil || guard==nil || strings.TrimSpace(policy.Version())=="" || strings.TrimSpace(scope)=="" || len(strings.TrimSpace(scope))>128 || strings.TrimSpace(token)=="" { return nil,errors.New("source, policy, durable replay guard, verifier scope, and credential are required") }
+ return &ProviderNeutralEvidenceVerificationService{source:source,policy:policy,guard:guard,scope:strings.TrimSpace(scope),token:token,now:time.Now},nil
 }
 func (s *ProviderNeutralEvidenceVerificationService) Handler()http.Handler{return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
  if s==nil||s.source==nil||s.policy==nil||s.guard==nil||s.scope==""||s.token=="" {writeJSON(w,503,map[string]string{"error":"evidence verification service is not configured"});return}
