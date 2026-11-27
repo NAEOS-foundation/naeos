@@ -252,7 +252,9 @@ func TestEvidenceVerifierSnapshotsPolicyVersionAtConstruction(t *testing.T) {
 	response := httptest.NewRecorder()
 	service.Handler().ServeHTTP(response, request)
 	var receipt evidenceVerificationResponse
-	if err := json.Unmarshal(response.Body.Bytes(), &receipt); err != nil { t.Fatal(err) }
+	if err := json.Unmarshal(response.Body.Bytes(), &receipt); err != nil {
+		t.Fatal(err)
+	}
 	if response.Code != http.StatusOK || receipt.VerificationPolicyVersion != "policy-v1" {
 		t.Fatalf("status=%d policy version=%q", response.Code, receipt.VerificationPolicyVersion)
 	}
