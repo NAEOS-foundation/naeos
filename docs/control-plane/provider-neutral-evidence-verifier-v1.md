@@ -80,7 +80,7 @@ This contract intentionally does not select GitHub, a cloud provider, or another
 
 A standalone executable is available at `cmd/naeos-evidence-verifier` and can be built with `Dockerfile.evidence-verifier`. It exposes `POST /v1/verify`, `GET /healthz`, and `GET /readyz`.
 
-Required environment: `NAEOS_EVIDENCE_SOURCE_URL` (HTTPS read-only observation API), `NAEOS_EVIDENCE_SOURCE_TOKEN`, `NAEOS_EVIDENCE_VERIFIER_TOKEN`, `NAEOS_EVIDENCE_POLICY_VERSION`; optional `NAEOS_EVIDENCE_VERIFIER_ADDR` defaults to `:8081`.
+Required environment: `NAEOS_EVIDENCE_SOURCE_URL` (HTTPS read-only observation API), `NAEOS_EVIDENCE_SOURCE_TOKEN`, `NAEOS_EVIDENCE_VERIFIER_TOKEN`, `NAEOS_EVIDENCE_POLICY_VERSION`; optional `NAEOS_EVIDENCE_VERIFIER_ADDR` defaults to `127.0.0.1:8081` (loopback-only).
 
 The configured source API must implement a read-only GET using query parameters `execution_id`, `expected_outcome`, optional `evidence_ref_hint`, and return the observation object described in the contract. HTTP 404/409/422 are non-confirming; other non-200 responses fail as unavailable. The generic policy only binds the expected outcome and is not provider-specific effect verification.
 
