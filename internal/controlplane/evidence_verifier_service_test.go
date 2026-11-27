@@ -59,12 +59,12 @@ func TestProviderNeutralEvidenceVerificationServiceRequiresDependencies(t *testi
 		policy ExecutionEvidencePolicy
 		token  string
 	}{
-		{name: "missing source", policy: policy, token: "secret"},
-		{name: "missing policy", source: source, token: "secret"},
-		{name: "missing token", source: source, policy: policy},
+		{name: "missing source", policy: policy, token: "secret", guard: &memoryReplayGuard{claims: map[string]bool{}}, scope: "test"},
+		{name: "missing policy", source: source, token: "secret", guard: &memoryReplayGuard{claims: map[string]bool{}}, scope: "test"},
+		{name: "missing token", source: source, policy: policy, guard: &memoryReplayGuard{claims: map[string]bool{}}, scope: "test"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if _, err := NewProviderNeutralEvidenceVerificationService(test.source, test.policy, test.token); err == nil {
+			if _, err := NewProviderNeutralEvidenceVerificationService(test.source, test.policy, test.guard, test.scope, test.token); err == nil {
 				t.Fatal("expected missing dependency to fail closed")
 			}
 		})
@@ -74,7 +74,7 @@ func TestProviderNeutralEvidenceVerificationServiceRequiresDependencies(t *testi
 func TestProviderNeutralEvidenceVerificationServiceReturnsBoundReceipt(t *testing.T) {
 	source := &evidenceSourceStub{observation: validEvidenceObservation("execution-1", ExecutionOutcomeCommitted)}
 	policy := &evidencePolicyStub{}
-	service, err := NewProviderNeutralEvidenceVerificationService(source, policy, "service-secret")
+	service, err := NewProviderNeutralEvidenceVerificationService(source, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestProviderNeutralEvidenceVerificationServiceFailsClosed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			source := &evidenceSourceStub{observation: test.observation, err: test.sourceErr}
 			policy := &evidencePolicyStub{err: test.policyErr}
-			service, err := NewProviderNeutralEvidenceVerificationService(source, policy, "service-secret")
+			service, err := NewProviderNeutralEvidenceVerificationService(source, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
 			if err != nil {
 				t.Fatal(err)
 			}
