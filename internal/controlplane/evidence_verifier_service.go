@@ -46,7 +46,10 @@ type ProviderNeutralEvidenceVerificationService struct {
 }
 
 func NewProviderNeutralEvidenceVerificationService(source AuthoritativeExecutionEvidenceSource, policy ExecutionEvidencePolicy, guard EvidenceVerifierReplayGuard, scope, token string) (*ProviderNeutralEvidenceVerificationService, error) {
-	policyVersion := strings.TrimSpace(policy.Version())
+	policyVersion := ""
+	if policy != nil {
+		policyVersion = strings.TrimSpace(policy.Version())
+	}
 	if source == nil || policy == nil || guard == nil || policyVersion == "" || len(policyVersion) > 128 || strings.TrimSpace(scope) == "" || len(strings.TrimSpace(scope)) > 128 || strings.TrimSpace(token) == "" {
 		return nil, errors.New("source, policy, durable replay guard, verifier scope, and credential are required")
 	}
