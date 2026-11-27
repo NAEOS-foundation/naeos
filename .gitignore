@@ -44,6 +44,8 @@ cmd/naeos/out/
 # Environment
 .env
 .env.local
+.env.staging
+.env.*.local
 
 # Local test spec files
 naeos.yaml

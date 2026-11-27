@@ -1,0 +1,33 @@
+name: naeos-control-plane-local
+
+services:
+  control-plane:
+    build:
+      context: .
+      dockerfile: Dockerfile.control-plane
+    image: naeos/control-plane:local-staging
+    container_name: naeos-control-plane-local
+    restart: unless-stopped
+    environment:
+      NAEOS_CONTROLPLANE_ENVIRONMENT: ${NAEOS_CONTROLPLANE_ENVIRONMENT:?Set NAEOS_CONTROLPLANE_ENVIRONMENT=staging}
+      NAEOS_CONTROLPLANE_DATABASE_URL: ${NAEOS_CONTROLPLANE_DATABASE_URL:?Set staging-only database URL}
+      NAEOS_CONTROLPLANE_ISSUER: ${NAEOS_CONTROLPLANE_ISSUER:?Set verified JWT issuer}
+      NAEOS_CONTROLPLANE_AUDIENCE: ${NAEOS_CONTROLPLANE_AUDIENCE:?Set verified JWT audience}
+      NAEOS_CONTROLPLANE_JWKS_URL: ${NAEOS_CONTROLPLANE_JWKS_URL:?Set HTTPS JWKS endpoint}
+      NAEOS_CONTROLPLANE_PRINCIPAL_KIND: ${NAEOS_CONTROLPLANE_PRINCIPAL_KIND:?Set principal kind to human or service}
+      NAEOS_CONTROLPLANE_ADDR: :8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/ready"]
+      interval: 20s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
