@@ -16,5 +16,8 @@ CREATE TABLE IF NOT EXISTS naeos_evidence_verifier.replay_claims (
  claimed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
  PRIMARY KEY (verifier_scope,request_id)
 );
+ALTER TABLE naeos_evidence_verifier.replay_claims ENABLE ROW LEVEL SECURITY;
+CREATE POLICY evidence_verifier_claim_insert ON naeos_evidence_verifier.replay_claims
+ FOR INSERT TO naeos_evidence_verifier_runtime WITH CHECK (TRUE);
 REVOKE ALL ON TABLE naeos_evidence_verifier.replay_claims FROM PUBLIC;
 GRANT INSERT ON TABLE naeos_evidence_verifier.replay_claims TO naeos_evidence_verifier_runtime;
