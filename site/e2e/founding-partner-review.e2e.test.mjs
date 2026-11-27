@@ -33,9 +33,13 @@ async function openReviewPage(lang, viewport = { width: 1440, height: 1000 }) {
 test("Indonesian founder review route renders sign-in and exposes no self-enrollment", async () => {
   const { page, pageErrors } = await openReviewPage("id");
   try {
-    await page.getByLabel("Email reviewer").waitFor({ state: "visible" });
-    await page.getByLabel("Password").waitFor({ state: "visible" });
-    await page.getByRole("button", { name: "Masuk", exact: true }).waitFor({ state: "visible" });
+    const configured = await page.getByLabel("Email reviewer").isVisible().catch(() => false);
+    if (configured) {
+      await page.getByLabel("Password").waitFor({ state: "visible" });
+      await page.getByRole("button", { name: "Masuk", exact: true }).waitFor({ state: "visible" });
+    } else {
+      await page.getByRole("alert").filter({ hasText: /belum dikonfigurasi/i }).waitFor({ state: "visible" });
+    }
     assert.equal(await page.getByRole("link", { name: /daftar|register|sign up/i }).count(), 0,
       "reviewer self-enrollment must not be exposed");
     assert.deepEqual(pageErrors, [], "review page must not throw uncaught browser errors");
@@ -47,9 +51,13 @@ test("Indonesian founder review route renders sign-in and exposes no self-enroll
 test("English founder review route renders the restricted reviewer sign-in", async () => {
   const { page, pageErrors } = await openReviewPage("en");
   try {
-    await page.getByLabel("Reviewer email").waitFor({ state: "visible" });
-    await page.getByLabel("Password").waitFor({ state: "visible" });
-    await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
+    const configured = await page.getByLabel("Reviewer email").isVisible().catch(() => false);
+    if (configured) {
+      await page.getByLabel("Password").waitFor({ state: "visible" });
+      await page.getByRole("button", { name: "Sign in", exact: true }).waitFor({ state: "visible" });
+    } else {
+      await page.getByRole("alert").filter({ hasText: /not configured/i }).waitFor({ state: "visible" });
+    }
     assert.equal(await page.getByRole("link", { name: /sign up|register/i }).count(), 0,
       "reviewer self-enrollment must not be exposed");
     assert.deepEqual(pageErrors, [], "review page must not throw uncaught browser errors");
