@@ -25,6 +25,15 @@ func NewPostgresEvidenceVerifierReplayGuard(ctx context.Context, databaseURL str
  pool, err := pgxpool.NewWithConfig(ctx,cfg); if err != nil { return nil, errors.New("unable to configure verifier PostgreSQL pool") }
  pingCtx,cancel:=context.WithTimeout(ctx,5*time.Second); defer cancel()
  if err:=pool.Ping(pingCtx); err!=nil { pool.Close(); return nil,errors.New("verifier PostgreSQL connectivity failed") }
+ var ready bool
+ const check = `SELECT to_regclass('naeos_evidence_verifier.replay_claims') IS NOT NULL,
+ has_schema_privilege(current_user,'naeos_evidence_verifier','USAGE'),
+ has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','INSERT'),
+ NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','SELECT'),
+ NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','UPDATE'),
+ NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','DELETE')`
+ var tableExists, schemaUsage, insertAllowed, selectDenied, updateDenied, deleteDenied bool
+ if err:=pool.QueryRow(pingCtx,check).Scan(&tableExists,&schemaUsage,&insertAllowed,&selectDenied,&updateDenied,&deleteDenied);err!=nil || !tableExists || !schemaUsage || !insertAllowed || !selectDenied || !updateDenied || !deleteDenied { pool.Close(); return nil,errors.New("verifier database schema or least-privilege role validation failed") }
  return &PostgresEvidenceVerifierReplayGuard{pool:pool},nil
 }
 func (g *PostgresEvidenceVerifierReplayGuard) Claim(ctx context.Context, scope, requestID string) (bool,error) {
