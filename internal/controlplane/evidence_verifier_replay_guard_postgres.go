@@ -31,9 +31,12 @@ func NewPostgresEvidenceVerifierReplayGuard(ctx context.Context, databaseURL str
  has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','INSERT'),
  NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','SELECT'),
  NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','UPDATE'),
- NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','DELETE')`
- var tableExists, schemaUsage, insertAllowed, selectDenied, updateDenied, deleteDenied bool
- if err:=pool.QueryRow(pingCtx,check).Scan(&tableExists,&schemaUsage,&insertAllowed,&selectDenied,&updateDenied,&deleteDenied);err!=nil || !tableExists || !schemaUsage || !insertAllowed || !selectDenied || !updateDenied || !deleteDenied { pool.Close(); return nil,errors.New("verifier database schema or least-privilege role validation failed") }
+ NOT has_table_privilege(current_user,'naeos_evidence_verifier.replay_claims','DELETE'),
+ pg_catalog.pg_has_role(current_user,'naeos_evidence_verifier_runtime','USAGE'),
+ (SELECT NOT rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname='naeos_evidence_verifier_runtime'),
+ (SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls FROM pg_catalog.pg_roles WHERE rolname=current_user)`
+ var tableExists, schemaUsage, insertAllowed, selectDenied, updateDenied, deleteDenied, member, groupSafe, loginSafe bool
+ if err:=pool.QueryRow(pingCtx,check).Scan(&tableExists,&schemaUsage,&insertAllowed,&selectDenied,&updateDenied,&deleteDenied,&member,&groupSafe,&loginSafe);err!=nil || !tableExists || !schemaUsage || !insertAllowed || !selectDenied || !updateDenied || !deleteDenied || !member || !groupSafe || !loginSafe { pool.Close(); return nil,errors.New("verifier database schema or least-privilege role validation failed") }
  return &PostgresEvidenceVerifierReplayGuard{pool:pool},nil
 }
 func (g *PostgresEvidenceVerifierReplayGuard) Claim(ctx context.Context, scope, requestID string) (bool,error) {
