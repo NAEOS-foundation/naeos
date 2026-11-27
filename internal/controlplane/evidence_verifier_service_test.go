@@ -189,7 +189,7 @@ func TestProviderNeutralEvidenceVerificationServiceRejectsUnauthorizedAndMalform
 
 func TestEvidenceVerifierRejectsOversizedReceiptFields(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		mutate func(*AuthoritativeExecutionObservation)
 	}{
 		{name: "evidence reference too long", mutate: func(o *AuthoritativeExecutionObservation) { o.EvidenceRef = "evidence://provider/" + strings.Repeat("x", 4097) }},
@@ -202,27 +202,39 @@ func TestEvidenceVerifierRejectsOversizedReceiptFields(t *testing.T) {
 			source := &evidenceSourceStub{observation: observation}
 			policy := &evidencePolicyStub{}
 			service, err := NewProviderNeutralEvidenceVerificationService(source, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
-			if err != nil { t.Fatal(err) }
+			if err != nil {
+				t.Fatal(err)
+			}
 			body, _ := json.Marshal(evidenceVerificationRequest{RequestID: strings.Repeat("d", 32), ExecutionID: "execution-1", Outcome: ExecutionOutcomeCommitted})
 			request := httptest.NewRequest(http.MethodPost, "/v1/verify", strings.NewReader(string(body)))
 			request.Header.Set("Authorization", "Bearer service-secret")
 			response := httptest.NewRecorder()
 			service.Handler().ServeHTTP(response, request)
-			if response.Code != http.StatusUnprocessableEntity { t.Fatalf("status=%d body=%s", response.Code, response.Body.String()) }
-			if policy.calls != 0 { t.Fatal("policy must not evaluate invalid oversized receipt") }
+			if response.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+			}
+			if policy.calls != 0 {
+				t.Fatal("policy must not evaluate invalid oversized receipt")
+			}
 		})
 	}
 }
 
-type mutableVersionPolicy struct { version string }
+type mutableVersionPolicy struct {
+	version string
+}
 func (p *mutableVersionPolicy) Version() string { return p.version }
-func (p *mutableVersionPolicy) EvaluateExecutionEvidence(context.Context, AuthoritativeExecutionObservation, ExecutionOutcome) error { return nil }
+func (p *mutableVersionPolicy) EvaluateExecutionEvidence(context.Context, AuthoritativeExecutionObservation, ExecutionOutcome) error {
+	return nil
+}
 
 func TestEvidenceVerifierSnapshotsPolicyVersionAtConstruction(t *testing.T) {
 	p := &mutableVersionPolicy{version: "policy-v1"}
 	source := &evidenceSourceStub{observation: validEvidenceObservation("execution-1", ExecutionOutcomeCommitted)}
 	service, err := NewProviderNeutralEvidenceVerificationService(source, p, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	p.version = "policy-v2"
 	body, _ := json.Marshal(evidenceVerificationRequest{RequestID: strings.Repeat("e", 32), ExecutionID: "execution-1", Outcome: ExecutionOutcomeCommitted})
 	request := httptest.NewRequest(http.MethodPost, "/v1/verify", strings.NewReader(string(body)))
@@ -240,6 +252,8 @@ func TestProviderNeutralEvidenceVerificationServiceRejectsInvalidPolicyVersion(t
 	for _, version := range []string{"", strings.Repeat("v", 129)} {
 		policy := &mutableVersionPolicy{version: version}
 		_, err := NewProviderNeutralEvidenceVerificationService(&evidenceSourceStub{}, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
-		if err == nil { t.Fatalf("policy version length=%d should be rejected", len(version)) }
+		if err == nil {
+			t.Fatalf("policy version length=%d should be rejected", len(version))
+		}
 	}
 }
