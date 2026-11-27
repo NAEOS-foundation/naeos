@@ -235,3 +235,11 @@ func TestEvidenceVerifierSnapshotsPolicyVersionAtConstruction(t *testing.T) {
 		t.Fatalf("status=%d policy version=%q", response.Code, receipt.VerificationPolicyVersion)
 	}
 }
+
+func TestProviderNeutralEvidenceVerificationServiceRejectsInvalidPolicyVersion(t *testing.T) {
+	for _, version := range []string{"", strings.Repeat("v", 129)} {
+		policy := &mutableVersionPolicy{version: version}
+		_, err := NewProviderNeutralEvidenceVerificationService(&evidenceSourceStub{}, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
+		if err == nil { t.Fatalf("policy version length=%d should be rejected", len(version)) }
+	}
+}
