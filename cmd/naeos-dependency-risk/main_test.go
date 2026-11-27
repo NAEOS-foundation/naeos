@@ -115,7 +115,6 @@ func TestDeriveGoToolchainRequestNoChange(t *testing.T) {
 		t.Fatal("same Go directive should not be classified as a toolchain change")
 	}
 }
-
 func TestDeriveEmptyNewGoModuleRecognizesDependencyFreeNestedModule(t *testing.T) {
 	workspace := t.TempDir()
 	originalDir, err := os.Getwd()

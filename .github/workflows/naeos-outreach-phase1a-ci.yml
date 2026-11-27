@@ -1,0 +1,39 @@
+name: NAEOS Outreach Phase 1A CI
+
+on:
+  pull_request:
+    paths:
+      - 'services/naeos-outreach/**'
+      - '.github/workflows/naeos-outreach-phase1a-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/naeos-outreach/**'
+      - '.github/workflows/naeos-outreach-phase1a-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/naeos-outreach
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Verify formatting
+        run: |
+          files=$(gofmt -l $(find . -name '*.go' -type f))
+          if [ -n "$files" ]; then
+            echo "Files require gofmt:"
+            echo "$files"
+            exit 1
+          fi
+      - name: Test
+        run: go test -race -cover ./...
+      - name: Vet
+        run: go vet ./...
