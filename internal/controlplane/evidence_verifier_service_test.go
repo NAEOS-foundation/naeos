@@ -192,8 +192,18 @@ func TestEvidenceVerifierRejectsOversizedReceiptFields(t *testing.T) {
 		name   string
 		mutate func(*AuthoritativeExecutionObservation)
 	}{
-		{name: "evidence reference too long", mutate: func(o *AuthoritativeExecutionObservation) { o.EvidenceRef = "evidence://provider/" + strings.Repeat("x", 4097) }},
-		{name: "authority too long", mutate: func(o *AuthoritativeExecutionObservation) { o.Authority = strings.Repeat("a", 257) }},
+		{
+			name: "evidence reference too long",
+			mutate: func(o *AuthoritativeExecutionObservation) {
+				o.EvidenceRef = "evidence://provider/" + strings.Repeat("x", 4097)
+			},
+		},
+		{
+			name: "authority too long",
+			mutate: func(o *AuthoritativeExecutionObservation) {
+				o.Authority = strings.Repeat("a", 257)
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
