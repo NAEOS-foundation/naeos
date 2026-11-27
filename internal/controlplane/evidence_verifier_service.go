@@ -36,13 +36,13 @@ type EvidenceVerifierReplayGuard interface {
 	Claim(context.Context, string, string) (bool, error)
 }
 type ProviderNeutralEvidenceVerificationService struct {
-	source AuthoritativeExecutionEvidenceSource
-	policy ExecutionEvidencePolicy
-	guard  EvidenceVerifierReplayGuard
-	scope  string
-	token  string
+	source        AuthoritativeExecutionEvidenceSource
+	policy        ExecutionEvidencePolicy
+	guard         EvidenceVerifierReplayGuard
+	scope         string
+	token         string
 	policyVersion string
-	now    func() time.Time
+	now           func() time.Time
 }
 
 func NewProviderNeutralEvidenceVerificationService(source AuthoritativeExecutionEvidenceSource, policy ExecutionEvidencePolicy, guard EvidenceVerifierReplayGuard, scope, token string) (*ProviderNeutralEvidenceVerificationService, error) {
