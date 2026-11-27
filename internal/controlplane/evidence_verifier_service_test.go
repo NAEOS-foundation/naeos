@@ -58,6 +58,8 @@ func TestProviderNeutralEvidenceVerificationServiceRequiresDependencies(t *testi
 		source AuthoritativeExecutionEvidenceSource
 		policy ExecutionEvidencePolicy
 		token  string
+		guard EvidenceVerifierReplayGuard
+		scope string
 	}{
 		{name: "missing source", policy: policy, token: "secret", guard: &memoryReplayGuard{claims: map[string]bool{}}, scope: "test"},
 		{name: "missing policy", source: source, token: "secret", guard: &memoryReplayGuard{claims: map[string]bool{}}, scope: "test"},
