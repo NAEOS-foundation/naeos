@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/NAEOS-foundation/naeos/internal/controlplane"
 )
 
 type policy struct{ version string }
