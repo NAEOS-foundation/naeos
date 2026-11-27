@@ -233,6 +233,7 @@ func TestEvidenceVerifierRejectsOversizedReceiptFields(t *testing.T) {
 type mutableVersionPolicy struct {
 	version string
 }
+
 func (p *mutableVersionPolicy) Version() string { return p.version }
 func (p *mutableVersionPolicy) EvaluateExecutionEvidence(context.Context, AuthoritativeExecutionObservation, ExecutionOutcome) error {
 	return nil
