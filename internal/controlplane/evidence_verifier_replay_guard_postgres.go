@@ -6,10 +6,11 @@ package controlplane
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PostgresEvidenceVerifierReplayGuard struct{ pool *pgxpool.Pool }
