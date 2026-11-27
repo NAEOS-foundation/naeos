@@ -41,14 +41,16 @@ type ProviderNeutralEvidenceVerificationService struct {
 	guard  EvidenceVerifierReplayGuard
 	scope  string
 	token  string
+	policyVersion string
 	now    func() time.Time
 }
 
 func NewProviderNeutralEvidenceVerificationService(source AuthoritativeExecutionEvidenceSource, policy ExecutionEvidencePolicy, guard EvidenceVerifierReplayGuard, scope, token string) (*ProviderNeutralEvidenceVerificationService, error) {
-	if source == nil || policy == nil || guard == nil || strings.TrimSpace(policy.Version()) == "" || strings.TrimSpace(scope) == "" || len(strings.TrimSpace(scope)) > 128 || strings.TrimSpace(token) == "" {
+	policyVersion := strings.TrimSpace(policy.Version())
+	if source == nil || policy == nil || guard == nil || policyVersion == "" || len(policyVersion) > 128 || strings.TrimSpace(scope) == "" || len(strings.TrimSpace(scope)) > 128 || strings.TrimSpace(token) == "" {
 		return nil, errors.New("source, policy, durable replay guard, verifier scope, and credential are required")
 	}
-	return &ProviderNeutralEvidenceVerificationService{source: source, policy: policy, guard: guard, scope: strings.TrimSpace(scope), token: token, now: time.Now}, nil
+	return &ProviderNeutralEvidenceVerificationService{source: source, policy: policy, guard: guard, scope: strings.TrimSpace(scope), token: token, policyVersion: policyVersion, now: time.Now}, nil
 }
 func (s *ProviderNeutralEvidenceVerificationService) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +114,7 @@ func (s *ProviderNeutralEvidenceVerificationService) Handler() http.Handler {
 			return
 		}
 		now := s.now().UTC()
-		if obs.ExecutionID != req.ExecutionID || obs.Outcome != req.Outcome || !validEvidenceReference(obs.EvidenceRef) || strings.TrimSpace(obs.Authority) == "" || !sha256HexPattern.MatchString(obs.EvidenceSHA256) || obs.ObservedAt.IsZero() || obs.ValidUntil.IsZero() || obs.ObservedAt.After(now.Add(30*time.Second)) || !obs.ValidUntil.After(now) || obs.ValidUntil.Before(obs.ObservedAt) {
+		if obs.ExecutionID != req.ExecutionID || obs.Outcome != req.Outcome || !validEvidenceReference(obs.EvidenceRef) || len(obs.EvidenceRef) > 4096 || strings.TrimSpace(obs.Authority) == "" || len(strings.TrimSpace(obs.Authority)) > 256 || !sha256HexPattern.MatchString(obs.EvidenceSHA256) || obs.ObservedAt.IsZero() || obs.ValidUntil.IsZero() || obs.ObservedAt.After(now.Add(30*time.Second)) || !obs.ValidUntil.After(now) || obs.ValidUntil.Before(obs.ObservedAt) {
 			writeJSON(w, 422, map[string]string{"error": "provider observation is unbound, incomplete, or expired"})
 			return
 		}
@@ -120,6 +122,6 @@ func (s *ProviderNeutralEvidenceVerificationService) Handler() http.Handler {
 			writeJSON(w, 422, map[string]string{"error": "evidence does not satisfy verification policy"})
 			return
 		}
-		writeJSON(w, 200, evidenceVerificationResponse{RequestID: req.RequestID, ExecutionID: obs.ExecutionID, Outcome: obs.Outcome, Status: "VERIFIED", EvidenceRef: obs.EvidenceRef, Authority: obs.Authority, EvidenceSHA256: obs.EvidenceSHA256, ObservedAt: obs.ObservedAt, ValidUntil: obs.ValidUntil, VerificationPolicyVersion: s.policy.Version()})
+		writeJSON(w, 200, evidenceVerificationResponse{RequestID: req.RequestID, ExecutionID: obs.ExecutionID, Outcome: obs.Outcome, Status: "VERIFIED", EvidenceRef: obs.EvidenceRef, Authority: obs.Authority, EvidenceSHA256: obs.EvidenceSHA256, ObservedAt: obs.ObservedAt, ValidUntil: obs.ValidUntil, VerificationPolicyVersion: s.policyVersion})
 	})
 }
