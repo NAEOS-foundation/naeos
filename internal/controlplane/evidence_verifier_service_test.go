@@ -151,7 +151,7 @@ func TestProviderNeutralEvidenceVerificationServiceFailsClosed(t *testing.T) {
 func TestProviderNeutralEvidenceVerificationServiceRejectsUnauthorizedAndMalformedRequests(t *testing.T) {
 	source := &evidenceSourceStub{observation: validEvidenceObservation("execution-1", ExecutionOutcomeCommitted)}
 	policy := &evidencePolicyStub{}
-	service, err := NewProviderNeutralEvidenceVerificationService(source, policy, "service-secret")
+	service, err := NewProviderNeutralEvidenceVerificationService(source, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
 	if err != nil {
 		t.Fatal(err)
 	}
