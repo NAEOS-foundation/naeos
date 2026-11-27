@@ -218,7 +218,7 @@ export default function FoundingPartnerReviewDashboard({ lang }: Props) {
   const button: React.CSSProperties = { padding: ".7rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", cursor: busy ? "wait" : "pointer", font: "inherit" };
 
   return (
-    <section className="container" style={{ maxWidth: "1180px", padding: "2rem 1.25rem 5rem" }}>
+    <section className="container" style={{ maxWidth: "1180px", padding: "2rem 1.25rem 5rem", overflowX: "clip" }}>
       <div className="badge badge-green">NAEOS · PRIVATE REVIEW</div>
       <h1 style={{ fontSize: "clamp(2rem, 5vw, 3rem)", marginTop: "1rem" }}>{t.title}</h1>
       <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>{t.subtitle}</p>
