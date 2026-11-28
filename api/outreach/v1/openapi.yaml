@@ -1,0 +1,1338 @@
+openapi: 3.1.0
+info:
+  title: NAEOS Outreach Server API
+  version: 0.1.0
+  license:
+    name: Apache License 2.0
+    identifier: Apache-2.0
+  description: |
+    Proposed Phase 1 prospect research and outreach-preparation contract.
+    Live sending and provider execution are not supported. The Phase 1A
+    skeleton currently implements only GET /health and GET /ready; all other
+    operations below are design proposals until separately implemented and
+    reviewed. Every response echoes X-Request-ID. If a caller omits the
+    optional header, the server generates a request ID.
+  x-request-correlation:
+    request-header: X-Request-ID
+    required: false
+    max-length: 128
+    if-omitted: server-generated
+    response-header: X-Request-ID
+    recorded-with-audit-events: true
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Health
+    description: Public process health and readiness checks.
+  - name: Prospects
+    description: Company prospect records and evidence-backed research.
+  - name: Contacts
+    description: Public contact research records and source evidence.
+  - name: Sources
+    description: Public source evidence attached to a prospect or contact.
+  - name: Qualification
+    description: Evidence-linked qualification assessments with server-derived provenance.
+  - name: Campaigns
+    description: Non-sending campaign preparation, membership, and dry-run evaluation.
+  - name: Drafts
+    description: Non-sending message proposals and version-specific human review.
+  - name: Suppression
+    description: Restricted, typed suppression controls and exact-match records.
+  - name: Events
+    description: Authorized, paginated activity history.
+paths:
+  /health:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: getHealth
+      tags: [Health]
+      summary: Process health
+      security: []
+      responses:
+        '200':
+          description: Process is responding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /ready:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: getReadiness
+      tags: [Health]
+      summary: Readiness status
+      security: []
+      responses:
+        '200':
+          description: Ready to serve the currently configured dependencies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+        '503':
+          $ref: '#/components/responses/NotReady'
+  /prospects:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: listProspects
+      tags: [Prospects]
+      summary: List or search prospects
+      x-required-capabilities: [outreach.prospect.read]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Query'
+      responses:
+        '200':
+          description: Prospect page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProspectPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: createProspect
+      tags: [Prospects]
+      summary: Create a prospect record
+      x-required-capabilities: [outreach.prospect.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProspectCreate'
+      responses:
+        '201':
+          description: Prospect created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prospect'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /prospects/{prospectId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: getProspect
+      tags: [Prospects]
+      summary: Retrieve a prospect and its source evidence
+      x-required-capabilities: [outreach.prospect.read]
+      parameters:
+        - $ref: '#/components/parameters/ProspectId'
+      responses:
+        '200':
+          description: Prospect record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prospect'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /prospects/{prospectId}/contacts:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: listProspectContacts
+      tags: [Contacts]
+      summary: List contact research records for a prospect
+      x-required-capabilities: [outreach.contact.read]
+      parameters:
+        - $ref: '#/components/parameters/ProspectId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Contact page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createProspectContact
+      tags: [Contacts]
+      summary: Create an unverified contact research record
+      description: Contact facts must remain unverified until source evidence is attached.
+      x-required-capabilities: [outreach.contact.write]
+      parameters:
+        - $ref: '#/components/parameters/ProspectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactCreate'
+      responses:
+        '201':
+          description: Contact created in an unverified state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /contacts/{contactId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: getContact
+      tags: [Contacts]
+      summary: Retrieve a contact and its source evidence
+      x-required-capabilities: [outreach.contact.read]
+      parameters:
+        - $ref: '#/components/parameters/ContactId'
+      responses:
+        '200':
+          description: Contact record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /prospects/{prospectId}/sources:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: createProspectSource
+      tags: [Sources]
+      summary: Attach public source evidence to a prospect
+      x-required-capabilities: [outreach.source.write]
+      parameters:
+        - $ref: '#/components/parameters/ProspectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceCreate'
+      responses:
+        '201':
+          description: Source evidence created and associated with the prospect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Source'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /contacts/{contactId}/sources:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: createContactSource
+      tags: [Sources]
+      summary: Attach public source evidence to a contact
+      x-required-capabilities: [outreach.source.write]
+      parameters:
+        - $ref: '#/components/parameters/ContactId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceCreate'
+      responses:
+        '201':
+          description: Source evidence created and associated with the contact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Source'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /prospects/{prospectId}/qualification:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: createProspectQualification
+      tags: [Qualification]
+      summary: Record an evidence-backed qualification assessment
+      description: Actor identity and model provenance are recorded by the server, not accepted as caller authority.
+      x-required-capabilities: [outreach.qualification.write]
+      parameters:
+        - $ref: '#/components/parameters/ProspectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualificationCreate'
+      responses:
+        '201':
+          description: Qualification recorded with server-derived provenance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Qualification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /campaigns:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: listCampaigns
+      tags: [Campaigns]
+      summary: List campaigns
+      x-required-capabilities: [outreach.campaign.read]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Campaign page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: createCampaign
+      tags: [Campaigns]
+      summary: Create a draft campaign
+      x-required-capabilities: [outreach.campaign.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreate'
+      responses:
+        '201':
+          description: Campaign created in draft state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /campaigns/{campaignId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: getCampaign
+      tags: [Campaigns]
+      summary: Retrieve a campaign and its current review state
+      x-required-capabilities: [outreach.campaign.read]
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Campaign record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /campaigns/{campaignId}/members:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: addCampaignMember
+      tags: [Campaigns]
+      summary: Add a prospect or contact subject to a campaign
+      x-required-capabilities: [outreach.campaign.write]
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignMemberCreate'
+      responses:
+        '201':
+          description: Campaign member created after eligibility and suppression checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /campaigns/{campaignId}/drafts:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: createCampaignDraft
+      tags: [Drafts]
+      summary: Create a non-sending draft proposal for a campaign member
+      x-required-capabilities: [outreach.draft.write]
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftCreate'
+      responses:
+        '201':
+          description: Draft created in reviewable state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draft'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /drafts/{draftId}/approval:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: decideDraftApproval
+      tags: [Drafts]
+      summary: Approve or reject one exact draft version
+      description: Reviewer identity is derived from the authenticated principal; approval is not permission to send.
+      x-required-capabilities: [outreach.draft.review]
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalCreate'
+      responses:
+        '201':
+          description: Version-specific review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /campaigns/{campaignId}/dry-run:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      operationId: evaluateCampaignDryRun
+      tags: [Campaigns]
+      summary: Evaluate eligibility and create a dry-run plan; never sends
+      x-required-capabilities: [outreach.campaign.evaluate]
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Dry-run result with per-subject suppression decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DryRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /suppression:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: listSuppressionEntries
+      tags: [Suppression]
+      summary: List suppression entries (restricted)
+      x-required-capabilities: [outreach.suppression.read]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Each item states whether its identifier was redacted; callers without a separate identifier-read capability receive no identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuppressionPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: createSuppressionEntry
+      tags: [Suppression]
+      summary: Add a typed suppression entry (restricted and auditable)
+      description: Exact, type-specific normalization is server controlled; fuzzy matching is not performed.
+      x-required-capabilities: [outreach.suppression.manage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuppressionCreate'
+      responses:
+        '201':
+          description: Suppression entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suppression'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /events:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      operationId: listEvents
+      tags: [Events]
+      summary: List authorized, paginated activity events
+      x-required-capabilities: [outreach.event.read]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/After'
+      responses:
+        '200':
+          description: Event page scoped to the authenticated owner/tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentication only; operation-specific authorization is expressed by x-required-capabilities.
+  parameters:
+    RequestId:
+      name: X-Request-ID
+      in: header
+      required: false
+      description: Optional request correlation ID. The server generates one when omitted and echoes it in every response.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: '^[A-Za-z0-9._:-]+$'
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    Query:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 200
+    After:
+      name: after
+      in: query
+      description: Opaque event cursor for stable forward pagination.
+      schema:
+        type: string
+        maxLength: 256
+    ProspectId:
+      name: prospectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ContactId:
+      name: contactId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CampaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DraftId:
+      name: draftId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  headers:
+    RequestId:
+      description: Correlation ID echoed by the server for this request.
+      schema:
+        type: string
+        maxLength: 128
+  responses:
+    BadRequest:
+      description: Request validation failed
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication is missing or invalid
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: The authenticated principal lacks the required capability
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found or not visible in the authenticated owner/tenant scope
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: The requested state transition conflicts with the current resource version/state
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotReady:
+      description: Service or required dependency is not ready
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [code, message, request_id]
+      properties:
+        code:
+          type: string
+          maxLength: 100
+        message:
+          type: string
+          maxLength: 1000
+        request_id:
+          type: string
+          maxLength: 128
+        details:
+          type: object
+          additionalProperties: true
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+    Readiness:
+      type: object
+      required: [status, readiness]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        readiness:
+          type: string
+          enum: [ready, not_ready]
+    ProspectCreate:
+      type: object
+      required: [company_name]
+      properties:
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        website:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+        country:
+          type: string
+          maxLength: 100
+        segment:
+          type: string
+          maxLength: 100
+        notes:
+          type: string
+          maxLength: 5000
+    Prospect:
+      allOf:
+        - $ref: '#/components/schemas/ProspectCreate'
+        - type: object
+          required: [prospect_id, verification_status, created_at]
+          properties:
+            prospect_id:
+              type: string
+              format: uuid
+            verification_status:
+              type: string
+              enum: [unverified, partial, verified, rejected]
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    ProspectPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prospect'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+    ContactCreate:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          maxLength: 250
+        role:
+          type: string
+          maxLength: 250
+        public_contact_channel:
+          type: string
+          maxLength: 500
+      description: Only public, relevant facts may be recorded. A new contact is unverified until supporting evidence is attached.
+    Contact:
+      allOf:
+        - $ref: '#/components/schemas/ContactCreate'
+        - type: object
+          required: [contact_id, prospect_id, verification_status, created_at]
+          properties:
+            contact_id:
+              type: string
+              format: uuid
+            prospect_id:
+              type: string
+              format: uuid
+            verification_status:
+              type: string
+              enum: [unverified, partial, verified, rejected]
+            source_ids:
+              type: array
+              items:
+                type: string
+                format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    ContactPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+    SourceCreate:
+      type: object
+      required: [source_url, source_type, retrieved_at]
+      properties:
+        source_url:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+          description: Public HTTP(S) source only; retrieval must defend against redirects to private or link-local networks.
+        source_type:
+          type: string
+          enum: [official_website, public_profile, public_document, news, other]
+        retrieved_at:
+          type: string
+          format: date-time
+        evidence_excerpt:
+          type: string
+          maxLength: 2000
+        evidence_hash:
+          type: string
+          maxLength: 128
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        attribution:
+          type: string
+          maxLength: 500
+    Source:
+      allOf:
+        - $ref: '#/components/schemas/SourceCreate'
+        - type: object
+          required: [source_id, subject_type, subject_id]
+          properties:
+            source_id:
+              type: string
+              format: uuid
+            subject_type:
+              type: string
+              enum: [prospect, contact]
+            subject_id:
+              type: string
+              format: uuid
+    QualificationCreate:
+      type: object
+      required: [rubric_version, score, priority, rationale, evidence_source_ids]
+      properties:
+        rubric_version:
+          type: string
+          minLength: 1
+          maxLength: 50
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        priority:
+          type: string
+          enum: [p0, p1, p2, p3, unqualified]
+        rationale:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        evidence_source_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        hypotheses:
+          type: array
+          items:
+            type: string
+            maxLength: 500
+    Qualification:
+      allOf:
+        - $ref: '#/components/schemas/QualificationCreate'
+        - type: object
+          required: [qualification_id, scored_at, provenance]
+          properties:
+            qualification_id:
+              type: string
+              format: uuid
+            scored_at:
+              type: string
+              format: date-time
+            provenance:
+              type: object
+              required: [actor_type, actor_id]
+              description: Server-derived identity/model provenance; caller-supplied actor fields are not accepted.
+              properties:
+                actor_type:
+                  type: string
+                  enum: [human, service, model]
+                actor_id:
+                  type: string
+                  maxLength: 200
+                model_id:
+                  type: string
+                  maxLength: 200
+                model_version:
+                  type: string
+                  maxLength: 200
+    CampaignCreate:
+      type: object
+      required: [name, goal, channel]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        goal:
+          type: string
+          maxLength: 2000
+        channel:
+          type: string
+          enum: [email, manual_linkedin, other_manual]
+        icp_definition:
+          type: object
+          additionalProperties: true
+        policy_profile:
+          type: string
+          maxLength: 100
+    Campaign:
+      allOf:
+        - $ref: '#/components/schemas/CampaignCreate'
+        - type: object
+          required: [campaign_id, status, created_at]
+          properties:
+            campaign_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [draft, review, approved, paused, archived]
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    CampaignPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+    CampaignMemberCreate:
+      type: object
+      required: [subject_type, subject_id]
+      properties:
+        subject_type:
+          type: string
+          enum: [prospect, contact]
+        subject_id:
+          type: string
+          format: uuid
+    CampaignMember:
+      allOf:
+        - $ref: '#/components/schemas/CampaignMemberCreate'
+        - type: object
+          required: [member_id, campaign_id, status, suppression_checked_at]
+          properties:
+            member_id:
+              type: string
+              format: uuid
+            campaign_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [eligible, excluded, review_required, removed]
+            suppression_checked_at:
+              type: string
+              format: date-time
+    DraftCreate:
+      type: object
+      required: [campaign_member_id, channel, body]
+      properties:
+        campaign_member_id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [email, manual_linkedin, other_manual]
+        subject:
+          type: string
+          maxLength: 500
+        body:
+          type: string
+          minLength: 1
+          maxLength: 12000
+        factual_claims:
+          type: array
+          items:
+            type: object
+            required: [claim, source_ids]
+            properties:
+              claim:
+                type: string
+                minLength: 1
+                maxLength: 1000
+              source_ids:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+                  format: uuid
+    Draft:
+      allOf:
+        - $ref: '#/components/schemas/DraftCreate'
+        - type: object
+          required: [draft_id, version, status, created_at]
+          properties:
+            draft_id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+              minimum: 1
+            status:
+              type: string
+              enum: [draft, review, approved, rejected, superseded]
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    ApprovalCreate:
+      type: object
+      required: [version, decision]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        decision:
+          type: string
+          enum: [approve, reject]
+        rationale:
+          type: string
+          maxLength: 2000
+    Approval:
+      type: object
+      required: [approval_id, draft_id, version, decision, reviewer_id, decided_at]
+      properties:
+        approval_id:
+          type: string
+          format: uuid
+        draft_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        decision:
+          type: string
+          enum: [approve, reject]
+        reviewer_id:
+          type: string
+          maxLength: 200
+          description: Derived by the server from the authenticated principal.
+        rationale:
+          type: string
+          maxLength: 2000
+        decided_at:
+          type: string
+          format: date-time
+    DryRun:
+      type: object
+      required: [campaign_id, generated_at, eligible_count, excluded_count, send_enabled, actions]
+      properties:
+        campaign_id:
+          type: string
+          format: uuid
+        generated_at:
+          type: string
+          format: date-time
+        eligible_count:
+          type: integer
+          minimum: 0
+        excluded_count:
+          type: integer
+          minimum: 0
+        send_enabled:
+          type: boolean
+          const: false
+        actions:
+          type: array
+          items:
+            type: object
+            required: [member_id, subject_type, subject_id, eligible, suppression_result, proposed_action]
+            properties:
+              member_id:
+                type: string
+                format: uuid
+              subject_type:
+                type: string
+                enum: [prospect, contact]
+              subject_id:
+                type: string
+                format: uuid
+              eligible:
+                type: boolean
+              suppression_result:
+                type: string
+                enum: [clear, suppressed, not_applicable, blocked]
+              exclusion_reason:
+                type: string
+                maxLength: 500
+              proposed_action:
+                type: string
+                enum: [prepare_draft, excluded, no_action]
+    SuppressionCreate:
+      type: object
+      required: [identifier_type, identifier, reason]
+      properties:
+        identifier_type:
+          type: string
+          enum: [account_domain, contact_id, channel_address]
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Canonicalization is determined by identifier_type and channel; matching is exact, never fuzzy.
+        channel:
+          type: string
+          enum: [email, manual_linkedin, other_manual]
+          description: Required for channel_address entries; omitted for account_domain and contact_id.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        source:
+          type: string
+          maxLength: 500
+      allOf:
+        - if:
+            properties:
+              identifier_type:
+                const: channel_address
+            required: [identifier_type]
+          then:
+            properties:
+              channel: {}
+            required: [channel]
+        - if:
+            properties:
+              identifier_type:
+                enum: [account_domain, contact_id]
+            required: [identifier_type]
+          then:
+            not:
+              properties:
+                channel: {}
+              required: [channel]
+    Suppression:
+      allOf:
+        - $ref: '#/components/schemas/SuppressionCreate'
+        - type: object
+          required: [suppression_id, normalization_version, created_at]
+          properties:
+            suppression_id:
+              type: string
+              format: uuid
+            normalization_version:
+              type: string
+              maxLength: 50
+              description: Server-selected version of the type/channel-specific canonicalization rule.
+            created_at:
+              type: string
+              format: date-time
+    SuppressionView:
+      type: object
+      required: [suppression_id, identifier_type, identifier_redacted, normalization_version, created_at]
+      properties:
+        suppression_id:
+          type: string
+          format: uuid
+        identifier_type:
+          type: string
+          enum: [account_domain, contact_id, channel_address]
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Omitted when redacted for this caller.
+        identifier_redacted:
+          type: boolean
+        channel:
+          type: string
+          enum: [email, manual_linkedin, other_manual]
+        normalization_version:
+          type: string
+          maxLength: 50
+        created_at:
+          type: string
+          format: date-time
+      allOf:
+        - if:
+            properties:
+              identifier_redacted:
+                const: false
+            required: [identifier_redacted]
+          then:
+            properties:
+              identifier: {}
+            required: [identifier]
+        - if:
+            properties:
+              identifier_redacted:
+                const: true
+            required: [identifier_redacted]
+          then:
+            not:
+              properties:
+                identifier: {}
+              required: [identifier]
+    SuppressionPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuppressionView'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+    EventPage:
+      type: object
+      required: [items, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        next_cursor:
+          type: string
+          maxLength: 256
+    Event:
+      type: object
+      required: [event_id, aggregate_type, aggregate_id, event_type, event_time, request_id]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        aggregate_type:
+          type: string
+          maxLength: 100
+        aggregate_id:
+          type: string
+          maxLength: 200
+        event_type:
+          type: string
+          maxLength: 100
+        event_time:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+          maxLength: 128
+        payload:
+          type: object
+          additionalProperties: true
+          description: Bounded, redacted event details; never contains secrets or unnecessary personal data.
