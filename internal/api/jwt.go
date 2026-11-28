@@ -18,6 +18,8 @@ import (
 
 // JWTClaims represents the claims in a JSON Web Token.
 type JWTClaims struct {
+	Issuer    string   `json:"iss,omitempty"`
+	Audience  []string `json:"aud,omitempty"`
 	Sub       string   `json:"sub"`
 	ClientID  string   `json:"client_id,omitempty"`
 	Name      string   `json:"name"`

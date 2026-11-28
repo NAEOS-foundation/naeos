@@ -94,6 +94,64 @@ func TestJWKSValidatorValidatesServiceJWT(t *testing.T) {
 	}
 }
 
+func TestJWKSValidatorPreservesSubjectAndClientIDSeparately(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	input := defaultTestServiceClaims()
+	input.Subject = "user-subject-123"
+	input.ClientID = "service-client-456"
+	token := makeTestServiceToken(t, key, input)
+
+	claims, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if claims.Sub != input.Subject {
+		t.Fatalf("sub = %q; want original subject %q", claims.Sub, input.Subject)
+	}
+	if claims.ClientID != input.ClientID {
+		t.Fatalf("client_id = %q; want %q", claims.ClientID, input.ClientID)
+	}
+	if claims.Issuer != input.Issuer {
+		t.Fatalf("iss = %q; want %q", claims.Issuer, input.Issuer)
+	}
+	if len(claims.Audience) != 1 || claims.Audience[0] != input.Audience[0] {
+		t.Fatalf("aud = %v; want %v", claims.Audience, input.Audience)
+	}
+}
+
+func TestJWKSValidatorPreservesOpaqueSubjectAndClientID(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	input := defaultTestServiceClaims()
+	input.Subject = "  opaque-subject-123 \t"
+	input.ClientID = "  client-456  "
+	token := makeTestServiceToken(t, key, input)
+
+	claims, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if claims.Sub != input.Subject {
+		t.Fatalf("sub = %q; want byte-for-byte original %q", claims.Sub, input.Subject)
+	}
+	if claims.ClientID != input.ClientID {
+		t.Fatalf("client_id = %q; want byte-for-byte original %q", claims.ClientID, input.ClientID)
+	}
+}
+
+func TestJWKSValidatorRejectsMissingOrWhitespaceOnlySubject(t *testing.T) {
+	for _, subject := range []string{"", " ", "\t\n"} {
+		t.Run("subject_"+base64.RawURLEncoding.EncodeToString([]byte(subject)), func(t *testing.T) {
+			validator, key := newTestJWKSValidator(t)
+			input := defaultTestServiceClaims()
+			input.Subject = subject
+			token := makeTestServiceToken(t, key, input)
+			if _, err := validator.Validate(context.Background(), token); err == nil {
+				t.Fatal("Validate accepted an empty or whitespace-only subject")
+			}
+		})
+	}
+}
+
 func TestJWKSValidatorRejectsWrongIssuerAudienceAndExpiredToken(t *testing.T) {
 	for _, test := range []struct {
 		name   string
