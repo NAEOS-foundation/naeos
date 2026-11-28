@@ -270,3 +270,95 @@ func TestProviderNeutralEvidenceVerificationServiceRejectsInvalidPolicyVersion(t
 		}
 	}
 }
+
+func TestEvidenceVerifierRejectsOversizedAndTrailingJSONBeforeClaim(t *testing.T) {
+	source := &evidenceSourceStub{observation: validEvidenceObservation("execution-1", ExecutionOutcomeCommitted)}
+	policy := &evidencePolicyStub{}
+	guard := &replayGuardOutcome{claimed: true}
+	service, err := NewProviderNeutralEvidenceVerificationService(source, policy, guard, "test-scope", "service-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oversizedRequest, err := json.Marshal(evidenceVerificationRequest{
+		RequestID: strings.Repeat("a", 32), ExecutionID: "execution-1",
+		Outcome: ExecutionOutcomeCommitted, EvidenceRef: strings.Repeat("x", 128*1024),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	validRequest, err := json.Marshal(evidenceVerificationRequest{
+		RequestID: strings.Repeat("b", 32), ExecutionID: "execution-1",
+		Outcome: ExecutionOutcomeCommitted,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name string
+		body string
+	}{
+		{name: "oversized request", body: string(oversizedRequest)},
+		{name: "trailing JSON value", body: string(validRequest) + "{}"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/v1/verify", strings.NewReader(tc.body))
+			request.Header.Set("Authorization", "Bearer service-secret")
+			response := httptest.NewRecorder()
+			service.Handler().ServeHTTP(response, request)
+			if response.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d want 400", response.Code)
+			}
+			if guard.calls != 0 || source.calls != 0 || policy.calls != 0 {
+				t.Fatalf("invalid request crossed claim/source/policy boundary: guard=%d source=%d policy=%d", guard.calls, source.calls, policy.calls)
+			}
+		})
+	}
+}
+
+func TestEvidenceVerifierRejectsInvalidObservationFieldsBeforePolicy(t *testing.T) {
+	cases := []struct {
+		name string
+		mutate func(*AuthoritativeExecutionObservation, time.Time)
+	}{
+		{name: "missing evidence reference", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.EvidenceRef = "" }},
+		{name: "malformed evidence reference", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.EvidenceRef = "relative/path" }},
+		{name: "missing authority", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.Authority = "" }},
+		{name: "invalid digest", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.EvidenceSHA256 = "bad-digest" }},
+		{name: "missing observed time", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.ObservedAt = time.Time{} }},
+		{name: "missing valid-until", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.ValidUntil = time.Time{} }},
+		{name: "future observation beyond skew", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) { o.ObservedAt = now.Add(31 * time.Second); o.ValidUntil = now.Add(2 * time.Minute) }},
+		{name: "valid-until before observed-at", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) { o.ObservedAt = now.Add(20 * time.Second); o.ValidUntil = now.Add(10 * time.Second) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			now := time.Now().UTC()
+			observation := validEvidenceObservation("execution-1", ExecutionOutcomeCommitted)
+			tc.mutate(&observation, now)
+			source := &evidenceSourceStub{observation: observation}
+			policy := &evidencePolicyStub{}
+			service, err := NewProviderNeutralEvidenceVerificationService(source, policy, &memoryReplayGuard{claims: map[string]bool{}}, "test", "service-secret")
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, err := json.Marshal(evidenceVerificationRequest{RequestID: strings.Repeat("f", 32), ExecutionID: "execution-1", Outcome: ExecutionOutcomeCommitted})
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := httptest.NewRequest(http.MethodPost, "/v1/verify", strings.NewReader(string(body)))
+			request.Header.Set("Authorization", "Bearer service-secret")
+			response := httptest.NewRecorder()
+			service.Handler().ServeHTTP(response, request)
+			if response.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("status=%d want 422 body=%s", response.Code, response.Body.String())
+			}
+			if strings.Contains(response.Body.String(), `"status":"VERIFIED"`) {
+				t.Fatal("invalid observation must never return VERIFIED")
+			}
+			if policy.calls != 0 {
+				t.Fatalf("policy evaluated invalid observation %d times", policy.calls)
+			}
+		})
+	}
+}
