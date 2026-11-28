@@ -64,7 +64,16 @@ func TestHealthRoutesRejectNonGetMethods(t *testing.T) {
 	}
 }
 
-func TestNilServiceFailsClosed(t)(t *testing.T) {
+func TestNilServiceFailsClosed(t *testing.T) {
+	handler := newHandler(nil)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/v1/verify", nil))
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("nil service returned %d, want %d", recorder.Code, http.StatusServiceUnavailable)
+	}
+}
+
+func TestVerifyRouteRemainsMountedAndRequiresPost(t *testing.T) {
 	handler := newTestHandler(t)
 
 	t.Run("GET is rejected with POST allowance", func(t *testing.T) {
