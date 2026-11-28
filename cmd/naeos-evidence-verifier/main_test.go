@@ -27,7 +27,7 @@ func (routeTestPolicy) EvaluateExecutionEvidence(context.Context, controlplane.A
 }
 
 type routeTestGuard struct {
-	ready bool
+	ready    bool
 	readyErr error
 }
 
@@ -90,11 +90,15 @@ func TestVerifierReadinessFailsClosed(t *testing.T) {
 
 func TestVerifierReadinessFalseFailsClosed(t *testing.T) {
 	service, err := controlplane.NewProviderNeutralEvidenceVerificationService(routeTestSource{}, routeTestPolicy{}, routeTestGuard{}, "test-scope", "test-token")
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	handler := newHandler(service, routeTestGuard{ready: false})
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/readyz", nil))
-	if recorder.Code != http.StatusServiceUnavailable { t.Fatalf("readiness returned %d, want 503", recorder.Code) }
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("readiness returned %d, want 503", recorder.Code)
+	}
 }
 
 func TestVerifierNilServiceFailsClosed(t *testing.T) {

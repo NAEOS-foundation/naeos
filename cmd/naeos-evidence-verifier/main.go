@@ -76,7 +76,6 @@ func run() error {
 	}
 }
 
-
 type evidenceVerifierReadinessProbe interface {
 	ClaimReadiness(context.Context) (bool, error)
 }
