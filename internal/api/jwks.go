@@ -196,15 +196,15 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		(claims.NotBefore != 0 && claims.NotBefore > now) || (claims.IssuedAt != 0 && claims.IssuedAt > now+60) {
 		return nil, errors.New("service JWT claims failed validation")
 	}
-	subject := strings.TrimSpace(claims.ClientID)
-	if subject == "" {
-		subject = strings.TrimSpace(claims.Subject)
-	}
-	if subject == "" {
-		return nil, errors.New("service JWT has no client identity")
+	// Subject is an opaque issuer identifier. Trim only to reject a blank value;
+	// preserve the verified subject and client ID exactly as issued.
+	if strings.TrimSpace(claims.Subject) == "" {
+		return nil, errors.New("service JWT has no subject")
 	}
 	return &JWTClaims{
-		Sub:       subject,
+		Issuer:    claims.Issuer,
+		Audience:  jwtAudienceValues(claims.Audience),
+		Sub:       claims.Subject,
 		ClientID:  claims.ClientID,
 		ExpiresAt: claims.Expires,
 		IssuedAt:  claims.IssuedAt,
@@ -215,19 +215,24 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 }
 
 func serviceAudienceContains(raw json.RawMessage, expected string) bool {
-	var one string
-	if json.Unmarshal(raw, &one) == nil {
-		return one == expected
-	}
-	var many []string
-	if json.Unmarshal(raw, &many) == nil {
-		for _, value := range many {
-			if value == expected {
-				return true
-			}
+	for _, value := range jwtAudienceValues(raw) {
+		if value == expected {
+			return true
 		}
 	}
 	return false
+}
+
+func jwtAudienceValues(raw json.RawMessage) []string {
+	var values []string
+	if json.Unmarshal(raw, &values) == nil {
+		return values
+	}
+	var single string
+	if json.Unmarshal(raw, &single) == nil && single != "" {
+		return []string{single}
+	}
+	return nil
 }
 
 func (v *JWKSValidator) key(ctx context.Context, kid string) (crypto.PublicKey, error) {

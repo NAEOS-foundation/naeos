@@ -32,8 +32,12 @@ In Supabase mode, NAEOS roles are read from trusted
 `app_metadata.naeos_roles`; only `admin`, `developer`, and `viewer` are
 recognized, and the default is `viewer`. Routes without explicit RBAC mappings
 are denied. Do not put authorization claims in user-editable `user_metadata`.
-Tenant-scoped pipeline and schema routes use
-`app_metadata.naeos_tenant_id`; conflicting `X-Tenant-ID` headers are rejected.
+This is the generic Core API's RBAC mapping only; it does not resolve Control
+Plane principals, agent bindings, organization/workspace membership, or resource
+ownership. Tenant-scoped pipeline and schema routes derive a request filter from
+the signed `app_metadata.naeos_tenant_id` claim, and conflicting `X-Tenant-ID`
+headers are rejected. This claim-based filter is not a membership lookup and
+must not be treated as production Control Plane tenant authorization.
 The artifact endpoint is disabled in Supabase mode until artifact data is
 partitioned by tenant.
 
@@ -62,4 +66,3 @@ naeos api [flags]
 ### SEE ALSO
 
 * [naeos](naeos.md)	 - NAEOS CLI - Declarative Engineering Runtime
-

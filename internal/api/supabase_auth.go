@@ -26,7 +26,10 @@ const defaultSupabaseRBACRole = "viewer"
 // SupabaseClaims carries the identity information NAEOS reads from a
 // Supabase access token payload.
 type SupabaseClaims struct {
+	Issuer   string
+	Audience []string
 	Sub      string
+	ClientID string
 	Email    string
 	Name     string
 	Role     string
@@ -70,9 +73,14 @@ func (s *SupabaseAuth) Validate(ctx context.Context, token string) (*JWTClaims, 
 	if claims.Role != supabaseRoleAuthenticated {
 		return nil, nil, fmt.Errorf("supabase token role %q is not authenticated", claims.Role)
 	}
-	if claims.Sub == "" || claims.Sub != baseClaims.Sub {
+	if strings.TrimSpace(claims.Sub) == "" || claims.Sub != baseClaims.Sub {
 		return nil, nil, fmt.Errorf("supabase token subject mismatch")
 	}
+	// The JWKS validator has already verified these values; retain the
+	// application client identity separately from the human subject.
+	claims.Issuer = baseClaims.Issuer
+	claims.Audience = append([]string(nil), baseClaims.Audience...)
+	claims.ClientID = baseClaims.ClientID
 	return baseClaims, claims, nil
 }
 
@@ -89,10 +97,13 @@ func ParseSupabaseClaims(token string) (*SupabaseClaims, error) {
 		return nil, fmt.Errorf("malformed supabase token claims: %w", err)
 	}
 	var raw struct {
-		Sub         string         `json:"sub"`
-		Email       string         `json:"email"`
-		Role        string         `json:"role"`
-		UserMeta    map[string]any `json:"user_metadata"`
+		Issuer      string          `json:"iss"`
+		Sub         string          `json:"sub"`
+		ClientID    string          `json:"client_id"`
+		Audience    json.RawMessage `json:"aud"`
+		Email       string          `json:"email"`
+		Role        string          `json:"role"`
+		UserMeta    map[string]any  `json:"user_metadata"`
 		AppMetadata struct {
 			NAEOSRoles    []any  `json:"naeos_roles"`
 			NAEOSTenantID string `json:"naeos_tenant_id"`
@@ -102,7 +113,10 @@ func ParseSupabaseClaims(token string) (*SupabaseClaims, error) {
 		return nil, fmt.Errorf("malformed supabase token claims: %w", err)
 	}
 	claims := &SupabaseClaims{
+		Issuer:   raw.Issuer,
+		Audience: jwtAudienceValues(raw.Audience),
 		Sub:      raw.Sub,
+		ClientID: raw.ClientID,
 		Email:    raw.Email,
 		Role:     raw.Role,
 		TenantID: strings.TrimSpace(raw.AppMetadata.NAEOSTenantID),
