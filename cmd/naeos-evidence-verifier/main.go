@@ -60,22 +60,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	mux := http.NewServeMux()
-	mux.Handle("/v1/verify", service.Handler())
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := guard.ClaimReadiness(r.Context()); err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte("not ready"))
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ready"))
-	})
-	server := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
+	server := &http.Server{Addr: addr, Handler: newHandler(service, guard), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 * 1024}
 	errs := make(chan error, 1)
 	go func() { errs <- server.ListenAndServe() }()
 	select {
@@ -89,4 +74,51 @@ func run() error {
 		}
 		return e
 	}
+}
+
+
+type evidenceVerifierReadinessProbe interface {
+	ClaimReadiness(context.Context) (bool, error)
+}
+
+func newHandler(service *controlplane.ProviderNeutralEvidenceVerificationService, probe evidenceVerifierReadinessProbe) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/v1/verify", service.Handler())
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("/configz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("configured"))
+	})
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if probe == nil {
+			http.Error(w, "not ready", http.StatusServiceUnavailable)
+			return
+		}
+		ready, err := probe.ClaimReadiness(r.Context())
+		if err != nil || !ready {
+			http.Error(w, "not ready", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ready"))
+	})
+	return mux
 }
