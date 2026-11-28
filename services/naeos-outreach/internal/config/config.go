@@ -51,7 +51,7 @@ func LoadWithOptions(addr string, allowNonLoopback bool) (Config, error) {
 // isLoopback reports whether host is a loopback address (IPv4 127/8, IPv6 ::1,
 // or the hostname "localhost").
 func isLoopback(host string) bool {
-	if host == "localhost" || host == "localhost.localdomain" {
+	if host == "localhost" {
 		return true
 	}
 	ip := net.ParseIP(host)

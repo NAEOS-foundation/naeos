@@ -26,7 +26,7 @@ func TestLoadValidAddress(t *testing.T) {
 }
 
 func TestLoadRejectsInvalidAddress(t *testing.T) {
-	for _, addr := range []string{"", " :8088", "host", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:abc", " 127.0.0.1:8088", "192.168.1.1:8088", "10.0.0.1:8088", "example.com:8088", "[2001:db8::1]:8088"} {
+	for _, addr := range []string{"", " :8088", "host", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:abc", " 127.0.0.1:8088", "192.168.1.1:8088", "10.0.0.1:8088", "localhost.localdomain:8088", "example.com:8088", "[2001:db8::1]:8088"} {
 		if addr == "" {
 			continue // Empty string intentionally selects the default.
 		}
