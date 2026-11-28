@@ -74,7 +74,7 @@ func (s *SupabaseAuth) Validate(ctx context.Context, token string) (*JWTClaims, 
 	if claims.Issuer != s.validator.issuer {
 		return nil, nil, fmt.Errorf("supabase token issuer mismatch")
 	}
-	if claims.Sub == "" || claims.Sub != baseClaims.Sub {
+	if strings.TrimSpace(claims.Sub) == "" || claims.Sub != baseClaims.Sub {
 		return nil, nil, fmt.Errorf("supabase token subject mismatch")
 	}
 	return baseClaims, claims, nil

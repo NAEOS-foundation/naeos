@@ -34,10 +34,13 @@ func (claims *JWTClaims) PrincipalID() string {
 	if claims == nil {
 		return ""
 	}
-	if subject := strings.TrimSpace(claims.Sub); subject != "" {
-		return subject
+	if strings.TrimSpace(claims.Sub) != "" {
+		return claims.Sub
 	}
-	return strings.TrimSpace(claims.ClientID)
+	if strings.TrimSpace(claims.ClientID) != "" {
+		return claims.ClientID
+	}
+	return ""
 }
 
 // JWTValidator validates and generates HS256-signed JWTs.

@@ -309,11 +309,28 @@ func TestJWKSValidatorKeepsSubjectAndClientIDDistinct(t *testing.T) {
 	}
 }
 
+func TestJWKSValidatorPreservesOpaqueSubjectAndClientID(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	claims := defaultTestServiceClaims()
+	claims.Subject = "  opaque-subject \t"
+	claims.ClientID = "  opaque-client \t"
+	verified, err := validator.Validate(context.Background(), makeTestServiceToken(t, key, claims))
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if verified.Sub != claims.Subject || verified.PrincipalID() != claims.Subject {
+		t.Fatalf("subject/principal = %q / %q; want exact subject %q", verified.Sub, verified.PrincipalID(), claims.Subject)
+	}
+	if verified.ClientID != claims.ClientID {
+		t.Fatalf("client_id = %q; want exact value %q", verified.ClientID, claims.ClientID)
+	}
+}
+
 func TestJWKSValidatorClientOnlyTokenUsesClientIDPrincipalFallback(t *testing.T) {
 	validator, key := newTestJWKSValidator(t)
 	claims := defaultTestServiceClaims()
 	claims.Subject = ""
-	claims.ClientID = "service-client"
+	claims.ClientID = "  service-client \t"
 	token := makeTestServiceToken(t, key, claims)
 
 	verified, err := validator.Validate(context.Background(), token)

@@ -240,6 +240,19 @@ func TestSupabaseAuthValidate(t *testing.T) {
 	}
 }
 
+func TestSupabaseAuthRejectsWhitespaceSubjectWithClientID(t *testing.T) {
+	id := newSupabaseTestIdentity(t)
+	claims := supabaseAccessClaims(id, " \t\n", nil)
+	claims["client_id"] = "browser-client"
+	token, err := id.sign(claims)
+	if err != nil {
+		t.Fatalf("sign token: %v", err)
+	}
+	if _, _, err := id.auth().Validate(context.Background(), token); err == nil {
+		t.Fatal("Validate accepted a whitespace-only user subject because client_id was present")
+	}
+}
+
 func TestServerSupabaseES256AuthFlow(t *testing.T) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {

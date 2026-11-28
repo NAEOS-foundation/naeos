@@ -93,7 +93,7 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			return
 		}
 		claims, err := r.identity.Validate(req.Context(), token)
-		if err != nil || claims == nil || strings.TrimSpace(claims.PrincipalID()) == "" {
+		if err != nil || claims == nil || strings.TrimSpace(claims.Sub) == "" {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid bearer token"})
 			return
 		}
@@ -110,7 +110,9 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			return
 		}
 
-		principal := strings.TrimSpace(claims.PrincipalID())
+		// Control Plane agent identity must come from the verified subject.
+		// The generic client-only fallback is reserved for explicit service routes.
+		principal := claims.Sub
 		if authorization.AgentID != "" && authorization.AgentID != principal {
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "token identity does not match requested agent"})
 			return

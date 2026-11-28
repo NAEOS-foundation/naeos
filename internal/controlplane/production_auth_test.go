@@ -159,3 +159,29 @@ func TestProductionAuthorizationUsesJWTSubjectOverClientID(t *testing.T) {
 		t.Fatalf("result = %+v; want principal bound to JWT sub %q", result, claims.Sub)
 	}
 }
+
+func TestProductionAuthorizationRejectsClientIDAsPrincipal(t *testing.T) {
+	tests := []struct {
+		name   string
+		claims *api.JWTClaims
+	}{
+		{name: "client-only token", claims: &api.JWTClaims{ClientID: "agent-gateway"}},
+		{name: "blank subject with client ID", claims: &api.JWTClaims{Sub: " \t\n", ClientID: "agent-gateway"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			runtime, req := productionAuthorizationHandlerFixture(t, test.claims, nil)
+			if got := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req).Code; got != http.StatusUnauthorized {
+				t.Fatalf("client identity status = %d; want 401", got)
+			}
+		})
+	}
+}
+
+func TestProductionAuthorizationDoesNotTrimOpaqueSubject(t *testing.T) {
+	claims := &api.JWTClaims{Sub: " agent-gateway "}
+	runtime, req := productionAuthorizationHandlerFixture(t, claims, nil)
+	if got := sendProductionAuthorizationRequest(runtime.ProductionHandler(), "valid", req).Code; got != http.StatusForbidden {
+		t.Fatalf("non-canonical opaque subject status = %d; want 403 without normalization", got)
+	}
+}
