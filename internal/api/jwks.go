@@ -196,16 +196,16 @@ func (v *JWKSValidator) Validate(ctx context.Context, token string) (*JWTClaims,
 		(claims.NotBefore != 0 && claims.NotBefore > now) || (claims.IssuedAt != 0 && claims.IssuedAt > now+60) {
 		return nil, errors.New("service JWT claims failed validation")
 	}
-	subject := strings.TrimSpace(claims.ClientID)
-	if subject == "" {
-		subject = strings.TrimSpace(claims.Subject)
-	}
-	if subject == "" {
-		return nil, errors.New("service JWT has no client identity")
+	// JWT identifiers are opaque: preserve their exact bytes and trim only for
+	// blank-value validation.
+	subject := claims.Subject
+	clientID := claims.ClientID
+	if strings.TrimSpace(subject) == "" && strings.TrimSpace(clientID) == "" {
+		return nil, errors.New("service JWT has no subject or client identity")
 	}
 	return &JWTClaims{
 		Sub:       subject,
-		ClientID:  claims.ClientID,
+		ClientID:  clientID,
 		ExpiresAt: claims.Expires,
 		IssuedAt:  claims.IssuedAt,
 		NotBefore: claims.NotBefore,

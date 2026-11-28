@@ -28,6 +28,21 @@ type JWTClaims struct {
 	Scopes    []string `json:"scopes,omitempty"`
 }
 
+// PrincipalID returns the JWT subject when present, falling back to client_id
+// only for legacy client-only tokens. The claims remain distinct.
+func (claims *JWTClaims) PrincipalID() string {
+	if claims == nil {
+		return ""
+	}
+	if strings.TrimSpace(claims.Sub) != "" {
+		return claims.Sub
+	}
+	if strings.TrimSpace(claims.ClientID) != "" {
+		return claims.ClientID
+	}
+	return ""
+}
+
 // JWTValidator validates and generates HS256-signed JWTs.
 type JWTValidator struct {
 	secret []byte

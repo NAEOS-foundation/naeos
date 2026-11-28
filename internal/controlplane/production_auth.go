@@ -123,7 +123,9 @@ func (r *ProductionRuntime) authorizationHandler() http.Handler {
 			return
 		}
 
-		principal := strings.TrimSpace(claims.Sub)
+		// Control Plane agent identity must come from the verified subject.
+		// The generic client-only fallback is reserved for explicit service routes.
+		principal := claims.Sub
 		if authorization.AgentID != "" && authorization.AgentID != principal {
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "token identity does not match requested agent"})
 			return

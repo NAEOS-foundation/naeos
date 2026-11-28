@@ -26,10 +26,12 @@ const defaultSupabaseRBACRole = "viewer"
 // SupabaseClaims carries the identity information NAEOS reads from a
 // Supabase access token payload.
 type SupabaseClaims struct {
-	Sub   string
-	Email string
-	Name  string
-	Role  string
+	Issuer   string
+	Sub      string
+	ClientID string
+	Email    string
+	Name     string
+	Role     string
 	// AppRoles holds the raw app_metadata.naeos_roles values before they are
 	// filtered against the NAEOS RBAC role registry.
 	AppRoles []string
@@ -69,7 +71,10 @@ func (s *SupabaseAuth) Validate(ctx context.Context, token string) (*JWTClaims, 
 	if claims.Role != supabaseRoleAuthenticated {
 		return nil, nil, fmt.Errorf("supabase token role %q is not authenticated", claims.Role)
 	}
-	if claims.Sub == "" || claims.Sub != baseClaims.Sub {
+	if claims.Issuer != s.validator.issuer {
+		return nil, nil, fmt.Errorf("supabase token issuer mismatch")
+	}
+	if strings.TrimSpace(claims.Sub) == "" || claims.Sub != baseClaims.Sub {
 		return nil, nil, fmt.Errorf("supabase token subject mismatch")
 	}
 	return baseClaims, claims, nil
@@ -88,7 +93,9 @@ func ParseSupabaseClaims(token string) (*SupabaseClaims, error) {
 		return nil, fmt.Errorf("malformed supabase token claims: %w", err)
 	}
 	var raw struct {
+		Issuer      string         `json:"iss"`
 		Sub         string         `json:"sub"`
+		ClientID    string         `json:"client_id"`
 		Email       string         `json:"email"`
 		Role        string         `json:"role"`
 		UserMeta    map[string]any `json:"user_metadata"`
@@ -101,9 +108,11 @@ func ParseSupabaseClaims(token string) (*SupabaseClaims, error) {
 		return nil, fmt.Errorf("malformed supabase token claims: %w", err)
 	}
 	claims := &SupabaseClaims{
-		Sub:   raw.Sub,
-		Email: raw.Email,
-		Role:  raw.Role,
+		Issuer:   raw.Issuer,
+		Sub:      raw.Sub,
+		ClientID: raw.ClientID,
+		Email:    raw.Email,
+		Role:     raw.Role,
 	}
 	if name, ok := raw.UserMeta["name"].(string); ok {
 		claims.Name = name
