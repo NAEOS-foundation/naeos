@@ -48,7 +48,23 @@ func TestHealthRoutesDoNotClaimDependencyReadiness(t *testing.T) {
 	}
 }
 
-func TestVerifyRouteRemainsMountedAndRequiresPost(t *testing.T) {
+func TestHealthRoutesRejectNonGetMethods(t *testing.T) {
+	handler := newTestHandler(t)
+	for _, path := range []string{"/healthz", "/configz", "/readyz"} {
+		t.Run(path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, path, nil))
+			if recorder.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("POST %s returned %d, want %d", path, recorder.Code, http.StatusMethodNotAllowed)
+			}
+			if got := recorder.Header().Get("Allow"); got != http.MethodGet {
+				t.Fatalf("Allow header = %q, want %q", got, http.MethodGet)
+			}
+		})
+	}
+}
+
+func TestNilServiceFailsClosed(t)(t *testing.T) {
 	handler := newTestHandler(t)
 
 	t.Run("GET is rejected with POST allowance", func(t *testing.T) {

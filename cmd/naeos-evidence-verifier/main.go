@@ -44,7 +44,7 @@ func run() error {
 	version := strings.TrimSpace(os.Getenv("NAEOS_EVIDENCE_POLICY_VERSION"))
 	addr := os.Getenv("NAEOS_EVIDENCE_VERIFIER_ADDR")
 	if addr == "" {
-		addr = ":8081"
+		addr = "127.0.0.1:8081"
 	}
 	if sourceURL == "" || sourceToken == "" || serviceToken == "" || version == "" {
 		return errors.New("required verifier configuration is missing")
@@ -83,17 +83,32 @@ func run() error {
 func newHandler(svc *controlplane.ProviderNeutralEvidenceVerificationService) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/v1/verify", svc.Handler())
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
-	mux.HandleFunc("/configz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/configz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("configured"))
 	})
 	// The source interface has no dependency health contract. Do not claim
 	// dependency readiness until a bounded, read-only probe is implemented.
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		http.Error(w, "authoritative source readiness is not verified", http.StatusServiceUnavailable)
 	})
 	return mux
