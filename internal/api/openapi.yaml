@@ -13,6 +13,48 @@ servers:
     description: Local development server
 
 paths:
+  /api/control-plane/executions/{executionID}/reconcile:
+    post:
+      operationId: reconcileExecutionOutcome
+      summary: Record a verified operator reconciliation for an ambiguous execution
+      description: Requires a service JWT with the naeos:execution:reconcile scope. The runtime derives reconciler identity from the validated JWT and accepts evidence only after the configured authoritative evidence verifier validates it. The durable ledger transaction rejects resolved executions and concurrent duplicate reconciliation.
+      security:
+        - serviceBearer: []
+      parameters:
+        - name: executionID
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [outcome, evidence_ref]
+              properties:
+                outcome:
+                  type: string
+                  enum: [COMMITTED, NOT_COMMITTED]
+                evidence_ref:
+                  type: string
+                  minLength: 1
+      responses:
+        "201":
+          description: Reconciliation durably appended to the execution ledger
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: Execution is already resolved or is not eligible for reconciliation
+        "422":
+          description: Authoritative evidence could not be verified
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
   /api/v1/health:
     get:
       operationId: getHealth

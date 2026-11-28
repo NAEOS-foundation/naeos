@@ -108,6 +108,30 @@ For social posts, company announcements, and educational content:
 
 Recommended formats to produce as separate templates: 1:1 post, 4:5 post, carousel, quote/insight, announcement, and LinkedIn company banner. Exact platform dimensions should be checked at production time.
 
+## 6.1 NAEOS Publication Family — Naros
+
+The NAEOS publication family consists of three editorial formats. They are **one NAEOS publication family, not separate sub-brands**. Each publication uses the canonical Primary Symbol Master v2.0.0, the shared brand palette references, and one consistent cover/header/footer system. Distinction comes from editorial purpose and labels, not separate logos or invented colors.
+
+| Publication | Editorial role | Content pattern |
+|---|---|---|
+| **NAEOS Engineering Notes** | Technical education and engineering evidence | Problem → architecture/mechanism → implementation/evidence → takeaway |
+| **NAEOS Founder Journey** | Transparent founder/building-in-public narrative | Context → decision/experiment → outcome or current status → lesson/open question |
+| **NAEOS Partner Brief** | Partner-facing opportunity, collaboration, and alignment | Context → mutual value → verified capability/offer → next step |
+
+### Publication visual rules
+
+- Use the canonical logo: `brand/master/naeos-primary-symbol-master-v2.svg`. Never redraw or use historical logo variants.
+- Use Obsidian `#0B0F19` as the dark foundation; Signal Blue `#2563FF` and documented blue/cyan references as restrained accents. Color status remains draft/reference until the semantic palette is ratified.
+- Cloud White `#FFFFFF` or Mist `#E5E7EB` may be used for text/surface contrast, subject to contrast validation.
+- Use the same typography hierarchy and grid across all three publication types. Typography is not yet officially ratified; templates use a practical fallback only.
+- Cover/header structure: logo → publication label → title → optional subtitle → issue/date/author metadata. Keep one dominant headline and avoid decorative clutter.
+- Use an editorial accent label or thin accent rule to identify the publication type; do not create a new symbol, logo, or standalone color palette for each.
+- Inside documents, maintain clear section hierarchy, readable body width, short paragraphs, diagrams/tables where they add information, and consistent footer metadata.
+- Claims must be evidence-backed. Clearly label assumptions, opinions, roadmap items, and experiments. Do not imply adoption, certification, compliance, customer results, or general availability without verification.
+- Keep editable source documents. Include version/date/status/author and confidentiality label when relevant.
+
+The working specification and reusable markdown document template are maintained at `brand/marketing/publications/README.md` and `brand/marketing/publications/DOCUMENT-TEMPLATE.md`. Treat both as Draft until visual review and the open brand decisions are completed.
+
 ## 7. Product UI expression
 
 The CRM and dashboard should apply the same principles of precision, clarity, and accountability:

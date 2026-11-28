@@ -6,6 +6,7 @@ package controlplane
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
 	"sync"
@@ -145,6 +146,202 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 		t.Fatalf("final approval = (%+v, %v)", final, err)
 	}
 
+	// Verify the production execution claim consumes approval and appends the
+	// durable intent in one transaction, including rollback when the ledger rejects it.
+	claimPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create atomic execution claim pool: %v", err)
+	}
+	defer claimPool.Close()
+	postgresLedger, err := NewPostgresLedger(claimPool)
+	if err != nil {
+		t.Fatalf("create atomic execution ledger: %v", err)
+	}
+	ledgerRepository, err := NewPostgresLedgerRepository(postgresLedger)
+	if err != nil {
+		t.Fatalf("create atomic execution ledger repository: %v", err)
+	}
+
+	atomicAgentID := "agent-atomic-" + suffix
+	atomicGrant := Grant{
+		GrantID: "grant-atomic-" + suffix, AgentID: atomicAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, atomicGrant); err != nil {
+		t.Fatalf("create active atomic grant: %v", err)
+	}
+	atomicApproval := Approval{
+		ID: "approval-atomic-" + suffix, DecisionID: "decision-atomic-" + suffix,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:atomic-" + suffix,
+	}
+	if err := approvals.Create(ctx, atomicApproval); err != nil {
+		t.Fatalf("create atomic approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, atomicApproval.ID, "pending", "approved", now.Add(3*time.Second)); err != nil {
+		t.Fatalf("approve atomic approval: %v", err)
+	}
+	startClaims := make(chan struct{})
+	claimResults := make(chan error, 2)
+	var claimWG sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		claimWG.Add(1)
+		go func(index int) {
+			defer claimWG.Done()
+			<-startClaims
+			intent := LedgerEvent{
+				Timestamp: now.Add(4 * time.Second), RequestID: "request-" + suffix,
+				DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+				AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+				EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+				Metadata: map[string]string{"approval_id": atomicApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
+			}
+			_, _, claimErr := ledgerRepository.ClaimExecution(ctx, intent, atomicApproval, now.Add(4*time.Second))
+			claimResults <- claimErr
+		}(i)
+	}
+	close(startClaims)
+	claimWG.Wait()
+	close(claimResults)
+	claimSuccesses, claimConflicts := 0, 0
+	for claimErr := range claimResults {
+		if claimErr == nil {
+			claimSuccesses++
+		} else if errors.Is(claimErr, ErrRepositoryConflict) {
+			claimConflicts++
+		} else {
+			t.Fatalf("unexpected atomic claim error: %v", claimErr)
+		}
+	}
+	if claimSuccesses != 1 || claimConflicts != 1 {
+		t.Fatalf("atomic claim winners=%d conflicts=%d; want exactly one of each", claimSuccesses, claimConflicts)
+	}
+	consumedApproval, err := approvals.Get(ctx, atomicApproval.ID)
+	if err != nil || consumedApproval.Status != "consumed" {
+		t.Fatalf("atomic approval state = (%+v, %v); want consumed", consumedApproval, err)
+	}
+
+	// Non-approval executions must still use the same atomic policy/grant fence.
+	noApprovalAgentID := "agent-no-approval-" + suffix
+	noApprovalGrant := Grant{
+		GrantID: "grant-no-approval-" + suffix, AgentID: noApprovalAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, noApprovalGrant); err != nil {
+		t.Fatalf("create no-approval grant: %v", err)
+	}
+	noApprovalIntent := LedgerEvent{
+		Timestamp: now.Add(5 * time.Second), RequestID: "request-no-approval-" + suffix,
+		DecisionID: "decision-no-approval-" + suffix, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: noApprovalAgentID, Capability: "repo.read", EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"policy_id": policyID, "policy_version": "1", "grant_id": noApprovalGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, noApprovalIntent, Approval{}, now.Add(5*time.Second)); err != nil {
+		t.Fatalf("atomic no-approval execution claim: %v", err)
+	}
+
+	rollbackApproval := Approval{
+		ID: "approval-rollback-" + suffix, DecisionID: atomicApproval.DecisionID,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: atomicApproval.ArtifactHash,
+	}
+	if err := approvals.Create(ctx, rollbackApproval); err != nil {
+		t.Fatalf("create rollback approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, rollbackApproval.ID, "pending", "approved", now.Add(5*time.Second)); err != nil {
+		t.Fatalf("approve rollback approval: %v", err)
+	}
+	rollbackIntent := LedgerEvent{
+		Timestamp: now.Add(6 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: atomicApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: atomicApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": rollbackApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, rollbackIntent, rollbackApproval, now.Add(6*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("duplicate execution claim error = %v; want conflict", err)
+	}
+	unchangedApproval, err := approvals.Get(ctx, rollbackApproval.ID)
+	if err != nil || unchangedApproval.Status != "approved" {
+		t.Fatalf("approval after rolled-back claim = (%+v, %v); want still approved", unchangedApproval, err)
+	}
+
+	// A revocation that commits before the claim must fence execution.
+	if err := grants.Revoke(ctx, atomicGrant.GrantID, "integration test revocation before claim", now.Add(7*time.Second)); err != nil {
+		t.Fatalf("revoke atomic grant before claim: %v", err)
+	}
+	revokedApproval := Approval{
+		ID: "approval-revoked-" + suffix, DecisionID: "decision-revoked-" + suffix,
+		AgentID: atomicAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:revoked-" + suffix,
+	}
+	if err := approvals.Create(ctx, revokedApproval); err != nil {
+		t.Fatalf("create revoked-grant approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, revokedApproval.ID, "pending", "approved", now.Add(8*time.Second)); err != nil {
+		t.Fatalf("approve revoked-grant approval: %v", err)
+	}
+	revokedIntent := LedgerEvent{
+		Timestamp: now.Add(9 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: revokedApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: atomicAgentID, Capability: "repo.read", ArtifactHash: revokedApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": revokedApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": atomicGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, revokedIntent, revokedApproval, now.Add(9*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("claim with revoked grant error = %v; want conflict", err)
+	}
+	stillApproved, err := approvals.Get(ctx, revokedApproval.ID)
+	if err != nil || stillApproved.Status != "approved" {
+		t.Fatalf("approval after revoked-grant claim = (%+v, %v); want approved", stillApproved, err)
+	}
+
+	// Advancing the active policy version before claim must reject the stale decision.
+	staleAgentID := "agent-stale-policy-" + suffix
+	staleGrant := Grant{
+		GrantID: "grant-stale-policy-" + suffix, AgentID: staleAgentID, PolicyID: policyID, PolicyVersion: 1,
+		Capabilities: []Capability{"repo.read"}, CreatedAt: now, ExpiresAt: now.Add(time.Hour), Status: "active",
+	}
+	if err := grants.Create(ctx, staleGrant); err != nil {
+		t.Fatalf("create stale-policy grant: %v", err)
+	}
+	staleApproval := Approval{
+		ID: "approval-stale-policy-" + suffix, DecisionID: "decision-stale-policy-" + suffix,
+		AgentID: staleAgentID, Capability: "repo.read", PolicyID: policyID, PolicyVersion: 1,
+		Approver: "integration-reviewer", Status: "pending", CreatedAt: now,
+		ExpiresAt: now.Add(time.Hour), ArtifactHash: "sha256:stale-policy-" + suffix,
+	}
+	if err := approvals.Create(ctx, staleApproval); err != nil {
+		t.Fatalf("create stale-policy approval: %v", err)
+	}
+	if _, err := approvals.Transition(ctx, staleApproval.ID, "pending", "approved", now.Add(10*time.Second)); err != nil {
+		t.Fatalf("approve stale-policy approval: %v", err)
+	}
+	policyV2 := clonePolicy(policy)
+	policyV2.Version = 2
+	policyV2.CreatedAt = now.Add(11 * time.Second)
+	policyV2.UpdatedAt = now.Add(11 * time.Second)
+	if err := policies.PutVersion(ctx, policyV2); err != nil {
+		t.Fatalf("activate policy version 2: %v", err)
+	}
+	staleIntent := LedgerEvent{
+		Timestamp: now.Add(12 * time.Second), RequestID: "request-" + suffix,
+		DecisionID: staleApproval.DecisionID, ExecutionID: controlPlaneID("EXEC"),
+		AgentID: staleAgentID, Capability: "repo.read", ArtifactHash: staleApproval.ArtifactHash,
+		EventType: "EXECUTION_STARTED", Decision: DecisionAllow,
+		Metadata: map[string]string{"approval_id": staleApproval.ID, "policy_id": policyID, "policy_version": "1", "grant_id": staleGrant.GrantID},
+	}
+	if _, _, err := ledgerRepository.ClaimExecution(ctx, staleIntent, staleApproval, now.Add(12*time.Second)); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("claim with stale policy error = %v; want conflict", err)
+	}
+	staleStillApproved, err := approvals.Get(ctx, staleApproval.ID)
+	if err != nil || staleStillApproved.Status != "approved" {
+		t.Fatalf("approval after stale-policy claim = (%+v, %v); want approved", staleStillApproved, err)
+	}
+
 	adminURL := os.Getenv("NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL")
 	if adminURL == "" {
 		t.Skip("set NAEOS_CONTROLPLANE_ADMIN_TEST_DATABASE_URL to verify admin-role rejection")
@@ -159,5 +356,151 @@ func TestPostgresRepositoriesIntegrationLifecycleAndSingleUse(t *testing.T) {
 	}
 	if err := verifyControlPlaneRuntimeRole(ctx, adminPool); err == nil {
 		t.Fatal("production runtime role verification accepted the admin database principal")
+	}
+}
+
+func TestPostgresExecutionReconciliationIsAtomicAndSingleUse(t *testing.T) {
+	databaseURL := os.Getenv("NAEOS_CONTROLPLANE_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set NAEOS_CONTROLPLANE_TEST_DATABASE_URL to an isolated migrated PostgreSQL test database")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("create reconciliation pool: %v", err)
+	}
+	defer pool.Close()
+	ledger, err := NewPostgresLedger(pool)
+	if err != nil {
+		t.Fatalf("create PostgreSQL ledger: %v", err)
+	}
+	repository, err := NewPostgresLedgerRepository(ledger)
+	if err != nil {
+		t.Fatalf("create PostgreSQL ledger repository: %v", err)
+	}
+
+	suffix := controlPlaneID("RECONCILE-TEST")
+	start := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: "request-" + suffix,
+		DecisionID: "decision-" + suffix, ExecutionID: "execution-" + suffix,
+		AgentID: "agent-" + suffix, Capability: "repository.write",
+		ArtifactHash: "sha256:" + suffix, EventType: "EXECUTION_STARTED",
+		Decision: DecisionAllow,
+	}
+	if event, _, err := repository.Append(ctx, start); err != nil || event.ID == "" {
+		t.Fatalf("append execution start = (%+v, %v)", event, err)
+	}
+	unknown := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
+		ExecutionID: start.ExecutionID, AgentID: start.AgentID, Capability: start.Capability,
+		ArtifactHash: start.ArtifactHash, EventType: "EXECUTION_UNKNOWN",
+		Decision: DecisionUnknown, Reason: ReasonExecutionOutcomeUnknown,
+	}
+	if event, _, err := repository.Append(ctx, unknown); err != nil || event.ID == "" {
+		t.Fatalf("append unknown outcome = (%+v, %v)", event, err)
+	}
+
+	// The SQL append function itself must reject reconciliation events; callers
+	// cannot bypass the dedicated atomic reconciliation workflow.
+	var previousHash string
+	if err := pool.QueryRow(ctx, `SELECT event_hash FROM naeos_control_plane.read_ledger_head()`).Scan(&previousHash); err != nil {
+		t.Fatalf("read ledger head for bypass test: %v", err)
+	}
+	bypass := LedgerEvent{
+		ID: controlPlaneID("EVT"), Timestamp: time.Now().UTC(), RequestID: start.RequestID,
+		DecisionID: start.DecisionID, ExecutionID: start.ExecutionID, AgentID: start.AgentID,
+		Capability: start.Capability, ArtifactHash: start.ArtifactHash,
+		EventType: "EXECUTION_RECONCILED", Decision: DecisionUnknown,
+		Metadata: map[string]string{"reconciliation_outcome": string(ExecutionOutcomeCommitted), "evidence_ref": "evidence://bypass", "reconciler_id": "operator-bypass"},
+	}
+	bypass.PreviousHash = previousHash
+	bypass.EventHash = hashLedgerEvent(bypass)
+	bypassPayload, err := json.Marshal(bypass)
+	if err != nil {
+		t.Fatalf("marshal bypass reconciliation: %v", err)
+	}
+	var bypassSequence int64
+	if err := pool.QueryRow(ctx, `SELECT naeos_control_plane.append_ledger_event($1::jsonb, $2, $3)`, bypassPayload, previousHash, bypass.EventHash).Scan(&bypassSequence); err == nil {
+		t.Fatal("generic SQL append function must reject reconciliation events")
+	}
+
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeCommitted, "", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("missing evidence reference error = %v; want conflict", err)
+	}
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcome("MAYBE"), "evidence://invalid", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("invalid outcome error = %v; want conflict", err)
+	}
+
+	startReconcile := make(chan struct{})
+	results := make(chan error, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-startReconcile
+			_, _, reconcileErr := repository.ReconcileExecution(
+				ctx, start.ExecutionID, ExecutionOutcomeCommitted,
+				"evidence://verified/"+suffix, "operator-test", time.Now().UTC(),
+			)
+			results <- reconcileErr
+		}()
+	}
+	close(startReconcile)
+	wg.Wait()
+	close(results)
+
+	successes, conflicts := 0, 0
+	for reconcileErr := range results {
+		if reconcileErr == nil {
+			successes++
+		} else if errors.Is(reconcileErr, ErrRepositoryConflict) {
+			conflicts++
+		} else {
+			t.Fatalf("unexpected reconciliation error: %v", reconcileErr)
+		}
+	}
+	if successes != 2 || conflicts != 0 {
+		t.Fatalf("identical concurrent reconciliation requests successes=%d conflicts=%d; want idempotent success for both", successes, conflicts)
+	}
+
+	events, err := repository.LoadVerified(ctx)
+	if err != nil {
+		t.Fatalf("verify reconciled ledger: %v", err)
+	}
+	reconciliations := 0
+	var committedReconciliation LedgerEvent
+	for _, event := range events {
+		if event.ExecutionID == start.ExecutionID && event.EventType == "EXECUTION_RECONCILED" {
+			reconciliations++
+			committedReconciliation = event
+			if event.Metadata["reconciler_id"] != "operator-test" ||
+				event.Metadata["evidence_ref"] != "evidence://verified/"+suffix ||
+				event.Metadata["reconciliation_outcome"] != string(ExecutionOutcomeCommitted) {
+				t.Fatalf("unexpected durable reconciliation event: %+v", event)
+			}
+		}
+	}
+	if reconciliations != 1 {
+		t.Fatalf("durable reconciliation count=%d; want exactly one", reconciliations)
+	}
+	replayed, replaySequence, err := repository.ReconcileExecution(
+		ctx, start.ExecutionID, ExecutionOutcomeCommitted,
+		"evidence://verified/"+suffix, "operator-test", time.Now().UTC(),
+	)
+	if err != nil || replayed.ID != committedReconciliation.ID || replaySequence < 1 {
+		t.Fatalf("idempotent reconciliation replay = (%+v, %d, %v)", replayed, replaySequence, err)
+	}
+	lateReceipt := LedgerEvent{
+		Timestamp: time.Now().UTC(), RequestID: start.RequestID, DecisionID: start.DecisionID,
+		ExecutionID: start.ExecutionID, AgentID: start.AgentID, Capability: start.Capability,
+		ArtifactHash: start.ArtifactHash, EventType: "EXECUTION_ALLOWED", Decision: DecisionAllow,
+	}
+	if _, _, err := repository.Append(ctx, lateReceipt); err == nil {
+		t.Fatal("late execution receipt must be rejected after reconciliation")
+	}
+	if _, _, err := repository.ReconcileExecution(ctx, start.ExecutionID, ExecutionOutcomeNotCommitted, "evidence://other", "operator-test", time.Now().UTC()); !errors.Is(err, ErrRepositoryConflict) {
+		t.Fatalf("duplicate reconciliation error = %v; want conflict", err)
 	}
 }

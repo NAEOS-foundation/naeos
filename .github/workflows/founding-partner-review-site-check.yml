@@ -1,0 +1,52 @@
+name: Founding Partner Review Dashboard Typecheck
+
+on:
+  pull_request:
+    branches: [feat/founding-partner-intake-20261125]
+    paths:
+      - 'site/app/[lang]/founding-partners/review/page.tsx'
+      - 'site/components/partners/FoundingPartnerReviewDashboard.tsx'
+      - 'site/.env.example'
+      - 'site/FOUNDING_PARTNER_REVIEW.md'
+      - 'site/package.json'
+      - 'site/package-lock.json'
+      - '.github/workflows/founding-partner-review-site-check.yml'
+  push:
+    branches: [feat/founding-partner-review-workflow]
+    paths:
+      - 'site/app/[lang]/founding-partners/review/page.tsx'
+      - 'site/components/partners/FoundingPartnerReviewDashboard.tsx'
+      - 'site/.env.example'
+      - 'site/FOUNDING_PARTNER_REVIEW.md'
+      - 'site/package.json'
+      - 'site/package-lock.json'
+      - '.github/workflows/founding-partner-review-site-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: founding-partner-review-site-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Founder Review Dashboard Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install dependencies
+        run: npm install --ignore-scripts --legacy-peer-deps
+      - name: Typecheck
+        run: npm run typecheck

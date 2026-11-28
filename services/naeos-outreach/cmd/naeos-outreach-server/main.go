@@ -1,0 +1,79 @@
+// Copyright 2025 NAEOS contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
+	"github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/authboundary"
+	outreachconfig "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/config"
+	outreachhttp "github.com/NAEOS-foundation/naeos/services/naeos-outreach/internal/httpserver"
+)
+
+func main() {
+	allowNonLoopback := false
+	if value := os.Getenv("NAEOS_OUTREACH_ALLOW_NON_LOOPBACK"); value != "" {
+		parsed, err := strconv.ParseBool(value)
+		if err != nil {
+			log.Fatalf("configuration error: NAEOS_OUTREACH_ALLOW_NON_LOOPBACK must be a boolean: %v", err)
+		}
+		allowNonLoopback = parsed
+	}
+
+	cfg, err := outreachconfig.LoadWithOptions(os.Getenv("NAEOS_OUTREACH_ADDR"), allowNonLoopback)
+	if err != nil {
+		log.Fatalf("configuration error: %v", err)
+	}
+
+	publicHandler := outreachhttp.NewHandler()
+
+	mux := http.NewServeMux()
+	mux.Handle("/health", publicHandler)
+	mux.Handle("/ready", publicHandler)
+	mux.Handle("/", authboundary.RequirePrincipal(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	})))
+
+	server := &http.Server{
+		Addr:              cfg.Addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		log.Printf("NAEOS Outreach server listening at %s", cfg.Addr)
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server failed: %v", err)
+		}
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("graceful shutdown failed: %v", err)
+			_ = server.Close()
+		}
+		if err := <-serverErrors; err != nil && err != http.ErrServerClosed {
+			log.Printf("server shutdown: %v", err)
+		}
+	}
+}

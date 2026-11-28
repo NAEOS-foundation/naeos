@@ -2,7 +2,7 @@ name: Control Plane Browser E2E
 
 on:
   pull_request:
-    branches: [main, fix/control-plane-auth-signed-off-20261012]
+    branches: [main, fix/control-plane-auth-signed-off-20261012, feat/founding-partner-intake-20261125]
     paths:
       - "site/**"
       - "Dockerfile.control-plane"
@@ -44,6 +44,8 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:3000
           CONTROL_PLANE_EXPECT_UNCONFIGURED_UPSTREAM: "true"
+          NEXT_PUBLIC_SUPABASE_URL: https://kqmhpsftijskesjdovjm.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_PkjsKuqVuy5BdjikdbNpNg_tsYL66Pq
         run: |
           set -euo pipefail
           npm run dev -- --hostname 127.0.0.1 > /tmp/naeos-next.log 2>&1 &
@@ -62,6 +64,7 @@ jobs:
             exit 1
           fi
           node --test e2e/control-plane.e2e.test.mjs
+          node --test e2e/founding-partner-review.e2e.test.mjs
 
   cloudflare-worker-preview-browser-e2e:
     # Fork PRs cannot access Cloudflare credentials; local PR browser E2E still runs.
@@ -134,7 +137,11 @@ jobs:
         if: steps.preview_scope.outputs.required == 'true'
         env:
           CONTROL_PLANE_EXPECT_UNCONFIGURED_UPSTREAM: "true"
-        run: node --test e2e/control-plane.e2e.test.mjs
+          NEXT_PUBLIC_SUPABASE_URL: https://kqmhpsftijskesjdovjm.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_PkjsKuqVuy5BdjikdbNpNg_tsYL66Pq
+        run: |
+          node --test e2e/control-plane.e2e.test.mjs
+          node --test e2e/founding-partner-review.e2e.test.mjs
 
   production-browser-e2e:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
