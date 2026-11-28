@@ -23,14 +23,14 @@ import (
 )
 
 type testServiceClaims struct {
-	Issuer    string   `json:"iss"`
-	Subject   string   `json:"sub"`
-	ClientID  string   `json:"client_id,omitempty"`
-	Audience  []string `json:"aud"`
-	Expires   int64    `json:"exp"`
-	NotBefore int64    `json:"nbf,omitempty"`
-	IssuedAt  int64    `json:"iat,omitempty"`
-	Scope     string   `json:"scope,omitempty"`
+	Issuer    string `json:"iss"`
+	Subject   string `json:"sub,omitempty"`
+	ClientID  string `json:"client_id,omitempty"`
+	Audience  any    `json:"aud"`
+	Expires   int64  `json:"exp"`
+	NotBefore int64  `json:"nbf,omitempty"`
+	IssuedAt  int64  `json:"iat,omitempty"`
+	Scope     string `json:"scope,omitempty"`
 }
 
 func newTestJWKSValidator(t *testing.T) (*JWKSValidator, *rsa.PrivateKey) {
@@ -91,6 +91,82 @@ func TestJWKSValidatorValidatesServiceJWT(t *testing.T) {
 	}
 	if claims.Sub != "naeos-intelligence" || !hasJWTClaimScope(claims, "naeos:repository:read") {
 		t.Fatalf("unexpected service identity or scope: %+v", claims)
+	}
+}
+
+func TestJWKSValidatorPreservesSubjectAndClientIDSeparately(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	input := defaultTestServiceClaims()
+	input.Subject = "user-subject-123"
+	input.ClientID = "service-client-456"
+	token := makeTestServiceToken(t, key, input)
+
+	claims, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if claims.Sub != input.Subject {
+		t.Fatalf("sub = %q; want original subject %q", claims.Sub, input.Subject)
+	}
+	if claims.ClientID != input.ClientID {
+		t.Fatalf("client_id = %q; want %q", claims.ClientID, input.ClientID)
+	}
+	if claims.Issuer != input.Issuer {
+		t.Fatalf("iss = %q; want %q", claims.Issuer, input.Issuer)
+	}
+	if len(claims.Audience) != 1 || claims.Audience[0] != "naeos-core" {
+		t.Fatalf("aud = %v; want [naeos-core]", claims.Audience)
+	}
+}
+
+func TestJWKSValidatorPreservesOpaqueSubjectAndClientID(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	input := defaultTestServiceClaims()
+	input.Subject = "  opaque-subject-123 \t"
+	input.ClientID = "  client-456  "
+	token := makeTestServiceToken(t, key, input)
+
+	claims, err := validator.Validate(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	if claims.Sub != input.Subject {
+		t.Fatalf("sub = %q; want byte-for-byte original %q", claims.Sub, input.Subject)
+	}
+	if claims.ClientID != input.ClientID {
+		t.Fatalf("client_id = %q; want byte-for-byte original %q", claims.ClientID, input.ClientID)
+	}
+}
+
+func TestJWKSValidatorRejectsMissingOrWhitespaceOnlySubject(t *testing.T) {
+	for name, subject := range map[string]string{
+		"missing":        "",
+		"single space":   " ",
+		"tabs and lines": "\t\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			validator, key := newTestJWKSValidator(t)
+			input := defaultTestServiceClaims()
+			input.Subject = subject
+			input.ClientID = "client-only-must-not-become-subject"
+			token := makeTestServiceToken(t, key, input)
+			if _, err := validator.Validate(context.Background(), token); err == nil {
+				t.Fatal("Validate accepted a missing or whitespace-only subject")
+			}
+		})
+	}
+}
+
+func TestJWKSValidatorAcceptsStringAudienceAndReturnsItSeparately(t *testing.T) {
+	validator, key := newTestJWKSValidator(t)
+	input := defaultTestServiceClaims()
+	input.Audience = "naeos-core"
+	claims, err := validator.Validate(context.Background(), makeTestServiceToken(t, key, input))
+	if err != nil {
+		t.Fatalf("Validate string audience: %v", err)
+	}
+	if len(claims.Audience) != 1 || claims.Audience[0] != "naeos-core" {
+		t.Fatalf("audience = %v; want [naeos-core]", claims.Audience)
 	}
 }
 

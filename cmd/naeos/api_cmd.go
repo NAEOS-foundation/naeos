@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -16,9 +17,10 @@ import (
 )
 
 var (
-	apiPort   string
-	apiAuth   bool
-	apiSecret string
+	apiPort     string
+	apiAuth     bool
+	apiSecret   string
+	apiAuthMode string
 )
 
 // apiPipelineRunsSchema mirrors the columns written by the API server's
@@ -34,14 +36,63 @@ const apiPipelineRunsSchema = `CREATE TABLE IF NOT EXISTS pipeline_runs (
 
 // attachDatabase connects the API server to a database when the
 // NAEOS_DB_DRIVER and NAEOS_DB_DATABASE environment variables are set.
-func attachDatabase(server *api.Server) error {
-	driver := os.Getenv("NAEOS_DB_DRIVER")
-	dsn := os.Getenv("NAEOS_DB_DATABASE")
+func apiDatabaseConfigFromEnv() (string, *database.Config, error) {
+	driver := strings.TrimSpace(os.Getenv("NAEOS_DB_DRIVER"))
+	dsn := strings.TrimSpace(os.Getenv("NAEOS_DB_DATABASE"))
 	if driver == "" && dsn == "" {
-		return nil
+		return "", nil, nil
 	}
 	if driver == "" {
 		driver = "sqlite"
+	}
+
+	dbConfig := &database.Config{Database: dsn}
+	switch driver {
+	case "postgres", "postgresql":
+		dbConfig.Host = strings.TrimSpace(os.Getenv("NAEOS_DB_HOST"))
+		dbConfig.User = os.Getenv("NAEOS_DB_USER")
+		password, err := readSecretEnv("NAEOS_DB_PASSWORD", "NAEOS_DB_PASSWORD_FILE")
+		if err != nil {
+			return "", nil, err
+		}
+		dbConfig.Password = password
+		dbConfig.Port = 5432
+		dbConfig.SSLMode = strings.TrimSpace(os.Getenv("NAEOS_DB_SSLMODE"))
+		if dbConfig.SSLMode == "" {
+			dbConfig.SSLMode = "verify-full"
+		}
+	case "mysql", "mariadb":
+		dbConfig.Host = strings.TrimSpace(os.Getenv("NAEOS_DB_HOST"))
+		dbConfig.User = os.Getenv("NAEOS_DB_USER")
+		password, err := readSecretEnv("NAEOS_DB_PASSWORD", "NAEOS_DB_PASSWORD_FILE")
+		if err != nil {
+			return "", nil, err
+		}
+		dbConfig.Password = password
+		dbConfig.Port = 3306
+	}
+	if port := strings.TrimSpace(os.Getenv("NAEOS_DB_PORT")); port != "" {
+		dbPort, err := strconv.Atoi(port)
+		if err != nil || dbPort < 1 || dbPort > 65535 {
+			return "", nil, fmt.Errorf("invalid NAEOS_DB_PORT %q: must be an integer from 1 to 65535", port)
+		}
+		dbConfig.Port = dbPort
+	}
+	if driver == "postgres" || driver == "postgresql" || driver == "mysql" || driver == "mariadb" {
+		if dbConfig.Host == "" || dbConfig.User == "" || dbConfig.Password == "" || dbConfig.Database == "" {
+			return "", nil, fmt.Errorf("NAEOS_DB_HOST, NAEOS_DB_USER, NAEOS_DB_PASSWORD, and NAEOS_DB_DATABASE are required for %s", driver)
+		}
+	}
+	return driver, dbConfig, nil
+}
+
+func attachDatabase(server *api.Server) error {
+	driver, dbConfig, err := apiDatabaseConfigFromEnv()
+	if err != nil {
+		return err
+	}
+	if dbConfig == nil {
+		return nil
 	}
 
 	db := database.New(driver)
@@ -49,7 +100,7 @@ func attachDatabase(server *api.Server) error {
 		return fmt.Errorf("unknown NAEOS_DB_DRIVER %q", driver)
 	}
 
-	if err := db.Connect(&database.Config{Database: dsn}); err != nil {
+	if err := db.Connect(dbConfig); err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}
 
@@ -66,6 +117,7 @@ func attachDatabase(server *api.Server) error {
 
 // apiAdminUserEnv overrides the RBAC user ID seeded when JWT auth is enabled.
 const apiAdminUserEnv = "NAEOS_API_ADMIN_USER"
+const apiAuthModeEnv = "NAEOS_API_AUTH_MODE"
 
 // supabaseAuthEnv derives the Supabase Auth issuer, audience, and JWKS URL
 // from the environment. SUPABASE_URL is the single required variable; the
@@ -80,7 +132,10 @@ func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
 	if explicit := strings.TrimSpace(os.Getenv("SUPABASE_JWKS_URL")); explicit != "" {
 		jwksURL = explicit
 	}
-	audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	audience = strings.TrimSpace(os.Getenv("SUPABASE_JWT_AUDIENCE"))
+	if audience == "" {
+		audience = strings.TrimSpace(os.Getenv("SUPABASE_AUTH_AUDIENCE"))
+	}
 	if audience == "" {
 		audience = "authenticated"
 	}
@@ -88,9 +143,9 @@ func supabaseAuthEnv() (issuer, audience, jwksURL string, ok bool) {
 }
 
 // registerAPIAuth attaches an auth manager seeded with an admin user so that a
-// JWT whose "sub" matches the configured admin user can use protected routes.
-func registerAPIAuth(server *api.Server) error {
-	m := auth.NewManager(os.Getenv("NAEOS_ENCRYPTION_KEY"))
+// legacy HS256 token whose "sub" matches the configured admin user can use protected routes.
+func registerAPIAuth(server *api.Server, encryptionKey string) error {
+	m := auth.NewManager(encryptionKey)
 	auth.SetupDefaultRoles(m.RBAC())
 
 	userID := os.Getenv(apiAdminUserEnv)
@@ -108,41 +163,119 @@ func registerAPIAuth(server *api.Server) error {
 	return nil
 }
 
+func validateAPIAuthSecrets(jwtSecret, encryptionKey string) error {
+	if len(jwtSecret) < 32 {
+		return fmt.Errorf("JWT secret must be at least 32 bytes; set NAEOS_API_JWT_SECRET or pass --secret")
+	}
+	if len(encryptionKey) < 32 {
+		return fmt.Errorf("NAEOS_ENCRYPTION_KEY must be at least 32 bytes")
+	}
+	if jwtSecret == encryptionKey {
+		return fmt.Errorf("NAEOS_API_JWT_SECRET and NAEOS_ENCRYPTION_KEY must be different")
+	}
+	return nil
+}
+
+func resolveAPIJWTSecret(cmd *cobra.Command) (string, error) {
+	if cmd.Flags().Changed("secret") {
+		return apiSecret, nil
+	}
+	if apiSecret != "" {
+		return apiSecret, nil
+	}
+	return readSecretEnv("NAEOS_API_JWT_SECRET", "NAEOS_API_JWT_SECRET_FILE")
+}
+
+func readSecretEnv(valueEnv, fileEnv string) (string, error) {
+	value := os.Getenv(valueEnv)
+	file := strings.TrimSpace(os.Getenv(fileEnv))
+	if value != "" && file != "" {
+		return "", fmt.Errorf("%s and %s must not both be set", valueEnv, fileEnv)
+	}
+	if value != "" {
+		return value, nil
+	}
+	if file == "" {
+		return "", nil
+	}
+	// #nosec G703 -- this path is set by the deployment operator for a mounted secret.
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return "", fmt.Errorf("read %s: %w", fileEnv, err)
+	}
+	secret := strings.TrimSuffix(string(data), "\n")
+	secret = strings.TrimSuffix(secret, "\r")
+	if secret == "" {
+		return "", fmt.Errorf("%s points to an empty secret file", fileEnv)
+	}
+	return secret, nil
+}
+
+func resolveAPIAuthMode(cmd *cobra.Command) string {
+	if cmd.Flags().Changed("auth-mode") {
+		return strings.ToLower(strings.TrimSpace(apiAuthMode))
+	}
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv(apiAuthModeEnv)))
+	if mode == "" {
+		return "hs256"
+	}
+	return mode
+}
+
 func newAPICommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
 		Short: "Start NAEOS REST API server",
 		Long:  `Start the NAEOS REST API server for external integrations and web dashboard.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			jwtSecret, err := resolveAPIJWTSecret(cmd)
+			if err != nil {
+				return err
+			}
+			encryptionKey, err := readSecretEnv("NAEOS_ENCRYPTION_KEY", "NAEOS_ENCRYPTION_KEY_FILE")
+			if err != nil {
+				return err
+			}
+			authMode := resolveAPIAuthMode(cmd)
+			var supabaseAuth *api.SupabaseAuth
+			if apiAuth {
+				switch authMode {
+				case "hs256":
+					if err := validateAPIAuthSecrets(jwtSecret, encryptionKey); err != nil {
+						return err
+					}
+				case "supabase":
+					if jwtSecret != "" {
+						return fmt.Errorf("NAEOS_API_JWT_SECRET and --secret must not be set when %s=supabase", apiAuthModeEnv)
+					}
+					sIssuer, sAudience, sJWKSURL, configured := supabaseAuthEnv()
+					if !configured {
+						return fmt.Errorf("SUPABASE_URL is required when %s=supabase", apiAuthModeEnv)
+					}
+					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
+					if err != nil {
+						return err
+					}
+				default:
+					return fmt.Errorf("unsupported %s %q: use hs256 or supabase", apiAuthModeEnv, authMode)
+				}
+			}
+
 			issuer := os.Getenv("NAEOS_API_JWKS_ISSUER")
 			audience := os.Getenv("NAEOS_API_JWKS_AUDIENCE")
 			jwksURL := os.Getenv("NAEOS_API_JWKS_URL")
 			serviceAuthConfigured := issuer != "" || audience != "" || jwksURL != ""
 			var serviceJWKS *api.JWKSValidator
 			if serviceAuthConfigured {
-				var err error
 				serviceJWKS, err = api.NewJWKSValidator(issuer, audience, jwksURL)
 				if err != nil {
 					return err
 				}
 			}
 
-			var supabaseAuth *api.SupabaseAuth
-			supabaseAuthConfigured := false
-			if apiAuth {
-				if sIssuer, sAudience, sJWKSURL, ok := supabaseAuthEnv(); ok {
-					var err error
-					supabaseAuth, err = api.NewSupabaseAuth(sIssuer, sAudience, sJWKSURL)
-					if err != nil {
-						return err
-					}
-					supabaseAuthConfigured = true
-				}
-			}
-
 			auth := &api.AuthConfig{
 				Enabled:     apiAuth,
-				JWTSecret:   apiSecret,
+				JWTSecret:   jwtSecret,
 				ServiceJWKS: serviceJWKS,
 				Supabase:    supabaseAuth,
 			}
@@ -151,8 +284,8 @@ func newAPICommand() *cobra.Command {
 			if err := attachDatabase(server); err != nil {
 				return err
 			}
-			if apiAuth && (apiSecret != "" || supabaseAuthConfigured) {
-				if err := registerAPIAuth(server); err != nil {
+			if apiAuth && authMode == "hs256" {
+				if err := registerAPIAuth(server, encryptionKey); err != nil {
 					return err
 				}
 			}
@@ -162,7 +295,8 @@ func newAPICommand() *cobra.Command {
 
 	cmd.Flags().StringVarP(&apiPort, "port", "p", "8080", "API server port")
 	cmd.Flags().BoolVarP(&apiAuth, "auth", "a", false, "Enable JWT authentication")
-	cmd.Flags().StringVarP(&apiSecret, "secret", "s", "", "JWT secret key")
+	cmd.Flags().StringVarP(&apiSecret, "secret", "s", "", "JWT secret key (defaults to NAEOS_API_JWT_SECRET)")
+	cmd.Flags().StringVar(&apiAuthMode, "auth-mode", "", "Authentication mode: hs256 or supabase (defaults to NAEOS_API_AUTH_MODE or hs256)")
 
 	return cmd
 }

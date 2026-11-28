@@ -603,6 +603,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 
 		// Auth
 		var userID string
+		var trustedTenantID string
 		var serviceToken bool
 		userAuthEnabled := s.Auth != nil && s.Auth.Enabled
 		serviceRepositoryRoute := strings.HasPrefix(r.URL.Path, "/api/v1/repositories/")
@@ -651,6 +652,7 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					s.writeError(w, http.StatusUnauthorized, "invalid bearer token")
 					return
 				}
+				trustedTenantID = supaClaims.TenantID
 				s.ensureSupabaseUser(supaClaims)
 			} else if s.jwt != nil {
 				claims, err = s.jwt.Validate(token)
@@ -683,6 +685,10 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 					return
 				}
 			}
+			if s.supabaseAuth != nil && r.URL.Path == "/api/v1/artifacts" {
+				s.writeError(w, http.StatusForbidden, "artifact endpoint is not tenant-scoped")
+				return
+			}
 
 		}
 
@@ -692,21 +698,28 @@ func (s *Server) handlerWithMiddleware(handler http.HandlerFunc) http.HandlerFun
 				r = r.WithContext(context.WithValue(r.Context(), serviceAuthContextKey{}, true))
 			}
 
-			// Resolve tenant from user metadata (X-Tenant-ID header or user attribute)
-			if s.tenantWorkspace != nil {
-				tenantID := r.Header.Get("X-Tenant-ID")
+			tenantID := ""
+			if s.supabaseAuth != nil {
+				tenantID = trustedTenantID
+				requestedTenantID := r.Header.Get("X-Tenant-ID")
+				if requestedTenantID != "" && requestedTenantID != trustedTenantID {
+					s.writeError(w, http.StatusForbidden, "tenant is not authorized")
+					return
+				}
+			} else if s.tenantWorkspace != nil {
+				tenantID = r.Header.Get("X-Tenant-ID")
 				if tenantID == "" {
 					if singleTenantID, ok := s.tenantWorkspace.SingleTenantForUser(userID); ok {
 						tenantID = singleTenantID
 					}
 				}
-				if tenantID != "" {
-					if !s.tenantWorkspace.IsMember(tenantID, userID) {
-						s.writeError(w, http.StatusForbidden, "user is not a member of the requested tenant")
-						return
-					}
-					r = r.WithContext(context.WithValue(r.Context(), TenantContextKey, tenantID))
+				if tenantID != "" && !s.tenantWorkspace.IsMember(tenantID, userID) {
+					s.writeError(w, http.StatusForbidden, "user is not a member of the requested tenant")
+					return
 				}
+			}
+			if tenantID != "" {
+				r = r.WithContext(context.WithValue(r.Context(), TenantContextKey, tenantID))
 			}
 		}
 
@@ -1383,13 +1396,24 @@ func (s *Server) handlePipelineStatus(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
+	tenantFilter, _ := r.Context().Value(TenantContextKey).(string)
+	if s.Auth != nil && s.Auth.Enabled && tenantFilter == "" {
+		s.writeError(w, http.StatusForbidden, "tenant context required")
+		return
+	}
 	s.pipelinesMu.RLock()
 	var lastRun *pipelineRun
-	if len(s.pipelines) > 0 {
-		last := s.pipelines[len(s.pipelines)-1]
-		lastRun = &last
+	total := 0
+	for i := len(s.pipelines) - 1; i >= 0; i-- {
+		if tenantFilter != "" && s.pipelines[i].TenantID != tenantFilter {
+			continue
+		}
+		if lastRun == nil {
+			last := s.pipelines[i]
+			lastRun = &last
+		}
+		total++
 	}
-	total := len(s.pipelines)
 	s.pipelinesMu.RUnlock()
 	status := "idle"
 	if lastRun != nil && lastRun.Status == "running" {
@@ -2533,6 +2557,13 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if s.db != nil {
+		if err := s.db.HealthCheck(); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = fmt.Fprint(w, `{"status":"not_ready","dependency":"database"}`)
+			return
+		}
+	}
 	fmt.Fprintf(w, `{"status":"ready"}`)
 }
 

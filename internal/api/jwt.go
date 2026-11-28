@@ -18,6 +18,8 @@ import (
 
 // JWTClaims represents the claims in a JSON Web Token.
 type JWTClaims struct {
+	Issuer    string   `json:"iss,omitempty"`
+	Audience  []string `json:"aud,omitempty"`
 	Sub       string   `json:"sub"`
 	ClientID  string   `json:"client_id,omitempty"`
 	Name      string   `json:"name"`
@@ -26,6 +28,35 @@ type JWTClaims struct {
 	NotBefore int64    `json:"nbf,omitempty"`
 	Scope     string   `json:"scope,omitempty"`
 	Scopes    []string `json:"scopes,omitempty"`
+}
+
+// UnmarshalJSON accepts the JWT audience in either its standard string or
+// string-array form while keeping the verified audience values separate.
+func (claims *JWTClaims) UnmarshalJSON(data []byte) error {
+	type claimsAlias JWTClaims
+	var decoded struct {
+		claimsAlias
+		Audience json.RawMessage `json:"aud"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*claims = JWTClaims(decoded.claimsAlias)
+	if len(decoded.Audience) == 0 || string(decoded.Audience) == "null" {
+		claims.Audience = nil
+		return nil
+	}
+	var audience []string
+	if err := json.Unmarshal(decoded.Audience, &audience); err == nil {
+		claims.Audience = audience
+		return nil
+	}
+	var single string
+	if err := json.Unmarshal(decoded.Audience, &single); err != nil {
+		return fmt.Errorf("invalid JWT audience: %w", err)
+	}
+	claims.Audience = []string{single}
+	return nil
 }
 
 // JWTValidator validates and generates HS256-signed JWTs.

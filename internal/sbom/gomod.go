@@ -35,6 +35,7 @@ var goModuleLicense = map[string]string{
 	"golang.org/x/crypto":                   "BSD-3-Clause",
 	"golang.org/x/mod":                      "BSD-3-Clause",
 	"golang.org/x/sync":                     "BSD-3-Clause",
+	"golang.org/x/time":                     "BSD-3-Clause",
 	"golang.org/x/text":                     "BSD-3-Clause",
 	"gopkg.in/yaml.v3":                      "MIT AND Apache-2.0",
 	"modernc.org/sqlite":                    "BSD-3-Clause",
