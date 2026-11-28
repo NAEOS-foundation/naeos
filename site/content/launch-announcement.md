@@ -1,66 +1,51 @@
 ---
 title: NAEOS Launch Announcement
-description: A public launch announcement for NAEOS, the declarative engineering platform for AI-native software delivery.
+description: Introducing NAEOS, the open-source engineering control plane for AI coding agents, with explicit policy, authorization, execution, evidence, and verification.
 ---
 
 # NAEOS Launch Announcement
 
-> NAEOS is the control plane for AI-native engineering. It turns software specifications into validated, governed, traceable workflows so AI can accelerate delivery without losing engineering discipline.
+> NAEOS is the Engineering Control Plane for AI Coding Agents.
 
-## Why we are launching now
-
-The problem is no longer whether AI can generate code. The problem is whether teams can trust, audit, and scale what AI produces.
-
-AI coding tools are improving quickly, but many engineering organizations still lack the system layer needed to keep architecture, policy, and output aligned. NAEOS is being launched to provide that missing layer.
-
-## What is available today
-
-The repository already contains a concrete implementation of the platform direction:
-
-- declarative specification parsing with YAML and JSON
-- an 11-stage execution pipeline for parse, normalize, resolve, build, validate, graph, policy, schedule, generate, review, and write
-- NEIR as the central engineering model
-- governance and policy enforcement hooks
-- AI context bundle generation for downstream execution
-- evidence and audit artifacts for traceability
-- CLI workflows for validation, generation, verification, and runtime control
+NAEOS helps engineering teams define intent, enforce policy, authorize execution, capture durable evidence, and independently verify outcomes across AI-assisted engineering workflows.
 
 ## Why this matters
 
-NAEOS is built around a simple principle:
+AI coding agents can generate and propose changes quickly. Engineering teams still need a system to decide what is authorized, what executes, and what evidence remains after execution.
 
-- one specification can become the source of truth
-- engineering intent can be validated before generation
-- AI context can be compiled consistently
-- generated artifacts can be traced back to the original specification
-- governance can be enforced as part of the workflow, not bolted on later
+NAEOS is being built around this control boundary—not simply around prompts or code generation.
 
-This creates a stronger foundation for AI-native software delivery across teams, systems, and environments.
+## The control model
 
-## Verified repository references
+```
+Specification
+→ NEIR
+→ Validation + Policy
+→ Agent Intent
+→ Authorized Execution
+→ Observation
+→ Evidence
+→ Independent Verification
+```
 
-For technical verification, see:
+## Current public proof
 
-- [README.md](https://github.com/NAEOS-foundation/naeos/blob/main/README.md)
-- [ARCHITECTURE-OVERVIEW.md](https://github.com/NAEOS-foundation/naeos/blob/main/ARCHITECTURE-OVERVIEW.md)
-- [GETTING-STARTED.md](https://github.com/NAEOS-foundation/naeos/blob/main/GETTING-STARTED.md)
-- [ROADMAP.md](https://github.com/NAEOS-foundation/naeos/blob/main/ROADMAP.md)
-- [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md)
+The repository's public proof path includes the control-plane workflow, Golden Path, reference demo, evidence records, and independent verifier.
 
-## What to expect next
+- P1.6–P1.10 form the primary Golden Path proof sequence.
+- P1.11 provides independent verification of serialized evidence.
+- The proof scope is evidence-based and does not imply blanket production assurance or compliance certification.
 
-NAEOS is being built in public around a clear technical direction:
+NAEOS retains specification-first engineering capabilities: NEIR connects engineering intent to validation, generated artifacts, and AI context.
 
-- stronger control-plane workflows
-- more robust end-to-end examples
-- deeper governance and audit capabilities
-- broader ecosystem and partner validation
+## Evaluate NAEOS
 
-## Call to action
+For a reproducible technical evaluation, start with the public Control Plane and run the Golden Path and Reference Demo from a fresh checkout. Inspect the resulting evidence and verify it independently.
 
-Explore the repository, try the CLI, and help shape the next phase of the platform.
+- [Repository](https://github.com/NAEOS-foundation/naeos)
+- [Getting Started](https://naeos.dev/docs/getting-started)
+- [Architecture](https://naeos.dev/architecture-overview)
+- [Whitepaper](https://naeos.dev/whitepaper)
+- [Roadmap](https://naeos.dev/roadmap)
 
-- GitHub: [NAEOS Foundation / naeos](https://github.com/NAEOS-foundation/naeos)
-- Docs: [Getting Started](https://naeos.dev/docs/getting-started)
-- Architecture: [Architecture Overview](https://naeos.dev/architecture-overview)
-- Investor Deck: [Investor Deck](https://naeos.dev/investor-deck)
+We are building in public. Technical feedback, reproducible issues, and external evaluation evidence will guide the next phase.

@@ -1,21 +1,22 @@
 {
   "brand": "NAEOS",
   "tagline": "Architecture Drives Engineering.",
+  "logoLockupTagline": "The Intelligent Core",
   "description": "Nusantara AI Engineering Operating System",
-  "version": "3.0.0",
-  "logoMaster": "1.0.0",
+  "version": "3.1.0",
+  "logoMaster": "2.0.0",
   "status": "FROZEN",
   "colors": {
     "naeosBlue": "#2563FF",
-    "electricCyan": "#00D9FF",
-    "deepNavy": "#06132B",
-    "obsidian": "#05070D",
+    "electricCyan": "#60A5FA",
+    "deepNavy": "#0B0F19",
+    "obsidian": "#0B0F19",
     "slate": "#64748B",
-    "silver": "#E2E8F0",
+    "silver": "#E5E7EB",
     "white": "#FFFFFF"
   },
   "typography": {
-    "display": "Space Grotesk",
+    "display": "Sora",
     "body": "Inter",
     "technical": "JetBrains Mono"
   },
@@ -27,9 +28,9 @@
     "monochrome": "logo-mono.svg"
   },
   "sourceOfTruth": "source-of-truth/README.md",
-  "derivedVector": "master/naeos-mark-master.svg",
+  "derivedVector": "master/naeos-primary-symbol-master-v2.svg",
   "sourceOfTruthSha256": "d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974",
-  "freezeRule": "The visual reference is immutable. Derived vectors and production variants may change only through an explicit versioned review; do not silently replace the source of truth.",
+  "freezeRule": "The original visual source remains immutable. The founder-approved NAEOS Primary Symbol Candidate v1.0 is registered as production Logo Master v2.0.0; geometry changes require a new explicit version.",
   "visualSourceOfTruthArtifact": "NAEOS Logo System FROZEN 1.0",
   "visualSourceOfTruthSha256": "d2e4c1c045bb1fc8ecc5cb8712ebaca2e3dd5662b2580d878186a7bb9b00f974"
 }

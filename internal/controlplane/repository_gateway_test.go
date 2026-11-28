@@ -47,6 +47,12 @@ func (l *repositoryGatewayTestLedger) Append(ctx context.Context, event LedgerEv
 	return event, int64(len(l.events)), nil
 }
 
+// ClaimExecution provides the atomic-claim contract for this serialized test ledger.
+// Production policy/grant locking is covered by PostgreSQL integration tests.
+func (l *repositoryGatewayTestLedger) ClaimExecution(ctx context.Context, event LedgerEvent, approval Approval, now time.Time) (LedgerEvent, int64, error) {
+	return l.Append(ctx, event)
+}
+
 func (l *repositoryGatewayTestLedger) LoadVerified(ctx context.Context) ([]LedgerEvent, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -292,5 +298,44 @@ func TestRepositoryDecisionGatewayConcurrentExecuteHasSingleWinner(t *testing.T)
 	wg.Wait()
 	if sideEffects != 1 || conflicts != 1 || len(unexpected) != 0 {
 		t.Fatalf("concurrent Execute: side_effects=%d conflicts=%d unexpected=%v; want one winner and one conflict", sideEffects, conflicts, unexpected)
+	}
+}
+
+func TestRepositoryDecisionGatewayRejectsMismatchedApprovalBeforeExecutionIntent(t *testing.T) {
+	gateway, req := repositoryGatewayFixture(t)
+	result, err := gateway.Authorize(context.Background(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewApprovalStore()
+	approvals := NewMemoryApprovalRepository(store)
+	approval := Approval{
+		ID: "approval-for-other-decision", DecisionID: "different-decision",
+		AgentID: req.AgentID, Capability: req.Action.Capability,
+		PolicyID: "repo-gateway-policy", PolicyVersion: 1,
+		Approver: "reviewer@example.test", Status: "pending",
+		CreatedAt: req.Timestamp.Add(-time.Minute), ExpiresAt: req.Timestamp.Add(time.Hour),
+		ArtifactHash: req.Action.ArtifactHash,
+	}
+	if err := approvals.Create(context.Background(), approval); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := approvals.Transition(context.Background(), approval.ID, "pending", "approved", req.Timestamp); err != nil {
+		t.Fatal(err)
+	}
+	gateway.Approvals = approvals
+	req.ApprovalID = approval.ID
+
+	called := false
+	executed, _, executeErr := gateway.Execute(context.Background(), req, result, func(context.Context) error {
+		called = true
+		return nil
+	})
+	if !errors.Is(executeErr, ErrRepositoryConflict) || executed.Status != DecisionDeny || called {
+		t.Fatalf("Execute = %+v, err=%v, side_effect_called=%t; want DENY before side effect", executed, executeErr, called)
+	}
+	if got := gateway.Ledger.(*repositoryGatewayTestLedger).countType("EXECUTION_STARTED"); got != 0 {
+		t.Fatalf("execution intents = %d; want 0 for mismatched approval", got)
 	}
 }

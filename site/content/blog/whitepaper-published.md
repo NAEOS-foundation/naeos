@@ -1,29 +1,33 @@
 ---
 title: "NAEOS Official Whitepaper Published"
-description: "The official NAEOS whitepaper is now available — a comprehensive technical document covering vision, architecture, the Engineering Constitution, NEIR, AI integration, governance, and compliance."
+description: "The NAEOS whitepaper documents the open-source engineering control plane for AI coding agents, its control model, current proof path, and evidence scope."
 date: 2026-08-01
 author: "NAEOS Foundation"
 categories: ["announcement"]
 ---
 
-We are excited to announce the publication of the **official NAEOS whitepaper** — available in English and Bahasa Indonesia, both in the repository and on this website.
+The **official NAEOS whitepaper** is available in English and Bahasa Indonesia. It is maintained alongside the repository and website to reflect the project's engineering direction and evidence-backed state.
 
-## What's Inside
+## Current focus
 
-The whitepaper is a comprehensive technical document that covers:
+NAEOS is an open-source, vendor-neutral engineering control plane for AI coding agents. Its canonical control model is:
 
-- **Executive summary & problem statement** — why declarative engineering answers the fragmentation crisis of modern software development
-- **Vision & mission** — "Architecture Drives Engineering."
-- **The Engineering Constitution** — the 12 constitutional articles that NAEOS compiles into executable rules
-- **Platform architecture** — the five-layer model and the deterministic nine-stage compilation pipeline
-- **Core components** — Specification Language v2, NEIR, the multi-language generator, kernel, AI compiler with 6 output adapters, governance & compliance, and the ecosystem marketplace
-- **Differentiation** — NAEOS vs conventional approaches, release history, roadmap, use cases, and adoption considerations
+```
+Specification
+→ NEIR
+→ Validation + Policy
+→ Agent Intent
+→ Authorized Execution
+→ Observation
+→ Evidence
+→ Independent Verification
+```
 
-All diagrams are rendered with Mermaid and validated automatically in CI.
+The public proof scope emphasizes the control-plane authorization, execution, evidence, and independent-verification path. Release versions and engineering milestone identifiers are documented separately.
 
-## Where to Read
+## Where to read
 
 - **Website**: [English](/whitepaper/) · [Bahasa Indonesia](/id/whitepaper/)
 - **Repository**: [WHITEPAPER-EN.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER-EN.md) · [WHITEPAPER.md](https://github.com/NAEOS-foundation/naeos/blob/main/WHITEPAPER.md)
 
-We hope this document helps engineers, architects, and organizations evaluate NAEOS as their platform engineering foundation. Feedback and suggestions are always welcome — open an issue or join the discussion on GitHub.
+The whitepaper is an evolving technical document. Evaluate the documented scope and reproducible proof for your use case; the existence of broader platform capabilities does not itself imply production assurance or compliance certification.

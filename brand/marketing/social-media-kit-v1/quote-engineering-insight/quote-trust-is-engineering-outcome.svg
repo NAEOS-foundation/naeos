@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">NAEOS Quote and Engineering Insight Master</title>
+  <desc id="desc">NAEOS editorial quote graphic: Trust is not a feature. It is an engineering outcome.</desc>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#64748B" stroke-width="1" opacity=".16"/>
+    </pattern>
+    <radialGradient id="halo">
+      <stop offset="0" stop-color="#2563FF" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#2563FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1350" fill="#0B0F19"/>
+  <rect width="1080" height="1350" fill="url(#grid)"/>
+  <circle cx="914" cy="250" r="260" fill="url(#halo)"/>
+  <g fill="none" stroke="#60A5FA" opacity=".72">
+    <circle cx="914" cy="250" r="104" stroke-width="2"/>
+    <circle cx="914" cy="250" r="72" stroke-width="1" stroke-dasharray="5 10"/>
+    <path d="M914 110V70M914 430V390M774 250H734M1094 250H1054" stroke-width="2"/>
+    <path d="M914 146V250H1018" stroke-width="2"/>
+  </g>
+  <g fill="#60A5FA">
+    <circle cx="914" cy="250" r="7"/>
+    <circle cx="1018" cy="250" r="5"/>
+    <circle cx="914" cy="146" r="5"/>
+  </g>
+  <text x="92" y="112" fill="#60A5FA" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700" letter-spacing="4">ENGINEERING INSIGHT</text>
+  <path d="M92 158H988" stroke="#64748B" stroke-opacity=".48" stroke-width="2"/>
+  <g font-family="Sora, Inter, sans-serif" font-size="76" font-weight="700" letter-spacing="-2">
+    <text x="92" y="398" fill="#FFFFFF">Trust is not</text>
+    <text x="92" y="492" fill="#FFFFFF">a feature.</text>
+    <text x="92" y="622" fill="#2563FF">It is an</text>
+    <text x="92" y="716" fill="#60A5FA">engineering</text>
+    <text x="92" y="810" fill="#60A5FA">outcome.</text>
+  </g>
+  <path d="M92 1000H194" stroke="#2563FF" stroke-width="6"/>
+  <g fill="#E5E7EB" font-family="Inter, sans-serif" font-size="27">
+    <text x="92" y="1060">Define the boundary. Authorize execution.</text>
+    <text x="92" y="1104">Preserve evidence. Verify independently.</text>
+  </g>
+  <path d="M92 1190H988" stroke="#64748B" stroke-opacity=".48" stroke-width="2"/>
+  <text x="92" y="1250" fill="#FFFFFF" font-family="Sora, sans-serif" font-size="30" font-weight="700" letter-spacing="3">NAEOS</text>
+  <text x="988" y="1250" text-anchor="end" fill="#E5E7EB" font-family="Inter, sans-serif" font-size="22">naeos.dev</text>
+  <text x="92" y="1294" fill="#64748B" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="1.5">THE ENGINEERING CONTROL PLANE FOR AI CODING AGENTS</text>
+</svg>

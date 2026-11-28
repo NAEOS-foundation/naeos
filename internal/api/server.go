@@ -55,6 +55,7 @@ type Server struct {
 	apiKeysMu        sync.RWMutex
 	jwt              *JWTValidator
 	serviceJWKS      *JWKSValidator
+	githubClient     *http.Client
 	supabaseAuth     *SupabaseAuth
 	authManager      *auth.Manager
 	routePerms       map[string]auth.RoutePermission
@@ -206,6 +207,7 @@ func NewServer(addr string, authCfg *AuthConfig) *Server {
 		Limiter:       NewRateLimiter(100, time.Minute),
 		TenantLimiter: NewRateLimiter(1000, time.Minute),
 		APIKeys:       make(map[string]*RateLimiter),
+		githubClient:  newGitHubHTTPClient(),
 		parser:        parser.NewParser("."),
 		compiler:      compiler.New(),
 		store:         store,
@@ -830,6 +832,17 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// newGitHubHTTPClient returns the fixed-authority GitHub transport. Redirects
+// are rejected so repository credentials are never forwarded to another host.
+func newGitHubHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout: 10 * time.Second,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+}
+
 func (s *Server) handleRepository(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -883,12 +896,9 @@ func (s *Server) handleRepository(w http.ResponseWriter, r *http.Request) {
 	if token := strings.TrimSpace(os.Getenv("GITHUB_TOKEN")); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			// Never forward service credentials to a redirect destination.
-			return http.ErrUseLastResponse
-		},
+	client := s.githubClient
+	if client == nil {
+		client = newGitHubHTTPClient()
 	}
 	resp, err := client.Do(req)
 	if err != nil {

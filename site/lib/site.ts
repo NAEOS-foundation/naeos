@@ -9,12 +9,12 @@ export const DEFAULT_LANG: Lang = "en";
 export const SITE = {
   baseUrl: "https://naeos.dev",
   title: {
-    en: "NAEOS — AI Engineering Operating System",
+    en: "NAEOS — AI Engineering Control Plane",
     id: "NAEOS — Engineering Control Plane untuk AI Coding Agents",
   } as Record<Lang, string>,
   description: {
-    en: "Open-source engineering control plane for AI coding agents: specification, policy, authorized execution, evidence, and independent verification.",
-    id: "Engineering control plane open-source untuk AI coding agents: specification, policy, authorized execution, evidence, dan independent verification.",
+    en: "Open-source engineering control plane for AI coding agents: specification, policy, authorization, controlled execution, durable evidence, and independent verification.",
+    id: "Engineering control plane open-source untuk AI coding agents: specification, policy, authorization, controlled execution, durable evidence, dan independent verification.",
   } as Record<Lang, string>,
   copyright: "Copyright © 2025-2026 NAEOS contributors.",
   repo: "https://github.com/NAEOS-foundation/naeos",
