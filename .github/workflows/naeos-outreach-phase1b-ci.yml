@@ -1,0 +1,80 @@
+name: NAEOS Outreach Phase 1B CI
+
+on:
+  pull_request:
+    paths:
+      - 'services/naeos-outreach/**'
+      - '.github/workflows/naeos-outreach-phase1b-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/naeos-outreach/**'
+      - '.github/workflows/naeos-outreach-phase1b-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/naeos-outreach
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Verify formatting
+        run: |
+          files=$(gofmt -l $(find . -name '*.go' -type f))
+          if [ -n "$files" ]; then
+            echo "Files require gofmt:"
+            echo "$files"
+            exit 1
+          fi
+      - name: Test
+        run: go test -race -cover ./...
+      - name: Vet
+        run: go vet ./...
+
+  docker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/naeos-outreach
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build --pull -t naeos-outreach:ci .
+      - name: Smoke test container
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_id=""
+          cleanup() {
+            if [[ -n "$container_id" ]]; then
+              docker stop --time 15 "$container_id" >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          container_id=$(docker run -d --rm -p 127.0.0.1:18088:8088 naeos-outreach:ci)
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18088/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" -ne 1 ]]; then
+            docker logs "$container_id"
+            echo "Container did not become healthy"
+            exit 1
+          fi
+
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18088/protected)
+          test "$status" = "401"
+          docker stop --time 15 "$container_id" >/dev/null
+          container_id=""

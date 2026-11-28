@@ -1,0 +1,12 @@
+# Copyright 2025 NAEOS contributors
+# SPDX-License-Identifier: Apache-2.0
+FROM golang:1.26.11-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/evidence-verifier ./cmd/naeos-evidence-verifier
+FROM gcr.io/distroless/static-debian13:nonroot
+COPY --from=build /out/evidence-verifier /evidence-verifier
+EXPOSE 8081
+ENTRYPOINT ["/evidence-verifier"]
