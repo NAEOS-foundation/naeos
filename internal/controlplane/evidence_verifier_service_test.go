@@ -319,7 +319,7 @@ func TestEvidenceVerifierRejectsOversizedAndTrailingJSONBeforeClaim(t *testing.T
 
 func TestEvidenceVerifierRejectsInvalidObservationFieldsBeforePolicy(t *testing.T) {
 	cases := []struct {
-		name string
+		name   string
 		mutate func(*AuthoritativeExecutionObservation, time.Time)
 	}{
 		{name: "missing evidence reference", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.EvidenceRef = "" }},
@@ -328,8 +328,14 @@ func TestEvidenceVerifierRejectsInvalidObservationFieldsBeforePolicy(t *testing.
 		{name: "invalid digest", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.EvidenceSHA256 = "bad-digest" }},
 		{name: "missing observed time", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.ObservedAt = time.Time{} }},
 		{name: "missing valid-until", mutate: func(o *AuthoritativeExecutionObservation, _ time.Time) { o.ValidUntil = time.Time{} }},
-		{name: "future observation beyond skew", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) { o.ObservedAt = now.Add(31 * time.Second); o.ValidUntil = now.Add(2 * time.Minute) }},
-		{name: "valid-until before observed-at", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) { o.ObservedAt = now.Add(20 * time.Second); o.ValidUntil = now.Add(10 * time.Second) }},
+		{name: "future observation beyond skew", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) {
+			o.ObservedAt = now.Add(31 * time.Second)
+			o.ValidUntil = now.Add(2 * time.Minute)
+		}},
+		{name: "valid-until before observed-at", mutate: func(o *AuthoritativeExecutionObservation, now time.Time) {
+			o.ObservedAt = now.Add(20 * time.Second)
+			o.ValidUntil = now.Add(10 * time.Second)
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

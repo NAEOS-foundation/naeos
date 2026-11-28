@@ -32,7 +32,7 @@ type routeTestGuard struct {
 }
 
 func (routeTestGuard) Claim(context.Context, string, string) (bool, error) { return true, nil }
-func (g routeTestGuard) ClaimReadiness(context.Context) (bool, error) { return g.ready, g.readyErr }
+func (g routeTestGuard) ClaimReadiness(context.Context) (bool, error)      { return g.ready, g.readyErr }
 
 func newRouteTestHandler(t *testing.T, readyErr error) http.Handler {
 	t.Helper()
